@@ -48,6 +48,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -143,6 +144,33 @@ public class User implements Principal, Comparable<User>, Serializable {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<OrganizationUser> organizations;
+
+    /**
+     * The total number of hosted entries (workflows and tools) a user is allowed to create.  A value of null
+     * means to use the configured system limit.
+     */
+    @Column()
+    @JsonIgnore
+    private Integer hostedEntryCountLimit;
+
+    /**
+     * The total number of versions a user is allowed to create for a single entry. A value of null
+     * means to use the configured system limit.
+     */
+    @Column()
+    @JsonIgnore
+    private Integer hostedEntryVersionsLimit;
+
+    /**
+     * A temporary credential to hold the access token of a request made to Dockstore with
+     * a token not minted by/through Dockstore. For example, if a user got an access token
+     * by logging into Google outside of Dockstore, then made an API call to Dockstore using that token,
+     * this field is used to hold the token.
+     */
+    @Transient
+    @JsonIgnore
+    private String temporaryCredential;
+
 
     public User() {
         entries = new TreeSet<>();
@@ -352,6 +380,32 @@ public class User implements Principal, Comparable<User>, Serializable {
     public void setSetupComplete(boolean setupComplete) {
         this.setupComplete = setupComplete;
     }
+
+    public Integer getHostedEntryCountLimit() {
+        return hostedEntryCountLimit;
+    }
+
+    public Integer getHostedEntryVersionsLimit() {
+        return hostedEntryVersionsLimit;
+    }
+
+    public void setHostedEntryCountLimit(Integer hostedEntryCountLimit) {
+        this.hostedEntryCountLimit = hostedEntryCountLimit;
+    }
+
+    public void setHostedEntryVersionsLimit(Integer hostedEntryVersionsLimit) {
+        this.hostedEntryVersionsLimit = hostedEntryVersionsLimit;
+    }
+
+    public String getTemporaryCredential() {
+        return temporaryCredential;
+    }
+
+    public void setTemporaryCredential(String temporaryCredential) {
+        this.temporaryCredential = temporaryCredential;
+    }
+
+
 
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)

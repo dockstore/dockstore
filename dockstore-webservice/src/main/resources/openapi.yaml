@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-alpha.7-SNAPSHOT
+  version: 1.7.0-alpha.0-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -1258,7 +1258,7 @@ paths:
         - tokens
       summary: Allow satellizer to post a new GitHub token to dockstore, used by login,
         can create new users.
-      description: A post method is required by saetillizer to send the GitHub token
+      description: A post method is required by satellizer to send the GitHub token
       operationId: addToken
       requestBody:
         $ref: "#/components/requestBodies/addTokenBody"
@@ -2343,7 +2343,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding wdl test parameter files.
+      summary: Get the corresponding WDL test parameter files.
       description: Does not require authentication for published tools, authentication can
         be provided for restricted tools
       operationId: getTestParameterFiles
@@ -2749,7 +2749,7 @@ paths:
     put:
       tags:
         - entries
-      summary: Update the aliases linked to an entry.
+      summary: Update the aliases linked to a entry in Dockstore.
       description: Aliases are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
       operationId: updateAliases
@@ -2779,6 +2779,30 @@ paths:
       security:
         - BEARER:
             []
+  "/entries/{id}/collections":
+    get:
+      tags:
+        - entries
+      summary: Get the collections and organizations that contain the published entry
+      description: Entry must be published
+      operationId: entryCollections
+      parameters:
+        - name: id
+          in: path
+          description: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollectionOrganization"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -2952,7 +2976,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Organization"
-    put:
+    post:
       tags:
         - organizations
       summary: Create an organization.
@@ -3006,6 +3030,61 @@ paths:
       security:
         - BEARER:
             []
+  "/organizations/collections/{alias}/aliases":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves a collection by alias.
+      description: ""
+      operationId: getCollectionByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+  "/organizations/collections/{collectionId}/aliases":
+    put:
+      tags:
+        - organizations
+      summary: Update the aliases linked to a Collection in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateCollectionAliases
+      parameters:
+        - name: collectionId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+      security:
+        - BEARER:
+            []
   "/organizations/name/{name}":
     get:
       tags:
@@ -3031,6 +3110,27 @@ paths:
       security:
         - BEARER:
             []
+  "/organizations/{alias}/aliases":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves an organization by alias.
+      description: ""
+      operationId: getOrganizationByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
   "/organizations/{organizationId}":
     get:
       tags:
@@ -3057,12 +3157,12 @@ paths:
       security:
         - BEARER:
             []
-    post:
+    put:
       tags:
         - organizations
       summary: Update an organization.
-      description: Currently only name, description, email, link and location can be
-        updated.
+      description: Currently only name, description, email, link, avatarUrl, and location
+        can be updated.
       operationId: updateOrganization
       parameters:
         - name: organizationId
@@ -3079,6 +3179,40 @@ paths:
               $ref: "#/components/schemas/Organization"
         description: Organization to update with.
         required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+      security:
+        - BEARER:
+            []
+  "/organizations/{organizationId}/aliases":
+    put:
+      tags:
+        - organizations
+      summary: Update the aliases linked to a listing in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateOrganizationAliases
+      parameters:
+        - name: organizationId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation
@@ -3147,7 +3281,7 @@ paths:
       security:
         - BEARER:
             []
-    put:
+    post:
       tags:
         - organizations
       summary: Create a collection in the given organization.
@@ -3211,7 +3345,7 @@ paths:
       security:
         - BEARER:
             []
-    post:
+    put:
       tags:
         - organizations
       summary: Update a collection.
@@ -3238,6 +3372,77 @@ paths:
             schema:
               $ref: "#/components/schemas/Collection"
         description: Collection to update with.
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+      security:
+        - BEARER:
+            []
+  "/organizations/{organizationId}/collections/{collectionId}/description":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves a collection description by organization ID and collection ID.
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getCollectionDescription
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BEARER:
+            []
+    put:
+      tags:
+        - organizations
+      summary: Update a collection's description.
+      description: Description in markdown
+      operationId: updateCollectionDescription
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Collections's description in markdown
         required: true
       responses:
         "200":
@@ -3399,6 +3604,26 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: offset
+          in: query
+          description: Start index of paging.  If this exceeds the current result set
+            return an empty set.  If not specified in the request, this will
+            start at the beginning of the results.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: limit
+          in: query
+          description: Amount of records to return in a given page, limited to 100
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 100
       responses:
         "200":
           description: successful operation
@@ -3474,6 +3699,31 @@ paths:
       summary: Rejects an organization.
       description: Admin/curator only
       operationId: rejectOrganization
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+      security:
+        - BEARER:
+            []
+  "/organizations/{organizationId}/request":
+    post:
+      tags:
+        - organizations
+      summary: Request an organization approval.
+      description: Only for rejected organizations
+      operationId: requestOrganizationReview
       parameters:
         - name: organizationId
           in: path
@@ -3637,6 +3887,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OrganizationUser"
+      security:
+        - BEARER:
+            []
+  "/organizations/{organizationName}/collections/{collectionName}/name":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves a collection by ID.
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getCollectionByName
+      parameters:
+        - name: organizationName
+          in: path
+          description: Organization name.
+          required: true
+          schema:
+            type: string
+        - name: collectionName
+          in: path
+          description: Collection name.
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
       security:
         - BEARER:
             []
@@ -3839,6 +4120,62 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+      security:
+        - BEARER:
+            []
+  "/users/user/{userId}/limits":
+    get:
+      tags:
+        - users
+      summary: Returns the specified user's limits. ADMIN or CURATOR only
+      description: ""
+      operationId: getUserLimits
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Limits"
+      security:
+        - BEARER:
+            []
+    put:
+      tags:
+        - users
+      summary: Update the specified user's limits. ADMIN or CURATOR only
+      description: ""
+      operationId: setUserLimits
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Limits"
+        description: Limits to set for a user
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Limits"
       security:
         - BEARER:
             []
@@ -4305,6 +4642,39 @@ paths:
         - BEARER:
             []
   "/workflows/hostedEntry/{entryId}":
+    post:
+      tags:
+        - hosted
+      summary: Creates a new revision of a hosted workflow from a zip
+      description: ""
+      operationId: addZip
+      parameters:
+        - name: entryId
+          in: path
+          description: hosted entry ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER:
+            []
     delete:
       tags:
         - hosted
@@ -5821,7 +6191,7 @@ externalDocs:
   description: Dockstore documentation
   url: https://www.dockstore.org/docs/getting-started
 servers:
-  - url: https://dockstore.org:8443
+  - url: https://dockstore.org/api
 components:
   requestBodies:
     PublishRequest:
@@ -5907,12 +6277,24 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Entry"
+        organizationID:
+          type: integer
+          format: int64
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for collections
+          additionalProperties:
+            $ref: "#/components/schemas/Alias"
         dbCreateDate:
           type: string
           format: date-time
         dbUpdateDate:
           type: string
           format: date-time
+        organizationName:
+          type: string
+          description: The name of the organization the collection belongs to
+          readOnly: true
         name:
           type: string
           example: Alignment
@@ -5923,6 +6305,33 @@ components:
         description:
           type: string
           description: Description of the collection
+        displayName:
+          type: string
+          description: Display name for a collection (Ex. Recommended Alignment
+            Algorithms). Not used for links.
+          minLength: 3
+          maxLength: 50
+          pattern: "[\\w ,_\\-&()']*"
+        topic:
+          type: string
+          description: Short description of the collection
+    CollectionOrganization:
+      type: object
+      properties:
+        collectionId:
+          type: integer
+          format: int64
+        collectionName:
+          type: string
+        collectionDisplayName:
+          type: string
+        organizationId:
+          type: integer
+          format: int64
+        organizationName:
+          type: string
+        organizationDisplayName:
+          type: string
     DescriptorLanguageBean:
       type: object
       properties:
@@ -6266,6 +6675,7 @@ components:
             - MODIFY_ORG
             - APPROVE_ORG
             - REJECT_ORG
+            - REREQUEST_ORG
             - ADD_USER_TO_ORG
             - REMOVE_USER_FROM_ORG
             - MODIFY_USER_ROLE_ORG
@@ -6327,6 +6737,15 @@ components:
           description: String representation of the tag
       description: This describes a descriptive label that can be placed on an entry in the
         dockstore
+    Limits:
+      type: object
+      properties:
+        hostedEntryCountLimit:
+          type: integer
+          format: int32
+        hostedEntryVersionLimit:
+          type: integer
+          format: int32
     Metadata:
       type: object
       required:
@@ -6370,6 +6789,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the organization in this web service
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for organizations
+          additionalProperties:
+            $ref: "#/components/schemas/Alias"
         dbCreateDate:
           type: string
           format: date-time
@@ -6411,6 +6835,17 @@ components:
         topic:
           type: string
           description: Short description of the organization
+        displayName:
+          type: string
+          description: Display name for an organization (Ex. Ontario Institute for Cancer
+            Research). Not used for links.
+          minLength: 3
+          maxLength: 50
+          pattern: "[\\w ,_\\-&()']*"
+        avatarUrl:
+          type: string
+          description: Logo URL
+          pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
     OrganizationUser:
       type: object
       required:
@@ -6545,6 +6980,7 @@ components:
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
+            - DOCKSTORE_YML
         content:
           type: string
           description: Cache for the contents of the target file
@@ -7036,6 +7472,7 @@ components:
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
+            - DOCKSTORE_YML
         valid:
           type: boolean
           description: Is the file type valid

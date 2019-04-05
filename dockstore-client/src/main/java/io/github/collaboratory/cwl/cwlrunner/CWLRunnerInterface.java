@@ -17,6 +17,8 @@ package io.github.collaboratory.cwl.cwlrunner;
 
 import java.util.List;
 
+import io.swagger.client.api.MetadataApi;
+
 /**
  * Abstracts out the interaction with cwlrunners (for example, cwltool or toil)
  */
@@ -25,7 +27,7 @@ public interface CWLRunnerInterface {
     /**
      * Checks that the environment is properly setup
      */
-    void checkForCWLDependencies();
+    void checkForCWLDependencies(MetadataApi metadataApi);
 
     /**
      *

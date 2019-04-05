@@ -15,10 +15,12 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.ws.rs.DELETE;
@@ -122,8 +124,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         // check if the user has hit a limit yet
         final long currentCount = getEntryDAO().countAllHosted(user.getId());
-        if (currentCount >= calculatedEntryLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + calculatedEntryLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        final int limit = user.getHostedEntryCountLimit() != null ? user.getHostedEntryCountLimit() : calculatedEntryLimit;
+        if (currentCount >= limit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         // Only check type for workflows
@@ -179,33 +182,60 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
 
-        // check if the user has hit a limit yet
-        final long currentCount = entry.getVersions().size();
-        if (currentCount >= calculatedEntryVersionLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
-        }
+        checkVersionLimit(user, entry);
 
         updateUnsetAbsolutePaths(sourceFiles);
 
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
 
-        version = versionValidation(version, entry);
+        return saveVersion(user, entryId, entry, version, versionSourceFiles, Optional.empty());
+    }
 
-        boolean isValidVersion = isValidVersion(version);
+    protected void checkVersionLimit(@Auth @ApiParam(hidden = true) User user, T entry) {
+        // check if the user has hit a limit yet
+        final long currentCount = entry.getVersions().size();
+        final int limit = user.getHostedEntryVersionsLimit() != null ? user.getHostedEntryVersionsLimit() : calculatedEntryVersionLimit;
+        if (currentCount >= limit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
+        }
+    }
+
+    /**
+     * Saves a version of a hosted entry.
+     *
+     * This code was extracted from the editHosted method for reuse with with the zip posting functionality. For zips, the
+     * mainDescriptor parameter was added.
+     *
+     * Until the zip support, hosted entries only supported a workflow path of /Dockstore.[wdl|cwl]. With zips, the user can
+     * specify any workflow path. The mainDescriptor is used to override the default /Dockstore.[wdl\cwl] within a version.
+     *
+     *
+     * @param user
+     * @param entryId
+     * @param entry
+     * @param version
+     * @param versionSourceFiles
+     * @param mainDescriptor the path of the main descriptor if different than the workflow default
+     * @return
+     */
+    T saveVersion(User user, Long entryId, T entry, U version, Set<SourceFile> versionSourceFiles, Optional<SourceFile> mainDescriptor) {
+        final U validatedVersion = versionValidation(version, entry, mainDescriptor);
+
+        boolean isValidVersion = isValidVersion(validatedVersion);
         if (!isValidVersion) {
             String fallbackMessage = "Your edited files are invalid. No new version was created. Please check your syntax and try again.";
-            String validationMessages = createValidationMessages(version);
+            String validationMessages = createValidationMessages(validatedVersion);
             validationMessages = (validationMessages != null && !validationMessages.isEmpty()) ? validationMessages : fallbackMessage;
             throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
         }
 
-        version.setValid(true); // Hosted entry versions must be valid to save
-        version.setVersionEditor(user);
-        populateMetadata(versionSourceFiles, entry, version);
-        long l = getVersionDAO().create(version);
+        validatedVersion.setValid(true); // Hosted entry versions must be valid to save
+        validatedVersion.setVersionEditor(user);
+        populateMetadata(versionSourceFiles, entry, validatedVersion);
+        long l = getVersionDAO().create(validatedVersion);
         entry.getVersions().add(getVersionDAO().findById(l));
-        entry.setLastModified(version.getLastModified());
+        entry.setLastModified(validatedVersion.getLastModified());
         FileFormatHelper.updateFileFormats(entry.getVersions(), fileFormatDAO);
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
@@ -265,11 +295,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * Note: There is one validation entry for each sourcefile type. This is true for test parameter files too.
      * @param version Version to validate
      * @param entry Entry for the version
+     * @param mainDescriptor the main descriptor if different than the default /Dockstore.wdl or /Dockstore.cwl
      * @return Version with updated validation information
      */
-    protected abstract U versionValidation(U version, T entry);
+    protected abstract U versionValidation(U version, T entry, Optional<SourceFile> mainDescriptor);
 
-    private void checkHosted(T entry) {
+    protected void checkHosted(T entry) {
         if (entry instanceof Tool) {
             if (((Tool)entry).getMode() != ToolMode.HOSTED) {
                 throw new CustomWebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
@@ -321,13 +352,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private Set<SourceFile> handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
         Set<U> versions = entry.getVersions();
         Map<String, SourceFile> map = new HashMap<>();
+        tag.setName(calculateNextVersionName(versions));
 
         if (versions.size() > 0) {
             // get the last one and modify files accordingly
-            Comparator<Version> comp = Comparator.comparingInt(p -> Integer.parseInt(p.getName()));
-            // there should always be a max with size() > 0
-            U versionWithTheLargestName = versions.stream().max(comp).orElseThrow(RuntimeException::new);
-            tag.setName(String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
+            U versionWithTheLargestName = versionWithLargestName(versions);
             // carry over old files
             versionWithTheLargestName.getSourceFiles().forEach(v -> {
                 SourceFile newfile = new SourceFile();
@@ -338,6 +367,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                 map.put(newfile.getPath(), newfile);
             });
 
+            boolean changed = false;
             // mutate sourcefiles accordingly
             // 1) matching filenames are updated with the new content
             // 2) empty files are deleted
@@ -349,27 +379,65 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                 if (map.containsKey(file.getPath())) {
                     if (file.getContent() != null) {
                         // case 1)
-                        map.get(file.getPath()).setContent(file.getContent());
+                        final SourceFile sourceFile = map.get(file.getPath());
+                        if (!sourceFile.getContent().equals(file.getContent())) {
+                            sourceFile.setContent(file.getContent());
+                            changed = true;
+                        }
                     } else {
-                        // case 3)
+                        // case 2)
                         map.remove(file.getPath());
                         LOG.info("deleted " + file.getPath() + " for new revision of " + entryId);
+                        changed = true;
                     }
                 } else {
+                    // case 3
                     map.put(file.getPath(), file);
+                    changed = true;
                 }
+            }
+
+            if (!changed) {
+                LOG.info("aborting change, there were no differences detected for new revision of " + entryId);
+                throw new CustomWebApplicationException("no changes detected", HttpStatus.SC_NO_CONTENT);
             }
         } else {
             // for brand new hosted tools
-            tag.setName("1");
             sourceFiles.forEach(f -> map.put(f.getPath(), f));
         }
+        persistSourceFiles(tag, map.values());
 
+        return tag.getSourceFiles();
+    }
+
+    void persistSourceFiles(U tag, Collection<SourceFile> sourceFiles) {
         // create everything still in the map
-        for (SourceFile e : map.values()) {
+        for (SourceFile e : sourceFiles) {
             long l = fileDAO.create(e);
             tag.getSourceFiles().add(fileDAO.findById(l));
         }
-        return tag.getSourceFiles();
     }
+
+    /**
+     * Calculates the next version name. Currently assumes versions are always stringified numbers, and returns
+     * the highest number + 1 as a string. Need to update when we support arbitrary names for the version.
+     * @param versions
+     * @return
+     */
+    String calculateNextVersionName(Set<U> versions) {
+        if (versions.isEmpty()) {
+            return "1";
+        } else {
+            U versionWithTheLargestName = versionWithLargestName(versions);
+            return (String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
+
+        }
+    }
+
+    private U versionWithLargestName(Set<U> versions) {
+        Comparator<Version> comp = Comparator.comparingInt(p -> Integer.parseInt(p.getName()));
+        // there should always be a max with size() > 0
+        return versions.stream().max(comp).orElseThrow(RuntimeException::new);
+    }
+
 }

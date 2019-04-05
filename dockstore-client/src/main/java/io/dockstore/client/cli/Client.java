@@ -59,6 +59,7 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.Ga4GhApi;
+import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
@@ -110,6 +111,7 @@ public class Client {
     private UsersApi usersApi;
     private Ga4GhApi ga4ghApi;
     private ExtendedGa4GhApi extendedGA4GHApi;
+    private MetadataApi metadataApi;
 
     private boolean isAdmin = false;
     private ToolClient toolClient;
@@ -446,7 +448,7 @@ public class Client {
     public void checkForCWLDependencies() {
         CWLRunnerFactory.setConfig(Utilities.parseConfig(getConfigFile()));
         CWLRunnerInterface cwlrunner = CWLRunnerFactory.createCWLRunner();
-        cwlrunner.checkForCWLDependencies();
+        cwlrunner.checkForCWLDependencies(metadataApi);
     }
 
     /**
@@ -772,7 +774,7 @@ public class Client {
         INIConfiguration config = getIniConfiguration(args);
         // pull out the variables from the config
         String token = config.getString("token", "");
-        String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
+        String serverUrl = config.getString("server-url", "https://dockstore.org/api");
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
         String cliVersion = getClientVersion();
@@ -787,7 +789,7 @@ public class Client {
         this.usersApi = new UsersApi(defaultApiClient);
         this.ga4ghApi = new Ga4GhApi(defaultApiClient);
         this.extendedGA4GHApi = new ExtendedGa4GhApi(defaultApiClient);
-
+        this.metadataApi = new MetadataApi(defaultApiClient);
 
         try {
             if (this.usersApi.getApiClient() != null) {

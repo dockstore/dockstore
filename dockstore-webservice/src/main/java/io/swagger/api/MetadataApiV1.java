@@ -40,7 +40,6 @@ public class MetadataApiV1 {
     private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
 
     @GET
-    @UnitOfWork
     @Produces( { "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = MetadataV1.class, tags = {
         "GA4GHV1", })

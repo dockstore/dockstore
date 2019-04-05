@@ -31,7 +31,7 @@ public class ExtendedUserData {
 
     public ExtendedUserData(User user, PermissionsInterface authorizer) {
         Hibernate.initialize(user.getEntries());
-        this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished) && !authorizer.isSharing(user);
+        this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished) && !authorizer.isSharing(user) && user.getOrganizations().size() == 0;
     }
 
     /**

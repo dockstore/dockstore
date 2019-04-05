@@ -7,16 +7,16 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
-if [ "${TESTING_PROFILE}" = "unit-tests" ]; then
+if [ "${TESTING_PROFILE}" = "unit-tests" ] || [ "${TESTING_PROFILE}" == "automated-review" ]; then
     exit 0;
 fi
 
 if [ "${TESTING_PROFILE}" = "toil-integration-tests" ]; then
     pip2.7 install --user toil[cwl]==3.15.0
 elif [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
-    pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.4.0/requirements.txt
-else
     pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.5.0/requirements.txt
+else
+    pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.6.0/requirements.txt
 fi
 
 # hook up integration tests with elastic search

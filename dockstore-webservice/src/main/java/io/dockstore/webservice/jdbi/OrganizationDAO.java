@@ -66,5 +66,7 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
         return uniqueResult(query);
     }
 
-
+    public Organization getByAlias(String alias) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Organization.getByAlias").setParameter("alias", alias));
+    }
 }

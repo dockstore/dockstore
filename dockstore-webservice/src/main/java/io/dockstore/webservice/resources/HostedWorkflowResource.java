@@ -15,15 +15,22 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
 
+import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
@@ -38,17 +45,22 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,6 +169,29 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         return super.editHosted(user, entryId, sourceFiles);
     }
 
+
+    @POST
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Path("/hostedEntry/{entryId}")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(nickname = "addZip", value = "Creates a new revision of a hosted workflow from a zip",
+            authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
+    public Workflow addZip(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "hosted entry ID")
+        @PathParam("entryId") Long entryId,  @FormDataParam("file") InputStream payload) {
+        final Workflow workflow = getEntryDAO().findById(entryId);
+        checkEntry(workflow);
+        checkHosted(workflow);
+        checkUserCanUpdate(user, workflow);
+        checkVersionLimit(user, workflow);
+        final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromInputStream(payload, workflow.getFileType());
+        final WorkflowVersion version = getVersion(workflow);
+        this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
+        version.setWorkflowPath(sourceFiles.getPrimaryDescriptor().getPath());
+        version.setName(calculateNextVersionName(workflow.getVersions()));
+        return this.saveVersion(user, entryId, workflow, version, new HashSet(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
+    }
+
     @Override
     protected void populateMetadata(Set<SourceFile> sourceFiles, Workflow workflow, WorkflowVersion version) {
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
@@ -182,10 +217,10 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry) {
+    protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
+        String mainDescriptorPath = mainDescriptorOpt.map(sf -> sf.getPath()).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
@@ -224,6 +259,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
         return version;
     }
+
 
     /**
      * A workflow version is valid if it has a valid descriptor set and all valid test parameter files

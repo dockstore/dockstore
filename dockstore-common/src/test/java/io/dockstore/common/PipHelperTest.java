@@ -12,8 +12,10 @@ import static org.junit.Assert.*;
 public class PipHelperTest {
     @Test
     public void convertSemVerToAvailableVersion() throws Exception {
-        Assert.assertEquals("1.5.0", PipHelper.convertSemVerToAvailableVersion(PipHelper.DEV_SEM_VER));
-        Assert.assertEquals("1.5.0", PipHelper.convertSemVerToAvailableVersion(null));
+        Assert.assertEquals("1.6.0", PipHelper.convertSemVerToAvailableVersion(PipHelper.DEV_SEM_VER));
+        Assert.assertEquals("1.6.0", PipHelper.convertSemVerToAvailableVersion(null));
+        Assert.assertEquals("1.6.0", PipHelper.convertSemVerToAvailableVersion("1.6.0-snapshot"));
+        Assert.assertEquals("1.6.0", PipHelper.convertSemVerToAvailableVersion("1.6.0"));
         Assert.assertEquals("1.5.0", PipHelper.convertSemVerToAvailableVersion("1.5.0-snapshot"));
         Assert.assertEquals("1.5.0", PipHelper.convertSemVerToAvailableVersion("1.5.0"));
         Assert.assertEquals("1.4.0", PipHelper.convertSemVerToAvailableVersion("1.4.0-snapshot"));

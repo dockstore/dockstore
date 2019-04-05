@@ -251,11 +251,6 @@ public final class ArgumentUtility {
         errorMessage("dockstore: " + cmd + " is not a dockstore command. See 'dockstore --help'.", Client.CLIENT_ERROR);
     }
 
-    private static void invalid(String cmd, String sub) {
-        errorMessage("dockstore: " + cmd + " " + sub + " is not a dockstore command. See 'dockstore " + cmd + " --help'.",
-                Client.CLIENT_ERROR);
-    }
-
     static boolean flag(List<String> args, String flag) {
 
         boolean found = false;

@@ -30,6 +30,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -40,6 +41,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -107,7 +109,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/username/{username}")
     @ApiOperation(value = "Get a user by username.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User listUser(@ApiParam(hidden = true) @Auth User authUser,
@@ -120,7 +122,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{userId}")
     @ApiOperation(value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
@@ -134,7 +136,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/user")
     @ApiOperation(value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User user) {
@@ -145,7 +147,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/user/memberships")
     @ApiOperation(value = "Get the logged-in users memberships.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "set")
     public Set<OrganizationUser> getUserMemberships(@ApiParam(hidden = true) @Auth User user) {
@@ -159,7 +161,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/user/extended")
     @ApiOperation(value = "Get additional information about the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
     public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Auth User user) {
@@ -243,7 +245,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/checkUser/{username}")
     @ApiOperation(value = "Check if user with some username exists.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean checkUserExists(@ApiParam(hidden = true) @Auth User user,
@@ -255,7 +257,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens")
     @ApiOperation(value = "Get tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,
@@ -266,7 +268,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens/github.com")
     @ApiOperation(value = "Get Github tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth User user,
@@ -277,7 +279,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens/gitlab.com")
     @ApiOperation(value = "Get Gitlab tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Auth User user,
@@ -288,7 +290,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens/quay.io")
     @ApiOperation(value = "Get Quay tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
@@ -299,7 +301,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens/dockstore")
     @ApiOperation(value = "Get Dockstore tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth User user,
@@ -310,7 +312,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{userId}/containers/published")
     @ApiOperation(value = "List all published tools from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth User user,
@@ -328,7 +330,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{userId}/workflows/published")
     @ApiOperation(value = "List all published workflows from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Auth User user,
@@ -483,7 +485,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @GET
     @Path("/{userId}/workflows")
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all workflows owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
@@ -505,7 +507,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @GET
     @Path("/{userId}/containers")
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all tools owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
@@ -518,7 +520,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/starredTools")
     @ApiOperation(value = "Get the logged-in user's starred tools.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
@@ -529,7 +531,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/starredWorkflows")
     @ApiOperation(value = "Get the logged-in user's starred workflows.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
@@ -571,6 +573,44 @@ public class UserResource implements AuthenticatedResourceInterface {
         }
         dbuser.updateUserMetadata(tokenDAO, source);
         return dbuser;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @RolesAllowed({"admin", "curator"})
+    @Path("/user/{userId}/limits")
+    @ApiOperation(value = "Returns the specified user's limits. ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
+    public Limits getUserLimits(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        User user = userDAO.findById(userId);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+        Limits limits = new Limits();
+        limits.setHostedEntryCountLimit(user.getHostedEntryCountLimit());
+        limits.setHostedEntryVersionLimit(user.getHostedEntryVersionsLimit());
+        return limits;
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({"admin", "curator"})
+    @Path("/user/{userId}/limits")
+    @ApiOperation(value = "Update the specified user's limits. ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
+    public Limits setUserLimits(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Limits to set for a user", required = true) Limits limits) {
+        User user = userDAO.findById(userId);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+        user.setHostedEntryCountLimit(limits.getHostedEntryCountLimit());
+        user.setHostedEntryVersionsLimit(limits.getHostedEntryVersionLimit());
+        // User could be cached by Dockstore or Google token -- invalidate all
+        tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        return limits;
     }
 
     /**

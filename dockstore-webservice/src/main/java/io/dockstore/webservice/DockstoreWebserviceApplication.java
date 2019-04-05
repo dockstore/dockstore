@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Label;
@@ -80,6 +81,7 @@ import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.db.DataSourceFactory;
+import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
@@ -127,7 +129,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private static Cache cache = null;
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
+            Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
             WorkflowVersion.class, FileFormat.class, Organization.class, OrganizationUser.class, Event.class, Collection.class, Validation.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
@@ -167,6 +169,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 return configuration.getDataSourceFactory();
             }
         });
+
+        bootstrap.addBundle(new MultiPartBundle());
 
         if (cache == null) {
             int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
@@ -261,7 +265,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
-        environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
+        environment.jersey().register(new EntryResource(toolDAO));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(OpenApiResource.class);

@@ -250,6 +250,25 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
             }
         }
     }
+    @Override
+    protected void publishHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " publish --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish --unpub [parameters]");
+        out("");
+        out("Description:");
+        out("  Publish/unpublish a registered " + getEntryType() + ".");
+        out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
+        out("Required Parameter(s):");
+        out("  --entry <entry>             Complete " + getEntryType()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("Optional Parameter(s):");
+        out("  --entryname <New" + getEntryType() + "name>      " + "New name to give the tool specified by --entry. "
+                + "This will register and publish a new copy of the tool with the given name.");
+        printHelpFooter();
+    }
 
     @Override
     protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType, String parentEntry) {
@@ -716,7 +735,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                     out("The tag " + versionName + " has already been verified by \'" + tagToUpdate.getVerifiedSource() + "\'");
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
-                    if (overwrite.toLowerCase().equals("y")) {
+                    if ("y".equalsIgnoreCase(overwrite)) {
                         verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                     } else {
                         toOverwrite = false;

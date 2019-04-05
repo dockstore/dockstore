@@ -16,8 +16,10 @@
 
 package io.dockstore.client.cli;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -462,8 +464,24 @@ public class LaunchTestIT {
     public void runToolToMissingS3() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_s3_failed.json"));
-        thrown.expect(RuntimeException.class);
-        runTool(cwlFile, cwlJSON);
+        ByteArrayOutputStream launcherOutput = null;
+        try {
+            launcherOutput = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(launcherOutput));
+
+            thrown.expect(AssertionError.class);
+            runTool(cwlFile, cwlJSON);
+            final String standardOutput = launcherOutput.toString();
+            assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
+        } finally {
+            try {
+                if (launcherOutput != null) {
+                    launcherOutput.close();
+                }
+            } catch (IOException ex) {
+                assertTrue("Error closing output stream.", true);
+            }
+        }
     }
 
     @Test
@@ -474,7 +492,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 1, countMatches);
+        assertEquals("output should include one provision out event, found " + countMatches, 1, countMatches);
         String filename = "test1";
         checkFileAndThenDeleteIt(filename);
         FileUtils.deleteDirectory(new File(filename));
@@ -629,6 +647,13 @@ public class LaunchTestIT {
         Client.main(args.toArray(new String[0]));
     }
 
+    private void runClientCommandConfig(ArrayList<String> args, File config) {
+        //used to run client with a specified config file
+        args.add(0, config.getPath());
+        args.add(0, "--config");
+        Client.main(args.toArray(new String[0]));
+    }
+
     private void runToolThreaded(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client) {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withThreads"));
 
@@ -644,13 +669,13 @@ public class LaunchTestIT {
 
     private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
-
+        client.SCRIPT.set(true);
         runToolShared(cwlFile, args, api, usersApi, client);
     }
 
     private void runWorkflow(File cwlFile, ArrayList<String> args, WorkflowsApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
-
+        client.SCRIPT.set(true);
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
@@ -666,6 +691,7 @@ public class LaunchTestIT {
 
         ArrayList<String> args = new ArrayList<String>() {{
             add("--local-entry");
+            add(file.getAbsolutePath());
             add("--json");
             add(json.getAbsolutePath());
         }};
@@ -678,7 +704,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run", systemOutRule.getLog()
+        assertTrue("output should tell user to specify the descriptor", systemOutRule.getLog()
                 .contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end"));
     }
 
@@ -690,9 +716,8 @@ public class LaunchTestIT {
         File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
 
         ArrayList<String> args = new ArrayList<String>() {{
-            add("--entry");
-            add("wrongExtcwl.wdl");
             add("--local-entry");
+            add(file.getAbsolutePath());
             add("--json");
             add(json.getAbsolutePath());
             add("--descriptor");
@@ -1312,7 +1337,8 @@ public class LaunchTestIT {
         exit.checkAssertionAfterwards(() ->
                 assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch, syntax error in json file: " + jsonFile))
         );
-        runClientCommand(args, false);
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
     }
     @Test
     public void malJsonToolWdlLocal() {
@@ -1332,6 +1358,27 @@ public class LaunchTestIT {
         exit.checkAssertionAfterwards(() ->
                 assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch, syntax error in json file: " + jsonFile))
         );
-        runClientCommand(args, false);
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
+    }
+    @Test
+    public void provisionInputWithPathSpaces() {
+        //Tests if file provisioning can handle a json parameter that specifies a file path containing spaces
+        File helloWDL = new File(ResourceHelpers.resourceFilePath("helloSpaces.wdl"));
+        File helloJSON = new File(ResourceHelpers.resourceFilePath("helloSpaces.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(helloWDL.getAbsolutePath());
+            add("--json");
+            add(helloJSON.getPath());
+        }};
+
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
+
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog().contains("Cromwell exit code: 0"));
     }
 }

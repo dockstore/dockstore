@@ -2,10 +2,13 @@ package io.dockstore.webservice.core;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -13,10 +16,14 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
@@ -35,6 +42,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "organization")
 @NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.getByAlias", query = "SELECT e from Organization e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllApproved", query = "SELECT org FROM Organization org WHERE org.status = 'APPROVED'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllPending", query = "SELECT org FROM Organization org WHERE org.status = 'PENDING'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllRejected", query = "SELECT org FROM Organization org WHERE org.status = 'REJECTED'"),
@@ -44,13 +52,13 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name) AND org.status = 'APPROVED'")
 })
 @SuppressWarnings("checkstyle:magicnumber")
-public class Organization implements Serializable {
+public class Organization implements Serializable, Aliasable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ApiModelProperty(value = "Implementation specific ID for the organization in this web service", position = 0)
     private long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the organization (ex. OICR)", required = true, example = "OICR", position = 1)
@@ -86,9 +94,21 @@ public class Organization implements Serializable {
     @ApiModelProperty(value = "Short description of the organization", position = 8)
     private String topic;
 
+    @Column(nullable = false, unique = true)
+    @Pattern(regexp = "[\\w ,_\\-&()']*")
+    @Size(min = 3, max = 50)
+    @ApiModelProperty(value = "Display name for an organization (Ex. Ontario Institute for Cancer Research). Not used for links.", position = 9)
+    private String displayName;
+
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
     private Set<Collection> collections = new HashSet<>();
+
+    @ElementCollection(targetClass = Alias.class)
+    @JoinTable(name = "organization_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
+    @MapKeyColumn(name = "alias", columnDefinition = "text")
+    @ApiModelProperty(value = "aliases can be used as an alternate unique id for organizations")
+    private Map<String, Alias> aliases = new HashMap<>();
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -97,6 +117,11 @@ public class Organization implements Serializable {
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
+
+    @Column
+    @Pattern(regexp = "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)")
+    @ApiModelProperty(value = "Logo URL", position = 9)
+    private String avatarUrl;
 
     public long getId() {
         return id;
@@ -204,5 +229,29 @@ public class Organization implements Serializable {
         this.status = status;
     }
 
+    public Map<String, Alias> getAliases() {
+        return aliases;
+    }
+
+    public void setAliases(Map<String, Alias> aliases) {
+        this.aliases = aliases;
+    }
+    
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
     public enum ApplicationState { PENDING, REJECTED, APPROVED }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
 }

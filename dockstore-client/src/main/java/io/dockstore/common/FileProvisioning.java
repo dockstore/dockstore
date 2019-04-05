@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.net.UrlEscapers;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.dockstore.client.cli.Client;
 import io.dockstore.provision.PreProvisionInterface;
@@ -239,6 +240,14 @@ public class FileProvisioning {
         executorService.shutdownNow();
     }
 
+    protected static URI createURIFromUnencodedPath(String filepath) {
+        //#1663
+        //pre-encoded paths will also work
+        //URI fileIdentifier = URI.create(filepath.replace(" ", "%20"));
+        URI fileIdentifier = URI.create(UrlEscapers.urlFragmentEscaper().escape(filepath));
+        return fileIdentifier;
+    }
+
     /**
      * This is an entry point from both WDL and CWL.
      * This method downloads both local and remote files into the working directory.
@@ -289,7 +298,7 @@ public class FileProvisioning {
             }
         }
 
-        URI objectIdentifier = URI.create(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
+        URI objectIdentifier = createURIFromUnencodedPath(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
         if (objectIdentifier.getScheme() != null) {
             String scheme = objectIdentifier.getScheme().toLowerCase();
             for (PreProvisionInterface plugin : preProvisionPlugins) {

@@ -107,7 +107,7 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("sitemap")
     @Operation(summary = "List all published workflow and tool paths", description = "List all published workflow and tool paths, NO authentication")
     @ApiOperation(value = "List all published workflow and tool paths.", notes = "NO authentication")
@@ -139,7 +139,7 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("rss")
     @Produces(MediaType.TEXT_XML)
     @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
@@ -175,7 +175,7 @@ public class MetadataResource {
                 Workflow workflow = (Workflow)dbEntry;
                 Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream().filter(v -> v.getDbUpdateDate() != null)
                     .max(Comparator.comparing(Version::getDbUpdateDate));
-                entry.setTitle(workflow.getWorkflowPath() + (max.map(workflowVersion -> ":" + workflowVersion.getName()).orElse("")));
+                entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
@@ -183,7 +183,7 @@ public class MetadataResource {
                 Tool tool = (Tool)dbEntry;
                 Optional<Tag> max = tool.getTags().stream().filter(v -> v.getDbUpdateDate() != null)
                     .max(Comparator.comparing(Version::getDbUpdateDate));
-                entry.setTitle(tool.getPath() + (max.map(tag -> ":" + tag.getName()).orElse("")));
+                entry.setTitle(tool.getPath());
                 String toolURL = createToolURL(tool);
                 entry.setGuid(toolURL);
                 entry.setLink(toolURL);
@@ -244,7 +244,6 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/sourceControlList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of source controls supported on Dockstore", description = "Get the list of source controls supported on Dockstore, NO authentication")
@@ -260,7 +259,6 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/dockerRegistryList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of docker registries supported on Dockstore", description = "Get the list of docker registries supported on Dockstore, NO authentication")
@@ -276,7 +274,6 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/descriptorLanguageList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of descriptor languages supported on Dockstore", description = "Get the list of descriptor languages supported on Dockstore, NO authentication")
@@ -292,7 +289,6 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/okHttpCachePerformance")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get measures of cache performance", description = "Get measures of cache performance, NO authentication")
@@ -311,6 +307,7 @@ public class MetadataResource {
         results.put("networkCount", String.valueOf(cache.networkCount()));
         results.put("hitCount", String.valueOf(cache.hitCount()));
         results.put("maxSize", String.valueOf(cache.maxSize()) + " bytes");
+
         try {
             results.put("size", String.valueOf(cache.size()) + " bytes");
         } catch (IOException e) {

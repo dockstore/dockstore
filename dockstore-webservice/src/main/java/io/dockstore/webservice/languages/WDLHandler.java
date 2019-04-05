@@ -58,7 +58,7 @@ import wdl4s.parser.WdlParser;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-    public static final String WDL_SYNTAX_ERROR = "There is a syntax error, please check the WDL file.";
+    public static final String WDL_SYNTAX_ERROR = "There is a syntax error or your WDL version is greater than draft-2. Please check the WDL file.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     @Override
@@ -213,7 +213,8 @@ public class WDLHandler implements LanguageHandlerInterface {
 
         if (filteredSourceFiles.size() > 0) {
             try {
-                Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
+                Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream()
+                    .filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
 
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
@@ -254,6 +255,11 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 return new VersionTypeValidation(false, validationMessageObject);
+            } catch (NoSuchMethodException e) {
+                //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
+                // https://github.com/ga4gh/dockstore/issues/2139
+                validationMessageObject.put(primaryDescriptorFilePath, "Unknown methods were found, indicating that this may be a WDL 1.0 file. Currently Dockstore cannot parse WDL 1.0, so validation has been skipped. It is likely that the import processing and DAG generation will be broken.\n" + e.getMessage());
+                return new VersionTypeValidation(true, validationMessageObject);
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {

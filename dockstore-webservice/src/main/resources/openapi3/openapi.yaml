@@ -5,9 +5,20 @@ components:
         content:
           type: string
       type: object
+    Aliasable:
+      properties:
+        aliases:
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+          type: object
+      type: object
     Collection:
       description: Collection in an organization, collects entries
       properties:
+        aliases:
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+          type: object
         dbCreateDate:
           format: date-time
           type: string
@@ -16,7 +27,11 @@ components:
           type: string
         description:
           description: Description of the collection
-          example: Alignment
+          type: string
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
           type: string
         entries:
           items:
@@ -34,9 +49,35 @@ components:
           minLength: 3
           pattern: '[a-zA-Z][a-zA-Z\d]*'
           type: string
+        organizationID:
+          format: int64
+          type: integer
+        organizationName:
+          type: string
+        topic:
+          description: Short description of the collection
+          example: A collection of alignment algorithms
+          type: string
       required:
-      - description
       - name
+      - topic
+      type: object
+    CollectionOrganization:
+      properties:
+        collectionDisplayName:
+          type: string
+        collectionId:
+          format: int64
+          type: integer
+        collectionName:
+          type: string
+        organizationDisplayName:
+          type: string
+        organizationId:
+          format: int64
+          type: integer
+        organizationName:
+          type: string
       type: object
     DescriptorLanguageBean:
       properties:
@@ -138,6 +179,7 @@ components:
           - MODIFY_ORG
           - APPROVE_ORG
           - REJECT_ORG
+          - REREQUEST_ORG
           - ADD_USER_TO_ORG
           - REMOVE_USER_FROM_ORG
           - MODIFY_USER_ROLE_ORG
@@ -171,8 +213,24 @@ components:
         value:
           type: string
       type: object
+    Limits:
+      properties:
+        hostedEntryCountLimit:
+          format: int32
+          type: integer
+        hostedEntryVersionLimit:
+          format: int32
+          type: integer
+      type: object
     Organization:
       properties:
+        aliases:
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+          type: object
+        avatarUrl:
+          pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
+          type: string
         dbCreateDate:
           format: date-time
           type: string
@@ -180,6 +238,11 @@ components:
           format: date-time
           type: string
         description:
+          type: string
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
           type: string
         email:
           type: string
@@ -329,6 +392,7 @@ components:
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
+          - DOCKSTORE_YML
           type: string
         verifiedBySource:
           additionalProperties:
@@ -603,6 +667,7 @@ components:
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
+          - DOCKSTORE_YML
           type: string
         valid:
           type: boolean
@@ -1017,7 +1082,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       parameters:
       - in: path
         name: organization
@@ -1032,7 +1097,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       responses:
         default:
           content:
@@ -2690,7 +2755,7 @@ paths:
           description: default response
   /entries/{id}/aliases:
     put:
-      operationId: updateAliases
+      operationId: updateAliases_2
       parameters:
       - in: path
         name: id
@@ -2713,6 +2778,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
+          description: default response
+  /entries/{id}/collections:
+    get:
+      operationId: entryCollections
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CollectionOrganization'
+                type: array
           description: default response
   /metadata/descriptorLanguageList:
     get:
@@ -2873,7 +2957,7 @@ paths:
                   $ref: '#/components/schemas/Organization'
                 type: array
           description: default response
-    put:
+    post:
       operationId: createOrganization
       requestBody:
         content:
@@ -2904,6 +2988,48 @@ paths:
                   $ref: '#/components/schemas/Organization'
                 type: array
           description: default response
+  /organizations/collections/{alias}/aliases:
+    get:
+      operationId: getCollectionByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: default response
+  /organizations/collections/{collectionId}/aliases:
+    put:
+      operationId: updateAliases_1
+      parameters:
+      - in: path
+        name: collectionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: aliases
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: default response
   /organizations/name/{name}:
     get:
       operationId: getOrganizationByName
@@ -2918,6 +3044,22 @@ paths:
           '*/*':
             schema:
               $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: default response
+  /organizations/{alias}/aliases:
+    get:
+      operationId: getOrganizationByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
       responses:
         default:
           content:
@@ -2947,7 +3089,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: default response
-    post:
+    put:
       operationId: updateOrganization
       parameters:
       - in: path
@@ -2956,6 +3098,32 @@ paths:
         schema:
           format: int64
           type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: default response
+  /organizations/{organizationId}/aliases:
+    put:
+      operationId: updateAliases_3
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: aliases
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':
@@ -3018,7 +3186,7 @@ paths:
                   $ref: '#/components/schemas/Collection'
                 type: array
           description: default response
-    put:
+    post:
       operationId: createCollection
       parameters:
       - in: path
@@ -3067,8 +3235,63 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: default response
-    post:
+    put:
       operationId: updateCollection
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: collectionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: default response
+  /organizations/{organizationId}/collections/{collectionId}/description:
+    get:
+      operationId: getCollectionDescription
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: collectionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: default response
+    put:
+      operationId: updateCollectionDescription
       parameters:
       - in: path
         name: organizationId
@@ -3212,6 +3435,18 @@ paths:
         schema:
           format: int64
           type: integer
+      - in: query
+        name: offset
+        schema:
+          default: 0
+          format: int32
+          type: integer
+      - in: query
+        name: limit
+        schema:
+          default: 100
+          format: int32
+          type: integer
       requestBody:
         content:
           '*/*':
@@ -3278,6 +3513,28 @@ paths:
   /organizations/{organizationId}/reject:
     post:
       operationId: rejectOrganization
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: default response
+  /organizations/{organizationId}/request:
+    post:
+      operationId: requestOrganizationReview
       parameters:
       - in: path
         name: organizationId
@@ -3408,6 +3665,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrganizationUser'
+          description: default response
+  /organizations/{organizationName}/collections/{collectionName}/name:
+    get:
+      operationId: getCollectionByName
+      parameters:
+      - in: path
+        name: organizationName
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: collectionName
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
           description: default response
   /users/checkUser/{username}:
     get:
@@ -3591,6 +3874,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+          description: default response
+  /users/user/{userId}/limits:
+    get:
+      operationId: getUserLimits
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Limits'
+          description: default response
+    put:
+      operationId: setUserLimits
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Limits'
           description: default response
   /users/username/{username}:
     get:
@@ -4017,7 +4343,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4031,6 +4357,27 @@ paths:
       requestBody:
         content:
           '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+    post:
+      operationId: addZip
+      parameters:
+      - in: path
+        name: entryId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/User'
       responses:

@@ -55,6 +55,7 @@ public class Validation implements Comparable<Validation> {
     private long id;
 
     @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "text")
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
     private SourceFile.FileType type;
 
@@ -62,7 +63,7 @@ public class Validation implements Comparable<Validation> {
     @ApiModelProperty(value = "Is the file type valid", required = true, position = 2)
     private boolean valid = false;
 
-    @Column
+    @Column(columnDefinition = "text")
     @ApiModelProperty(value = "Mapping of filepath to validation message", required = true, position = 3)
     private String message;
 

@@ -421,10 +421,11 @@ public class WorkflowResource
 
             // Update source files for each version
             Map<String, SourceFile> existingFileMap = new HashMap<>();
-            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getPath(), file));
+            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getAbsolutePath(), file));
+
             for (SourceFile file : version.getSourceFiles()) {
-                if (existingFileMap.containsKey(file.getType().toString() + file.getPath())) {
-                    existingFileMap.get(file.getType().toString() + file.getPath()).setContent(file.getContent());
+                if (existingFileMap.containsKey(file.getType().toString() + file.getAbsolutePath())) {
+                    existingFileMap.get(file.getType().toString() + file.getAbsolutePath()).setContent(file.getContent());
                 } else {
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);
@@ -432,11 +433,11 @@ public class WorkflowResource
                 }
             }
 
-            // Remove existing files that are no longer present
+            // Remove existing files that are no longer present on remote
             for (Map.Entry<String, SourceFile> entry : existingFileMap.entrySet()) {
                 boolean toDelete = true;
                 for (SourceFile file : version.getSourceFiles()) {
-                    if (entry.getKey().equals(file.getType().toString() + file.getPath())) {
+                    if (entry.getKey().equals(file.getType().toString() + file.getAbsolutePath())) {
                         toDelete = false;
                     }
                 }
@@ -454,7 +455,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}")
     @ApiOperation(value = "Retrieve a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
@@ -651,7 +652,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/users")
     @ApiOperation(value = "Get users of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
@@ -667,7 +668,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/published/{workflowId}")
     @ApiOperation(value = "Get a published workflow.", notes = "Hidden versions will not be visible. NO authentication", response = Workflow.class)
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
@@ -679,7 +680,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/organization/{organization}/published")
     @ApiOperation(value = "List all published workflows of an organization.", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getPublishedWorkflowsByOrganization(
@@ -742,7 +743,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("published")
     @ApiOperation(value = "List all published workflows.", tags = {
         "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
@@ -766,7 +767,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("shared")
     @ApiOperation(value = "Retrieve all workflows shared with user.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, tags = {
@@ -795,7 +796,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}")
     @ApiOperation(value = "Get a workflow by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
@@ -864,7 +865,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/permissions")
     @ApiOperation(value = "Get all permissions for a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
@@ -877,7 +878,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/actions")
     @ApiOperation(value = "Gets all actions a user can perform on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
@@ -924,7 +925,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/entry/{repository}")
     @ApiOperation(value = "Get an entry by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including entry name if applicable).", response = Entry.class)
@@ -945,7 +946,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/entry/{repository}/published")
     @ApiOperation(value = "Get a published entry by path.", notes = "Requires full path (including entry name if applicable).", response = Entry.class)
     public Entry getPublishedEntryByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
@@ -961,7 +962,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
     @ApiOperation(value = "Get a list of workflows by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Does not require workflow name.", response = Workflow.class, responseContainer = "List")
@@ -975,7 +976,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
@@ -989,7 +990,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/versions")
     @ApiOperation(value = "List the versions for a published workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
@@ -1001,7 +1002,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/verifiedSources")
     @ApiOperation(value = "Get a semicolon delimited list of verified sources.", tags = {
         "workflows" }, notes = "NO authentication", response = String.class)
@@ -1038,7 +1039,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/wdl")
     @ApiOperation(value = "Get the primary WDL descriptor file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -1050,7 +1051,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/nextflow")
     @ApiOperation(value = "Get the nextflow.config file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -1062,7 +1063,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding CWL descriptor file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -1075,7 +1076,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/wdl/{relative-path}")
     @ApiOperation(value = "Get the corresponding WDL descriptor file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -1088,7 +1089,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/nextflow/{relative-path}")
     @ApiOperation(value = "Get the corresponding nextflow documents on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -1102,7 +1103,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/secondaryCwl")
     @ApiOperation(value = "Get the corresponding cwl documents on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
@@ -1114,7 +1115,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/secondaryWdl")
     @ApiOperation(value = "Get the corresponding wdl documents on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
@@ -1126,7 +1127,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/secondaryNextflow")
     @ApiOperation(value = "Get the corresponding Nextflow documents on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
@@ -1138,7 +1139,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/testParameterFiles")
     @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
@@ -1251,13 +1252,13 @@ public class WorkflowResource
         // construct git url like git@github.com:ga4gh/dockstore-ui.git
         String registryURLPrefix;
         SourceControl sourceControlEnum;
-        if (workflowRegistry.toLowerCase().equals(SourceControl.BITBUCKET.getFriendlyName().toLowerCase())) {
+        if (workflowRegistry.equalsIgnoreCase(SourceControl.BITBUCKET.getFriendlyName().toLowerCase())) {
             sourceControlEnum = SourceControl.BITBUCKET;
             registryURLPrefix = sourceControlEnum.toString();
-        } else if (workflowRegistry.toLowerCase().equals(SourceControl.GITHUB.getFriendlyName().toLowerCase())) {
+        } else if (workflowRegistry.equalsIgnoreCase(SourceControl.GITHUB.getFriendlyName().toLowerCase())) {
             sourceControlEnum = SourceControl.GITHUB;
             registryURLPrefix = sourceControlEnum.toString();
-        } else if (workflowRegistry.toLowerCase().equals(SourceControl.GITLAB.getFriendlyName().toLowerCase())) {
+        } else if (workflowRegistry.equalsIgnoreCase(SourceControl.GITLAB.getFriendlyName().toLowerCase())) {
             sourceControlEnum = SourceControl.GITLAB;
             registryURLPrefix = sourceControlEnum.toString();
         } else {
@@ -1370,7 +1371,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version.", response = String.class, notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
@@ -1403,7 +1404,7 @@ public class WorkflowResource
      */
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/tools/{workflowVersionId}")
     @ApiOperation(value = "Get the Tools for a given workflow version.", notes = OPTIONAL_AUTH_MESSAGE, response = String.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
@@ -1516,7 +1517,7 @@ public class WorkflowResource
     @GET
     @Path("/{workflowId}/starredUsers")
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @ApiOperation(value = "Returns list of users who starred the given workflow.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsers(
         @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
@@ -1702,7 +1703,7 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/zip/{workflowVersionId}")
     @ApiOperation(value = "Download a ZIP file of a workflow and all associated files.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })

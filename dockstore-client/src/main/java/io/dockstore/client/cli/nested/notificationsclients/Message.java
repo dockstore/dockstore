@@ -13,11 +13,37 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+package io.dockstore.client.cli.nested.notificationsclients;
+
+import io.dockstore.client.cli.Client;
 
 /**
- * Implements notifications with various applications (Slack) during Dockstore launch commands
- * The message to send should be resolved in NotificationsClient.java (currently only Slack messages can be constructed)
- * New messages should be added here.
+ * Message structure to be sent
+ *
  * @author gluu
+ * @since 19/01/18
  */
-package io.dockstore.client.cli.nested.NotificationsClients;
+public class Message {
+    // Slack keyword
+    String text;
+    // Slack keyword
+    String username = System.getProperty("user.name");
+    String uuid;
+    String platform = "Dockstore CLI " + Client.getClientVersion();
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+}
