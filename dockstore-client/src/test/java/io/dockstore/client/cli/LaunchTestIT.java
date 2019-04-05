@@ -170,6 +170,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
+        client.SCRIPT.set(true);
 
         PluginClient.handleCommand(Lists.newArrayList("download"), Utilities.parseConfig(client.getConfigFile()));
 
@@ -306,6 +307,7 @@ public class LaunchTestIT {
         ContainersApi api = mock(ContainersApi.class);
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
+        client.SCRIPT.set(true);
         // do not use a cache
         runToolThreaded(cwlFile, args, api, usersApi, client);
     }
@@ -728,6 +730,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL_STRING);
@@ -913,7 +916,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-
+        client.SCRIPT.set(true);
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
