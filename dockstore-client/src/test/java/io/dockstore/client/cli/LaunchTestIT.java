@@ -646,6 +646,7 @@ public class LaunchTestIT {
 
         args.add(0, ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
         args.add(0, "--config");
+        Client.SCRIPT.set(true);
         Client.main(args.toArray(new String[0]));
     }
 
@@ -653,6 +654,7 @@ public class LaunchTestIT {
         //used to run client with a specified config file
         args.add(0, config.getPath());
         args.add(0, "--config");
+        Client.SCRIPT.set(true);
         Client.main(args.toArray(new String[0]));
     }
 
