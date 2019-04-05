@@ -377,6 +377,7 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit-version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -419,12 +420,6 @@
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-                <scope>test</scope>
-                <version>2.0.1</version>
             </dependency>
 
             <dependency>
@@ -542,12 +537,20 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>findbugs</artifactId>
                 <version>3.0.1</version>
+                <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.ow2.asm</groupId>
                         <artifactId>asm-debug-all</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <!-- used for suppressing findbugs warnings only -->
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>annotations</artifactId>
+                <scope>provided</scope>
+                <version>3.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.objenesis</groupId>
