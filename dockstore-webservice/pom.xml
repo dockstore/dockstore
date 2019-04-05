@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <jetty-servlet.version>9.4.11.v20180605</jetty-servlet.version>
+        <jetty-servlet.version>9.4.14.v20181114</jetty-servlet.version>
     </properties>
 
     <parent>
@@ -350,12 +350,12 @@
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-annotation</artifactId>
-            <version>4.0.2</version>
+            <version>4.0.5</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-healthchecks</artifactId>
-            <version>4.0.2</version>
+            <version>4.0.5</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
