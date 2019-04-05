@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -136,7 +137,7 @@ public class Collection implements Serializable, Aliasable {
     }
 
     public Set<Entry> getEntries() {
-        return entries;
+        return entries.stream().filter(entry -> entry.getIsPublished()).collect(Collectors.toSet());
     }
 
     public void setEntries(Set<Entry> entries) {

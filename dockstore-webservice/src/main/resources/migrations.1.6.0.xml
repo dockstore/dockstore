@@ -348,4 +348,35 @@
             ALTER TABLE sourcefile ADD CONSTRAINT absolutepath_check CHECK (absolutepath LIKE '/%' OR absolutepath='')
         </sql>
     </changeSet>
+    <changeSet id="epicAbsolutePathFix" author="dyuen">
+        <sql dbms="postgresql">
+            update sourcefile s set absolutepath = subquery.concat_ws FROM (
+                with workflow_paths as (
+                    select w.giturl, w.mode, wv.workflowpath, s.id, s.path, s.absolutepath, s.type, CONCAT_WS('/', NULLIF(LEFT(wv.workflowpath, LENGTH (wv.workflowpath) - POSITION('/' in REVERSE(wv.workflowpath))),''), path) as concat_ws     from workflow w, workflow_workflowversion wwv, workflowversion wv, version_sourcefile vs, sourcefile s where w.id = wwv.workflowid and wwv.workflowversionid = wv.id and wv.id = vs.versionid and  vs.sourcefileid = s.id
+                    and workflowpath != path -- ignore primary descriptors, primary descriptors already use absolute path
+                    and s.type != 'CWL_TEST_JSON' -- these use absolute paths already too
+                    and s.type != 'WDL_TEST_JSON' -- these use absolute paths already too
+                    and s.type != 'NEXTFLOW_CONFIG' -- these use absolute paths already too
+                    order by w.id
+                )
+                select concat_ws, id from workflow_paths
+                where path != concat_ws -- our calculations result in no change when these are secondary files with a primary at the root, so ignore them
+            ) as subquery WHERE subquery.id = s.id;
+        </sql>
+        <sql dbms="postgresql">
+            update sourcefile s set absolutepath = subquery.concat_ws FROM (
+                with tool_paths as (
+                    select t.giturl, t.mode, ta.cwlpath, ta.wdlpath, coalesce(nullif(ta.cwlpath,''), nullif(ta.wdlpath,'')) as toolpath, s.id, s.path, s.absolutepath, s.type from tool t, tool_tag tt, tag ta, version_sourcefile vs, sourcefile s where t.id = tt.toolid and tt.tagid = ta.id and ta.id = vs.versionid and  vs.sourcefileid = s.id
+                    and cwlpath != path -- ignore primary descriptors, primary descriptors already use absolute path
+                    and wdlpath != path
+                    and s.type != 'CWL_TEST_JSON' -- these use absolute paths already too
+                    and s.type != 'WDL_TEST_JSON' -- these use absolute paths already too
+                    and s.type != 'DOCKERFILE' -- these use absolute paths already too
+                    order by t.id
+                )
+                select id,concat_ws from (select *, CONCAT_WS('/', NULLIF(LEFT(toolpath, LENGTH (toolpath) - POSITION('/' in REVERSE(toolpath))),''), path) as concat_ws from tool_paths
+                ) p  where path != concat_ws -- our calculations result in no change when these are secondary files with a primary at the root, so ignore them
+            ) as subquery WHERE subquery.id = s.id;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
