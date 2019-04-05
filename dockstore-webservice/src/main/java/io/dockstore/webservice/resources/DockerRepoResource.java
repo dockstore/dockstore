@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -270,7 +271,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}")
     @ApiOperation(value = "Retrieve a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
@@ -409,7 +410,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/users")
     @ApiOperation(value = "Get users of a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
@@ -424,7 +425,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/published/{containerId}")
     @ApiOperation(value = "Get a published tool.", notes = "NO authentication", response = Tool.class)
     public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
@@ -439,7 +440,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/namespace/{namespace}/published")
     @ApiOperation(value = "List all published tools belonging to the specified namespace.", notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> getPublishedContainersByNamespace(
@@ -451,7 +452,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/schema/{containerId}/published")
     @ApiOperation(value = "Get a published tool's schema by ID.", notes = "NO authentication", responseContainer = "List")
     public List getPublishedContainerSchema(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
@@ -625,7 +626,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("published")
     @ApiOperation(value = "List all published tools.", tags = {
         "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
@@ -648,7 +649,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/{repository}/published")
     @ApiOperation(value = "Get a list of published tools by path.", notes = "NO authentication", response = Tool.class)
     public List<Tool> getPublishedContainerByPath(
@@ -661,7 +662,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
     @ApiOperation(value = "Get a list of tools by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Does not require tool name.", response = Tool.class, responseContainer = "List")
@@ -675,7 +676,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/tool/{repository}")
     @ApiOperation(value = "Get a tool by the specific tool path", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including tool name if applicable).", response = Tool.class)
@@ -693,7 +694,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/tool/{repository}/published")
     @ApiOperation(value = "Get a published tool by the specific tool path.", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
@@ -714,7 +715,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/tags")
     @ApiOperation(value = "List the tags for a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List", hidden = true)
@@ -729,7 +730,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -742,7 +743,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/verifiedSources")
     @ApiOperation(value = "Get the sources that verified a tool.", tags = {
         "containers" }, notes = "NO authentication", response = String.class)
@@ -750,8 +751,9 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        Set<String> verifiedSourcesArray = new HashSet<>();
-        tool.getTags().stream().filter(Version::isVerified).forEach((Tag v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
+        Set<String> verifiedSourcesArray = tool.getTags().stream()
+                .filter(Version::isVerified)
+                .map(v -> v.getVerifiedSource()).collect(Collectors.toSet());
 
         JSONArray jsonArray;
         try {
@@ -767,7 +769,7 @@ public class DockerRepoResource
     // Add for new descriptor types
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the primary CWL descriptor file on Github.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -779,7 +781,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/wdl")
     @ApiOperation(value = "Get the primary WDL descriptor file on Github.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -791,7 +793,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding CWL descriptor file on Github.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -804,7 +806,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/wdl/{relative-path}")
     @ApiOperation(value = "Get the corresponding WDL descriptor file on Github.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
@@ -817,7 +819,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/secondaryCwl")
     @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
@@ -829,7 +831,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/secondaryWdl")
     @ApiOperation(value = "Get a list of secondary WDL files from Git.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
@@ -841,9 +843,9 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{containerId}/testParameterFiles")
-    @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = {
+    @ApiOperation(value = "Get the corresponding WDL test parameter files.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -879,7 +881,6 @@ public class DockerRepoResource
      */
     @GET
     @Timed
-    @UnitOfWork
     @Path("/dockerRegistryList")
     @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
@@ -985,7 +986,7 @@ public class DockerRepoResource
     @GET
     @Path("/{containerId}/starredUsers")
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @ApiOperation(value = "Returns list of users who starred a tool.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsers(
         @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
@@ -1079,7 +1080,7 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{toolId}/zip/{tagId}")
     @ApiOperation(value = "Download a ZIP file of a tool and all associated files.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
