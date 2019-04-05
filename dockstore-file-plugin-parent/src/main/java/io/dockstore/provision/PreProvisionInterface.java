@@ -1,6 +1,7 @@
 package io.dockstore.provision;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import ro.fortsoft.pf4j.ExtensionPoint;
@@ -46,4 +47,12 @@ public interface PreProvisionInterface extends ExtensionPoint {
      * @return return schemes that this preprovisioning interface handles (ex: dos)
      */
     Set<String> schemesHandled();
+
+    /**
+     * Optional method that can be overridden.
+     *
+     */
+    default void setConfiguration(Map<String, String> config) {
+        // No default implementation necessary
+    };
 }

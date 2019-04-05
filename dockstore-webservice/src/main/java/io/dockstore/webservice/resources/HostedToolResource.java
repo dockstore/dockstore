@@ -16,11 +16,17 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 
 import javax.ws.rs.Path;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -29,11 +35,13 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -73,28 +81,29 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted tool", response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace) {
-        return super.createHosted(user, registry, name, descriptorType, namespace);
+    @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
+    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+        return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 
     @Override
-    protected Tool getEntry(User user, String registry, String name, String descriptorType, String namespace) {
+    protected Tool getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Tool tool = new Tool();
-        tool.setRegistry(registry);
+        tool.setRegistry(registry.toString());
         tool.setNamespace(namespace);
         tool.setName(name);
         tool.setMode(ToolMode.HOSTED);
         tool.setLastUpdated(new Date());
         tool.setLastModified(new Date());
+        tool.setToolname(entryName);
         tool.getUsers().add(user);
         return tool;
     }
 
     @Override
-    @ApiOperation(nickname = "editHostedTool", value = "Non-idempotent operation for creating new revisions of hosted tools", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted tools", response = Tool.class)
+    @ApiOperation(nickname = "editHostedTool", value = "Non-idempotent operation for creating new revisions of hosted tools.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
     }
@@ -130,8 +139,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    @ApiOperation(nickname = "deleteHostedToolVersion", value = "Delete a revision of a hosted tool", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Delete a revision of a hosted tool", response = Tool.class)
+    @ApiOperation(nickname = "deleteHostedToolVersion", value = "Delete a revision of a hosted tool.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool deleteHostedVersion(User user, Long entryId, String version) {
         Tool tool = super.deleteHostedVersion(user, entryId, version);
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
@@ -139,10 +148,94 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
-        boolean isValidCWL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.cwl"));
-        boolean isValidWDL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.wdl"));
-        boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
-        return (isValidCWL || isValidWDL) && hasDockerfile;
+    protected Tag versionValidation(Tag version, Tool entry, Optional<SourceFile> mainDescriptor) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
+
+        LanguageHandlerInterface.VersionTypeValidation validDockerfile = validateDockerfile(sourceFiles);
+        Validation dockerfileValidation = new Validation(SourceFile.FileType.DOCKERFILE, validDockerfile);
+        version.addOrUpdateValidation(dockerfileValidation);
+
+        LanguageHandlerInterface.VersionTypeValidation validCWLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateToolSet(sourceFiles, "/Dockstore.cwl");
+        Validation cwlValidation = new Validation(SourceFile.FileType.DOCKSTORE_CWL, validCWLDescriptorSet);
+        version.addOrUpdateValidation(cwlValidation);
+
+        LanguageHandlerInterface.VersionTypeValidation validCWLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateTestParameterSet(sourceFiles);
+        Validation cwlTestParameterValidation = new Validation(SourceFile.FileType.CWL_TEST_JSON, validCWLTestParameterSet);
+        version.addOrUpdateValidation(cwlTestParameterValidation);
+
+        LanguageHandlerInterface.VersionTypeValidation validWDLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateToolSet(sourceFiles, "/Dockstore.wdl");
+        Validation wdlValidation = new Validation(SourceFile.FileType.DOCKSTORE_WDL, validWDLDescriptorSet);
+        version.addOrUpdateValidation(wdlValidation);
+
+        LanguageHandlerInterface.VersionTypeValidation validWDLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateTestParameterSet(sourceFiles);
+        Validation wdlTestParameterValidation = new Validation(SourceFile.FileType.WDL_TEST_JSON, validWDLTestParameterSet);
+        version.addOrUpdateValidation(wdlTestParameterValidation);
+
+        return version;
+    }
+
+    /**
+     * Validates dockerfile (currently just ensurse that it exists)
+     * @param sourceFiles List of sourcefiles for a version
+     * @return Pair including if dockerfile is valid, along with error message if it is not
+     */
+    protected LanguageHandlerInterface.VersionTypeValidation validateDockerfile(Set<SourceFile> sourceFiles) {
+        boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
+        Map<String, String> validationMessageObject = new HashMap<>();
+        if (!hasDockerfile) {
+            validationMessageObject.put("/Dockerfile", "Missing Dockerfile.");
+        }
+        return new LanguageHandlerInterface.VersionTypeValidation(hasDockerfile, validationMessageObject);
+    }
+
+    /**
+     * A tag is valid if it has a valid Dockerfile, at least one valid descriptor set, and a matching set of valid test parameter files.
+     * @param tag Tag to validate
+     * @return Updated tag
+     */
+    @Override
+    protected boolean isValidVersion(Tag tag) {
+        SortedSet<Validation> validations = tag.getValidations();
+        boolean validDockerfile = isVersionTypeValidated(validations, SourceFile.FileType.DOCKERFILE);
+        boolean validCwl = isVersionTypeValidated(validations, SourceFile.FileType.DOCKSTORE_CWL);
+        boolean validWdl = isVersionTypeValidated(validations, SourceFile.FileType.DOCKSTORE_WDL);
+        boolean validCwlTestParameters = isVersionTypeValidated(validations, SourceFile.FileType.CWL_TEST_JSON);
+        boolean validWdlTestParameters = isVersionTypeValidated(validations, SourceFile.FileType.WDL_TEST_JSON);
+
+        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
+        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
+
+        return validDockerfile && ((hasCwl && validCwl && validCwlTestParameters) || (hasWdl && validWdl && validWdlTestParameters));
+    }
+
+    /**
+     * A helper function which finds the first sourcefile of a given type and returns whether or not it is valid
+     * @param validations Set of version validations
+     * @param fileType FileType to look for
+     * @return True if sourcefile exists and is valid, false otherwise
+     */
+    protected boolean isVersionTypeValidated(SortedSet<Validation> validations, SourceFile.FileType fileType) {
+        Optional<Validation> foundFile = validations
+                .stream()
+                .filter(Validation -> Objects.equals(Validation.getType(), fileType))
+                .findFirst();
+
+        return foundFile.isPresent() && foundFile.get().isValid();
+    }
+
+    @Override
+    protected DescriptorLanguage checkType(String descriptorType) {
+        // Descriptor type does not matter for tools
+        return null;
+    }
+
+    @Override
+    protected Registry checkRegistry(String registry) {
+        for (Registry registryObject : Registry.values()) {
+            if (Objects.equals(registry.toLowerCase(), registryObject.toString())) {
+                return registryObject;
+            }
+        }
+        throw new CustomWebApplicationException(registry + " is not a valid registry type", HttpStatus.SC_BAD_REQUEST);
     }
 }

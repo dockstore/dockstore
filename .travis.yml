@@ -1,9 +1,3 @@
-notifications:
-  slack:
-    on_success: never
-    on_failure: always
-    rooms:
-    - oicr:S9k4EowgQv9AnbCfEZHSzCsg
 sudo: required
 services:
 - docker
@@ -13,75 +7,76 @@ addons:
 
 cache:
   directories:
-  - $HOME/.m2
   - /tmp/localstack_install_dir
   - $HOME/.cache/pip
+  - $HOME/.m2/repository
+  - $HOME/apache-maven-3.5.4
 
 language: java
-jdk:
-- oraclejdk8
+jdk: openjdk10
 
 env:
   - TESTING_PROFILE=integration-tests
 
 jobs:
   include:
-    - stage: unit-tests 
+    - stage: unit-tests
+      jdk: oraclejdk8
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE
+# moved to CircleCI (may move back if build speed improves)
+#    - stage: unit-tests
+#      jdk: openjdk10
+#      env:
+#      - TESTING_PROFILE=unit-tests
+#      script: mvn --batch-mode clean install -P$TESTING_PROFILE
 
-    # no point in running integration tests if we don't pass unit tests
-    - stage: integration-tests 
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true 
-    - stage: integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=tool-integration-tests
-    - stage: integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=workflow-integration-tests
-    - stage: integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=other-integration-tests
-    - stage: integration-tests
-      env:
-        - TESTING_PROFILE=toil-integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-    - stage: integration-tests
-      env:
-        - TESTING_PROFILE=regression-integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+# moved to CircleCI (may move back if build speed improves)
+#    - stage: automated-review
+#      jdk: openjdk10
+#      env:
+#      - TESTING_PROFILE=automated-review
+#      script:
+#      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
+#      - scripts/check_migrations.sh
 
-    # no point in running coverage if we don't pass integration tests
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=true
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=tool-integration-tests
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=workflow-integration-tests
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=other-integration-tests
-# build lifecycle is before_install, install, before_script, script, after_script
+    - stage: coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=toil-integration-tests         
+    - stage: coverage
+      jdk: oraclejdk8
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=regression-integration-tests
+        
+# build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
 before_install:
+- export M2_HOME=$HOME/apache-maven-3.5.4
+- if [ ! -d $M2_HOME/bin ]; then curl https://archive.apache.org/dist/maven/maven-3/3.5.4/binaries/apache-maven-3.5.4-bin.tar.gz | tar zxf - -C $HOME; fi
+- export PATH=$M2_HOME/bin:$PATH
+# see https://www.deps.co/guides/travis-ci-latest-java/
+- if [ -e $JAVA_HOME/lib/security/cacerts ]; then rm $JAVA_HOME/lib/security/cacerts && ln -s /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts; fi
 # need to clear out old version of the plugin till everything is merged due to https://github.com/maven-download-plugin/maven-download-plugin/issues/80
 - rm -Rf $HOME/.m2/repository/.cache/download-maven-plugin/
 # turn this back on when npm settles down/we find a swagger2openapi replacement
@@ -90,6 +85,9 @@ before_install:
 - scripts/decrypt.sh
 # turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
 #- scripts/check-swagger.sh
+# codacy hookup
+- sudo apt-get install jq
+- wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
 
 install:
 - docker version
@@ -106,7 +104,13 @@ before_cache:
 - rm -rf $HOME/.m2/repository/.cache/download-maven-plugin directory
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+- bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+- java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l Java -r reports/target/site/jacoco-aggregate/jacoco.xml 
   
 notifications:
+  slack:
+    on_success: never
+    on_failure: always
+    rooms:
+    - oicr:S9k4EowgQv9AnbCfEZHSzCsg
   webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN

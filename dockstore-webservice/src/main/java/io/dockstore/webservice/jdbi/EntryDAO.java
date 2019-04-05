@@ -34,6 +34,7 @@ import javax.persistence.criteria.Root;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -140,6 +141,14 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return uniqueResult(namedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
     }
 
+    public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
+        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
+        List<CollectionOrganization> collectionOrganizations = entityManager
+                .createNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId", CollectionOrganization.class)
+                .setParameter("entryId", entryId).getResultList();
+        return collectionOrganizations;
+    }
+
     public T findPublishedById(long id) {
         return (T)uniqueResult(
             namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
@@ -197,10 +206,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             predicates.add(cb.and(// get published workflows
                 cb.isTrue(entry.get("isPublished")),
                 // ensure we deal with null values and then do like queries on those non-null values
-                cb.or(cb.and(cb.isNotNull(entry.get(nameName)), cb.like(entry.get(nameName), "%" + filter + "%")), //
-                    cb.and(cb.isNotNull(entry.get("author")), cb.like(entry.get("author"), "%" + filter + "%")), //
-                    cb.and(cb.isNotNull(entry.get(repoName)), cb.like(entry.get(repoName), "%" + filter + "%")), //
-                    cb.and(cb.isNotNull(entry.get(orgName)), cb.like(entry.get(orgName), "%" + filter + "%")))));
+                cb.or(cb.and(cb.isNotNull(entry.get(nameName)), cb.like(cb.upper(entry.get(nameName)), "%" + filter.toUpperCase() + "%")), //
+                    cb.and(cb.isNotNull(entry.get("author")), cb.like(cb.upper(entry.get("author")), "%" + filter.toUpperCase() + "%")), //
+                    cb.and(cb.isNotNull(entry.get(repoName)), cb.like(cb.upper(entry.get(repoName)), "%" + filter.toUpperCase() + "%")), //
+                    cb.and(cb.isNotNull(entry.get(orgName)), cb.like(cb.upper(entry.get(orgName)), "%" + filter.toUpperCase() + "%")))));
         } else {
             predicates.add(cb.isTrue(entry.get("isPublished")));
         }

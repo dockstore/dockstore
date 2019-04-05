@@ -83,7 +83,7 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
         long entryId = message.getEntryId();
         long entryVersionId = message.getEntryVersionId();
         if (Objects.equals(message.getTargetEntry(), "tool")) {
-            DockstoreTool publishedContainer = toolApi.getPublishedContainer(entryId);
+            DockstoreTool publishedContainer = toolApi.getPublishedContainer(entryId, null);
             Optional<Tag> possibleTag = tagsApi.getTagsByPath(entryId).stream().filter(t -> t.getId() == entryVersionId).findFirst();
             Tag tag;
             if (possibleTag.isPresent()) {
@@ -172,7 +172,7 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
             containertagsApi.updateTags(entryId, Lists.newArrayList(tag));
             return true;
         } else if (Objects.equals(message.getTargetEntry(), "workflow")) {
-            Workflow publishedWorkflow = workflowsApi.getPublishedWorkflow(entryId);
+            Workflow publishedWorkflow = workflowsApi.getPublishedWorkflow(entryId, null);
             Optional<WorkflowVersion> first = publishedWorkflow.getWorkflowVersions().stream().filter(v -> v.getId() == entryVersionId)
                 .findFirst();
             WorkflowVersion workflowVersion;

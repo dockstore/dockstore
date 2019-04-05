@@ -141,23 +141,23 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/{tokenId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Get a specific token by id", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get a specific token by id", response = Token.class)
+    @ApiOperation(value = "Get a specific token by id.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class)
     @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
     public Token listToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
-        Token t = tokenDAO.findById(tokenId);
-        checkUser(user, t.getUserId());
+        Token token = tokenDAO.findById(tokenId);
+        checkUser(user, token.getUserId());
 
-        return t;
+        return token;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/quay.io")
-    @ApiOperation(value = "Add a new quay IO token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
+    @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
             "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
                     + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("access_token") String accessToken) {
@@ -199,7 +199,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @DELETE
     @Path("/{tokenId}")
     @UnitOfWork
-    @ApiOperation(value = "Deletes a token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "Delete a token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value"))
     public Response deleteToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
@@ -223,7 +223,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/gitlab.com")
-    @ApiOperation(value = "Add a new gitlab.com token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
+    @ApiOperation(value = "Add a new gitlab.com token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
             "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
                     + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGitlabToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
@@ -277,6 +277,22 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     }
 
+    private String getCodeFromSatellizerObject(JsonObject satellizerObject) {
+        JsonObject oauthData = satellizerObject.get("oauthData").getAsJsonObject();
+        return oauthData.get("code").getAsString();
+    }
+
+    private String getRedirectURIFromSatellizerObject(JsonObject satellizerObject) {
+        JsonObject authorizationData = satellizerObject.get("authorizationData").getAsJsonObject();
+        return authorizationData.get("redirect_uri").getAsString();
+    }
+
+    private boolean getRegisterFromSatellizerObject(JsonObject satellizerObject) {
+        JsonObject userData = satellizerObject.get("userData").getAsJsonObject();
+        return userData.has("register") && userData.get("register").getAsBoolean();
+    }
+
+
     /**
      * Adds a Google token to the existing user if user is authenticated already.
      * Otherwise, below table indicates what happens when the "Login with Google" button in the UI2 is clicked
@@ -303,15 +319,15 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/google")
-    @ApiOperation(value = "Allow satellizer to post a new Google token to dockstore", authorizations = {
+    @ApiOperation(value = "Allow satellizer to post a new Google token to Dockstore.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the Google token", response = Token.class)
     public Token addGoogleToken(@ApiParam(hidden = true) @Auth Optional<User> authUser, @ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
-        final String code = satellizerObject.get("code").getAsString();
-        final String redirectUri = satellizerObject.get("redirectUri").getAsString();
-        final boolean registerUser = satellizerObject.has("register") && satellizerObject.get("register").getAsBoolean();
+        final String code = getCodeFromSatellizerObject(satellizerObject);
+        final String redirectUri = getRedirectURIFromSatellizerObject(satellizerObject);
+        final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
         TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri);
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
@@ -394,21 +410,21 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/github")
-    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users", authorizations = {
+    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by saetillizer to send the GitHub token", response = Token.class)
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
-        final String code = satellizerObject.get("code").getAsString();
-        final boolean registerUser = satellizerObject.has("register") && satellizerObject.get("register").getAsBoolean();
+        final String code = getCodeFromSatellizerObject(satellizerObject);
+        final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
         return handleGitHubUser(null, code, registerUser);
     }
     @GET
     @Timed
     @UnitOfWork
     @Path("/github.com")
-    @ApiOperation(value = "Add a new github.com token, used by accounts page", authorizations = {
+    @ApiOperation(value = "Add a new github.com token, used by accounts page.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
@@ -514,7 +530,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org")
-    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", authorizations = {
+    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)

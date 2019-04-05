@@ -24,8 +24,10 @@ import io.dockstore.common.ConfidentialTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
+import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Organization;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import org.junit.Assert;
@@ -91,8 +93,38 @@ public class UserResourceIT extends BaseIT {
 
         // Add hosted workflow, should use new username
         HostedApi userHostedApi = new HostedApi(client);
-        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", "cwl", null, null);
+        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
         assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo", hostedWorkflow.getOrganization());
+    }
+
+    /**
+     * Should not be able to update username after creating an organisation
+     * @throws ApiException
+     */
+    @Test
+    public void testChangeUsernameAfterOrgCreation() throws ApiException {
+        ApiClient client = getWebClient(USER_2_USERNAME);
+        UsersApi userApi = new UsersApi(client);
+        OrganizationsApi organizationsApi = new OrganizationsApi(client);
+
+        // Can change username when not a member of any organisations
+        assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
+
+        // Create organisation
+        Organization organization = new Organization();
+        organization.setName("testname");
+        organization.setDisplayName("test name");
+        organization.setLocation("testlocation");
+        organization.setLink("https://www.google.com");
+        organization.setEmail("test@email.com");
+        organization.setDescription("hello");
+        organization.setTopic("This is a short topic");
+        organization.setAvatarUrl("https://www.lifehardin.net/images/employees/default-logo.png");
+
+        organizationsApi.createOrganization(organization);
+
+        // Cannot change username now that user is part of an organisation
+        assertFalse(userApi.getExtendedUserData().isCanChangeUsername());
     }
 
 
@@ -122,13 +154,13 @@ public class UserResourceIT extends BaseIT {
         Assert.assertNotNull(user);
         // try to delete with published workflows
         userApi.refreshWorkflows(user.getId());
-        final Workflow workflowByPath = workflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow workflowByPath = workflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId());
 
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
-        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), SwaggerUtility.createPublishRequest(true));
@@ -151,7 +183,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the workflow
         boolean expectedAdminAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
 
         } catch (ApiException e) {
             expectedAdminAccessToFail = true;

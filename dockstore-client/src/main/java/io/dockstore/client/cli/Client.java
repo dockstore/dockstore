@@ -48,6 +48,7 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.DepCommand;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.common.GeneratedConstants;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
@@ -58,6 +59,7 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.Ga4GhApi;
+import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
@@ -109,6 +111,7 @@ public class Client {
     private UsersApi usersApi;
     private Ga4GhApi ga4ghApi;
     private ExtendedGa4GhApi extendedGA4GHApi;
+    private MetadataApi metadataApi;
 
     private boolean isAdmin = false;
     private ToolClient toolClient;
@@ -445,7 +448,7 @@ public class Client {
     public void checkForCWLDependencies() {
         CWLRunnerFactory.setConfig(Utilities.parseConfig(getConfigFile()));
         CWLRunnerInterface cwlrunner = CWLRunnerFactory.createCWLRunner();
-        cwlrunner.checkForCWLDependencies();
+        cwlrunner.checkForCWLDependencies(metadataApi);
     }
 
     /**
@@ -771,10 +774,10 @@ public class Client {
         INIConfiguration config = getIniConfiguration(args);
         // pull out the variables from the config
         String token = config.getString("token", "");
-        String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
+        String serverUrl = config.getString("server-url", "https://dockstore.org/api");
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
-        String cliVersion = Client.class.getPackage().getImplementationVersion();
+        String cliVersion = getClientVersion();
         defaultApiClient.setUserAgent("Dockstore-CLI/" + cliVersion + "/java");
 
         ApiKeyAuth bearer = (ApiKeyAuth)defaultApiClient.getAuthentication("BEARER");
@@ -786,7 +789,7 @@ public class Client {
         this.usersApi = new UsersApi(defaultApiClient);
         this.ga4ghApi = new Ga4GhApi(defaultApiClient);
         this.extendedGA4GHApi = new ExtendedGa4GhApi(defaultApiClient);
-
+        this.metadataApi = new MetadataApi(defaultApiClient);
 
         try {
             if (this.usersApi.getApiClient() != null) {
@@ -801,6 +804,15 @@ public class Client {
 
         defaultApiClient.setDebugging(DEBUG.get());
         CWLRunnerFactory.setConfig(config);
+    }
+
+    public static String getClientVersion() {
+        String cliVersion = Client.class.getPackage().getImplementationVersion();
+        if (cliVersion == null) {
+            // then we're probably in an IDE or CI build test, it would be nice to get the current project version
+            cliVersion = GeneratedConstants.PROJECT_VERSION;
+        }
+        return cliVersion;
     }
 
     private INIConfiguration getIniConfiguration(List<String> args) {

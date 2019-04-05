@@ -71,6 +71,16 @@ public class BasicIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
+    /**
+     * Test the "dockstore tool publish" command
+     */
+    @Test
+    public void testPublishList() {
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--script" });
+        Assert.assertTrue("Should have contained the unpublished tool belonging to the user", systemOutRule.getLog().contains("quay.io/dockstoretestuser/noautobuild"));
+        Assert.assertFalse("Should not have contained the unpublished tool belonging to another user", systemOutRule.getLog().contains("quay.io/test_org/test1"));
+    }
+
         /*
          General-ish tests
          */
@@ -1180,7 +1190,7 @@ public class BasicIT extends BaseIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
 
         ContainersApi containersApi = new ContainersApi(correctWebClient);
-        final DockstoreTool containerByToolPath = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json");
+        final DockstoreTool containerByToolPath = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json", null);
         containersApi.refresh(containerByToolPath.getId());
 
         // Check that no WDL or CWL test files

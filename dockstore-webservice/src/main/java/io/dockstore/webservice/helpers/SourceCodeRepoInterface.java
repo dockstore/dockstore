@@ -34,10 +34,12 @@ import javax.validation.constraints.NotNull;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.LanguageType;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -45,6 +47,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -195,14 +198,14 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Create branches and associated source files
-        setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
         // setting last modified date can be done uniformly
         Optional<Date> max = workflow.getWorkflowVersions().stream().map(Version::getLastModified).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
-        max.ifPresent(date -> {
+        if (max.isPresent()) {
             long time = max.get().getTime();
             workflow.setLastModified(new Date(Math.max(time, 0L)));
-        });
+        }
 
         // update each workflow with reference types
         Set<WorkflowVersion> versions = workflow.getVersions();
@@ -529,4 +532,66 @@ public abstract class SourceCodeRepoInterface {
      * @param version
      */
     abstract String getCommitID(String repositoryId, Version version);
+
+    /**
+     * Returns a workflow version with validation information updated
+     * @param version Version to validate
+     * @param entry Entry containing version to validate
+     * @param mainDescriptorPath Descriptor path to validate
+     * @return Workflow version with validation information
+     */
+    public WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
+        SourceFile.FileType identifiedType = entry.getFileType();
+        Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects
+                .equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
+
+        // Validate descriptor set
+        if (mainDescriptor.isPresent()) {
+            LanguageHandlerInterface.VersionTypeValidation validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
+            version.addOrUpdateValidation(descriptorValidation);
+        } else {
+            Map<String, String> validationMessage = new HashMap<>();
+            validationMessage.put(mainDescriptorPath, "Missing the primary descriptor.");
+            LanguageHandlerInterface.VersionTypeValidation noPrimaryDescriptor = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
+            Validation noPrimaryDescriptorValidation = new Validation(identifiedType, noPrimaryDescriptor);
+            version.addOrUpdateValidation(noPrimaryDescriptorValidation);
+        }
+
+        // Validate test parameter set
+        SourceFile.FileType testParameterType = null;
+        switch (identifiedType) {
+        case DOCKSTORE_CWL:
+            testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            break;
+        case DOCKSTORE_WDL:
+            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            break;
+        case NEXTFLOW_CONFIG:
+            // Nextflow does not have test parameter files, so do not fail
+            break;
+        default:
+            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (testParameterType != null) {
+            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+            version.addOrUpdateValidation(testParameterValidation);
+        }
+
+        version.setValid(isValidVersion(version));
+
+        return version;
+    }
+
+    /**
+     * Checks if the given workflow version is valid based on existing validations
+     * @param version Version to check validation
+     * @return True if valid workflow version, false otherwise
+     */
+    public boolean isValidVersion(WorkflowVersion version) {
+        return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
+    }
 }

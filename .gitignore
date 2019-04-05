@@ -19,6 +19,9 @@ AndroidManifest.xml
 *.war
 *.ear
 
+# vscode
+.vscode
+
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 /target/
@@ -29,6 +32,7 @@ dockstore-client/target/
 swagger-java-client/target/
 swagger-java-quay-client/target/
 swagger-java-sam-client/target/
+swagger-java-bitbucket-client/target/
 dockstore-event-consumer/target/
 dockstore-webservice/nbactions.xml
 dockstore-common/target/

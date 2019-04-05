@@ -402,7 +402,7 @@ public class CheckerClient extends WorkflowClient {
                     Client.CLIENT_ERROR);
             } else {
                 if (authRequired) {
-                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
+                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId(), null);
                 } else {
                     checkerWorkflow = getDockstoreWorkflowById(entry.getCheckerId());
                 }

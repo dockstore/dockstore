@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
@@ -38,10 +39,11 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
@@ -60,12 +62,27 @@ public interface LanguageHandlerInterface {
     Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles);
 
     /**
-     * Confirms whether the content of a descriptor contains a valid workflow
-     *
-     * @param content the content of a descriptor
-     * @return true iff the workflow looks like a valid workflow
+     * Validates a workflow set for the workflow described by with primaryDescriptorFilePath
+     * @param sourcefiles Set of sourcefiles
+     * @param primaryDescriptorFilePath Primary descriptor path
+     * @return Is a valid workflow set, error message
      */
-    boolean isValidWorkflow(String content);
+    VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+
+    /**
+     * Validates a tool set for the workflow described by with primaryDescriptorFilePath
+     * @param sourcefiles Set of sourcefiles
+     * @param primaryDescriptorFilePath Primary descriptor path
+     * @return Is a valid tool set, error message
+     */
+    VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+
+    /**
+     * Validates a test parameter set
+     * @param sourceFiles Set of sourcefiles
+     * @return Are all test parameter files valid, collection of error messages
+     */
+    VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles);
 
     /**
      * Parse a descriptor file and return a recursive mapping of its imports
@@ -94,6 +111,42 @@ public interface LanguageHandlerInterface {
     String getContent(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
 
     /**
+     * Checks that the test parameter files are valid JSON or YAML
+     * Note: If even one is invalid, return invalid. Also merges all validation messages into one.
+     * @param sourcefiles Set of sourcefiles
+     * @param fileType Test parameter file type
+     * @return Pair of isValid and validationMessage
+     */
+    default VersionTypeValidation checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
+        Boolean isValid = true;
+        Map<String, String> validationMessageObject = new HashMap<>();
+        for (SourceFile sourcefile : sourcefiles) {
+            if (Objects.equals(sourcefile.getType(), fileType)) {
+                Yaml yaml = new Yaml();
+                try {
+                    yaml.load(sourcefile.getContent());
+                } catch (YAMLException e) {
+                    validationMessageObject.put(sourcefile.getPath(), e.getMessage());
+                    isValid = false;
+                }
+            }
+        }
+        return new VersionTypeValidation(isValid, validationMessageObject);
+    }
+
+    /**
+     * Removes any sourcefiles of some file types from a set
+     * @param sourcefiles
+     * @param fileTypes
+     * @return Filtered sourcefile set
+     */
+    default Set<SourceFile> filterSourcefiles(Set<SourceFile> sourcefiles, List<SourceFile.FileType> fileTypes) {
+        return sourcefiles.stream()
+                .filter(sourcefile -> fileTypes.contains(sourcefile.getType()))
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * This method will setup the nodes (nodePairs) and edges (stepToDependencies) into Cytoscape compatible JSON
      *
      * @param nodePairs          looks like a list of node ids and docker pull information (often null)
@@ -102,13 +155,13 @@ public interface LanguageHandlerInterface {
      * @param nodeDockerInfo     also looks like a list of node ids mapped to a triple describing where it came from and some docker information?
      * @return Cytoscape compatible JSON with nodes and edges
      */
-    default String setupJSONDAG(List<Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
+    default String setupJSONDAG(List<org.apache.commons.lang3.tuple.Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
         Map<String, String> stepToType, Map<String, Triple<String, String, String>> nodeDockerInfo) {
         List<Map<String, Map<String, String>>> nodes = new ArrayList<>();
         List<Map<String, Map<String, String>>> edges = new ArrayList<>();
 
         // Iterate over steps, make nodes and edges
-        for (Pair<String, String> node : nodePairs) {
+        for (org.apache.commons.lang3.tuple.Pair<String, String> node : nodePairs) {
             String stepId = node.getLeft();
             String dockerUrl = null;
             if (nodeDockerInfo.get(stepId) != null) {
@@ -301,7 +354,7 @@ public interface LanguageHandlerInterface {
         final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
 
         // Initialize data structures for DAG
-        List<Pair<String, String>> nodePairs = new ArrayList<>();
+        List<org.apache.commons.lang3.tuple.Pair<String, String>> nodePairs = new ArrayList<>();
         Map<String, String> callToType = new HashMap<>();
 
         // Initialize data structures for Tool table
@@ -333,7 +386,7 @@ public interface LanguageHandlerInterface {
         }
 
         // Determine start node edges
-        for (Pair<String, String> node : nodePairs) {
+        for (org.apache.commons.lang3.tuple.Pair<String, String> node : nodePairs) {
             ToolInfo toolInfo = toolInfoMap.get(node.getLeft());
             if (toolInfo.toolDependencyList.size() == 0) {
                 toolInfo.toolDependencyList.add("UniqueBeginKey");
@@ -387,6 +440,32 @@ public interface LanguageHandlerInterface {
         ToolInfo(String dockerContainer, List<String> toolDependencyList) {
             this.dockerContainer = dockerContainer;
             this.toolDependencyList = toolDependencyList;
+        }
+    }
+
+    class VersionTypeValidation {
+        protected boolean isValid;
+        protected Map<String, String> message;
+
+        public VersionTypeValidation(boolean isValid, Map<String, String> message) {
+            this.isValid = isValid;
+            this.message = message;
+        }
+
+        public boolean isValid() {
+            return isValid;
+        }
+
+        public void setValid(boolean valid) {
+            isValid = valid;
+        }
+
+        public Map<String, String> getMessage() {
+            return message;
+        }
+
+        public void setMessage(Map<String, String> message) {
+            this.message = message;
         }
     }
 }

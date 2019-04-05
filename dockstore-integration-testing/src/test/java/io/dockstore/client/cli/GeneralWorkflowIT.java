@@ -16,9 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
@@ -113,6 +110,17 @@ public class GeneralWorkflowIT extends BaseIT {
                 .runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
         Assert.assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
 
+        testPublishList();
+    }
+
+    /**
+     * Test the "dockstore workflow publish" command
+     */
+    private void testPublishList() {
+        systemOutRule.clearLog();
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--script" });
+        Assert.assertTrue("Should contain a FULL workflow belonging to the user", systemOutRule.getLog().contains("github.com/DockstoreTestUser2/hello-dockstore-workflow"));
+        Assert.assertFalse("Should not contain a STUB workflow belonging to the user", systemOutRule.getLog().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified "));
     }
 
     /**

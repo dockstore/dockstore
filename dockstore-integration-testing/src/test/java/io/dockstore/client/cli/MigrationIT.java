@@ -32,7 +32,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-
 /**
  * Testing migration
  *
@@ -105,7 +104,7 @@ public class MigrationIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(funkfile) from tool", new ScalarHandler<>());
         // count will be zero, but there should be no exception
-        Assert.assertTrue("could select from new column", count == 0);
+        Assert.assertEquals("could select from new column", 0, count);
         final long orphanedTokensCount = testingPostgres
                 .runSelectStatement("select count(*) from token where userid not in (select id from enduser)", new ScalarHandler<>());
         Assert.assertEquals(0, orphanedTokensCount);

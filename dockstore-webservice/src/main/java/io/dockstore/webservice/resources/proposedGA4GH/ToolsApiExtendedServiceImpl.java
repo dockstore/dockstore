@@ -193,7 +193,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 Map<String, String> parameters = new HashMap<>();
                 // TODO: note that this is lossy if there are repeated parameters
                 // but it looks like the elastic search http client classes don't handle it
-                queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
+                if (queryParameters != null) {
+                    queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
+                }
                 org.elasticsearch.client.Response get = restClient.performRequest("GET", "/entry/_search", parameters, entity);
                 if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                     throw new CustomWebApplicationException("Could not submit index to elastic search",
@@ -207,8 +209,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         return Response.ok().entity(0).build();
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     @Override
-    public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String relativePath, Boolean verified,
+    public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String platformVersion, String relativePath, Boolean verified,
         String metadata) {
 
         ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
@@ -243,6 +246,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     SourceFile.VerificationInformation verificationInformation = new SourceFile.VerificationInformation();
                     verificationInformation.metadata = metadata;
                     verificationInformation.verified = verified;
+                    verificationInformation.platformVersion = platformVersion;
                     sourceFile.getVerifiedBySource().put(platform, verificationInformation);
                 }
                 // denormalizes verification out to the version level for performance

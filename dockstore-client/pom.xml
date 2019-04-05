@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.5.5-SNAPSHOT</version>
+        <version>1.6.1-SNAPSHOT</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -42,17 +42,22 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.5.5-SNAPSHOT</version>
+            <version>1.6.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.5.5-SNAPSHOT</version>
+            <version>1.6.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>openapi-java-wes-client</artifactId>
+            <version>1.6.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-file-plugin-parent</artifactId>
-            <version>1.5.5-SNAPSHOT</version>
+            <version>1.6.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -78,11 +83,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-        </dependency>
-        <!-- seems redundant, but actually needed by commons-vfs2 at runtime. See https://issues.apache.org/jira/browse/VFS-360 -->
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -204,11 +204,6 @@
             <artifactId>commons-net</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-cli</groupId>
-            <artifactId>commons-cli</artifactId>
-            <version>1.4</version>
-        </dependency>
-        <dependency>
             <groupId>com.github.zafarkhaja</groupId>
             <artifactId>java-semver</artifactId>
             <version>0.9.0</version>
@@ -221,7 +216,13 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
-            <version>2.2</version>
+            <version>2.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
@@ -233,10 +234,6 @@
             <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
@@ -244,6 +241,25 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>findbugs</artifactId>
+        </dependency>
+
+        <!-- https://github.com/dropwizard/dropwizard/issues/2318 -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.1.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+            <version>${jersey-version}</version>
         </dependency>
     </dependencies>
 
@@ -320,7 +336,6 @@
 
                             <usedDependencies>
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
-                                <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
                                 <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</usedDependency>
                                 <usedDependency>org.broadinstitute:wdl4s-wom_2.11</usedDependency>
                                 <usedDependency>io.spray:spray-json_2.11</usedDependency>
@@ -344,8 +359,8 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.eluder.coveralls</groupId>

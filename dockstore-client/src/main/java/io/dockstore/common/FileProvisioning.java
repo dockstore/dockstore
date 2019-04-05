@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.net.UrlEscapers;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.dockstore.client.cli.Client;
 import io.dockstore.provision.PreProvisionInterface;
@@ -78,8 +79,8 @@ public class FileProvisioning {
     private final int threads;
     private final boolean cache;
 
-    private List<ProvisionInterface> plugins = new ArrayList<>();
-    private List<PreProvisionInterface> preProvisionPlugins = new ArrayList<>();
+    private List<ProvisionInterface> plugins;
+    private List<PreProvisionInterface> preProvisionPlugins;
 
     private INIConfiguration config;
 
@@ -96,20 +97,29 @@ public class FileProvisioning {
             this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
             this.preProvisionPlugins = pluginManager.getExtensions(PreProvisionInterface.class);
 
+            // Map of ProvisionInterface & PreProvisionInterface plugins
+            Map<String, ProvisionInterface> pluginsMap = this.plugins
+                .stream()
+                .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
+
+            Map<String, PreProvisionInterface> preProvisionMap = this.preProvisionPlugins
+                .stream()
+                .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
+
             List<PluginWrapper> pluginWrappers = pluginManager.getPlugins();
             for (PluginWrapper pluginWrapper : pluginWrappers) {
                 SubnodeConfiguration section = config.getSection(pluginWrapper.getPluginId());
                 Map<String, String> sectionConfig = new HashMap<>();
                 Iterator<String> keys = section.getKeys();
                 keys.forEachRemaining(key -> sectionConfig.put(key, section.getString(key)));
-                // this is ugly, but we need to pass configuration into the plugins
-                // TODO: speed this up using a map of plugins
-                for (ProvisionInterface extension : plugins) {
-                    String extensionName = extension.getClass().getName();
-                    String pluginClass = pluginWrapper.getDescriptor().getPluginClass();
-                    if (extensionName.startsWith(pluginClass)) {
-                        extension.setConfiguration(sectionConfig);
-                    }
+
+                String pluginClass = pluginWrapper.getDescriptor().getPluginClass();
+                // Pass sectionConfig to each plugin
+                if (pluginsMap.containsKey(pluginClass)) {
+                    pluginsMap.get(pluginClass).setConfiguration(sectionConfig);
+                }
+                if (preProvisionMap.containsKey(pluginClass)) {
+                    preProvisionMap.get(pluginClass).setConfiguration(sectionConfig);
                 }
             }
         } catch (UnexpectedCharacterException e) {
@@ -134,6 +144,15 @@ public class FileProvisioning {
     private static boolean isCacheOn(INIConfiguration config) {
         final String useCache = config.getString("use-cache", "false");
         return "true".equalsIgnoreCase(useCache) || "use".equalsIgnoreCase(useCache) || "T".equalsIgnoreCase(useCache);
+    }
+
+    /*
+     * Retrieves plugin name given object class name.
+     * Splits outer plugin class name (which extends Plugin abstract class) and inner class name (which extends
+     * ProvisionInterface or PreProvisionInterface), then returns outer plugin name
+    */
+    public static String findPluginName(String classObj) {
+        return classObj.split("\\$")[0];
     }
 
     public static void main(String[] args) {
@@ -221,6 +240,14 @@ public class FileProvisioning {
         executorService.shutdownNow();
     }
 
+    protected static URI createURIFromUnencodedPath(String filepath) {
+        //#1663
+        //pre-encoded paths will also work
+        //URI fileIdentifier = URI.create(filepath.replace(" ", "%20"));
+        URI fileIdentifier = URI.create(UrlEscapers.urlFragmentEscaper().escape(filepath));
+        return fileIdentifier;
+    }
+
     /**
      * This is an entry point from both WDL and CWL.
      * This method downloads both local and remote files into the working directory.
@@ -271,7 +298,7 @@ public class FileProvisioning {
             }
         }
 
-        URI objectIdentifier = URI.create(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
+        URI objectIdentifier = createURIFromUnencodedPath(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
         if (objectIdentifier.getScheme() != null) {
             String scheme = objectIdentifier.getScheme().toLowerCase();
             for (PreProvisionInterface plugin : preProvisionPlugins) {
@@ -405,7 +432,7 @@ public class FileProvisioning {
 
     private void handleUploadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision, String metadata) {
         int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
-        retryWrapper(provision, targetPath, localPath, maxRetries, false, threads);
+        retryWrapper(provision, targetPath, localPath, maxRetries, false, metadata, threads);
     }
 
     /**

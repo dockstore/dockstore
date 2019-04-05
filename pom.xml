@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.5.5-SNAPSHOT</version>
+    <version>1.6.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -30,21 +30,22 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:ga4gh/dockstore.git</github.url>
-        <dropwizard.version>1.3.1</dropwizard.version>
+        <dropwizard.version>1.3.7</dropwizard.version>
         <swagger-annotations-version>1.5.19</swagger-annotations-version>
+        <openapi-annotations-version>2.0.6</openapi-annotations-version>
         <assertj.version>3.9.1</assertj.version>
-        <jackson.version>2.9.5</jackson.version>
+        <jackson.version>2.9.8</jackson.version>
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>1.11.313</aws.version>
-        <powermock.version>1.7.4</powermock.version>
-        <postgresql.version>42.1.4</postgresql.version>
-        <mockito.version>2.8.9</mockito.version>
-        <cwlavro.version>2.0.4</cwlavro.version>
+        <powermock.version>2.0.0-beta.5</powermock.version>
+        <postgresql.version>42.2.5</postgresql.version>
+        <mockito.version>2.22.0</mockito.version>
+        <cwlavro.version>2.0.4.2</cwlavro.version>
         <okhttp.version>3.9.0</okhttp.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <swagger-ui.version>3.17.0</swagger-ui.version>
+        <swagger-ui.version>3.20.5</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
         <httpcomponents.version>4.5.5</httpcomponents.version>
@@ -146,6 +147,7 @@
         <module>dockstore-file-plugin-parent</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
+        <module>openapi-java-client</module>
         <module>swagger-java-quay-client</module>
         <module>swagger-java-bitbucket-client</module>
         <module>dockstore-client</module>
@@ -153,6 +155,7 @@
         <module>dockstore-integration-testing</module>
         <module>dockstore-event-consumer</module>
         <module>reports</module>
+        <module>openapi-java-wes-client</module>
     </modules>
 
 
@@ -210,12 +213,6 @@
                 <artifactId>aws-java-sdk-s3</artifactId>
                 <version>${aws.version}</version>
             </dependency>
-
-            <dependency>
-                <groupId>commons-httpclient</groupId>
-                <artifactId>commons-httpclient</artifactId>
-                <version>3.1</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
@@ -255,6 +252,11 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-hibernate5</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -349,6 +351,27 @@
                 <artifactId>swagger-core</artifactId>
                 <version>${swagger-annotations-version}</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${openapi-annotations-version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-servlet-initializer -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+                <version>${openapi-annotations-version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-jaxrs2</artifactId>
+                <version>${openapi-annotations-version}</version>
+            </dependency>
+
+
+
 
             <dependency>
                 <groupId>junit</groupId>
@@ -373,7 +396,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>24.0-jre</version>
+                <version>24.1.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
@@ -431,6 +454,12 @@
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
+                <artifactId>powermock-api-support</artifactId>
+                <version>${powermock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-easymock</artifactId>
                 <version>${powermock.version}</version>
                 <scope>test</scope>
@@ -438,7 +467,8 @@
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-mockito-common</artifactId>
-                <version>${powermock.version}</version>
+                <!-- <version>${powermock.version}</version> seems to have gone out of sync with 2.0.0 -->
+                <version>1.7.4</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -452,6 +482,18 @@
                         <artifactId>objenesis</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.8.21</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.8.21</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -557,12 +599,12 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
-                <version>2.11.11</version>
+                <version>2.11.12</version>
             </dependency>
             <dependency>
                 <groupId>io.spray</groupId>
                 <artifactId>spray-json_2.11</artifactId>
-                <version>1.3.2</version>
+                <version>1.3.5</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api-client</groupId>
@@ -573,7 +615,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.21</version>
+                <version>1.23</version>
             </dependency>
 
             <dependency>
@@ -677,7 +719,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.13</version>
+                <version>1.18</version>
             </dependency>
             <dependency>
                 <groupId>javax.ws.rs</groupId>
@@ -707,7 +749,7 @@
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy</artifactId>
-                <version>2.4.7</version>
+                <version>2.5.5</version>
             </dependency>
             <dependency>
                 <groupId>jaxen</groupId>
@@ -718,6 +760,32 @@
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm-commons</artifactId>
                 <version>5.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>1.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>2.2.8</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-core</artifactId>
+                <version>2.2.8</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>2.2.8</version>
+            </dependency>
+            <!-- CVE-2018-1000180 -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.60</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -776,7 +844,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>8.9</version>
+                            <version>8.18</version>
                         </dependency>
                     </dependencies>
                     <configuration>
@@ -884,9 +952,17 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>3.0.5</version>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>3.1.3</version>
+                    <dependencies>
+                        <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
+                        <dependency>
+                            <groupId>com.github.spotbugs</groupId>
+                            <artifactId>spotbugs</artifactId>
+                            <version>3.1.3</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -913,6 +989,13 @@
                     <groupId>org.eluder.coveralls</groupId>
                     <artifactId>coveralls-maven-plugin</artifactId>
                     <version>4.3.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>javax.xml.bind</groupId>
+                            <artifactId>jaxb-api</artifactId>
+                            <version>2.2.8</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -924,10 +1007,11 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>3.0.0</version>
                 </plugin>
+                <!-- https://mvnrepository.com/artifact/org.scala-tools/maven-scala-plugin -->
                 <plugin>
-                    <groupId>net.alchim31.maven</groupId>
-                    <artifactId>scala-maven-plugin</artifactId>
-                    <version>3.3.2</version>
+                    <groupId>org.scala-tools</groupId>
+                    <artifactId>maven-scala-plugin</artifactId>
+                    <version>2.15.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -989,6 +1073,8 @@
                                         <exclude>commons-lang:commons-lang</exclude>
                                         <!-- superceded by org.apache.commons:commons-configuration2 for direct dependencies-->
                                         <exclude>commons-configuration:commons-configuration</exclude>
+                                        <!-- superceded by org.apache.httpcomponents:httpclient -->
+                                        <exclude>commons-httpclient:commons-httpclient</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>
@@ -1056,9 +1142,9 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.5</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>3.1.3</version>
                 <executions>
                     <execution>
                         <goals>
@@ -1119,6 +1205,23 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>net.revelc.code</groupId>
+                <artifactId>impsort-maven-plugin</artifactId>
+                <version>1.2.0</version>
+                <configuration>
+                    <groups>java.,javax.,*</groups>
+                    <staticAfter>true</staticAfter>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>sort-imports</id>
+                        <goals>
+                            <goal>sort</goal><!-- runs at process-sources phase by default -->
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

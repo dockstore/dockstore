@@ -1,0 +1,382 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2018 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.6.0">
+    <changeSet author="gluu (generated)" id="addPlatformVersionToSourcefileVerified">
+        <addColumn tableName="sourcefile_verified">
+            <column name="platformversion" type="text" remarks="By default set to null"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addOrganisationTable">
+        <createTable tableName="organisation">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="organisation_pkey"/>
+            </column>
+            <column name="approved" type="BOOLEAN"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="link" type="VARCHAR(255)"/>
+            <column name="location" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addOrganisationUserTable">
+        <createTable tableName="organisation_user">
+            <column name="organisationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="organisationuser_pkey"/>
+            </column>
+            <column name="userid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="organisationuser_pkey"/>
+            </column>
+            <column name="accepted" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="role" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="uniqueNameForOrgs">
+        <addUniqueConstraint columnNames="name" constraintName="nameUK" tableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addOrganisationFKToOrgUser">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="organisation_user" constraintName="orgFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addUserFKToOrgUser">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="organisation_user" constraintName="userFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupFK1">
+        <dropForeignKeyConstraint baseTableName="endusergroup" constraintName="fkm0exig2r3dsxqafwaraf7rnr3"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupFK2">
+        <dropForeignKeyConstraint baseTableName="endusergroup" constraintName="fkrxn6hh2max4sk4ceehyv7mt2e"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupTable">
+        <dropTable tableName="endusergroup"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropUserGroupTable">
+        <dropTable tableName="usergroup"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="createEventsTable">
+        <createTable tableName="event">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="event_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="initiatoruserid" type="BIGINT"/>
+            <column name="organisationid" type="BIGINT"/>
+            <column name="toolid" type="BIGINT"/>
+            <column name="userid" type="BIGINT"/>
+            <column name="workflowid" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addOrganisationFKEvent">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="event" constraintName="fkOrganisationId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addInitiatorUserFKEvent">
+        <addForeignKeyConstraint baseColumnNames="initiatoruserid" baseTableName="event" constraintName="FKInitiatorUserId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addToolFKEvent">
+        <addForeignKeyConstraint baseColumnNames="toolid" baseTableName="event" constraintName="FKToolId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addUserFKEvent">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="event" constraintName="FKUserId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addWorkflowFKEvent">
+        <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="event" constraintName="FKWorkflowId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="createCollectionTable">
+        <createTable tableName="collection">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="collection_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="description" type="TEXT"/>
+            <column name="name" type="VARCHAR(39)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organisationid" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="createCollectionEntryTable">
+        <createTable tableName="collection_entry">
+            <column name="collectionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="collection_entry_pkey"/>
+            </column>
+            <column name="entryid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="collection_entry_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addCollectionNameConstraint">
+        <addUniqueConstraint columnNames="name" constraintName="uk_collectionName" tableName="collection"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addOrgIdFKConstraint">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="collection" constraintName="fk_orgIdInCollection" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1addCollectionIdFKConstraint">
+        <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="collection_entry" constraintName="fk_collectionIdInCollectionEntry" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addCollectionColumnToEvent">
+        <addColumn tableName="event">
+            <column name="collectionid" type="int8"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addCollectionFKEvent">
+        <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="event" constraintName="fk_collectionIdInEvent" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addTopicToOrganisation">
+        <addColumn tableName="organisation">
+            <column name="topic" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="aduncan" id="AddValidationTable">
+        <createTable tableName="validation">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="validation_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="message" type="VARCHAR" remarks="A mapping of file path to message."/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="valid" type="BOOLEAN"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="aduncan" id="AddValidationJoinTable">
+        <createTable tableName="version_validation">
+            <column name="versionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_validation_pkey"/>
+            </column>
+            <column name="validationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_validation_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="aduncan" id="AddJoinValidationConstraint">
+        <addUniqueConstraint columnNames="validationid" constraintName="uk_validationid" tableName="version_validation"/>
+    </changeSet>
+    <changeSet author="aduncan" id="AddValidationIdConstraint">
+        <addForeignKeyConstraint baseColumnNames="validationid" baseTableName="version_validation" constraintName="fkvalidationid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation"/>
+    </changeSet>
+
+    <changeSet id="AddNotNullAbsolutePathConstraint" author="coverbeck">
+        <update tableName="sourcefile">
+            <column name="absolutepath" valueComputed="path"/>
+            <where>absolutepath is null</where>
+        </update>
+        <addNotNullConstraint tableName="sourcefile" columnName="absolutepath"/>
+    </changeSet>
+
+    <changeSet author="aduncan" id="AddStatusColumnToOrganisations">
+        <addColumn tableName="organisation">
+            <column defaultValue="PENDING" name="status" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen" id="constraintOrgNames">
+        <sql dbms="postgresql">
+            create unique index organization_name_index on organisation (LOWER(name));
+        </sql>
+    </changeSet>
+
+    <changeSet author="aduncan" id="dropOldApprovedFieldFromOrganisations">
+        <dropColumn columnName="approved" tableName="organisation"/>
+    </changeSet>
+
+    <changeSet author="dyuen" id="renameAllOrganization">
+        <renameTable newTableName="organization"
+                     oldTableName="organisation"
+        />
+        <renameTable newTableName="organization_user"
+                     oldTableName="organisation_user"
+        />
+        <renameColumn newColumnName="organizationid"
+                      oldColumnName="organisationid"
+                      tableName="organization_user"/>
+        <renameColumn newColumnName="organizationid"
+                      oldColumnName="organisationid"
+                      tableName="collection"/>
+        <renameColumn newColumnName="organizationid"
+                      oldColumnName="organisationid"
+                      tableName="event"/>
+        <sql dbms="postgresql">ALTER SEQUENCE organisation_id_seq RENAME TO organization_id_seq</sql>
+    </changeSet>
+
+    <changeSet author="NatalieEO" id="addAvatarurlColumnToOrganizations">
+        <addColumn tableName="organization">
+            <column name="avatarurl" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen" id="maintain_consistency">
+        <modifyDataType columnName="name" newDataType="varchar(39)" tableName="organization"/>
+        <modifyDataType columnName="type" newDataType="clob" tableName="validation"/>
+        <modifyDataType columnName="message" newDataType="clob" tableName="validation"/>
+    </changeSet>
+    
+    <changeSet author="dyuen" id="collection_alias">
+        <createTable tableName="collection_alias">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="collection_alias_pkey"/>
+            </column>
+            <column name="content" type="TEXT"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="alias" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="collection_alias_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="alias" constraintName="unique_col_aliases" tableName="collection_alias"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="collection_alias" constraintName="fk_collection_alias" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1551127767692-2">
+        <createTable tableName="organzation_alias">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="organzation_alias_pkey"/>
+            </column>
+            <column name="content" type="TEXT"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="alias" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="organzation_alias_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="alias" constraintName="unique_org_aliases" tableName="organzation_alias"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="organzation_alias" constraintName="fk_organzation_alias" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organization"/>
+    </changeSet>
+
+    <changeSet author="aduncan" id="addDisplayNameToOrganization">
+        <addColumn tableName="organization">
+            <column name="displayname" type="varchar(50 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="aduncan" id="addDisplayNameToOrganizationUniqueConstraint">
+        <update tableName="organization">
+            <column name="displayname" valueComputed="name"/>
+            <where>displayname is null</where>
+        </update>
+        <addUniqueConstraint columnNames="displayname" constraintName="uk_orgDisplayName" tableName="organization"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addDisplayNameToCollection">
+        <addColumn tableName="collection">
+            <column name="displayname" type="varchar(50 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addDisplayNameToCollectionUniqueConstraint">
+        <update tableName="collection">
+            <column name="displayname" valueComputed="name"/>
+            <where>displayname is null</where>
+        </update>
+        <addUniqueConstraint columnNames="displayname" constraintName="uk_collDisplayName" tableName="collection"/>
+    </changeSet>
+
+    <changeSet author="aduncan" id="addTopicToCollection">
+        <addColumn tableName="collection">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="charlesoverbeck (generated)" id="addHostedEntryCountlimitToUser">
+        <addColumn tableName="enduser">
+            <column name="hostedentrycountlimit" type="int4"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="charlesoverbeck (generated)" id="addHostedEntryVersionsLimitToUser">
+        <addColumn tableName="enduser">
+            <column name="hostedentryversionslimit" type="int4"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen" id="constraintColNames">
+        <dropUniqueConstraint constraintName="uk_collectionName"
+                              tableName="collection"/>
+        <dropUniqueConstraint constraintName="nameUK"
+                              tableName="organization"/>
+        <sql dbms="postgresql">
+            create unique index collection_name_index on collection (LOWER(name), organizationid);
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen" id="organization_alias_rename">
+        <renameTable oldTableName="organzation_alias" newTableName="organization_alias"/>
+    </changeSet>
+    <changeSet id="fixAbsolutePath" author="aduncan">
+        <sql dbms="postgresql">
+            UPDATE sourcefile SET absolutepath = CONCAT('/', absolutepath) WHERE absolutepath NOT LIKE '/%'
+        </sql>
+    </changeSet>
+    <changeSet id="checkAbsolutePath" author="gluu">
+        <sql dbms="postgresql">
+            ALTER TABLE sourcefile ADD CONSTRAINT absolutepath_check CHECK (absolutepath LIKE '/%' OR absolutepath='')
+        </sql>
+    </changeSet>
+    <changeSet id="epicAbsolutePathFix" author="dyuen">
+        <sql dbms="postgresql">
+            update sourcefile s set absolutepath = subquery.concat_ws FROM (
+                with workflow_paths as (
+                    select w.giturl, w.mode, wv.workflowpath, s.id, s.path, s.absolutepath, s.type, CONCAT_WS('/', NULLIF(LEFT(wv.workflowpath, LENGTH (wv.workflowpath) - POSITION('/' in REVERSE(wv.workflowpath))),''), path) as concat_ws     from workflow w, workflow_workflowversion wwv, workflowversion wv, version_sourcefile vs, sourcefile s where w.id = wwv.workflowid and wwv.workflowversionid = wv.id and wv.id = vs.versionid and  vs.sourcefileid = s.id
+                    and workflowpath != path -- ignore primary descriptors, primary descriptors already use absolute path
+                    and s.type != 'CWL_TEST_JSON' -- these use absolute paths already too
+                    and s.type != 'WDL_TEST_JSON' -- these use absolute paths already too
+                    and s.type != 'NEXTFLOW_CONFIG' -- these use absolute paths already too
+                    order by w.id
+                )
+                select concat_ws, id from workflow_paths
+                where path != concat_ws -- our calculations result in no change when these are secondary files with a primary at the root, so ignore them
+            ) as subquery WHERE subquery.id = s.id;
+        </sql>
+        <sql dbms="postgresql">
+            update sourcefile s set absolutepath = subquery.concat_ws FROM (
+                with tool_paths as (
+                    select t.giturl, t.mode, ta.cwlpath, ta.wdlpath, coalesce(nullif(ta.cwlpath,''), nullif(ta.wdlpath,'')) as toolpath, s.id, s.path, s.absolutepath, s.type from tool t, tool_tag tt, tag ta, version_sourcefile vs, sourcefile s where t.id = tt.toolid and tt.tagid = ta.id and ta.id = vs.versionid and  vs.sourcefileid = s.id
+                    and cwlpath != path -- ignore primary descriptors, primary descriptors already use absolute path
+                    and wdlpath != path
+                    and s.type != 'CWL_TEST_JSON' -- these use absolute paths already too
+                    and s.type != 'WDL_TEST_JSON' -- these use absolute paths already too
+                    and s.type != 'DOCKERFILE' -- these use absolute paths already too
+                    order by t.id
+                )
+                select id,concat_ws from (select *, CONCAT_WS('/', NULLIF(LEFT(toolpath, LENGTH (toolpath) - POSITION('/' in REVERSE(toolpath))),''), path) as concat_ws from tool_paths
+                ) p  where path != concat_ws -- our calculations result in no change when these are secondary files with a primary at the root, so ignore them
+            ) as subquery WHERE subquery.id = s.id;
+        </sql>
+    </changeSet>
+</databaseChangeLog>

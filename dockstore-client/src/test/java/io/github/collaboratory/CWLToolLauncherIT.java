@@ -15,10 +15,8 @@
  */
 package io.github.collaboratory;
 
-import io.dockstore.common.ToilCompatibleTest;
 import io.github.collaboratory.cwl.LauncherIT;
 import org.apache.commons.io.FileUtils;
-import org.junit.experimental.categories.Category;
 
 /**
  * @author dyuen

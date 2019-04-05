@@ -160,17 +160,15 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         // TODO: No exceptions are caught here in the event of a failed call
         SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 
-        // Non-null sourcefile means that the sourcefile is valid
-        if (sourceFile != null) {
-            version.setValid(true);
-        }
         version.setReferenceType(type);
         version.setLastModified(committedDate);
         // Use default test parameter file if either new version or existing version that hasn't been edited
         createTestParameterFiles(workflow, id, branchName, version, identifiedType);
+        version = combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults);
 
-        workflow.addWorkflowVersion(
-                combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+        version = versionValidation(version, workflow, calculatedPath);
+
+        workflow.addWorkflowVersion(version);
     }
 
     @Override

@@ -20,10 +20,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,7 +57,7 @@ import wdl4s.parser.WdlParser;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-    public static final String WDL_SYNTAX_ERROR = "There is a syntax error, please check the WDL file.";
+    public static final String WDL_SYNTAX_ERROR = "There is a syntax error or your WDL version is greater than draft-2. Please check the WDL file.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     @Override
@@ -191,17 +194,96 @@ public class WDLHandler implements LanguageHandlerInterface {
         return null;
     }
 
+    /**
+     * A common helper method for validating tool and workflow sets
+     * @param sourcefiles Set of sourcefiles to validate
+     * @param primaryDescriptorFilePath Path of primary descriptor
+     * @param type workflow or tool
+     * @return
+     */
+    public VersionTypeValidation validateEntrySet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
+        File tempMainDescriptor = null;
+        String mainDescriptor = null;
+
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL));
+        Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
+
+        Map<String, String> validationMessageObject = new HashMap<>();
+
+        if (filteredSourceFiles.size() > 0) {
+            try {
+                Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream()
+                    .filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
+
+                if (primaryDescriptor.isPresent()) {
+                    if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
+                        validationMessageObject.put(primaryDescriptorFilePath, "The primary descriptor '" + primaryDescriptorFilePath + "' has no content. Please make it a valid WDL document if you want to save.");
+                        return new VersionTypeValidation(false, validationMessageObject);
+                    }
+                    mainDescriptor = primaryDescriptor.get().getContent();
+                } else {
+                    validationMessageObject.put(primaryDescriptorFilePath, "The primary descriptor '" + primaryDescriptorFilePath + "' could not be found.");
+                    return new VersionTypeValidation(false, validationMessageObject);
+                }
+
+                Map<String, String> secondaryDescContent = new HashMap<>();
+                for (SourceFile sourceFile : filteredSourceFiles) {
+                    if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath) && sourceFile.getContent() != null) {
+                        if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
+                            if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
+                                validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
+                            } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
+                                validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
+                            } else {
+                                validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
+                            }
+                            return new VersionTypeValidation(false, validationMessageObject);
+                        }
+                        secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
+                    }
+                }
+                tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+                Bridge bridge = new Bridge(tempMainDescriptor.getParent());
+                bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+                Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
+                if (Objects.equals(type, "tool")) {
+                    bridge.isValidTool(tempMainDescriptor);
+                } else {
+                    bridge.isValidWorkflow(tempMainDescriptor);
+                }
+            } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
+                validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
+                return new VersionTypeValidation(false, validationMessageObject);
+            } catch (NoSuchMethodException e) {
+                //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
+                // https://github.com/ga4gh/dockstore/issues/2139
+                validationMessageObject.put(primaryDescriptorFilePath, "Unknown methods were found, indicating that this may be a WDL 1.0 file. Currently Dockstore cannot parse WDL 1.0, so validation has been skipped. It is likely that the import processing and DAG generation will be broken.\n" + e.getMessage());
+                return new VersionTypeValidation(true, validationMessageObject);
+            } catch (Exception e) {
+                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } finally {
+                FileUtils.deleteQuietly(tempMainDescriptor);
+            }
+        } else {
+            validationMessageObject.put(primaryDescriptorFilePath, "Primary WDL descriptor is not present.");
+            return new VersionTypeValidation(false, validationMessageObject);
+        }
+        return new VersionTypeValidation(true, null);
+    }
+
     @Override
-    public boolean isValidWorkflow(String content) {
-        // TODO: this code looks like it was broken at some point, needs investigation
-        //        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-        //        if (nameSpaceWithWorkflow != null) {
-        //            return true;
-        //        }
-        //
-        //        return false;
-        // For now as long as a file exists, it is a valid WDL
-        return true;
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "workflow");
+    }
+
+    @Override
+    public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "tool");
+    }
+
+    @Override
+    public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.WDL_TEST_JSON);
     }
 
     @Override
@@ -321,16 +403,4 @@ public class WDLHandler implements LanguageHandlerInterface {
         }));
         return toolInfoMap;
     }
-
-    /**
-     * Odd un-used method that seems like it could be useful
-     *
-     * @param workflowFile
-     * @return
-     */
-    List<String> getWdlImports(File workflowFile) {
-        Bridge bridge = new Bridge(workflowFile.getParent());
-        return bridge.getImportFiles(workflowFile);
-    }
-
 }

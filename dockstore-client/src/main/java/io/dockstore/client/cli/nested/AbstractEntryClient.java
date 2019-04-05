@@ -17,8 +17,12 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -27,7 +31,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import javax.ws.rs.core.HttpHeaders;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
@@ -45,16 +52,27 @@ import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.CWLClient;
 import io.github.collaboratory.nextflow.NextFlowClient;
 import io.github.collaboratory.wdl.WDLClient;
+import io.openapi.wes.client.api.WorkflowExecutionServiceApi;
+import io.openapi.wes.client.model.RunId;
+import io.openapi.wes.client.model.RunLog;
+import io.openapi.wes.client.model.RunStatus;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
+import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.SubnodeConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.parser.ParserException;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.DOWNLOAD;
@@ -95,9 +113,15 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  * @author dyuen
  */
 public abstract class AbstractEntryClient<T> {
+    private static final String WORKFLOW = "workflow";
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
+
     protected boolean isAdmin = false;
+    protected boolean isWesCommand = false;
+    protected boolean isLocalEntry = false;
+    protected String wesUri = null;
+    protected String wesAuth = null;
 
     static String getCleanedDescription(String description) {
         description = MoreObjects.firstNonNull(description, "");
@@ -107,6 +131,22 @@ public abstract class AbstractEntryClient<T> {
             description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
         }
         return description;
+    }
+
+    public String getWesUri() {
+        return wesUri;
+    }
+
+    public String getWesAuth() {
+        return wesAuth;
+    }
+
+    public boolean isWesCommand() {
+        return isWesCommand;
+    }
+
+    public boolean isLocalEntry() {
+        return isLocalEntry;
     }
 
     public CWL getCwlUtil() {
@@ -151,6 +191,11 @@ public abstract class AbstractEntryClient<T> {
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
         out("");
         out("  " + DOWNLOAD + "         :  download " + getEntryType() + "s to the local directory");
+        if (WORKFLOW.equalsIgnoreCase(getEntryType())) {
+            out("");
+            out("  wes              :  calls a Workflow Execution Schema API (WES) for a version of a " + getEntryType() + "");
+        }
+
         printClientSpecificHelp();
         if (isAdmin) {
             printAdminHelp();
@@ -233,6 +278,14 @@ public abstract class AbstractEntryClient<T> {
                 break;
             case "test_parameter":
                 testParameter(args);
+                break;
+            case "wes":
+                isWesCommand = true;
+                if (WORKFLOW.equalsIgnoreCase(getEntryType())) {
+                    processWesCommands(args);
+                } else {
+                    errorMessage("WES API calls are only valid for workflows not tools.", CLIENT_ERROR);
+                }
                 break;
             default:
                 return false;
@@ -669,7 +722,7 @@ public abstract class AbstractEntryClient<T> {
 
             String parentEntry = optVal(args, "--parent-entry", entry);
 
-            if (getEntryType().toLowerCase().equals("tool")) {
+            if (getEntryType().equalsIgnoreCase("tool")) {
                 descriptorType = reqVal(args, "--descriptor-type");
                 descriptorType = descriptorType.toLowerCase();
                 boolean validType = false;
@@ -718,10 +771,9 @@ public abstract class AbstractEntryClient<T> {
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
     LanguageType checkFileExtension(String path) {
-        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING) || FilenameUtils.getExtension(path).toLowerCase()
-                .equals("yaml") || FilenameUtils.getExtension(path).toLowerCase().equals("yml")) {
+        if (FilenameUtils.getExtension(path).equalsIgnoreCase(CWL_STRING) || FilenameUtils.getExtension(path).equalsIgnoreCase("yaml") || FilenameUtils.getExtension(path).equalsIgnoreCase("yml")) {
             return LanguageType.CWL;
-        } else if (FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)) {
+        } else if (FilenameUtils.getExtension(path).equalsIgnoreCase(WDL_STRING)) {
             return LanguageType.WDL;
         } else if (path.endsWith("nextflow.config")) {
             return LanguageType.NEXTFLOW;
@@ -744,7 +796,7 @@ public abstract class AbstractEntryClient<T> {
         LanguageType ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
         if (!file.exists() || file.isDirectory()) {
-            if (getEntryType().toLowerCase().equals("tool")) {
+            if (getEntryType().equalsIgnoreCase("tool")) {
                 errorMessage("The tool file " + file.getPath() + " does not exist. Did you mean to launch a remote tool or a workflow?",
                     ENTRY_NOT_FOUND);
             } else {
@@ -878,6 +930,165 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
+     * Validates that any JSON and/or YAML files being passed in are syntactically valid.
+     * If there is any error other than invalid syntax, the error is ignored and expected to be handled later.
+     * Because prevalidation occurs prior to launch, the args need to be preserved for the later handling.
+     *
+     * @param args
+     */
+    protected void preValidateLaunchArguments(List<String> args) {
+        // Create a copy of args for prevalidation since optVals removes args from list
+        List<String> argsCopy = new java.util.ArrayList(args);
+        String jsonFile = optVal(argsCopy, "--json", null);
+        String yamlFile = optVal(argsCopy, "--yaml", null);
+        if (jsonFile != null) {
+            try {
+                fileToJSON(jsonFile);
+            } catch (ParserException ex) {
+                errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
+            } catch (Exception e) {
+                // Log error, but let existing code handle
+                LOG.error("Error prevalidating input file: " + jsonFile, e);
+            }
+        }
+        if (yamlFile != null) {
+            try {
+                fileToJSON(yamlFile);
+            } catch (ParserException ex) {
+                errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
+            } catch (Exception e) {
+                // Log error, but let existing code handle
+                LOG.error("Error prevalidating input file: " + yamlFile, e);
+            }
+        }
+    }
+
+
+    /**
+     * Creates a WES API object and sets the endpoint.
+     *
+     * @param wesUrl URL to WES endpoint
+     */
+    public WorkflowExecutionServiceApi getWorkflowExecutionServiceApi(String wesUrl, String wesCred) {
+        WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
+
+        // Uncomment this code when Swagger Codegen generates correct Java
+        // for OpenApi 3.0 yaml with arrays of files
+        //ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
+
+        // Done so we can override the Serialize method in ApiClient
+        // Since Swagger Codegen does not create correct code for the
+        // workflow attachment
+        // Delete these next two lines when Swagger Codegen is fixed
+        ApiClientExtended wesApiClient = new ApiClientExtended();
+        clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
+
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        SubnodeConfiguration configSubNode = null;
+        try {
+            configSubNode = config.getSection("WES");
+        } catch (Exception e) {
+            out("Could not get WES section from config file");
+        }
+
+        String wesEndpointUrl = ObjectUtils.firstNonNull(wesUrl, configSubNode.getString("url"));
+        if (wesEndpointUrl == null || wesEndpointUrl.isEmpty()) {
+            errorMessage("No WES URL found in config file and no WES URL entered on command line. Please add url: <url> to "
+                    + "config file in a WES section or use --wes-url <url> option on the command line", CLIENT_ERROR);
+        } else {
+            out("WES endpoint url is: " + wesEndpointUrl);
+            wesApiClient.setBasePath(wesEndpointUrl);
+        }
+
+        /**
+         * Setup authentication credentials for the WES URL
+         */
+        String wesAuthorizationCredentials = ObjectUtils.firstNonNull(wesCred, configSubNode.getString("authorization"));
+        if (wesAuthorizationCredentials == null) {
+            out("Could not set Authorization header. Authorization key not found in config file and not provided on the command line. "
+                    + "Please add 'authorization: <type> <credentials> to config file in WES section or "
+                    + "use --wes-auth '<type> <credentials>' option on the command line if authorization credentials are needed");
+        } else {
+            wesApiClient.addDefaultHeader(HttpHeaders.AUTHORIZATION, wesAuthorizationCredentials);
+        }
+
+        // Add these headers to the http request. Are these needed?
+        wesApiClient.addDefaultHeader("Accept", "*/*");
+        wesApiClient.addDefaultHeader("Expect", "100-continue");
+
+        clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
+        return clientWorkflowExecutionServiceApi;
+    }
+
+    /**
+     * Processes Workflow Execution Schema (WES) commands.
+     *
+     * @param args Arguments entered into the CLI
+     */
+    public void processWesCommands(final List<String> args) {
+        this.wesUri = optVal(args, "--wes-url", null);
+        this.wesAuth = optVal(args, "--wes-auth", null);
+
+        if (args.isEmpty() || (args.size() == 1 && containsHelpRequest(args))) {
+            wesHelp();
+        } else {
+            final String cmd = args.remove(0);
+            switch (cmd) {
+            case "launch":
+                if (args.isEmpty() || containsHelpRequest(args)) {
+                    wesLaunchHelp();
+                } else {
+                    launch(args);
+                }
+                break;
+            case "status":
+                if (args.isEmpty() || containsHelpRequest(args)) {
+                    wesStatusHelp();
+                } else {
+                    WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(getWesUri(), getWesAuth());
+                    String workflowId = reqVal(args, "--id");
+                    out("Getting status of WES workflow");
+                    if (args.contains("--verbose")) {
+                        try {
+                            RunLog response = clientWorkflowExecutionServiceApi.getRunLog(workflowId);
+                            out("Verbose run status is: " + response.toString());
+                        } catch (io.openapi.wes.client.ApiException e) {
+                            LOG.error("Error getting verbose WES run status", e);
+                        }
+                    } else {
+                        try {
+                            RunStatus response = clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
+                            out("Brief run status is: " + response.toString());
+                        } catch (io.openapi.wes.client.ApiException e) {
+                            LOG.error("Error getting brief WES run status", e);
+                        }
+                    }
+                }
+                break;
+            case "cancel":
+                if (args.isEmpty() || containsHelpRequest(args)) {
+                    wesCancelHelp();
+                } else {
+                    WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(getWesUri(), getWesAuth());
+                    out("Canceling WES workflow");
+                    String workflowId = reqVal(args, "--id");
+                    try {
+                        RunId response = clientWorkflowExecutionServiceApi.cancelRun(workflowId);
+                        out("Cancelled run with id: " + response.toString());
+                    } catch (io.openapi.wes.client.ApiException e) {
+                        LOG.error("Error canceling WES run", e);
+                    }
+                }
+                break;
+            default:
+                invalid(cmd);
+                break;
+            }
+        }
+
+    }
+
+    /**
      * Launches tools and workflows.
      *
      * @param args Arguments entered into the CLI
@@ -892,11 +1103,15 @@ public abstract class AbstractEntryClient<T> {
             } else if (args.contains("--local-entry")) {
                 final String descriptor = optVal(args, "--descriptor", null);
                 final String localFilePath = reqVal(args, "--local-entry");
+                this.isLocalEntry = true;
+                preValidateLaunchArguments(args);
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
                 if (!args.contains("--entry")) {
                     errorMessage("dockstore: missing required flag --entry", CLIENT_ERROR);
                 }
+                this.isLocalEntry = false;
+                preValidateLaunchArguments(args);
                 final String descriptor = optVal(args, "--descriptor", CWL_STRING);
                 if (descriptor.equals(CWL_STRING)) {
                     try {
@@ -932,29 +1147,27 @@ public abstract class AbstractEntryClient<T> {
      */
     public abstract String zipFilename(T entry);
 
-    private void launchCwl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException, IOException {
+    private void launchCwl(String entry, final List<String> args, boolean isALocalEntry) throws ApiException, IOException {
         final String yamlRun = optVal(args, "--yaml", null);
         String jsonRun = optVal(args, "--json", null);
-        final String csvRuns = optVal(args, "--tsv", null);
         final String uuid = optVal(args, "--uuid", null);
 
-        if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)) {
-            errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
+        if (!(yamlRun != null ^ jsonRun != null)) {
+            errorMessage("One of  --json or --yaml is required", CLIENT_ERROR);
         }
         CWLClient client = new CWLClient(this);
-        client.launch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, uuid);
+        client.launch(entry, isALocalEntry, yamlRun, jsonRun, null, uuid);
     }
 
     /**
-     * Returns the first path that is not null and is not remote
+     * Returns the first path that is not null and is not remote (YAML preference)
      *
      * @param yamlRun The yaml file path
      * @param jsonRun The json file path
-     * @param csvRun  The csv file path
-     * @return
+     * @return Path to first not null file
      */
-    public String getOriginalTestParameterFilePath(String yamlRun, String jsonRun, String csvRun) {
-        java.util.Optional<String> s = Stream.of(yamlRun, jsonRun, csvRun).filter(Objects::nonNull).findFirst();
+    public String getFirstNotNullParameterFile(String yamlRun, String jsonRun) {
+        Optional<String> s = Stream.of(yamlRun, jsonRun).filter(Objects::nonNull).findFirst();
         if (s.isPresent() && Paths.get(s.get()).toFile().exists()) {
             // convert relative path to absolute path
             return s.get();
@@ -973,24 +1186,28 @@ public abstract class AbstractEntryClient<T> {
         }
     }
 
-    private void launchWdl(final List<String> args, boolean isLocalEntry) throws IOException, ApiException {
+    private void launchWdl(final List<String> args, boolean isALocalEntry) throws IOException, ApiException {
         final String entry = reqVal(args, "--entry");
-        launchWdl(entry, args, isLocalEntry);
+        launchWdl(entry, args, isALocalEntry);
     }
 
-    private void launchWdl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
-        final String json = reqVal(args, "--json");
+    private void launchWdl(String entry, final List<String> args, boolean isALocalEntry) throws ApiException {
+        final String yamlRun = optVal(args, "--yaml", null);
+        String jsonRun = optVal(args, "--json", null);
+        if (!(yamlRun != null ^ jsonRun != null)) {
+            errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
+        }
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
         final String uuid = optVal(args, "--uuid", null);
         WDLClient client = new WDLClient(this);
-        client.launch(entry, isLocalEntry, null, json, null, wdlOutputTarget, uuid);
+        client.launch(entry, isALocalEntry, yamlRun, jsonRun, wdlOutputTarget, uuid);
     }
 
-    private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
+    private void launchNextFlow(String entry, final List<String> args, boolean isALocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);
-        client.launch(entry, isLocalEntry, null, json, null, null, uuid);
+        client.launch(entry, isALocalEntry, null, json, null, uuid);
     }
 
     private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {
@@ -1020,28 +1237,109 @@ public abstract class AbstractEntryClient<T> {
         throw new UnsupportedOperationException("language not supported yet");
     }
 
+    /**
+     * Loads docker images from file system if there are any
+     */
+    public void loadDockerImages() {
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        String dockerImageDirectory = config.getString("docker-images");
+        if (!StringUtils.isBlank(dockerImageDirectory)) {
+            Path directoryPath = Paths.get(dockerImageDirectory);
+            Supplier<Stream<Path>> list = () -> {
+                try {
+                    return java.nio.file.Files.list(directoryPath);
+                } catch (NotDirectoryException e) {
+                    System.out.println("The specified Docker image directory is a file: " + directoryPath.toAbsolutePath());
+                } catch (NoSuchFileException e) {
+                    System.out.println("The specified Docker image directory not found: " + directoryPath.toAbsolutePath());
+                } catch (IOException e) {
+                    // Not able to find a situation in which this occurs
+                    System.out.println("Something is wrong with the specified Docker image directory: " + directoryPath.toAbsolutePath());
+                    System.out.println(e.toString());
+                }
+                return Stream.empty();
+            };
+            if (list.get().count() == 0) {
+                System.out.println("There are no files in the docker image directory: " + directoryPath.toAbsolutePath());
+            } else {
+                System.out.println("Loading docker images...");
+                list.get().forEach(path -> Utilities.executeCommand("docker load -i \"" + path + "\"", System.out, System.err));
+            }
+        } else {
+            LOG.info("No docker image directory specified in Dockstore config file");
+        }
+    }
+
     public abstract Client getClient();
+
+
 
     /**
      * help text output
      */
-
-    private void publishHelp() {
+    public void wesHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType().toLowerCase() + " publish --help");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish [parameters]");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish --unpub [parameters]");
+        out("Commands:");
+        out("");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " wes --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes launch [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes status [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes cancel [parameters]");
         out("");
         out("Description:");
-        out("  Publish/unpublish a registered " + getEntryType() + ".");
-        out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
-        out("Required Parameters:");
-        out("  --entry <entry>             Complete " + getEntryType()
-                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("  --entryname <" + getEntryType() + "name>      " + getEntryType() + "name of new entry");
+        out(" Sends a request to a Workflow Execution Service (WES) endpoint.");
+        printWesHelpFooter();
         printHelpFooter();
     }
+
+    protected void wesLaunchHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " wes launch --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes launch [parameters]");
+        printLaunchHelpBody();
+        printWesHelpFooter();
+        printHelpFooter();
+    }
+
+    public void wesStatusHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " wes status --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes status [parameters]");
+        out("");
+        out("Description:");
+        out("  Status, gets the status of a " + getEntryType() + ".");
+        out("Required Parameters:");
+        out("  --id <id>                           Id of a run at the WES endpoint, e.g. id returned from the launch command");
+        out("Optional Parameters:");
+        out("  --verbose                           Provide extra status information");
+        out("");
+        printWesHelpFooter();
+        printHelpFooter();
+    }
+
+    public void wesCancelHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " wes cancel --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes cancel [parameters]");
+        out("");
+        out("Description:");
+        out("  Cancels a " + getEntryType() + ".");
+        out("Required Parameters:");
+        out("  --id <id>                           Id of a run at the WES endpoint, e.g. id returned from the launch command");
+        out("");
+        printWesHelpFooter();
+        printHelpFooter();
+    }
+
+    public void printWesHelpFooter() {
+        out("Global Optional Parameters:");
+        out("  --wes-url <WES URL>                 URL where the WES request should be sent, e.g. 'http://localhost:8080/ga4gh/wes/v1'");
+        out("  --wes-auth <auth>                   Authorization credentials for the WES endpoint, e.g. 'Bearer 12345'");
+        out("");
+        out("NOTE: WES SUPPORT IS IN BETA AT THIS TIME. RESULTS MAY BE UNPREDICTABLE.");
+    }
+
+    protected abstract void publishHelp();
 
     private void starHelp() {
         printHelpHeader();
@@ -1098,7 +1396,7 @@ public abstract class AbstractEntryClient<T> {
         out("  --entry <entry>                                                          Complete " + getEntryType()
                 + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --version <version>                                                      " + getEntryType() + " version name");
-        if (getEntryType().toLowerCase().equals("tool")) {
+        if (getEntryType().equalsIgnoreCase("tool")) {
             out("  --descriptor-type <descriptor-type>                                      CWL/WDL");
         }
         out("");
@@ -1261,10 +1559,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    protected void launchHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + getEntryType().toLowerCase() + " launch --help");
-        out("       dockstore " + getEntryType().toLowerCase() + " launch [parameters]");
+    protected void printLaunchHelpBody() {
         out("");
         out("Description:");
         out("  Launch an entry locally.");
@@ -1279,13 +1574,20 @@ public abstract class AbstractEntryClient<T> {
         out("Optional parameters:");
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --yaml <yaml file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
-        out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
         if (!(this instanceof CheckerClient)) {
             out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
         }
         out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
         out("  --uuid                              Allows you to specify a uuid for 3rd party notifications");
+        out("");
+    }
+
+    protected void launchHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " launch --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " launch [parameters]");
+        printLaunchHelpBody();
         printHelpFooter();
     }
 
@@ -1314,4 +1616,21 @@ public abstract class AbstractEntryClient<T> {
         out("");
     }
 
+
+
+    /**
+     * Reads a file whose format is either YAML or JSON and makes a JSON string out of the contents
+     * @param yamlRun
+     * @return
+     * @throws ParserException if the JSON or YAML is not syntactically valid
+     * @throws IOException
+     */
+    public String fileToJSON(String yamlRun) throws IOException {
+        Yaml yaml = new Yaml();
+        try (FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun))) {
+            Map<String, Object> map = yaml.load(fileInputStream);
+            JSONObject jsonObject = new JSONObject(map);
+            return jsonObject.toString();
+        }
+    }
 }

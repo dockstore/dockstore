@@ -22,6 +22,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ExtendedGa4GhApi;
+import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
@@ -77,23 +78,74 @@ public class SearchResourceIT extends BaseIT {
         // update the search index
         extendedGa4GhApi.toolsIndexGet();
         waitForRefresh(5000);
+        waitForRefresh(5000);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
 
         workflowApi.publish(workflow.getId(), new PublishRequest() {
             public Boolean isPublish() { return false;}
         });
+
         waitForRefresh(1500);
         String exampleESQuery = "{\"size\":201,\"_source\":{\"excludes\":[\"*.content\",\"*.sourceFiles\",\"description\",\"users\",\"workflowVersions.dirtyBit\",\"workflowVersions.hidden\",\"workflowVersions.last_modified\",\"workflowVersions.name\",\"workflowVersions.valid\",\"workflowVersions.workflow_path\",\"workflowVersions.workingDirectory\",\"workflowVersions.reference\"]},\"query\":{\"match_all\":{}}}";
         workflowApi.publish(workflow.getId(), new PublishRequest() {
             public Boolean isPublish() { return true;}
         });
+
         waitForRefresh(1500);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
         assertTrue(s.contains(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW));
+    }
+
+    /**
+     * This tests that the elastic search health check will fail if the Docker container is down, the
+     * index is not made, or the index is made but there are no results.
+     */
+    @Test
+    public void testElasticSearchHealthCheck() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        MetadataApi metadataApi = new MetadataApi(webClient);
+
+        // Should fail with no index
+        try {
+            metadataApi.checkElasticSearch();
+        } catch (ApiException ex) {
+            assertTrue("Should fail", true);
+        }
+
+        // Update the search index
+        extendedGa4GhApi.toolsIndexGet();
+        waitForRefresh(5000);
+        // Should still fail even with index
+        try {
+            metadataApi.checkElasticSearch();
+        } catch (ApiException ex) {
+            assertTrue("Should fail", true);
+        }
+
+        // Register and publish workflow
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+
+        workflowApi.publish(workflow.getId(), new PublishRequest() {
+            public Boolean isPublish() { return true;}
+        });
+
+        waitForRefresh(1500);
+
+        // Should not fail since a workflow exists in index
+        try {
+            metadataApi.checkElasticSearch();
+        } catch (ApiException ex) {
+            assertTrue("Should not fail", false);
+        }
     }
 }

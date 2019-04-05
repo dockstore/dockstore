@@ -54,7 +54,7 @@ database:
     charSet: UTF-8
     hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
     # create database as needed, disable in production
-    hibernate.hbm2ddl.auto: create
+    hibernate.hbm2ddl.auto: validate
     # suppress session log to reduce verbosity
     hibernate.generate_statistics: false
 

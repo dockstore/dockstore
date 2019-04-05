@@ -37,7 +37,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.swagger.bitbucket.client.ApiClient;
 import io.swagger.bitbucket.client.ApiException;
 import io.swagger.bitbucket.client.Configuration;
@@ -301,15 +300,12 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                    // validity is checked just for the root description
-                    if (sourceFile != null) {
-                        version.setValid(LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent()));
-                    }
-
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
                     workflow.addWorkflowVersion(
                         combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+
+                    version = versionValidation(version, workflow, calculatedPath);
                 });
 
                 if (paginatedRefs.getNext() != null) {

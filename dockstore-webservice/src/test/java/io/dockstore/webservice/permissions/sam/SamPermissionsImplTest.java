@@ -32,7 +32,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
@@ -48,11 +53,11 @@ import static org.mockito.Mockito.when;
 
 public class SamPermissionsImplTest {
 
-    public static final String FOO_WORKFLOW_NAME = "foo";
-    public static final String GOO_WORKFLOW_NAME = "goo";
-    public static final String DOCKSTORE_ORG_WORKFLOW_NAME = "dockstore.org/john/myworkflow";
-    public static final String JANE_DOE_GMAIL_COM = "jane.doe@gmail.com";
-    public static final String JANE_DOE_GITHUB_ID = "jdoe";
+    private static final String FOO_WORKFLOW_NAME = "foo";
+    private static final String GOO_WORKFLOW_NAME = "goo";
+    private static final String DOCKSTORE_ORG_WORKFLOW_NAME = "dockstore.org/john/myworkflow";
+    private static final String JANE_DOE_GMAIL_COM = "jane.doe@gmail.com";
+    private static final String JANE_DOE_GITHUB_ID = "jdoe";
     private AccessPolicyResponseEntry ownerPolicy;
     private AccessPolicyResponseEntry writerPolicy;
     private AccessPolicyResponseEntry readerPolicy;
@@ -65,33 +70,46 @@ public class SamPermissionsImplTest {
     private Permission ownerPermission;
     private Permission writerPermission;
     private Permission readerPermission;
-    private AccessPolicyMembership readerAccessPolicyMemebership;
+    private AccessPolicyMembership readerAccessPolicyMembership;
     private AccessPolicyResponseEntry readerAccessPolicyResponseEntry;
 
     @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
 
     @Before
     public void setup() {
         ownerPolicy = new AccessPolicyResponseEntry();
         ownerPolicy.setPolicyName(SamConstants.OWNER_POLICY);
         AccessPolicyMembership accessPolicyMembership = new AccessPolicyMembership();
-        accessPolicyMembership.setRoles(Arrays.asList(SamConstants.OWNER_POLICY));
-        accessPolicyMembership.setMemberEmails(Arrays.asList("jdoe@ucsc.edu"));
+        accessPolicyMembership.setRoles(Collections.singletonList(SamConstants.OWNER_POLICY));
+        accessPolicyMembership.setMemberEmails(Collections.singletonList("jdoe@ucsc.edu"));
         ownerPolicy.setPolicy(accessPolicyMembership);
 
         writerPolicy = new AccessPolicyResponseEntry();
         writerPolicy.setPolicyName(SamConstants.WRITE_POLICY);
         AccessPolicyMembership writerMembership = new AccessPolicyMembership();
-        writerMembership.setRoles(Arrays.asList(SamConstants.WRITE_POLICY));
-        writerMembership.setMemberEmails(Arrays.asList(JANE_DOE_GMAIL_COM));
+        writerMembership.setRoles(Collections.singletonList(SamConstants.WRITE_POLICY));
+        writerMembership.setMemberEmails(Collections.singletonList(JANE_DOE_GMAIL_COM));
         writerPolicy.setPolicy(writerMembership);
 
         readerPolicy = new AccessPolicyResponseEntry();
         readerPolicy.setPolicyName(SamConstants.READ_POLICY);
         AccessPolicyMembership readerMembership = new AccessPolicyMembership();
-        readerMembership.setRoles(Arrays.asList(SamConstants.READ_POLICY));
-        readerMembership.setMemberEmails(Arrays.asList(JANE_DOE_GMAIL_COM));
+        readerMembership.setRoles(Collections.singletonList(SamConstants.READ_POLICY));
+        readerMembership.setMemberEmails(Collections.singletonList(JANE_DOE_GMAIL_COM));
         readerPolicy.setPolicy(readerMembership);
 
         TokenDAO tokenDAO = Mockito.mock(TokenDAO.class);
@@ -114,8 +132,8 @@ public class SamPermissionsImplTest {
         ownerPermission.setEmail("jdoe@ucsc.edu");
         ownerPermission.setRole(Role.OWNER);
         Assert.assertThat(samPermissionsImpl
-                        .accessPolicyResponseEntryToUserPermissions(Arrays.asList(ownerPolicy)),
-                CoreMatchers.is(Arrays.asList(ownerPermission)));
+                        .accessPolicyResponseEntryToUserPermissions(Collections.singletonList(ownerPolicy)),
+                CoreMatchers.is(Collections.singletonList(ownerPermission)));
 
         writerPermission = new Permission();
         writerPermission.setEmail(JANE_DOE_GMAIL_COM);
@@ -125,9 +143,9 @@ public class SamPermissionsImplTest {
         readerPermission.setEmail(JANE_DOE_GMAIL_COM);
         readerPermission.setRole(Role.READER);
 
-        readerAccessPolicyMemebership = new AccessPolicyMembership();
+        readerAccessPolicyMembership = new AccessPolicyMembership();
         readerAccessPolicyResponseEntry = new AccessPolicyResponseEntry();
-        readerAccessPolicyResponseEntry.setPolicy(readerAccessPolicyMemebership);
+        readerAccessPolicyResponseEntry.setPolicy(readerAccessPolicyMembership);
         readerAccessPolicyResponseEntry.setPolicyName(SamConstants.READ_POLICY);
         readerAccessPolicyResponseEntry.getPolicy().addRolesItem(SamConstants.READ_POLICY);
         readerAccessPolicyResponseEntry.getPolicy().addMemberEmailsItem(JANE_DOE_GMAIL_COM);
@@ -229,7 +247,7 @@ public class SamPermissionsImplTest {
     @Test
     public void testSetPermission() throws ApiException {
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME))
-                .thenReturn(Collections.emptyList(), Arrays.asList(readerAccessPolicyResponseEntry));
+                .thenReturn(Collections.emptyList(), Collections.singletonList(readerAccessPolicyResponseEntry));
         Permission permission = new Permission();
         permission.setEmail(JANE_DOE_GMAIL_COM);
         permission.setRole(Role.READER);
@@ -261,7 +279,7 @@ public class SamPermissionsImplTest {
             permission.setRole(Role.READER);
             when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME))
                     .thenThrow(new ApiException(404, "Not Found"))
-                    .thenReturn( Arrays.asList(readerAccessPolicyResponseEntry));
+                    .thenReturn(Collections.singletonList(readerAccessPolicyResponseEntry));
             try {
                 setupInitializePermissionsMocks(SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME);
                 final List<Permission> permissions = samPermissionsImpl.setPermission(userMock, fooWorkflow, permission);
@@ -286,7 +304,7 @@ public class SamPermissionsImplTest {
         final Permission readerPermission = new Permission(JANE_DOE_GMAIL_COM, Role.READER);
         final String encodedPath = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath))
-                .thenReturn(Arrays.asList(writerPolicy));
+                .thenReturn(Collections.singletonList(writerPolicy));
         setupInitializePermissionsMocks(encodedPath);
         doNothing().when(resourcesApiMock)
                 .removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.WRITE_POLICY, JANE_DOE_GMAIL_COM);
@@ -300,7 +318,8 @@ public class SamPermissionsImplTest {
     @Test
     public void removePermissionTest() throws ApiException {
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX  + FOO_WORKFLOW_NAME))
-                .thenReturn(Arrays.asList(readerAccessPolicyResponseEntry), Arrays.asList(readerAccessPolicyResponseEntry), Collections.EMPTY_LIST);
+                .thenReturn(Collections.singletonList(readerAccessPolicyResponseEntry),
+                    Collections.singletonList(readerAccessPolicyResponseEntry), Collections.EMPTY_LIST);
         final List<Permission> permissions = samPermissionsImpl.getPermissionsForWorkflow(userMock, fooWorkflow);
         Assert.assertEquals(permissions.size(), 1);
         try {
@@ -355,7 +374,7 @@ public class SamPermissionsImplTest {
 
     @Test
     public void testDockstoreOwnerNoSamPermissions() {
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
         Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
     }
@@ -405,7 +424,7 @@ public class SamPermissionsImplTest {
     @Test
     public void testNotOriginalOwnerWithEmailNotUsername() {
         when(userMock.getUsername()).thenReturn(JANE_DOE_GITHUB_ID);
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         thrown.expect(CustomWebApplicationException.class);
         samPermissionsImpl.checkEmailNotOriginalOwner(JANE_DOE_GMAIL_COM, fooWorkflow);
         samPermissionsImpl.checkEmailNotOriginalOwner("johndoe@example.com", fooWorkflow);
@@ -428,8 +447,8 @@ public class SamPermissionsImplTest {
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
                 .thenReturn(Collections.emptyList()) // case 1
                 .thenReturn(Arrays.asList(reader, writer)) // case 2
-                .thenReturn(Arrays.asList(owner)) // case 3
-                .thenReturn(Arrays.asList(owner)); // case 4
+                .thenReturn(Collections.singletonList(owner)) // case 3
+                .thenReturn(Collections.singletonList(owner)); // case 4
         // Case 1: No resources are shared
         Assert.assertFalse(samPermissionsImpl.isSharing(userMock));
 
@@ -442,7 +461,7 @@ public class SamPermissionsImplTest {
         onlyOwner.setPolicyName(SamConstants.OWNER_POLICY);
         onlyOwner.getPolicy().getMemberEmails().add(JANE_DOE_GMAIL_COM);
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
-                .thenReturn(Arrays.asList(onlyOwner));
+                .thenReturn(Collections.singletonList(onlyOwner));
         Assert.assertFalse(samPermissionsImpl.isSharing(userMock));
 
         // Case 4: Is owner, and is being shared
@@ -464,8 +483,8 @@ public class SamPermissionsImplTest {
                 .thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized")) // case 1
                 .thenReturn(Collections.emptyList()) // case 2
                 .thenReturn(Arrays.asList(reader, writer)) // case 3
-                .thenReturn(Arrays.asList(owner)) // case 4
-                .thenReturn(Arrays.asList(owner)); // case 5
+                .thenReturn(Collections.singletonList(owner)) // case 4
+                .thenReturn(Collections.singletonList(owner)); // case 5
 
         // Case 1. User has Google token, but is not in SAM
         samPermissionsImpl.selfDestruct(userMock);
@@ -482,7 +501,7 @@ public class SamPermissionsImplTest {
         onlyOwner.setPolicyName(SamConstants.OWNER_POLICY);
         onlyOwner.getPolicy().getMemberEmails().add(JANE_DOE_GMAIL_COM);
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
-                .thenReturn(Arrays.asList(onlyOwner));
+                .thenReturn(Collections.singletonList(onlyOwner));
         samPermissionsImpl.selfDestruct(userMock);
 
         // Case 5. User is owner and has shared
@@ -506,11 +525,11 @@ public class SamPermissionsImplTest {
      */
     @Test
     public void testSetPermissionWhenResourceCreatedWithoutAllPolicies() throws ApiException {
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
-                .thenReturn(Arrays.asList(owner));
+                .thenReturn(Collections.singletonList(owner));
         setupInitializePermissionsMocks(resourceId);
         samPermissionsImpl.setPermission(userMock, fooWorkflow, new Permission("johndoe@example.com", Role.WRITER));
         verify(resourcesApiMock, times(1)).overwritePolicy(eq(SamConstants.RESOURCE_TYPE), anyString(), eq(SamConstants.WRITE_POLICY), any());
@@ -518,7 +537,7 @@ public class SamPermissionsImplTest {
 
     @Test
     public void testSamPolicyOwnedbyAnother() throws ApiException {
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
                 .thenThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "")); // If you don't have permissions, you get a 404
@@ -535,11 +554,11 @@ public class SamPermissionsImplTest {
 
     @Test
     public void testAddingOwnerDoesNotCreateSecondOwnerPolicy() throws ApiException { //https://github.com/ga4gh/dockstore/issues/1805
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
-                .thenReturn(Arrays.asList(owner));
+                .thenReturn(Collections.singletonList(owner));
         samPermissionsImpl.setPermission(userMock, fooWorkflow, new Permission("johndoe@example.com", Role.OWNER));
         verify(resourcesApiMock, times(0)).overwritePolicy(eq(SamConstants.RESOURCE_TYPE), anyString(), eq(SamConstants.OWNER_POLICY), any());
     }

@@ -16,20 +16,29 @@
 
 package io.dockstore.client.cli;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.ToolDescriptor;
+import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -40,12 +49,18 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 public class LaunchTestIT {
@@ -62,6 +77,13 @@ public class LaunchTestIT {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
 
     @Test
     public void wdlCorrect() {
@@ -107,23 +129,84 @@ public class LaunchTestIT {
     }
 
     @Test
+    public void wdlMetadataNoopPluginTest() {
+        //Test when content and extension are wdl  --> no need descriptor
+        File helloWDL = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
+        File helloJSON = new File(ResourceHelpers.resourceFilePath("hello.metadata.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--json");
+            add(helloJSON.getAbsolutePath());
+            add("--wdl-output-target");
+            add("noop://nowhere.test");
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+        workflowClient.checkEntryFile(helloWDL.getAbsolutePath(), args, null);
+
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog().contains("Cromwell exit code: 0"));
+        assertTrue("output should include a noop plugin run with metadata", systemOutRule.getLog().contains("really cool metadata"));
+    }
+
+    @Test
+    public void cwlMetadataNoopPluginTest() {
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("collab-cwl-noop-job.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
+
+        PluginClient.handleCommand(Lists.newArrayList("download"), Utilities.parseConfig(client.getConfigFile()));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+        workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
+
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
+        assertTrue("output should include a noop plugin run with metadata", systemOutRule.getLog().contains("really cool metadata"));
+    }
+
+    @Test
     public void wdlWorkflowCorrectFlags() {
+        wdlEntryCorrectFlags("workflow");
+    }
+
+    @Test
+    public void wdlToolCorrectFlags() {
+        wdlEntryCorrectFlags("tool");
+    }
+
+    private void wdlEntryCorrectFlags(String entryType) {
         File yamlTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.yaml"));
         File jsonTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.json"));
 
-        ArrayList<String> yamlFileWithJSONFlag = getLaunchWorkflowStringList();
+        ArrayList<String> yamlFileWithJSONFlag = getLaunchStringList(entryType);
         yamlFileWithJSONFlag.add("--json");
         yamlFileWithJSONFlag.add(yamlTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> yamlFileWithYAMLFlag = getLaunchWorkflowStringList();
+        ArrayList<String> yamlFileWithYAMLFlag = getLaunchStringList(entryType);
         yamlFileWithYAMLFlag.add("--yaml");
         yamlFileWithYAMLFlag.add(yamlTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> jsonFileWithJSONFlag = getLaunchWorkflowStringList();
+        ArrayList<String> jsonFileWithJSONFlag = getLaunchStringList(entryType);
         jsonFileWithJSONFlag.add("--json");
         jsonFileWithJSONFlag.add(jsonTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> jsonFileWithYAMLFlag = getLaunchWorkflowStringList();
+        ArrayList<String> jsonFileWithYAMLFlag = getLaunchStringList(entryType);
         jsonFileWithYAMLFlag.add("--yaml");
         jsonFileWithYAMLFlag.add(jsonTestParameterFile.getAbsolutePath());
 
@@ -133,13 +216,21 @@ public class LaunchTestIT {
         Client.main(jsonFileWithYAMLFlag.toArray(new String[0]));
     }
 
-
     @Test
     public void yamlAndJsonWorkflowCorrect() {
+        yamlAndJsonEntryCorrect("workflow");
+    }
+
+    @Test
+    public void yamlAndJsonToolCorrect() {
+        yamlAndJsonEntryCorrect("tool");
+    }
+
+    private void yamlAndJsonEntryCorrect(String entryType) {
         File yamlTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.yaml"));
         File jsonTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.json"));
 
-        ArrayList<String> args = getLaunchWorkflowStringList();
+        ArrayList<String> args = getLaunchStringList(entryType);
         args.add("--yaml");
         args.add(yamlTestParameterFile.getAbsolutePath());
         args.add("--json");
@@ -149,12 +240,12 @@ public class LaunchTestIT {
         Client.main(args.toArray(new String[0]));
     }
 
-    private ArrayList<String> getLaunchWorkflowStringList() {
+    private ArrayList<String> getLaunchStringList(String entryType) {
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
             return new ArrayList<String>() {{
                 add("--config");
                 add(ResourceHelpers.resourceFilePath("config"));
-                add("workflow");
+                add(entryType);
                 add("launch");
                 add("--local-entry");
                 add(descriptorFile.getAbsolutePath());
@@ -373,8 +464,24 @@ public class LaunchTestIT {
     public void runToolToMissingS3() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_s3_failed.json"));
-        thrown.expect(RuntimeException.class);
-        runTool(cwlFile, cwlJSON);
+        ByteArrayOutputStream launcherOutput = null;
+        try {
+            launcherOutput = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(launcherOutput));
+
+            thrown.expect(AssertionError.class);
+            runTool(cwlFile, cwlJSON);
+            final String standardOutput = launcherOutput.toString();
+            assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
+        } finally {
+            try {
+                if (launcherOutput != null) {
+                    launcherOutput.close();
+                }
+            } catch (IOException ex) {
+                assertTrue("Error closing output stream.", true);
+            }
+        }
     }
 
     @Test
@@ -385,7 +492,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 1, countMatches);
+        assertEquals("output should include one provision out event, found " + countMatches, 1, countMatches);
         String filename = "test1";
         checkFileAndThenDeleteIt(filename);
         FileUtils.deleteDirectory(new File(filename));
@@ -540,6 +647,13 @@ public class LaunchTestIT {
         Client.main(args.toArray(new String[0]));
     }
 
+    private void runClientCommandConfig(ArrayList<String> args, File config) {
+        //used to run client with a specified config file
+        args.add(0, config.getPath());
+        args.add(0, "--config");
+        Client.main(args.toArray(new String[0]));
+    }
+
     private void runToolThreaded(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client) {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withThreads"));
 
@@ -555,13 +669,13 @@ public class LaunchTestIT {
 
     private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
-
+        client.SCRIPT.set(true);
         runToolShared(cwlFile, args, api, usersApi, client);
     }
 
     private void runWorkflow(File cwlFile, ArrayList<String> args, WorkflowsApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
-
+        client.SCRIPT.set(true);
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
@@ -577,6 +691,7 @@ public class LaunchTestIT {
 
         ArrayList<String> args = new ArrayList<String>() {{
             add("--local-entry");
+            add(file.getAbsolutePath());
             add("--json");
             add(json.getAbsolutePath());
         }};
@@ -589,7 +704,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run", systemOutRule.getLog()
+        assertTrue("output should tell user to specify the descriptor", systemOutRule.getLog()
                 .contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end"));
     }
 
@@ -601,9 +716,8 @@ public class LaunchTestIT {
         File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
 
         ArrayList<String> args = new ArrayList<String>() {{
-            add("--entry");
-            add("wrongExtcwl.wdl");
             add("--local-entry");
+            add(file.getAbsolutePath());
             add("--json");
             add(json.getAbsolutePath());
             add("--descriptor");
@@ -1110,6 +1224,85 @@ public class LaunchTestIT {
     }
 
     @Test
+    public void entry2jsonNoVersion() throws IOException {
+        /*
+         * Make a runtime JSON template for input to the workflow
+         * but don't provide a version at the end of the entry
+         * E.g dockstore workflow convert entry2json --entry quay.io/collaboratory/dockstore-tool-linux-sort
+         * Dockstore will try to use the 'master' version, however the 'master' version
+         * is not valid so Dockstore should print an error message and exit
+         * */
+        WorkflowVersion aWorkflowVersion1 = new WorkflowVersion();
+        aWorkflowVersion1.setName("master");
+        aWorkflowVersion1.setValid(false);
+        Date earlierDate = new Date(100L);
+        aWorkflowVersion1.setLastModified(earlierDate);
+
+        List<WorkflowVersion> listWorkflowVersions = new ArrayList<WorkflowVersion>();
+        listWorkflowVersions.add(aWorkflowVersion1);
+
+        Workflow workflow = new Workflow();
+        workflow.setWorkflowVersions(listWorkflowVersions);
+        workflow.setLastModified(1);
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+
+        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include error message",
+                        systemErrRule.getLog().contains("Cannot use workflow version 'master'")));
+
+        workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort", ToolDescriptor.TypeEnum.WDL, false);
+    }
+
+    @Test
+    public void entry2jsonBadVersion() throws IOException {
+        /*
+         * Make a runtime JSON template for input to the workflow
+         * but provide a non existent version at the end of the entry
+         * E.g dockstore workflow convert entry2json --entry quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0
+         * Dockstore will try to use the last modified version (1.0.0) and print an explanation message.
+         * The last modified version is not valid so Dockstore should print an error message and exit
+         * */
+
+        WorkflowVersion aWorkflowVersion1 = new WorkflowVersion();
+        aWorkflowVersion1.setName("1.0.0");
+        aWorkflowVersion1.setValid(false);
+        Date laterDate = new Date(1000L);
+        aWorkflowVersion1.setLastModified(laterDate);
+
+        List<WorkflowVersion> listWorkflowVersions = new ArrayList<WorkflowVersion>();
+        listWorkflowVersions.add(aWorkflowVersion1);
+
+        Workflow workflow = new Workflow();
+        workflow.setWorkflowVersions(listWorkflowVersions);
+        workflow.setLastModified(1);
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+
+        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include error messages",
+                        (systemOutRule.getLog().contains("Could not locate workflow with version '2.0.0'") &&
+                                systemErrRule.getLog().contains("Cannot use workflow version '1.0.0'"))));
+
+        workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0", ToolDescriptor.TypeEnum.WDL, false);
+    }
+
+
+    @Test
     public void cwl2jsonNoOutput() {
         exit.expectSystemExit();
         File file = new File(ResourceHelpers.resourceFilePath("noOutput.cwl"));
@@ -1123,7 +1316,69 @@ public class LaunchTestIT {
 
         runClientCommand(args, false);
         exit.checkAssertionAfterwards(() ->
-            assertTrue("output should include an error message", systemErrRule.getLog().contains("\"outputs section is not valid\""))
+                assertTrue("output should include an error message", systemErrRule.getLog().contains("\"outputs section is not valid\""))
         );
+    }
+    @Test
+    public void malJsonWorkflowWdlLocal() {
+        //checks if json input has broken syntax for workflows
+
+        File helloWdl = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
+        File jsonFile = new File(ResourceHelpers.resourceFilePath("testInvalidJSON.json"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(helloWdl.getAbsolutePath());
+            add("--json");
+            add(jsonFile.getAbsolutePath());
+        }};
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(() ->
+                assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch, syntax error in json file: " + jsonFile))
+        );
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
+    }
+    @Test
+    public void malJsonToolWdlLocal() {
+        //checks if json input has broken syntax for tools
+
+        File helloWdl = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
+        File jsonFile = new File(ResourceHelpers.resourceFilePath("testInvalidJSON.json"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("tool");
+            add("launch");
+            add("--local-entry");
+            add(helloWdl.getAbsolutePath());
+            add("--json");
+            add(jsonFile.getAbsolutePath());
+        }};
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(() ->
+                assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch, syntax error in json file: " + jsonFile))
+        );
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
+    }
+    @Test
+    public void provisionInputWithPathSpaces() {
+        //Tests if file provisioning can handle a json parameter that specifies a file path containing spaces
+        File helloWDL = new File(ResourceHelpers.resourceFilePath("helloSpaces.wdl"));
+        File helloJSON = new File(ResourceHelpers.resourceFilePath("helloSpaces.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(helloWDL.getAbsolutePath());
+            add("--json");
+            add(helloJSON.getPath());
+        }};
+
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
+
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog().contains("Cromwell exit code: 0"));
     }
 }

@@ -102,7 +102,6 @@ public class BasicPostgreSQL {
     public void clearDatabase() {
         runUpdateStatement("delete from user_profile;");
         runUpdateStatement("delete from user_entry;");
-        runUpdateStatement("delete from endusergroup;");
         runUpdateStatement("delete from starred;");
         runUpdateStatement("delete from token;");
         runUpdateStatement("delete from version_sourcefile;");
@@ -111,12 +110,14 @@ public class BasicPostgreSQL {
         runUpdateStatement("delete from tag;");
         runUpdateStatement("delete from workflow_workflowversion;");
         runUpdateStatement("delete from workflowversion;");
+        runUpdateStatement("delete from organization_user;");
+        runUpdateStatement("delete from event;");
+        runUpdateStatement("delete from organization;");
         runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from entry_label;");
         runUpdateStatement("delete from label;");
         runUpdateStatement("delete from workflow;");
         runUpdateStatement("delete from tool;");
-        runUpdateStatement("delete from usergroup;");
         runUpdateStatement("delete from databasechangelog;");
         runUpdateStatement("delete from databasechangeloglock;");
     }

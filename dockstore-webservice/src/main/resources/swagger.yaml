@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.5.4-SNAPSHOT"
+  version: "1.6.0-rc.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -40,6 +40,7 @@ tags:
 - name: "metadata"
   description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
     \ etc."
+- name: "organizations"
 - name: "tokens"
   description: "List, modify, refresh, and delete tokens for external services"
 - name: "users"
@@ -573,6 +574,11 @@ paths:
         description: "Platform to report on"
         required: true
         type: "string"
+      - name: "platform_version"
+        in: "query"
+        description: "Version of the platform to report on"
+        required: true
+        type: "string"
       - name: "verified"
         in: "query"
         description: "Verification status, omit to delete key"
@@ -1024,7 +1030,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new bitbucket.org token, used by quay.io redirect"
+      summary: "Add a new bitbucket.org token, used by quay.io redirect."
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
@@ -1048,7 +1054,7 @@ paths:
       tags:
       - "tokens"
       summary: "Allow satellizer to post a new GitHub token to dockstore, used by\
-        \ login, can create new users"
+        \ login, can create new users."
       description: "A post method is required by saetillizer to send the GitHub token"
       operationId: "addToken"
       produces:
@@ -1071,7 +1077,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new github.com token, used by accounts page"
+      summary: "Add a new github.com token, used by accounts page."
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
@@ -1094,7 +1100,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new gitlab.com token"
+      summary: "Add a new gitlab.com token."
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
@@ -1117,7 +1123,7 @@ paths:
     post:
       tags:
       - "tokens"
-      summary: "Allow satellizer to post a new Google token to dockstore"
+      summary: "Allow satellizer to post a new Google token to Dockstore."
       description: "A post method is required by satellizer to send the Google token"
       operationId: "addGoogleToken"
       produces:
@@ -1140,7 +1146,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new quay IO token"
+      summary: "Add a new quay IO token."
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
@@ -1163,8 +1169,8 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Get a specific token by id"
-      description: "Get a specific token by id"
+      summary: "Get a specific token by id."
+      description: ""
       operationId: "listToken"
       produces:
       - "application/json"
@@ -1189,7 +1195,7 @@ paths:
     delete:
       tags:
       - "tokens"
-      summary: "Deletes a token"
+      summary: "Delete a token."
       description: ""
       operationId: "deleteToken"
       produces:
@@ -1227,30 +1233,35 @@ paths:
     post:
       tags:
       - "hosted"
-      summary: "Create a hosted tool"
-      description: "Create a hosted tool"
+      summary: "Create a hosted tool."
+      description: ""
       operationId: "createHostedTool"
       produces:
       - "application/json"
       parameters:
       - name: "registry"
         in: "query"
-        description: "For tools, the Docker registry"
+        description: "The Docker registry (Tools only)"
         required: false
         type: "string"
       - name: "name"
         in: "query"
-        description: "name"
+        description: "The repository name"
         required: true
         type: "string"
       - name: "descriptorType"
         in: "query"
-        description: "Descriptor type"
-        required: true
+        description: "The descriptor type (Workflows only)"
+        required: false
         type: "string"
       - name: "namespace"
         in: "query"
-        description: "For tools, the Docker namespace"
+        description: "The Docker namespace (Tools only)"
+        required: false
+        type: "string"
+      - name: "entryName"
+        in: "query"
+        description: "Optional entry name (Tools only)"
         required: false
         type: "string"
       responses:
@@ -1264,8 +1275,8 @@ paths:
     delete:
       tags:
       - "hosted"
-      summary: "Delete a revision of a hosted tool"
-      description: "Delete a revision of a hosted tool"
+      summary: "Delete a revision of a hosted tool."
+      description: ""
       operationId: "deleteHostedToolVersion"
       produces:
       - "application/json"
@@ -1291,9 +1302,8 @@ paths:
     patch:
       tags:
       - "hosted"
-      summary: "Non-idempotent operation for creating new revisions of hosted tools"
-      description: "Non-idempotent operation for creating new revisions of hosted\
-        \ tools"
+      summary: "Non-idempotent operation for creating new revisions of hosted tools."
+      description: ""
       operationId: "editHostedTool"
       produces:
       - "application/json"
@@ -1324,7 +1334,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "List all published containers belonging to the specified namespace"
+      summary: "List all published tools belonging to the specified namespace."
       description: "NO authentication"
       operationId: "getPublishedContainersByNamespace"
       produces:
@@ -1347,7 +1357,7 @@ paths:
       tags:
       - "containers"
       summary: "Get a tool by the specific tool path"
-      description: "Lists info of tool. Enter full path (include quay.io in path)."
+      description: "Requires full path (including tool name if applicable)."
       operationId: "getContainerByToolPath"
       produces:
       - "application/json"
@@ -1356,6 +1366,11 @@ paths:
         in: "path"
         description: "repository path"
         required: true
+        type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
         type: "string"
       responses:
         200:
@@ -1368,8 +1383,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published tool by the specific tool path"
-      description: "Lists info of tool. Enter full path (include quay.io in path)."
+      summary: "Get a published tool by the specific tool path."
+      description: "Requires full path (including tool name if applicable)."
       operationId: "getPublishedContainerByToolPath"
       produces:
       - "application/json"
@@ -1378,6 +1393,11 @@ paths:
         in: "path"
         description: "repository path"
         required: true
+        type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
         type: "string"
       responses:
         200:
@@ -1388,9 +1408,8 @@ paths:
     get:
       tags:
       - "containertags"
-      summary: "Get tags  for a container by id"
-      description: "Lists tags for a container. Enter full path (include quay.io in\
-        \ path)."
+      summary: "Get tags for a tool by id."
+      description: ""
       operationId: "getTagsByPath"
       produces:
       - "application/json"
@@ -1415,8 +1434,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a list of tools by path"
-      description: "Lists info of tool. Enter full path (include quay.io in path)."
+      summary: "Get a list of tools by path."
+      description: "Does not require tool name."
       operationId: "getContainerByPath"
       produces:
       - "application/json"
@@ -1439,7 +1458,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a list of published tools by path"
+      summary: "Get a list of published tools by path."
       description: "NO authentication"
       operationId: "getPublishedContainerByPath"
       produces:
@@ -1459,7 +1478,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "List all published containers."
+      summary: "List all published tools."
       description: "NO authentication"
       operationId: "allPublishedContainers"
       produces:
@@ -1513,7 +1532,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published container"
+      summary: "Get a published tool."
       description: "NO authentication"
       operationId: "getPublishedContainer"
       produces:
@@ -1525,6 +1544,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -1534,8 +1558,8 @@ paths:
     post:
       tags:
       - "containers"
-      summary: "Register an image manually, along with tags"
-      description: "Register an image manually."
+      summary: "Register a tool manually, along with tags."
+      description: ""
       operationId: "registerManual"
       produces:
       - "application/json"
@@ -1557,7 +1581,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published container's schema by ID"
+      summary: "Get a published tool's schema by ID."
       description: "NO authentication"
       operationId: "getPublishedContainerSchema"
       produces:
@@ -1582,7 +1606,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a registered repo"
+      summary: "Retrieve a tool."
       description: "This is one of the few endpoints that returns the user object\
         \ with populated properties (minus the userProfiles property)"
       operationId: "getContainer"
@@ -1595,6 +1619,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -1606,7 +1635,9 @@ paths:
       tags:
       - "containers"
       summary: "Update the tool with the given tool."
-      description: ""
+      description: "Updates default descriptor paths, default Docker paths, default\
+        \ test parameter paths, git url, and default version. Also updates tool maintainer\
+        \ email, and private access for manual tools."
       operationId: "updateContainer"
       produces:
       - "application/json"
@@ -1633,7 +1664,7 @@ paths:
     delete:
       tags:
       - "containers"
-      summary: "Delete a tool"
+      summary: "Delete a tool."
       description: ""
       operationId: "deleteContainer"
       produces:
@@ -1654,7 +1685,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding Dockstore.cwl file on Github."
+      summary: "Get the primary CWL descriptor file on Github."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "cwl"
@@ -1682,7 +1713,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding Dockstore.cwl file on Github."
+      summary: "Get the corresponding CWL descriptor file on Github."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "secondaryCwlPath"
@@ -1742,7 +1773,7 @@ paths:
     put:
       tags:
       - "containers"
-      summary: "Update the labels linked to a container."
+      summary: "Update the labels linked to a tool."
       description: "Labels are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "updateLabels"
@@ -1778,9 +1809,8 @@ paths:
     post:
       tags:
       - "containers"
-      summary: "Publish or unpublish a container"
-      description: "publish a container (public or private). Assumes that user is\
-        \ using quay.io and github."
+      summary: "Publish or unpublish a tool."
+      description: ""
       operationId: "publish"
       produces:
       - "application/json"
@@ -1808,7 +1838,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Refresh one particular repo"
+      summary: "Refresh one particular tool."
       description: ""
       operationId: "refresh"
       produces:
@@ -1831,7 +1861,7 @@ paths:
     post:
       tags:
       - "containertags"
-      summary: "Request a DOI for this version of a tool"
+      summary: "Request a DOI for this version of a tool."
       description: ""
       operationId: "requestDOIForToolTag"
       produces:
@@ -1922,7 +1952,7 @@ paths:
     put:
       tags:
       - "containers"
-      summary: "Stars a tool."
+      summary: "Star a tool."
       description: ""
       operationId: "starEntry"
       produces:
@@ -1949,7 +1979,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Returns list of users who starred the given tool"
+      summary: "Returns list of users who starred a tool."
       description: ""
       operationId: "getStarredUsers"
       produces:
@@ -1972,9 +2002,8 @@ paths:
     post:
       tags:
       - "containertags"
-      summary: "Add new tags linked to a container"
-      description: "Tag correspond to each row of the versions table listing all information\
-        \ for a docker repo tag"
+      summary: "Add new tags linked to a tool."
+      description: ""
       operationId: "addTags"
       produces:
       - "application/json"
@@ -2005,9 +2034,8 @@ paths:
     put:
       tags:
       - "containertags"
-      summary: "Update the tags linked to a container"
-      description: "Tag correspond to each row of the versions table listing all information\
-        \ for a docker repo tag"
+      summary: "Update the tags linked to a tool."
+      description: ""
       operationId: "updateTags"
       produces:
       - "application/json"
@@ -2039,9 +2067,8 @@ paths:
     delete:
       tags:
       - "containertags"
-      summary: "Delete tag linked to a container"
-      description: "Tag correspond to each row of the versions table listing all information\
-        \ for a docker repo tag"
+      summary: "Delete tag linked to a tool."
+      description: ""
       operationId: "deleteTags"
       produces:
       - "application/json"
@@ -2105,7 +2132,7 @@ paths:
     put:
       tags:
       - "containers"
-      summary: "Add test parameter files for a given tag."
+      summary: "Add test parameter files to a tag."
       description: ""
       operationId: "addTestParameterFiles"
       produces:
@@ -2157,7 +2184,7 @@ paths:
     delete:
       tags:
       - "containers"
-      summary: "Delete test parameter files for a given tag."
+      summary: "Delete test parameter files to a tag."
       description: ""
       operationId: "deleteTestParameterFiles"
       produces:
@@ -2203,7 +2230,7 @@ paths:
     delete:
       tags:
       - "containers"
-      summary: "Unstars a tool."
+      summary: "Unstar a tool."
       description: ""
       operationId: "unstarEntry"
       produces:
@@ -2224,9 +2251,9 @@ paths:
     put:
       tags:
       - "containers"
-      summary: "Change the workflow paths"
-      description: "Tag correspond to each row of the versions table listing all information\
-        \ for a docker repo tag"
+      summary: "Change the tool paths."
+      description: "Resets the descriptor paths and dockerfile path of all versions\
+        \ to match the default paths from the tool object passed."
       operationId: "updateTagContainerPath"
       produces:
       - "application/json"
@@ -2254,7 +2281,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get users of a container"
+      summary: "Get users of a tool."
       description: ""
       operationId: "getUsers"
       produces:
@@ -2279,8 +2306,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the sources that verified a particular tool."
-      description: "Does not need authentication"
+      summary: "Get the sources that verified a tool."
+      description: "NO authentication"
       operationId: "verifiedSources"
       produces:
       - "application/json"
@@ -2337,7 +2364,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding Dockstore.wdl file on Github."
+      summary: "Get the primary WDL descriptor file on Github."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "wdl"
@@ -2365,7 +2392,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding Dockstore.wdl file on Github."
+      summary: "Get the corresponding WDL descriptor file on Github."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "secondaryWdlPath"
@@ -2453,7 +2480,7 @@ paths:
     put:
       tags:
       - "entries"
-      summary: "Update the aliases linked to an entry."
+      summary: "Update the aliases linked to a entry in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "updateAliases"
@@ -2485,12 +2512,35 @@ paths:
             $ref: "#/definitions/Entry"
       security:
       - BEARER: []
+  /entries/{id}/collections:
+    get:
+      tags:
+      - "entries"
+      summary: "Get the collections and organizations that contain the published entry"
+      description: "Entry must be published"
+      operationId: "entryCollections"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/CollectionOrganization"
   /metadata/descriptorLanguageList:
     get:
       tags:
       - "metadata"
       summary: "Get the list of descriptor languages supported on Dockstore."
-      description: "Does not need authentication"
+      description: "NO authentication"
       operationId: "getDescriptorLanguages"
       produces:
       - "application/json"
@@ -2507,7 +2557,7 @@ paths:
       tags:
       - "metadata"
       summary: "Get the list of docker registries supported on Dockstore."
-      description: "Does not need authentication"
+      description: "NO authentication"
       operationId: "getDockerRegistries"
       produces:
       - "application/json"
@@ -2519,12 +2569,26 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/RegistryBean"
+  /metadata/elasticSearch:
+    get:
+      tags:
+      - "metadata"
+      summary: "Successful response if elastic search is up and running."
+      description: "NO authentication"
+      operationId: "checkElasticSearch"
+      produces:
+      - "text/html"
+      - "text/xml"
+      parameters: []
+      responses:
+        default:
+          description: "successful operation"
   /metadata/okHttpCachePerformance:
     get:
       tags:
       - "metadata"
       summary: "Get measures of cache performance."
-      description: "Does not need authentication"
+      description: "NO authentication"
       operationId: "getCachePerformance"
       produces:
       - "application/json"
@@ -2542,7 +2606,7 @@ paths:
     get:
       tags:
       - "metadata"
-      summary: "List all tools and workflows in creation order"
+      summary: "List all published tools and workflows in creation order."
       description: "NO authentication"
       operationId: "rssFeed"
       produces:
@@ -2557,7 +2621,7 @@ paths:
     get:
       tags:
       - "metadata"
-      summary: "Returns the file containing runner dependencies"
+      summary: "Returns the file containing runner dependencies."
       description: ""
       operationId: "getRunnerDependencies"
       produces:
@@ -2601,7 +2665,7 @@ paths:
     get:
       tags:
       - "metadata"
-      summary: "List all workflow and tool paths."
+      summary: "List all published workflow and tool paths."
       description: "NO authentication"
       operationId: "sitemap"
       produces:
@@ -2618,7 +2682,7 @@ paths:
       tags:
       - "metadata"
       summary: "Get the list of source controls supported on Dockstore."
-      description: "Does not need authentication"
+      description: "NO authentication"
       operationId: "getSourceControlList"
       produces:
       - "application/json"
@@ -2630,11 +2694,909 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SourceControlBean"
+  /organizations:
+    get:
+      tags:
+      - "organizations"
+      summary: "List all available organizations."
+      description: "NO Authentication"
+      operationId: "getApprovedOrganizations"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Organization"
+    post:
+      tags:
+      - "organizations"
+      summary: "Create an organization."
+      description: "Organization requires approval by an admin before being made public."
+      operationId: "createOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Organization to register."
+        required: true
+        schema:
+          $ref: "#/definitions/Organization"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/all:
+    get:
+      tags:
+      - "organizations"
+      summary: "List all organizations."
+      description: "Admin/curator only"
+      operationId: "getAllOrganizations"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "type"
+        in: "query"
+        description: "Filter to apply to organizations."
+        required: true
+        type: "string"
+        enum:
+        - "all"
+        - "pending"
+        - "rejected"
+        - "approved"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/collections/{alias}/aliases:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves a collection by alias."
+      description: ""
+      operationId: "getCollectionByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+  /organizations/collections/{collectionId}/aliases:
+    put:
+      tags:
+      - "organizations"
+      summary: "Update the aliases linked to a Collection in Dockstore."
+      description: "Aliases are alphanumerical (case-insensitive and may contain internal\
+        \ hyphens), given in a comma-delimited list."
+      operationId: "updateCollectionAliases"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "collectionId"
+        in: "path"
+        description: "Entry to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "aliases"
+        in: "query"
+        description: "Comma-delimited list of aliases."
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves an organization by name."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getOrganizationByName"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "name"
+        in: "path"
+        description: "Organization name."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{alias}/aliases:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves an organization by alias."
+      description: ""
+      operationId: "getOrganizationByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+  /organizations/{organizationId}:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves an organization by ID."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getOrganizationById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organizations"
+      summary: "Update an organization."
+      description: "Currently only name, description, email, link, avatarUrl, and\
+        \ location can be updated."
+      operationId: "updateOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Organization to update with."
+        required: true
+        schema:
+          $ref: "#/definitions/Organization"
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/aliases:
+    put:
+      tags:
+      - "organizations"
+      summary: "Update the aliases linked to a listing in Dockstore."
+      description: "Aliases are alphanumerical (case-insensitive and may contain internal\
+        \ hyphens), given in a comma-delimited list."
+      operationId: "updateOrganizationAliases"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Entry to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "aliases"
+        in: "query"
+        description: "Comma-delimited list of aliases."
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - "organizations"
+      summary: "Approves an organization."
+      description: "Admin/curator only"
+      operationId: "approveOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/collections:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieve all collections for an organization."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getCollectionsFromOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "include"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    post:
+      tags:
+      - "organizations"
+      summary: "Create a collection in the given organization."
+      description: ""
+      operationId: "createCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Collection to register."
+        required: true
+        schema:
+          $ref: "#/definitions/Collection"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/collections/{collectionId}:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves a collection by ID."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getCollectionById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organizations"
+      summary: "Update a collection."
+      description: "Currently only name and description can be updated."
+      operationId: "updateCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Collection to update with."
+        required: true
+        schema:
+          $ref: "#/definitions/Collection"
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/collections/{collectionId}/description:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves a collection description by organization ID and collection\
+        \ ID."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getCollectionDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organizations"
+      summary: "Update a collection's description."
+      description: "Description in markdown"
+      operationId: "updateCollectionDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Collections's description in markdown"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/collections/{collectionId}/entry:
+    post:
+      tags:
+      - "organizations"
+      summary: "Add an entry to a collection."
+      description: ""
+      operationId: "addEntryToCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryId"
+        in: "query"
+        description: "Entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "organizations"
+      summary: "Delete an entry from a collection."
+      description: ""
+      operationId: "deleteEntryFromCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryId"
+        in: "query"
+        description: "Entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/description:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves an organization description by organization ID."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getOrganizationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organizations"
+      summary: "Update an organization's description."
+      description: "Description in markdown"
+      operationId: "updateOrganizationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization to update description."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Organization's description in markdown"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/events:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves all events for an organization."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getOrganizationEvents"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "offset"
+        in: "query"
+        description: "Start index of paging.  If this exceeds the current result set\
+          \ return an empty set.  If not specified in the request, this will start\
+          \ at the beginning of the results."
+        required: false
+        type: "integer"
+        default: 0
+        format: "int32"
+      - name: "limit"
+        in: "query"
+        description: "Amount of records to return in a given page, limited to 100"
+        required: false
+        type: "integer"
+        default: 100
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Event"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/invitation:
+    post:
+      tags:
+      - "organizations"
+      summary: "Accept or reject an organization invitation."
+      description: "True accepts the invitation, false rejects the invitation."
+      operationId: "acceptOrRejectInvitation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "accept"
+        in: "query"
+        description: "Accept or reject"
+        required: true
+        type: "boolean"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/members:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves all members for an organization."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getOrganizationMembers"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            uniqueItems: true
+            items:
+              $ref: "#/definitions/OrganizationUser"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/reject:
+    post:
+      tags:
+      - "organizations"
+      summary: "Rejects an organization."
+      description: "Admin/curator only"
+      operationId: "rejectOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - "organizations"
+      summary: "Request an organization approval."
+      description: "Only for rejected organizations"
+      operationId: "requestOrganizationReview"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/user:
+    post:
+      tags:
+      - "organizations"
+      summary: "Updates a user role in an organization."
+      description: ""
+      operationId: "updateUserRole"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "role"
+        in: "query"
+        description: "Role of user."
+        required: true
+        type: "string"
+        enum:
+        - "MAINTAINER"
+        - "MEMBER"
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/OrganizationUser"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organizations"
+      summary: "Adds a user role to an organization."
+      description: ""
+      operationId: "addUserToOrg"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "role"
+        in: "query"
+        description: "Role of user."
+        required: true
+        type: "string"
+        enum:
+        - "MAINTAINER"
+        - "MEMBER"
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/OrganizationUser"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "organizations"
+      summary: "Remove a user from an organization."
+      description: ""
+      operationId: "deleteUserRole"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/users/{username}:
+    put:
+      tags:
+      - "organizations"
+      summary: "Adds a user role to an organization."
+      description: ""
+      operationId: "addUserToOrgByUsername"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Role of user. \"MAINTAINER\" or \"MEMBER\""
+        required: true
+        schema:
+          type: "string"
+      - name: "username"
+        in: "path"
+        description: "User to add to org."
+        required: true
+        type: "string"
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/OrganizationUser"
+      security:
+      - BEARER: []
+  /organizations/{organizationName}/collections/{collectionName}/name:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves a collection by ID."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getCollectionByName"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationName"
+        in: "path"
+        description: "Organization name."
+        required: true
+        type: "string"
+      - name: "collectionName"
+        in: "path"
+        description: "Collection name."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
   /users/checkUser/{username}:
     get:
       tags:
       - "users"
-      summary: "Check if user with some username exists"
+      summary: "Check if user with some username exists."
       description: ""
       operationId: "checkUserExists"
       produces:
@@ -2652,98 +3614,11 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
-  /users/groups:
-    get:
-      tags:
-      - "users"
-      summary: "List all groups"
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "allGroups"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Group"
-      security:
-      - BEARER: []
-    post:
-      tags:
-      - "users"
-      summary: "Create user group"
-      description: ""
-      operationId: "createGroup"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "group_name"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Group"
-      security:
-      - BEARER: []
-  /users/groups/{groupId}:
-    get:
-      tags:
-      - "users"
-      summary: "List a group"
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "getGroup"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "groupId"
-        in: "path"
-        description: "Group"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Group"
-      security:
-      - BEARER: []
-  /users/groups/{groupId}/users:
-    get:
-      tags:
-      - "users"
-      summary: "Get users that belongs to a group"
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "getUsersFromGroup"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "groupId"
-        in: "path"
-        description: "Group"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/User"
-      security:
-      - BEARER: []
   /users/starredTools:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred tools"
+      summary: "Get the logged-in user's starred tools."
       description: ""
       operationId: "getStarredTools"
       produces:
@@ -2762,7 +3637,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred workflows"
+      summary: "Get the logged-in user's starred workflows."
       description: ""
       operationId: "getStarredWorkflows"
       produces:
@@ -2781,8 +3656,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Update metadata of all users"
-      description: "Update all users metadata. Admin only."
+      summary: "Update metadata of all users."
+      description: "Admin only."
       operationId: "updateUserMetadata"
       produces:
       - "application/json"
@@ -2800,7 +3675,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user"
+      summary: "Get the logged-in user."
       description: ""
       operationId: "getUser"
       produces:
@@ -2816,7 +3691,7 @@ paths:
     delete:
       tags:
       - "users"
-      summary: "Delete user if possible"
+      summary: "Delete user if possible."
       description: ""
       operationId: "selfDestruct"
       produces:
@@ -2833,7 +3708,7 @@ paths:
     post:
       tags:
       - "users"
-      summary: "Change username if possible"
+      summary: "Change username if possible."
       description: ""
       operationId: "changeUsername"
       produces:
@@ -2855,7 +3730,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get additional information on the logged-in user"
+      summary: "Get additional information about the logged-in user."
       description: ""
       operationId: "getExtendedUserData"
       produces:
@@ -2868,12 +3743,32 @@ paths:
             $ref: "#/definitions/ExtendedUserData"
       security:
       - BEARER: []
+  /users/user/memberships:
+    get:
+      tags:
+      - "users"
+      summary: "Get the logged-in users memberships."
+      description: ""
+      operationId: "getUserMemberships"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            uniqueItems: true
+            items:
+              $ref: "#/definitions/OrganizationUser"
+      security:
+      - BEARER: []
   /users/user/updateUserMetadata:
     get:
       tags:
       - "users"
-      summary: "Update metadata for logged in user"
-      description: "Update metadata for logged in user."
+      summary: "Update metadata for logged in user."
+      description: ""
       operationId: "updateLoggedInUserMetadata"
       produces:
       - "application/json"
@@ -2893,11 +3788,62 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/user/{userId}/limits:
+    get:
+      tags:
+      - "users"
+      summary: "Returns the specified user's limits. ADMIN or CURATOR only"
+      description: ""
+      operationId: "getUserLimits"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Limits"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "users"
+      summary: "Update the specified user's limits. ADMIN or CURATOR only"
+      description: ""
+      operationId: "setUserLimits"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Limits to set for a user"
+        required: true
+        schema:
+          $ref: "#/definitions/Limits"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Limits"
+      security:
+      - BEARER: []
   /users/username/{username}:
     get:
       tags:
       - "users"
-      summary: "Get user"
+      summary: "Get a user by username."
       description: ""
       operationId: "listUser"
       produces:
@@ -2919,7 +3865,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get user with id"
+      summary: "Get user by id."
       description: ""
       operationId: "getUser"
       produces:
@@ -2942,9 +3888,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List repos owned by the logged-in user"
-      description: "Lists all registered and unregistered containers owned by the\
-        \ user"
+      summary: "List all tools owned by the logged-in user."
+      description: ""
       operationId: "userContainers"
       produces:
       - "application/json"
@@ -2968,8 +3913,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all published containers from a user"
-      description: "Get user's published containers only"
+      summary: "List all published tools from a user."
+      description: ""
       operationId: "userPublishedContainers"
       produces:
       - "application/json"
@@ -2993,8 +3938,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh repos owned by the logged-in user"
-      description: "Updates some metadata"
+      summary: "Refresh all tools owned by the logged-in user."
+      description: ""
       operationId: "refresh"
       produces:
       - "application/json"
@@ -3018,8 +3963,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh repos owned by the logged-in user with specified organization"
-      description: "Refresh all tools in an organization"
+      summary: "Refresh all tools owned by the logged-in user with specified organization."
+      description: ""
       operationId: "refreshToolsByOrganization"
       produces:
       - "application/json"
@@ -3044,95 +3989,11 @@ paths:
               $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
-  /users/{userId}/groups:
-    get:
-      tags:
-      - "users"
-      summary: "Get groups that the user belongs to"
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "getGroupsFromUser"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Group"
-      security:
-      - BEARER: []
-    put:
-      tags:
-      - "users"
-      summary: "Add a group to a user"
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "addGroupToUser"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User ID of user"
-        required: true
-        type: "integer"
-        format: "int64"
-      - in: "body"
-        name: "body"
-        description: "PublishRequest to refresh the list of repos for a user"
-        required: true
-        schema:
-          $ref: "#/definitions/Group"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
-      security:
-      - BEARER: []
-  /users/{userId}/groups/{groupId}:
-    delete:
-      tags:
-      - "users"
-      summary: "Remove a user from a group"
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "removeUserFromGroup"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User ID of user"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "groupId"
-        in: "path"
-        description: "Group ID of group"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
-        400:
-          description: "Invalid user or group value"
-      security:
-      - BEARER: []
   /users/{userId}/tokens:
     get:
       tags:
       - "users"
-      summary: "Get tokens with user id"
+      summary: "Get tokens with user id."
       description: ""
       operationId: "getUserTokens"
       produces:
@@ -3157,7 +4018,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get Dockstore tokens with user id"
+      summary: "Get Dockstore tokens with user id."
       description: ""
       operationId: "getDockstoreUserTokens"
       produces:
@@ -3182,7 +4043,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get Github tokens with user id"
+      summary: "Get Github tokens with user id."
       description: ""
       operationId: "getGithubUserTokens"
       produces:
@@ -3207,7 +4068,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get Gitlab tokens with user id"
+      summary: "Get Gitlab tokens with user id."
       description: ""
       operationId: "getGitlabUserTokens"
       produces:
@@ -3232,7 +4093,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get Quay tokens with user id"
+      summary: "Get Quay tokens with user id."
       description: ""
       operationId: "getQuayUserTokens"
       produces:
@@ -3257,8 +4118,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List workflows owned by the logged-in user"
-      description: "Lists all registered and unregistered workflows owned by the user"
+      summary: "List all workflows owned by the logged-in user."
+      description: ""
       operationId: "userWorkflows"
       produces:
       - "application/json"
@@ -3282,8 +4143,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all published workflows from a user"
-      description: "Get user's published workflows only"
+      summary: "List all published workflows from a user."
+      description: ""
       operationId: "userPublishedWorkflows"
       produces:
       - "application/json"
@@ -3307,8 +4168,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh workflows owned by the logged-in user"
-      description: "Updates some metadata"
+      summary: "Refresh all workflows owned by the logged-in user."
+      description: ""
       operationId: "refreshWorkflows"
       produces:
       - "application/json"
@@ -3332,8 +4193,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh workflows owned by the logged-in user with specified organization"
-      description: "Refresh all workflows in an organization"
+      summary: "Refresh all workflows owned by the logged-in user with specified organization."
+      description: ""
       operationId: "refreshWorkflowsByOrganization"
       produces:
       - "application/json"
@@ -3362,30 +4223,35 @@ paths:
     post:
       tags:
       - "hosted"
-      summary: "Create a hosted workflow"
-      description: "Create a hosted workflow"
+      summary: "Create a hosted workflow."
+      description: ""
       operationId: "createHostedWorkflow"
       produces:
       - "application/json"
       parameters:
       - name: "registry"
         in: "query"
-        description: "For tools, the Docker registry"
+        description: "The Docker registry (Tools only)"
         required: false
         type: "string"
       - name: "name"
         in: "query"
-        description: "name"
+        description: "The repository name"
         required: true
         type: "string"
       - name: "descriptorType"
         in: "query"
-        description: "Descriptor type"
-        required: true
+        description: "The descriptor type (Workflows only)"
+        required: false
         type: "string"
       - name: "namespace"
         in: "query"
-        description: "For tools, the Docker namespace"
+        description: "The Docker namespace (Tools only)"
+        required: false
+        type: "string"
+      - name: "entryName"
+        in: "query"
+        description: "Optional entry name (Tools only)"
         required: false
         type: "string"
       responses:
@@ -3396,11 +4262,39 @@ paths:
       security:
       - BEARER: []
   /workflows/hostedEntry/{entryId}:
+    post:
+      tags:
+      - "hosted"
+      summary: "Creates a new revision of a hosted workflow from a zip"
+      description: ""
+      operationId: "addZip"
+      consumes:
+      - "multipart/form-data"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "entryId"
+        in: "path"
+        description: "hosted entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "file"
+        in: "formData"
+        required: false
+        type: "file"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
     delete:
       tags:
       - "hosted"
       summary: "Delete a revision of a hosted workflow"
-      description: "Delete a revision of a hosted workflow"
+      description: ""
       operationId: "deleteHostedWorkflowVersion"
       produces:
       - "application/json"
@@ -3427,8 +4321,7 @@ paths:
       tags:
       - "hosted"
       summary: "Non-idempotent operation for creating new revisions of hosted workflows"
-      description: "Non-idempotent operation for creating new revisions of hosted\
-        \ workflows"
+      description: ""
       operationId: "editHostedWorkflow"
       produces:
       - "application/json"
@@ -3459,7 +4352,7 @@ paths:
     post:
       tags:
       - "workflows"
-      summary: "Manually register a workflow"
+      summary: "Manually register a workflow."
       description: "Manually register workflow (public or private)."
       operationId: "manualRegister"
       produces:
@@ -3506,7 +4399,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "List all published workflows belonging to the specified namespace"
+      summary: "List all published workflows of an organization."
       description: "NO authentication"
       operationId: "getPublishedWorkflowsByOrganization"
       produces:
@@ -3528,8 +4421,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get an entry by path"
-      description: "Gets an entry from the path. Enter full path."
+      summary: "Get an entry by path."
+      description: "Requires full path (including entry name if applicable)."
       operationId: "getEntryByPath"
       produces:
       - "application/json"
@@ -3550,8 +4443,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get an entry by path"
-      description: "Gets a published entry from the path. Enter full path."
+      summary: "Get a published entry by path."
+      description: "Requires full path (including entry name if applicable)."
       operationId: "getPublishedEntryByPath"
       produces:
       - "application/json"
@@ -3570,8 +4463,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a workflow by path"
-      description: "Lists info of workflow. Enter full path."
+      summary: "Get a workflow by path."
+      description: "Requires full path (including workflow name if applicable)."
       operationId: "getWorkflowByPath"
       produces:
       - "application/json"
@@ -3580,6 +4473,11 @@ paths:
         in: "path"
         description: "repository path"
         required: true
+        type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
         type: "string"
       responses:
         200:
@@ -3592,7 +4490,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Gets all actions a user can perform on a workflow"
+      summary: "Gets all actions a user can perform on a workflow."
       description: ""
       operationId: "getWorkflowActions"
       produces:
@@ -3621,9 +4519,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get all permissions for a workflow"
-      description: "Lists all permissions for a workflow. The user must be the workflow\
-        \ owner."
+      summary: "Get all permissions for a workflow."
+      description: "The user must be the workflow owner."
       operationId: "getWorkflowPermissions"
       produces:
       - "application/json"
@@ -3645,9 +4542,8 @@ paths:
     delete:
       tags:
       - "workflows"
-      summary: "Remove the specified user role for a workflow"
-      description: "Removes a role from a workflow. The user must be the workflow\
-        \ owner."
+      summary: "Remove the specified user role for a workflow."
+      description: "The user must be the workflow owner."
       operationId: "removeWorkflowRole"
       produces:
       - "application/json"
@@ -3683,9 +4579,9 @@ paths:
     patch:
       tags:
       - "workflows"
-      summary: "Set the specified permission for a user on a workflow"
-      description: "Adds a permission for a workflow. The user must be the workflow\
-        \ owner. Currently only supported on hosted workflows."
+      summary: "Set the specified permission for a user on a workflow."
+      description: "The user must be the workflow owner. Currently only supported\
+        \ on hosted workflows."
       operationId: "addWorkflowPermission"
       produces:
       - "application/json"
@@ -3715,7 +4611,7 @@ paths:
       tags:
       - "workflows"
       summary: "Get a published workflow by path"
-      description: "Lists info of workflow. Enter full path."
+      description: "Does not require workflow name."
       operationId: "getPublishedWorkflowByPath"
       produces:
       - "application/json"
@@ -3724,6 +4620,11 @@ paths:
         in: "path"
         description: "repository path"
         required: true
+        type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
         type: "string"
       responses:
         200:
@@ -3734,8 +4635,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a list of workflows by path"
-      description: "Lists info of workflow. Enter full path."
+      summary: "Get a list of workflows by path."
+      description: "Does not require workflow name."
       operationId: "getAllWorkflowByPath"
       produces:
       - "application/json"
@@ -3812,8 +4713,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a published workflow"
-      description: "NO authentication"
+      summary: "Get a published workflow."
+      description: "Hidden versions will not be visible. NO authentication"
       operationId: "getPublishedWorkflow"
       produces:
       - "application/json"
@@ -3824,6 +4725,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -3833,8 +4739,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "All workflows shared with user"
-      description: "List all workflows shared with user"
+      summary: "Retrieve all workflows shared with user."
+      description: ""
       operationId: "sharedWorkflows"
       produces:
       - "application/json"
@@ -3852,7 +4758,7 @@ paths:
     post:
       tags:
       - "workflows"
-      summary: "Register a checker workflow and associates it with the given tool/workflow"
+      summary: "Register a checker workflow and associates it with the given tool/workflow."
       description: ""
       operationId: "registerCheckerWorkflow"
       produces:
@@ -3895,7 +4801,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a registered workflow"
+      summary: "Retrieve a workflow"
       description: "This is one of the few endpoints that returns the user object\
         \ with populated properties (minus the userProfiles property)"
       operationId: "getWorkflow"
@@ -3908,6 +4814,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -3919,7 +4830,8 @@ paths:
       tags:
       - "workflows"
       summary: "Update the workflow with the given workflow."
-      description: ""
+      description: "Updates descriptor type (if stub), default workflow path, default\
+        \ file path, and default version"
       operationId: "updateWorkflow"
       produces:
       - "application/json"
@@ -3947,7 +4859,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.cwl file on Github."
+      summary: "Get the primary CWL descriptor file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "cwl"
@@ -3975,7 +4887,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.cwl file on Github."
+      summary: "Get the corresponding CWL descriptor file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "secondaryCwlPath"
@@ -4007,7 +4919,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the DAG for a given workflow version"
+      summary: "Get the DAG for a given workflow version."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getWorkflowDag"
@@ -4037,7 +4949,7 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Update the default version of the given workflow."
+      summary: "Update the default version of a workflow."
       description: ""
       operationId: "updateWorkflowDefaultVersion"
       produces:
@@ -4102,7 +5014,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding nextflow.config file on Github."
+      summary: "Get the nextflow.config file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "nextflow"
@@ -4162,7 +5074,7 @@ paths:
     post:
       tags:
       - "workflows"
-      summary: "Publish or unpublish a workflow"
+      summary: "Publish or unpublish a workflow."
       description: "Publish/publish a workflow (public or private)."
       operationId: "publish"
       produces:
@@ -4191,8 +5103,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Refresh one particular workflow. Always do a full refresh when targeted"
-      description: ""
+      summary: "Refresh one particular workflow."
+      description: "Full refresh"
       operationId: "refresh"
       produces:
       - "application/json"
@@ -4214,7 +5126,7 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Request a DOI for this version of a workflow"
+      summary: "Request a DOI for this version of a workflow."
       description: ""
       operationId: "requestDOIForWorkflowVersion"
       produces:
@@ -4245,9 +5157,9 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Change the workflow paths"
-      description: "Workflow version correspond to each row of the versions table\
-        \ listing all information for a workflow"
+      summary: "Reset the workflow paths."
+      description: "Resets the workflow paths of all versions to match the default\
+        \ workflow path from the workflow object passed."
       operationId: "updateWorkflowPath"
       produces:
       - "application/json"
@@ -4388,7 +5300,7 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Stars a workflow."
+      summary: "Star a workflow."
       description: ""
       operationId: "starEntry"
       produces:
@@ -4415,7 +5327,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Returns list of users who starred the given Workflow"
+      summary: "Returns list of users who starred the given workflow."
       description: ""
       operationId: "getStarredUsers"
       produces:
@@ -4549,7 +5461,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the Tools for a given workflow version"
+      summary: "Get the Tools for a given workflow version."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getTableToolContent"
@@ -4579,7 +5491,7 @@ paths:
     delete:
       tags:
       - "workflows"
-      summary: "Unstars a workflow."
+      summary: "Unstar a workflow."
       description: ""
       operationId: "unstarEntry"
       produces:
@@ -4600,7 +5512,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get users of a workflow"
+      summary: "Get users of a workflow."
       description: ""
       operationId: "getUsers"
       produces:
@@ -4625,8 +5537,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a semicolon delimited list of verified sources"
-      description: "Does not need authentication"
+      summary: "Get a semicolon delimited list of verified sources."
+      description: "NO authentication"
       operationId: "verifiedSources"
       produces:
       - "application/json"
@@ -4683,7 +5595,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.wdl file on Github."
+      summary: "Get the primary WDL descriptor file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "wdl"
@@ -4711,7 +5623,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.wdl file on Github."
+      summary: "Get the corresponding WDL descriptor file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "secondaryWdlPath"
@@ -4743,9 +5655,8 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Update the workflow versions linked to a workflow"
-      description: "Workflow version correspond to each row of the versions table\
-        \ listing all information for a workflow"
+      summary: "Update the workflow versions linked to a workflow."
+      description: "Updates workflow path, reference, and hidden attributes."
       operationId: "updateWorkflowVersion"
       produces:
       - "application/json"
@@ -4810,6 +5721,79 @@ definitions:
     type: "object"
     properties:
       content:
+        type: "string"
+  Collection:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the collection in this web service"
+      entries:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Entry"
+      organizationID:
+        type: "integer"
+        format: "int64"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for collections"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      organizationName:
+        type: "string"
+        description: "The name of the organization the collection belongs to"
+        readOnly: true
+      name:
+        type: "string"
+        example: "Alignment"
+        position: 1
+        description: "Name of the collection."
+        minLength: 3
+        maxLength: 39
+        pattern: "[a-zA-Z][a-zA-Z\\d]*"
+      description:
+        type: "string"
+        position: 2
+        description: "Description of the collection"
+      displayName:
+        type: "string"
+        position: 3
+        description: "Display name for a collection (Ex. Recommended Alignment Algorithms).\
+          \ Not used for links."
+        minLength: 3
+        maxLength: 50
+        pattern: "[\\w ,_\\-&()']*"
+      topic:
+        type: "string"
+        position: 4
+        description: "Short description of the collection"
+  CollectionOrganization:
+    type: "object"
+    properties:
+      collectionId:
+        type: "integer"
+        format: "int64"
+      collectionName:
+        type: "string"
+      collectionDisplayName:
+        type: "string"
+      organizationId:
+        type: "integer"
+        format: "int64"
+      organizationName:
+        type: "string"
+      organizationDisplayName:
         type: "string"
   DescriptorLanguageBean:
     type: "object"
@@ -5157,6 +6141,66 @@ definitions:
         format: "int32"
       message:
         type: "string"
+  Event:
+    type: "object"
+    required:
+    - "type"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the event in this web service"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      user:
+        position: 1
+        description: "User that the event is acting on."
+        $ref: "#/definitions/User"
+      organization:
+        position: 2
+        description: "Organization that the event is acting on."
+        $ref: "#/definitions/Organization"
+      tool:
+        position: 3
+        description: "Tool that the event is acting on."
+        $ref: "#/definitions/DockstoreTool"
+      workflow:
+        position: 4
+        description: "Workflow that the event is acting on."
+        $ref: "#/definitions/Workflow"
+      collection:
+        position: 5
+        description: "Collection that the event is acting on."
+        $ref: "#/definitions/Collection"
+      initiatorUser:
+        position: 6
+        description: "User initiating the event."
+        $ref: "#/definitions/User"
+      type:
+        type: "string"
+        position: 7
+        description: "The event type."
+        enum:
+        - "CREATE_ORG"
+        - "DELETE_ORG"
+        - "MODIFY_ORG"
+        - "APPROVE_ORG"
+        - "REJECT_ORG"
+        - "REREQUEST_ORG"
+        - "ADD_USER_TO_ORG"
+        - "REMOVE_USER_FROM_ORG"
+        - "MODIFY_USER_ROLE_ORG"
+        - "APPROVE_ORG_INVITE"
+        - "REJECT_ORG_INVITE"
+        - "CREATE_COLLECTION"
+        - "MODIFY_COLLECTION"
+        - "REMOVE_FROM_COLLECTION"
+        - "ADD_TO_COLLECTION"
+    description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
     properties:
@@ -5194,28 +6238,6 @@ definitions:
       \ that describes how to build a particular container image. Examples include\
       \ Dockerfiles for creating Docker images and Singularity recipes for Singularity\
       \ images "
-  Group:
-    type: "object"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        readOnly: true
-      name:
-        type: "string"
-      users:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
-      dbCreateDate:
-        type: "string"
-        format: "date-time"
-      dbUpdateDate:
-        type: "string"
-        format: "date-time"
-    description: "This describes a grouping of end-users for the purposes of managing\
-      \ sharing. Implementation-specific."
   Label:
     type: "object"
     required:
@@ -5232,6 +6254,15 @@ definitions:
         description: "String representation of the tag"
     description: "This describes a descriptive label that can be placed on an entry\
       \ in the dockstore"
+  Limits:
+    type: "object"
+    properties:
+      hostedEntryCountLimit:
+        type: "integer"
+        format: "int32"
+      hostedEntryVersionLimit:
+        type: "integer"
+        format: "int32"
   Metadata:
     type: "object"
     required:
@@ -5265,6 +6296,121 @@ definitions:
       friendly-name:
         type: "string"
     description: "Describes this registry to better allow for mirroring and indexing."
+  Organization:
+    type: "object"
+    required:
+    - "name"
+    - "status"
+    - "users"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the organization in this web\
+          \ service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for organizations"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      name:
+        type: "string"
+        example: "OICR"
+        position: 1
+        description: "Name of the organization (ex. OICR)"
+        minLength: 3
+        maxLength: 39
+        pattern: "[a-zA-Z][a-zA-Z\\d]*"
+      description:
+        type: "string"
+        position: 2
+        description: "Description of the organization"
+      link:
+        type: "string"
+        position: 3
+        description: "Link to the organization website"
+      location:
+        type: "string"
+        position: 4
+        description: "Location of the organization"
+      email:
+        type: "string"
+        position: 5
+        description: "Contact email for the organization"
+      status:
+        type: "string"
+        position: 6
+        description: "Is the organization approved, pending, or rejected"
+        enum:
+        - "PENDING"
+        - "REJECTED"
+        - "APPROVED"
+      users:
+        type: "array"
+        position: 7
+        description: "Set of users in the organization"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrganizationUser"
+      topic:
+        type: "string"
+        position: 8
+        description: "Short description of the organization"
+      displayName:
+        type: "string"
+        position: 9
+        description: "Display name for an organization (Ex. Ontario Institute for\
+          \ Cancer Research). Not used for links."
+        minLength: 3
+        maxLength: 50
+        pattern: "[\\w ,_\\-&()']*"
+      avatarUrl:
+        type: "string"
+        position: 9
+        description: "Logo URL"
+        pattern: "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
+  OrganizationUser:
+    type: "object"
+    required:
+    - "accepted"
+    - "role"
+    properties:
+      id:
+        $ref: "#/definitions/OrganizationUserId"
+      user:
+        $ref: "#/definitions/User"
+      organization:
+        $ref: "#/definitions/Organization"
+      role:
+        type: "string"
+        description: "The role of the user in the organization"
+        enum:
+        - "MAINTAINER"
+        - "MEMBER"
+      accepted:
+        type: "boolean"
+        description: "Has the user accepted their membership."
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+  OrganizationUserId:
+    type: "object"
+    properties:
+      userId:
+        type: "integer"
+        format: "int64"
+      organizationId:
+        type: "integer"
+        format: "int64"
   Permission:
     type: "object"
     properties:
@@ -5364,6 +6510,7 @@ definitions:
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
+        - "DOCKSTORE_YML"
       content:
         type: "string"
         position: 2
@@ -5402,6 +6549,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
       last_modified:
         type: "string"
         format: "date-time"
@@ -5868,12 +7021,48 @@ definitions:
         position: 12
         description: "Indicates whether this user has accepted their username"
     description: "End users for the dockstore"
+  Validation:
+    type: "object"
+    required:
+    - "id"
+    - "message"
+    - "type"
+    - "valid"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the source file in this web service"
+      type:
+        type: "string"
+        position: 1
+        description: "Enumerates the type of file"
+        enum:
+        - "DOCKSTORE_CWL"
+        - "DOCKSTORE_WDL"
+        - "DOCKERFILE"
+        - "CWL_TEST_JSON"
+        - "WDL_TEST_JSON"
+        - "NEXTFLOW"
+        - "NEXTFLOW_CONFIG"
+        - "NEXTFLOW_TEST_PARAMS"
+        - "DOCKSTORE_YML"
+      valid:
+        type: "boolean"
+        position: 2
+        description: "Is the file type valid"
+      message:
+        type: "string"
+        position: 3
+        description: "Mapping of filepath to validation message"
   VerificationInformation:
     type: "object"
     properties:
       verified:
         type: "boolean"
       metadata:
+        type: "string"
+      platformVersion:
         type: "string"
   VerifyRequest:
     type: "object"
@@ -6085,6 +7274,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
       workingDirectory:
         type: "string"
       last_modified:

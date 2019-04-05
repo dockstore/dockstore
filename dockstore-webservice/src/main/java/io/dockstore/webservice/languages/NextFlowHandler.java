@@ -26,19 +26,24 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import groovy.lang.MissingPropertyException;
-import groovy.util.ConfigObject;
-import groovy.util.ConfigSlurper;
+import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
+import io.dockstore.common.NextflowUtilities;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -48,44 +53,71 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
  */
 public class NextFlowHandler implements LanguageHandlerInterface {
 
+    private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
+
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
-        ConfigObject parse = getConfigObject(content);
-        ConfigObject manifest = (ConfigObject)parse.get("manifest");
-        if (manifest != null && manifest.containsKey("description")) {
-            entry.setDescription((String)manifest.get("description"));
+        final Configuration configuration = NextflowUtilities.grabConfig(content);
+        String descriptionInProgress = null;
+        if (configuration.containsKey("manifest.description")) {
+            entry.setDescription(configuration.getString("manifest.description"));
+            descriptionInProgress = entry.getDescription();
         }
-        if (manifest != null && manifest.containsKey("author")) {
-            entry.setAuthor((String)manifest.get("author"));
+        if (configuration.containsKey("manifest.author")) {
+            entry.setAuthor(configuration.getString("manifest.author"));
         }
-
+        // look for extended help message from nf-core workflows when it is available
+        String mainScriptPath = "main.nf";
+        if (configuration.containsKey("manifest.mainScript")) {
+            mainScriptPath = configuration.getString("manifest.mainScript");
+        }
+        String finalMainScriptPath = mainScriptPath;
+        final Optional<SourceFile> potentialScript = sourceFiles.stream().filter(file -> file.getPath().equals(finalMainScriptPath))
+            .findFirst();
+        if (potentialScript.isPresent()) {
+            String helpMessage = getHelpMessage(potentialScript.get().getContent());
+            // abitrarily follow description, markdown looks funny without the line breaks
+            if (!StringUtils.isEmpty(helpMessage)) {
+                helpMessage = "\n\n" + helpMessage;
+            }
+            String builder = Stream.of(descriptionInProgress, helpMessage).filter(s -> s != null && !s.isEmpty())
+                .collect(Collectors.joining(""));
+            entry.setDescription(builder);
+        }
         return entry;
-    }
-
-    @Override
-    public boolean isValidWorkflow(String content) {
-        return content.contains("manifest");
     }
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
-        ConfigObject parse = getConfigObject(content);
+        // FIXME: see{@link NextflowUtilities#grabConfig(String) grabConfig} method for comments on why
+        // we have to look at imports in this crummy way
+        final Matcher matcher = INCLUDE_CONFIG_PATTERN.matcher(content);
+        Set<String> suspectedConfigImports = new HashSet<>();
+        while (matcher.find()) {
+            suspectedConfigImports.add(CharMatcher.is('\'').trimFrom(matcher.group(1).trim()));
+        }
+
+        final Configuration configuration = NextflowUtilities.grabConfig(content);
         Map<String, SourceFile> imports = new HashMap<>();
 
         // add the NextFlow scripts
-        ConfigObject manifest = (ConfigObject)parse.get("manifest");
         String mainScriptPath = "main.nf";
-        if (manifest != null && manifest.containsKey("mainScript")) {
-            mainScriptPath = (String)manifest.get("mainScript");
+        if (configuration.containsKey("manifest.mainScript")) {
+            mainScriptPath = configuration.getString("manifest.mainScript");
         }
-        String mainScriptAbsolutePath = convertRelativePathToAbsolutePath(filepath, mainScriptPath);
 
-        Optional<SourceFile> sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptAbsolutePath);
-        if (sourceFile.isPresent()) {
-            sourceFile.get().setPath(mainScriptPath);
-            imports.put(mainScriptPath, sourceFile.get());
+        suspectedConfigImports.add(mainScriptPath);
+
+        for (String filename : suspectedConfigImports) {
+            String filenameAbsolutePath = convertRelativePathToAbsolutePath(filepath, filename);
+            Optional<SourceFile> sourceFile = sourceCodeRepoInterface
+                .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, filenameAbsolutePath);
+            if (sourceFile.isPresent()) {
+                sourceFile.get().setPath(filename);
+                imports.put(filename, sourceFile.get());
+            }
         }
         // source files in /lib seem to be automatically added to the script classpath
         // binaries are also there and will need to be ignored
@@ -107,27 +139,15 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         }
     }
 
-    private ConfigObject getConfigObject(String content) {
-        ConfigSlurper slurper = new ConfigSlurper();
-        //TODO: replace with NextFlow parser when licensing issues are dealt with
-        // this sucks, but we need to ignore includeConfig lines
-        String cleanedContent = content.replaceAll("(?i)(?m)^[ \t]*includeConfig.*", "");
-        try {
-            return slurper.parse(cleanedContent);
-        } catch (MissingPropertyException e) {
-            LOG.error("could not parse nextflow config due to " + e.getMessage());
-            return new ConfigObject();
-        }
-    }
-
     private GroovySourceAST getFirstAstWithKeyword(GroovySourceAST ast, String keyword, boolean compareChild) {
         return getFirstAstWithKeyword(ast, keyword, compareChild, new HashSet<>());
     }
 
     /**
      * Returns the first AST found with some keyword as text
-     * @param ast An AST
-     * @param keyword Text to search node for (exact match)
+     *
+     * @param ast          An AST
+     * @param keyword      Text to search node for (exact match)
      * @param compareChild If true will check first child for keyword, if false will check current node
      * @return AST with some keyword as text
      */
@@ -168,9 +188,9 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         return subtree;
     }
 
-
     /**
      * Given an AST for an EXPR will return the text name
+     *
      * @param exprAST AST of an EXPR
      * @return Input channel name
      */
@@ -178,9 +198,9 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         return exprAST == null ? null : exprAST.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getText();
     }
 
-
     /**
      * Given an AST for a process, returns the name of the process
+     *
      * @param processAST AST of a process
      * @return Process name
      */
@@ -190,6 +210,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Get a list of all channel names for either inputs or outputs of an EXPR
+     *
      * @param processAST AST of a process
      * @return List of channels for inputs or outputs of a process
      */
@@ -199,9 +220,10 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         inputs.add(getInputChannelNameForEXPR(firstEXPR));
 
         // Only look at next sibling under certain conditions
-        if (!(processAST != null && processAST.getNextSibling() != null && processAST.getNextSibling().getFirstChild() != null && Objects.equals(processAST.getNextSibling().getFirstChild().getText(), "output"))) {
+        if (!(processAST != null && processAST.getNextSibling() != null && processAST.getNextSibling().getFirstChild() != null && Objects
+            .equals(processAST.getNextSibling().getFirstChild().getText(), "output"))) {
             if (processAST != null && processAST.getNextSibling() != null) {
-                inputs.addAll(getListOfIO((GroovySourceAST) processAST.getNextSibling()));
+                inputs.addAll(getListOfIO((GroovySourceAST)processAST.getNextSibling()));
             }
         }
         return inputs;
@@ -213,7 +235,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Gets a list of all subtrees with text keyword
-     * @param ast Some AST
+     *
+     * @param ast     Some AST
      * @param keyword A keyword of an existing node in an AST
      * @return List of AST with some keyword
      */
@@ -250,6 +273,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Returns a list of input channels the process AST depends on
+     *
      * @param processAST AST of a process
      * @return List of input channels for a process
      */
@@ -264,6 +288,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Returns a list of all channels written to by the given process AST
+     *
      * @param processAST AST of a process
      * @return List of output channels for a process
      */
@@ -289,24 +314,21 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
         // nextflow uses the main script from the manifest as the main descriptor
         // add the NextFlow scripts
-        ConfigObject parse = getConfigObject(mainDescriptor);
-        ConfigObject manifest = (ConfigObject)parse.get("manifest");
+        final Configuration configuration = NextflowUtilities.grabConfig(mainDescriptor);
         String mainScriptPath = "main.nf";
-        if (manifest != null && manifest.containsKey("mainScript")) {
-            mainScriptPath = manifest.get("mainScript").toString();
+        if (configuration.containsKey("manifest.mainScript")) {
+            mainScriptPath = configuration.getString("manifest.mainScript");
         }
         mainDescriptor = secondaryDescContent.get(mainScriptPath);
 
         // Get default container (process.container takes precedence over params.container)
-        ConfigObject params = (ConfigObject)parse.get("params");
         String defaultContainer = null;
-        if (params != null && params.containsKey("container")) {
-            defaultContainer = params.get("container").toString();
+        if (configuration.containsKey("params.container")) {
+            defaultContainer = configuration.getString("params.container");
         }
 
-        ConfigObject process = (ConfigObject)parse.get("process");
-        if (process != null && process.containsKey("container")) {
-            defaultContainer = process.get("container").toString();
+        if (configuration.containsKey("process.container")) {
+            defaultContainer = configuration.getString("process.container");
         }
 
         Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);
@@ -325,6 +347,71 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     /**
+     * Get help message from nf-core workflows
+     *
+     * @return the aggregated help message
+     */
+    private String getHelpMessage(String mainDescriptor) {
+        try {
+            StringBuilder builder = new StringBuilder();
+            final List<GroovySourceAST> process = getGroovySourceASTList(mainDescriptor, "helpMessage");
+            process.forEach(ast -> getHelpMessage(ast, builder, new HashSet<GroovySourceAST>()));
+            return builder.toString();
+        } catch (IOException | TokenStreamException | RecognitionException e) {
+            LOG.warn("could not parse", e);
+        }
+        return null;
+    }
+
+    /**
+     * Aggregates the help message from what looks like log comments
+     *
+     * @param definition the ast
+     * @param builder    aggregates text
+     * @param set        the set of AST seen before (to avoid looping)
+     */
+    private void getHelpMessage(GroovySourceAST definition, StringBuilder builder, Set<GroovySourceAST> set) {
+        if (set.contains(definition)) {
+            return;
+        }
+        set.add(definition);
+        // not sure why groovy puts text under a type of 88, cannot find a constant for this
+        final int groovyTextType = 88;
+        if (definition.getType() == groovyTextType) {
+            builder.append(definition.getText());
+        }
+        for (int i = 0; i < definition.getNumberOfChildren(); i++) {
+            final GroovySourceAST groovySourceAST = definition.childAt(i);
+            getHelpMessage(groovySourceAST, builder, set);
+        }
+        GroovySourceAST nextSibling = (GroovySourceAST)definition.getNextSibling();
+        while (nextSibling != null) {
+            getHelpMessage(nextSibling, builder, set);
+            nextSibling = (GroovySourceAST)nextSibling.getNextSibling();
+        }
+    }
+
+    /**
+     * Given string content, look for a keyword inside the AST representation of it
+     *
+     * @param mainDescriptor content
+     * @param keyword        keyword to lookup
+     * @return
+     * @throws RecognitionException
+     * @throws TokenStreamException
+     * @throws IOException
+     */
+    private List<GroovySourceAST> getGroovySourceASTList(String mainDescriptor, String keyword)
+        throws RecognitionException, TokenStreamException, IOException {
+        try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
+            GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
+            make.compilationUnit();
+            GroovySourceAST ast = (GroovySourceAST)make.getAST();
+            return getSubtreesOfKeyword(ast, keyword);
+        }
+    }
+
+    /**
      * Returns map from names of processes to their dependencies (processes that had to come before)
      *
      * @param mainDescriptor
@@ -333,13 +420,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     private Map<String, List<String>> getCallsToDependencies(String mainDescriptor) {
         //TODO: create proper dependency arrays, for now just list processes sequentially
         Map<String, List<String>> map = new HashMap<>();
-        try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
-            GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
-            make.compilationUnit();
-
-            GroovySourceAST ast = (GroovySourceAST)make.getAST();
-
-            List<GroovySourceAST> processList = getSubtreesOfKeyword(ast, "process");
+        try {
+            List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
             Map<String, List<String>> processNameToInputChannels = new HashMap<>();
             Map<String, List<String>> processNameToOutputChannels = new HashMap<>();
 
@@ -360,10 +442,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
                 List<String> dependencies = new ArrayList<>();
                 processNameToInputChannels.get(processName).forEach((String channelRead) -> {
                     processNameToOutputChannels.keySet().forEach((String dependentProcessName) -> {
-                        Optional<String> temp = processNameToOutputChannels.get(dependentProcessName)
-                                .stream()
-                                .filter(channelWrite -> Objects.equals(channelRead, channelWrite))
-                                .findFirst();
+                        Optional<String> temp = processNameToOutputChannels.get(dependentProcessName).stream()
+                            .filter(channelWrite -> Objects.equals(channelRead, channelWrite)).findFirst();
 
                         if (temp.isPresent()) {
                             dependencies.add(dependentProcessName);
@@ -380,11 +460,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     private Map<String, String> getCallsToDockerMap(String mainDescriptor, String defaultContainer) {
         Map<String, String> map = new HashMap<>();
-        try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
-            GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
-            make.compilationUnit();
-            GroovySourceAST ast = (GroovySourceAST)make.getAST();
-            List<GroovySourceAST> processList = getSubtreesOfKeyword(ast, "process");
+        try {
+            List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
 
             for (GroovySourceAST processAST : processList) {
                 String processName = getProcessValue(processAST);
@@ -405,5 +482,44 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             LOG.warn("could not parse", e);
         }
         return map;
+    }
+
+    @Override
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        Optional<SourceFile> mainDescriptor = sourcefiles.stream()
+            .filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+        Map<String, String> validationMessageObject = new HashMap<>();
+        String validationMessage;
+        String content;
+        if (mainDescriptor.isPresent()) {
+            content = mainDescriptor.get().getContent();
+            if (content.contains("manifest")) {
+                return new VersionTypeValidation(true, null);
+            } else {
+                validationMessage = "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.";
+            }
+        } else {
+            validationMessage = "Descriptor file '" + primaryDescriptorFilePath + "' not found.";
+        }
+        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
+        return new VersionTypeValidation(false, validationMessageObject);
+    }
+
+    @Override
+    public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        // Todo: Throw exception instead?
+        Map<String, String> validationMessageObject = new HashMap<>();
+        validationMessageObject.put(primaryDescriptorFilePath, "Nextflow does not support tools.");
+        return new VersionTypeValidation(true, validationMessageObject);
+    }
+
+    @Override
+    public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        // Todo: Throw exception instead?
+        Map<String, String> validationMessageObject = new HashMap<>();
+        for (SourceFile sourceFile : sourceFiles) {
+            validationMessageObject.put(sourceFile.getPath(), "Nextflow does not support test parameter files.");
+        }
+        return new VersionTypeValidation(true, validationMessageObject);
     }
 }

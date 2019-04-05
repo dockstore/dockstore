@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -72,7 +71,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @NamedQueries({
     @NamedQuery(name = "Entry.getGenericEntryById", query = "SELECT e from Entry e WHERE :id = e.id"),
-    @NamedQuery(name = "Entry.getGenericEntryByAlias", query = "SELECT e from Entry e JOIN e.aliases a WHERE KEY(a) IN :alias")
+        @NamedQuery(name = "Entry.getGenericEntryByAlias", query = "SELECT e from Entry e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName) from Collection col join col.entries as entry join col.organization as organization where entry.id = :entryId")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -89,7 +89,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL and ispublished = TRUE union"
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE"),
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;") })
-public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry> {
+public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
     /**
      * re-use existing generator for backwards compatibility
@@ -147,7 +147,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
-
     @JsonIgnore
     @JoinColumn(name = "checkerid")
     @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
@@ -155,7 +154,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private Workflow checkerWorkflow;
 
     @ElementCollection(targetClass = Alias.class)
-    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "alias" }))
+    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
     private Map<String, Alias> aliases = new HashMap<>();
@@ -349,6 +348,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public boolean removeStarredUser(User user) {
         return starredUsers.remove(user);
     }
+
     /**
      * Used during refresh to update containers
      *
@@ -457,24 +457,5 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public int compareTo(@NotNull Entry that) {
         return ComparisonChain.start().compare(this.getId(), that.getId(), Ordering.natural().nullsLast())
             .result();
-    }
-
-    /**
-     * Stores alias information for a tool.
-     * For now its just blank, but can be expanded with additional information on the aliases (such as if they point at dockstore mirrors)
-     */
-    @Embeddable
-    public static class Alias {
-        @Column(columnDefinition = "text")
-        public String content = "";
-
-        // database timestamps
-        @Column(updatable = false)
-        @CreationTimestamp
-        private Timestamp dbCreateDate;
-
-        @Column()
-        @UpdateTimestamp
-        private Timestamp dbUpdateDate;
     }
 }

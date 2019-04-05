@@ -15,36 +15,51 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
 
+import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,10 +103,10 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted workflow", response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace) {
-        return super.createHosted(user, registry, name, descriptorType, namespace);
+    @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+        return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 
     @Override
@@ -128,7 +143,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected Workflow getEntry(User user, String registry, String name, String descriptorType, String namespace) {
+    protected Workflow getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Workflow workflow = new Workflow();
         workflow.setMode(WorkflowMode.HOSTED);
         // TODO: We set the organization to the username of the user creating it. However, for gmail accounts this is an
@@ -136,19 +151,44 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setOrganization(user.getUsername());
         workflow.setRepository(name);
         workflow.setSourceControl(SourceControl.DOCKSTORE);
-        workflow.setDescriptorType(descriptorType);
+        workflow.setDescriptorType(descriptorType.toString().toLowerCase());
         workflow.setLastUpdated(new Date());
         workflow.setLastModified(new Date());
-        workflow.setDefaultWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(descriptorType.toLowerCase()));
+        // Uncomment if we add entry name to hosted workflows
+        // workflow.setWorkflowName(entryName);
+        workflow.setDefaultWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(descriptorType.toString().toLowerCase()));
         workflow.getUsers().add(user);
         return workflow;
     }
     
     @Override
     @ApiOperation(nickname = "editHostedWorkflow", value = "Non-idempotent operation for creating new revisions of hosted workflows", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted workflows", response = Workflow.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
+    }
+
+
+    @POST
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Path("/hostedEntry/{entryId}")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(nickname = "addZip", value = "Creates a new revision of a hosted workflow from a zip",
+            authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
+    public Workflow addZip(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "hosted entry ID")
+        @PathParam("entryId") Long entryId,  @FormDataParam("file") InputStream payload) {
+        final Workflow workflow = getEntryDAO().findById(entryId);
+        checkEntry(workflow);
+        checkHosted(workflow);
+        checkUserCanUpdate(user, workflow);
+        checkVersionLimit(user, workflow);
+        final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromInputStream(payload, workflow.getFileType());
+        final WorkflowVersion version = getVersion(workflow);
+        this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
+        version.setWorkflowPath(sourceFiles.getPrimaryDescriptor().getPath());
+        version.setName(calculateNextVersionName(workflow.getVersions()));
+        return this.saveVersion(user, entryId, workflow, version, new HashSet(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
     }
 
     @Override
@@ -170,20 +210,79 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     @Override
     @ApiOperation(nickname = "deleteHostedWorkflowVersion", value = "Delete a revision of a hosted workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Delete a revision of a hosted workflow", response = Workflow.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow deleteHostedVersion(User user, Long entryId, String version) {
         return super.deleteHostedVersion(user, entryId, version);
     }
 
     @Override
-    protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Workflow entry) {
+    protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
-        for (SourceFile sourceFile : sourceFiles) {
-            if (Objects.equals(sourceFile.getPath(), mainDescriptorPath)) {
-                return LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent());
+        String mainDescriptorPath = mainDescriptorOpt.map(sf -> sf.getPath()).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
+        Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
+
+        // Validate descriptor set
+        LanguageHandlerInterface.VersionTypeValidation validDescriptorSet;
+        Validation descriptorValidation;
+        if (mainDescriptor.isPresent()) {
+            validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+        } else {
+            Map<String, String> validationMessage = new HashMap<>();
+            validationMessage.put("Unknown", "Missing the primary descriptor.");
+            validDescriptorSet = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
+        }
+        descriptorValidation = new Validation(identifiedType, validDescriptorSet);
+        version.addOrUpdateValidation(descriptorValidation);
+
+        SourceFile.FileType testParameterType = null;
+        switch (identifiedType) {
+        case DOCKSTORE_CWL:
+            testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            break;
+        case DOCKSTORE_WDL:
+            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            break;
+        case NEXTFLOW_CONFIG:
+            // Nextflow does not have test parameter files, so do not fail
+            break;
+        default:
+            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (testParameterType != null) {
+            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+            version.addOrUpdateValidation(testParameterValidation);
+        }
+
+        return version;
+    }
+
+
+    /**
+     * A workflow version is valid if it has a valid descriptor set and all valid test parameter files
+     * @param version Workflow Version to validate
+     * @return Updated workflow version
+     */
+    @Override
+    protected boolean isValidVersion(WorkflowVersion version) {
+        return !version.getValidations().stream().filter(Validation -> !Validation.isValid()).findFirst().isPresent();
+    }
+
+    @Override
+    protected DescriptorLanguage checkType(String descriptorType) {
+        for (DescriptorLanguage descriptorLanguage : DescriptorLanguage.values()) {
+            if (Objects.equals(descriptorLanguage.toString().toLowerCase(), descriptorType.toLowerCase())) {
+                return descriptorLanguage;
             }
         }
-        return false;
+        throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Override
+    protected Registry checkRegistry(String registry) {
+        // Registry does not matter for workflows
+        return null;
     }
 }

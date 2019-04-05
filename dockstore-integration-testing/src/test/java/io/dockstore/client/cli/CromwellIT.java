@@ -83,7 +83,7 @@ public class CromwellIT {
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
         // run a workflow
-        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null, null);
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null);
         Assert.assertEquals(0, run);
     }
 
@@ -98,7 +98,7 @@ public class CromwellIT {
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl_wrong.json"));
         // run a workflow
-        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null, null);
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null);
         Assert.assertTrue(run != 0);
     }
 
@@ -128,7 +128,7 @@ public class CromwellIT {
 
         String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
         // run a workflow
-        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, newJsonPath, null, tempDir.getAbsolutePath(), null);
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, newJsonPath, tempDir.getAbsolutePath(), null);
         Assert.assertEquals(0, run);
         // let's check that provisioning out occured
         final Collection<File> files = FileUtils.listFiles(tempDir, null, true);
@@ -150,7 +150,6 @@ public class CromwellIT {
                         + "workflow three_step {\n" + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n"
                         + "  call wc {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
         bridge.setSecondaryFiles(secondaryFiles);
-        bridge.getImportFiles(sourceFile);
     }
 
     /**
@@ -166,7 +165,7 @@ public class CromwellIT {
         File workflowFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("hello_world.json"));
         // run a workflow
-        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null, null);
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null);
         Assert.assertEquals(0, run);
     }
 

@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.5.5-SNAPSHOT</version>
+        <version>1.6.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
@@ -34,24 +34,30 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
-            <version>1.5.5-SNAPSHOT</version>
+            <version>1.6.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.5.5-SNAPSHOT</version>
+            <version>1.6.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.5.5-SNAPSHOT</version>
+            <version>1.6.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>openapi-java-client</artifactId>
+            <version>1.6.1-SNAPSHOT</version>
         </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.5.5-SNAPSHOT</version>
+            <version>1.6.1-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -186,8 +192,16 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
+                <groupId>org.scala-tools</groupId>
+                <artifactId>maven-scala-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

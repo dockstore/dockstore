@@ -71,13 +71,13 @@ public class NextFlowIT extends BaseIT {
         }
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
         // Tests that nf-core nextflow.config files can be parsed
@@ -103,13 +103,13 @@ public class NextFlowIT extends BaseIT {
         usersApi.refreshWorkflows(user.getId());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId());
 
         List<SourceFile> sourceFileList = new ArrayList<>(
@@ -134,13 +134,13 @@ public class NextFlowIT extends BaseIT {
         usersApi.refreshWorkflows(user.getId());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId());
 
         List<SourceFile> sourceFileList = new ArrayList<>(

@@ -43,6 +43,7 @@ import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
@@ -60,7 +61,7 @@ import org.hibernate.annotations.Check;
         "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
                 + " * associated with CWL and Dockerfile documents")
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "registry", "namespace", "name", "toolname" }))
+@Table(uniqueConstraints = @UniqueConstraint(name = "ukbq5vy17y4ocaist3d3r3imcus", columnNames = { "registry", "namespace", "name", "toolname" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Tool c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isPublished = true"),
@@ -322,6 +323,9 @@ public class Tool extends Entry<Tool, Tag> {
      */
     @Enumerated(EnumType.STRING)
     @JsonProperty("registry")
+    //FIXME: breaks this for OpenAPI, if we don't break it, the enum is generated using dockerPath via toString which
+    // fails horribly
+    @Schema(type = "integer")
     @ApiModelProperty(position = 30)
     public Registry getRegistryProvider() {
         for (Registry r : Registry.values()) {

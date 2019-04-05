@@ -235,13 +235,14 @@ else
       exit -100;
     fi
 
-    if [[ "$_java" ]]; then
-      version=$("$_java" -version 2>&1 | awk -F '"' '/version/ {print $2}')
-      if [[ "$version" < "1.8" ]]; then
-        echo "Dockstore requires Java version 1.8 and above."
-        exit -100;
-      fi
-    fi
+# does not work with OpenJDK 10 on Ubuntu. format looks very different
+#    if [[ "$_java" ]]; then
+#      version=$("$_java" -version 2>&1 | awk -F '"' '/version/ {print $2}')
+#      if [[ "$version" < "1.8" ]]; then
+#        echo "Dockstore requires Java version 1.8 and above."
+#        exit -100;
+#      fi
+#    fi
 
     ${JAVA_CMD} ${DOCKSTORE_JVM_OPTS} io.dockstore.client.cli.Client "$@"
     

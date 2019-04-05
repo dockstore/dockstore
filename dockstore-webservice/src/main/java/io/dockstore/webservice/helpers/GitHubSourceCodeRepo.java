@@ -16,6 +16,23 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.dockstore.common.SourceControl;
@@ -29,7 +46,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
 import org.apache.commons.io.FilenameUtils;
@@ -42,7 +58,6 @@ import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHMyself;
-import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
@@ -53,21 +68,6 @@ import org.kohsuke.github.RateLimitHandler;
 import org.kohsuke.github.extras.OkHttp3Connector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -214,20 +214,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
-            // get repos under the user directly
-            Map<String, GHRepository> allRepositories = github.getMyself().getAllRepositories();
+            // TODO: This code should be optimized. Ex. Only grab repositories from a specific org if refreshing by org.
+            // The filter all includes:
+            // * All repositories I own
+            // * All repositories I am a contributor on
+            // * All repositories from organizations I belong to
+
+            final int pageSize = 30;
+            Map<String, GHRepository> allMyRepos = new TreeMap<>();
+            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> allMyRepos.put(r.getFullName(), r));
+
+            Map<String, GHRepository> allRepositories = Collections.unmodifiableMap(allMyRepos);
+
             for (Map.Entry<String, GHRepository> innerEntry : allRepositories.entrySet()) {
                 reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-            }
-
-            // get organizations that user has access to
-            Map<String, GHOrganization> myOrganizations = github.getMyOrganizations();
-            for (Map.Entry<String, GHOrganization> entry : myOrganizations.entrySet()) {
-                GHOrganization organization = github.getOrganization(entry.getKey());
-                Map<String, GHRepository> repositories = organization.getRepositories();
-                for (Map.Entry<String, GHRepository> innerEntry : repositories.entrySet()) {
-                    reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-                }
             }
             return reposByGitURl;
         } catch (IOException e) {
@@ -247,7 +247,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             github.getMyOrganizations();
         } catch (IOException e) {
             throw new CustomWebApplicationException(
-                "Please recreate your GitHub token, we probably need an upgraded token to list your organizations", HttpStatus.SC_BAD_REQUEST);
+                "Please recreate your GitHub token by unlinking and then relinking your GitHub account through the Accounts page. "
+                        + "We need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
         }
         return true;
     }
@@ -337,16 +338,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Get contents of descriptor file and store
                 String decodedContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
                 if (decodedContent != null) {
-                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(decodedContent);
-                    // if we have a valid workflow document
                     SourceFile file = new SourceFile();
                     file.setContent(decodedContent);
                     file.setPath(calculatedPath);
                     file.setAbsolutePath(calculatedPath);
                     file.setType(identifiedType);
-                    version.setValid(validWorkflow);
                     version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
-
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
@@ -381,6 +378,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
             }
 
+            version = versionValidation(version, workflow, calculatedPath);
 
             workflow.addWorkflowVersion(version);
         }

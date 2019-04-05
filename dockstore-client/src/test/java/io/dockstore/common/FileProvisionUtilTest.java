@@ -22,6 +22,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import static io.dockstore.common.FileProvisionUtil.PLUGINS_JSON_FILENAME;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -44,5 +45,12 @@ public class FileProvisionUtilTest {
         File f = new File(pluginFile);
         assertTrue(f.exists() && !f.isDirectory());
         f.delete();
+    }
+
+    @Test
+    public void testFileProvisioningCustom() {
+        File iniFile = FileUtils.getFile("src", "test", "resources", "config.withTestPlugin");
+        FileProvisioning fileProvisioning = new FileProvisioning(iniFile.getAbsolutePath());
+        assertNotNull(fileProvisioning);
     }
 }

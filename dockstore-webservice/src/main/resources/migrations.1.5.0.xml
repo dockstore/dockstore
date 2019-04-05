@@ -224,4 +224,5 @@
             UPDATE sourcefile SET absolutepath=path
         </sql>
     </changeSet>
+
 </databaseChangeLog>

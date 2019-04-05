@@ -22,11 +22,12 @@ import java.util.List;
 import com.google.common.base.Joiner;
 import io.dockstore.client.cli.ArgumentUtility;
 import io.dockstore.client.cli.Client;
+import io.swagger.client.api.MetadataApi;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class GenericCWLRunnerWrapper implements CWLRunnerInterface {
     @Override
-    public void checkForCWLDependencies() {
+    public void checkForCWLDependencies(MetadataApi metadataApi) {
         final String[] s1 = { "cwl-runner", "--version" };
         final ImmutablePair<String, String> pair1 = io.cwl.avro.Utilities
                 .executeCommand(Joiner.on(" ").join(Arrays.asList(s1)), false, com.google.common.base.Optional.absent(),

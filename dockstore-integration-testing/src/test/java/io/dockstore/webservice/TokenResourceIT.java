@@ -62,14 +62,15 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.niceMock;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.mockStaticStrict;
 import static org.powermock.api.easymock.PowerMock.replay;
@@ -83,8 +84,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ GoogleHelper.class, GitHubBuilder.class, GitHubHelper.class })
 @Category(ConfidentialTest.class)
-@PowerMockIgnore({ "javax.security.*", "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*",
-        "javax.net.*", "org.apache.http.impl.client.*", "org.apache.http.protocol.*", "org.apache.http.*" })
+@PowerMockIgnore( { "javax.security.*", "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*",
+    "javax.net.*", "org.apache.http.impl.client.*", "org.apache.http.protocol.*", "org.apache.http.*", "com.sun.org.apache.xerces.*",
+    "javax.xml.*", "org.xml.*", "org.w3c.*" })
 public class TokenResourceIT extends BaseIT {
 
     @Rule
@@ -103,8 +105,8 @@ public class TokenResourceIT extends BaseIT {
     private TokenDAO tokenDAO;
     private UserDAO userDAO;
     private long initialTokenCount;
-    private final String satellizerJSON = "{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n";
-    private final String satellizerJSONForRegistration = "{\"code\": \"fakeCode\", \"register\": true, \"redirectUri\": \"fakeRedirectUri\"}";
+    private final String satellizerJSON = fixture("fixtures/satellizerLogin.json");
+    private final String satellizerJSONForRegistration = fixture("fixtures/satellizerRegister.json");;
     private final static String GOOGLE_ACCOUNT_USERNAME1 = "potato@gmail.com";
     private final static String GOOGLE_ACCOUNT_USERNAME2 = "beef@gmail.com";
     private final static String CUSTOM_USERNAME1 = "tuber";

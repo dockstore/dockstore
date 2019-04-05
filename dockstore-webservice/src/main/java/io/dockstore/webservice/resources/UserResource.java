@@ -17,7 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,13 +38,13 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.annotations.Beta;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
-import io.dockstore.webservice.core.Group;
+import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -55,7 +54,6 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
-import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -67,8 +65,6 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
@@ -89,7 +85,6 @@ public class UserResource implements AuthenticatedResourceInterface {
     private static final String PERMISSIONS_NOTE = "This is not tied into PermissionsInterface but could be";
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
-    private final GroupDAO groupDAO;
     private final TokenDAO tokenDAO;
 
     private final WorkflowResource workflowResource;
@@ -102,7 +97,6 @@ public class UserResource implements AuthenticatedResourceInterface {
     public UserResource(SessionFactory sessionFactory, WorkflowResource workflowResource, DockerRepoResource dockerRepoResource,
             CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
         this.userDAO = new UserDAO(sessionFactory);
-        this.groupDAO = new GroupDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
@@ -113,23 +107,11 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.cachingAuthenticator = cachingAuthenticator;
     }
 
-    @POST
-    @Timed
-    @UnitOfWork
-    @Path("/groups")
-    @ApiOperation(value = "Create user group", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class)
-    public Group createGroup(@ApiParam(hidden = true) @Auth User user, @QueryParam("group_name") String name) {
-        Group group = new Group();
-        group.setName(name);
-        long create = groupDAO.create(group);
-        return groupDAO.findById(create);
-    }
-
     @GET
     @Timed
     @UnitOfWork
     @Path("/username/{username}")
-    @ApiOperation(value = "Get user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    @ApiOperation(value = "Get a user by username.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User listUser(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("Username of user to return") @PathParam("username") String username) {
         @SuppressWarnings("deprecation")
@@ -142,7 +124,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}")
-    @ApiOperation(value = "Get user with id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    @ApiOperation(value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(authUser, userId);
         User user = userDAO.findById(userId);
@@ -156,7 +138,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/user")
-    @ApiOperation(value = "Get the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    @ApiOperation(value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         Hibernate.initialize(foundUser.getUserProfiles());
@@ -166,8 +148,22 @@ public class UserResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/user/memberships")
+    @ApiOperation(value = "Get the logged-in users memberships.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "set")
+    public Set<OrganizationUser> getUserMemberships(@ApiParam(hidden = true) @Auth User user) {
+        User foundUser = userDAO.findById(user.getId());
+        Set<OrganizationUser> organizationUsers = foundUser.getOrganizations();
+        organizationUsers.forEach(organizationUser -> Hibernate.initialize(organizationUser.getOrganization()));
+        return organizationUsers;
+    }
+
+
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/user/extended")
-    @ApiOperation(value = "Get additional information on the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
+    @ApiOperation(value = "Get additional information about the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
     public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         return new ExtendedUserData(foundUser, this.authorizer);
@@ -177,7 +173,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/user/changeUsername")
-    @ApiOperation(value = "Change username if possible", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    @ApiOperation(value = "Change username if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User changeUsername(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
         checkUser(authUser, authUser.getId());
         Pattern pattern = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
@@ -208,7 +204,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/user")
-    @ApiOperation(value = "Delete user if possible", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
+    @ApiOperation(value = "Delete user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean selfDestruct(
             @ApiParam(hidden = true) @Auth User authUser) {
         checkUser(authUser, authUser.getId());
@@ -251,7 +247,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/checkUser/{username}")
-    @ApiOperation(value = "Check if user with some username exists", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
+    @ApiOperation(value = "Check if user with some username exists.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean checkUserExists(@ApiParam(hidden = true) @Auth User user,
                                    @ApiParam("User name to check") @PathParam("username") String username) {
         @SuppressWarnings("deprecation")
@@ -263,7 +259,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens")
-    @ApiOperation(value = "Get tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
@@ -274,7 +270,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/github.com")
-    @ApiOperation(value = "Get Github tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Github tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
@@ -285,7 +281,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/gitlab.com")
-    @ApiOperation(value = "Get Gitlab tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Gitlab tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
@@ -296,7 +292,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/quay.io")
-    @ApiOperation(value = "Get Quay tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Quay tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
@@ -307,7 +303,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/dockstore")
-    @ApiOperation(value = "Get Dockstore tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Dockstore tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
@@ -315,113 +311,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @GET
-    @Beta
-    @Timed
-    @UnitOfWork
-    @Path("/{userId}/groups")
-    @ApiOperation(value = "Get groups that the user belongs to", notes = PERMISSIONS_NOTE, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class, responseContainer = "List")
-    public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User") @PathParam("userId") long userId) {
-        checkUser(authUser, userId);
-
-        User user = userDAO.findById(userId);
-        if (user == null) {
-            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        return new ArrayList<>(user.getGroups());
-    }
-
-    @GET
-    @Beta
-    @Timed
-    @UnitOfWork
-    @Path("/groups/{groupId}/users")
-    @ApiOperation(value = "Get users that belongs to a group", notes = PERMISSIONS_NOTE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
-    public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth User user, @ApiParam("Group") @PathParam("groupId") long groupId) {
-        Group group = groupDAO.findById(groupId);
-        if (group == null) {
-            throw new CustomWebApplicationException("Group not found.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        return new ArrayList<>(group.getUsers());
-    }
-
-    @GET
-    @Beta
-    @Timed
-    @UnitOfWork
-    @Path("/groups")
-    @ApiOperation(value = "List all groups", notes = PERMISSIONS_NOTE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class, responseContainer = "List")
-    public List<Group> allGroups(@ApiParam(hidden = true) @Auth User user) {
-        return groupDAO.findAll();
-    }
-
-    @GET
-    @Beta
-    @Timed
-    @UnitOfWork
-    @Path("/groups/{groupId}")
-    @ApiOperation(value = "List a group", notes = PERMISSIONS_NOTE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class)
-    public Group getGroup(@ApiParam(hidden = true) @Auth User user, @ApiParam("Group") @PathParam("groupId") long groupId) {
-        return groupDAO.findById(groupId);
-    }
-
-    @PUT
-    @Beta
-    @Timed
-    @UnitOfWork
-    @Path("/{userId}/groups")
-    @ApiOperation(value = "Add a group to a user", notes = PERMISSIONS_NOTE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User addGroupToUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User ID of user") @PathParam("userId") long userId,
-            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group groupParam) {
-        checkUser(authUser, userId);
-
-        User user = userDAO.findById(userId);
-        // need a live group
-        Group group = groupDAO.findById(groupParam.getId());
-
-        if (user != null && group != null) {
-            user.addGroup(group);
-        } else {
-            LOG.info((user != null ? user.getUsername() : "user with no name") + ": " + "user or group is null");
-            throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        return user;
-
-    }
-
-    @DELETE
-    @Beta
-    @Timed
-    @UnitOfWork
-    @Path("/{userId}/groups/{groupId}")
-    @ApiOperation(value = "Remove a user from a group", notes = PERMISSIONS_NOTE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid user or group value"))
-    public User removeUserFromGroup(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam("User ID of user") @PathParam("userId") long userId,
-            @ApiParam("Group ID of group") @PathParam("groupId") long groupId) {
-        checkUser(authUser, userId);
-
-        User user = userDAO.findById(userId);
-        Group group = groupDAO.findById(groupId);
-
-        if (user != null && group != null) {
-            user.removeGroup(group);
-        } else {
-            LOG.info((user != null ? user.getUsername() : "user with no name") + ": " + "user or group is null");
-
-            throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
-        }
-        return user;
-    }
-
-    @GET
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/published")
-    @ApiOperation(value = "List all published containers from a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List all published tools from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
@@ -439,7 +332,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/published")
-    @ApiOperation(value = "List all published workflows from a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get user's published workflows only", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all published workflows from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
@@ -457,7 +350,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/{organization}/refresh")
-    @ApiOperation(value = "Refresh repos owned by the logged-in user with specified organization", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all tools in an organization", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all tools owned by the logged-in user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
@@ -523,7 +416,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/refresh")
-    @ApiOperation(value = "Refresh repos owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all tools owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
@@ -548,7 +441,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/{organization}/refresh")
-    @ApiOperation(value = "Refresh workflows owned by the logged-in user with specified organization", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all workflows in an organization", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all workflows owned by the logged-in user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
@@ -572,7 +465,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/refresh")
-    @ApiOperation(value = "Refresh workflows owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all workflows owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
@@ -593,7 +486,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List workflows owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all workflows owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
@@ -615,7 +508,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/containers")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List repos owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List all tools owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
@@ -629,7 +522,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/starredTools")
-    @ApiOperation(value = "Get the logged-in user's starred tools", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the logged-in user's starred tools.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
@@ -640,7 +533,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/starredWorkflows")
-    @ApiOperation(value = "Get the logged-in user's starred workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the logged-in user's starred workflows.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
@@ -652,7 +545,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork
     @RolesAllowed("admin")
     @Path("/updateUserMetadata")
-    @ApiOperation(value = "Update metadata of all users", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update all users metadata. Admin only.", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Update metadata of all users.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin only.", response = User.class, responseContainer = "List")
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
@@ -672,7 +565,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/user/updateUserMetadata")
-    @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update metadata for logged in user.", response = User.class)
+    @ApiOperation(value = "Update metadata for logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
         User dbuser = userDAO.findById(user.getId());
         if (source.equals(TokenType.GOOGLE_COM)) {
@@ -680,6 +573,44 @@ public class UserResource implements AuthenticatedResourceInterface {
         }
         dbuser.updateUserMetadata(tokenDAO, source);
         return dbuser;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({"admin", "curator"})
+    @Path("/user/{userId}/limits")
+    @ApiOperation(value = "Returns the specified user's limits. ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
+    public Limits getUserLimits(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        User user = userDAO.findById(userId);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+        Limits limits = new Limits();
+        limits.setHostedEntryCountLimit(user.getHostedEntryCountLimit());
+        limits.setHostedEntryVersionLimit(user.getHostedEntryVersionsLimit());
+        return limits;
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({"admin", "curator"})
+    @Path("/user/{userId}/limits")
+    @ApiOperation(value = "Update the specified user's limits. ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
+    public Limits setUserLimits(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Limits to set for a user", required = true) Limits limits) {
+        User user = userDAO.findById(userId);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+        user.setHostedEntryCountLimit(limits.getHostedEntryCountLimit());
+        user.setHostedEntryVersionsLimit(limits.getHostedEntryVersionLimit());
+        // User could be cached by Dockstore or Google token -- invalidate all
+        tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        return limits;
     }
 
     /**
