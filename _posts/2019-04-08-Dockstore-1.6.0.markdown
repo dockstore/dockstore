@@ -25,4 +25,5 @@ See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/mi
 * none known (or intended anyway)
 
 ### Minor
-* none
+* while many workflows with file structures that previously did not work should be working with this update, a few workflows with nested file structures and were previously refreshed incorrectly may have issues with the migration
+* please refresh workflows that you notice may have issues or let us know (drop us a line on https://gitter.im/ga4gh/dockstore on github or on discourse) if you run into an issue where a workflow seems to have indexed a source file incorrectly in the wrong location, thanks!
