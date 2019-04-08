@@ -22,13 +22,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -221,14 +219,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // * All repositories from organizations I belong to
 
             final int pageSize = 30;
-            Map<String, GHRepository> allMyRepos = new TreeMap<>();
-            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> allMyRepos.put(r.getFullName(), r));
-
-            Map<String, GHRepository> allRepositories = Collections.unmodifiableMap(allMyRepos);
-
-            for (Map.Entry<String, GHRepository> innerEntry : allRepositories.entrySet()) {
-                reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-            }
+            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> reposByGitURl.put(r.getSshUrl(), r.getFullName()));
             return reposByGitURl;
         } catch (IOException e) {
             LOG.error("could not find projects due to ", e);
