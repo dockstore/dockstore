@@ -1,0 +1,29 @@
+## Highlighted new features include 
+
+* initial support for [organizations and collections](https://docs.dockstore.org/docs/publisher-tutorials/organizations-and-collections/)
+  * institutions, grant agencies, consortiums, and more can now organize, describe, and highlight worthy workflows and tools found on Dockstore
+* language support updates
+  * cwltool updates from 1.0.20180403145700 to 1.0.20181217162649
+  * cromwell updates from 30.2 to 36 (also a mode for CWL with [Cromwell via the CLI](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/#cromwell-beta))
+  * to elaborate, [verified](https://docs.dockstore.org/faq/#what-is-a-verified-tool-or-workflow) workflows have been run in-house succesfully with these versions but feel free to try newer versions as well and let us know if things are broken 
+  * select between classic and [EPAM](https://github.com/epam/pipeline-builder) visualizations for WDL workflows
+  * improved support for Nextflow workflows
+      * using Nextflow code to parse and process workflow authors and descriptions for better compatibility
+* beta support for launching workflows directly onto GA4GH WES endpoints
+  * see our first steps at [WES CLI](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/)
+* launch-with support for [Terra](https://terra.bio/)
+* improved display of validation errors
+* support for [aliases](https://docs.dockstore.org/docs/publisher-tutorials/guid-alias/) for advanced developers
+* a huge host of bugfixes for everything from Nextflow DAGs, our support for GA4GH TRS endpoints, the usability of search, description file encoding, display of files on iOS, and display of error messages
+* a plugin for provisioning files to and from Google Cloud Storage 
+
+See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/milestone/20)
+
+## Breaking changes 
+
+### Major
+* none known (or intended anyway)
+
+### Minor
+* while many workflows with file structures that previously did not work should be working with this update, a few workflows with nested file structures and were previously refreshed incorrectly may have issues with the migration
+* please refresh workflows that you notice may have issues or let us know (drop us a line on https://gitter.im/ga4gh/dockstore on github or on discourse) if you run into an issue where a workflow seems to have indexed a source file incorrectly in the wrong location, thanks!
