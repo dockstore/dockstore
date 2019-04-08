@@ -421,6 +421,13 @@
                 <version>${assertj.version}</version>
                 <scope>test</scope>
             </dependency>
+            <!-- used for suppressing findbugs warnings only -->
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>annotations</artifactId>
+                <scope>provided</scope>
+                <version>3.0.1</version>
+            </dependency>
 
             <dependency>
                 <groupId>javax.annotation</groupId>
@@ -544,13 +551,6 @@
                         <artifactId>asm-debug-all</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <!-- used for suppressing findbugs warnings only -->
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-                <scope>provided</scope>
-                <version>3.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.objenesis</groupId>
