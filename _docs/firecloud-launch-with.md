@@ -37,7 +37,7 @@ and disks).
 
 ## Limitations
 0. While we support launching of WDL workflows, tools as listed in Dockstore are currently not supported.
-0. FireCloud does not currently support file-path based imports.  Importing a workflow with file-based imports will result in error.  See [developer docs](/docs/publisher-tutorials/for-developers/#converting-file-path-based-imports-to-public-https-based-imports) for more info.
+0. FireCloud does not currently support file-path based imports.  Importing a workflow with file-based imports will result in error.  See the [converting file-based imports doc](/docs/user-tutorials/language-support/#converting-file-path-based-imports-to-public-https-based-imports-for-wdl) for more info.
 0. Only the WDL language is supported.
 
 ## See Also

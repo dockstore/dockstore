@@ -27,7 +27,7 @@ See more [here](https://cromwell.readthedocs.io/en/stable/wf_options/Overview).
 
 ## Limitations
 1. While we support launching of WDL workflows, tools as listed in Dockstore are currently not supported.
-1. Terra does not currently support file-path based imports.  Importing a workflow with file-based imports will result in error.  See [developer docs](/docs/publisher-tutorials/for-developers/#converting-file-path-based-imports-to-public-https-based-imports) for more info.
+1. Terra does not currently support file-path based imports.  Importing a workflow with file-based imports will result in error.  See the [converting file-based imports doc](/docs/user-tutorials/language-support/#converting-file-path-based-imports-to-public-https-based-imports-for-wdl) for more info.
 1. Only the WDL language is supported.
 
 ## See Also
