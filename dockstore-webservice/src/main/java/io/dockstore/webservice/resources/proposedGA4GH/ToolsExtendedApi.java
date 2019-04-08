@@ -58,7 +58,7 @@ public class ToolsExtendedApi {
 
     @GET
     @Path("/tools/{organization}")
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
     @ApiOperation(value = "List tools of an organization", notes = "This endpoint returns tools of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
@@ -71,7 +71,6 @@ public class ToolsExtendedApi {
 
     @POST
     @Path("/tools/entry/_search")
-    @UnitOfWork
     @Produces({ "application/json" })
     @ApiOperation(value = "Search the index of tools", notes = "This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint", response = String.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An elastic search result.", response = String.class) })
@@ -95,7 +94,7 @@ public class ToolsExtendedApi {
 
     @GET
     @Path("/workflows/{organization}")
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
     @ApiOperation(value = "List workflows of an organization", notes = "This endpoint returns workflows of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
@@ -108,7 +107,7 @@ public class ToolsExtendedApi {
 
     @GET
     @Path("/containers/{organization}")
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
     @ApiOperation(value = "List entries of an organization", notes = "This endpoint returns entries of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
@@ -121,7 +120,7 @@ public class ToolsExtendedApi {
 
     @GET
     @Path("/organizations")
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
     @ApiOperation(value = "List all organizations", notes = "This endpoint returns list of all organizations. ", response = String.class, responseContainer = "List")
     @ApiResponses(value = {

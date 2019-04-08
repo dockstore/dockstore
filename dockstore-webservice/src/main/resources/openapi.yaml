@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-rc.0-SNAPSHOT
+  version: 1.7.0-alpha.0-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -1258,7 +1258,7 @@ paths:
         - tokens
       summary: Allow satellizer to post a new GitHub token to dockstore, used by login,
         can create new users.
-      description: A post method is required by saetillizer to send the GitHub token
+      description: A post method is required by satellizer to send the GitHub token
       operationId: addToken
       requestBody:
         $ref: "#/components/requestBodies/addTokenBody"
@@ -2343,7 +2343,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding wdl test parameter files.
+      summary: Get the corresponding WDL test parameter files.
       description: Does not require authentication for published tools, authentication can
         be provided for restricted tools
       operationId: getTestParameterFiles
@@ -6372,6 +6372,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6387,10 +6391,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6556,6 +6556,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6571,10 +6575,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7528,6 +7528,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7543,10 +7547,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
