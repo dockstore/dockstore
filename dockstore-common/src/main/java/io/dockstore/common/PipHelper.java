@@ -14,6 +14,12 @@ import com.github.zafarkhaja.semver.Version;
  */
 public final class PipHelper {
     public static final String DEV_SEM_VER = "development-build";
+    private static final int SEVEN = 7;
+    private static final int SIX = 6;
+    private static final int FIVE = 5;
+    private static final int FOUR = 4;
+    private static final int THREE = 3;
+
     private PipHelper() { }
 
     /**
@@ -28,13 +34,13 @@ public final class PipHelper {
         }
         Version semVer = Version.valueOf(semVerString);
         // Use the 1.6.0 even for snapshot
-        if (semVer.getMinorVersion() == 7) {
+        if (semVer.getMinorVersion() == SEVEN) {
             return "1.7.0";
-        } else if (semVer.getMinorVersion() == 6) {
+        } else if (semVer.getMinorVersion() == SIX) {
             return "1.6.0";
-        } else if (semVer.getMinorVersion() == 5) {
+        } else if (semVer.getMinorVersion() == FIVE) {
             return "1.5.0";
-        } else if (semVer.getMinorVersion() == 4 || semVer.getMinorVersion() == 3) {
+        } else if (semVer.getMinorVersion() == FOUR || semVer.getMinorVersion() == THREE) {
             return "1.4.0";
         }
         return null;
