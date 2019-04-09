@@ -3,6 +3,7 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -13,18 +14,22 @@ import io.dockstore.common.LanguageType;
 import io.openapi.wes.client.api.WorkflowExecutionServiceApi;
 import io.openapi.wes.client.model.RunId;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
+import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 
 public class WESLauncher extends BaseLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(WESLauncher.class);
     private static final String TAGS = "{\"Client\":\"Dockstore\"}";
     private static final String WORKFLOW_TYPE_VERSION = "1.0";
+
+    // Cromwell currently supports draft-2 of the WDL specification
+    // https://cromwell.readthedocs.io/en/stable/LanguageSupport/
+    private static final String WDL_WORKFLOW_TYPE_VERSION = "draft-2";
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
@@ -75,18 +80,6 @@ public class WESLauncher extends BaseLauncher {
         return new ImmutablePair<String, String>("", "");
     }
 
-    /*
-     * File type must match workflow language possible file types
-     * E.g. for CWL workflows the file extension must be cwl, yaml, or yml
-     * Also include json files
-     */
-    protected boolean fileIsCorrectType(File potentialAttachmentFile) {
-        LanguageType potentialAttachmentFileLanguage = abstractEntryClient.checkFileExtension(potentialAttachmentFile.getName()); //file extension could be cwl,wdl or ""
-        return (potentialAttachmentFile.exists() && !potentialAttachmentFile.isDirectory()
-                && (potentialAttachmentFileLanguage.equals(this.languageType)
-                || FilenameUtils.getExtension(potentialAttachmentFile.getAbsolutePath()).toLowerCase().equals("json")));
-    }
-
     protected void addFilesToWorkflowAttachment(List<File> workflowAttachment, File zippedEntry, File tempDir) {
         try {
             SwaggerUtility.unzipFile(zippedEntry, tempDir);
@@ -95,28 +88,27 @@ public class WESLauncher extends BaseLauncher {
             exceptionMessage(e, "Unable to get workflow attachment files from zip file " + zippedEntry.getName(), IO_ERROR);
         }
 
-        // Put file names in workflow attachment list
-        File[] listOfFiles = tempDir.listFiles();
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].isFile()) {
-                // TODO check file extension (type) only for a local entry; pass all files found in remote entry folder?
-                // Locate code that grabs all imports for a non local entry and use that instead of checking extension
-                // since CWL can import many file types
-                // There may be confidential or large files that are not needed in a local directory that should
-                // not be sent to a remote endpoint?
-                if (fileIsCorrectType(listOfFiles[i])) {
-                    System.out.println("Adding file " + listOfFiles[i].getName() + " to workflow attachment");
-                    File fileToAdd = new File(tempDir, listOfFiles[i].getName());
-                    workflowAttachment.add(fileToAdd);
-                } else {
-                    System.out.println("File " + listOfFiles[i].getName() + " is not the correct type for the workflow so it will not be "
-                            + "added to the workflow attachment");
-                }
-            } else if (listOfFiles[i].isDirectory()) {
-                System.out.println("Found directory " + listOfFiles[i].getName());
-            }
-        }
+        try {
 
+            // A null fileFilter causes all files to be returned
+            String[] fileFilter = null;
+            // For a local entry restrict the kinds of files that can be added to the workflow attachment. CWL can import many
+            // file types but there may be confidential or large files in a local directory that should
+            // not be sent to a remote endpoint.
+            // TODO Locate code that grabs all imports for a non local entry and use that instead of checking extension
+            if (abstractEntryClient.isLocalEntry()) {
+                fileFilter = new String[]{"yml", "yaml", "json", this.languageType.toString().toLowerCase()};
+            }
+            Iterator it = FileUtils.iterateFiles(tempDir, fileFilter, true);
+            while (it.hasNext()) {
+                File afile = (File) it.next();
+                workflowAttachment.add(afile);
+            }
+        } catch (Exception e) {
+            LOG.error("Unable to traverse directory " + tempDir.getName() + " to get workflow attachment files", e);
+            exceptionMessage(e, "Unable to traverse directory " + tempDir.getName() + " to get workflow "
+                    + "attachment files", GENERIC_ERROR);
+        }
     }
 
     public void runWESCommand(String jsonString, File localPrimaryDescriptorFile, File zippedEntry) {
@@ -124,17 +116,28 @@ public class WESLauncher extends BaseLauncher {
         final File tempDir = Files.createTempDir();
 
         List<File> workflowAttachment = new ArrayList<>();
-        addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry, tempDir);
+
+        // Our current Cromwell WES endpoint requires that the first workflow attachment item be the source
+        // for the primary descriptor
+        // add it as the first item in the workflow attachement even though it may again
+        // be added as an attachment in addFilesToWorkflowAttachment
+        // Including it twice should not cause a problem
         workflowAttachment.add(localPrimaryDescriptorFile);
+
+        addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry, tempDir);
+
         File jsonInputFile = new File(jsonString);
+        // add the input file so the endpoint has it; not sure if this is needed
         workflowAttachment.add(jsonInputFile);
 
         String languageType = this.languageType.toString().toUpperCase();
 
         // CWL uses workflow type version with a 'v' prefix, e.g 'v1.0', but WDL uses '1.0'
         String workflowTypeVersion = WORKFLOW_TYPE_VERSION;
-        if ("CWL".equals(languageType.toUpperCase())) {
+        if ("CWL".equalsIgnoreCase(languageType)) {
             workflowTypeVersion = "v" + WORKFLOW_TYPE_VERSION;
+        } else if ("WDL".equalsIgnoreCase(languageType)) {
+            workflowTypeVersion = WDL_WORKFLOW_TYPE_VERSION;
         }
 
         try {

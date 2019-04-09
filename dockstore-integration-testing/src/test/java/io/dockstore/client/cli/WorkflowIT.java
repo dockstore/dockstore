@@ -81,6 +81,7 @@ import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -217,7 +218,7 @@ public class WorkflowIT extends BaseIT {
         FileWrapper toolDescriptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        assertFalse(content.isEmpty());
         checkForRelativeFile(adminGa4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL", "Dockstore.cwl");
 
 
@@ -273,8 +274,7 @@ public class WorkflowIT extends BaseIT {
         assertEquals("There should be one user of the workflow after manually registering it.", 1, workflow.getUsers().size());
         Workflow refresh = workflowApi.refresh(workflow.getId());
 
-
-        Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
+        assertFalse(refresh.isIsPublished());
 
         // should be able to launch properly with correct credentials even though the workflow is not published
         FileUtils.writeStringToFile(new File("md5sum.input"), "foo" , StandardCharsets.UTF_8);
@@ -412,7 +412,7 @@ public class WorkflowIT extends BaseIT {
         } catch (ApiException ex) {
             success = false;
         } finally {
-            assertTrue("User does not have access to workflow.", !success);
+            assertFalse(success);
         }
         // Other user: Should fail
         success = true;
@@ -421,7 +421,7 @@ public class WorkflowIT extends BaseIT {
         } catch (ApiException ex) {
             success = false;
         } finally {
-            assertTrue("User does not have access to workflow.", !success);
+            assertFalse(success);
         }
 
         // Publish
@@ -450,7 +450,7 @@ public class WorkflowIT extends BaseIT {
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
                         "test", "cwl", null);
         Workflow refresh = workflowApi.refresh(workflow.getId());
-        Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
+        assertFalse(refresh.isIsPublished());
         workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", workflow.getId(), "cwl", "checker-input-cwl.json");
         workflowApi.refresh(workflow.getId());
 
@@ -486,7 +486,7 @@ public class WorkflowIT extends BaseIT {
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
                         "test", "cwl", null);
         Workflow refresh = workflowApi.refresh(workflow.getId());
-        Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
+        Assert.assertFalse(refresh.isIsPublished());
 
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", workflow.getId(), "cwl", "checker-input-cwl.json");
 
@@ -619,8 +619,8 @@ public class WorkflowIT extends BaseIT {
             .findFirst();
         String tableToolContent = workflowApi.getTableToolContent(refreshGithub.getId(), first.get().getId());
         String workflowDag = workflowApi.getWorkflowDag(refreshGithub.getId(), first.get().getId());
-        assertTrue("tool table should be present", !tableToolContent.isEmpty());
-        assertTrue("workflow dag should be present", !workflowDag.isEmpty());
+            assertFalse(tableToolContent.isEmpty());
+            assertFalse(workflowDag.isEmpty());
         Gson gson = new Gson();
         List<Map<String, String>> list = gson.fromJson(tableToolContent, List.class);
         Map<Map,List> map = gson.fromJson(workflowDag, Map.class);
@@ -644,7 +644,7 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         UsersApi usersApi = new UsersApi(webClient);
-        final List<Workflow> workflow = usersApi.refreshWorkflows(userId);
+        final List<Workflow> workflows = usersApi.refreshWorkflows(userId);
 
         // Check that there are multiple workflows
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
@@ -658,9 +658,9 @@ public class WorkflowIT extends BaseIT {
         assertEquals("No workflows are in full mode", 0, count3);
 
         // check that a nextflow workflow made it
-        long nfWorkflowCount = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
+        long nfWorkflowCount = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
         assertTrue("Nextflow workflow not found", nfWorkflowCount > 0);
-        Workflow mtaNf = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
+        Workflow mtaNf = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         mtaNf.setWorkflowPath("/nextflow.config");
         mtaNf.setDescriptorType(LanguageType.NEXTFLOW.toString());
@@ -693,6 +693,27 @@ public class WorkflowIT extends BaseIT {
         assertTrue("could get mta as part of list", toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects
             .equals(tool.getId(), mtaWorkflowID)));
         assertNotNull("could get mta as a specific tool", toolV2);
+
+        // Check that a workflow from my namespace is present
+        assertTrue("Should have at least one repo from DockstoreTestUser2.",
+                workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")));
+
+        // Check that a workflow from an organization I belong to is present
+        assertTrue("Should have repository basic-workflow from organization dockstoretesting.",
+                workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("dockstoretesting") &&
+                        workflow.getRepository().equalsIgnoreCase("basic-workflow")));
+
+        // Check that a workflow that I am a collaborator on is present
+        assertTrue("Should have repository dockstore-whalesay-2 from DockstoreTestUser.", workflows.stream().anyMatch((Workflow workflow) ->
+                workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser") &&
+                workflow.getRepository().equalsIgnoreCase("dockstore-whalesay-2")));
+
+        // Check that for a repo from my organization that I forked to DockstoreTestUser2, that it along with the original repo are present
+        assertEquals("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.", 2, workflows.stream().filter((Workflow workflow) ->
+                (workflow.getOrganization().equalsIgnoreCase("dockstoretesting") ||
+                workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")) &&
+                workflow.getRepository().equalsIgnoreCase("basic-workflow")).count());
+
     }
 
     /**
@@ -879,8 +900,8 @@ public class WorkflowIT extends BaseIT {
         source1.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/sorttool.cwl")), StandardCharsets.UTF_8));
         source2.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
         Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
-        assertTrue(!workflow.getInputFileFormats().isEmpty());
-        assertTrue(!workflow.getOutputFileFormats().isEmpty());
+        assertFalse(workflow.getInputFileFormats().isEmpty());
+        assertFalse(workflow.getOutputFileFormats().isEmpty());
 
 
         // launch the workflow, note that the latest version of the workflow should launch (i.e. the working one)
@@ -957,7 +978,7 @@ public class WorkflowIT extends BaseIT {
         FileWrapper toolDescriptor = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        assertFalse(content.isEmpty());
         // check slashed paths
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0", "toolkit/if_input_is_bz2_convert_to_gz_else_just_rename.cwl");
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0", "toolkit/if_file_name_is_bz2_then_return_null_else_return_in_json_to_output.cwl");
@@ -1013,7 +1034,7 @@ public class WorkflowIT extends BaseIT {
         FileWrapper toolDescriptor = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        assertFalse(content.isEmpty());
         // check slashed paths
         checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "/cgpmap-bamOut.cwl");
         // check paths without slash
@@ -1041,7 +1062,7 @@ public class WorkflowIT extends BaseIT {
         toolDescriptor = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", dockstoreTestUser2RelativeImportsTool, reference, filename);
         content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find " + filename + " from generated URL", !content.isEmpty());
+        assertFalse(content.isEmpty());
     }
 
     /**
@@ -1067,7 +1088,7 @@ public class WorkflowIT extends BaseIT {
         } catch (ApiException c) {
             success = false;
         } finally {
-            assertTrue("The workflow cannot be registered as it is a duplicate.", !success);
+            assertFalse(success);
         }
 
         success = true;
@@ -1076,7 +1097,7 @@ public class WorkflowIT extends BaseIT {
         } catch (ApiException c) {
             success = false;
         } finally {
-            assertTrue("The workflow cannot be registered as the repository doesn't exist.", !success);
+            assertFalse(success);
         }
     }
 
@@ -1160,7 +1181,7 @@ public class WorkflowIT extends BaseIT {
         FileWrapper toolDescriptor = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        assertFalse(content.isEmpty());
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
         // ignore extra separators
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "/adtex.cwl");
@@ -1177,7 +1198,7 @@ public class WorkflowIT extends BaseIT {
         assertTrue("could not find tool tests", toolTests.size() > 0);
         for(FileWrapper test: toolTests) {
             content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
-            Assert.assertTrue("could not find content from generated test JSON URL", !content.isEmpty());
+            assertFalse(content.isEmpty());
         }
     }
 
@@ -1235,13 +1256,13 @@ public class WorkflowIT extends BaseIT {
                 // enable later with a simplification to TRS
                 FileWrapper test = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
-                assertTrue("test exists", !test.getContent().isEmpty());
+                assertFalse(test.getContent().isEmpty());
                 count.incrementAndGet();
             } else if (file.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR || file.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) {
                 // annoyingly, some files are tool tests, some are tooldescriptor
                 FileWrapper toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
-                assertTrue("descriptor exists", !toolDescriptor.getContent().isEmpty());
+                assertFalse(toolDescriptor.getContent().isEmpty());
                 count.incrementAndGet();
             } else {
                 fail();

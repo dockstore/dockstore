@@ -93,7 +93,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/collections/{alias}/aliases")
     @ApiOperation(nickname = "getCollectionByAlias", value = "Retrieves a collection by alias.", response = Collection.class)
     public Collection getCollectionByAlias(@ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
@@ -102,7 +102,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Retrieves a collection by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection getCollectionById(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -125,7 +125,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("{organizationName}/collections/{collectionName}/name")
     @ApiOperation(value = "Retrieves a collection by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection getCollectionByName(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -285,7 +285,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("{organizationId}/collections")
     @ApiOperation(value = "Retrieve all collections for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, responseContainer = "List", response = Collection.class)
@@ -459,7 +459,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("{organizationId}/collections/{collectionId}/description")
     @ApiOperation(value = "Retrieves a collection description by organization ID and collection ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
     public String getCollectionDescription(@ApiParam(hidden = true) @Auth Optional<User> user,

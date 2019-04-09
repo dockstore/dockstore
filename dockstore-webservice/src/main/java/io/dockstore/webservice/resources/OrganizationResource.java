@@ -77,7 +77,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all available organizations.", notes = "NO Authentication", responseContainer = "List", response = Organization.class)
     public List<Organization> getApprovedOrganizations() {
         return organizationDAO.findAllApproved();
@@ -166,7 +166,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/name/{name}/")
     @ApiOperation(value = "Retrieves an organization by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
@@ -211,7 +211,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{organizationId}")
     @ApiOperation(value = "Retrieves an organization by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
@@ -222,7 +222,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{organizationId}/description")
     @ApiOperation(value = "Retrieves an organization description by organization ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
@@ -270,7 +270,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{organizationId}/members")
     @ApiOperation(value = "Retrieves all members for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "Set")
@@ -281,7 +281,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/{organizationId}/events")
     @ApiOperation(value = "Retrieves all events for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Event.class, responseContainer = "List")
@@ -328,7 +328,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/all")
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organizations.", authorizations = {

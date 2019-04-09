@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -151,11 +152,15 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     public String getAbsolutePath() {
-        return absolutePath;
+        if (absolutePath == null) {
+            return null;
+        }
+        return Paths.get(absolutePath).normalize().toString();
     }
 
     public void setAbsolutePath(String absolutePath) {
         // TODO: Figure out the actual absolute path before this workaround
+        // FIXME: it looks like dockstore tool test_parameter --add and a number of other CLI commands depend on this now
         this.absolutePath = ZipSourceFileHelper.addLeadingSlashIfNecessary((absolutePath));
         if (!this.absolutePath.equals(absolutePath)) {
             LOG.warn("Absolute path workaround used, this should be fixed at some point");

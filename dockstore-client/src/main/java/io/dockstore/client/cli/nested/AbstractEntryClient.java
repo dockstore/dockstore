@@ -119,6 +119,7 @@ public abstract class AbstractEntryClient<T> {
 
     protected boolean isAdmin = false;
     protected boolean isWesCommand = false;
+    protected boolean isLocalEntry = false;
     protected String wesUri = null;
     protected String wesAuth = null;
 
@@ -142,6 +143,10 @@ public abstract class AbstractEntryClient<T> {
 
     public boolean isWesCommand() {
         return isWesCommand;
+    }
+
+    public boolean isLocalEntry() {
+        return isLocalEntry;
     }
 
     public CWL getCwlUtil() {
@@ -1098,12 +1103,14 @@ public abstract class AbstractEntryClient<T> {
             } else if (args.contains("--local-entry")) {
                 final String descriptor = optVal(args, "--descriptor", null);
                 final String localFilePath = reqVal(args, "--local-entry");
+                this.isLocalEntry = true;
                 preValidateLaunchArguments(args);
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
                 if (!args.contains("--entry")) {
                     errorMessage("dockstore: missing required flag --entry", CLIENT_ERROR);
                 }
+                this.isLocalEntry = false;
                 preValidateLaunchArguments(args);
                 final String descriptor = optVal(args, "--descriptor", CWL_STRING);
                 if (descriptor.equals(CWL_STRING)) {
@@ -1140,7 +1147,7 @@ public abstract class AbstractEntryClient<T> {
      */
     public abstract String zipFilename(T entry);
 
-    private void launchCwl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException, IOException {
+    private void launchCwl(String entry, final List<String> args, boolean isALocalEntry) throws ApiException, IOException {
         final String yamlRun = optVal(args, "--yaml", null);
         String jsonRun = optVal(args, "--json", null);
         final String uuid = optVal(args, "--uuid", null);
@@ -1149,7 +1156,7 @@ public abstract class AbstractEntryClient<T> {
             errorMessage("One of  --json or --yaml is required", CLIENT_ERROR);
         }
         CWLClient client = new CWLClient(this);
-        client.launch(entry, isLocalEntry, yamlRun, jsonRun, null, uuid);
+        client.launch(entry, isALocalEntry, yamlRun, jsonRun, null, uuid);
     }
 
     /**
@@ -1179,12 +1186,12 @@ public abstract class AbstractEntryClient<T> {
         }
     }
 
-    private void launchWdl(final List<String> args, boolean isLocalEntry) throws IOException, ApiException {
+    private void launchWdl(final List<String> args, boolean isALocalEntry) throws IOException, ApiException {
         final String entry = reqVal(args, "--entry");
-        launchWdl(entry, args, isLocalEntry);
+        launchWdl(entry, args, isALocalEntry);
     }
 
-    private void launchWdl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
+    private void launchWdl(String entry, final List<String> args, boolean isALocalEntry) throws ApiException {
         final String yamlRun = optVal(args, "--yaml", null);
         String jsonRun = optVal(args, "--json", null);
         if (!(yamlRun != null ^ jsonRun != null)) {
@@ -1193,14 +1200,14 @@ public abstract class AbstractEntryClient<T> {
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
         final String uuid = optVal(args, "--uuid", null);
         WDLClient client = new WDLClient(this);
-        client.launch(entry, isLocalEntry, yamlRun, jsonRun, wdlOutputTarget, uuid);
+        client.launch(entry, isALocalEntry, yamlRun, jsonRun, wdlOutputTarget, uuid);
     }
 
-    private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
+    private void launchNextFlow(String entry, final List<String> args, boolean isALocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);
-        client.launch(entry, isLocalEntry, null, json, null, uuid);
+        client.launch(entry, isALocalEntry, null, json, null, uuid);
     }
 
     private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {
@@ -1332,22 +1339,7 @@ public abstract class AbstractEntryClient<T> {
         out("NOTE: WES SUPPORT IS IN BETA AT THIS TIME. RESULTS MAY BE UNPREDICTABLE.");
     }
 
-    private void publishHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + getEntryType().toLowerCase() + " publish --help");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish [parameters]");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish --unpub [parameters]");
-        out("");
-        out("Description:");
-        out("  Publish/unpublish a registered " + getEntryType() + ".");
-        out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
-        out("Required Parameters:");
-        out("  --entry <entry>             Complete " + getEntryType()
-                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("  --entryname <" + getEntryType() + "name>      " + getEntryType() + "name of new entry");
-        printHelpFooter();
-    }
+    protected abstract void publishHelp();
 
     private void starHelp() {
         printHelpHeader();
