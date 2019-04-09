@@ -5,11 +5,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import com.google.common.io.Files;
 import io.dockstore.client.cli.SwaggerUtility;
-import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
 import io.openapi.wes.client.api.WorkflowExecutionServiceApi;
 import io.openapi.wes.client.model.RunId;
@@ -18,6 +16,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
@@ -30,10 +29,7 @@ public class WESLauncher extends BaseLauncher {
     // Cromwell currently supports draft-2 of the WDL specification
     // https://cromwell.readthedocs.io/en/stable/LanguageSupport/
     private static final String WDL_WORKFLOW_TYPE_VERSION = "draft-2";
-
-    protected List<String> command;
-    protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
-    protected WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi;
+    private WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi;
 
 
     public WESLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
@@ -111,7 +107,7 @@ public class WESLauncher extends BaseLauncher {
         }
     }
 
-    public void runWESCommand(String jsonString, File localPrimaryDescriptorFile, File zippedEntry) {
+    public void runWESCommand(String jsonInputFilePath, File localPrimaryDescriptorFile, File zippedEntry) {
         String workflowURL = localPrimaryDescriptorFile.getName();
         final File tempDir = Files.createTempDir();
 
@@ -124,11 +120,21 @@ public class WESLauncher extends BaseLauncher {
         // Including it twice should not cause a problem
         workflowAttachment.add(localPrimaryDescriptorFile);
 
-        addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry, tempDir);
 
-        File jsonInputFile = new File(jsonString);
+        addFilesToWorkflowAttachment(workflowAttachment, zippedEntry, tempDir);
+
         // add the input file so the endpoint has it; not sure if this is needed
+        File jsonInputFile = new File(jsonInputFilePath);
         workflowAttachment.add(jsonInputFile);
+
+        String jsonString = null;
+        try {
+            jsonString = abstractEntryClient.fileToJSON(jsonInputFilePath);
+        } catch (IOException ex) {
+            System.out.println("Could not construct JSON string from " + jsonInputFilePath + ". Request will not be sent to WES endpoint. "
+                    + "Please check that the input file is proper JSON");
+            errorMessage(ex.getMessage(), IO_ERROR);
+        }
 
         String languageType = this.languageType.toString().toUpperCase();
 
@@ -141,7 +147,7 @@ public class WESLauncher extends BaseLauncher {
         }
 
         try {
-            RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonInputFile, languageType, workflowTypeVersion, TAGS,
+            RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonString, languageType, workflowTypeVersion, TAGS,
                     "{}", workflowURL, workflowAttachment);
             System.out.println("Launched WES run with id: " + response.toString());
         } catch (io.openapi.wes.client.ApiException e) {
