@@ -101,7 +101,8 @@ public class WESLauncher extends BaseLauncher {
                 workflowAttachment.add(afile);
             }
         } catch (Exception e) {
-            LOG.error("Unable to traverse directory " + tempDir.getName() + " to get workflow attachment files", e);
+            System.out.println("Unable to traverse directory " + tempDir.getName() + " to get workflow "
+                            + "attachment files");
             exceptionMessage(e, "Unable to traverse directory " + tempDir.getName() + " to get workflow "
                     + "attachment files", GENERIC_ERROR);
         }
@@ -131,9 +132,11 @@ public class WESLauncher extends BaseLauncher {
         try {
             jsonString = abstractEntryClient.fileToJSON(jsonInputFilePath);
         } catch (IOException ex) {
-            System.out.println("Could not construct JSON string from " + jsonInputFilePath + ". Request will not be sent to WES endpoint. "
-                    + "Please check that the input file is proper JSON");
-            errorMessage(ex.getMessage(), IO_ERROR);
+            System.out.println("Could not construct JSON from " + jsonInputFilePath + ". Request will not be sent to WES endpoint. "
+                    + "Please check that the input file is proper JSON.");
+            exceptionMessage(ex,"Could not construct JSON from " + jsonInputFilePath + ". Request will not be sent to WES endpoint. "
+                    + "Please check that the input file is proper JSON.", IO_ERROR);
+
         }
 
         String languageType = this.languageType.toString().toUpperCase();
