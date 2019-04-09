@@ -215,10 +215,13 @@ eyJoaXN0b3J5IjpbMjA4MjI5MzQ4NV19
 ## Workflow Execution Service (WES) Command Line Interface (CLI)
 
 The Workflow Execution Service API describes a standard programmatic way to run and manage workflows. See more information here: 
-https://github.com/ga4gh/workflow-execution-service-schemas
+[https://github.com/ga4gh/workflow-execution-service-schemas](https://github.com/ga4gh/workflow-execution-service-schemas).
 
 The Dockstore CLI implements a WES client that allows users to submit a request to launch a workflow run, get the status of a run, or cancel a
 run at a WES endpoint. 
+
+Workflow inputs must be described so that the remote executor can access them. In practice, this means providing them using HTTP URLs in the 
+workflow input file. In addition, to download outputs, the workflow and executor must be configured to make these data available using HTTP methods.
 
 
 ### Usage
