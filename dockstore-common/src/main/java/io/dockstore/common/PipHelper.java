@@ -24,18 +24,20 @@ public final class PipHelper {
      */
     public static String convertSemVerToAvailableVersion(String semVerString) {
         if (semVerString == null || DEV_SEM_VER.equals(semVerString)) {
-            semVerString = "9001.9001.9001";
+            return "1.6.0";
         }
         Version semVer = Version.valueOf(semVerString);
         // Use the 1.6.0 even for snapshot
-        if (semVer.greaterThan(Version.valueOf("1.5.0"))) {
+        if (semVer.getMinorVersion() == 7) {
+            return "1.7.0";
+        } else if (semVer.getMinorVersion() == 6) {
             return "1.6.0";
-        }
-        if (semVer.greaterThan(Version.valueOf("1.4.0"))) {
+        } else if (semVer.getMinorVersion() == 5) {
             return "1.5.0";
-        } else {
+        } else if (semVer.getMinorVersion() == 4 || semVer.getMinorVersion() == 3) {
             return "1.4.0";
         }
+        return null;
     }
 
     /**
