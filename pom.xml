@@ -40,9 +40,9 @@
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>1.11.313</aws.version>
-        <powermock.version>2.0.0-beta.5</powermock.version>
+        <powermock.version>2.0.0</powermock.version>
         <postgresql.version>42.2.5</postgresql.version>
-        <mockito.version>2.22.0</mockito.version>
+        <mockito.version>2.26.0</mockito.version>
         <cwlavro.version>2.0.4.2</cwlavro.version>
         <okhttp.version>3.9.0</okhttp.version>
         <slf4j.version>1.7.26</slf4j.version>
@@ -57,11 +57,6 @@
         <skipClientITs>true</skipClientITs>
         <skipITs>true</skipITs>
     </properties>
-
-    <!-- deprecated, but needed by Versions Maven Plugin -->
-    <prerequisites>
-        <maven>3.3.9</maven>
-    </prerequisites>
 
     <organization>
         <name>Dockstore</name>
@@ -126,6 +121,11 @@
             <id>sagebionetworks</id>
             <name>sagebionetworks-releases</name>
             <url>http://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
+        </repository>
+        <repository>
+            <id>mockito</id>
+            <name>mockito</name>
+            <url>https://dl.bintray.com/mockito/maven/</url>
         </repository>
     </repositories>
 
@@ -490,13 +490,13 @@
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
-                <version>1.8.21</version>
+                <version>1.9.10</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.8.21</version>
+                <version>1.9.10</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -508,7 +508,7 @@
             <dependency>
                 <groupId>org.easymock</groupId>
                 <artifactId>easymock</artifactId>
-                <version>3.6</version>
+                <version>4.0.1</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.objenesis</groupId>
@@ -557,7 +557,7 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>2.6</version>
+                <version>3.0.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.http-client</groupId>
@@ -854,10 +854,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.7.0</version>
+                    <version>3.8.0</version>
                     <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
+                        <release>11</release>
                         <showDeprecation>true</showDeprecation>
                     </configuration>
                 </plugin>
@@ -897,7 +896,14 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.1.1</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.shared</groupId>
+                            <artifactId>maven-dependency-analyzer</artifactId>
+                            <version>1.11.1</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1094,10 +1100,10 @@
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
                                 <requireMavenVersion>
-                                    <version>3.3.9</version>
+                                    <version>3.5.4</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>1.8.0</version>
+                                    <version>11</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
@@ -1139,6 +1145,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>11</release>
+	        </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1219,22 +1228,6 @@
                         <param>${project.basedir}/reports/target/site/jacoco-aggregate/jacoco.xml</param>
                     </jacocoReports>
                 </configuration>
-            </plugin>
-            <!-- identify and fail if we use problematic Java dependencies for Java 9 -->
-            <plugin>
-                <groupId>org.codefx.mvn</groupId>
-                <artifactId>jdeps-maven-plugin</artifactId>
-                <version>0.2</version>
-                <configuration>
-                    <defaultSeverity>FAIL</defaultSeverity>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>jdkinternals</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
