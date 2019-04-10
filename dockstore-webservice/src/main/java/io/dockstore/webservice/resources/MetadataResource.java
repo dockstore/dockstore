@@ -231,6 +231,9 @@ public class MetadataResource {
         }
         boolean unwrap = !("json").equals(output);
         String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
+        if (fileVersion == null) {
+            throw new CustomWebApplicationException("Invalid version, could not retrieve runner dependencies file", HttpStatus.SC_BAD_REQUEST);
+        }
         try {
             String content = Resources.toString(this.getClass().getClassLoader()
                     .getResource("requirements/" + fileVersion + "/requirements" + (pythonVersion.startsWith("3") ? "3" : "") + ".txt"), StandardCharsets.UTF_8);
