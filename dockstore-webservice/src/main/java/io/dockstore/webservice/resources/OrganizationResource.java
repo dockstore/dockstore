@@ -720,7 +720,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     /**
      * Common checks done by the user add/edit/delete endpoints
      *
-     * @param organizationId Organization ID to perform action on
+     * @param organizationId Organization ID of organization to perform action on
      * @param userId User ID of user to perform action on
      * @param user User performing the action
      * @return A pair of organistion to edit and user add/edit/delete role
