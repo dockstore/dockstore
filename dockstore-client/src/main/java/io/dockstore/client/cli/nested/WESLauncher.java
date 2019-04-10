@@ -16,7 +16,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
@@ -61,7 +60,7 @@ public class WESLauncher extends BaseLauncher {
      * Provisions output files defined in the parameter file
      * @param stdout stdout of running entry
      * @param stderr stderr of running entry
-     * @param wdlOutputTarget
+     * @param wdlOutputTarget remote path to provision outputs files to (ex: s3://oicr.temp/testing-launcher/)
      */
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
@@ -80,8 +79,8 @@ public class WESLauncher extends BaseLauncher {
         try {
             SwaggerUtility.unzipFile(zippedEntry, tempDir);
         } catch (IOException e) {
-            System.out.println("Could not get files from workflow attachment " + zippedEntry.getName() + " Request not sent.");
-            exceptionMessage(e, "Unable to get workflow attachment files from zip file " + zippedEntry.getName(), IO_ERROR);
+            exceptionMessage(e, "Unable to get workflow attachment files from zip file " + zippedEntry.getName()
+                    + " Request not sent.", IO_ERROR);
         }
 
         try {
@@ -101,8 +100,6 @@ public class WESLauncher extends BaseLauncher {
                 workflowAttachment.add(afile);
             }
         } catch (Exception e) {
-            System.out.println("Unable to traverse directory " + tempDir.getName() + " to get workflow "
-                            + "attachment files");
             exceptionMessage(e, "Unable to traverse directory " + tempDir.getName() + " to get workflow "
                     + "attachment files", GENERIC_ERROR);
         }
@@ -132,11 +129,8 @@ public class WESLauncher extends BaseLauncher {
         try {
             jsonString = abstractEntryClient.fileToJSON(jsonInputFilePath);
         } catch (IOException ex) {
-            System.out.println("Could not construct JSON from " + jsonInputFilePath + ". Request will not be sent to WES endpoint. "
-                    + "Please check that the input file is proper JSON.");
-            exceptionMessage(ex,"Could not construct JSON from " + jsonInputFilePath + ". Request will not be sent to WES endpoint. "
-                    + "Please check that the input file is proper JSON.", IO_ERROR);
-
+            exceptionMessage(ex, "Could not construct JSON from " + jsonInputFilePath + ". Request will not be sent to WES "
+                    + "endpoint. Please check that the input file is proper JSON.", IO_ERROR);
         }
 
         String languageType = this.languageType.toString().toUpperCase();
