@@ -39,7 +39,7 @@
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
-        <aws.version>1.11.313</aws.version>
+        <aws.version>1.11.534</aws.version>
         <powermock.version>2.0.0</powermock.version>
         <postgresql.version>42.2.5</postgresql.version>
         <mockito.version>2.26.0</mockito.version>
