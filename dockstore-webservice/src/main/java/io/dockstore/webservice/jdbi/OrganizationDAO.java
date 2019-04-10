@@ -31,6 +31,9 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
         session.flush();
     }
 
+    public List<Organization> sortApprovedByStar() {
+        return list(namedQuery("io.dockstore.webservice.core.Organization.sortApprovedByStar"));
+    }
     public List<Organization> findAllApproved() {
         return list(namedQuery("io.dockstore.webservice.core.Organization.findAllApproved"));
     }

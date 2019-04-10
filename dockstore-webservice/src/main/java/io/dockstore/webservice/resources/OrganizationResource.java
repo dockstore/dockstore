@@ -81,7 +81,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all available organizations.", notes = "NO Authentication", responseContainer = "List", response = Organization.class)
     public List<Organization> getApprovedOrganizations() {
-        return organizationDAO.findAllApproved();
+        return organizationDAO.sortApprovedByStar();
     }
 
     @POST
