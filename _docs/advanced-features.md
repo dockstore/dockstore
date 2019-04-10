@@ -220,8 +220,8 @@ The Workflow Execution Service API describes a standard programmatic way to run 
 The Dockstore CLI implements a WES client that allows users to submit a request to launch a workflow run, get the status of a run, or cancel a
 run at a WES endpoint. 
 
-Workflow inputs must be described so that the remote executor can access them. In practice, this means providing them using HTTP URLs in the 
-workflow input file. In addition, to download outputs, the workflow and executor must be configured to make these data available using HTTP methods.
+Workflow inputs must be described so that the remote executor can access them. In practice, this means providing them using HTTP(S) URLs in the 
+workflow input file. In addition, to download outputs, the workflow and executor must be configured to make these data available using HTTP(S) methods.
 
 
 ### Usage
