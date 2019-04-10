@@ -39,7 +39,7 @@ public class ToolClassesApiV1 {
     private final ToolClassesApiService delegate = ToolClassesApiServiceFactory.getToolClassesApi();
 
     @GET
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
         "GA4GHV1", })

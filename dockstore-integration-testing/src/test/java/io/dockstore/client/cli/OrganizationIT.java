@@ -1164,6 +1164,21 @@ public class OrganizationIT extends BaseIT {
                 .runSelectStatement("select count(*) from event where type = 'ADD_TO_COLLECTION'", new ScalarHandler<>());
         assertEquals("There should be 2 events of type ADD_TO_COLLECTION, there are " + count3, 2, count3);
 
+        // Unpublish tool
+        PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
+        containersApi.publish(entryId, unpublishRequest);
+
+        // Collection should have one tool returned
+        long entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
+        assertEquals("There should be one entry with the collection, there are " + entryCount, 1, entryCount);
+
+        // Publish tool
+        containersApi.publish(entryId, publishRequest);
+
+        // Collection should have two tools returned
+        entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
+        assertEquals("There should be two entries with the collection, there are " + entryCount, 2, entryCount);
+
         // Remove a tool from the collection
         organizationsApi.deleteEntryFromCollection(organization.getId(), collectionId, entryId);
 

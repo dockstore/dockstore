@@ -316,6 +316,6 @@ public abstract class GA4GHIT {
             return;
         }
         Response response = client.target(url).request().get();
-        assertEquals("Not ok response: " + url, response.getStatus(), HttpStatus.SC_OK);
+        assertEquals("Not ok response: " + url, HttpStatus.SC_OK, response.getStatus());
     }
 }

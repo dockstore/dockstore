@@ -56,7 +56,6 @@ import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHMyself;
-import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
@@ -213,21 +212,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
-            // get repos under the user directly
-            Map<String, GHRepository> allRepositories = github.getMyself().getAllRepositories();
-            for (Map.Entry<String, GHRepository> innerEntry : allRepositories.entrySet()) {
-                reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-            }
+            // TODO: This code should be optimized. Ex. Only grab repositories from a specific org if refreshing by org.
+            // The filter all includes:
+            // * All repositories I own
+            // * All repositories I am a contributor on
+            // * All repositories from organizations I belong to
 
-            // get organizations that user has access to
-            Map<String, GHOrganization> myOrganizations = github.getMyOrganizations();
-            for (Map.Entry<String, GHOrganization> entry : myOrganizations.entrySet()) {
-                GHOrganization organization = github.getOrganization(entry.getKey());
-                Map<String, GHRepository> repositories = organization.getRepositories();
-                for (Map.Entry<String, GHRepository> innerEntry : repositories.entrySet()) {
-                    reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-                }
-            }
+            final int pageSize = 30;
+            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> reposByGitURl.put(r.getSshUrl(), r.getFullName()));
             return reposByGitURl;
         } catch (IOException e) {
             LOG.error("could not find projects due to ", e);
