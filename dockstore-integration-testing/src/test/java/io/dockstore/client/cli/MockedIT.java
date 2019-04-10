@@ -176,7 +176,7 @@ public class MockedIT {
         String configFileLocation = TestUtility.getConfigFileLocation(true, true, true);
         when(client.getConfigFile()).thenReturn(configFileLocation);
 
-        Client.main(new String[] { "--clean-cache", "--config", configFileLocation });
+        Client.main(new String[] { "--clean-cache", "--config", configFileLocation, "--script" });
         // this is kind of redundant, it looks like we take the mocked config file no matter what
         Client.main(new String[] { "--config", configFileLocation, "tool", "launch", "--entry", "quay.io/collaboratory/arrays", "--json",
                 ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"),
