@@ -1,5 +1,6 @@
 package io.dockstore.client.cli;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -7,20 +8,17 @@ import java.util.Objects;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.resources.StarrableResourceInterface;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Collection;
-import io.swagger.client.model.CollectionOrganization;
-import io.swagger.client.model.Event;
-import io.swagger.client.model.Limits;
-import io.swagger.client.model.Organization;
+import io.swagger.client.model.*;
 import io.swagger.client.model.Organization.StatusEnum;
-import io.swagger.client.model.PublishRequest;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -1376,5 +1374,26 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to update a collection with an existing name.");
         }
+    }
+
+    @Test
+    public void testStarringOrganization() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        UsersApi usersApi = new UsersApi(webClientUser2);
+        User user = usersApi.getUser();
+        List<User> users = new ArrayList<>();
+        users.add(user);
+
+        StarRequest body = SwaggerUtility.createStarRequest(false);
+        // Create the Organization
+        Organization organization = createOrg(organizationsApi);
+
+        assertEquals(0, organization.getStarredUsers().size());
+        organization.setStarredUsers(users);
+        assertEquals(1, organization.getStarredUsers().size());
+        users.remove(user);
+        organization.setStarredUsers(users);
+        assertEquals(0, organization.getStarredUsers().size());
     }
 }
