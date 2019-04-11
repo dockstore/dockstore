@@ -85,7 +85,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @ApiOperation(nickname = "updateCollectionAliases", value = "Update the aliases linked to a Collection in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Collection.class)
     public Collection updateAliases(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Entry to modify.", required = true) @PathParam("collectionId") Long id,
+        @ApiParam(value = "Collection to modify.", required = true) @PathParam("collectionId") Long id,
         @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         return AliasableResourceInterface.super.updateAliases(user, id, aliases, emptyBody);
@@ -290,7 +290,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @ApiOperation(value = "Retrieve all collections for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, responseContainer = "List", response = Collection.class)
     public List<Collection> getCollectionsFromOrganization(@ApiParam(hidden = true) @Auth Optional<User> user,
-            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId, @QueryParam("include") String include) {
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId, @ApiParam(value = "Included fields") @QueryParam("include") String include) {
         if (!user.isPresent()) {
             Organization organization = organizationDAO.findApprovedById(organizationId);
             throwExceptionForNullOrganization(organization);
@@ -370,7 +370,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork
     @Path("{organizationId}/collections/{collectionId}")
-    @ApiOperation(value = "Update a collection.", notes = "Currently only name and description can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
+    @ApiOperation(value = "Update a collection.", notes = "Currently only name, display name, description, and topic can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection updateCollection(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Collection to update with.", required = true) Collection collection,
             @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
