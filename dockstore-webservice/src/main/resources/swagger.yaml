@@ -2795,7 +2795,7 @@ paths:
       parameters:
       - name: "collectionId"
         in: "path"
-        description: "Entry to modify."
+        description: "Collection to modify."
         required: true
         type: "integer"
         format: "int64"
@@ -2889,8 +2889,8 @@ paths:
       tags:
       - "organizations"
       summary: "Update an organization."
-      description: "Currently only name, description, email, link, avatarUrl, and\
-        \ location can be updated."
+      description: "Currently only name, display name, description, topic, email,\
+        \ link, avatarUrl, and location can be updated."
       operationId: "updateOrganization"
       produces:
       - "application/json"
@@ -2992,6 +2992,7 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
+        description: "Included fields"
         required: false
         type: "string"
       responses:
@@ -3065,7 +3066,8 @@ paths:
       tags:
       - "organizations"
       summary: "Update a collection."
-      description: "Currently only name and description can be updated."
+      description: "Currently only name, display name, description, and topic can\
+        \ be updated."
       operationId: "updateCollection"
       produces:
       - "application/json"
@@ -3444,7 +3446,7 @@ paths:
         - "MEMBER"
       - name: "userId"
         in: "query"
-        description: "User to add to org."
+        description: "User ID of user to update within organization."
         required: true
         type: "integer"
         format: "int64"
@@ -3480,7 +3482,7 @@ paths:
         - "MEMBER"
       - name: "userId"
         in: "query"
-        description: "User to add to org."
+        description: "User ID of user to add to organization."
         required: true
         type: "integer"
         format: "int64"
@@ -3515,7 +3517,7 @@ paths:
       parameters:
       - name: "userId"
         in: "query"
-        description: "User to add to org."
+        description: "User ID of user to remove from organization."
         required: true
         type: "integer"
         format: "int64"

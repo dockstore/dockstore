@@ -147,7 +147,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         if (organizationUser == null) {
             String msg = "Organization not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         if (Objects.equals(organization.getStatus(), Organization.ApplicationState.REJECTED)) {
@@ -404,7 +404,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Timed
     @UnitOfWork
     @Path("{organizationId}")
-    @ApiOperation(value = "Update an organization.", notes = "Currently only name, description, email, link, avatarUrl, and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
+    @ApiOperation(value = "Update an organization.", notes = "Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     public Organization updateOrganization(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Organization to update with.", required = true) Organization organization,
         @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id) {
@@ -514,7 +514,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
     public OrganizationUser addUserToOrg(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @QueryParam("role") String role,
-        @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
+        @ApiParam(value = "User ID of user to add to organization.", required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
 
@@ -548,7 +548,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
     public OrganizationUser updateUserRole(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @QueryParam("role") String role,
-        @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
+        @ApiParam(value = "User ID of user to update within organization.", required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId) {
 
         // Basic checks to ensure that action can be taken
@@ -580,7 +580,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "Remove a user from an organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = void.class)
     public void deleteUserRole(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
+        @ApiParam(value = "User ID of user to remove from organization.", required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId) {
 
         // Basic checks to ensure that action can be taken
@@ -720,9 +720,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     /**
      * Common checks done by the user add/edit/delete endpoints
      *
-     * @param organizationId
-     * @param userId
-     * @param user
+     * @param organizationId Organization ID of organization to perform action on
+     * @param userId User ID of user to perform action on
+     * @param user User performing the action
      * @return A pair of organistion to edit and user add/edit/delete role
      */
     private Pair<Organization, User> commonUserOrg(Long organizationId, Long userId, User user) {
