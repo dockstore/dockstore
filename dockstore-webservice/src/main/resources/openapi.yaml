@@ -2803,6 +2803,36 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CollectionOrganization"
+  "/entries/{id}/topic":
+    put:
+      tags:
+        - entries
+      summary: Set the topic ID for an entry.
+      description: ""
+      operationId: setTopicId
+      parameters:
+        - name: id
+          in: path
+          description: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: topicId
+          in: query
+          description: The Discourse topic Id.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -6370,12 +6400,11 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        topicId:
+          type: string
+          description: The Id of the corresponding topic on Dockstore Discuss
         custom_docker_registry_path:
           type: string
-          readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
           readOnly: true
         has_checker:
           type: boolean
@@ -6392,6 +6421,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6557,10 +6590,9 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
+        topicId:
           type: string
-          format: date-time
-          readOnly: true
+          description: The Id of the corresponding topic on Dockstore Discuss
         has_checker:
           type: boolean
           readOnly: true
@@ -6576,6 +6608,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7525,13 +7561,12 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        topicId:
+          type: string
+          description: The Id of the corresponding topic on Dockstore Discuss
         parent_id:
           type: integer
           format: int64
-          readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
           readOnly: true
         has_checker:
           type: boolean
@@ -7548,6 +7583,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

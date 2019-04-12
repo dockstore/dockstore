@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -90,6 +91,20 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException("Published entry does not exist.", HttpStatus.SC_BAD_REQUEST);
         }
         return this.toolDAO.findCollectionsByEntryId(entry.getId());
+    }
+
+    @PUT
+    @Path("/{id}/topic")
+    @Timed
+    @RolesAllowed({ "curator" })
+    @UnitOfWork
+    @ApiOperation(value = "Set the topic ID for an entry.", response = Entry.class)
+    public Entry setTopicId(@ApiParam(value = "id", required = true) @PathParam("id") Long id,
+            @ApiParam(value = "The Discourse topic Id.", required = true) @QueryParam("topicId") String topicId,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        Entry entry = this.toolDAO.getGenericEntryById(id);
+        entry.setTopicId(topicId);
+        return entry;
     }
 
     @Override

@@ -2535,6 +2535,39 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/CollectionOrganization"
+  /entries/{id}/topic:
+    put:
+      tags:
+      - "entries"
+      summary: "Set the topic ID for an entry."
+      description: ""
+      operationId: "setTopicId"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "topicId"
+        in: "query"
+        description: "The Discourse topic Id."
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Entry"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -5834,12 +5867,11 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      topicId:
+        type: "string"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       custom_docker_registry_path:
         type: "string"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
         readOnly: true
       has_checker:
         type: "boolean"
@@ -5856,6 +5888,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6048,10 +6084,9 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
+      topicId:
         type: "string"
-        format: "date-time"
-        readOnly: true
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6067,6 +6102,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7102,13 +7141,12 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      topicId:
+        type: "string"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       parent_id:
         type: "integer"
         format: "int64"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
         readOnly: true
       has_checker:
         type: "boolean"
@@ -7125,6 +7163,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
