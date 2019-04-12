@@ -1,0 +1,165 @@
+<!--
+    Copyright 2018 OICR
+ *
+    Licensed under the Apache License, Version 2.0 (the "License")
+    you may not use this file except in compliance with the License
+    You may obtain a copy of the License at
+ *
+        http://www.apache.org/licenses/LICENSE-2.0
+ *
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<table style="padding: 5px;">
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>CWL</th>
+            <th>WDL</th>
+            <th>Nextflow</th>
+        </tr>
+    </thead>
+
+    <body>
+        <tr>
+            <th>Dockstore site</th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td><a href="/getting-started-with-dockstore/">Tool registration</a></td>
+            <td style="background-color:#dff0d8">Yes</td>
+            <td style="background-color:#dff0d8">Yes</td>
+            <td style="background-color:#fcf8e3">No</td>
+        </tr>
+        <tr>
+            <td><a href="/workflows/">Workflow registration</a></td>
+            <td style="background-color:#dff0d8">Yes</td>
+            <td style="background-color:#dff0d8">Yes</td>
+            <td style="background-color:#dff0d8">Yes</td>
+        </tr>
+        <tr>
+            <td><a href="/hosted-tools-and-workflows/">Hosted Workflows</a></td>
+            <td style="background-color:#dff0d8">Yes</td>
+            <td style="background-color:#dff0d8">Yes</td>
+            <td style="background-color:#dff0d8">Yes</td>
+        </tr>
+        <tr>
+            <td>DAG Display</td>
+            <td style="background-color:#dff0d8">Yes (cwl version=>1.0)
+                <sup>[0]</sup>
+            </td>
+            <td style="background-color:#dff0d8">Yes (wdl version&lt;=draft-2)
+                <sup>[1]</sup>
+            </td>
+            <td style="background-color:#dff0d8">Limited support</td>
+        </tr>
+        <tr>
+            <td>Tool Tab Display</td>
+            <td style="background-color:#dff0d8">Yes (cwl version=>1.0)</td>
+            <td style="background-color:#dff0d8">Yes (wdl version&lt;=draft-2)</td>
+            <td style="background-color:#dff0d8">Yes</td>
+        </tr>
+        <tr>
+            <td>Launch-with Platforms</td>
+            <td style="background-color:#fcf8e3">Not yet!</td>
+            <td style="background-color:#dff0d8">
+                <a href="/firecloud-launch-with/">FireCloud</a> (workflows only)<sup>[2]</sup>
+                <br>
+                <a href="/dnastack-launch-with/">DNAstack</a> (workflows only)<sup>[3]</sup>
+                <br>
+                <a href="/dnanexus-launch-with/">DNAnexus</a> (workflows only)
+                <br>
+                Terra (workflows only)
+            </td>
+            <td style="background-color:#fcf8e3">Not yet!</td>
+        </tr>
+        <tr>
+            <td>Metadata Display</td>
+            <td style="background-color:#dff0d8"><a href="/best-practices/#authorship-metadata">Yes</a></td>
+            <td style="background-color:#dff0d8"><a href="/wdl-best-practices/#authorship-metadata">Yes (wdl version&lt;=draft-2)</a></td>
+            <td style="background-color:#dff0d8"><a href="/nfl-best-practices/#authorship-metadata">Yes</a></td>
+        </tr>
+        <tr>
+            <th>Dockstore CLI</th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td><a href="/launch/#dockstore-cli">Local workflow engines</a></td>
+            <td style="background-color:#dff0d8">cwltool, Cromwell
+            </td>
+            <td style="background-color:#dff0d8">Cromwell
+                <sup>[4]</sup>
+            </td>
+            <td style="background-color:#dff0d8">Nextflow
+            </td>
+        </tr>
+        <tr>
+            <td><a href="/advanced-features/#file-provisioning">File Provisioning</a> In</td>
+            <td style="background-color:#dff0d8">Local File System
+                <br>HTTP
+                <br>FTP
+                <br>S3 via plugins
+                <br><a href="https://github.com/ga4gh/data-object-service-schemas">Data Object Service</a>
+            </td>
+            <td style="background-color:#dff0d8">Local File System
+                <br>HTTP
+                <br>FTP
+                <br>S3 via plugins
+                <br><a href="https://github.com/ga4gh/data-object-service-schemas">Data Object Service</a>
+            </td>
+            <td style="background-color:#dff0d8">Local File System
+                <br><a href="https://www.nextflow.io/docs/latest/script.html#http-ftp-files">HTTP</a>
+                <br><a href="https://www.nextflow.io/docs/latest/script.html#http-ftp-files">FTP</a>
+                <br><a href="https://www.nextflow.io/docs/latest/amazons3.html#">S3</a>
+            </td>
+        </tr>
+        <tr>
+            <td>Plugins Support</td>
+            <td style="background-color:#dff0d8">
+                <a href="https://github.com/dockstore/s3-plugin">s3</a>
+                <br>
+                <a href="https://github.com/dockstore/s3cmd-plugin">s3cmd</a>
+                <br>
+                <a href="https://github.com/dockstore/icgc-get-plugin">icgc-get</a>
+                <br>
+                <a href="https://github.com/dockstore/data-object-service-plugin">Data Object Service</a>
+            </td>
+            <td style="background-color:#dff0d8">
+                <a href="https://github.com/dockstore/s3-plugin">s3</a>
+                <br>
+                <a href="https://github.com/dockstore/s3cmd-plugin">s3cmd</a>
+                <br>
+                <a href="https://github.com/dockstore/icgc-get-plugin">icgc-get</a>
+                <br>
+                <a href="https://github.com/dockstore/data-object-service-plugin">Data Object Service</a>
+            </td>
+            <td style="background-color:#fcf8e3">No</td>
+        </tr>
+        <tr>
+            <td>File Provisioning Out</td>
+            <td style="background-color:#dff0d8">Local File System
+                <br>HTTP
+                <br>FTP
+                <br>S3 via plugins 
+            </td>
+            <td style="background-color:#fcf8e3">Local File System
+            </td>
+            <td style="background-color:#dff0d8">Local File System
+                <br><a href="https://www.nextflow.io/docs/latest/process.html#storedir">S3</a>
+            </td>
+        </tr>
+        <tr>
+            <td><a href="/advanced-features/#notifications">Notifications</a></td>
+            <td style="background-color:#dff0d8">Yes</td>
+            <td style="background-color:#dff0d8">Yes</td>
+            <td style="background-color:#fcf8e3">No</td>
+        </tr>
+    </body>
+</table>

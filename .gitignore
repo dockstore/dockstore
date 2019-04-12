@@ -61,3 +61,6 @@ dockstore-client/Cromwell.stderr.txt
 dockstore-client/Cromwell.stdout.txt
 dockstore-client/datastore
 dockstore-client/cromwell-executions
+
+# Documentation
+docs/_build/

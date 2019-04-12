@@ -1,0 +1,12 @@
+--2019-04-11 10:21:41--  https://github.com/ga4gh/dockstore/blob/gh-pages/assets/files/2017_BOSC_Sanger_keiranmraine.pdf
+Resolving github.com (github.com)... 192.30.253.113, 192.30.253.112
+Connecting to github.com (github.com)|192.30.253.113|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [text/html]
+Saving to: ‘2017_BOSC_Sanger_keiranmraine.pdf’
+
+     0K .......... .......... .......... .......... .......... 1.54M
+    50K .....                                                   110M=0.03s
+
+2019-04-11 10:21:41 (1.71 MB/s) - ‘2017_BOSC_Sanger_keiranmraine.pdf’ saved [56909]
+
