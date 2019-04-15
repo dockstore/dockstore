@@ -6995,7 +6995,6 @@ components:
       properties:
         star:
           type: boolean
-          readOnly: true
     Tag:
       type: object
       required:

@@ -40,4 +40,8 @@ public class StarRequest {
     public boolean getStar() {
         return star;
     }
+
+    public void setStar(boolean star) {
+        this.star = star;
+    }
 }
