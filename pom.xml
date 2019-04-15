@@ -158,6 +158,7 @@
         <module>dockstore-event-consumer</module>
         <module>reports</module>
         <module>openapi-java-wes-client</module>
+        <module>swagger-java-discourse-client</module>
     </modules>
 
 
