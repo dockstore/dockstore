@@ -1376,30 +1376,35 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
-//    @Test
-//    public void testStarringOrganization() {
-//        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
-//
-//        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
-//        UsersApi usersApi = new UsersApi(webClientUser2);
-//        User user = usersApi.getUser();
-//        List<User> users = new ArrayList<>();
-//        users.add(user);
-//
-//        //StarRequest body = SwaggerUtility.createStarRequest(false);
-//        StarRequest body = new StarRequest();
-//        body.setStar(false);
-//        // Create the Organization
-//        Organization organization = createOrg(organizationsApi);
-//
-//        organizationsApi.starOrganization(organization.getId(), body);
-//        assertEquals(1, organization.getStarredUsers().size());
-//
-//        assertEquals(0, organization.getStarredUsers().size());
-//        organization.setStarredUsers(users);
-//        assertEquals(1, organization.getStarredUsers().size());
-//        users.remove(user);
-//        organization.setStarredUsers(users);
-//        assertEquals(0, organization.getStarredUsers().size());
-//    }
+    @Test
+    public void testStarringOrganization() {
+        // Create the Organization, user, and star request body
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        Organization organization = createOrg(organizationsApi);
+        UsersApi usersApi = new UsersApi(webClientUser2);
+        User user = usersApi.getUser();
+        List<User> users = new ArrayList<>();
+        users.add(user);
+        StarRequest body = new StarRequest();
+        body.setStar(false);
+
+        // Test starring/unstarring org
+        organizationsApi.starOrganization(organization.getId(), body);
+        assertEquals(1, organizationsApi.getStarredUsers(organization.getId()).size());
+        assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsers(organization.getId()).get(0).getUsername());
+
+        organizationsApi.unstarOrganization(organization.getId());
+        assertEquals(0, organizationsApi.getStarredUsers(organization.getId()).size());
+
+        // Test setting/getting starred users
+        organization.setStarredUsers(users);
+        assertEquals(1, organization.getStarredUsers().size());
+        assertEquals(user.getUsername(), organization.getStarredUsers().get(0).getUsername());
+
+        users.remove(user);
+        organization.setStarredUsers(users);
+        assertEquals(0, organization.getStarredUsers().size());
+    }
 }
