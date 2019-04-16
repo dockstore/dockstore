@@ -96,6 +96,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotEmpty
     private String gitlabClientSecret;
 
+    @NotEmpty
+    private String discoureKey;
+
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
 
@@ -290,6 +293,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setGitlabClientSecret(String gitlabClientSecret) {
         this.gitlabClientSecret = gitlabClientSecret;
+    }
+
+    public String getDiscoureKey() {
+        return discoureKey;
+    }
+
+    public void setDiscoureKey(String discoureKey) {
+        this.discoureKey = discoureKey;
     }
 
     @JsonProperty("esconfiguration")

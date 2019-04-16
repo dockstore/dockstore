@@ -20,12 +20,12 @@
                    context="1.7.0">
     <changeSet author="aduncan" id="addToolTopicId">
         <addColumn tableName="tool">
-            <column name="topicid" type="varchar(255 BYTE)"/>
+            <column name="topicid" type="BIGINT"/>
         </addColumn>
     </changeSet>
     <changeSet author="aduncan" id="addWorkflowTopicId">
         <addColumn tableName="workflow">
-            <column name="topicid" type="varchar(255 BYTE)"/>
+            <column name="topicid" type="BIGINT"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>

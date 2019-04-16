@@ -2807,9 +2807,9 @@ paths:
     put:
       tags:
         - entries
-      summary: Set the topic ID for an entry.
+      summary: Create a discourse topic for an entry.
       description: ""
-      operationId: setTopicId
+      operationId: setDiscourseTopic
       parameters:
         - name: id
           in: path
@@ -2818,12 +2818,6 @@ paths:
           schema:
             type: integer
             format: int64
-        - name: topicId
-          in: query
-          description: The Discourse topic Id.
-          required: true
-          schema:
-            type: string
       requestBody:
         $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
@@ -2833,6 +2827,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Entry"
+      security:
+        - BEARER:
+            []
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -6401,7 +6398,8 @@ components:
           type: string
           format: date-time
         topicId:
-          type: string
+          type: integer
+          format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
         custom_docker_registry_path:
           type: string
@@ -6591,7 +6589,8 @@ components:
           type: string
           format: date-time
         topicId:
-          type: string
+          type: integer
+          format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
         has_checker:
           type: boolean
@@ -7562,7 +7561,8 @@ components:
           type: string
           format: date-time
         topicId:
-          type: string
+          type: integer
+          format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
         parent_id:
           type: integer

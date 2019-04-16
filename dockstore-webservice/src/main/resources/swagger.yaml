@@ -2539,9 +2539,9 @@ paths:
     put:
       tags:
       - "entries"
-      summary: "Set the topic ID for an entry."
+      summary: "Create a discourse topic for an entry."
       description: ""
-      operationId: "setTopicId"
+      operationId: "setDiscourseTopic"
       produces:
       - "application/json"
       parameters:
@@ -2551,11 +2551,6 @@ paths:
         required: true
         type: "integer"
         format: "int64"
-      - name: "topicId"
-        in: "query"
-        description: "The Discourse topic Id."
-        required: true
-        type: "string"
       - in: "body"
         name: "body"
         description: "This is here to appease Swagger. It requires PUT methods to\
@@ -2568,6 +2563,8 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -5868,7 +5865,8 @@ definitions:
         type: "string"
         format: "date-time"
       topicId:
-        type: "string"
+        type: "integer"
+        format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
       custom_docker_registry_path:
         type: "string"
@@ -6085,7 +6083,8 @@ definitions:
         type: "string"
         format: "date-time"
       topicId:
-        type: "string"
+        type: "integer"
+        format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
       has_checker:
         type: "boolean"
@@ -7142,7 +7141,8 @@ definitions:
         type: "string"
         format: "date-time"
       topicId:
-        type: "string"
+        type: "integer"
+        format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
       parent_id:
         type: "integer"

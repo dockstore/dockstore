@@ -29,10 +29,13 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
@@ -41,6 +44,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.discourse.client.ApiClient;
+import io.swagger.discourse.client.ApiException;
+import io.swagger.discourse.client.Configuration;
+import io.swagger.discourse.client.api.TopicsApi;
+import io.swagger.discourse.client.model.Body1;
+import io.swagger.discourse.client.model.InlineResponse2005;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,12 +67,23 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
+    private static final String DISCOURSE_URL = "https://discuss.dockstore.org/";
+
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;
+    private final Integer discourseCategoryId = 6;
+    private final ApiClient apiClient;
+    private final TopicsApi topicsApi;
 
-    public EntryResource(ToolDAO toolDAO) {
+    public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
         elasticManager = new ElasticManager();
+        apiClient = Configuration.getDefaultApiClient();
+        apiClient.addDefaultHeader("Content-Type", "application/x-www-form-urlencoded");
+        apiClient.setBasePath(DISCOURSE_URL);
+        apiClient.setApiKey(configuration.getDiscoureKey());
+        topicsApi = new TopicsApi(apiClient);
+
     }
 
     @PUT
@@ -98,12 +118,37 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Timed
     @RolesAllowed({ "curator" })
     @UnitOfWork
-    @ApiOperation(value = "Set the topic ID for an entry.", response = Entry.class)
-    public Entry setTopicId(@ApiParam(value = "id", required = true) @PathParam("id") Long id,
-            @ApiParam(value = "The Discourse topic Id.", required = true) @QueryParam("topicId") String topicId,
+    @ApiOperation(value = "Create a discourse topic for an entry.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
+    public Entry setDiscourseTopic(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "id", required = true) @PathParam("id") Long id,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Entry entry = this.toolDAO.getGenericEntryById(id);
-        entry.setTopicId(topicId);
+
+        Long entryTopicId = entry.getTopicId();
+        if (entryTopicId == null) {
+            throw new CustomWebApplicationException("Entry " + id + " already has an associated Discourse topic.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Create request body
+        Body1 body = new Body1();
+        body.setRaw("");
+        if (entry instanceof Workflow) {
+            body.setTitle(((Workflow)(entry)).getWorkflowPath());
+        } else {
+            body.setTitle(((Tool)(entry)).getToolPath());
+        }
+        body.setCategory(discourseCategoryId);
+
+        // Create new topic if possible
+        InlineResponse2005 response;
+        try {
+            response = topicsApi.postsJsonPost(body);
+        } catch (ApiException ex) {
+            throw new CustomWebApplicationException(ex.getMessage(), HttpStatus.SC_BAD_REQUEST);
+        }
+
+        entry.setTopicId(response.getId().longValue());
         return entry;
     }
 

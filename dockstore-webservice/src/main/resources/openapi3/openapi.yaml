@@ -148,7 +148,8 @@ components:
           type: array
           uniqueItems: true
         topicId:
-          type: string
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -625,7 +626,8 @@ components:
         toolname:
           type: string
         topicId:
-          type: string
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -786,7 +788,8 @@ components:
           type: array
           uniqueItems: true
         topicId:
-          type: string
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -2806,7 +2809,7 @@ paths:
           description: default response
   /entries/{id}/topic:
     put:
-      operationId: setTopicId
+      operationId: setDiscourseTopic
       parameters:
       - in: path
         name: id
@@ -2814,15 +2817,11 @@ paths:
         schema:
           format: int64
           type: integer
-      - in: query
-        name: topicId
-        schema:
-          type: string
       requestBody:
         content:
           '*/*':
             schema:
-              type: string
+              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -3060,7 +3059,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3166,7 +3165,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
