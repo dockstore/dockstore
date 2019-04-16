@@ -99,11 +99,11 @@ components:
           type: string
         gitHubAuthUrl:
           type: string
-        gitHubClientId:
-          type: string
         gitHubRedirectPath:
           type: string
         gitHubScope:
+          type: string
+        githubClientId:
           type: string
         gitlabAuthUrl:
           type: string

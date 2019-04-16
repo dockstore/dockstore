@@ -5853,7 +5853,7 @@ definitions:
         type: "string"
       enableLaunchWithFireCloud:
         type: "boolean"
-      gitHubClientId:
+      githubClientId:
         type: "string"
       quayIoClientId:
         type: "string"
