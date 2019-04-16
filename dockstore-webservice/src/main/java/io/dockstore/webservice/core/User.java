@@ -147,7 +147,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Organizations in dockstore that this user starred", position = 14)
+    @ApiModelProperty(value = "Organizations in Dockstore that this user starred", position = 14)
     @OrderBy("id")
     @JsonIgnore
     private final Set<Organization> starredOrganizations;
@@ -307,16 +307,20 @@ public class User implements Principal, Comparable<User>, Serializable {
     }
 
     public Set<Entry> getStarredEntries() {
-        return starredEntries; }
+        return starredEntries;
+    }
 
     public Set<Organization> getStarredOrganizations() {
-        return starredOrganizations; }
+        return starredOrganizations;
+    }
 
     public void addStarredEntry(Entry entry) {
-        starredEntries.add(entry); }
+        starredEntries.add(entry);
+    }
 
     public boolean removeStarredEntry(Entry entry) {
-        return starredEntries.remove(entry); }
+        return starredEntries.remove(entry);
+    }
 
     public void addStarredOrganization(Organization organization) {
         starredOrganizations.add(organization);

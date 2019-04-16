@@ -545,11 +545,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/starredOrganizations")
-    @ApiOperation(value = "Get the logged-in user's starred Organizations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class, responseContainer = "List")
+    @ApiOperation(value = "Get the logged-in user's starred organizations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class, responseContainer = "List")
     public Set<Organization> getStarredOrganizations(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        return u.getStarredOrganizations().stream().filter(element -> element instanceof Organization)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return u.getStarredOrganizations();
     }
 
     @GET

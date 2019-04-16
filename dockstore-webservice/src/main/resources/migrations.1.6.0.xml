@@ -348,23 +348,6 @@
             ALTER TABLE sourcefile ADD CONSTRAINT absolutepath_check CHECK (absolutepath LIKE '/%' OR absolutepath='')
         </sql>
     </changeSet>
-
-    <changeSet author="louisecabansay (generated)" id="addStarredOrganizations">
-        <createTable tableName="starred_organizations">
-            <column name="organizationid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
-            </column>
-            <column name="userid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet author="louisecabansay (generated)" id="addUserIdStarOrgConstratint">
-        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="starred_organizations" constraintName="fk_userIdStarredOrganizations" referencedColumnNames="id" referencedTableName="enduser"/>
-    </changeSet>
-    <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstratint">
-        <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" referencedColumnNames="id" referencedTableName="organization"/>
-    </changeSet>
     <changeSet id="epicAbsolutePathFix" author="dyuen">
         <sql dbms="postgresql">
             update sourcefile s set absolutepath = subquery.concat_ws FROM (
@@ -395,5 +378,21 @@
                 ) p  where path != concat_ws -- our calculations result in no change when these are secondary files with a primary at the root, so ignore them
             ) as subquery WHERE subquery.id = s.id;
         </sql>
+    </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addStarredOrganizations">
+        <createTable tableName="starred_organizations">
+            <column name="organizationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
+            </column>
+            <column name="userid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addUserIdStarOrgConstratint">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="starred_organizations" constraintName="fk_userIdStarredOrganizations" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstratint">
+        <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" referencedColumnNames="id" referencedTableName="organization"/>
     </changeSet>
 </databaseChangeLog>

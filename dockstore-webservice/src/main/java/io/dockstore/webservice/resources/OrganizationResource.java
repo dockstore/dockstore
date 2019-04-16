@@ -81,7 +81,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all available organizations.", notes = "NO Authentication", responseContainer = "List", response = Organization.class)
     public List<Organization> getApprovedOrganizations() {
-        return organizationDAO.sortApprovedByStar();
+        return organizationDAO.findApprovedSortedByStar();
     }
 
     @POST
@@ -352,7 +352,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @ApiOperation(value = "Returns list of users who starred the given organization.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsers(
-            @ApiParam(value = "Organization to grab starred users for.", required = true) @PathParam("organizationId") Long organizationId) {
+            @ApiParam(value = "Get starred users of an organization by id.", required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findById(organizationId);
         checkOrganization(organization);
         return organization.getStarredUsers();

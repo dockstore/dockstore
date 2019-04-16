@@ -3514,7 +3514,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to grab starred users for."
+        description: "Get starred users of an organization by id."
         required: true
         type: "integer"
         format: "int64"
@@ -3740,7 +3740,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred Organizations."
+      summary: "Get the logged-in user's starred organizations."
       description: ""
       operationId: "getStarredOrganizations"
       produces:
@@ -6614,8 +6614,7 @@ definitions:
       starredUsers:
         type: "array"
         position: 10
-        description: "This indicates the users that have starred this organization,\
-          \ dockstore specific"
+        description: "This indicates the users that have starred this organization"
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
