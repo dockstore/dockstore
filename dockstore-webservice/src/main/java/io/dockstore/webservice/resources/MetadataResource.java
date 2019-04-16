@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +49,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.api.Config;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
@@ -367,6 +369,20 @@ public class MetadataResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
         }
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/config")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Configuration for UI clients of the API", description = "Configuration, NO authentication")
+    @ApiOperation(value = "Configuration for UI clients of the API", notes = "NO authentication")
+    public Config getConfig() {
+        try {
+            return Config.fromWebConfig(this.config);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            LOG.error("Error generating config response", e);
+            throw new CustomWebApplicationException("Error retrieving config information", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
 }

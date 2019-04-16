@@ -16,7 +16,6 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
-import java.util.List;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
@@ -38,23 +37,19 @@ public final class GitHubHelper {
     private GitHubHelper() {
     }
 
-    public static String getGitHubAccessToken(String code, List<String> githubClientID, List<String> githubClientSecret) {
-        String accessToken = null;
-        for (int i = 0; i < githubClientID.size() && accessToken == null; i++) {
-            final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
+    public static String getGitHubAccessToken(String code, String githubClientID, String githubClientSecret) {
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
                 HTTP_TRANSPORT, JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
-                new ClientParametersAuthentication(githubClientID.get(i), githubClientSecret.get(i)), githubClientID.get(i),
+                new ClientParametersAuthentication(githubClientID, githubClientSecret), githubClientID,
                 "https://github.com/login/oauth/authorize").build();
-            try {
-                TokenResponse tokenResponse = flow.newTokenRequest(code)
+        try {
+            TokenResponse tokenResponse = flow.newTokenRequest(code)
                     .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-                accessToken = tokenResponse.getAccessToken();
-            } catch (IOException e) {
-                LOG.error("Retrieving accessToken was unsuccessful");
-                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
-            }
+            return tokenResponse.getAccessToken();
+        } catch (IOException e) {
+            LOG.error("Retrieving accessToken was unsuccessful");
+            throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
         }
-        return accessToken;
     }
 
 }
