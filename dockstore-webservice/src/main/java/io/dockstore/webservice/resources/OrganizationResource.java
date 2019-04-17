@@ -308,11 +308,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                           @ApiParam(value = "StarRequest to star an organization for a user", required = true) StarRequest request) {
         Organization organization = organizationDAO.findById(organizationId);
         boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
-        if (!doesOrgExist) {
-            String msg = "Organization not found";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
+        throwErrorIfOrganizationNotFound(doesOrgExist);
         Set<User> starredUsers = organization.getStarredUsers();
         if (!starredUsers.contains(user)) {
             organization.addStarredUser(user);
@@ -332,11 +328,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                             @ApiParam(value = "Organization to unstar.", required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findById(organizationId);
         boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
-        if (!doesOrgExist) {
-            String msg = "Organization not found";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
+        throwErrorIfOrganizationNotFound(doesOrgExist);
         Set<User> starredUsers = organization.getStarredUsers();
         if (starredUsers.contains(user)) {
             organization.removeStarredUser(user);
@@ -350,10 +342,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Path("/{organizationId}/starredUsers")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Returns list of users who starred the given organization.", response = User.class, responseContainer = "List")
-    public Set<User> getStarredUsers(
-            @ApiParam(value = "Get starred users of an organization by id.", required = true) @PathParam("organizationId") Long organizationId) {
-        Organization organization = organizationDAO.findById(organizationId);
+    @ApiOperation(value = "Returns list of users who starred the given approved organization.", response = User.class, responseContainer = "List")
+    public Set<User> getStarredUsersForApprovedOrganization(
+            @ApiParam(value = "Get starred users of an approved organization by id.", required = true) @PathParam("organizationId") Long organizationId) {
+        Organization organization = organizationDAO.findApprovedById(organizationId);
         checkOrganization(organization);
         return organization.getStarredUsers();
     }
@@ -776,6 +768,19 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
         OrganizationUser organizationUser = getUserOrgRole(organization, userId);
         return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
+    }
+
+    /**
+    * If organization doesn't exist, throw error message
+    *
+     * @param doesOrgExist
+    */
+    private void throwErrorIfOrganizationNotFound(Boolean doesOrgExist) {
+        if (!doesOrgExist) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
     }
 
     /**

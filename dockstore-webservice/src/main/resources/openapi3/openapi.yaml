@@ -1812,7 +1812,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -3180,7 +3180,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3728,7 +3728,7 @@ paths:
           description: default response
   /organizations/{organizationId}/starredUsers:
     get:
-      operationId: getStarredUsers_1
+      operationId: getStarredUsersForApprovedOrganization
       parameters:
       - in: path
         name: organizationId
@@ -4094,7 +4094,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -4253,7 +4253,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
@@ -4655,7 +4655,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
     patch:
       operationId: editHosted_1
@@ -5592,7 +5592,7 @@ paths:
           description: default response
   /workflows/{workflowId}/starredUsers:
     get:
-      operationId: getStarredUsers_2
+      operationId: getStarredUsers_1
       parameters:
       - in: path
         name: workflowId

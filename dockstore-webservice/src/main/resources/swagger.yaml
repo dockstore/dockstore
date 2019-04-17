@@ -3506,15 +3506,15 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Returns list of users who starred the given organization."
+      summary: "Returns list of users who starred the given approved organization."
       description: ""
-      operationId: "getStarredUsers"
+      operationId: "getStarredUsersForApprovedOrganization"
       produces:
       - "application/json"
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Get starred users of an organization by id."
+        description: "Get starred users of an approved organization by id."
         required: true
         type: "integer"
         format: "int64"

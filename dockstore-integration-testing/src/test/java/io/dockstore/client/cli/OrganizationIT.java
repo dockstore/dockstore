@@ -90,7 +90,7 @@ public class OrganizationIT extends BaseIT {
         organization.setLink("https://www.google.com");
         organization.setEmail("test@email.com");
         organization.setDescription(markdownDescription);
-        organization.setTopic("his is a short topic");
+        organization.setTopic("This is a short topic");
         organization.setAvatarUrl("https://www.lifehardin.net/images/employees/default-logo.png");
         return organization;
     }
@@ -1383,11 +1383,18 @@ public class OrganizationIT extends BaseIT {
 
     @Test
     public void testStarringOrganization() {
-        // Create the Organization, user, and star request body
+        // Setup user
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
 
+        // Setup admin
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        // Create org
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         Organization organization = createOrg(organizationsApi);
+
+        // Create user and star request body
         UsersApi usersApi = new UsersApi(webClientUser2);
         User user = usersApi.getUser();
         List<User> users = new ArrayList<>();
@@ -1396,12 +1403,15 @@ public class OrganizationIT extends BaseIT {
         body.setStar(false);
 
         // Test starring/unstarring org
+        // Admin approve it
+        organizationsApiAdmin.approveOrganization(organization.getId());
         organizationsApi.starOrganization(organization.getId(), body);
-        assertEquals(1, organizationsApi.getStarredUsers(organization.getId()).size());
-        assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsers(organization.getId()).get(0).getUsername());
+
+        assertEquals(1, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
+        assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).get(0).getUsername());
 
         organizationsApi.unstarOrganization(organization.getId());
-        assertEquals(0, organizationsApi.getStarredUsers(organization.getId()).size());
+        assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
 
         // Test setting/getting starred users
         organization.setStarredUsers(users);
