@@ -259,6 +259,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                 // https://github.com/ga4gh/dockstore/issues/2139
                 validationMessageObject.put(primaryDescriptorFilePath, "Unknown methods were found, indicating that this may be a WDL 1.0 file. Currently Dockstore cannot parse WDL 1.0, so validation has been skipped. It is likely that the import processing and DAG generation will be broken.\n" + e.getMessage());
                 return new VersionTypeValidation(true, validationMessageObject);
+            } catch (StackOverflowError e) {
+                // This is niche and should be fixed properly with a new WDL parser.
+                throw new CustomWebApplicationException("Error parsing workflow. You may have a recursive import.", HttpStatus.SC_BAD_REQUEST);
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
