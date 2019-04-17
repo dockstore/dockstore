@@ -19,14 +19,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.Set;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import io.dockstore.webservice.languages.WDLHandler;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -62,5 +66,31 @@ public class WDLParseTest {
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
         assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
+    }
+
+    /**
+     * Tests that Dockstore can handle a workflow with recursive imports
+     */
+    @Test
+    public void testRecursiveImport() {
+        String type = "workflow";
+        File recursiveWDL = new File(ResourceHelpers.resourceFilePath("recursive.wdl"));
+        String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
+        SourceFile sourceFile = new SourceFile();
+        try {
+            sourceFile.setContent(FileUtils.readFileToString(recursiveWDL, StandardCharsets.UTF_8));
+            sourceFile.setAbsolutePath(recursiveWDL.getAbsolutePath());
+            sourceFile.setPath(recursiveWDL.getAbsolutePath());
+            sourceFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+            Set<SourceFile> sourceFileSet = new HashSet<>();
+            sourceFileSet.add(sourceFile);
+            WDLHandler wdlHandler = new WDLHandler();
+            wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
+            Assert.fail();
+        } catch (IOException e) {
+            Assert.fail();
+        } catch (CustomWebApplicationException e) {
+            Assert.assertEquals("Error parsing workflow. You may have a recursive import.", e.getResponse().getEntity());
+        }
     }
 }
