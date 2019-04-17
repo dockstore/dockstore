@@ -345,7 +345,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "Returns list of users who starred the given approved organization.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsersForApprovedOrganization(
             @ApiParam(value = "Get starred users of an approved organization by id.", required = true) @PathParam("organizationId") Long organizationId) {
-        Organization organization = organizationDAO.findApprovedById(organizationId);
+        Organization organization = organizationDAO.findById(organizationId);
         checkOrganization(organization);
         return organization.getStarredUsers();
     }
