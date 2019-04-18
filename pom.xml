@@ -955,7 +955,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
-                    <version>3.7</version>
+                    <version>3.7.1</version>
                 </plugin>
                 <!-- fix at 2.7 until a solution to symbolic links not being copied is ready -->
                 <plugin>
