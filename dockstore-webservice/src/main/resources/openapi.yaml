@@ -2813,7 +2813,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: id
+          description: The id of the entry to add a topic to.
           required: true
           schema:
             type: integer

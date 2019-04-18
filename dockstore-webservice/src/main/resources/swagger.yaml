@@ -2547,7 +2547,7 @@ paths:
       parameters:
       - name: "id"
         in: "path"
-        description: "id"
+        description: "The id of the entry to add a topic to."
         required: true
         type: "integer"
         format: "int64"

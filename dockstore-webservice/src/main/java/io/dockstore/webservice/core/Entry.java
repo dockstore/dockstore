@@ -170,7 +170,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @Column
     @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
-    private long topicId;
+    private Long topicId;
 
     public Entry() {
         users = new TreeSet<>();
@@ -353,11 +353,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return starredUsers.remove(user);
     }
 
-    public long getTopicId() {
+    public Long getTopicId() {
         return topicId;
     }
 
-    public void setTopicId(long topicId) {
+    public void setTopicId(Long topicId) {
         this.topicId = topicId;
     }
 

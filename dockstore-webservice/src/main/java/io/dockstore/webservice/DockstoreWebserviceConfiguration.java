@@ -97,7 +97,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String gitlabClientSecret;
 
     @NotEmpty
-    private String discoureKey;
+    private String discourseUrl;
+
+    @NotEmpty
+    private String discourseKey;
 
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
@@ -295,12 +298,20 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.gitlabClientSecret = gitlabClientSecret;
     }
 
-    public String getDiscoureKey() {
-        return discoureKey;
+    public String getDiscourseUrl() {
+        return discourseUrl;
     }
 
-    public void setDiscoureKey(String discoureKey) {
-        this.discoureKey = discoureKey;
+    public void setDiscourseUrl(String discourseUrl) {
+        this.discourseUrl = discourseUrl;
+    }
+
+    public String getDiscourseKey() {
+        return discourseKey;
+    }
+
+    public void setDiscourseKey(String discourseKey) {
+        this.discourseKey = discourseKey;
     }
 
     @JsonProperty("esconfiguration")

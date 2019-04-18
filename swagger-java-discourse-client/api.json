@@ -8,7 +8,7 @@
         "description": "This page contains the documentation on how to use Discourse through API calls.\n\n> Note: This documentation is not complete, so for missing parts you may have to\n[reverse engineer the Discourse API](https://meta.discourse.org/t/how-to-reverse-engineer-the-discourse-api/20576) to figure out how to use an API endpoint.\n\n### Request Content-Type\n\nThe Content-Type for POST and PUT requests must be set to `application/x-www-form-urlencoded`\nor `multipart/form-data` otherwise you may receive a bad request response.\n\n### Endpoint Names and Response Content-Type\n\nMost API endpoints provide the same content as their HTML counterparts. For example\nthe URL `/categories` serves a list of categories, the `/categories.json` API provides the\nsame information in JSON format.\n\nInstead of sending API requests to `/categories.json` you may also send them to `/categories`\nand add an `Accept: application/json` header to the request to get the JSON response.\nSending requests with the `Accept` header is necessary if you want to use URLs\nfor related endpoints returned by the API, such as pagination URLs.\nThese URLs are returned without the `.json` prefix so you need to add the header in\norder to get the correct response format.\n\n### Authentication\n\nSome endpoints do not require any authentication, pretty much anything else will\nrequire you to be authenticated.\n\nTo become authenticated you will need to create an API Key from the admin panel.\n\nOnce you have your API Key you can pass it in as a GET url parameter like this:\n\n```\ncurl -X GET \"http://127.0.0.1:3000/admin/users/list/active.json?api_key=714552c6148e1617aeab526d0606184b94a80ec048fc09894ff1a72b740c5f19&api_username=discourse1\"\n```\n\nIf you are making a POST request you can pass them in the body:\n\n```\ncurl -X POST \"http://127.0.0.1:3000/categories\" \\\n-H \"Content-Type: multipart/form-data;\" \\\n-F \"api_key=714552c6148e1617aeab526d0606184b94a80ec048fc09894ff1a72b740c5f19\" \\\n-F \"api_username=discourse1\" \\\n-F \"name=89853c20-4409-e91a-a8ea-f6cdff96aaaa\" \\\n-F \"color=49d9e9\" \\\n-F \"text_color=f0fcfd\"\n```\n",
         "version": "latest"
     },
-    "host": "discourse.example.com",
+    "host": "discuss.dockstore.org",
     "schemes": [
         "https"
     ],
@@ -843,6 +843,9 @@
                 }
             },
             "post": {
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
                 "description": "Create a new topic, a new post, or a private message\n",
                 "tags": [
                     "Topics",
@@ -850,50 +853,56 @@
                 ],
                 "parameters": [
                     {
-                        "name": "body",
-                        "in": "body",
-                        "required": false,
-                        "schema": {
-                            "type": "object",
-                            "required": [
-                                "raw"
-                            ],
-                            "properties": {
-                                "title": {
-                                    "type": "string",
-                                    "description": "required if creating a new topic or new private message\n"
-                                },
-                                "topic_id": {
-                                    "type": "integer",
-                                    "description": "required if creating a new post"
-                                },
-                                "raw": {
-                                    "type": "string"
-                                },
-                                "category": {
-                                    "type": "integer",
-                                    "description": "optional if creating a new topic,\nignored if creating a new post\n"
-                                },
-                                "target_usernames": {
-                                    "type": "string",
-                                    "description": "required for private message, comma separated\n",
-                                    "example": "discourse1,discourse2"
-                                },
-                                "archetype": {
-                                    "type": "string",
-                                    "description": "required for private message\n",
-                                    "example": "private_message",
-                                    "enum": [
-                                        "private_message"
-                                    ]
-                                },
-                                "created_at": {
-                                    "type": "string",
-                                    "description": "pick a date other than the default current time\n",
-                                    "example": "2017-01-31"
-                                }
-                            }
-                        }
+                        "in": "formData",
+                        "name": "api_key",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "api_username",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "title",
+                        "type": "string",
+                        "description": "required if creating a new topic or new private message\n"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "topic_id",
+                        "type": "integer",
+                        "description": "required if creating a new post"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "raw",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "in": "formData",
+                        "name": "category",
+                        "type": "integer",
+                        "description": "optional if creating a new topic,\nignored if creating a new post\n"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "target_usernames",
+                        "type": "string",
+                        "description": "required for private message, comma separated\n"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "archetype",
+                        "type": "string",
+                        "description": "required for private message\n"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "created_at",
+                        "type": "string",
+                        "description": "pick a date other than the default current time\n"
                     }
                 ],
                 "responses": {
@@ -1705,20 +1714,6 @@
                                         "posts",
                                         "stream"
                                     ]
-                                },
-                                "timeline_lookup": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "0": {
-                                                "type": "array",
-                                                "uniqueItems": true,
-                                                "items": {
-                                                    "type": "object"
-                                                }
-                                            }
-                                        }
-                                    }
                                 },
                                 "id": {
                                     "type": "number"
