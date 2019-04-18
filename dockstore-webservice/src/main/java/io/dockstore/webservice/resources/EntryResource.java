@@ -69,11 +69,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;
-    private final Integer discourseCategoryId = 6;
+    private final Integer defaultDiscourseCategoryId = 6;
+    private final Integer testDiscourseCategoryId = 9;
     private final ApiClient apiClient;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseApiUsername = "system";
+    private final int maxDescriptionLength = 500;
 
     public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
@@ -123,6 +125,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
     public Entry setDiscourseTopic(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "The id of the entry to add a topic to.", required = true) @PathParam("id") Long id,
+            @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads(6).", defaultValue = "6") @QueryParam("categoryId") Integer categoryId,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Entry entry = this.toolDAO.getGenericEntryById(id);
 
@@ -134,22 +137,42 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException("Entry " + id + " already has an associated Discourse topic.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Create new topic if possible
+        // Verify and set category
+        Integer category = defaultDiscourseCategoryId;
+        if (categoryId != null) {
+            if (categoryId.equals(testDiscourseCategoryId) || categoryId.equals(defaultDiscourseCategoryId)) {
+                category = categoryId;
+            } else {
+                throw new CustomWebApplicationException("Category " + categoryId + " is not a valid category.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
+        // Create title and link to entry
+        String entryLink = "https://dockstore.org/";
         String title;
         if (entry instanceof Workflow) {
             title = ((Workflow)(entry)).getWorkflowPath();
+            entryLink += "workflows/";
         } else {
             title = ((Tool)(entry)).getToolPath();
+            entryLink += "tools/";
         }
+
+        entryLink += title;
+
+        // Create description
+        String description = entry.getDescription() != null ? entry.getDescription().substring(0, maxDescriptionLength) : "";
+        description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + entryLink + "'>" + title + "</a></small>\n";
+
+        // Create a discourse topic
         InlineResponse2005 response;
         try {
-            response = topicsApi.postsJsonPost(entry.getDescription(), discourseKey, discourseApiUsername, title, null, discourseCategoryId, null, null, null);
+            response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
         } catch (ApiException ex) {
             throw new CustomWebApplicationException(ex.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
         entry.setTopicId(response.getId().longValue());
-
         return entry;
     }
 

@@ -2818,6 +2818,15 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: categoryId
+          in: query
+          description: The id of the category to add a topic to, defaults to Automatic Tool
+            and Workflow Threads(6).
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 6
       requestBody:
         $ref: "#/components/requestBodies/updateLabelsBody"
       responses:

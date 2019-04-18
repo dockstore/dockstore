@@ -2817,6 +2817,11 @@ paths:
         schema:
           format: int64
           type: integer
+      - in: query
+        name: categoryId
+        schema:
+          format: int32
+          type: integer
       requestBody:
         content:
           '*/*':
@@ -3813,7 +3818,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -3972,7 +3977,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId
