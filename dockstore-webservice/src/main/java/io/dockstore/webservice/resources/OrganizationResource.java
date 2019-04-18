@@ -306,9 +306,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public void starOrganization(@ApiParam(hidden = true) @Auth User user,
                           @ApiParam(value = "Organization to star.", required = true) @PathParam("organizationId") Long organizationId,
                           @ApiParam(value = "StarRequest to star an organization for a user", required = true) StarRequest request) {
-        Organization organization = organizationDAO.findById(organizationId);
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
-        throwErrorIfOrganizationNotFound(doesOrgExist);
+        Organization organization = organizationDAO.findApprovedById(organizationId);
+        boolean isOrgApproved = isOrganizationApproved(organizationId);
+        throwErrorIfOrganizationNotFound(isOrgApproved);
         Set<User> starredUsers = organization.getStarredUsers();
         if (!starredUsers.contains(user)) {
             organization.addStarredUser(user);
@@ -326,9 +326,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "Unstar an organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void unstarOrganization(@ApiParam(hidden = true) @Auth User user,
                             @ApiParam(value = "Organization to unstar.", required = true) @PathParam("organizationId") Long organizationId) {
-        Organization organization = organizationDAO.findById(organizationId);
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
-        throwErrorIfOrganizationNotFound(doesOrgExist);
+        Organization organization = organizationDAO.findApprovedById(organizationId);
+        boolean isOrgApproved = isOrganizationApproved(organizationId);
+        throwErrorIfOrganizationNotFound(isOrgApproved);
         Set<User> starredUsers = organization.getStarredUsers();
         if (starredUsers.contains(user)) {
             organization.removeStarredUser(user);
@@ -768,6 +768,18 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
         OrganizationUser organizationUser = getUserOrgRole(organization, userId);
         return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
+    }
+
+    private boolean isOrganizationApproved(Long organizationId) {
+        return isOrganizationApproved(organizationId, organizationDAO);
+    }
+
+    static boolean isOrganizationApproved(Long organizationId, OrganizationDAO organizationDAO) {
+        Organization organization = organizationDAO.findApprovedById(organizationId);
+        if (organization == null) {
+            return false;
+        }
+        return true;
     }
 
     /**

@@ -7,6 +7,7 @@ import java.util.Objects;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -1402,8 +1403,19 @@ public class OrganizationIT extends BaseIT {
         StarRequest body = new StarRequest();
         body.setStar(false);
 
-        // Test starring/unstarring org
-        // Admin approve it
+        // Should only be able to star approved organizations
+        boolean throwsError = false;
+        try {
+            organizationsApi.starOrganization(organization.getId(), body);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to star an unapproved organization.");
+        }
+
+        // Approve organization and star it
         organizationsApiAdmin.approveOrganization(organization.getId());
         organizationsApi.starOrganization(organization.getId(), body);
 
