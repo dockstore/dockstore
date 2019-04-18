@@ -43,7 +43,7 @@
         <powermock.version>2.0.0</powermock.version>
         <postgresql.version>42.2.5</postgresql.version>
         <mockito.version>2.26.0</mockito.version>
-        <cwlavro.version>2.0.4.2</cwlavro.version>
+        <cwlavro.version>2.0.7</cwlavro.version>
         <okhttp.version>3.9.0</okhttp.version>
         <slf4j.version>1.7.26</slf4j.version>
         <swagger-ui.version>3.20.5</swagger-ui.version>
