@@ -307,8 +307,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                           @ApiParam(value = "Organization to star.", required = true) @PathParam("organizationId") Long organizationId,
                           @ApiParam(value = "StarRequest to star an organization for a user", required = true) StarRequest request) {
         Organization organization = organizationDAO.findApprovedById(organizationId);
-        boolean isOrgApproved = isOrganizationApproved(organizationId);
-        throwErrorIfOrganizationNotFound(isOrgApproved);
+        checkOrganization(organization);
         Set<User> starredUsers = organization.getStarredUsers();
         if (!starredUsers.contains(user)) {
             organization.addStarredUser(user);
@@ -327,8 +326,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public void unstarOrganization(@ApiParam(hidden = true) @Auth User user,
                             @ApiParam(value = "Organization to unstar.", required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findApprovedById(organizationId);
-        boolean isOrgApproved = isOrganizationApproved(organizationId);
-        throwErrorIfOrganizationNotFound(isOrgApproved);
+        checkOrganization(organization);
         Set<User> starredUsers = organization.getStarredUsers();
         if (starredUsers.contains(user)) {
             organization.removeStarredUser(user);
@@ -770,27 +768,6 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
     }
 
-    private boolean isOrganizationApproved(Long organizationId) {
-        return isOrganizationApproved(organizationId, organizationDAO);
-    }
-
-    static boolean isOrganizationApproved(Long organizationId, OrganizationDAO organizationDAO) {
-        Organization organization = organizationDAO.findApprovedById(organizationId);
-        return organization != null;
-    }
-
-    /**
-    * If organization doesn't exist, throw error message
-    *
-     * @param doesOrgExist
-    */
-    private void throwErrorIfOrganizationNotFound(Boolean doesOrgExist) {
-        if (!doesOrgExist) {
-            String msg = "Organization not found";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-    }
 
     /**
      * Common checks done by the user add/edit/delete endpoints
