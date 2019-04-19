@@ -1422,8 +1422,30 @@ public class OrganizationIT extends BaseIT {
         assertEquals(1, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
         assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).get(0).getUsername());
 
+        throwsError = false;
+        try {
+            organizationsApi.starOrganization(organization.getId(), body);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to star an already starred organization");
+        }
+
         organizationsApi.unstarOrganization(organization.getId());
         assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
+
+        throwsError = false;
+        try {
+            organizationsApi.unstarOrganization(organization.getId());
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to unstar an already unstarred organization");
+        }
 
         // Test setting/getting starred users
         organization.setStarredUsers(users);

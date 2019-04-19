@@ -345,7 +345,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "Returns list of users who starred the given approved organization.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsersForApprovedOrganization(
             @ApiParam(value = "Get starred users of an approved organization by id.", required = true) @PathParam("organizationId") Long organizationId) {
-        Organization organization = organizationDAO.findById(organizationId);
+        Organization organization = organizationDAO.findApprovedById(organizationId);
         checkOrganization(organization);
         return organization.getStarredUsers();
     }
@@ -776,10 +776,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     static boolean isOrganizationApproved(Long organizationId, OrganizationDAO organizationDAO) {
         Organization organization = organizationDAO.findApprovedById(organizationId);
-        if (organization == null) {
-            return false;
-        }
-        return true;
+        return organization != null;
     }
 
     /**
