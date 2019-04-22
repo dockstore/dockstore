@@ -2803,7 +2803,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CollectionOrganization"
-  /metadata/config:
+  /metadata/config.json:
     get:
       tags:
         - metadata
@@ -6398,6 +6398,7 @@ components:
           type: string
         googleClientId:
           type: string
+      description: Configuration information for UI clients of the Dockstore webservice.
     DescriptorLanguageBean:
       type: object
       properties:

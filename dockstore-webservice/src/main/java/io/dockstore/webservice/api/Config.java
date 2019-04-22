@@ -6,7 +6,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.swagger.annotations.ApiModel;
 import org.apache.commons.beanutils.BeanUtils;
 
-@ApiModel("Config")
+@ApiModel(description = "Configuration information for UI clients of the Dockstore webservice.")
 public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
 
     /**

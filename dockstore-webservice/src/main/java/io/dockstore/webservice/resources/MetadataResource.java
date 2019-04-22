@@ -372,7 +372,7 @@ public class MetadataResource {
     }
 
     @GET
-    @Path("/config")
+    @Path("/config.json")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Configuration for UI clients of the API", description = "Configuration, NO authentication")
     @ApiOperation(value = "Configuration for UI clients of the API", notes = "NO authentication")
