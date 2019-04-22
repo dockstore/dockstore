@@ -1404,15 +1404,11 @@ public class OrganizationIT extends BaseIT {
         body.setStar(false);
 
         // Should only be able to star approved organizations
-        boolean throwsError = false;
         try {
             organizationsApi.starOrganization(organization.getId(), body);
+            Assert.fail();
         } catch (ApiException ex) {
-            throwsError = true;
-        }
-
-        if (!throwsError) {
-            fail("Was able to star an unapproved organization.");
+            Assert.assertEquals("Organization not found", ex.getMessage());
         }
 
         // Approve organization and star it
@@ -1422,29 +1418,24 @@ public class OrganizationIT extends BaseIT {
         assertEquals(1, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
         assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).get(0).getUsername());
 
-        throwsError = false;
+        // Should not be able to star twice
         try {
             organizationsApi.starOrganization(organization.getId(), body);
+            Assert.fail();
         } catch (ApiException ex) {
-            throwsError = true;
+            Assert.assertTrue(ex.getMessage().contains("You cannot star the organization"));
         }
 
-        if (!throwsError) {
-            fail("Was able to star an already starred organization");
-        }
 
         organizationsApi.unstarOrganization(organization.getId());
         assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
 
-        throwsError = false;
+        // Should not be able to unstar twice
         try {
             organizationsApi.unstarOrganization(organization.getId());
+            Assert.fail();
         } catch (ApiException ex) {
-            throwsError = true;
-        }
-
-        if (!throwsError) {
-            fail("Was able to unstar an already unstarred organization");
+            Assert.assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
         }
 
         // Test setting/getting starred users
