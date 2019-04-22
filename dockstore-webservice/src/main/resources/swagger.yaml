@@ -2665,7 +2665,7 @@ paths:
     get:
       tags:
       - "metadata"
-      summary: "List all published workflow and tool paths."
+      summary: "List all available workflow, tool, organization, and collection paths."
       description: "NO authentication"
       operationId: "sitemap"
       produces:
