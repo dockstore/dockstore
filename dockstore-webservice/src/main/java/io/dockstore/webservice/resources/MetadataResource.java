@@ -117,7 +117,7 @@ public class MetadataResource {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("sitemap")
-    @Operation(summary = "List all available workflow, tool, organization, and collection paths", description = "List all published workflow and tool paths, NO authentication")
+    @Operation(summary = "List all available workflow, tool, organization, and collection paths", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "NO authentication")
     public String sitemap() {
         //TODO needs to be more efficient via JPA query

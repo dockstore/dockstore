@@ -2777,7 +2777,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /entries/{id}/collections:
     get:
@@ -2915,7 +2915,9 @@ paths:
       - metadata
   /metadata/sitemap:
     get:
-      description: List all published workflow and tool paths, NO authentication
+      description: List all available workflow, tool, organization, and collection
+        paths. Available means published for tools/workflows, and approved for organizations
+        and their respective collections. NO authentication
       operationId: sitemap
       responses:
         default:
@@ -3028,7 +3030,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:
@@ -4317,7 +4319,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
