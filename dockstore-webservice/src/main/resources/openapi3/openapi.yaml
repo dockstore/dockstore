@@ -1737,7 +1737,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted
@@ -2777,7 +2777,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /entries/{id}/collections:
     get:
@@ -2929,7 +2929,9 @@ paths:
               schema:
                 type: string
           description: default response
-      summary: List all available workflow, tool, organization, and collection paths
+      summary: List all available workflow, tool, organization, and collection paths.
+        Available means published for tools/workflows, and approved for organizations
+        and their respective collections.
       tags:
       - metadata
   /metadata/sourceControlList:
@@ -3030,7 +3032,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:
