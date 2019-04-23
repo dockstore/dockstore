@@ -16,7 +16,8 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 
@@ -74,7 +75,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;
     private final Integer testDiscourseCategoryId = 9;
-    private final ApiClient apiClient;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
@@ -88,7 +88,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
 
-        apiClient = Configuration.getDefaultApiClient();
+        ApiClient apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Content-Type", "application/x-www-form-urlencoded");
         apiClient.addDefaultHeader("cache-control", "no-cache");
         apiClient.setBasePath(discourseUrl);
@@ -183,9 +183,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         // Check that discourse is reachable
         boolean isReachable;
-        final int timeout = 1000;
         try {
-            isReachable = InetAddress.getByName(discourseUrl).isReachable(timeout);
+            URL url = new URL(discourseUrl);
+            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.connect();
+            int respCode = connection.getResponseCode();
+            isReachable = respCode == HttpStatus.SC_OK;
         } catch (IOException ex) {
             LOG.info("Error reaching " + discourseUrl);
             isReachable = false;

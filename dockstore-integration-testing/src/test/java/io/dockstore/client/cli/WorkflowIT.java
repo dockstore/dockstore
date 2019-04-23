@@ -1347,7 +1347,7 @@ public class WorkflowIT extends BaseIT {
     /**
      * NOTE: This test is not normally run. It is only for running locally to confirm that the discourse topic generation is working.
      *
-     * Adds a discourse topic for a workflow (adds to a hidden category)
+     * Adds a discourse topic for a workflow (adds to a Automatic Tool and Workflow Threads - NEED TO DELETE TOPIC)
      */
     @Ignore
     public void publishWorkflowAndTestDiscourseTopicCreation() {
@@ -1378,11 +1378,8 @@ public class WorkflowIT extends BaseIT {
         }
         assertTrue("Should fail creating a topic in category 3.", thrownException);
 
-        // Should be able to create a topic in category 9
-        Integer correctCategoryId = 9;
-        curatorEntriesApi.setDiscourseTopic(workflow.getId(), correctCategoryId, "");
-
         // Should not be able to create a topic for the same workflow in category 9
+        Integer correctCategoryId = 9;
         thrownException = false;
         try {
             curatorEntriesApi.setDiscourseTopic(workflow.getId(), correctCategoryId, "");
