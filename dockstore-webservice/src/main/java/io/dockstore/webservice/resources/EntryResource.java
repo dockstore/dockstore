@@ -71,10 +71,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
     public final Integer defaultDiscourseCategoryId = 6;
+    public final Integer testDiscourseCategoryId = 9;
 
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;
-    private final Integer testDiscourseCategoryId = 9;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
@@ -178,7 +178,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         entryLink += title;
 
         // Create description
-        String description = entry.getDescription() != null ? entry.getDescription().substring(0, maxDescriptionLength) : "";
+        String description = "";
+        if (entry.getDescription() != null) {
+            description = entry.getDescription() != null ? entry.getDescription().substring(0, Math.min(entry.getDescription().length(), maxDescriptionLength)) : "";
+        }
+
         description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + entryLink + "'>" + title + "</a></small>\n";
 
         // Check that discourse is reachable
@@ -201,7 +205,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             try {
                 response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
             } catch (ApiException ex) {
-                throw new CustomWebApplicationException(ex.getMessage(), HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Could not add a topic to the given entry.", HttpStatus.SC_BAD_REQUEST);
             }
             entry.setTopicId(response.getId().longValue());
         }
