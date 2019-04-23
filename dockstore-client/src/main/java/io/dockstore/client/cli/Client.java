@@ -664,6 +664,8 @@ public class Client {
         }
         if (flag(args, "--script") || flag(args, "--s")) {
             SCRIPT.set(true);
+        } else {
+            SCRIPT.set(false);
         }
 
         try {

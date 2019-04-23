@@ -21,12 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.DeleteMessageRequest;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.model.BasicMessage;
@@ -37,6 +31,13 @@ import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 public final class EventConsumer {
 
@@ -82,14 +83,10 @@ public final class EventConsumer {
         String zenodoToken = consumer.getConsumerConfiguration().getString("zenodoToken");
         String zenodoURL = consumer.getConsumerConfiguration().getString("zenodoURL");
 
-
-        AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.US_EAST_1).build();
+        final SqsClient sqs = SqsClient.builder().region(Region.US_EAST_1).build();
         LOG.info("Receiving messages from MyFifoQueue.fifo");
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsURL);
-        // there's no indefinite wait
-        receiveMessageRequest.setMessageAttributeNames(Lists.newArrayList(".*"));
-        receiveMessageRequest.setWaitTimeSeconds(MAX_WAIT_TIME_SECONDS);
-        receiveMessageRequest.setMaxNumberOfMessages(1);
+        final ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder().queueUrl(sqsURL).attributeNamesWithStrings(Lists.newArrayList(".*")).waitTimeSeconds(MAX_WAIT_TIME_SECONDS).maxNumberOfMessages(1).build();
+
         Gson gson = new Gson();
 
         DOIHandler doiHandler = new DOIHandler(dockstoreURL, dockstoreToken, zenodoURL, zenodoToken);
@@ -97,33 +94,35 @@ public final class EventConsumer {
         messageHandlers.put(doiHandler.messageTypeHandled(), doiHandler);
 
         do {
-            List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
+            final List<Message> messages = sqs.receiveMessage(receiveMessageRequest).messages();
             for (Message message : messages) {
                 LOG.debug("  Message");
-                LOG.debug("    MessageId:     " + message.getMessageId());
-                LOG.debug("    ReceiptHandle: " + message.getReceiptHandle());
-                LOG.debug("    MD5OfBody:     " + message.getMD5OfBody());
-                LOG.debug("    Body:          " + message.getBody());
-                for (Entry<String, String> entry : message.getAttributes().entrySet()) {
+                LOG.debug("    MessageId:     " + message.messageId());
+                LOG.debug("    ReceiptHandle: " + message.receiptHandle());
+                LOG.debug("    MD5OfBody:     " + message.md5OfBody());
+                LOG.debug("    Body:          " + message.body());
+                for (Entry<MessageSystemAttributeName, String> entry: message.attributes().entrySet()) {
                     LOG.debug("  Attribute");
                     LOG.debug("    Name:  " + entry.getKey());
                     LOG.debug("    Value: " + entry.getValue());
                 }
 
                 // in reality, get the workflow here and create a zenodo entry for it
-                MessageHandler messageHandler = messageHandlers.get(message.getMessageAttributes().get("type").getStringValue());
+                MessageHandler messageHandler = messageHandlers.get(message.messageAttributes().get("type").stringValue());
                 if (messageHandler != null) {
-                    BasicMessage basicMessage = (BasicMessage)gson.fromJson(message.getBody(), messageHandler.messageClassHandled());
+                    BasicMessage basicMessage = (BasicMessage)gson.fromJson(message.body(), messageHandler.messageClassHandled());
                     boolean handled = messageHandler.handleMessage(basicMessage);
 
-                    String messageReceiptHandle = messages.get(0).getReceiptHandle();
+                    String messageReceiptHandle = messages.get(0).receiptHandle();
                     if (handled) {
                         // Delete the message
                         LOG.info("Deleting the message");
-                        sqs.deleteMessage(new DeleteMessageRequest(sqsURL, messageReceiptHandle));
+                        sqs.deleteMessage(DeleteMessageRequest.builder().queueUrl(sqsURL).receiptHandle(messageReceiptHandle).build());
                     } else {
                         // requeue the message
-                        sqs.changeMessageVisibility(sqsURL, messageReceiptHandle, 0);
+                        final ChangeMessageVisibilityRequest request = ChangeMessageVisibilityRequest.builder().queueUrl(sqsURL)
+                            .receiptHandle(messageReceiptHandle).visibilityTimeout(0).build();
+                        sqs.changeMessageVisibility(request);
                     }
                 }
 

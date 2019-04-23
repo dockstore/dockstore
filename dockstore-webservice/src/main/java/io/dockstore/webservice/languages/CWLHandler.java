@@ -340,7 +340,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                         } else if (isWorkflow(secondaryDescContent.get(secondaryFile), yaml)) {
                             stepToType.put(workflowStepId, workflowType);
                         } else {
-                            stepToType.put(workflowStepId, nodePrefix);
+                            stepToType.put(workflowStepId, "n/a");
                         }
                     }
 

@@ -100,6 +100,7 @@ public class LaunchTestIT {
         WorkflowsApi api = mock(WorkflowsApi.class);
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
+        client.SCRIPT.set(true);
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
@@ -145,6 +146,7 @@ public class LaunchTestIT {
         WorkflowsApi api = mock(WorkflowsApi.class);
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
+        client.SCRIPT.set(true);
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
@@ -169,6 +171,7 @@ public class LaunchTestIT {
         WorkflowsApi api = mock(WorkflowsApi.class);
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
+        client.SCRIPT.set(true);
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
 
         PluginClient.handleCommand(Lists.newArrayList("download"), Utilities.parseConfig(client.getConfigFile()));
@@ -243,6 +246,7 @@ public class LaunchTestIT {
     private ArrayList<String> getLaunchStringList(String entryType) {
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
             return new ArrayList<String>() {{
+                add("--script");
                 add("--config");
                 add(ResourceHelpers.resourceFilePath("config"));
                 add(entryType);
@@ -644,6 +648,7 @@ public class LaunchTestIT {
 
         args.add(0, ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
         args.add(0, "--config");
+        args.add(0, "--script");
         Client.main(args.toArray(new String[0]));
     }
 
@@ -651,10 +656,12 @@ public class LaunchTestIT {
         //used to run client with a specified config file
         args.add(0, config.getPath());
         args.add(0, "--config");
+        args.add(0, "--script");
         Client.main(args.toArray(new String[0]));
     }
 
     private void runToolThreaded(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client) {
+        client.SCRIPT.set(true);
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withThreads"));
 
         runToolShared(cwlFile, args, api, usersApi, client);
@@ -728,6 +735,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL_STRING);
@@ -753,6 +761,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
@@ -777,6 +786,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
@@ -801,6 +811,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
@@ -830,6 +841,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL_STRING);
@@ -859,6 +871,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         exit.expectSystemExit();
 
@@ -887,6 +900,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         exit.expectSystemExit();
 
@@ -913,7 +927,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-
+        client.SCRIPT.set(true);
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
@@ -940,6 +954,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
@@ -968,6 +983,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -995,6 +1011,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1022,6 +1039,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1049,6 +1067,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1076,6 +1095,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1103,6 +1123,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(

@@ -145,7 +145,8 @@ public class MockedIT {
     @Ignore
     public void runLaunchNJson() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-                "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
+                "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json"),
+                "--script" });
     }
 
     /**
@@ -157,7 +158,8 @@ public class MockedIT {
     @Test
     public void runLaunchOneLocalArrayedJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"),
+                "--script" });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
         Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
@@ -174,10 +176,11 @@ public class MockedIT {
         String configFileLocation = TestUtility.getConfigFileLocation(true, true, true);
         when(client.getConfigFile()).thenReturn(configFileLocation);
 
-        Client.main(new String[] { "--clean-cache", "--config", configFileLocation });
+        Client.main(new String[] { "--clean-cache", "--config", configFileLocation, "--script" });
         // this is kind of redundant, it looks like we take the mocked config file no matter what
         Client.main(new String[] { "--config", configFileLocation, "tool", "launch", "--entry", "quay.io/collaboratory/arrays", "--json",
-                ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+                ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"),
+                "--script" });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
         Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
@@ -185,7 +188,8 @@ public class MockedIT {
 
         // try again, things should be cached now
         Client.main(new String[] { "--config", configFileLocation, "tool", "launch", "--entry", "quay.io/collaboratory/arrays", "--json",
-                ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+                ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"),
+                "--script" });
         Assert.assertEquals("output should contain only hard linking", 6, StringUtils.countMatches(systemOutRule.getLog(), "hard-linking"));
         Assert.assertTrue("output should not contain warnings about skipping files", !systemOutRule.getLog().contains("skipping"));
     }
@@ -199,7 +203,8 @@ public class MockedIT {
     @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json") });
+                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"),
+                "--script" });
 
         Assert.assertTrue(new File("/tmp/wc1.out").exists());
         Assert.assertTrue(new File("/tmp/wc2.out").exists());
