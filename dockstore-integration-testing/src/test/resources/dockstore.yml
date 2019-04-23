@@ -10,6 +10,8 @@ gitlabClientSecret: <fill me in>
 gitlabRedirectURI: http://<fill me in>:8080/auth/tokens/gitlab.com
 bitbucketClientID: <fill me in>
 bitbucketClientSecret: <fill me in>
+discourseKey: <fill me in>
+discourseUrl: <fill me in>
 
 googleClientID: <fill me in>
 googleClientSecret: <fill me in>
