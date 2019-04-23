@@ -117,8 +117,8 @@ public class MetadataResource {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("sitemap")
-    @Operation(summary = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
-    @ApiOperation(value = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.", notes = "NO authentication")
+    @Operation(summary = "List all available workflow, tool, organization, and collection paths.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
+    @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
         //TODO needs to be more efficient via JPA query
         List<Tool> tools = toolDAO.findAllPublished();

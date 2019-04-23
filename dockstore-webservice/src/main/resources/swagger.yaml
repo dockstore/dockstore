@@ -2665,10 +2665,10 @@ paths:
     get:
       tags:
       - "metadata"
-      summary: "List all available workflow, tool, organization, and collection paths.\
-        \ Available means published for tools/workflows, and approved for organizations\
+      summary: "List all available workflow, tool, organization, and collection paths."
+      description: "List all available workflow, tool, organization, and collection\
+        \ paths. Available means published for tools/workflows, and approved for organizations\
         \ and their respective collections."
-      description: "NO authentication"
       operationId: "sitemap"
       produces:
       - "text/html"
