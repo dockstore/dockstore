@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.io.IOException;
+import java.net.InetAddress;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,13 +69,15 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
+    public final Integer defaultDiscourseCategoryId = 6;
+
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;
-    private final Integer defaultDiscourseCategoryId = 6;
     private final Integer testDiscourseCategoryId = 9;
     private final ApiClient apiClient;
     private final TopicsApi topicsApi;
     private final String discourseKey;
+    private final String discourseUrl;
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
 
@@ -81,11 +85,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         this.toolDAO = toolDAO;
         elasticManager = new ElasticManager();
 
+        discourseUrl = configuration.getDiscourseUrl();
+        discourseKey = configuration.getDiscourseKey();
+
         apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Content-Type", "application/x-www-form-urlencoded");
         apiClient.addDefaultHeader("cache-control", "no-cache");
-        apiClient.setBasePath(configuration.getDiscourseUrl());
-        discourseKey = configuration.getDiscourseKey();
+        apiClient.setBasePath(discourseUrl);
+
         topicsApi = new TopicsApi(apiClient);
     }
 
@@ -127,6 +134,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @ApiParam(value = "The id of the entry to add a topic to.", required = true) @PathParam("id") Long id,
             @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads(6).", defaultValue = "6") @QueryParam("categoryId") Integer categoryId,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        return createAndSetDiscourseTopic(id, categoryId);
+    }
+
+    /**
+     * For a given entry, create a Discourse thread if applicable and set in database
+     * @param id entry id
+     * @param categoryId category id (6 for automatic tools and workflows category)
+     * @return Entry with discourse ID set
+     */
+    public Entry createAndSetDiscourseTopic(Long id, Integer categoryId) {
         Entry entry = this.toolDAO.getGenericEntryById(id);
 
         if (entry == null || !entry.getIsPublished()) {
@@ -164,15 +181,27 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         String description = entry.getDescription() != null ? entry.getDescription().substring(0, maxDescriptionLength) : "";
         description += "\n<hr>\n<small>This is a companion discussion topic for the original entry at <a href='" + entryLink + "'>" + title + "</a></small>\n";
 
-        // Create a discourse topic
-        InlineResponse2005 response;
+        // Check that discourse is reachable
+        boolean isReachable;
+        final int timeout = 1000;
         try {
-            response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
-        } catch (ApiException ex) {
-            throw new CustomWebApplicationException(ex.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            isReachable = InetAddress.getByName(discourseUrl).isReachable(timeout);
+        } catch (IOException ex) {
+            LOG.info("Error reaching " + discourseUrl);
+            isReachable = false;
         }
 
-        entry.setTopicId(response.getId().longValue());
+        if (isReachable) {
+            // Create a discourse topic
+            InlineResponse2005 response;
+            try {
+                response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
+            } catch (ApiException ex) {
+                throw new CustomWebApplicationException(ex.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            }
+            entry.setTopicId(response.getId().longValue());
+        }
+
         return entry;
     }
 
