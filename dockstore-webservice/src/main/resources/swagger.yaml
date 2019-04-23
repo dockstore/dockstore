@@ -2535,6 +2535,21 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/CollectionOrganization"
+  /metadata/config.json:
+    get:
+      tags:
+      - "metadata"
+      summary: "Configuration for UI clients of the API"
+      description: "NO authentication"
+      operationId: "getConfig"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Config"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -5799,6 +5814,56 @@ definitions:
         type: "string"
       organizationDisplayName:
         type: "string"
+  Config:
+    type: "object"
+    properties:
+      discourseUrl:
+        type: "string"
+      dnaStackImportUrl:
+        type: "string"
+      fireCloudImportUrl:
+        type: "string"
+      dnaNexusImportUrl:
+        type: "string"
+      terraImportUrl:
+        type: "string"
+      gitHubAuthUrl:
+        type: "string"
+      gitHubRedirectPath:
+        type: "string"
+      gitHubScope:
+        type: "string"
+      quayIoAuthUrl:
+        type: "string"
+      quayIoRedirectPath:
+        type: "string"
+      quayIoScope:
+        type: "string"
+      bitBucketAuthUrl:
+        type: "string"
+      gitlabAuthUrl:
+        type: "string"
+      gitlabRedirectPath:
+        type: "string"
+      gitlabScope:
+        type: "string"
+      googleScope:
+        type: "string"
+      cwlVisualizerUri:
+        type: "string"
+      enableLaunchWithFireCloud:
+        type: "boolean"
+      githubClientId:
+        type: "string"
+      quayIoClientId:
+        type: "string"
+      bitBucketClientId:
+        type: "string"
+      gitlabClientId:
+        type: "string"
+      googleClientId:
+        type: "string"
+    description: "Configuration information for UI clients of the Dockstore webservice."
   DescriptorLanguageBean:
     type: "object"
     properties:

@@ -79,6 +79,55 @@ components:
         organizationName:
           type: string
       type: object
+    Config:
+      properties:
+        bitBucketAuthUrl:
+          type: string
+        bitBucketClientId:
+          type: string
+        cwlVisualizerUri:
+          type: string
+        discourseUrl:
+          type: string
+        dnaNexusImportUrl:
+          type: string
+        dnaStackImportUrl:
+          type: string
+        enableLaunchWithFireCloud:
+          type: boolean
+        fireCloudImportUrl:
+          type: string
+        gitHubAuthUrl:
+          type: string
+        gitHubRedirectPath:
+          type: string
+        gitHubScope:
+          type: string
+        githubClientId:
+          type: string
+        gitlabAuthUrl:
+          type: string
+        gitlabClientId:
+          type: string
+        gitlabRedirectPath:
+          type: string
+        gitlabScope:
+          type: string
+        googleClientId:
+          type: string
+        googleScope:
+          type: string
+        quayIoAuthUrl:
+          type: string
+        quayIoClientId:
+          type: string
+        quayIoRedirectPath:
+          type: string
+        quayIoScope:
+          type: string
+        terraImportUrl:
+          type: string
+      type: object
     DescriptorLanguageBean:
       properties:
         friendlyName:
@@ -2777,7 +2826,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /entries/{id}/collections:
     get:
@@ -2798,6 +2847,20 @@ paths:
                   $ref: '#/components/schemas/CollectionOrganization'
                 type: array
           description: default response
+  /metadata/config.json:
+    get:
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+          description: default response
+      summary: Configuration for UI clients of the API
+      tags:
+      - metadata
   /metadata/descriptorLanguageList:
     get:
       description: Get the list of descriptor languages supported on Dockstore, NO
@@ -3030,7 +3093,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3784,7 +3847,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -3943,7 +4006,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
@@ -4345,7 +4408,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
     patch:
       operationId: editHosted_1
