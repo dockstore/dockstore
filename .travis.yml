@@ -64,20 +64,14 @@ jobs:
 # not feeling the bang-for-the-buck for these, running only in release branch         
     - stage: coverage
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      branches:
-        only:
-          - master
-          - /^release.*$/
+      branch = master OR branch =~ /^release.*$/
       env:
         - TESTING_PROFILE=toil-integration-tests         
     - stage: coverage
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=regression-integration-tests
-      branches:
-        only:
-          - master
-          - /^release.*$/
+      branch = master OR branch =~ /^release.*$/
         
 # build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
