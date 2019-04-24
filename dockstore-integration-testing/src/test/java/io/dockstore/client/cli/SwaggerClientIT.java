@@ -53,6 +53,7 @@ import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DescriptorLanguageBean;
+import io.swagger.client.model.Config;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.MetadataV1;
@@ -820,6 +821,17 @@ public class SwaggerClientIT extends BaseIT {
         final Workflow updatedWorkflow = hostedApi.addZip(hostedWorkflow.getId(), new File(smartseqZip));
         // A version should now exist.
         Assert.assertEquals(1, updatedWorkflow.getWorkflowVersions().size());
+    }
+
+    /**
+     * Test that the config endpoint doesn't fail and validates one random property
+     */
+    @Test
+    public void testConfig() {
+        final ApiClient webClient = getWebClient();
+        final MetadataApi metadataApi = new MetadataApi(webClient);
+        final Config config = metadataApi.getConfig();
+        Assert.assertEquals("read:org,user:email", config.getGitHubScope());
     }
 
     /**

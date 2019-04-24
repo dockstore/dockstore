@@ -51,7 +51,7 @@
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
         <httpcomponents.version>4.5.8</httpcomponents.version>
         <httpcore.version>4.4.11</httpcore.version>
-        <jetty-servlet.version>9.4.14.v20181114</jetty-servlet.version>
+        <jetty-servlet.version>9.4.17.v20190418</jetty-servlet.version>
         <netty.version>4.1.33.Final</netty.version>
 
         <skipTests>false</skipTests>
