@@ -323,24 +323,18 @@ public class MetadataResource {
     @Path("/okHttpCachePerformance")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get measures of cache performance", description = "Get measures of cache performance, NO authentication")
-    @ApiResponse(content = @Content(
-        mediaType = "application/json",
-        array = @ArraySchema(schema = @Schema(implementation = String.class))))
-    @ApiOperation(value = "Get measures of cache performance.", notes = "NO authentication", response = Map.class, responseContainer = "List")
+    @ApiResponse(content = @Content(mediaType = "application/json"))
+    @ApiOperation(value = "Get measures of cache performance.", notes = "NO authentication", response = Map.class)
     public Map<String, String> getCachePerformance() {
-        return extractCacheStatistics();
-    }
-
-    public static Map<String, String> extractCacheStatistics() {
         Cache cache = DockstoreWebserviceApplication.getCache();
         Map<String, String> results = new HashMap<>();
         results.put("requestCount", String.valueOf(cache.requestCount()));
         results.put("networkCount", String.valueOf(cache.networkCount()));
         results.put("hitCount", String.valueOf(cache.hitCount()));
-        results.put("maxSize", String.valueOf(cache.maxSize()) + " bytes");
+        results.put("maxSize", cache.maxSize() + " bytes");
 
         try {
-            results.put("size", String.valueOf(cache.size()) + " bytes");
+            results.put("size", cache.size() + " bytes");
         } catch (IOException e) {
             /* do nothing if we cannot report size */
             LOG.warn("unable to determine cache size, may not have initialized yet");
