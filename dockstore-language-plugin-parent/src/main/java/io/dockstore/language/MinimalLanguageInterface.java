@@ -28,21 +28,13 @@ import org.apache.commons.lang3.tuple.Pair;
  * a) A logo for your language
  * b) Launch instructions for your language (i.e. given all the desciptors for a workflow locally, how would I run a workflow on the command-line?)
  * c) What language is your description in (Markdown, HTML, etc.)?
+ * d) A short (acronym like CWl, WDL) name for your language and a longer more descriptive name (like "Common Workflow Language")
  */
 public interface MinimalLanguageInterface {
 
     /**
-     * @return short name for your language ("CWL")
-     */
-    String shortName();
-
-    /**
-     * @return long name for your language ("Common Workflow Language")
-     */
-    String longName();
-
-    /**
-     * Validate a filename path that might be entered by your user (i.e. is "/Dockstore.wdl" a valid path to the "first" descriptor)
+     * Validate a filename path that might be entered by your user (i.e. is "/Dockstore.wdl" a valid path to the "first" descriptor).
+     * This is used to distinguish between multiple workflows that may be stored in one repo.
      *
      * @return a pattern that can be used to validate filepaths
      */
@@ -60,6 +52,7 @@ public interface MinimalLanguageInterface {
 
     /**
      * Given the primary descriptor and the files indexed from indexWorkflowFiles, return relevant metadata
+     * about the workflow.
      *
      * @param initialPath  the path to the primary descriptor
      * @param contents     contents of the primary descriptor
@@ -71,8 +64,11 @@ public interface MinimalLanguageInterface {
     /**
      * When indexing, Dockstore will distinguish between extra files that hold things like extra code, tools, configuration (imported descriptors) and test parameter files (example parameter sets used to run a workflow)
      */
-    enum GenericFileType { IMPORTED_DESCRIPTOR, TEST_PARAMETER_FILES }
+    enum GenericFileType { IMPORTED_DESCRIPTOR, TEST_PARAMETER_FILE, CONTAINERFILE }
 
+    /**
+     * Reads files relative to the file found via {@link #initialPathPattern()}
+     */
     interface FileReader {
         /**
          * Get the contents of a file from GitHub, GitLab, etc.
