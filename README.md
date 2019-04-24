@@ -139,7 +139,7 @@ Categories include:
 You can also run it on your local computer but will need to setup postgres separately.
 
 1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
-2. The dockstore.yml is mostly a standard [Dropwizard configuration file](http://www.dropwizard.io/1.0.5/docs/manual/configuration.html). 
+2. The dockstore.yml is mostly a standard [Dropwizard configuration file](http://www.dropwizard.io/1.3.9/docs/manual/configuration.html). 
 Refer to the linked document to setup httpClient and database. 
 3. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
 4. If you need integration with GitHub.com, Quay.io. or Bitbucket for your work, you will need to follow the appropriate 
