@@ -32,7 +32,7 @@
         <github.url>scm:git:git@github.com:ga4gh/dockstore.git</github.url>
         <dropwizard.version>1.3.9</dropwizard.version>
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
-        <swagger-annotations-version>1.5.19</swagger-annotations-version>
+        <swagger-annotations-version>1.5.22</swagger-annotations-version>
         <openapi-annotations-version>2.0.6</openapi-annotations-version>
         <assertj.version>3.9.1</assertj.version>
         <jackson.version>2.9.8</jackson.version>
