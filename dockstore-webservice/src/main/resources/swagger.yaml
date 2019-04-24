@@ -2554,11 +2554,14 @@ paths:
       - name: "categoryId"
         in: "query"
         description: "The id of the category to add a topic to, defaults to Automatic\
-          \ Tool and Workflow Threads(6)."
+          \ Tool and Workflow Threads (6)."
         required: false
         type: "integer"
         default: 6
         format: "int32"
+        enum:
+        - 6
+        - 9
       - in: "body"
         name: "body"
         description: "This is here to appease Swagger. It requires PUT methods to\
