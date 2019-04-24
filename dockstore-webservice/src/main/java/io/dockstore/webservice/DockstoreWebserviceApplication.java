@@ -271,7 +271,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new EntryResource(toolDAO));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
-        environment.jersey().register(new ToolTesterResource());
+        environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(OpenApiResource.class);
         environment.jersey().register(OpenAPIDescription.class);
 

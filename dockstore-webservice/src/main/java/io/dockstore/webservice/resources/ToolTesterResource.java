@@ -32,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.ToolTester.ToolTesterLog;
 import io.dockstore.webservice.core.ToolTester.ToolTesterLogType;
 import io.dockstore.webservice.core.ToolTester.ToolTesterS3Client;
@@ -49,6 +50,11 @@ import org.apache.http.HttpStatus;
 @Produces(MediaType.APPLICATION_JSON)
 @io.swagger.v3.oas.annotations.tags.Tag(name = "toolTester", description = "Interactions with the Dockstore-support's ToolTester application")
 public class ToolTesterResource {
+    private final String bucketName;
+
+    public ToolTesterResource(DockstoreWebserviceConfiguration configuration) {
+        bucketName = configuration.getToolTesterBucket();
+    }
 
     @GET
     @Timed
@@ -59,11 +65,14 @@ public class ToolTesterResource {
     public String getToolTesterLog(@NotNull @QueryParam("tool_id") String toolId, @NotNull @QueryParam("tool_version_name") String toolVersionName,
             @NotNull @QueryParam("test_filename") String testFilename, @NotNull @QueryParam("runner") String runner,
             @NotNull @QueryParam("log_type") ToolTesterLogType logType, @NotNull @QueryParam("filename") String filename) {
-        ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client();
+        if (bucketName == null) {
+            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up", HttpStatus.SC_SERVICE_UNAVAILABLE);
+        }
+        ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(bucketName);
         try {
             return toolTesterS3Client.getToolTesterLog(toolId, toolVersionName, testFilename, runner, filename);
         } catch (AmazonS3Exception e) {
-            throw new CustomWebApplicationException("Encountered problems communicating with s3", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up", HttpStatus.SC_SERVICE_UNAVAILABLE);
         } catch (IOException e) {
             throw new CustomWebApplicationException("Could not log file contents", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
@@ -75,11 +84,14 @@ public class ToolTesterResource {
     @Operation(summary = "Search for ToolTester log files")
     @ApiOperation(value = "Search for ToolTester log files")
     public List<ToolTesterLog> search(@NotNull @QueryParam("tool_id") String toolId, @NotNull @QueryParam("tool_version_name") String toolVersionName) {
+        if (bucketName == null) {
+            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up", HttpStatus.SC_SERVICE_UNAVAILABLE);
+        }
         try {
-            ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client();
+            ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(bucketName);
             return toolTesterS3Client.getToolTesterLogs(toolId, toolVersionName);
         } catch (AmazonS3Exception e) {
-            throw new CustomWebApplicationException("Encountered problems communicating with s3", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up", HttpStatus.SC_SERVICE_UNAVAILABLE);
         } catch (UnsupportedEncodingException e) {
             throw new CustomWebApplicationException("Could generate s3 bucket key", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }

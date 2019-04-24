@@ -47,8 +47,8 @@ public class ToolTesterS3Client {
     private String bucketName;
     private AmazonS3 s3;
 
-    public ToolTesterS3Client() {
-        bucketName = "dockstore.tooltester.backup";
+    public ToolTesterS3Client(String bucketName) {
+        this.bucketName = bucketName;
         s3 = AmazonS3ClientBuilder.standard().build();
     }
 
@@ -118,9 +118,6 @@ public class ToolTesterS3Client {
 
     }
 
-    /**
-     * This is not used in tooltester, to be moved into Dockstore webservice
-     */
     public List<ToolTesterLog> getToolTesterLogs(String toolId, String toolVersionName) throws UnsupportedEncodingException {
         String key = convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8.toString());
         ObjectListing listing = s3.listObjects(bucketName, key);

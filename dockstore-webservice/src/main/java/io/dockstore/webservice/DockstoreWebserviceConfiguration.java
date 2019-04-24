@@ -101,6 +101,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String sqsURL;
 
+    private String toolTesterBucket = null;
+
     private String authorizerType = null;
 
     private List<String> externalGoogleClientIdPrefixes = new ArrayList<>();
@@ -108,6 +110,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @Valid
     @NotNull
     private UIConfig uiConfig;
+
+    @JsonProperty("toolTesterBucket")
+    public String getToolTesterBucket() {
+        return toolTesterBucket;
+    }
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
