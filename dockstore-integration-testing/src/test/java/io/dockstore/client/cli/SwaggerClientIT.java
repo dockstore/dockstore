@@ -17,8 +17,6 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -28,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
@@ -53,11 +52,13 @@ import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.DescriptorLanguageBean;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.Permission;
 import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.RegistryBean;
 import io.swagger.client.model.SharedWorkflows;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
@@ -741,6 +742,24 @@ public class SwaggerClientIT extends BaseIT {
         starring(containerIds2, containersApi, usersApi);
         starring(containerIds3, containersApi, usersApi);
         starring(containerIds4, containersApi, usersApi);
+    }
+
+    @Test
+    public void testEnumMetadataEndpoints() throws ApiException {
+        ApiClient apiClient = getWebClient();
+        MetadataApi metadataApi = new MetadataApi(apiClient);
+        final List<RegistryBean> dockerRegistries = metadataApi.getDockerRegistries();
+        final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
+        assertNotNull(dockerRegistries);
+        assertNotNull(descriptorLanguages);
+    }
+
+    @Test
+    public void testCacheMetadataEndpoint() throws ApiException{
+        ApiClient apiClient = getWebClient();
+        MetadataApi metadataApi = new MetadataApi(apiClient);
+        final Map<String, Object> cachePerformance = metadataApi.getCachePerformance();
+        assertNotNull(cachePerformance);
     }
 
     @Test
