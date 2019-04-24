@@ -737,12 +737,20 @@ public class WorkflowResource
         long id = workflowDAO.create(c);
         c = workflowDAO.findById(id);
         if (request.getPublish()) {
-            elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
+            try {
+                elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
+            } catch (Exception ex) {
+                LOG.error("There was an error updating the Elastic index");
+            }
             if (c.getTopicId() == null) {
                 entryResource.createAndSetDiscourseTopic(id, entryResource.defaultDiscourseCategoryId);
             }
         } else {
-            elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
+            try {
+                elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
+            } catch (Exception ex) {
+                LOG.error("There was an error updating the Elastic index");
+            }
         }
         return c;
     }

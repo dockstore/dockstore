@@ -132,7 +132,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
     public Entry setDiscourseTopic(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "The id of the entry to add a topic to.", required = true) @PathParam("id") Long id,
-            @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads(6).", defaultValue = "6") @QueryParam("categoryId") Integer categoryId,
+            @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", defaultValue = "6", allowableValues = "6,9") @QueryParam("categoryId") Integer categoryId,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         return createAndSetDiscourseTopic(id, categoryId);
     }
@@ -187,16 +187,21 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         // Check that discourse is reachable
         boolean isReachable;
+        HttpURLConnection connection = null;
         try {
             URL url = new URL(discourseUrl);
-            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+            connection = (HttpURLConnection)url.openConnection();
             connection.setRequestMethod("GET");
             connection.connect();
             int respCode = connection.getResponseCode();
             isReachable = respCode == HttpStatus.SC_OK;
         } catch (IOException ex) {
-            LOG.info("Error reaching " + discourseUrl);
+            LOG.error("Error reaching " + discourseUrl);
             isReachable = false;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
 
         if (isReachable) {
@@ -205,7 +210,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             try {
                 response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
             } catch (ApiException ex) {
-                throw new CustomWebApplicationException("Could not add a topic to the given entry.", HttpStatus.SC_BAD_REQUEST);
+                String message = "Could not add a topic to the given entry.";
+                LOG.error(message);
+                throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
             }
             entry.setTopicId(response.getId().longValue());
         }

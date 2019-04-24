@@ -619,12 +619,20 @@ public class DockerRepoResource
         long id = toolDAO.create(tool);
         tool = toolDAO.findById(id);
         if (request.getPublish()) {
-            elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+            try {
+                elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+            } catch (Exception ex) {
+                LOG.error("There was an error updating the Elastic index");
+            }
             if (tool.getTopicId() == null) {
                 entryResource.createAndSetDiscourseTopic(id, entryResource.defaultDiscourseCategoryId);
             }
         } else {
-            elasticManager.handleIndexUpdate(tool, ElasticMode.DELETE);
+            try {
+                elasticManager.handleIndexUpdate(tool, ElasticMode.DELETE);
+            } catch (Exception ex) {
+                LOG.error("There was an error updating the Elastic index");
+            }
         }
         return tool;
     }
