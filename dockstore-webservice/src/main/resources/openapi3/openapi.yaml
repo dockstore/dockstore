@@ -677,6 +677,24 @@ components:
           type: array
           uniqueItems: true
       type: object
+    ToolTesterLog:
+      properties:
+        filename:
+          type: string
+        logType:
+          enum:
+          - FULL
+          - SUMMARY
+          type: string
+        runner:
+          type: string
+        testFilename:
+          type: string
+        toolId:
+          type: string
+        toolVersionName:
+          type: string
+      type: object
     User:
       properties:
         avatarUrl:
@@ -1786,7 +1804,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted
@@ -3757,6 +3775,79 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: default response
+  /toolTester/logs:
+    get:
+      operationId: getToolTesterLog
+      parameters:
+      - in: query
+        name: tool_id
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: tool_version_name
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: test_filename
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: runner
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: log_type
+        required: true
+        schema:
+          enum:
+          - FULL
+          - SUMMARY
+          type: string
+      - in: query
+        name: filename
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: default response
+      summary: Get ToolTester log file
+      tags:
+      - toolTester
+  /toolTester/logs/search:
+    get:
+      operationId: search
+      parameters:
+      - in: query
+        name: tool_id
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: tool_version_name
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolTesterLog'
+                type: array
+          description: default response
+      summary: Search for ToolTester log files
+      tags:
+      - toolTester
   /users/checkUser/{username}:
     get:
       operationId: checkUserExists
@@ -5663,3 +5754,5 @@ paths:
 tags:
 - description: description of the webservice itself
   name: metadata
+- description: Interactions with the Dockstore-support's ToolTester application
+  name: toolTester

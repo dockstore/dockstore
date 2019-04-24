@@ -42,6 +42,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolTester.ToolTesterLog;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
@@ -69,6 +70,7 @@ import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.OrganizationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
+import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
@@ -130,7 +132,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
-            WorkflowVersion.class, FileFormat.class, Organization.class, OrganizationUser.class, Event.class, Collection.class, Validation.class) {
+            WorkflowVersion.class, FileFormat.class, Organization.class, OrganizationUser.class, Event.class, Collection.class, Validation.class,
+            ToolTesterLog.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -268,6 +271,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new EntryResource(toolDAO));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new ToolTesterResource());
         environment.jersey().register(OpenApiResource.class);
         environment.jersey().register(OpenAPIDescription.class);
 
