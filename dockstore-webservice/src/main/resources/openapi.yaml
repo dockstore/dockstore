@@ -2804,7 +2804,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/CollectionOrganization"
   "/entries/{id}/topic":
-    put:
+    post:
       tags:
         - entries
       summary: Create a discourse topic for an entry.
@@ -2830,8 +2830,6 @@ paths:
               - 6
               - 9
             default: 6
-      requestBody:
-        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation

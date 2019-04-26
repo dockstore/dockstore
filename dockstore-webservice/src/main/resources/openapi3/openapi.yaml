@@ -2857,7 +2857,7 @@ paths:
                 type: array
           description: default response
   /entries/{id}/topic:
-    put:
+    post:
       operationId: setDiscourseTopic
       parameters:
       - in: path

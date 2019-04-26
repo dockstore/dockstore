@@ -2536,7 +2536,7 @@ paths:
             items:
               $ref: "#/definitions/CollectionOrganization"
   /entries/{id}/topic:
-    put:
+    post:
       tags:
       - "entries"
       summary: "Create a discourse topic for an entry."
@@ -2562,13 +2562,6 @@ paths:
         enum:
         - 6
         - 9
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"

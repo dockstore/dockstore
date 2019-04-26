@@ -1348,6 +1348,8 @@ public class WorkflowIT extends BaseIT {
      * NOTE: This test is not normally run. It is only for running locally to confirm that the discourse topic generation is working.
      *
      * Adds a discourse topic for a workflow (adds to a Automatic Tool and Workflow Threads - NEED TO DELETE TOPIC)
+     *
+     * Requires you to have the correct discourse information set in the dockstoreTest.yml
      */
     @Ignore
     public void publishWorkflowAndTestDiscourseTopicCreation() {
@@ -1369,24 +1371,20 @@ public class WorkflowIT extends BaseIT {
         });
 
         // Should not be able to create a topic in category 3 (for example)
-        boolean thrownException = false;
         Integer wrongCategoryId = 3;
         try {
-            curatorEntriesApi.setDiscourseTopic(workflow.getId(), wrongCategoryId, "");
+            curatorEntriesApi.setDiscourseTopic(workflow.getId(), wrongCategoryId);
+            fail("Should not be able to set discourse topic.");
         } catch (ApiException ex) {
-            thrownException = true;
         }
-        assertTrue("Should fail creating a topic in category 3.", thrownException);
 
         // Should not be able to create a topic for the same workflow in category 9
         Integer correctCategoryId = 9;
-        thrownException = false;
         try {
-            curatorEntriesApi.setDiscourseTopic(workflow.getId(), correctCategoryId, "");
+            curatorEntriesApi.setDiscourseTopic(workflow.getId(), correctCategoryId);
+            fail("Should still not be able to set discourse topic.");
         } catch (ApiException ex) {
-            thrownException = true;
         }
-        assertTrue("Should fail creating another topic for a workflow that has one.", thrownException);
 
     }
 }

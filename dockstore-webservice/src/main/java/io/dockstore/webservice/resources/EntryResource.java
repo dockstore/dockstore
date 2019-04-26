@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -123,7 +124,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return this.toolDAO.findCollectionsByEntryId(entry.getId());
     }
 
-    @PUT
+    @POST
     @Path("/{id}/topic")
     @Timed
     @RolesAllowed({ "curator" })
@@ -132,8 +133,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
     public Entry setDiscourseTopic(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "The id of the entry to add a topic to.", required = true) @PathParam("id") Long id,
-            @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", defaultValue = "6", allowableValues = "6,9") @QueryParam("categoryId") Integer categoryId,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+            @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", defaultValue = "6", allowableValues = "6,9") @QueryParam("categoryId") Integer categoryId) {
         return createAndSetDiscourseTopic(id, categoryId);
     }
 
@@ -196,7 +196,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             int respCode = connection.getResponseCode();
             isReachable = respCode == HttpStatus.SC_OK;
         } catch (IOException ex) {
-            LOG.error("Error reaching " + discourseUrl);
+            LOG.error("Error reaching " + discourseUrl, ex);
             isReachable = false;
         } finally {
             if (connection != null) {
