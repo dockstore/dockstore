@@ -35,7 +35,6 @@ import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.core.OpenAPIDescription;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.SourceFile;
@@ -273,7 +272,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(OpenApiResource.class);
-        environment.jersey().register(OpenAPIDescription.class);
 
 
         // attach the container dao statically to avoid too much modification of generated code

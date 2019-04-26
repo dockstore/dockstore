@@ -930,6 +930,21 @@ components:
         workingDirectory:
           type: string
       type: object
+externalDocs:
+  description: User documentation for dockstore
+  url: https://docs.dockstore.org/
+info:
+  contact:
+    email: theglobalalliance@genomicsandhealth.org
+    name: Dockstore@ga4gh
+    url: https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506
+  description: The Dockstore API, includes proprietary and GA4GH V1+V2 endpoints
+  license:
+    name: Apache 2.0
+    url: https://github.com/ga4gh/dockstore/blob/develop/LICENSE
+  termsOfService: http://swagger.io/terms/
+  title: Dockstore
+  version: 1.6.0
 openapi: 3.0.1
 paths:
   /api/ga4gh/v1/metadata:
@@ -1804,7 +1819,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -2844,7 +2859,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /entries/{id}/collections:
     get:
@@ -2892,6 +2907,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/DescriptorLanguageBean'
                 type: array
+          description: potato
       summary: Get the list of descriptor languages supported on Dockstore
       tags:
       - metadata
@@ -2907,6 +2923,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/RegistryBean'
                 type: array
+          description: potato
       summary: Get the list of docker registries supported on Dockstore
       tags:
       - metadata
@@ -2935,6 +2952,7 @@ paths:
                 items:
                   type: string
                 type: array
+          description: potato
       summary: Get measures of cache performance
       tags:
       - metadata
@@ -2991,6 +3009,7 @@ paths:
             application/json:
               schema:
                 type: string
+          description: potato
       summary: Returns the file containing runner dependencies
       tags:
       - metadata
@@ -3025,6 +3044,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
                 type: array
+          description: potato
       summary: Get the list of source controls supported on Dockstore
       tags:
       - metadata
@@ -3111,7 +3131,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3217,7 +3237,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -3779,22 +3799,26 @@ paths:
     get:
       operationId: getToolTesterLog
       parameters:
-      - in: query
+      - example: '#workflow/github.com/dockstore/hello_world'
+        in: query
         name: tool_id
         required: true
         schema:
           type: string
-      - in: query
+      - example: v1.0.0
+        in: query
         name: tool_version_name
         required: true
         schema:
           type: string
-      - in: query
+      - example: hello_world.cwl.json
+        in: query
         name: test_filename
         required: true
         schema:
           type: string
-      - in: query
+      - example: cwltool
+        in: query
         name: runner
         required: true
         schema:
@@ -3807,7 +3831,8 @@ paths:
           - FULL
           - SUMMARY
           type: string
-      - in: query
+      - example: 1554477737092.log
+        in: query
         name: filename
         required: true
         schema:
@@ -3826,12 +3851,14 @@ paths:
     get:
       operationId: search
       parameters:
-      - in: query
+      - example: '#workflow/github.com/dockstore/hello_world'
+        in: query
         name: tool_id
         required: true
         schema:
           type: string
-      - in: query
+      - example: v1.0.0
+        in: query
         name: tool_version_name
         required: true
         schema:

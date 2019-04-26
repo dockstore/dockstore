@@ -43,7 +43,6 @@ tags:
   - name: organizations
   - name: tokens
     description: List, modify, refresh, and delete tokens for external services
-  - name: toolTester
   - name: users
     description: List, modify, and manage end users of the dockstore
   - name: workflows
@@ -3939,81 +3938,6 @@ paths:
       security:
         - BEARER:
             []
-  /toolTester/logs:
-    get:
-      tags:
-        - toolTester
-      summary: Get ToolTester log file
-      description: ""
-      operationId: getToolTesterLog
-      parameters:
-        - name: tool_id
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: tool_version_name
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: test_filename
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: runner
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: log_type
-          in: query
-          required: true
-          schema:
-            type: string
-            enum:
-              - FULL
-              - SUMMARY
-        - name: filename
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            text/plain:
-              schema:
-                type: string
-  /toolTester/logs/search:
-    get:
-      tags:
-        - toolTester
-      summary: Search for ToolTester log files
-      description: ""
-      operationId: search
-      parameters:
-        - name: tool_id
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: tool_version_name
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ToolTesterLog"
   "/users/checkUser/{username}":
     get:
       tags:
@@ -6515,6 +6439,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6530,10 +6458,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6699,6 +6623,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6714,10 +6642,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7421,24 +7345,6 @@ components:
             - SECONDARY_DESCRIPTOR
             - CONTAINERFILE
             - OTHER
-    ToolTesterLog:
-      type: object
-      properties:
-        toolId:
-          type: string
-        toolVersionName:
-          type: string
-        testFilename:
-          type: string
-        runner:
-          type: string
-        logType:
-          type: string
-          enum:
-            - FULL
-            - SUMMARY
-        filename:
-          type: string
     ToolTestsV1:
       type: object
       properties:
@@ -7689,6 +7595,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7704,10 +7614,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

@@ -43,7 +43,6 @@ tags:
 - name: "organizations"
 - name: "tokens"
   description: "List, modify, refresh, and delete tokens for external services"
-- name: "toolTester"
 - name: "users"
   description: "List, modify, and manage end users of the dockstore"
 - name: "workflows"
@@ -3612,73 +3611,6 @@ paths:
             $ref: "#/definitions/Collection"
       security:
       - BEARER: []
-  /toolTester/logs:
-    get:
-      tags:
-      - "toolTester"
-      summary: "Get ToolTester log file"
-      description: ""
-      operationId: "getToolTesterLog"
-      produces:
-      - "text/plain"
-      parameters:
-      - name: "tool_id"
-        in: "query"
-        required: true
-        type: "string"
-      - name: "tool_version_name"
-        in: "query"
-        required: true
-        type: "string"
-      - name: "test_filename"
-        in: "query"
-        required: true
-        type: "string"
-      - name: "runner"
-        in: "query"
-        required: true
-        type: "string"
-      - name: "log_type"
-        in: "query"
-        required: true
-        type: "string"
-        enum:
-        - "FULL"
-        - "SUMMARY"
-      - name: "filename"
-        in: "query"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "string"
-  /toolTester/logs/search:
-    get:
-      tags:
-      - "toolTester"
-      summary: "Search for ToolTester log files"
-      description: ""
-      operationId: "search"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "tool_id"
-        in: "query"
-        required: true
-        type: "string"
-      - name: "tool_version_name"
-        in: "query"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/ToolTesterLog"
   /users/checkUser/{username}:
     get:
       tags:
@@ -5972,6 +5904,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5987,10 +5923,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6183,6 +6115,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6198,10 +6134,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6980,24 +6912,6 @@ definitions:
         - "SECONDARY_DESCRIPTOR"
         - "CONTAINERFILE"
         - "OTHER"
-  ToolTesterLog:
-    type: "object"
-    properties:
-      toolId:
-        type: "string"
-      toolVersionName:
-        type: "string"
-      testFilename:
-        type: "string"
-      runner:
-        type: "string"
-      logType:
-        type: "string"
-        enum:
-        - "FULL"
-        - "SUMMARY"
-      filename:
-        type: "string"
   ToolTestsV1:
     type: "object"
     properties:
@@ -7259,6 +7173,10 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7274,10 +7192,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1

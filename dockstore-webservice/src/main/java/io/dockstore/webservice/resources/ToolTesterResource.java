@@ -22,11 +22,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -36,9 +34,10 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.ToolTester.ToolTesterLog;
 import io.dockstore.webservice.core.ToolTester.ToolTesterLogType;
 import io.dockstore.webservice.core.ToolTester.ToolTesterS3Client;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 
 /**
@@ -46,9 +45,8 @@ import org.apache.http.HttpStatus;
  * @since 1.7.0
  */
 @Path("/toolTester")
-@Api("/toolTester")
 @Produces(MediaType.APPLICATION_JSON)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "toolTester", description = "Interactions with the Dockstore-support's ToolTester application")
+@Tag(name = "toolTester", description = "Interactions with the Dockstore-support's ToolTester application")
 public class ToolTesterResource {
     private final String bucketName;
 
@@ -61,18 +59,22 @@ public class ToolTesterResource {
     @Path("logs")
     @Operation(summary = "Get ToolTester log file")
     @Produces(MediaType.TEXT_PLAIN)
-    @ApiOperation(value = "Get ToolTester log file")
-    public String getToolTesterLog(@NotNull @QueryParam("tool_id") String toolId, @NotNull @QueryParam("tool_version_name") String toolVersionName,
-            @NotNull @QueryParam("test_filename") String testFilename, @NotNull @QueryParam("runner") String runner,
-            @NotNull @QueryParam("log_type") ToolTesterLogType logType, @NotNull @QueryParam("filename") String filename) {
+    public String getToolTesterLog(@Parameter(in = ParameterIn.QUERY, name = "tool_id", example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
+            @Parameter(in = ParameterIn.QUERY, name = "tool_version_name", example = "v1.0.0", required = true) String toolVersionName,
+            @Parameter(in = ParameterIn.QUERY, name = "test_filename", example = "hello_world.cwl.json", required = true) String testFilename,
+            @Parameter(in = ParameterIn.QUERY, name = "runner", example = "cwltool", required = true) String runner,
+            @Parameter(in = ParameterIn.QUERY, name = "log_type", required = true) ToolTesterLogType logType,
+            @Parameter(in = ParameterIn.QUERY, name = "filename", example = "1554477737092.log", required = true) String filename) {
         if (bucketName == null) {
-            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up", HttpStatus.SC_SERVICE_UNAVAILABLE);
+            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
+                    HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
         ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(bucketName);
         try {
             return toolTesterS3Client.getToolTesterLog(toolId, toolVersionName, testFilename, runner, filename);
         } catch (AmazonS3Exception e) {
-            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up", HttpStatus.SC_SERVICE_UNAVAILABLE);
+            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
+                    HttpStatus.SC_SERVICE_UNAVAILABLE);
         } catch (IOException e) {
             throw new CustomWebApplicationException("Could not log file contents", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
@@ -82,16 +84,18 @@ public class ToolTesterResource {
     @Timed
     @Path("logs/search")
     @Operation(summary = "Search for ToolTester log files")
-    @ApiOperation(value = "Search for ToolTester log files")
-    public List<ToolTesterLog> search(@NotNull @QueryParam("tool_id") String toolId, @NotNull @QueryParam("tool_version_name") String toolVersionName) {
+    public List<ToolTesterLog> search(@Parameter(in = ParameterIn.QUERY, name = "tool_id", example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
+            @Parameter(in = ParameterIn.QUERY, name = "tool_version_name", example = "v1.0.0", required = true) String toolVersionName) {
         if (bucketName == null) {
-            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up", HttpStatus.SC_SERVICE_UNAVAILABLE);
+            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
+                    HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
         try {
             ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(bucketName);
             return toolTesterS3Client.getToolTesterLogs(toolId, toolVersionName);
         } catch (AmazonS3Exception e) {
-            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up", HttpStatus.SC_SERVICE_UNAVAILABLE);
+            throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
+                    HttpStatus.SC_SERVICE_UNAVAILABLE);
         } catch (UnsupportedEncodingException e) {
             throw new CustomWebApplicationException("Could generate s3 bucket key", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
