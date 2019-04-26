@@ -182,7 +182,6 @@ public abstract class SourceCodeRepoInterface {
             return workflow;
         }
 
-
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
         workflow.setMode(WorkflowMode.FULL);
 
@@ -215,6 +214,7 @@ public abstract class SourceCodeRepoInterface {
         updateEntryMetadata(workflow, workflow.determineWorkflowType());
         return workflow;
     }
+
 
     /**
      * Update an entry with the contents of the descriptor file from a source code repo

@@ -385,6 +385,46 @@ public class WorkflowResource
         return workflow;
     }
 
+    @GET
+    @Path("/addOrUpdateVersion/")
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Add or update a tag or release to a workflow.", notes = "To be called by a lambda function", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
+    public List<Workflow> addNewVersion(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organization name", required = true) @QueryParam("organization") String organization,
+            @ApiParam(value = "Repository name", required = true) @QueryParam("repository") String repository,
+            @ApiParam(value = "Git reference for new version (tag or release)", required = true) @QueryParam("gitReference") String gitReference) {
+
+        // Path on Dockstore
+        String dockstoreWorkflowPath = "github.com/" + organization + "/" + repository;
+
+        // Find all workflows with the given path
+        List<Workflow> workflows = workflowDAO.findAllByPath(dockstoreWorkflowPath, false);
+
+        // Filter to only include valid workflows
+        List<Workflow> validWorkflows = workflows
+                .stream()
+                .filter(workflow ->
+                        workflow != null &&  workflow.getMode() != WorkflowMode.HOSTED && workflow.getMode() != WorkflowMode.STUB)
+                .collect(Collectors.toList());
+
+        if (validWorkflows.size() > 0) {
+            // All workflows with the same path have the same Git Url
+            String sharedGitUrl = workflows.get(0).getGitUrl();
+
+            // Set up source code interface and ensure token is set up
+            user = userDAO.findById(user.getId());
+            final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(sharedGitUrl, user);
+
+            // Pull new version information from GitHub and update the versions
+
+        }
+
+        return validWorkflows;
+    }
+
     /**
      * Updates the existing workflow in the database with new information from newWorkflow, including new, updated, and removed
      * workflow verions.

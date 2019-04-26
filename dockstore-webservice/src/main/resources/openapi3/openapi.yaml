@@ -1786,7 +1786,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted
@@ -2914,9 +2914,9 @@ paths:
           content:
             application/json:
               schema:
-                items:
+                additionalProperties:
                   type: string
-                type: array
+                type: object
       summary: Get measures of cache performance
       tags:
       - metadata
@@ -4348,6 +4348,36 @@ paths:
                   $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
+  /workflows/addOrUpdateVersion:
+    get:
+      operationId: addNewVersion
+      parameters:
+      - in: query
+        name: organization
+        schema:
+          type: string
+      - in: query
+        name: repository
+        schema:
+          type: string
+      - in: query
+        name: gitReference
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
   /workflows/hostedEntry:
     post:
       operationId: createHosted_2
@@ -4382,7 +4412,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
@@ -4408,7 +4438,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
