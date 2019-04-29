@@ -53,6 +53,14 @@ import io.swagger.discourse.client.ApiException;
 import io.swagger.discourse.client.Configuration;
 import io.swagger.discourse.client.api.TopicsApi;
 import io.swagger.discourse.client.model.InlineResponse2005;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +75,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/entries")
 @Api("entries")
 @Produces(MediaType.APPLICATION_JSON)
+@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer", bearerFormat = "JWT") })
 public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
@@ -129,17 +138,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Timed
     @RolesAllowed({ "curator" })
     @UnitOfWork
-    @ApiOperation(value = "Create a discourse topic for an entry.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
-    public Entry setDiscourseTopic(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "The id of the entry to add a topic to.", required = true) @PathParam("id") Long id,
-            @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", defaultValue = "6", allowableValues = "6,9") @QueryParam("categoryId") Integer categoryId) {
+    @Operation(description = "Create a discourse topic for an entry.", security = @SecurityRequirement(name = "bearer"))
+    public Entry setDiscourseTopic(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true) Long id,
+            @Parameter(description = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", name = "categoryId", in = ParameterIn.PATH, required = true,
+                    schema = @Schema(allowableValues = "6,9", defaultValue = "6")) Integer categoryId) {
         return createAndSetDiscourseTopic(id, categoryId);
     }
 
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
-     * @param id entry id
+     * @param id entry id;
      * @param categoryId category id (6 for automatic tools and workflows category)
      * @return Entry with discourse ID set
      */
