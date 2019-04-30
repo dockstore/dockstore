@@ -402,7 +402,7 @@ public class WorkflowResource
         String dockstoreWorkflowPath = "github.com/" + organization + "/" + repository;
 
         // Find all workflows with the given path that are full
-        List<Workflow> workflows = findAllFullByPath(dockstoreWorkflowPath);
+        List<Workflow> workflows = findAllFullWorkflowsByPath(dockstoreWorkflowPath);
 
         if (workflows.size() > 0) {
             // All workflows with the same path have the same Git Url
@@ -422,10 +422,15 @@ public class WorkflowResource
             }
         }
 
-        return findAllFullByPath(dockstoreWorkflowPath);
+        return findAllFullWorkflowsByPath(dockstoreWorkflowPath);
     }
 
-    private List<Workflow> findAllFullByPath(String dockstoreWorkflowPath) {
+    /**
+     * Finds all workflows from a general Dockstore path that are of type FULL
+     * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
+     * @return List of FULL workflows with the given Dockstore path
+     */
+    private List<Workflow> findAllFullWorkflowsByPath(String dockstoreWorkflowPath) {
         return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
                 .stream()
                 .filter(workflow ->

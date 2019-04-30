@@ -316,9 +316,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Retrieve important information related to a reference
-     * @param ref
-     * @param repository
-     * @return
+     * @param ref GitHub reference object
+     * @param repository GitHub repository object
+     * @return Triple containing reference name, branch date, and SHA
      */
     private Triple getRef(GHRef ref, GHRepository repository) {
         final Date epochStart = new Date(0);
@@ -362,13 +362,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Creates a workflow version for a specific version within a workflow
-     * @param repositoryId
-     * @param workflow
-     * @param ref
-     * @param existingWorkflow
-     * @param existingDefaults
-     * @param repository
-     * @return
+     * @param repositoryId Unique repository ID (ex. dockstore/dockstore-ui2)
+     * @param workflow Workflow object
+     * @param ref Triple containing reference name, branch date, and SHA
+     * @param existingWorkflow Optional existing workflow
+     * @param existingDefaults Optional mapping of existing versions
+     * @param repository GitHub repository object
+     * @return WorkflowVersion for the given reference
      */
     private WorkflowVersion setupWorkflowVersionsHelper(String repositoryId, Workflow workflow, Triple<String, Date, String> ref, Optional<Workflow> existingWorkflow,
             Map<String, WorkflowVersion> existingDefaults, GHRepository repository) {
