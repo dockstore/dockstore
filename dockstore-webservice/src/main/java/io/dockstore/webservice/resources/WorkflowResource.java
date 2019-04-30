@@ -387,31 +387,24 @@ public class WorkflowResource
     }
 
     @GET
-    @Path("/addOrUpdateVersion/")
+    @Path("/upsertVersion/")
     @Timed
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a tag or release to all workflows that include the given repository.", notes = "To be called by a lambda function. Assumes the workflow already exists.", authorizations = {
+    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag to all workflows that come from the given repository.", notes = "To be called by a lambda function.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
-    public List<Workflow> addNewVersion(@ApiParam(hidden = true) @Auth User user,
+    public List<Workflow> upsertVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organization name", required = true) @QueryParam("organization") String organization,
             @ApiParam(value = "Repository name", required = true) @QueryParam("repository") String repository,
-            @ApiParam(value = "Git reference for new version (tag or release)", required = true) @QueryParam("gitReference") String gitReference) {
+            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference) {
 
         // Path on Dockstore
         String dockstoreWorkflowPath = "github.com/" + organization + "/" + repository;
 
-        // Find all workflows with the given path
-        List<Workflow> workflows = workflowDAO.findAllByPath(dockstoreWorkflowPath, false);
+        // Find all workflows with the given path that are full
+        List<Workflow> workflows = findAllFullByPath(dockstoreWorkflowPath);
 
-        // Filter to only include valid workflows
-        List<Workflow> validWorkflows = workflows
-                .stream()
-                .filter(workflow ->
-                        workflow != null && workflow.getMode() == WorkflowMode.FULL)
-                .collect(Collectors.toList());
-
-        if (validWorkflows.size() > 0) {
+        if (workflows.size() > 0) {
             // All workflows with the same path have the same Git Url
             String sharedGitUrl = workflows.get(0).getGitUrl();
 
@@ -420,16 +413,24 @@ public class WorkflowResource
             final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, user);
 
             // Pull new version information from GitHub and update the versions
-            validWorkflows = sourceCodeRepo.upsertVersionForWorkflows(organization, repository, gitReference, validWorkflows);
+            workflows = sourceCodeRepo.upsertVersionForWorkflows(organization, repository, gitReference, workflows);
 
-            for (Workflow workflow : validWorkflows) {
-                // update each workflow with reference types
+            // Update each workflow with reference types
+            for (Workflow workflow : workflows) {
                 Set<WorkflowVersion> versions = workflow.getVersions();
                 versions.forEach(version -> sourceCodeRepo.updateReferenceType(organization + "/" + repository, version));
             }
         }
 
-        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false);
+        return findAllFullByPath(dockstoreWorkflowPath);
+    }
+
+    private List<Workflow> findAllFullByPath(String dockstoreWorkflowPath) {
+        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
+                .stream()
+                .filter(workflow ->
+                        workflow.getMode() == WorkflowMode.FULL)
+                .collect(Collectors.toList());
     }
 
     /**

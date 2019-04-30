@@ -4236,42 +4236,6 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/addOrUpdateVersion:
-    get:
-      tags:
-      - "workflows"
-      summary: "Add or update a tag or release to all workflows that include the given\
-        \ repository."
-      description: "To be called by a lambda function. Assumes the workflow already\
-        \ exists."
-      operationId: "addNewVersion"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "organization"
-        in: "query"
-        description: "Organization name"
-        required: true
-        type: "string"
-      - name: "repository"
-        in: "query"
-        description: "Repository name"
-        required: true
-        type: "string"
-      - name: "gitReference"
-        in: "query"
-        description: "Git reference for new version (tag or release)"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /workflows/hostedEntry:
     post:
       tags:
@@ -4805,6 +4769,41 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SharedWorkflows"
+      security:
+      - BEARER: []
+  /workflows/upsertVersion:
+    get:
+      tags:
+      - "workflows"
+      summary: "Add or update a workflow version for a given GitHub tag to all workflows\
+        \ that come from the given repository."
+      description: "To be called by a lambda function."
+      operationId: "upsertVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organization"
+        in: "query"
+        description: "Organization name"
+        required: true
+        type: "string"
+      - name: "repository"
+        in: "query"
+        description: "Repository name"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "query"
+        description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
@@ -5938,6 +5937,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5953,10 +5956,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6149,6 +6148,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6164,10 +6167,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7207,6 +7206,10 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7222,10 +7225,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1

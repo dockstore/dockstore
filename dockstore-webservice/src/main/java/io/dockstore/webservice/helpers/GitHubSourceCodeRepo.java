@@ -572,12 +572,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Updates all the workflows with the new version
-     * @param organization
-     * @param repository
-     * @param gitReference
-     * @param workflows
-     * @return list of workflows with new version
+     * Updates all the workflows with the new/updated version
+     * @param organization Github organization name (ex. dockstore from dockstore/dockstore-ui2)
+     * @param repository Github repostory name (ex. dockstore-ui2 from dockstore/dockstore-ui2)
+     * @param gitReference GitHub reference object
+     * @param workflows Workflows to upsert version
+     * @return list of workflows with new/updated version
      */
     public List<Workflow> upsertVersionForWorkflows(String organization, String repository, String gitReference, List<Workflow> workflows) {
         GHRepository ghRepository = getRepository(organization + "/" + repository);
@@ -590,10 +590,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Retrieves a version of a workflow from GitHub
-     * @param ghRepository
-     * @param gitReference
-     * @param workflow
-     * @return
+     * @param ghRepository GitHub repository object
+     * @param gitReference GitHub tag reference (ex. foobar for refs/tags/foobar)
+     * @param workflow Workflow to upsert version to
+     * @return Workflow version corresponding to GitHub tag
      */
     public WorkflowVersion getVersion(GHRepository ghRepository, String gitReference, Workflow workflow) {
         try {
@@ -608,7 +608,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot retrieve the workflow reference from GitHub");
+            LOG.info(gitUsername + ": Cannot retrieve the workflow reference from GitHub", e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
     }

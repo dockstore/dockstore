@@ -1760,7 +1760,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -1786,7 +1786,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -3199,7 +3199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4348,36 +4348,6 @@ paths:
                   $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
-  /workflows/addOrUpdateVersion:
-    get:
-      operationId: addNewVersion
-      parameters:
-      - in: query
-        name: organization
-        schema:
-          type: string
-      - in: query
-        name: repository
-        schema:
-          type: string
-      - in: query
-        name: gitReference
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Workflow'
-                type: array
-          description: default response
   /workflows/hostedEntry:
     post:
       operationId: createHosted_2
@@ -4412,7 +4382,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
@@ -4438,7 +4408,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4826,6 +4796,36 @@ paths:
               schema:
                 items:
                   $ref: '#/components/schemas/SharedWorkflows'
+                type: array
+          description: default response
+  /workflows/upsertVersion:
+    get:
+      operationId: upsertVersion
+      parameters:
+      - in: query
+        name: organization
+        schema:
+          type: string
+      - in: query
+        name: repository
+        schema:
+          type: string
+      - in: query
+        name: gitReference
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
   /workflows/versions:
