@@ -583,7 +583,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository ghRepository = getRepository(organization + "/" + repository);
         for (Workflow workflow : workflows) {
             WorkflowVersion version = getVersion(ghRepository, gitReference, workflow);
-            workflow.getVersions().add(version);
+            workflow.addWorkflowVersion(version);
         }
         return workflows;
     }
