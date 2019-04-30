@@ -2807,39 +2807,29 @@ paths:
     post:
       tags:
         - entries
-      summary: Create a discourse topic for an entry.
-      description: ""
       operationId: setDiscourseTopic
       parameters:
         - name: id
           in: path
-          description: The id of the entry to add a topic to.
           required: true
           schema:
             type: integer
             format: int64
         - name: categoryId
-          in: query
-          description: The id of the category to add a topic to, defaults to Automatic Tool
-            and Workflow Threads (6).
-          required: false
+          in: path
+          required: true
           schema:
             type: integer
             format: int32
-            enum:
-              - 6
-              - 9
-            default: 6
       responses:
         "200":
           description: successful operation
+          headers:
+            {}
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Entry"
-      security:
-        - BEARER:
-            []
   /metadata/config.json:
     get:
       tags:
@@ -6480,15 +6470,15 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        has_checker:
+          type: boolean
+          readOnly: true
         output_file_formats:
           type: array
           readOnly: true
@@ -6668,15 +6658,15 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        has_checker:
+          type: boolean
+          readOnly: true
         output_file_formats:
           type: array
           readOnly: true
@@ -7644,15 +7634,15 @@ components:
           type: integer
           format: int64
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        has_checker:
+          type: boolean
+          readOnly: true
         output_file_formats:
           type: array
           readOnly: true

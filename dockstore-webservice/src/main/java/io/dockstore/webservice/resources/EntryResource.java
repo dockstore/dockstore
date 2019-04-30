@@ -139,10 +139,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @RolesAllowed({ "curator" })
     @UnitOfWork
     @Operation(description = "Create a discourse topic for an entry.", security = @SecurityRequirement(name = "bearer"))
-    public Entry setDiscourseTopic(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-            @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true) Long id,
+    public Entry setDiscourseTopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id,
             @Parameter(description = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", name = "categoryId", in = ParameterIn.PATH, required = true,
-                    schema = @Schema(allowableValues = "6,9", defaultValue = "6")) Integer categoryId) {
+                    schema = @Schema(allowableValues = "6,9", defaultValue = "6")) @PathParam("categoryId") Integer categoryId) {
         return createAndSetDiscourseTopic(id, categoryId);
     }
 
