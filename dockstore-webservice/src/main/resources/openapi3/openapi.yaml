@@ -2875,7 +2875,7 @@ paths:
           type: integer
       - description: The id of the category to add a topic to, defaults to Automatic
           Tool and Workflow Threads (6).
-        in: path
+        in: query
         name: categoryId
         required: true
         schema:
@@ -3243,7 +3243,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4426,7 +4426,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:

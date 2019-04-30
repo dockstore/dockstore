@@ -2539,26 +2539,36 @@ paths:
     post:
       tags:
       - "entries"
+      summary: "Create a discourse topic for an entry."
+      description: ""
       operationId: "setDiscourseTopic"
       produces:
       - "application/json"
       parameters:
       - name: "id"
         in: "path"
+        description: "The id of the entry to add a topic to."
         required: true
         type: "integer"
         format: "int64"
       - name: "categoryId"
-        in: "path"
-        required: true
+        in: "query"
+        description: "The id of the category to add a topic to, defaults to Automatic\
+          \ Tool and Workflow Threads (6)."
+        required: false
         type: "integer"
+        default: 6
         format: "int32"
+        enum:
+        - 6
+        - 9
       responses:
         200:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
-          headers: {}
+      security:
+      - BEARER: []
   /metadata/config.json:
     get:
       tags:
@@ -5932,15 +5942,15 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      has_checker:
-        type: "boolean"
-        readOnly: true
       output_file_formats:
         type: "array"
         readOnly: true
@@ -6147,15 +6157,15 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      has_checker:
-        type: "boolean"
-        readOnly: true
       output_file_formats:
         type: "array"
         readOnly: true
@@ -7209,15 +7219,15 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      has_checker:
-        type: "boolean"
-        readOnly: true
       output_file_formats:
         type: "array"
         readOnly: true

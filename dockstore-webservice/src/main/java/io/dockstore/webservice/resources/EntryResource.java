@@ -138,11 +138,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Timed
     @RolesAllowed({ "curator" })
     @UnitOfWork
+    @ApiOperation(value = "Create a discourse topic for an entry.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
     @Operation(description = "Create a discourse topic for an entry.", security = @SecurityRequirement(name = "bearer"))
     public Entry setDiscourseTopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-            @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true) @PathParam("id") Long id,
-            @Parameter(description = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", name = "categoryId", in = ParameterIn.PATH, required = true,
-                    schema = @Schema(allowableValues = "6,9", defaultValue = "6")) @PathParam("categoryId") Integer categoryId) {
+            @ApiParam(value = "The id of the entry to add a topic to.", required = true)
+            @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
+            @PathParam("id") Long id,
+            @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", defaultValue = "6", allowableValues = "6,9")
+            @Parameter(description = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", name = "categoryId", in = ParameterIn.QUERY, required = true,
+                    schema = @Schema(allowableValues = "6,9", defaultValue = "6"))
+            @QueryParam("categoryId") Integer categoryId) {
         return createAndSetDiscourseTopic(id, categoryId);
     }
 
