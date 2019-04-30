@@ -172,7 +172,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    void updateReferenceType(String repositoryId, Version version) {
+    public void updateReferenceType(String repositoryId, Version version) {
         /* no-op handled earlier since the library handles it in a more trivial way than the github library */
     }
 

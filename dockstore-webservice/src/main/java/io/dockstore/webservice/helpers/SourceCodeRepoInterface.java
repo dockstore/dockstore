@@ -524,7 +524,7 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId
      * @param version
      */
-    abstract void updateReferenceType(String repositoryId, Version version);
+    public abstract void updateReferenceType(String repositoryId, Version version);
 
     /**
      * Given a version of a tool or workflow, return the corresponding current commit id

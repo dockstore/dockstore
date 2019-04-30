@@ -4612,8 +4612,9 @@ paths:
     get:
       tags:
         - workflows
-      summary: Add or update a tag or release to a workflow.
-      description: To be called by a lambda function
+      summary: Add or update a tag or release to all workflows that include the given
+        repository.
+      description: To be called by a lambda function. Assumes the workflow already exists.
       operationId: addNewVersion
       parameters:
         - name: organization

@@ -77,6 +77,7 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
@@ -390,7 +391,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a tag or release to a workflow.", notes = "To be called by a lambda function", authorizations = {
+    @ApiOperation(value = "Add or update a tag or release to all workflows that include the given repository.", notes = "To be called by a lambda function. Assumes the workflow already exists.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
     public List<Workflow> addNewVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organization name", required = true) @QueryParam("organization") String organization,
@@ -407,7 +408,7 @@ public class WorkflowResource
         List<Workflow> validWorkflows = workflows
                 .stream()
                 .filter(workflow ->
-                        workflow != null &&  workflow.getMode() != WorkflowMode.HOSTED && workflow.getMode() != WorkflowMode.STUB)
+                        workflow != null && workflow.getMode() == WorkflowMode.FULL)
                 .collect(Collectors.toList());
 
         if (validWorkflows.size() > 0) {
@@ -416,13 +417,19 @@ public class WorkflowResource
 
             // Set up source code interface and ensure token is set up
             user = userDAO.findById(user.getId());
-            final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(sharedGitUrl, user);
+            final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, user);
 
             // Pull new version information from GitHub and update the versions
+            validWorkflows = sourceCodeRepo.upsertVersionForWorkflows(organization, repository, gitReference, validWorkflows);
 
+            for (Workflow workflow : validWorkflows) {
+                // update each workflow with reference types
+                Set<WorkflowVersion> versions = workflow.getVersions();
+                versions.forEach(version -> sourceCodeRepo.updateReferenceType(organization + "/" + repository, version));
+            }
         }
 
-        return validWorkflows;
+        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false);
     }
 
     /**
