@@ -2826,7 +2826,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /entries/{id}/collections:
     get:
@@ -2914,9 +2914,9 @@ paths:
           content:
             application/json:
               schema:
-                items:
+                additionalProperties:
                   type: string
-                type: array
+                type: object
       summary: Get measures of cache performance
       tags:
       - metadata
@@ -3093,7 +3093,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3199,7 +3199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
