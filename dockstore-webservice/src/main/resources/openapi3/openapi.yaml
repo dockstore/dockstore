@@ -196,6 +196,9 @@ components:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -671,6 +674,9 @@ components:
           type: string
         toolname:
           type: string
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -830,6 +836,9 @@ components:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -912,6 +921,11 @@ components:
         workingDirectory:
           type: string
       type: object
+  securitySchemes:
+    bearer:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
 openapi: 3.0.1
 paths:
   /api/ga4gh/v1/metadata:
@@ -1786,7 +1800,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted
@@ -2847,6 +2861,36 @@ paths:
                   $ref: '#/components/schemas/CollectionOrganization'
                 type: array
           description: default response
+  /entries/{id}/topic:
+    post:
+      description: Create a discourse topic for an entry.
+      operationId: setDiscourseTopic
+      parameters:
+      - description: The id of the entry to add a topic to.
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: The id of the category to add a topic to, defaults to Automatic
+          Tool and Workflow Threads (6).
+        in: query
+        name: categoryId
+        required: true
+        schema:
+          default: 6
+          format: int32
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: default response
+      security:
+      - bearer: []
   /metadata/config.json:
     get:
       description: Configuration, NO authentication
@@ -3093,7 +3137,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3199,7 +3243,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4408,7 +4452,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1

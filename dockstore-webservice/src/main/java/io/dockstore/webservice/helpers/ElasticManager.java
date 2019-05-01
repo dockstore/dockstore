@@ -127,7 +127,7 @@ public class ElasticManager {
             } else {
                 LOGGER.error("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
         }
     }
