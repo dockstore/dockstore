@@ -2958,9 +2958,9 @@ paths:
           content:
             application/json:
               schema:
-                items:
+                additionalProperties:
                   type: string
-                type: array
+                type: object
       summary: Get measures of cache performance
       tags:
       - metadata
@@ -4426,7 +4426,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:

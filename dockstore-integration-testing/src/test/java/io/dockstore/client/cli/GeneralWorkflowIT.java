@@ -756,7 +756,6 @@ public class GeneralWorkflowIT extends BaseIT {
      * This is a high level test to ensure that gitlab basics are working for gitlab as a workflow repo
      */
     @Test
-    @Category(SlowTest.class)
     public void testGitlab() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -873,7 +872,6 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests manually publishing a gitlab workflow
      */
     @Test
-    @Category(SlowTest.class)
     public void testManualPublishGitlab() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
