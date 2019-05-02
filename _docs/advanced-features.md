@@ -115,15 +115,17 @@ The latter is `~/.dockstore/cache/` by default and can be set to any directory l
 
 By default, Dockstore will attempt to download files up to three times. Control this with the `file-provision-retries` parameter inside `~/.dockstore/config`.
 
-## Running CWL-runner with extra tags
+## Running CWL with extra flags
 
-When running a CWL tool, you may want to add additional parameters/flags to the `cwl-runner` command. You can do this by updating your dockstore config file (`~/.dockstore/config`).
+When running a CWL tool or workflow, you may want to add additional parameters or flags to the executor. You can do this by updating your dockstore config file (`~/.dockstore/config`).
 
-As an example, adding the following line to your config file will stop cwl-runner from cleaning up (the Docker container and the temp directory as mounted on the host) and make it run in debug mode.
+As an example, adding the following line to your config file will stop `cwltool` from removing the Docker container and temp directory as mounted on the host, and make it run in debug mode.
 
 ```
 cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir
 ```
+
+At times, `cwltool` can create a large amount of output in addition to the workflow's standard output and error. This [can lead to memory problems](https://github.com/dockstore/dockstore/issues/1420) in the Dockstore CLI. To avoid this, you can run in quiet mode by adding the `--quiet` flag.
 
 ## Alternative CWL Launchers
 
