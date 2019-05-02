@@ -287,8 +287,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
-            WorkflowVersion version = setupWorkflowVersionsHelper(repositoryId, workflow, ref, existingWorkflow, existingDefaults, repository);
-            workflow.addWorkflowVersion(version);
+            if (ref != null) {
+                WorkflowVersion version = setupWorkflowVersionsHelper(repositoryId, workflow, ref, existingWorkflow, existingDefaults,
+                        repository);
+                workflow.addWorkflowVersion(version);
+            }
         }
 
         GHRateLimit endRateLimit = getGhRateLimitQuietly();
@@ -320,7 +323,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param repository GitHub repository object
      * @return Triple containing reference name, branch date, and SHA
      */
-    private Triple getRef(GHRef ref, GHRepository repository) {
+    private Triple<String, Date, String> getRef(GHRef ref, GHRepository repository) {
         final Date epochStart = new Date(0);
         Date branchDate = new Date(0);
         String refName = ref.getRef();
@@ -354,9 +357,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } catch (IOException e) {
                 LOG.info("unable to retrieve commit date for branch " + refName);
             }
+            return Triple.of(refName, branchDate, sha);
+        } else {
+            return null;
         }
-
-        return Triple.of(refName, branchDate, sha);
     }
 
 
@@ -582,25 +586,29 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public List<Workflow> upsertVersionForWorkflows(String organization, String repository, String gitReference, List<Workflow> workflows) {
         GHRepository ghRepository = getRepository(organization + "/" + repository);
         for (Workflow workflow : workflows) {
-            WorkflowVersion version = getVersion(ghRepository, gitReference, workflow);
+            WorkflowVersion version = getTagVersion(ghRepository, gitReference, workflow);
             workflow.addWorkflowVersion(version);
         }
         return workflows;
     }
 
     /**
-     * Retrieves a version of a workflow from GitHub
+     * Retrieves a tag of a workflow from GitHub
      * @param ghRepository GitHub repository object
      * @param gitReference GitHub tag reference (ex. foobar for refs/tags/foobar)
      * @param workflow Workflow to upsert version to
      * @return Workflow version corresponding to GitHub tag
      */
-    public WorkflowVersion getVersion(GHRepository ghRepository, String gitReference, Workflow workflow) {
+    public WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) {
         try {
             String refName = "tags/" + gitReference;
             GHRef ghRef = ghRepository.getRef(refName);
 
             Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
+            if (ref == null) {
+                LOG.info(gitUsername + ": Cannot retrieve the workflow reference from GitHub");
+                throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
+            }
             Optional<WorkflowVersion> existingVersion = workflow.getVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReference)).findFirst();
             Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
             if (existingVersion.isPresent()) {
