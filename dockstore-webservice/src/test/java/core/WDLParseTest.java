@@ -90,7 +90,7 @@ public class WDLParseTest {
         } catch (IOException e) {
             Assert.fail();
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals("Error parsing workflow. You may have a recursive import.", e.getResponse().getEntity());
+            Assert.assertEquals("Error parsing workflow. You may have a recursive import.", e.getErrorMessage());
         }
     }
 }
