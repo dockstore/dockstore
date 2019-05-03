@@ -196,6 +196,9 @@ components:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -671,6 +674,9 @@ components:
           type: string
         toolname:
           type: string
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -848,6 +854,9 @@ components:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -930,6 +939,11 @@ components:
         workingDirectory:
           type: string
       type: object
+  securitySchemes:
+    bearer:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
 externalDocs:
   description: User documentation for dockstore
   url: https://docs.dockstore.org/
@@ -2859,7 +2873,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /entries/{id}/collections:
     get:
@@ -2880,6 +2894,36 @@ paths:
                   $ref: '#/components/schemas/CollectionOrganization'
                 type: array
           description: default response
+  /entries/{id}/topic:
+    post:
+      description: Create a discourse topic for an entry.
+      operationId: setDiscourseTopic
+      parameters:
+      - description: The id of the entry to add a topic to.
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: The id of the category to add a topic to, defaults to Automatic
+          Tool and Workflow Threads (6).
+        in: query
+        name: categoryId
+        required: true
+        schema:
+          default: 6
+          format: int32
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: default response
+      security:
+      - bearer: []
   /metadata/config.json:
     get:
       description: Configuration, NO authentication
@@ -3237,7 +3281,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:

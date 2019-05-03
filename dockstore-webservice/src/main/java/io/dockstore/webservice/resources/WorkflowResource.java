@@ -142,13 +142,14 @@ public class WorkflowResource
     private final FileDAO fileDAO;
     private final FileFormatDAO fileFormatDAO;
     private final HttpClient client;
+    private final EntryResource entryResource;
 
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final PermissionsInterface permissionsInterface;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
-        PermissionsInterface permissionsInterface) {
+        PermissionsInterface permissionsInterface, EntryResource entryResource) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
@@ -162,6 +163,8 @@ public class WorkflowResource
         this.bitbucketClientSecret = bitbucketClientSecret;
 
         this.permissionsInterface = permissionsInterface;
+
+        this.entryResource = entryResource;
 
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         elasticManager = new ElasticManager();
@@ -735,6 +738,9 @@ public class WorkflowResource
         c = workflowDAO.findById(id);
         if (request.getPublish()) {
             elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
+            if (c.getTopicId() == null) {
+                entryResource.createAndSetDiscourseTopic(id, entryResource.defaultDiscourseCategoryId);
+            }
         } else {
             elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
         }

@@ -168,6 +168,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    @Column
+    @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
+    private Long topicId;
+
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
@@ -347,6 +351,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public boolean removeStarredUser(User user) {
         return starredUsers.remove(user);
+    }
+
+    public Long getTopicId() {
+        return topicId;
+    }
+
+    public void setTopicId(Long topicId) {
+        this.topicId = topicId;
     }
 
     /**
