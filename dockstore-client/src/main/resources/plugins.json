@@ -13,8 +13,8 @@
     "location": "https://github.com/dockstore/data-object-service-plugin/releases/download/0.0.1/dockstore-file-dos-plugin-0.0.1.zip"
   }, {
     "name": "dockstore-file-gs-plugin",
-    "version": "0.0.1",
-    "location": "https://github.com/dockstore/gs-plugin/releases/download/0.0.1/dockstore-file-gs-plugin-0.0.1.zip"
+    "version": "0.0.2",
+    "location": "https://github.com/dockstore/gs-plugin/releases/download/0.0.2/dockstore-file-gs-plugin-0.0.2.zip"
   }
 
   ]
