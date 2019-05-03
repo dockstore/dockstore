@@ -53,13 +53,14 @@ public class ToolTesterS3Client {
     }
 
     /**
-     * This essentially generates the filePath of the log that will be stored on S3
+     * This essentially generates the s3 key of the log that is already be stored on S3.
+     * Different from the ToolTester function of the same name, as that takes different parameters.
      *
      * @param toolId       The GA4GH Tool ID
      * @param versionName  The GA4GH ToolVersion name
      * @param testFilePath The file that was tested (Dockerfile, test.json, etc)
      * @param runner       The runner used to test (cwltool, cromwell, etc)
-     * @param filename     The start time in milliseconds since epoch
+     * @param filename     The log name time in milliseconds since epoch
      * @return S3 key (file path)
      * @throws UnsupportedEncodingException Could not endpoint string
      */
@@ -74,7 +75,7 @@ public class ToolTesterS3Client {
         return String.join("/", pathList);
     }
 
-    private static ToolTesterLog convertUserMetadataToToolTesterLog(Map<String, String> userMetadata, String filename) {
+    static ToolTesterLog convertUserMetadataToToolTesterLog(Map<String, String> userMetadata, String filename) {
         String toolId = userMetadata.get(ObjectMetadataEnum.TOOL_ID.toString());
         String toolVersionName = userMetadata.get(ObjectMetadataEnum.VERSION_NAME.toString());
         String testFilename = userMetadata.get(ObjectMetadataEnum.TEST_FILE_PATH.toString());
@@ -88,11 +89,12 @@ public class ToolTesterS3Client {
      * Workflows will be in a "workflow" directory whereas tools will be in a "tool" directory
      * repository and optional toolname or workflowname must be encoded or else looking for logs of a specific tool without toolname (quay.io/dockstore/hello_world)
      * will return logs for the other ones with toolnames (quay.io/dockstore/hello_world/thing)
+     * TODO: Somehow reuse this between repos
      *
      * @param toolId TRS tool ID
      * @return The key for s3
      */
-    private static String convertToolIdToPartialKey(String toolId) throws UnsupportedEncodingException {
+    static String convertToolIdToPartialKey(String toolId) throws UnsupportedEncodingException {
         if (toolId.startsWith("#workflow")) {
             toolId = toolId.replaceFirst("#workflow", "workflow");
         } else {
