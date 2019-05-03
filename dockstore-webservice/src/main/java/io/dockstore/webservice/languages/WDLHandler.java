@@ -15,8 +15,10 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
@@ -48,6 +50,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -289,18 +292,19 @@ public class WDLHandler implements LanguageHandlerInterface {
             while (m.find()) {
                 String match = m.group(1);
                 if (match.startsWith("http://") || match.startsWith("https://")) { // Don't resolve URLs
-                    System.out.println("Found match: " + match);
                     if (currentFileImports.contains(match)) {
                         throw new CustomWebApplicationException("Error parsing workflow. You may have a recursive import.",
                                 HttpStatus.SC_BAD_REQUEST);
                     } else {
-                        System.out.println("New match: " + match);
                         currentFileImports.add(match);
                         URL url = new URL(match);
-                        String s = IOUtils.toString(url, StandardCharsets.UTF_8);
-                        checkForRecursiveHTTPImports(s, currentFileImports);
+                        try (InputStream is = url.openStream()) {
+                            BoundedInputStream boundedInputStream = new BoundedInputStream(is, FileUtils.ONE_MB);
+                            String fileContents = IOUtils.toString(boundedInputStream, StandardCharsets.UTF_8);
+                            checkForRecursiveHTTPImports(fileContents, currentFileImports);
+                        }
                     }
-                    currentFileImports.add(match.replaceFirst("file://", "")); // remove file:// from path
+                    currentFileImports.add(match);
                 }
             }
         }
