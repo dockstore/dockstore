@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.0-SNAPSHOT"
+  version: "1.7.0-alpha.2-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2535,6 +2535,40 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/CollectionOrganization"
+  /entries/{id}/topic:
+    post:
+      tags:
+      - "entries"
+      summary: "Create a discourse topic for an entry."
+      description: ""
+      operationId: "setDiscourseTopic"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the entry to add a topic to."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "categoryId"
+        in: "query"
+        description: "The id of the category to add a topic to, defaults to Automatic\
+          \ Tool and Workflow Threads (6)."
+        required: false
+        type: "integer"
+        default: 6
+        format: "int32"
+        enum:
+        - 6
+        - 9
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /metadata/config.json:
     get:
       tags:
@@ -5934,6 +5968,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -6148,6 +6186,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7202,6 +7244,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       parent_id:
         type: "integer"
         format: "int64"

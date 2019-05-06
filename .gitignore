@@ -33,6 +33,7 @@ swagger-java-client/target/
 swagger-java-quay-client/target/
 swagger-java-sam-client/target/
 swagger-java-bitbucket-client/target/
+swagger-java-discourse-client/target/
 dockstore-event-consumer/target/
 dockstore-webservice/nbactions.xml
 dockstore-common/target/

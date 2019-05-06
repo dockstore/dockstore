@@ -1,5 +1,5 @@
 <!--
-  ~    Copyright 2017 OICR
+  ~    Copyright 2019 OICR
   ~
   ~    Licensed under the Apache License, Version 2.0 (the "License");
   ~    you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>swagger-java-quay-client</artifactId>
+    <artifactId>swagger-java-discourse-client</artifactId>
     <packaging>jar</packaging>
-    <name>swagger-java-quay-client</name>
+    <name>swagger-java-discourse-client</name>
 
     <parent>
         <version>1.7.0-alpha.2-SNAPSHOT</version>
@@ -39,15 +39,15 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/discovery.formatted.json</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/api.json</inputSpec>
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
                                 <library>jersey2</library>
                                 <dateLibrary>java8</dateLibrary>
-                                <invokerPackage>io.swagger.quay.client</invokerPackage>
-                                <modelPackage>io.swagger.quay.client.model</modelPackage>
-                                <apiPackage>io.swagger.quay.client.api</apiPackage>
+                                <invokerPackage>io.swagger.discourse.client</invokerPackage>
+                                <modelPackage>io.swagger.discourse.client.model</modelPackage>
+                                <apiPackage>io.swagger.discourse.client.api</apiPackage>
                             </configOptions>
                             <generateModelTests>false</generateModelTests>
                             <generateApiTests>false</generateApiTests>
@@ -70,7 +70,7 @@
                             <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
-                                    <directory>target/generated-sources/swagger/src/gen/java/main/io/swagger/quay/client/api</directory>
+                                    <directory>target/generated-sources/swagger/src/gen/java/main/io/swagger/discourse/client/api</directory>
                                     <includes>
                                         <include>ManifestApi.java</include>
                                         <include>SecscanApi.java</include>

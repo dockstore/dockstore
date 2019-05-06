@@ -17,6 +17,8 @@ package io.dockstore.webservice.languages;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -46,6 +48,8 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -148,7 +152,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         if (node instanceof WdlParser.Ast) {
             WdlParser.Ast nodeAst = (WdlParser.Ast)node;
             if (nodeAst.getAttribute("key") instanceof WdlParser.Terminal && (((WdlParser.Terminal)nodeAst.getAttribute("key"))
-                .getSourceString().equalsIgnoreCase(key))) {
+                    .getSourceString().equalsIgnoreCase(key))) {
                 return ((WdlParser.Terminal)nodeAst.getAttribute("value")).getSourceString();
             }
         }
@@ -213,7 +217,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         if (filteredSourceFiles.size() > 0) {
             try {
                 Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream()
-                    .filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
+                        .filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
 
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
@@ -246,6 +250,8 @@ public class WDLHandler implements LanguageHandlerInterface {
                 Bridge bridge = new Bridge(tempMainDescriptor.getParent());
                 bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
                 Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
+                String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
+                checkForRecursiveHTTPImports(content, new HashSet<>());
                 if (Objects.equals(type, "tool")) {
                     bridge.isValidTool(tempMainDescriptor);
                 } else {
@@ -257,8 +263,12 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (NoSuchMethodException e) {
                 //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
                 // https://github.com/ga4gh/dockstore/issues/2139
-                validationMessageObject.put(primaryDescriptorFilePath, "Unknown methods were found, indicating that this may be a WDL 1.0 file. Currently Dockstore cannot parse WDL 1.0, so validation has been skipped. It is likely that the import processing and DAG generation will be broken.\n" + e.getMessage());
+                validationMessageObject.put(primaryDescriptorFilePath,
+                        "Unknown methods were found, indicating that this may be a WDL 1.0 file. Currently Dockstore cannot parse WDL 1.0, so validation has been skipped. It is likely that the import processing and DAG generation will be broken.\n"
+                                + e.getMessage());
                 return new VersionTypeValidation(true, validationMessageObject);
+            } catch (CustomWebApplicationException e) {
+                throw e;
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
@@ -269,6 +279,34 @@ public class WDLHandler implements LanguageHandlerInterface {
             return new VersionTypeValidation(false, validationMessageObject);
         }
         return new VersionTypeValidation(true, null);
+    }
+
+    public void checkForRecursiveHTTPImports(String content, Set<String> currentFileImports) throws IOException {
+        // Use matcher to get imports
+        String[] lines = StringUtils.split(content, '\n');
+
+        for (String line : lines) {
+            Matcher m = IMPORT_PATTERN.matcher(line);
+
+            while (m.find()) {
+                String match = m.group(1);
+                if (match.startsWith("http://") || match.startsWith("https://")) { // Don't resolve URLs
+                    if (currentFileImports.contains(match)) {
+                        throw new CustomWebApplicationException("Error parsing workflow. You may have a recursive import.",
+                                HttpStatus.SC_BAD_REQUEST);
+                    } else {
+                        currentFileImports.add(match);
+                        URL url = new URL(match);
+                        try (InputStream is = url.openStream()) {
+                            BoundedInputStream boundedInputStream = new BoundedInputStream(is, FileUtils.ONE_MB);
+                            String fileContents = IOUtils.toString(boundedInputStream, StandardCharsets.UTF_8);
+                            checkForRecursiveHTTPImports(fileContents, currentFileImports);
+                        }
+                    }
+                    currentFileImports.add(match);
+                }
+            }
+        }
     }
 
     @Override
@@ -288,12 +326,12 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
+            SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
         return processImports(repositoryId, content, version, sourceCodeRepoInterface, new HashMap<>(), filepath);
     }
 
     private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String currentFilePath) {
+            SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String currentFilePath) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
 
         // Use matcher to get imports
@@ -345,7 +383,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      */
     @Override
     public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent,
-        LanguageHandlerInterface.Type type, ToolDAO dao) {
+            LanguageHandlerInterface.Type type, ToolDAO dao) {
         // Initialize general variables
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";

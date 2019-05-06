@@ -128,9 +128,10 @@ public class DockerRepoResource
     private final ObjectMapper objectMapper;
     private final ElasticManager elasticManager;
     private final WorkflowResource workflowResource;
+    private final EntryResource entryResource;
 
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
-        String bitbucketClientSecret, WorkflowResource workflowResource) {
+        String bitbucketClientSecret, WorkflowResource workflowResource, EntryResource entryResource) {
         objectMapper = mapper;
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
@@ -144,6 +145,7 @@ public class DockerRepoResource
         this.bitbucketClientSecret = bitbucketClientSecret;
 
         this.workflowResource = workflowResource;
+        this.entryResource = entryResource;
 
         this.toolDAO = new ToolDAO(sessionFactory);
         elasticManager = new ElasticManager();
@@ -618,6 +620,9 @@ public class DockerRepoResource
         tool = toolDAO.findById(id);
         if (request.getPublish()) {
             elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+            if (tool.getTopicId() == null) {
+                entryResource.createAndSetDiscourseTopic(id, entryResource.defaultDiscourseCategoryId);
+            }
         } else {
             elasticManager.handleIndexUpdate(tool, ElasticMode.DELETE);
         }
