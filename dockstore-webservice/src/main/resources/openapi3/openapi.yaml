@@ -1833,7 +1833,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -2951,7 +2951,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/DescriptorLanguageBean'
                 type: array
-          description: potato
+          description: List of descriptor languages
       summary: Get the list of descriptor languages supported on Dockstore
       tags:
       - metadata
@@ -2967,7 +2967,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/RegistryBean'
                 type: array
-          description: potato
+          description: List of Docker registries
       summary: Get the list of docker registries supported on Dockstore
       tags:
       - metadata
@@ -2996,7 +2996,7 @@ paths:
                 additionalProperties:
                   type: string
                 type: object
-          description: potato
+          description: Cache performance information
       summary: Get measures of cache performance
       tags:
       - metadata
@@ -3053,7 +3053,7 @@ paths:
             application/json:
               schema:
                 type: string
-          description: potato
+          description: The requirements.txt file
       summary: Returns the file containing runner dependencies
       tags:
       - metadata
@@ -3088,7 +3088,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
                 type: array
-          description: potato
+          description: List of source control repositories
       summary: Get the list of source controls supported on Dockstore
       tags:
       - metadata
@@ -3281,7 +3281,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4544,7 +4544,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
@@ -4570,7 +4570,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
