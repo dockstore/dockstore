@@ -215,7 +215,6 @@ public abstract class SourceCodeRepoInterface {
         return workflow;
     }
 
-
     /**
      * Update an entry with the contents of the descriptor file from a source code repo
      *

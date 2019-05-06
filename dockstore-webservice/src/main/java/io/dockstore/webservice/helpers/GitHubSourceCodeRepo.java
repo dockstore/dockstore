@@ -310,7 +310,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repository = github.getRepository(repositoryId);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot retrieve the workflow from GitHub");
+            LOG.info(gitUsername + ": Cannot retrieve the workflow from GitHub", e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -606,14 +606,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
             if (ref == null) {
-                LOG.info(gitUsername + ": Cannot retrieve the workflow reference from GitHub");
+                LOG.info(gitUsername + ": Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
                 throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
             }
-            Optional<WorkflowVersion> existingVersion = workflow.getVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReference)).findFirst();
+
+            // Find existing version if it exists
+            Optional<WorkflowVersion> existingVersion = workflow.getVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
             Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
             if (existingVersion.isPresent()) {
                 existingDefaults.put(gitReference, existingVersion.get());
             }
+
+            // Create version with sourcefiles and validate
             return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot retrieve the workflow reference from GitHub", e);

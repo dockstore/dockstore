@@ -5081,7 +5081,7 @@ paths:
       tags:
         - workflows
       summary: Add or update a workflow version for a given GitHub tag to all workflows
-        that come from the given repository.
+        associated with the given repository.
       description: To be called by a lambda function.
       operationId: upsertVersion
       parameters:

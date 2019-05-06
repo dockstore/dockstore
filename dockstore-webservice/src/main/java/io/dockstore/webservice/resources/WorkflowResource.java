@@ -391,15 +391,15 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag to all workflows that come from the given repository.", notes = "To be called by a lambda function.", authorizations = {
+    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag to all workflows associated with the given repository.", notes = "To be called by a lambda function.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
     public List<Workflow> upsertVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organization name", required = true) @QueryParam("organization") String organization,
             @ApiParam(value = "Repository name", required = true) @QueryParam("repository") String repository,
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference) {
 
-        // Path on Dockstore
-        String dockstoreWorkflowPath = "github.com/" + organization + "/" + repository;
+        // Create path on Dockstore (not unique across workflows)
+        String dockstoreWorkflowPath = String.join("/", "github.com", organization, repository);
 
         // Find all workflows with the given path that are full
         List<Workflow> workflows = findAllFullWorkflowsByPath(dockstoreWorkflowPath);
