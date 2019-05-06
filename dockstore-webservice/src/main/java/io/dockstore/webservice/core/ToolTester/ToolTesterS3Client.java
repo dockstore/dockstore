@@ -68,8 +68,8 @@ public class ToolTesterS3Client {
             throws UnsupportedEncodingException {
         List<String> pathList = new ArrayList<>();
         pathList.add(convertToolIdToPartialKey(toolId));
-        pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8.toString()));
-        pathList.add(URLEncoder.encode(testFilePath, StandardCharsets.UTF_8.toString()));
+        pathList.add(URLEncoder.encode(versionName, StandardCharsets.UTF_8.name()));
+        pathList.add(URLEncoder.encode(testFilePath, StandardCharsets.UTF_8.name()));
         pathList.add(runner);
         pathList.add(filename);
         return String.join("/", pathList);
@@ -103,7 +103,7 @@ public class ToolTesterS3Client {
         String[] split = toolId.split("/");
         if (split.length == MAX_TOOL_ID_STRING_SEGMENTS) {
             split[TOOL_ID_REPOSITORY_INDEX] = URLEncoder
-                    .encode(split[TOOL_ID_REPOSITORY_INDEX] + "/" + split[TOOL_ID_TOOLNAME_INDEX], StandardCharsets.UTF_8.toString());
+                    .encode(split[TOOL_ID_REPOSITORY_INDEX] + "/" + split[TOOL_ID_TOOLNAME_INDEX], StandardCharsets.UTF_8.name());
             String[] encodedToolIdArray = Arrays.copyOf(split, split.length - 1);
             return String.join("/", encodedToolIdArray);
         } else {
@@ -121,7 +121,7 @@ public class ToolTesterS3Client {
     }
 
     public List<ToolTesterLog> getToolTesterLogs(String toolId, String toolVersionName) throws UnsupportedEncodingException {
-        String key = convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8.toString());
+        String key = convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8.name());
         ObjectListing listing = s3.listObjects(bucketName, key);
         List<S3ObjectSummary> summaries = listing.getObjectSummaries();
         while (listing.isTruncated()) {
