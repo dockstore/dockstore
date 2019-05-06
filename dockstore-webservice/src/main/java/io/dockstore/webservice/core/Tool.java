@@ -231,7 +231,7 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(position = 28)
     public List<String> getDescriptorType() {
         Set<SourceFile.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType)
-            .distinct().collect(Collectors.toSet());
+                .collect(Collectors.toSet());
         boolean supportsCWL = set.contains(SourceFile.FileType.DOCKSTORE_CWL);
         boolean supportsWDL = set.contains(SourceFile.FileType.DOCKSTORE_WDL);
         List<String> languages = new ArrayList<>();
