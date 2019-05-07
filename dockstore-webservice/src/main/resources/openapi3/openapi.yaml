@@ -3137,7 +3137,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3243,7 +3243,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4591,6 +4591,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: default response
+  /workflows/path/workflow/upsertVersion:
+    get:
+      operationId: upsertVersion
+      parameters:
+      - in: query
+        name: organization
+        schema:
+          type: string
+      - in: query
+        name: repository
+        schema:
+          type: string
+      - in: query
+        name: gitReference
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
   /workflows/path/workflow/{repository}:
     get:
       operationId: getWorkflowByPath
@@ -4840,36 +4870,6 @@ paths:
               schema:
                 items:
                   $ref: '#/components/schemas/SharedWorkflows'
-                type: array
-          description: default response
-  /workflows/upsertVersion:
-    get:
-      operationId: upsertVersion
-      parameters:
-      - in: query
-        name: organization
-        schema:
-          type: string
-      - in: query
-        name: repository
-        schema:
-          type: string
-      - in: query
-        name: gitReference
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
   /workflows/versions:

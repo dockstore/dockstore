@@ -4510,6 +4510,41 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
+  /workflows/path/workflow/upsertVersion:
+    get:
+      tags:
+      - "workflows"
+      summary: "Add or update a workflow version for a given GitHub tag to all workflows\
+        \ associated with the given repository."
+      description: "To be called by a lambda function."
+      operationId: "upsertVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organization"
+        in: "query"
+        description: "Organization name"
+        required: true
+        type: "string"
+      - name: "repository"
+        in: "query"
+        description: "Repository name"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "query"
+        description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/path/workflow/{repository}:
     get:
       tags:
@@ -4803,41 +4838,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SharedWorkflows"
-      security:
-      - BEARER: []
-  /workflows/upsertVersion:
-    get:
-      tags:
-      - "workflows"
-      summary: "Add or update a workflow version for a given GitHub tag to all workflows\
-        \ associated with the given repository."
-      description: "To be called by a lambda function."
-      operationId: "upsertVersion"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "organization"
-        in: "query"
-        description: "Organization name"
-        required: true
-        type: "string"
-      - name: "repository"
-        in: "query"
-        description: "Repository name"
-        required: true
-        type: "string"
-      - name: "gitReference"
-        in: "query"
-        description: "Git reference for new GitHub tag"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:

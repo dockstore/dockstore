@@ -310,7 +310,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repository = github.getRepository(repositoryId);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot retrieve the workflow from GitHub", e);
+            LOG.error(gitUsername + ": Cannot retrieve the workflow from GitHub", e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -355,7 +355,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     branchDate = epochStart;
                 }
             } catch (IOException e) {
-                LOG.info("unable to retrieve commit date for branch " + refName);
+                LOG.error("unable to retrieve commit date for branch " + refName);
             }
             return Triple.of(refName, branchDate, sha);
         } else {
@@ -365,7 +365,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
 
     /**
-     * Creates a workflow version for a specific version within a workflow
+     * Creates a workflow version for a specific branch/tag on GitHub
      * @param repositoryId Unique repository ID (ex. dockstore/dockstore-ui2)
      * @param workflow Workflow object
      * @param ref Triple containing reference name, branch date, and SHA
@@ -417,9 +417,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
                         testJson.setContent(testJsonContent);
 
-                        // Check if test parameter file has already been added
-                        long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == testJson.getType()).count();
-                        if (duplicateCount == 0) {
+                        // Only add test parameter file if it hasn't already been added
+                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
+                        if (!hasDuplicate) {
                             version.getSourceFiles().add(testJson);
                         }
                     }
@@ -427,7 +427,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
 
         } catch (Exception ex) {
-            LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
+            LOG.error(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
         }
 
         return versionValidation(version, workflow, calculatedPath);
@@ -606,7 +606,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
             if (ref == null) {
-                LOG.info(gitUsername + ": Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
+                LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
                 throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
             }
 
@@ -620,7 +620,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Create version with sourcefiles and validate
             return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot retrieve the workflow reference from GitHub", e);
+            LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub", e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
     }

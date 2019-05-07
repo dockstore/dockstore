@@ -390,7 +390,7 @@ public class WorkflowResource
     }
 
     @GET
-    @Path("/upsertVersion/")
+    @Path("/path/workflow/upsertVersion/")
     @Timed
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
@@ -402,7 +402,7 @@ public class WorkflowResource
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference) {
 
         // Create path on Dockstore (not unique across workflows)
-        String dockstoreWorkflowPath = String.join("/", "github.com", organization, repository);
+        String dockstoreWorkflowPath = String.join("/", TokenType.GITHUB_COM.toString(), organization, repository);
 
         // Find all workflows with the given path that are full
         List<Workflow> workflows = findAllFullWorkflowsByPath(dockstoreWorkflowPath);
@@ -412,8 +412,8 @@ public class WorkflowResource
             String sharedGitUrl = workflows.get(0).getGitUrl();
 
             // Set up source code interface and ensure token is set up
-            user = userDAO.findById(user.getId());
-            final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, user);
+            User updatedUser = userDAO.findById(user.getId());
+            final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, updatedUser);
 
             // Pull new version information from GitHub and update the versions
             workflows = sourceCodeRepo.upsertVersionForWorkflows(organization, repository, gitReference, workflows);
