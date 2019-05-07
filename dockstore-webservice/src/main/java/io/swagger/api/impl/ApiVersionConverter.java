@@ -102,7 +102,7 @@ public final class ApiVersionConverter {
         Response.ResponseBuilder responseBuilder = Response.ok(object);
         if (!headers.isEmpty()) {
             for (String str : headers.keySet()) {
-                String newString = "";
+                String newString;
                 switch (str) {
                 case "next_page":
                     newString = "next-page";

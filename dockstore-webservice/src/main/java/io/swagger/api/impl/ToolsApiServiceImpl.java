@@ -691,11 +691,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return ToolFile.FileTypeEnum.CONTAINERFILE;
         case DOCKSTORE_WDL:
         case DOCKSTORE_CWL:
+        case NEXTFLOW:
             return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
         case NEXTFLOW_CONFIG:
             return ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
-        case NEXTFLOW:
-            return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
         default:
             return ToolFile.FileTypeEnum.OTHER;
         }

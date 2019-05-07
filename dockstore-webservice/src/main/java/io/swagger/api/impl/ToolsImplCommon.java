@@ -172,12 +172,10 @@ public final class ToolsImplCommon {
                     toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
                     break;
                 case NEXTFLOW:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
+                    case NEXTFLOW_CONFIG:
+                        toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
                     break;
-                case NEXTFLOW_CONFIG:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
-                    break;
-                case DOCKERFILE:
+                    case DOCKERFILE:
                     toolVersion.setContainerfile(true);
                 default:
                     // Unhandled file type is apparently ignored
