@@ -2,6 +2,7 @@ package io.dockstore.webservice.permissions.sam;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -205,7 +206,7 @@ public class SamPermissionsImplTest {
         owner.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + GOO_WORKFLOW_NAME);
         owner.setAccessPolicyName(SamConstants.OWNER_POLICY);
         ResourceAndAccessPolicy writer = new ResourceAndAccessPolicy();
-        writer.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + URLEncoder.encode(DOCKSTORE_ORG_WORKFLOW_NAME, "UTF-8"));
+        writer.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + URLEncoder.encode(DOCKSTORE_ORG_WORKFLOW_NAME, StandardCharsets.UTF_8));
         writer.setAccessPolicyName(SamConstants.WRITE_POLICY);
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenReturn(Arrays.asList(reader, owner, writer));
         final Map<Role, List<String>> sharedWithUser = samPermissionsImpl.workflowsSharedWithUser(userMock);

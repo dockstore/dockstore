@@ -18,6 +18,7 @@ package io.dockstore.client.cli.nested;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -428,7 +429,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
                         switch (descriptor) {
                         case CWL_STRING:
-                            if (!(yamlRun != null ^ jsonRun != null)) {
+                            if ((yamlRun != null) == (jsonRun != null)) {
                                 errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
                             } else {
                                 try {
@@ -700,7 +701,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             } else {
                 // Check if already has been verified
                 if (versionToUpdate.isVerified() && !isScript) {
-                    Scanner scanner = new Scanner(System.in, "utf-8");
+                    Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8);
                     out("The version " + versionName + " has already been verified by \'" + versionToUpdate.getVerifiedSource() + "\'");
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
