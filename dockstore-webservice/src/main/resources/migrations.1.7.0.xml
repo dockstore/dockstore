@@ -30,10 +30,10 @@
     </changeSet>
     <changeSet author="louisecabansay (generated)" id="addStarredOrganizations">
         <createTable tableName="starred_organizations">
-            <column name="organizationid" type="BIGINT">
+            <column name="userid" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
             </column>
-            <column name="userid" type="BIGINT">
+            <column name="organizationid" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
             </column>
         </createTable>
