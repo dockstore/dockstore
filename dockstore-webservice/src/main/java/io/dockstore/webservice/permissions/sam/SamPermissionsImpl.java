@@ -1,6 +1,5 @@
 package io.dockstore.webservice.permissions.sam;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
@@ -421,9 +420,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
     }
 
     private String encodedWorkflowResource(Workflow workflow, ApiClient apiClient) {
-        final StringBuilder sb = new StringBuilder(SamConstants.WORKFLOW_PREFIX);
-        sb.append(workflow.getWorkflowPath());
-        return apiClient.escapeString(sb.toString());
+        return apiClient.escapeString(SamConstants.WORKFLOW_PREFIX + workflow.getWorkflowPath());
     }
 
     /**

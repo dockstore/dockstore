@@ -99,15 +99,14 @@ public class MetadataV1 {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("class MetadataV1 {\n");
 
-        sb.append("    version: ").append(toIndentedString(version)).append("\n");
-        sb.append("    apiVersion: ").append(toIndentedString(apiVersion)).append("\n");
-        sb.append("    country: ").append(toIndentedString(country)).append("\n");
-        sb.append("    friendlyName: ").append(toIndentedString(friendlyName)).append("\n");
-        sb.append("}");
-        return sb.toString();
+        String sb = "class MetadataV1 {\n" +
+                "    version: " + toIndentedString(version) + "\n" +
+                "    apiVersion: " + toIndentedString(apiVersion) + "\n" +
+                "    country: " + toIndentedString(country) + "\n" +
+                "    friendlyName: " + toIndentedString(friendlyName) + "\n" +
+                "}";
+        return sb;
     }
 
     /**
