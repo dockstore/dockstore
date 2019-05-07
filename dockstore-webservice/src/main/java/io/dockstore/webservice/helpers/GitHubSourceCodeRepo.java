@@ -577,14 +577,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Updates all the workflows with the new/updated version
-     * @param organization Github organization name (ex. dockstore from dockstore/dockstore-ui2)
-     * @param repository Github repostory name (ex. dockstore-ui2 from dockstore/dockstore-ui2)
+     * @param repository Github repostory name (ex. dockstore/dockstore-ui2)
      * @param gitReference GitHub reference object
      * @param workflows Workflows to upsert version
      * @return list of workflows with new/updated version
      */
-    public List<Workflow> upsertVersionForWorkflows(String organization, String repository, String gitReference, List<Workflow> workflows) {
-        GHRepository ghRepository = getRepository(organization + "/" + repository);
+    public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
+        GHRepository ghRepository = getRepository(repository);
         for (Workflow workflow : workflows) {
             WorkflowVersion version = getTagVersion(ghRepository, gitReference, workflow);
             workflow.addWorkflowVersion(version);

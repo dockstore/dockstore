@@ -4798,46 +4798,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Entry"
-  /workflows/path/workflow/upsertVersion:
-    put:
-      tags:
-        - workflows
-      summary: Add or update a workflow version for a given GitHub tag to all workflows
-        associated with the given repository.
-      description: To be called by a lambda function.
-      operationId: upsertVersion
-      parameters:
-        - name: organization
-          in: query
-          description: Organization name
-          required: true
-          schema:
-            type: string
-        - name: repository
-          in: query
-          description: Repository name
-          required: true
-          schema:
-            type: string
-        - name: gitReference
-          in: query
-          description: Git reference for new GitHub tag
-          required: true
-          schema:
-            type: string
-      requestBody:
-        $ref: "#/components/requestBodies/updateLabelsBody"
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Workflow"
-      security:
-        - BEARER: []
   "/workflows/path/workflow/{repository}":
     get:
       tags:
@@ -5021,6 +4981,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Workflow"
+  "/workflows/path/workflow/{repository}/upsertVersion":
+    put:
+      tags:
+        - workflows
+      summary: Add or update a workflow version for a given GitHub tag to all workflows
+        associated with the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function.
+      operationId: upsertVersions
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+        - name: gitReference
+          in: query
+          description: Git reference for new GitHub tag
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/workflows/path/{repository}":
     get:
       tags:
@@ -6374,10 +6368,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6393,6 +6383,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6562,10 +6556,6 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6581,6 +6571,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7538,10 +7532,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7557,6 +7547,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

@@ -1800,7 +1800,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -2840,7 +2840,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /entries/{id}/collections:
     get:
@@ -3243,7 +3243,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4426,7 +4426,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
@@ -4452,7 +4452,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4590,36 +4590,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-          description: default response
-  /workflows/path/workflow/upsertVersion:
-    put:
-      operationId: upsertVersion
-      parameters:
-      - in: query
-        name: organization
-        schema:
-          type: string
-      - in: query
-        name: repository
-        schema:
-          type: string
-      - in: query
-        name: gitReference
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Workflow'
-                type: array
           description: default response
   /workflows/path/workflow/{repository}:
     get:
@@ -4772,6 +4742,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+          description: default response
+  /workflows/path/workflow/{repository}/upsertVersion:
+    put:
+      operationId: upsertVersions
+      parameters:
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: gitReference
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
           description: default response
   /workflows/path/{repository}:
     get:

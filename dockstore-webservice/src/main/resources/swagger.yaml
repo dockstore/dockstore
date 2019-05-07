@@ -4510,48 +4510,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
-  /workflows/path/workflow/upsertVersion:
-    put:
-      tags:
-      - "workflows"
-      summary: "Add or update a workflow version for a given GitHub tag to all workflows\
-        \ associated with the given repository."
-      description: "To be called by a lambda function."
-      operationId: "upsertVersion"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "organization"
-        in: "query"
-        description: "Organization name"
-        required: true
-        type: "string"
-      - name: "repository"
-        in: "query"
-        description: "Repository name"
-        required: true
-        type: "string"
-      - name: "gitReference"
-        in: "query"
-        description: "Git reference for new GitHub tag"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /workflows/path/workflow/{repository}:
     get:
       tags:
@@ -4724,6 +4682,43 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
+  /workflows/path/workflow/{repository}/upsertVersion:
+    put:
+      tags:
+      - "workflows"
+      summary: "Add or update a workflow version for a given GitHub tag to all workflows\
+        \ associated with the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function."
+      operationId: "upsertVersions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "query"
+        description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/path/{repository}:
     get:
       tags:
@@ -5982,10 +5977,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6001,6 +5992,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6197,10 +6192,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6216,6 +6207,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7259,10 +7254,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7278,6 +7269,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
