@@ -20,4 +20,4 @@
  * @author gluu
  * @since 24/04/19
  */
-package io.dockstore.webservice.core.ToolTester;
+package io.dockstore.webservice.core.tooltester;

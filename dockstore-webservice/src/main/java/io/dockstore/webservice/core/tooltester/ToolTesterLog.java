@@ -16,7 +16,7 @@
  *
  */
 
-package io.dockstore.webservice.core.ToolTester;
+package io.dockstore.webservice.core.tooltester;
 
 /**
  * @author gluu

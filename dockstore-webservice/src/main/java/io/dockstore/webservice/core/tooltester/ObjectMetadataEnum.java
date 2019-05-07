@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package io.dockstore.webservice.core.ToolTester;
+package io.dockstore.webservice.core.tooltester;
 
 /**
  * TODO: Figure out how to share this between ToolTester and this

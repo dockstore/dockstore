@@ -16,10 +16,9 @@
  *
  */
 
-package io.dockstore.webservice.core.ToolTester;
+package io.dockstore.webservice.core.tooltester;
 
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;

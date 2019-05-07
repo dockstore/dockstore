@@ -16,7 +16,7 @@
  *
  */
 
-package io.dockstore.webservice.core.ToolTester;
+package io.dockstore.webservice.core.tooltester;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,19 +96,20 @@ public class ToolTesterS3Client {
      * @return The key for s3
      */
     static String convertToolIdToPartialKey(String toolId) throws UnsupportedEncodingException {
-        if (toolId.startsWith("#workflow")) {
-            toolId = toolId.replaceFirst("#workflow", "workflow");
+        String partialKey = toolId;
+        if (partialKey.startsWith("#workflow")) {
+            partialKey = partialKey.replaceFirst("#workflow", "workflow");
         } else {
-            toolId = "tool/" + toolId;
+            partialKey = "tool/" + partialKey;
         }
-        String[] split = toolId.split("/");
+        String[] split = partialKey.split("/");
         if (split.length == MAX_TOOL_ID_STRING_SEGMENTS) {
             split[TOOL_ID_REPOSITORY_INDEX] = URLEncoder
                     .encode(split[TOOL_ID_REPOSITORY_INDEX] + "/" + split[TOOL_ID_TOOLNAME_INDEX], StandardCharsets.UTF_8.name());
             String[] encodedToolIdArray = Arrays.copyOf(split, split.length - 1);
             return String.join("/", encodedToolIdArray);
         } else {
-            return toolId;
+            return partialKey;
         }
     }
 
@@ -132,7 +133,8 @@ public class ToolTesterS3Client {
         return convertObjectListingToTooltesterLogs(listing);
     }
 
-    private List<ToolTesterLog> convertObjectListingToTooltesterLogs(ObjectListing listing) {
+    private List<ToolTesterLog> convertObjectListingToTooltesterLogs(ObjectListing firstListing) {
+        ObjectListing listing = firstListing;
         List<S3ObjectSummary> summaries = listing.getObjectSummaries();
         while (listing.isTruncated()) {
             listing = s3.listNextBatchOfObjects(listing);
