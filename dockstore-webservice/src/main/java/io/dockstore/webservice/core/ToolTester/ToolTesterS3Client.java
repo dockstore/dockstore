@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -49,7 +50,7 @@ public class ToolTesterS3Client {
 
     public ToolTesterS3Client(String bucketName) {
         this.bucketName = bucketName;
-        s3 = AmazonS3ClientBuilder.standard().build();
+        this.s3 = AmazonS3ClientBuilder.standard().build();
     }
 
     /**
@@ -132,21 +133,17 @@ public class ToolTesterS3Client {
     }
 
     private List<ToolTesterLog> convertObjectListingToTooltesterLogs(ObjectListing listing) {
-        List<ToolTesterLog> toolTesterLogs = new ArrayList<>();
         List<S3ObjectSummary> summaries = listing.getObjectSummaries();
         while (listing.isTruncated()) {
             listing = s3.listNextBatchOfObjects(listing);
             summaries.addAll(listing.getObjectSummaries());
         }
-
-        summaries.forEach(summary -> {
+        return summaries.stream().map(summary -> {
             ObjectMetadata objectMetadata = s3.getObjectMetadata(bucketName, summary.getKey());
             Map<String, String> userMetadata = objectMetadata.getUserMetadata();
             String filename = getFilenameFromSummary(summary);
-            ToolTesterLog toolTesterLog = convertUserMetadataToToolTesterLog(userMetadata, filename);
-            toolTesterLogs.add(toolTesterLog);
-        });
-        return toolTesterLogs;
+            return convertUserMetadataToToolTesterLog(userMetadata, filename);
+        }).collect(Collectors.toList());
     }
 
     private String getFilenameFromSummary(S3ObjectSummary summary) {

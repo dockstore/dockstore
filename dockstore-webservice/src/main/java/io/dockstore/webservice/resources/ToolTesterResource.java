@@ -39,6 +39,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author gluu
@@ -48,6 +50,7 @@ import org.apache.http.HttpStatus;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "toolTester", description = "Interactions with the Dockstore-support's ToolTester application")
 public class ToolTesterResource {
+    private static final Logger LOG = LoggerFactory.getLogger(ToolTesterResource.class);
     private final String bucketName;
 
     public ToolTesterResource(DockstoreWebserviceConfiguration configuration) {
@@ -60,24 +63,26 @@ public class ToolTesterResource {
     @Operation(summary = "Get ToolTester log file")
     @Produces(MediaType.TEXT_PLAIN)
     public String getToolTesterLog(
-            @QueryParam("tool_id") @Parameter(example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
+            @QueryParam("tool_id") @Parameter(description = "TRS Tool Id", example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
             @QueryParam("tool_version_name") @Parameter(example = "v1.0.0", required = true) String toolVersionName,
             @QueryParam("test_filename") @Parameter(example = "hello_world.cwl.json", required = true) String testFilename,
             @QueryParam("runner") @Parameter(example = "cwltool", required = true) String runner,
             @QueryParam("log_type") @Parameter(required = true) ToolTesterLogType logType,
             @QueryParam("filename") @Parameter(example = "1554477737092.log", required = true) String filename) {
-        if (bucketName == null) {
+        if (this.bucketName == null) {
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
-        ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(bucketName);
+        ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(this.bucketName);
         try {
             return toolTesterS3Client.getToolTesterLog(toolId, toolVersionName, testFilename, runner, filename);
         } catch (AmazonS3Exception e) {
+            LOG.error(e.getMessage(), e);
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
         } catch (IOException e) {
-            throw new CustomWebApplicationException("Could not log file contents", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            LOG.error(e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not fetch log file contents", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -86,20 +91,22 @@ public class ToolTesterResource {
     @Path("logs/search")
     @Operation(summary = "Search for ToolTester log files")
     public List<ToolTesterLog> search(
-            @QueryParam("tool_id") @Parameter(example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
+            @QueryParam("tool_id") @Parameter(description = "TRS Tool Id", example = "#workflow/github.com/dockstore/hello_world", required = true) String toolId,
             @QueryParam("tool_version_name") @Parameter(example = "v1.0.0", required = true) String toolVersionName) {
-        if (bucketName == null) {
+        if (this.bucketName == null) {
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
         try {
-            ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(bucketName);
+            ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(this.bucketName);
             return toolTesterS3Client.getToolTesterLogs(toolId, toolVersionName);
         } catch (AmazonS3Exception e) {
+            LOG.error(e.getMessage(), e);
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
         } catch (UnsupportedEncodingException e) {
-            throw new CustomWebApplicationException("Could generate s3 bucket key", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            LOG.error(e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not find log file location", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 }
