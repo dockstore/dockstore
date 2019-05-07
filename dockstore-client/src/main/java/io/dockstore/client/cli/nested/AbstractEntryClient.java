@@ -1000,9 +1000,7 @@ public abstract class AbstractEntryClient<T> {
             wesApiClient.setBasePath(wesEndpointUrl);
         }
 
-        /**
-         * Setup authentication credentials for the WES URL
-         */
+        // Setup authentication credentials for the WES URL
         String wesAuthorizationCredentials = ObjectUtils.firstNonNull(wesCred, configSubNode.getString("authorization"));
         if (wesAuthorizationCredentials == null) {
             out("Could not set Authorization header. Authorization key not found in config file and not provided on the command line. "

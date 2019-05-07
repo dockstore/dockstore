@@ -23,7 +23,7 @@ import io.swagger.v3.oas.integration.api.ObjectMapperProcessor;
 public class OrderedObjectMapperProcessor implements ObjectMapperProcessor {
     @Override
     public void processJsonObjectMapper(ObjectMapper mapper) {
-        /** do nothing */
+        // do nothing
     }
 
     @Override
