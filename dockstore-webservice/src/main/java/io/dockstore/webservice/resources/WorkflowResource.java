@@ -389,7 +389,7 @@ public class WorkflowResource
         return workflow;
     }
 
-    @GET
+    @PUT
     @Path("/path/workflow/upsertVersion/")
     @Timed
     @UnitOfWork
@@ -399,7 +399,8 @@ public class WorkflowResource
     public List<Workflow> upsertVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organization name", required = true) @QueryParam("organization") String organization,
             @ApiParam(value = "Repository name", required = true) @QueryParam("repository") String repository,
-            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference) {
+            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
 
         // Create path on Dockstore (not unique across workflows)
         String dockstoreWorkflowPath = String.join("/", TokenType.GITHUB_COM.toString(), organization, repository);
