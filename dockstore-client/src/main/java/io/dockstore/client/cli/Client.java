@@ -153,7 +153,7 @@ public class Client {
         final Properties properties = new Properties();
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         try {
-            properties.load(classLoader.getResourceAsStream("project.properties"));
+            properties.load(Objects.requireNonNull(classLoader.getResourceAsStream("project.properties")));
         } catch (IOException e) {
             LOG.error("Could not get project.properties file");
         }
