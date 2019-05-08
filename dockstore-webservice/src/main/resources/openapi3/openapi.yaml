@@ -310,6 +310,11 @@ components:
           minLength: 3
           pattern: '[a-zA-Z][a-zA-Z\d]*'
           type: string
+        starredUsers:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
         status:
           enum:
           - PENDING
@@ -3281,7 +3286,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -3701,6 +3706,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: default response
+  /organizations/{organizationId}/star:
+    put:
+      operationId: starOrganization
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+  /organizations/{organizationId}/starredUsers:
+    get:
+      operationId: getStarredUsersForApprovedOrganization
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/User'
+                type: array
+                uniqueItems: true
+          description: default response
+  /organizations/{organizationId}/unstar:
+    delete:
+      operationId: unstarOrganization
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
   /organizations/{organizationId}/user:
     delete:
       operationId: deleteUserRole
@@ -3941,6 +4006,24 @@ paths:
             application/json:
               schema:
                 type: boolean
+          description: default response
+  /users/starredOrganizations:
+    get:
+      operationId: getStarredOrganizations
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Organization'
+                type: array
+                uniqueItems: true
           description: default response
   /users/starredTools:
     get:
