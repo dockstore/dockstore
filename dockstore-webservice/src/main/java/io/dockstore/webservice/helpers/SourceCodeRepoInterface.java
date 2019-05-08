@@ -172,7 +172,7 @@ public abstract class SourceCodeRepoInterface {
         // NextFlow and (future) dockstore.yml workflow can be detected and handled without stubs
 
         // Determine if workflow should be returned as a STUB or FULL
-        if (!existingWorkflow.isPresent()) {
+        if (existingWorkflow.isEmpty()) {
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
             workflow.setDescriptorType(LanguageType.CWL.toString());
             return workflow;
@@ -592,6 +592,6 @@ public abstract class SourceCodeRepoInterface {
      * @return True if valid workflow version, false otherwise
      */
     private boolean isValidVersion(WorkflowVersion version) {
-        return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
+        return version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isEmpty();
     }
 }

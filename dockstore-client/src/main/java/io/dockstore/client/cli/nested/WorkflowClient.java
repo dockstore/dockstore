@@ -355,7 +355,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         Optional<WorkflowVersion> first = workflow.getWorkflowVersions().stream().filter(foo -> foo.getName().equalsIgnoreCase(tag))
             .findFirst();
         // if no master is present (for example, for hosted workflows), fail over to the latest descriptor
-        if (!first.isPresent()) {
+        if (first.isEmpty()) {
             first = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getLastModified));
             first.ifPresent(workflowVersion -> System.out.println("Could not locate workflow with version '" + tag + "'. Using last modified version '"
                     + workflowVersion.getName() + "' instead."));
@@ -688,7 +688,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     .findFirst();
 
             WorkflowVersion versionToUpdate;
-            if (!first.isPresent()) {
+            if (first.isEmpty()) {
                 errorMessage(versionName + " is not a valid version for " + entry, Client.CLIENT_ERROR);
             }
             versionToUpdate = first.get();

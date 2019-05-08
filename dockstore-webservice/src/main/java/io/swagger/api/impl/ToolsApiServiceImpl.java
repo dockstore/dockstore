@@ -167,9 +167,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             entryPath += "/" + parsedID.getToolName();
         }
         if (parsedID.isTool()) {
-            entry = toolDAO.findByPath(entryPath, !user.isPresent());
+            entry = toolDAO.findByPath(entryPath, user.isEmpty());
         } else {
-            entry = workflowDAO.findByPath(entryPath, !user.isPresent());
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty());
         }
         if (entry != null && entry.getIsPublished()) {
             return entry;
@@ -479,7 +479,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
         }
 
-        if (!entryVersion.isPresent()) {
+        if (entryVersion.isEmpty()) {
             Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "version not found");
             return Response.status(status).build();
         }

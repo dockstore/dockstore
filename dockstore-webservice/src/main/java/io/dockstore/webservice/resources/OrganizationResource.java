@@ -172,7 +172,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     public Organization getOrganizationByName(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Organization name.", required = true) @PathParam("name") String name) {
-        if (!user.isPresent()) {
+        if (user.isEmpty()) {
             // No user given, only show approved organizations
             Organization organization = organizationDAO.findApprovedByName(name);
             throwExceptionForNullOrganization(organization);
@@ -305,7 +305,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      * @return Organization with given id
      */
     private Organization getOrganizationByIdOptionalAuth(Optional<User> user, Long orgId) {
-        if (!user.isPresent()) {
+        if (user.isEmpty()) {
             // No user given, only show approved organizations
             Organization organization = organizationDAO.findApprovedById(orgId);
             throwExceptionForNullOrganization(organization);
