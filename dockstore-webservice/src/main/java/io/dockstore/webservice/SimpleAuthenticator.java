@@ -87,7 +87,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         return GoogleHelper.userinfoplusFromToken(credentials);
     }
 
-    User createUser(Userinfoplus userinfoPlus) {
+    private User createUser(Userinfoplus userinfoPlus) {
         User user = new User();
         GoogleHelper.updateUserFromGoogleUserinfoplus(userinfoPlus, user);
         user.setUsername(userinfoPlus.getEmail());

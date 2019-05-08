@@ -179,7 +179,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
      * @param sourceFiles List of sourcefiles for a version
      * @return Pair including if dockerfile is valid, along with error message if it is not
      */
-    protected LanguageHandlerInterface.VersionTypeValidation validateDockerfile(Set<SourceFile> sourceFiles) {
+    private LanguageHandlerInterface.VersionTypeValidation validateDockerfile(Set<SourceFile> sourceFiles) {
         boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
         Map<String, String> validationMessageObject = new HashMap<>();
         if (!hasDockerfile) {
@@ -214,7 +214,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
      * @param fileType FileType to look for
      * @return True if sourcefile exists and is valid, false otherwise
      */
-    protected boolean isVersionTypeValidated(SortedSet<Validation> validations, SourceFile.FileType fileType) {
+    private boolean isVersionTypeValidated(SortedSet<Validation> validations, SourceFile.FileType fileType) {
         Optional<Validation> foundFile = validations
                 .stream()
                 .filter(Validation -> Objects.equals(Validation.getType(), fileType))

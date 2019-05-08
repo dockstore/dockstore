@@ -39,7 +39,7 @@ public final class TabExpansionUtil {
      * @param tabSeparated
      * @return
      */
-    public static String expansion(String tabSeparated) {
+    private static String expansion(String tabSeparated) {
         String[] lines = tabSeparated.split("\n");
         // get headers
         String[] header = lines[0].split("\t");

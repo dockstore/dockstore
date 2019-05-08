@@ -140,7 +140,7 @@ public final class NextflowUtilities {
     /**
      * Runtime exception for Nextflow integration issues
      */
-    public static class NextflowParsingException extends RuntimeException {
+    static class NextflowParsingException extends RuntimeException {
         NextflowParsingException(String message) {
             super(message);
         }

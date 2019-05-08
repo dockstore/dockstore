@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
-    public static final int BYTES_IN_KB = 1024;
+    private static final int BYTES_IN_KB = 1024;
 
     String gitUsername;
 
@@ -72,7 +72,7 @@ public abstract class SourceCodeRepoInterface {
      * @param reference the tag/branch to get the file from
      * @return content of the file
      */
-    public abstract String readFile(String repositoryId, String fileName, @NotNull String reference);
+    protected abstract String readFile(String repositoryId, String fileName, @NotNull String reference);
 
     /**
      * Read a file from the importer and add it into files
@@ -144,7 +144,7 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @return workflow with some attributes set
      */
-    public abstract Workflow initializeWorkflow(String repositoryId);
+    protected abstract Workflow initializeWorkflow(String repositoryId);
 
     /**
      * Finds all of the workflow versions for a given workflow and store them and their corresponding source files
@@ -155,8 +155,8 @@ public abstract class SourceCodeRepoInterface {
      * @param existingDefaults
      * @return workflow with associated workflow versions
      */
-    public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults);
+    protected abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
+                                                      Map<String, WorkflowVersion> existingDefaults);
 
     /**
      * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
@@ -316,7 +316,7 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId
      * @return Branch of interest
      */
-    public abstract String getMainBranch(Entry entry, String repositoryId);
+    protected abstract String getMainBranch(Entry entry, String repositoryId);
 
     /**
 
@@ -494,7 +494,7 @@ public abstract class SourceCodeRepoInterface {
      * The following methods were duplicated code, but are not well designed for this interface
      */
 
-    public abstract SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type);
+    protected abstract SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type);
 
     void createTestParameterFiles(Workflow workflow, String id, String branchName, WorkflowVersion version,
         SourceFile.FileType identifiedType) {
@@ -540,7 +540,7 @@ public abstract class SourceCodeRepoInterface {
      * @param mainDescriptorPath Descriptor path to validate
      * @return Workflow version with validation information
      */
-    public WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
+    WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects
@@ -591,7 +591,7 @@ public abstract class SourceCodeRepoInterface {
      * @param version Version to check validation
      * @return True if valid workflow version, false otherwise
      */
-    public boolean isValidVersion(WorkflowVersion version) {
+    private boolean isValidVersion(WorkflowVersion version) {
         return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
     }
 }

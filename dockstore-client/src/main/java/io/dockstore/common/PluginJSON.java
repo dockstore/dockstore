@@ -22,7 +22,7 @@ import com.google.gson.annotations.SerializedName;
  * @author gluu
  * @since 14/03/17
  */
-public class PluginJSON {
+class PluginJSON {
     @SerializedName("name")
     @Expose
     private String name;

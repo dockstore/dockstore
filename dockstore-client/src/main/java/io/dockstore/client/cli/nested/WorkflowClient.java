@@ -92,11 +92,11 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  */
 public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
     private static final String UPDATE_WORKFLOW = "update_workflow";
     protected final WorkflowsApi workflowsApi;
-    protected final UsersApi usersApi;
-    protected final Client client;
+    private final UsersApi usersApi;
+    private final Client client;
     private JCommander jCommander;
     private CommandLaunch commandLaunch;
 
@@ -758,7 +758,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         }
     }
 
-    public void publish(boolean publish, String entry) {
+    private void publish(boolean publish, String entry) {
         String action = "publish";
         if (!publish) {
             action = "unpublish";

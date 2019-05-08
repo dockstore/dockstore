@@ -19,8 +19,8 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public class CwltoolLauncher extends BaseLauncher {
 
-    protected List<String> command;
-    protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
+    private List<String> command;
+    private Map<String, List<FileProvisioning.FileInfo>> outputMap;
     public CwltoolLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         super(abstractEntryClient, language, script);
         setLauncherName("cwltool");

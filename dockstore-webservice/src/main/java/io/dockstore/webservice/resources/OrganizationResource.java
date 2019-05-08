@@ -663,7 +663,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      * @param userId
      * @return OrganizationUser role
      */
-    protected static OrganizationUser getUserOrgRole(Organization organization, Long userId) {
+    static OrganizationUser getUserOrgRole(Organization organization, Long userId) {
         Set<OrganizationUser> organizationUserSet = organization.getUsers();
         Optional<OrganizationUser> matchingUser = organizationUserSet.stream()
             .filter(organizationUser -> Objects.equals(organizationUser.getUser().getId(), userId)).findFirst();

@@ -31,7 +31,7 @@ import io.dockstore.webservice.helpers.ElasticMode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
-public interface AliasableResourceInterface<T extends Aliasable> {
+interface AliasableResourceInterface<T extends Aliasable> {
 
     Optional<ElasticManager> getElasticManager();
 

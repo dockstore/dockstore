@@ -118,10 +118,10 @@ public abstract class AbstractEntryClient<T> {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
 
     protected boolean isAdmin = false;
-    protected boolean isWesCommand = false;
-    protected boolean isLocalEntry = false;
-    protected String wesUri = null;
-    protected String wesAuth = null;
+    private boolean isWesCommand = false;
+    boolean isLocalEntry = false;
+    private String wesUri = null;
+    private String wesAuth = null;
 
     static String getCleanedDescription(String description) {
         description = MoreObjects.firstNonNull(description, "");
@@ -447,7 +447,7 @@ public abstract class AbstractEntryClient<T> {
      * private helper methods
      */
 
-    public void publish(List<String> args) {
+    private void publish(List<String> args) {
         if (args.isEmpty()) {
             handleListNonpublishedEntries();
         } else if (containsHelpRequest(args)) {
@@ -654,7 +654,7 @@ public abstract class AbstractEntryClient<T> {
         }
     }
 
-    public void handleEntry2json(List<String> args) throws ApiException, IOException {
+    void handleEntry2json(List<String> args) throws ApiException, IOException {
         if (args.isEmpty() || containsHelpRequest(args)) {
             entry2jsonHelp();
         } else {
@@ -663,7 +663,7 @@ public abstract class AbstractEntryClient<T> {
         }
     }
 
-    public void handleEntry2tsv(List<String> args) throws ApiException, IOException {
+    void handleEntry2tsv(List<String> args) throws ApiException, IOException {
         if (args.isEmpty() || containsHelpRequest(args)) {
             entry2tsvHelp();
         } else {
@@ -908,7 +908,7 @@ public abstract class AbstractEntryClient<T> {
      *
      * @param args Arguments entered into the CLI
      */
-    public void download(final List<String> args) {
+    private void download(final List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             downloadHelp();
         } else {
@@ -936,7 +936,7 @@ public abstract class AbstractEntryClient<T> {
      *
      * @param args
      */
-    protected void preValidateLaunchArguments(List<String> args) {
+    void preValidateLaunchArguments(List<String> args) {
         // Create a copy of args for prevalidation since optVals removes args from list
         List<String> argsCopy = new java.util.ArrayList(args);
         String jsonFile = optVal(argsCopy, "--json", null);
@@ -1023,7 +1023,7 @@ public abstract class AbstractEntryClient<T> {
      *
      * @param args Arguments entered into the CLI
      */
-    public void processWesCommands(final List<String> args) {
+    private void processWesCommands(final List<String> args) {
         this.wesUri = optVal(args, "--wes-url", null);
         this.wesAuth = optVal(args, "--wes-auth", null);
 
@@ -1275,7 +1275,7 @@ public abstract class AbstractEntryClient<T> {
     /**
      * help text output
      */
-    public void wesHelp() {
+    private void wesHelp() {
         printHelpHeader();
         out("Commands:");
         out("");
@@ -1290,7 +1290,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    protected void wesLaunchHelp() {
+    private void wesLaunchHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " wes launch --help");
         out("       dockstore " + getEntryType().toLowerCase() + " wes launch [parameters]");
@@ -1299,7 +1299,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    public void wesStatusHelp() {
+    private void wesStatusHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " wes status --help");
         out("       dockstore " + getEntryType().toLowerCase() + " wes status [parameters]");
@@ -1315,7 +1315,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    public void wesCancelHelp() {
+    private void wesCancelHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " wes cancel --help");
         out("       dockstore " + getEntryType().toLowerCase() + " wes cancel [parameters]");
@@ -1329,7 +1329,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    public void printWesHelpFooter() {
+    private void printWesHelpFooter() {
         out("Global Optional Parameters:");
         out("  --wes-url <WES URL>                 URL where the WES request should be sent, e.g. 'http://localhost:8080/ga4gh/wes/v1'");
         out("  --wes-auth <auth>                   Authorization credentials for the WES endpoint, e.g. 'Bearer 12345'");
@@ -1541,7 +1541,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    protected void downloadHelp() {
+    private void downloadHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " download --help");
         out("       dockstore " + getEntryType().toLowerCase() + " download [parameters]");
@@ -1557,7 +1557,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    protected void printLaunchHelpBody() {
+    private void printLaunchHelpBody() {
         out("");
         out("Description:");
         out("  Launch an entry locally.");

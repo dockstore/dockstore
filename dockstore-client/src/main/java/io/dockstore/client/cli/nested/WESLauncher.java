@@ -75,7 +75,7 @@ public class WESLauncher extends BaseLauncher {
         return new ImmutablePair<String, String>("", "");
     }
 
-    protected void addFilesToWorkflowAttachment(List<File> workflowAttachment, File zippedEntry, File tempDir) {
+    private void addFilesToWorkflowAttachment(List<File> workflowAttachment, File zippedEntry, File tempDir) {
         try {
             SwaggerUtility.unzipFile(zippedEntry, tempDir);
         } catch (IOException e) {
@@ -105,7 +105,7 @@ public class WESLauncher extends BaseLauncher {
         }
     }
 
-    public void runWESCommand(String jsonInputFilePath, File localPrimaryDescriptorFile, File zippedEntry) {
+    private void runWESCommand(String jsonInputFilePath, File localPrimaryDescriptorFile, File zippedEntry) {
         String workflowURL = localPrimaryDescriptorFile.getName();
         final File tempDir = Files.createTempDir();
 

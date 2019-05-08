@@ -80,7 +80,7 @@ public final class ResourceUtilities {
     }
 
     // Todo: Implement a backoff algorithm for below HTTP calls
-    public static Optional<String> getResponseAsString(HttpRequestBase httpRequest, HttpClient client) {
+    private static Optional<String> getResponseAsString(HttpRequestBase httpRequest, HttpClient client) {
         Optional<String> result = Optional.empty();
         final int waitTime = 60000;
         try {

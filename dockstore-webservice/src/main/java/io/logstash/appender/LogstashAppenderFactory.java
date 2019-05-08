@@ -43,11 +43,11 @@ public class LogstashAppenderFactory extends AbstractAppenderFactory {
     private static final int MIN_PORT = 1;
 
     @NotNull
-    protected String host;
+    private String host;
 
     @Min(MIN_PORT)
     @Max(MAX_PORT)
-    protected int port;
+    private int port;
 
     @Min(MIN_PORT)
     @Max(MAX_PORT)

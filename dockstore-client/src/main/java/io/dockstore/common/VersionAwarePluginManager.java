@@ -38,7 +38,7 @@ import ro.fortsoft.pf4j.util.NotFileFilter;
 /**
  * This extends the default plugin manager to be version-aware (take the latest version of a plugin)
  */
-public class VersionAwarePluginManager extends DefaultPluginManager {
+class VersionAwarePluginManager extends DefaultPluginManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(VersionAwarePluginManager.class);
     // Version 0.0.0 -> Up to 1.4; Version 0.0.1 -> 1.5; Version 0.0.2 -> 1.6

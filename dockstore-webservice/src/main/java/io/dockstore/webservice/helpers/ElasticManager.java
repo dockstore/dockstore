@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
  * @since 26/07/17
  */
 public class ElasticManager {
-    public static DockstoreWebserviceConfiguration config;
+    private static DockstoreWebserviceConfiguration config;
     private static String hostname;
     private static int port;
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
@@ -179,7 +179,7 @@ public class ElasticManager {
      * @param entry     The entry to check
      * @return          null if checker, entry otherwise
      */
-    public static Entry filterCheckerWorkflows(Entry entry) {
+    private static Entry filterCheckerWorkflows(Entry entry) {
         return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
     }
 

@@ -366,7 +366,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
-    boolean userIsOnlyMember(List<String> resourceIds, ResourcesApi resourcesApi) {
+    private boolean userIsOnlyMember(List<String> resourceIds, ResourcesApi resourcesApi) {
         for (String resourceId : resourceIds) {
             final List<AccessPolicyResponseEntry> entries;
             try {
@@ -452,7 +452,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
         return Token.extractToken(tokens, TokenType.GOOGLE_COM);
     }
 
-    boolean hasGoogleToken(User user) {
+    private boolean hasGoogleToken(User user) {
         return user.getTemporaryCredential() != null || googleToken(user) != null;
     }
 
@@ -496,7 +496,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
         return new ArrayList<>(map.values());
     }
 
-    <T> Optional<T> readValue(ApiException e, Class<T> clazz) {
+    private <T> Optional<T> readValue(ApiException e, Class<T> clazz) {
         String body = e.getResponseBody();
         return readValue(body, clazz);
     }

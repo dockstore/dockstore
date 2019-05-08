@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Converter(autoApply = true)
-public class TokenTypeConverter implements AttributeConverter<TokenType, String> {
+class TokenTypeConverter implements AttributeConverter<TokenType, String> {
     private static final Logger LOG = LoggerFactory.getLogger(TokenTypeConverter.class);
 
     @Override

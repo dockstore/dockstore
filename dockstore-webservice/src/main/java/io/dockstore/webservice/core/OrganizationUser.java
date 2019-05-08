@@ -130,15 +130,15 @@ public class OrganizationUser implements Serializable {
     @Embeddable
     public static class OrganizationUserId implements Serializable {
         @Column(name = "userId")
-        protected Long userId;
+        Long userId;
 
         @Column(name = "organizationId")
-        protected Long organizationId;
+        Long organizationId;
 
         public OrganizationUserId() {
         }
 
-        public OrganizationUserId(Long userId, Long organizationId) {
+        OrganizationUserId(Long userId, Long organizationId) {
             this.userId = userId;
             this.organizationId = organizationId;
         }

@@ -37,7 +37,7 @@ public abstract class BaseLanguageClient {
     private static final Logger LOG = LoggerFactory.getLogger(BaseLanguageClient.class);
     protected final AbstractEntryClient abstractEntryClient;
     protected INIConfiguration config;
-    protected String notificationsWebHookURL;
+    private String notificationsWebHookURL;
     protected NotificationsClient notificationsClient;
     protected BaseLauncher launcher;
 
@@ -47,19 +47,19 @@ public abstract class BaseLanguageClient {
     protected String wdlOutputTarget;
     protected String yamlParameterFile;
     protected String jsonParameterFile;
-    protected String uuid;
+    private String uuid;
 
     // Fields generated during setup and running of entry
     protected File tempLaunchDirectory;
     protected File localPrimaryDescriptorFile;
     protected File zippedEntryFile;
     protected String selectedParameterFile;
-    protected File provisionedParameterFile;
+    private File provisionedParameterFile;
     protected String workingDirectory;
     protected String stdout;
     protected String stderr;
 
-    public BaseLanguageClient(AbstractEntryClient abstractEntryClient, BaseLauncher launcher) {
+    protected BaseLanguageClient(AbstractEntryClient abstractEntryClient, BaseLauncher launcher) {
         this.abstractEntryClient = abstractEntryClient;
         this.launcher = launcher;
     }
@@ -71,7 +71,7 @@ public abstract class BaseLanguageClient {
     /**
      * Selects the intended parameter file
      */
-    public abstract String selectParameterFile();
+    protected abstract String selectParameterFile();
 
     /**
      * Provision the input files based on the selected parameter file.
@@ -79,30 +79,30 @@ public abstract class BaseLanguageClient {
      * Must set the variable workingDirectory
      * @return Updated parameter file
      */
-    public abstract File provisionInputFiles();
+    protected abstract File provisionInputFiles();
 
     /**
      * Runs the tool/workflow with the selected launcher
      * Must set the variables stdout and stderr
      * @throws ExecuteException
      */
-    public abstract void executeEntry() throws ExecuteException;
+    protected abstract void executeEntry() throws ExecuteException;
 
     /**
      * Provisions the output files to their appropriate location
      */
-    public abstract void provisionOutputFiles();
+    protected abstract void provisionOutputFiles();
 
     /**
      * Download files and put them in a temporary directory
      * Must set the variables localPrimaryDescriptorFile, zippedEntryFile, and provisionedParameterFile
      */
-    public abstract void downloadFiles();
+    protected abstract void downloadFiles();
 
     /**
      * Setup for notifications to webhook
      */
-    public void setupNotifications() {
+    private void setupNotifications() {
         config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
         notificationsWebHookURL = config.getString("notifications", "");
         notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
@@ -117,7 +117,7 @@ public abstract class BaseLanguageClient {
      * @param outputTarget
      * @param notificationUUID
      */
-    public void setLaunchInformation(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID) {
+    private void setLaunchInformation(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID) {
         this.entry = entryVal;
         this.isLocalEntry = localEntry;
         this.yamlParameterFile = yamlFile;
@@ -130,7 +130,7 @@ public abstract class BaseLanguageClient {
      * Common code to setup and launch a pipeline
      * @return Exit code of process
      */
-    public long launchPipeline(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID) throws ApiException {
+    protected long launchPipeline(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID) throws ApiException {
         // Initialize client with some launch information
         setLaunchInformation(entryVal, localEntry, yamlFile, jsonFile, outputTarget, notificationUUID);
 
@@ -204,7 +204,7 @@ public abstract class BaseLanguageClient {
      * @param type CWL or WDL
      * @return Pair of downloaded primary descriptor and zip file
      */
-    public LauncherFiles initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type) {
+    protected LauncherFiles initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type) {
         // Try to create a working directory
         File workingDir;
         try {
@@ -261,7 +261,7 @@ public abstract class BaseLanguageClient {
      * @param directoryToZip The directoryToZip to zip
      * @return The zip file created
      */
-    public File zipDirectory(File workingDir, File directoryToZip) {
+    private File zipDirectory(File workingDir, File directoryToZip) {
         String zipFilePath = workingDir.getAbsolutePath() + "/directory.zip";
         try (FileOutputStream fos = new FileOutputStream(zipFilePath); ZipOutputStream zos = new ZipOutputStream(fos)) {
             zipFile(directoryToZip, "/", zos);
@@ -280,7 +280,7 @@ public abstract class BaseLanguageClient {
      * @param zos Zip Output Stream
      * @throws IOException
      */
-    public void zipFile(File fileToZip, String fileName, ZipOutputStream zos) throws IOException {
+    private void zipFile(File fileToZip, String fileName, ZipOutputStream zos) throws IOException {
         if (fileToZip == null) {
             return;
         }
@@ -322,7 +322,7 @@ public abstract class BaseLanguageClient {
      * @throws ExecuteException
      * @throws RuntimeException
      */
-    public void commonExecutionCode(File workDir, String launcherName) throws ExecuteException, RuntimeException {
+    protected void commonExecutionCode(File workDir, String launcherName) throws ExecuteException, RuntimeException {
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
 
         if (abstractEntryClient.isWesCommand()) {

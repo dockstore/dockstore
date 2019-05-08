@@ -192,7 +192,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return saveVersion(user, entryId, entry, version, versionSourceFiles, Optional.empty());
     }
 
-    protected void checkVersionLimit(@Auth @ApiParam(hidden = true) User user, T entry) {
+    void checkVersionLimit(@Auth @ApiParam(hidden = true) User user, T entry) {
         // check if the user has hit a limit yet
         final long currentCount = entry.getVersions().size();
         final int limit = user.getHostedEntryVersionsLimit() != null ? user.getHostedEntryVersionsLimit() : calculatedEntryVersionLimit;
@@ -265,7 +265,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @param version version of interest
      * @return String containing all invalid validation messages
      */
-    protected String createValidationMessages(U version) {
+    private String createValidationMessages(U version) {
         StringBuilder result = new StringBuilder();
         result.append("Unable to save the new version due to the following error(s): ");
         Gson g = new Gson();
@@ -300,7 +300,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      */
     protected abstract U versionValidation(U version, T entry, Optional<SourceFile> mainDescriptor);
 
-    protected void checkHosted(T entry) {
+    void checkHosted(T entry) {
         if (entry instanceof Tool) {
             if (((Tool)entry).getMode() != ToolMode.HOSTED) {
                 throw new CustomWebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);

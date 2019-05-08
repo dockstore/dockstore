@@ -100,7 +100,7 @@ public class Client {
     public static final int ENTRY_NOT_FOUND = 12; // Entry could not be found locally or remotely
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
-    public static final AtomicBoolean INFO = new AtomicBoolean(false);
+    private static final AtomicBoolean INFO = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
 
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
@@ -835,7 +835,7 @@ public class Client {
         this.configFile = configFile;
     }
     
-    public ToolClient getToolClient() {
+    private ToolClient getToolClient() {
         return toolClient;
     }
 
@@ -843,7 +843,7 @@ public class Client {
         return workflowClient;
     }
 
-    public CheckerClient getCheckerClient() {
+    private CheckerClient getCheckerClient() {
         return checkerClient;
     }
 }

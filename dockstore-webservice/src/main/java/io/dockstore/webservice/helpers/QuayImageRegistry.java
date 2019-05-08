@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  */
 public class QuayImageRegistry extends AbstractImageRegistry {
 
-    public static final String QUAY_URL = "https://quay.io/api/v1/";
+    private static final String QUAY_URL = "https://quay.io/api/v1/";
 
     private static final Logger LOG = LoggerFactory.getLogger(QuayImageRegistry.class);
 
@@ -332,7 +332,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
      * @param reference a raw reference from git like "refs/heads/master"
      * @return the last segment like master
      */
-    public static String parseReference(String reference) {
+    private static String parseReference(String reference) {
         if (reference != null) {
             Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
             Matcher m = p.matcher(reference);
@@ -387,11 +387,11 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return false;
     }
 
-    public static class RepoList {
+    static class RepoList {
 
         private List<Tool> repositories;
 
-        public List<Tool> getRepositories() {
+        List<Tool> getRepositories() {
             return repositories;
         }
 

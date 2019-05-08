@@ -25,7 +25,7 @@ import org.apache.http.HttpStatus;
 /**
  * Resources that interact with starring and unstarring
  */
-public interface StarrableResourceInterface extends AuthenticatedResourceInterface {
+interface StarrableResourceInterface extends AuthenticatedResourceInterface {
     /**
      * Stars the entry
      *

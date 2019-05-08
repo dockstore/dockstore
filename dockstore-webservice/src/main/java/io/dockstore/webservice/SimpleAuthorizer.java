@@ -22,7 +22,7 @@ import io.dropwizard.auth.Authorizer;
 /**
  * @author dyuen
  */
-public class SimpleAuthorizer implements Authorizer<User> {
+class SimpleAuthorizer implements Authorizer<User> {
 
     @Override
     public boolean authorize(User principal, String role) {

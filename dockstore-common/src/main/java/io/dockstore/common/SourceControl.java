@@ -57,9 +57,9 @@ public enum SourceControl {
      */
     public static class SourceControlBean {
 
-        public String value;
+        String value;
 
-        public String friendlyName;
+        String friendlyName;
 
         public SourceControlBean(SourceControl sourceControl) {
             this.value = sourceControl.toString();

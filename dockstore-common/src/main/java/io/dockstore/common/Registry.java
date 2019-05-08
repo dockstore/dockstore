@@ -92,12 +92,12 @@ public enum Registry {
     public static class RegistryBean {
 
         @JsonProperty("enum")
-        public String value;
-        public String dockerPath;
-        public String friendlyName;
-        public String url;
-        public String privateOnly;
-        public String customDockerPath;
+        String value;
+        String dockerPath;
+        String friendlyName;
+        String url;
+        String privateOnly;
+        String customDockerPath;
 
         public RegistryBean(Registry registry) {
             this.value = registry.name();

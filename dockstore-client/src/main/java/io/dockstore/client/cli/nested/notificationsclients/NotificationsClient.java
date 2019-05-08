@@ -41,9 +41,9 @@ public class NotificationsClient {
     public static final String COMPLETED = "workflow-complete";
     protected static final String USERNAME = "Dockstore CLI";
     private static final Logger LOG = LoggerFactory.getLogger(NotificationsClient.class);
-    protected String hookURL;
-    protected String uuid;
-    protected boolean disabled = false;
+    private String hookURL;
+    private String uuid;
+    private boolean disabled = false;
 
     public NotificationsClient(String hookURL, String uuid) {
         boolean invalidHookURL = (hookURL == null || hookURL.isEmpty());

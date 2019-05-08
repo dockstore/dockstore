@@ -93,7 +93,7 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  */
 public class CWLClient extends BaseLanguageClient implements LanguageClientInterface {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(CWLClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CWLClient.class);
     private static final String WORKING_DIRECTORY = "working-directory";
     private static final String CWL_RUNNER = "cwlrunner";
     private static final String DEFAULT_LAUNCHER = "cwltool";
@@ -101,8 +101,8 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
     private static final String CROMWELL = "cromwell";
     private static final String WES = "wes";
 
-    protected final Yaml yaml = new Yaml(new SafeConstructor());
-    protected final Gson gson = CWL.getTypeSafeCWLToolDocument();
+    private final Yaml yaml = new Yaml(new SafeConstructor());
+    private final Gson gson = CWL.getTypeSafeCWLToolDocument();
     private final FileProvisioning fileProvisioning;
     private String originalTestParameterFilePath;
     private Map<String, List<FileProvisioning.FileInfo>> outputMap;
@@ -1122,7 +1122,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         return outputSet;
     }
 
-    public static String getBasename(String path) {
+    private static String getBasename(String path) {
         return Paths.get(path).getFileName().toString();
     }
 

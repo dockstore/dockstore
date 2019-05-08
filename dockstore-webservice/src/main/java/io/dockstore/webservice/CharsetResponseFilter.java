@@ -21,7 +21,7 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
 
-public class CharsetResponseFilter implements ContainerResponseFilter {
+class CharsetResponseFilter implements ContainerResponseFilter {
 
     /**
      * Filter method called after a response has been provided for a request

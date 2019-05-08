@@ -32,9 +32,9 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  * This is a base class for clients that launch workflows with Cromwell
  */
 public class CromwellLauncher extends BaseLauncher {
-    protected static final String DEFAULT_CROMWELL_VERSION = "36";
+    private static final String DEFAULT_CROMWELL_VERSION = "36";
 
-    protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
+    private Map<String, List<FileProvisioning.FileInfo>> outputMap;
 
     public CromwellLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         super(abstractEntryClient, language, script);
@@ -196,7 +196,7 @@ public class CromwellLauncher extends BaseLauncher {
      * @param gson Gson object
      * @return Object for Cromwell output
      */
-    public Map<String, String> parseOutputObjectFromCromwellStdout(String stdout, Gson gson) {
+    private Map<String, String> parseOutputObjectFromCromwellStdout(String stdout, Gson gson) {
         String outputPrefix = "Final Outputs:";
         int prefixLocation = stdout.indexOf(outputPrefix);
         if (prefixLocation == -1) {

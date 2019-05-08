@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Resources that interact with source control tokens
  */
-public interface SourceControlResourceInterface {
+interface SourceControlResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(SourceControlResourceInterface.class);
 

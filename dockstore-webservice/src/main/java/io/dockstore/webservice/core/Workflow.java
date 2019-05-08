@@ -73,7 +73,7 @@ import org.hibernate.annotations.Check;
 @SuppressWarnings("checkstyle:magicnumber")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
-    static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
+    private static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
     @Enumerated(EnumType.STRING)
@@ -305,7 +305,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return getFileType(this.descriptorType);
     }
 
-    public static SourceFile.FileType getFileType(String descriptorType) {
+    private static SourceFile.FileType getFileType(String descriptorType) {
         SourceFile.FileType fileType;
         if (descriptorType.equalsIgnoreCase(LanguageType.WDL.toString())) {
             fileType = SourceFile.FileType.DOCKSTORE_WDL;

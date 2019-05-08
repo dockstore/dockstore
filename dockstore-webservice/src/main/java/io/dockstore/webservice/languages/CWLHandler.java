@@ -59,7 +59,7 @@ import org.yaml.snakeyaml.error.YAMLException;
  * This class will eventually handle support for understanding CWL
  */
 public class CWLHandler implements LanguageHandlerInterface {
-    public static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {

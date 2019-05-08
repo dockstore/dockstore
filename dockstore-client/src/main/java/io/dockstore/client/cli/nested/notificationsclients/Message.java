@@ -23,12 +23,12 @@ import io.dockstore.client.cli.Client;
  * @author gluu
  * @since 19/01/18
  */
-public class Message {
+class Message {
     // Slack keyword
-    String text;
+    private String text;
     // Slack keyword
     String username = System.getProperty("user.name");
-    String uuid;
+    private String uuid;
     String platform = "Dockstore CLI " + Client.getClientVersion();
 
     public String getUuid() {

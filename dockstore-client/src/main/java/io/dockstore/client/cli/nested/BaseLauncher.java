@@ -18,37 +18,37 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
  * Launchers such as cwltool and cromwell extend this.
  */
 public abstract class BaseLauncher {
-    protected final AbstractEntryClient abstractEntryClient;
-    protected final FileProvisioning fileProvisioning;
+    final AbstractEntryClient abstractEntryClient;
+    final FileProvisioning fileProvisioning;
     // The primary descriptor of the workflow
-    protected File primaryDescriptor;
+    File primaryDescriptor;
     // A zip file for the entire entry
-    protected File zippedEntry;
+    File zippedEntry;
     // Parameter file with all remote files resolved locally
-    protected File provisionedParameterFile;
+    File provisionedParameterFile;
     // Path to original parameter file
-    protected String originalParameterFile;
+    String originalParameterFile;
     // The working directory
     // For local entries this is the parent dir of the primary file
     // For remote entries this is the tmp dir where workflow files are downloaded to
-    protected String workingDirectory;
+    String workingDirectory;
 
     // CWL, WDL, NEXTFLOW
-    protected LanguageType languageType;
-    protected File executionFile;
+    LanguageType languageType;
+    File executionFile;
 
-    protected boolean script;
+    boolean script;
 
-    protected String launcherName;
+    String launcherName;
 
-    public BaseLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+    BaseLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         this.abstractEntryClient = abstractEntryClient;
         this.fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
         this.languageType = language;
         this.script = script;
     }
 
-    public void setLauncherName(String launcherName) {
+    void setLauncherName(String launcherName) {
         this.launcherName = launcherName;
     }
 
@@ -122,8 +122,8 @@ public abstract class BaseLauncher {
      * @param stderr     formatted stderr for output
      * @param executor    help text explaining name of integration
      */
-    public void outputIntegrationOutput(String workingDir, String stdout, String stderr,
-            String executor) {
+    void outputIntegrationOutput(String workingDir, String stdout, String stderr,
+                                 String executor) {
         System.out.println(executor + " stdout:\n" + stdout);
         System.out.println(executor + " stderr:\n" + stderr);
         try {

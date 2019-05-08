@@ -57,7 +57,7 @@ public class ToolWorkflowDeserializer implements JsonDeserializer<SearchClient.E
     }
 
 
-    public class DateDeserializer implements JsonDeserializer<Date> {
+    class DateDeserializer implements JsonDeserializer<Date> {
         public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             return new Date(json.getAsJsonPrimitive().getAsLong());
         }

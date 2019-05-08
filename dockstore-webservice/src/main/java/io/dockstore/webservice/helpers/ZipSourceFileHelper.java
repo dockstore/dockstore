@@ -43,8 +43,8 @@ import org.yaml.snakeyaml.introspector.PropertyUtils;
  */
 public final class ZipSourceFileHelper {
 
-    public static final int ZIP_SIZE_LIMIT = 100_000;
-    public static final int ZIP_ENTRIES_LIMIT = 100;
+    private static final int ZIP_SIZE_LIMIT = 100_000;
+    private static final int ZIP_ENTRIES_LIMIT = 100;
     private static final Logger LOG = LoggerFactory.getLogger(ZipSourceFileHelper.class);
 
     private ZipSourceFileHelper() {
@@ -222,7 +222,7 @@ public final class ZipSourceFileHelper {
     }
 
     // Should move this out of here when other components use dockstore.yml
-    protected static DockstoreYaml readAndPrevalidateDockstoreYml(InputStream inputStream) {
+    private static DockstoreYaml readAndPrevalidateDockstoreYml(InputStream inputStream) {
         Constructor constructor = new Constructor(DockstoreYaml.class);
         constructor.setPropertyUtils(new PropertyUtils() {
             @Override
@@ -252,7 +252,7 @@ public final class ZipSourceFileHelper {
         private final SourceFile primaryDescriptor;
         private final List<SourceFile> allDescriptors;
 
-        public SourceFiles(SourceFile primaryDescriptor, List<SourceFile> allDescriptors) {
+        SourceFiles(SourceFile primaryDescriptor, List<SourceFile> allDescriptors) {
             this.primaryDescriptor = primaryDescriptor;
             this.allDescriptors = allDescriptors;
         }

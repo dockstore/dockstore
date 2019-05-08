@@ -850,11 +850,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
          *
          * @return an internal path, usable only if we know if we have a tool or workflow
          */
-        public String getPath() {
+        String getPath() {
             return registry + "/" + organization + "/" + name;
         }
 
-        public boolean isTool() {
+        boolean isTool() {
             return tool;
         }
     }

@@ -48,7 +48,7 @@ public final class SwaggerUtility {
         unzipFile(zipFile, unzipDirectory, false);
     }
 
-    public static void unzipFile(File zipFile, File unzipDirectory, boolean deleteZip) throws IOException {
+    private static void unzipFile(File zipFile, File unzipDirectory, boolean deleteZip) throws IOException {
         try (ZipFile zipFileActual = new ZipFile(zipFile)) {
             zipFileActual.stream().forEach((ZipEntry zipEntry) -> {
                 if (!zipEntry.isDirectory()) {

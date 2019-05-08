@@ -314,7 +314,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonProperty("last_modified_date")
-    public Date getLastModifiedDate() {
+    Date getLastModifiedDate() {
         return lastModified;
     }
 

@@ -24,7 +24,7 @@ import org.hibernate.SessionFactory;
  */
 public abstract class AbstractDockstoreDAO<T> extends AbstractDAO<T> {
 
-    public AbstractDockstoreDAO(SessionFactory factory) {
+    AbstractDockstoreDAO(SessionFactory factory) {
         super(factory);
     }
 

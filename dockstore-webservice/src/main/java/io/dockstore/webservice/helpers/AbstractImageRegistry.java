@@ -70,7 +70,7 @@ public abstract class AbstractImageRegistry {
      *
      * @return list of namespaces
      */
-    public abstract List<String> getNamespaces();
+    protected abstract List<String> getNamespaces();
 
     /**
      * Get all tags for a given tool
@@ -85,14 +85,14 @@ public abstract class AbstractImageRegistry {
      * @param namespaces
      * @return
      */
-    public abstract List<Tool> getToolsFromNamespace(List<String> namespaces);
+    protected abstract List<Tool> getToolsFromNamespace(List<String> namespaces);
 
     /**
      * Updates each tool with build/general information
      *
      * @param apiTools
      */
-    public abstract void updateAPIToolsWithBuildInformation(List<Tool> apiTools);
+    protected abstract void updateAPIToolsWithBuildInformation(List<Tool> apiTools);
 
     /**
      * Returns the registry associated with the current class
@@ -106,7 +106,7 @@ public abstract class AbstractImageRegistry {
      * @param tool
      * @return
      */
-    public abstract boolean canConvertToAuto(Tool tool);
+    protected abstract boolean canConvertToAuto(Tool tool);
 
     /**
      * Updates/Adds/Deletes tools and their associated tags

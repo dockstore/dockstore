@@ -47,7 +47,7 @@ public final class CWLRunnerFactory {
         CWLRunnerFactory.config = config;
     }
 
-    public static String getCWLRunner() {
+    private static String getCWLRunner() {
         return config.getString("cwlrunner", CWLRunner.CWLTOOL.toString());
     }
 }

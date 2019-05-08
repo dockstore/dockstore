@@ -14,10 +14,10 @@ import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.MultiPart;
 
-public class ApiClientExtended extends ApiClient {
+class ApiClientExtended extends ApiClient {
 
 
-    public void createBodyPart(MultiPart multiPart, String key, Object formObject) {
+    private void createBodyPart(MultiPart multiPart, String key, Object formObject) {
         if (formObject instanceof File) {
             File file = (File)formObject;
             FormDataContentDisposition contentDisp = FormDataContentDisposition.name(key)

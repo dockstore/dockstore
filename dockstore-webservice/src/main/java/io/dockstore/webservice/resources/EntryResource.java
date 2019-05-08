@@ -81,7 +81,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
     public final Integer defaultDiscourseCategoryId = 6;
-    public final Integer testDiscourseCategoryId = 9;
+    private final Integer testDiscourseCategoryId = 9;
 
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;

@@ -94,7 +94,7 @@ public class ToolVersionV1  {
         return url;
     }
 
-    public void setUrl(String url) {
+    private void setUrl(String url) {
         this.url = url;
     }
 

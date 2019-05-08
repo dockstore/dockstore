@@ -627,7 +627,7 @@ public class FileProvisioning {
             this.url = url;
         }
 
-        public String getMetadata() {
+        String getMetadata() {
             return metadata;
         }
 

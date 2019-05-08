@@ -159,11 +159,11 @@ public final class SearchClient {
     public class ElasticSearchObject {
 
         @SerializedName("hits")
-        public HitsExternal hits;
+        HitsExternal hits;
 
         public class HitsExternal {
             @SerializedName("hits")
-            public HitsInternal[] hits;
+            HitsInternal[] hits;
         }
 
         public class HitsInternal {

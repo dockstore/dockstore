@@ -19,5 +19,5 @@ package io.dockstore.common;
  * @author aduncan
  * @since 09/02/18
  */
-public class IntegrationTest {
+class IntegrationTest {
 }

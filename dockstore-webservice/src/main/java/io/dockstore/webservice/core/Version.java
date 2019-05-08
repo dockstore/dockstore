@@ -70,23 +70,25 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tag_id_seq")
     @SequenceGenerator(name = "tag_id_seq", sequenceName = "tag_id_seq")
     @ApiModelProperty(value = "Implementation specific ID for the tag in this web service", position = 0)
-    protected long id;
+    long id;
 
     @Column
     @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 2)
-    protected String reference;
+    String reference;
 
     @Column
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 6)
-    protected String name;
+    String name;
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 22)
+    private
     String commitID;
 
     @Column
     @JsonProperty("last_modified")
     @ApiModelProperty(value = "The last time this image was modified in the image registry", position = 1)
+    private
     Date lastModified;
 
     @Column(columnDefinition = "text default 'UNSET'", nullable = false)
@@ -162,7 +164,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OrderBy("type")
     private final SortedSet<Validation> validations;
 
-    public Version() {
+    Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
         doiStatus = DOIStatus.NOT_REQUESTED;
@@ -199,14 +201,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public abstract String getWorkingDirectory();
 
-    public void update(T version) {
+    void update(T version) {
         valid = version.isValid();
         lastModified = version.getLastModified();
         name = version.getName();
         referenceType = version.getReferenceType();
     }
 
-    public void clone(T version) {
+    void clone(T version) {
         name = version.getName();
         lastModified = version.getLastModified();
         referenceType = version.getReferenceType();

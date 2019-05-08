@@ -21,7 +21,7 @@ package io.dockstore.common;
  */
 public enum LanguageType {
     CWL("cwl"), WDL("wdl"), NEXTFLOW("nfl"), NONE("none");
-    public final String desc;
+    private final String desc;
 
     LanguageType(String name) {
         desc = name;

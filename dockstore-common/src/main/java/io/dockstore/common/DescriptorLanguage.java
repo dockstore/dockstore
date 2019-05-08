@@ -48,7 +48,7 @@ public enum DescriptorLanguage {
         return descriptorLanguageShort;
     }
 
-    public String getFriendlyName() {
+    private String getFriendlyName() {
         return friendlyName;
     }
 
@@ -57,9 +57,9 @@ public enum DescriptorLanguage {
      */
     public static class DescriptorLanguageBean {
 
-        public String value;
+        String value;
 
-        public String friendlyName;
+        String friendlyName;
 
         public DescriptorLanguageBean(DescriptorLanguage descriptorLanguage) {
             this.value = descriptorLanguage.toString();
