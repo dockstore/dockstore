@@ -93,8 +93,7 @@ public final class ApiVersionConverter {
         } else if (SourceFile.TEST_FILE_TYPES.contains(wrapper.getOriginalFile().getType())) {
             return new ToolTestsV1(wrapper);
         } else {
-            ToolDescriptor descriptor = new ToolDescriptor(wrapper);
-            return descriptor;
+            return new ToolDescriptor(wrapper);
         }
     }
 

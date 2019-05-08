@@ -321,8 +321,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
-            Organization organization = organizationDAO.findById(orgId);
-            return organization;
+            return organizationDAO.findById(orgId);
         }
     }
 

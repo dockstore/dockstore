@@ -244,8 +244,7 @@ public class FileProvisioning {
         //#1663
         //pre-encoded paths will also work
         //URI fileIdentifier = URI.create(filepath.replace(" ", "%20"));
-        URI fileIdentifier = URI.create(UrlEscapers.urlFragmentEscaper().escape(filepath));
-        return fileIdentifier;
+        return URI.create(UrlEscapers.urlFragmentEscaper().escape(filepath));
     }
 
     /**
