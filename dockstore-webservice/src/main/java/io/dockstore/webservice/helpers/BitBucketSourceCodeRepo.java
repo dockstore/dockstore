@@ -194,7 +194,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    void updateReferenceType(String repositoryId, Version version) {
+    public void updateReferenceType(String repositoryId, Version version) {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
             return;
         }

@@ -116,7 +116,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
-    @Cascade(CascadeType.DETACH)
+    @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     private final SortedSet<WorkflowVersion> workflowVersions;
 
 

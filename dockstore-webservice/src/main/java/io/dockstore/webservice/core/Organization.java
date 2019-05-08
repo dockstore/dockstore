@@ -6,7 +6,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -18,16 +20,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -49,7 +55,8 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAll", query = "SELECT org FROM Organization org"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name)"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedById", query = "SELECT org FROM Organization org WHERE org.id = :id AND org.status = 'APPROVED'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name) AND org.status = 'APPROVED'")
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name) AND org.status = 'APPROVED'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedSortedByStar", query = "SELECT org FROM Organization org LEFT JOIN org.starredUsers WHERE org.status = 'APPROVED' GROUP BY org.id ORDER BY COUNT(organizationid) DESC")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Organization implements Serializable, Aliasable {
@@ -100,6 +107,13 @@ public class Organization implements Serializable, Aliasable {
     @ApiModelProperty(value = "Display name for an organization (Ex. Ontario Institute for Cancer Research). Not used for links.", position = 9)
     private String displayName;
 
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty(value = "This indicates the users that have starred this organization", required = false, position = 10)
+    @JsonSerialize(using = EntryStarredSerializer.class)
+    @OrderBy("id")
+    private Set<User> starredUsers;
+
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
     private Set<Collection> collections = new HashSet<>();
@@ -122,6 +136,15 @@ public class Organization implements Serializable, Aliasable {
     @Pattern(regexp = "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)")
     @ApiModelProperty(value = "Logo URL", position = 9)
     private String avatarUrl;
+
+    public Organization() {
+        starredUsers = new TreeSet<>();
+    }
+
+    public Organization(long id) {
+        this.id = id;
+        starredUsers = new TreeSet<>();
+    }
 
     public long getId() {
         return id;
@@ -195,6 +218,18 @@ public class Organization implements Serializable, Aliasable {
         this.users = users;
     }
 
+    public Set<User> getStarredUsers() {
+        return starredUsers;
+    }
+
+    public void addStarredUser(User user) {
+        starredUsers.add(user);
+    }
+
+    public boolean removeStarredUser(User user) {
+        return starredUsers.remove(user);
+    }
+
     public Set<Collection> getCollections() {
         return collections;
     }
@@ -236,7 +271,7 @@ public class Organization implements Serializable, Aliasable {
     public void setAliases(Map<String, Alias> aliases) {
         this.aliases = aliases;
     }
-    
+
     public String getDisplayName() {
         return displayName;
     }

@@ -77,6 +77,7 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
@@ -386,6 +387,58 @@ public class WorkflowResource
         // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflow;
+    }
+
+    @PUT
+    @Path("/path/workflow/{repository}/upsertVersion/")
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag to all workflows associated with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
+    public List<Workflow> upsertVersions(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String repository,
+            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+
+        // Create path on Dockstore (not unique across workflows)
+        String dockstoreWorkflowPath = String.join("/", TokenType.GITHUB_COM.toString(), repository);
+
+        // Find all workflows with the given path that are full
+        List<Workflow> workflows = findAllFullWorkflowsByPath(dockstoreWorkflowPath);
+
+        if (workflows.size() > 0) {
+            // All workflows with the same path have the same Git Url
+            String sharedGitUrl = workflows.get(0).getGitUrl();
+
+            // Set up source code interface and ensure token is set up
+            User updatedUser = userDAO.findById(user.getId());
+            final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, updatedUser);
+
+            // Pull new version information from GitHub and update the versions
+            workflows = sourceCodeRepo.upsertVersionForWorkflows(repository, gitReference, workflows);
+
+            // Update each workflow with reference types
+            for (Workflow workflow : workflows) {
+                Set<WorkflowVersion> versions = workflow.getVersions();
+                versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
+            }
+        }
+
+        return findAllFullWorkflowsByPath(dockstoreWorkflowPath);
+    }
+
+    /**
+     * Finds all workflows from a general Dockstore path that are of type FULL
+     * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
+     * @return List of FULL workflows with the given Dockstore path
+     */
+    private List<Workflow> findAllFullWorkflowsByPath(String dockstoreWorkflowPath) {
+        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
+                .stream()
+                .filter(workflow ->
+                        workflow.getMode() == WorkflowMode.FULL)
+                .collect(Collectors.toList());
     }
 
     /**

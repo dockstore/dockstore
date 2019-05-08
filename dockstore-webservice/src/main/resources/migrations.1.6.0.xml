@@ -247,7 +247,7 @@
         <modifyDataType columnName="type" newDataType="clob" tableName="validation"/>
         <modifyDataType columnName="message" newDataType="clob" tableName="validation"/>
     </changeSet>
-    
+
     <changeSet author="dyuen" id="collection_alias">
         <createTable tableName="collection_alias">
             <column name="id" type="BIGINT">

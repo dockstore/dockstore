@@ -243,7 +243,7 @@ public class MetadataResource {
     @Produces({ "text/plain", "application/json" })
     @Path("/runner_dependencies")
     @Operation(summary = "Returns the file containing runner dependencies", description = "Returns the file containing runner dependencies, NO authentication")
-    @ApiResponse(content = @Content(
+    @ApiResponse(description = "The requirements.txt file", content = @Content(
         mediaType = "application/json",
         schema = @Schema(implementation = String.class)))
     @ApiOperation(value = "Returns the file containing runner dependencies.", response = String.class)
@@ -278,7 +278,7 @@ public class MetadataResource {
     @Path("/sourceControlList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of source controls supported on Dockstore", description = "Get the list of source controls supported on Dockstore, NO authentication")
-    @ApiResponse(content = @Content(
+    @ApiResponse(description = "List of source control repositories", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = SourceControl.SourceControlBean.class))))
     @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "NO authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
@@ -293,7 +293,7 @@ public class MetadataResource {
     @Path("/dockerRegistryList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of docker registries supported on Dockstore", description = "Get the list of docker registries supported on Dockstore, NO authentication")
-    @ApiResponse(content = @Content(
+    @ApiResponse(description = "List of Docker registries", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = Registry.RegistryBean.class))))
     @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
@@ -308,7 +308,7 @@ public class MetadataResource {
     @Path("/descriptorLanguageList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of descriptor languages supported on Dockstore", description = "Get the list of descriptor languages supported on Dockstore, NO authentication")
-    @ApiResponse(content = @Content(
+    @ApiResponse(description = "List of descriptor languages", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = DescriptorLanguage.DescriptorLanguageBean.class))))
     @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "NO authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
@@ -323,7 +323,7 @@ public class MetadataResource {
     @Path("/okHttpCachePerformance")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get measures of cache performance", description = "Get measures of cache performance, NO authentication")
-    @ApiResponse(content = @Content(mediaType = "application/json"))
+    @ApiResponse(description = "Cache performance information", content = @Content(mediaType = "application/json"))
     @ApiOperation(value = "Get measures of cache performance.", notes = "NO authentication", response = Map.class)
     public Map<String, String> getCachePerformance() {
         Cache cache = DockstoreWebserviceApplication.getCache();

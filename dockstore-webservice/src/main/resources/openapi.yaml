@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.7.0-alpha.1-SNAPSHOT
+  version: 1.7.0-alpha.2-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -562,8 +562,7 @@ paths:
         "200":
           description: An array of Tools of the input organization.
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/api/ga4gh/v2/extended/tools/{organization}":
     get:
       tags:
@@ -705,8 +704,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /api/ga4gh/v2/metadata:
     get:
       tags:
@@ -1250,8 +1248,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/github:
     post:
       tags:
@@ -1270,8 +1267,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/github.com:
     get:
       tags:
@@ -1295,8 +1291,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/gitlab.com:
     get:
       tags:
@@ -1320,8 +1315,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/google:
     post:
       tags:
@@ -1339,8 +1333,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/quay.io:
     get:
       tags:
@@ -1364,8 +1357,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/auth/tokens/{tokenId}":
     get:
       tags:
@@ -1393,8 +1385,7 @@ paths:
         "404":
           description: Token not found
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - tokens
@@ -1413,8 +1404,7 @@ paths:
         "400":
           description: Invalid token value
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /containers/dockerRegistryList:
     get:
       tags:
@@ -1477,8 +1467,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/hostedEntry/{entryId}":
     delete:
       tags:
@@ -1508,8 +1497,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     patch:
       tags:
         - hosted
@@ -1534,8 +1522,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/namespace/{namespace}/published":
     get:
       tags:
@@ -1587,8 +1574,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/path/tool/{repository}/published":
     get:
       tags:
@@ -1642,8 +1628,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/path/{repository}":
     get:
       tags:
@@ -1668,8 +1653,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/path/{repository}/published":
     get:
       tags:
@@ -1801,8 +1785,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/schema/{containerId}/published":
     get:
       tags:
@@ -1859,8 +1842,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - containers
@@ -1887,8 +1869,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - containers
@@ -1907,8 +1888,7 @@ paths:
         "400":
           description: "Invalid "
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/cwl":
     get:
       tags:
@@ -1938,8 +1918,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/cwl/{relative-path}":
     get:
       tags:
@@ -1974,8 +1953,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/dockerfile":
     get:
       tags:
@@ -2005,8 +1983,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/labels":
     put:
       tags:
@@ -2039,8 +2016,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/publish":
     post:
       tags:
@@ -2066,8 +2042,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/refresh":
     get:
       tags:
@@ -2091,8 +2066,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/requestDOI/{tagId}":
     post:
       tags:
@@ -2125,8 +2099,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/secondaryCwl":
     get:
       tags:
@@ -2158,8 +2131,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/secondaryWdl":
     get:
       tags:
@@ -2191,8 +2163,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/star":
     put:
       tags:
@@ -2214,8 +2185,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/starredUsers":
     get:
       tags:
@@ -2274,8 +2244,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - containertags
@@ -2309,8 +2278,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/tags/{tagId}":
     delete:
       tags:
@@ -2337,8 +2305,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/testParameterFiles":
     get:
       tags:
@@ -2380,8 +2347,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - containers
@@ -2432,8 +2398,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - containers
@@ -2482,8 +2447,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/unstar":
     delete:
       tags:
@@ -2503,8 +2467,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/updateTagPaths":
     put:
       tags:
@@ -2531,8 +2494,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/users":
     get:
       tags:
@@ -2558,8 +2520,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/verifiedSources":
     get:
       tags:
@@ -2616,8 +2577,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/wdl":
     get:
       tags:
@@ -2647,8 +2607,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/wdl/{relative-path}":
     get:
       tags:
@@ -2683,8 +2642,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{toolId}/defaultVersion":
     put:
       tags:
@@ -2715,8 +2673,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{toolId}/zip/{tagId}":
     get:
       tags:
@@ -2743,8 +2700,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/entries/{id}/aliases":
     put:
       tags:
@@ -2777,8 +2733,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/entries/{id}/collections":
     get:
       tags:
@@ -2838,8 +2793,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /metadata/config.json:
     get:
       tags:
@@ -3048,8 +3002,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /organizations/all:
     get:
       tags:
@@ -3079,8 +3032,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/collections/{alias}/aliases":
     get:
       tags:
@@ -3134,8 +3086,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/name/{name}":
     get:
       tags:
@@ -3159,8 +3110,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{alias}/aliases":
     get:
       tags:
@@ -3206,8 +3156,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
@@ -3238,8 +3187,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/aliases":
     put:
       tags:
@@ -3272,8 +3220,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/approve":
     post:
       tags:
@@ -3297,8 +3244,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/collections":
     get:
       tags:
@@ -3331,8 +3277,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     post:
       tags:
         - organizations
@@ -3362,8 +3307,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/collections/{collectionId}":
     get:
       tags:
@@ -3395,8 +3339,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
@@ -3433,8 +3376,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/collections/{collectionId}/description":
     get:
       tags:
@@ -3466,8 +3408,7 @@ paths:
               schema:
                 type: string
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
@@ -3504,8 +3445,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/collections/{collectionId}/entry":
     post:
       tags:
@@ -3543,8 +3483,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - organizations
@@ -3581,8 +3520,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/description":
     get:
       tags:
@@ -3607,8 +3545,7 @@ paths:
               schema:
                 type: string
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
@@ -3638,8 +3575,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/events":
     get:
       tags:
@@ -3686,8 +3622,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Event"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/invitation":
     post:
       tags:
@@ -3713,8 +3648,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/members":
     get:
       tags:
@@ -3742,8 +3676,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/reject":
     post:
       tags:
@@ -3767,8 +3700,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/request":
     post:
       tags:
@@ -3792,8 +3724,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/user":
     post:
       tags:
@@ -3833,8 +3764,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
@@ -3875,8 +3805,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - organizations
@@ -3902,8 +3831,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/users/{username}":
     put:
       tags:
@@ -3940,8 +3868,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationName}/collections/{collectionName}/name":
     get:
       tags:
@@ -3971,8 +3898,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/checkUser/{username}":
     get:
       tags:
@@ -3995,8 +3921,7 @@ paths:
               schema:
                 type: boolean
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/starredTools:
     get:
       tags:
@@ -4014,8 +3939,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/starredWorkflows:
     get:
       tags:
@@ -4033,8 +3957,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/updateUserMetadata:
     get:
       tags:
@@ -4052,8 +3975,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user:
     get:
       tags:
@@ -4069,8 +3991,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - users
@@ -4085,8 +4006,7 @@ paths:
               schema:
                 type: boolean
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user/changeUsername:
     post:
       tags:
@@ -4109,8 +4029,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user/extended:
     get:
       tags:
@@ -4126,8 +4045,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ExtendedUserData"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user/memberships:
     get:
       tags:
@@ -4146,8 +4064,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user/updateUserMetadata:
     get:
       tags:
@@ -4173,8 +4090,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/user/{userId}/limits":
     get:
       tags:
@@ -4198,8 +4114,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Limits"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - users
@@ -4229,8 +4144,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Limits"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/username/{username}":
     get:
       tags:
@@ -4253,8 +4167,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}":
     get:
       tags:
@@ -4278,8 +4191,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/containers":
     get:
       tags:
@@ -4305,8 +4217,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/containers/published":
     get:
       tags:
@@ -4332,8 +4243,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/containers/refresh":
     get:
       tags:
@@ -4359,8 +4269,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/containers/{organization}/refresh":
     get:
       tags:
@@ -4393,8 +4302,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens":
     get:
       tags:
@@ -4420,8 +4328,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens/dockstore":
     get:
       tags:
@@ -4447,8 +4354,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens/github.com":
     get:
       tags:
@@ -4474,8 +4380,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens/gitlab.com":
     get:
       tags:
@@ -4501,8 +4406,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens/quay.io":
     get:
       tags:
@@ -4528,8 +4432,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/workflows":
     get:
       tags:
@@ -4555,8 +4458,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/workflows/published":
     get:
       tags:
@@ -4582,8 +4484,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/workflows/refresh":
     get:
       tags:
@@ -4609,8 +4510,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/workflows/{organization}/refresh":
     get:
       tags:
@@ -4643,8 +4543,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /workflows/hostedEntry:
     post:
       tags:
@@ -4691,8 +4590,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/hostedEntry/{entryId}":
     post:
       tags:
@@ -4725,8 +4623,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - hosted
@@ -4755,8 +4652,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     patch:
       tags:
         - hosted
@@ -4781,8 +4677,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /workflows/manualRegister:
     post:
       tags:
@@ -4835,8 +4730,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/organization/{organization}/published":
     get:
       tags:
@@ -4882,8 +4776,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/path/entry/{repository}/published":
     get:
       tags:
@@ -4933,8 +4826,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/path/workflow/{repository}/actions":
     get:
       tags:
@@ -4964,8 +4856,7 @@ paths:
                     - DELETE
                     - SHARE
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/path/workflow/{repository}/permissions":
     get:
       tags:
@@ -4990,8 +4881,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Permission"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - workflows
@@ -5031,8 +4921,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Permission"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     patch:
       tags:
         - workflows
@@ -5064,8 +4953,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Permission"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/path/workflow/{repository}/published":
     get:
       tags:
@@ -5093,6 +4981,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Workflow"
+  "/workflows/path/workflow/{repository}/upsertVersion":
+    put:
+      tags:
+        - workflows
+      summary: Add or update a workflow version for a given GitHub tag to all workflows
+        associated with the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function.
+      operationId: upsertVersions
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+        - name: gitReference
+          in: query
+          description: Git reference for new GitHub tag
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/workflows/path/{repository}":
     get:
       tags:
@@ -5117,8 +5039,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /workflows/published:
     get:
       tags:
@@ -5224,8 +5145,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SharedWorkflows"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{entryId}/registerCheckerWorkflow/{descriptorType}":
     post:
       tags:
@@ -5273,8 +5193,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}":
     get:
       tags:
@@ -5305,8 +5224,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - workflows
@@ -5332,8 +5250,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/cwl":
     get:
       tags:
@@ -5363,8 +5280,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/cwl/{relative-path}":
     get:
       tags:
@@ -5399,8 +5315,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/dag/{workflowVersionId}":
     get:
       tags:
@@ -5432,8 +5347,7 @@ paths:
               schema:
                 type: string
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/defaultVersion":
     put:
       tags:
@@ -5464,8 +5378,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/labels":
     put:
       tags:
@@ -5498,8 +5411,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/nextflow":
     get:
       tags:
@@ -5529,8 +5441,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/nextflow/{relative-path}":
     get:
       tags:
@@ -5565,8 +5476,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/publish":
     post:
       tags:
@@ -5592,8 +5502,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/refresh":
     get:
       tags:
@@ -5617,8 +5526,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/requestDOI/{workflowVersionId}":
     put:
       tags:
@@ -5651,8 +5559,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkflowVersion"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/resetVersionPaths":
     put:
       tags:
@@ -5679,8 +5586,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/restub":
     get:
       tags:
@@ -5704,8 +5610,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/secondaryCwl":
     get:
       tags:
@@ -5737,8 +5642,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/secondaryNextflow":
     get:
       tags:
@@ -5770,8 +5674,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/secondaryWdl":
     get:
       tags:
@@ -5803,8 +5706,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/star":
     put:
       tags:
@@ -5826,8 +5728,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/starredUsers":
     get:
       tags:
@@ -5883,8 +5784,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - workflows
@@ -5926,8 +5826,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - workflows
@@ -5967,8 +5866,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/tools/{workflowVersionId}":
     get:
       tags:
@@ -6000,8 +5898,7 @@ paths:
               schema:
                 type: string
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/unstar":
     delete:
       tags:
@@ -6021,8 +5918,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/users":
     get:
       tags:
@@ -6048,8 +5944,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/verifiedSources":
     get:
       tags:
@@ -6106,8 +6001,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkflowVersion"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/wdl":
     get:
       tags:
@@ -6137,8 +6031,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/wdl/{relative-path}":
     get:
       tags:
@@ -6173,8 +6066,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/workflowVersions":
     put:
       tags:
@@ -6209,8 +6101,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkflowVersion"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/zip/{workflowVersionId}":
     get:
       tags:
@@ -6237,8 +6128,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
 externalDocs:
   description: Dockstore documentation
   url: https://www.dockstore.org/docs/getting-started
@@ -7105,7 +6995,6 @@ components:
       properties:
         star:
           type: boolean
-          readOnly: true
     Tag:
       type: object
       required:

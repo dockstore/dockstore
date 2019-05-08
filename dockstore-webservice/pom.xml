@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.7.0-alpha.2-SNAPSHOT</version>
+        <version>1.7.0-alpha.3-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -53,27 +53,27 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.7.0-alpha.2-SNAPSHOT</version>
+            <version>1.7.0-alpha.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.7.0-alpha.2-SNAPSHOT</version>
+            <version>1.7.0-alpha.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.7.0-alpha.2-SNAPSHOT</version>
+            <version>1.7.0-alpha.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.7.0-alpha.2-SNAPSHOT</version>
+            <version>1.7.0-alpha.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.0-alpha.2-SNAPSHOT</version>
+            <version>1.7.0-alpha.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -533,7 +533,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.0-alpha.2-SNAPSHOT</version>
+            <version>1.7.0-alpha.3-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -634,6 +634,12 @@
             <artifactId>groovy</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.11.86</version>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sqs</artifactId>
@@ -965,6 +971,7 @@
                     <outputFileName>openapi</outputFileName>
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
                     <outputFormat>YAML</outputFormat>
+                    <openapiFilePath>${project.basedir}/src/main/resources/configurationFilePath.yaml</openapiFilePath>
                     <resourcePackages>
                         <package>io.swagger.api</package>
                         <package>io.swagger.model</package>
@@ -972,7 +979,6 @@
                         <package>io.dockstore.webservice.resources.rss</package>
                         <package>io.dockstore.webservice.resources.proposedGA4GH</package>
                     </resourcePackages>
-                    <prettyPrint>true</prettyPrint>
                     <objectMapperProcessorClass>io.swagger.OrderedObjectMapperProcessor</objectMapperProcessorClass>
                 </configuration>
                 <executions>

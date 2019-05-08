@@ -28,4 +28,20 @@
             <column name="topicid" type="BIGINT"/>
         </addColumn>
     </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addStarredOrganizations">
+        <createTable tableName="starred_organizations">
+            <column name="userid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
+            </column>
+            <column name="organizationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addUserIdStarOrgConstratint">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="starred_organizations" constraintName="fk_userIdStarredOrganizations" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstratint">
+        <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" referencedColumnNames="id" referencedTableName="organization"/>
+    </changeSet>
 </databaseChangeLog>
