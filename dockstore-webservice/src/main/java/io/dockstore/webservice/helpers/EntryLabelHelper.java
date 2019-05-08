@@ -36,7 +36,7 @@ import org.apache.http.HttpStatus;
 class EntryLabelHelper<T extends Entry> {
     private LabelDAO labelDAO;
 
-    public EntryLabelHelper(LabelDAO lDAO) {
+    EntryLabelHelper(LabelDAO lDAO) {
         this.labelDAO = lDAO;
     }
 

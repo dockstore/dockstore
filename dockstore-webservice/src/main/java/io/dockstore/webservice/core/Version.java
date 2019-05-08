@@ -82,13 +82,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 22)
-    private
     String commitID;
 
     @Column
     @JsonProperty("last_modified")
     @ApiModelProperty(value = "The last time this image was modified in the image registry", position = 1)
-    private
     Date lastModified;
 
     @Column(columnDefinition = "text default 'UNSET'", nullable = false)

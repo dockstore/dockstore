@@ -82,7 +82,7 @@ import org.hibernate.annotations.Check;
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tool extends Entry<Tool, Tag> {
 
-    private static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
+    public static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)

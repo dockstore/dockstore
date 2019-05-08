@@ -73,7 +73,7 @@ import org.hibernate.annotations.Check;
 @SuppressWarnings("checkstyle:magicnumber")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
-    private static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
+    public static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
     @Enumerated(EnumType.STRING)

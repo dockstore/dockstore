@@ -63,21 +63,6 @@ components:
       - topic
       type: object
     CollectionOrganization:
-      properties:
-        collectionDisplayName:
-          type: string
-        collectionId:
-          format: int64
-          type: integer
-        collectionName:
-          type: string
-        organizationDisplayName:
-          type: string
-        organizationId:
-          format: int64
-          type: integer
-        organizationName:
-          type: string
       type: object
     Config:
       properties:
@@ -129,11 +114,6 @@ components:
           type: string
       type: object
     DescriptorLanguageBean:
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
       type: object
     Entry:
       properties:
@@ -395,17 +375,7 @@ components:
       type: object
     RegistryBean:
       properties:
-        customDockerPath:
-          type: string
-        dockerPath:
-          type: string
         enum:
-          type: string
-        friendlyName:
-          type: string
-        privateOnly:
-          type: string
-        url:
           type: string
       type: object
     SharedWorkflows:
@@ -422,11 +392,6 @@ components:
           type: array
       type: object
     SourceControlBean:
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
       type: object
     SourceFile:
       properties:
@@ -3180,7 +3145,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:

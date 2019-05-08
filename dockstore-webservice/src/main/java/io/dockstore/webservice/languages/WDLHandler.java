@@ -60,9 +60,11 @@ import wdl4s.parser.WdlParser;
  * This class will eventually handle support for understanding WDL
  */
 public class WDLHandler implements LanguageHandlerInterface {
+    static final String WDL_SYNTAX_ERROR = "There is a syntax error or your WDL version is greater than draft-2. Please check the WDL file.";
+
     private static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-    public static final String WDL_SYNTAX_ERROR = "There is a syntax error or your WDL version is greater than draft-2. Please check the WDL file.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
+
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {

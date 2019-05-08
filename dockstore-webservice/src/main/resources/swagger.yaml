@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.2"
+  version: "1.7.0-alpha.3-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -5958,21 +5958,6 @@ definitions:
         description: "Short description of the collection"
   CollectionOrganization:
     type: "object"
-    properties:
-      collectionId:
-        type: "integer"
-        format: "int64"
-      collectionName:
-        type: "string"
-      collectionDisplayName:
-        type: "string"
-      organizationId:
-        type: "integer"
-        format: "int64"
-      organizationName:
-        type: "string"
-      organizationDisplayName:
-        type: "string"
   Config:
     type: "object"
     properties:
@@ -6025,11 +6010,6 @@ definitions:
     description: "Configuration information for UI clients of the Dockstore webservice."
   DescriptorLanguageBean:
     type: "object"
-    properties:
-      value:
-        type: "string"
-      friendlyName:
-        type: "string"
   DockstoreTool:
     type: "object"
     required:
@@ -6691,16 +6671,6 @@ definitions:
   RegistryBean:
     type: "object"
     properties:
-      dockerPath:
-        type: "string"
-      friendlyName:
-        type: "string"
-      url:
-        type: "string"
-      privateOnly:
-        type: "string"
-      customDockerPath:
-        type: "string"
       enum:
         type: "string"
   SharedWorkflows:
@@ -6718,11 +6688,6 @@ definitions:
           $ref: "#/definitions/Workflow"
   SourceControlBean:
     type: "object"
-    properties:
-      value:
-        type: "string"
-      friendlyName:
-        type: "string"
   SourceFile:
     type: "object"
     required:
