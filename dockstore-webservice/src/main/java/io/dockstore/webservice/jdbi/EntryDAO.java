@@ -62,8 +62,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     EntryDAO(SessionFactory factory) {
         super(factory);
-        /**
-         * ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class
+        /*
+          ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class
          */
         this.typeOfT = (Class<T>)((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
