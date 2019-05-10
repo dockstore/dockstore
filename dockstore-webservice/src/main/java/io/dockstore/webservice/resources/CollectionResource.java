@@ -109,7 +109,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId) {
 
-        if (!user.isPresent()) {
+        if (user.isEmpty()) {
             // No user given, only show collections from approved organizations
             Collection collection = collectionDAO.findById(collectionId);
             throwExceptionForNullCollection(collection);
@@ -132,7 +132,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization name.", required = true) @PathParam("organizationName") String organizationName,
             @ApiParam(value = "Collection name.", required = true) @PathParam("collectionName") String collectionName) {
 
-        if (!user.isPresent()) {
+        if (user.isEmpty()) {
             // No user given, only show collections from approved organizations
             Organization organization = organizationDAO.findApprovedByName(organizationName);
             if (organization == null) {
@@ -291,7 +291,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, responseContainer = "List", response = Collection.class)
     public List<Collection> getCollectionsFromOrganization(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId, @ApiParam(value = "Included fields") @QueryParam("include") String include) {
-        if (!user.isPresent()) {
+        if (user.isEmpty()) {
             Organization organization = organizationDAO.findApprovedById(organizationId);
             throwExceptionForNullOrganization(organization);
         } else {

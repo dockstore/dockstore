@@ -176,7 +176,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public long countAllPublished(Optional<String> filter) {
-        if (!filter.isPresent()) {
+        if (filter.isEmpty()) {
             return countAllPublished();
         }
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
