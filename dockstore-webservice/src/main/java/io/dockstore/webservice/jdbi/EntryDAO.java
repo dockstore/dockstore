@@ -143,10 +143,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
         EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
-        List<CollectionOrganization> collectionOrganizations = entityManager
+        return entityManager
                 .createNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId", CollectionOrganization.class)
                 .setParameter("entryId", entryId).getResultList();
-        return collectionOrganizations;
     }
 
     public T findPublishedById(long id) {
