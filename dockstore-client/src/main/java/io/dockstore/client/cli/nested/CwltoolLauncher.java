@@ -66,7 +66,8 @@ public class CwltoolLauncher extends BaseLauncher {
         if (outputMap.size() > 0) {
             System.out.println("Provisioning your output files to their final destinations");
             List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = CWLClient.registerOutputFiles(outputMap, outputObj, "");
-            this.fileProvisioning.uploadFiles(outputList);
+            // short circuit file provisioning because the paths are screwed up
+            // this.fileProvisioning.uploadFiles(outputList);
         }
     }
 

@@ -1088,11 +1088,11 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
             return outputSet;
         }
         Path path = Paths.get(cwlOutputPath);
-        if (!path.isAbsolute() || !java.nio.file.Files.exists(path)) {
-            // changing the cwlOutput path to an absolute path (bunny uses absolute, cwltool uses relative, but can change?!)
-            Path currentRelativePath = Paths.get("");
-            cwlOutputPath = currentRelativePath.toAbsolutePath().toString() + cwlOutputPath;
-        }
+        //        if (!path.isAbsolute() || !java.nio.file.Files.exists(path)) {
+        //            // changing the cwlOutput path to an absolute path (bunny uses absolute, cwltool uses relative, but can change?!)
+        //            Path currentRelativePath = Paths.get("");
+        //            cwlOutputPath = currentRelativePath.toAbsolutePath().toString() + cwlOutputPath;
+        //        }
 
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
         System.out.println("Registering: #" + key + " to provision from " + cwlOutputPath + " to : " + file.getUrl());
