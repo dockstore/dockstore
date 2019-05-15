@@ -66,7 +66,7 @@ There are two types of roles available:
 Membership can be updated on the membership tab of the organization page. A maintainer cannot delete their own membership.
 
 When a user is requested to join an organization, they will receive an invite. 
-Pending invitatons are displayed on the `requests` tab of the [accounts](https://dockstore.org/accounts) page and here a user can either accept or reject the request.
+Pending invitations are displayed on the `requests` tab of the [accounts](https://dockstore.org/accounts) page and here a user can either accept or reject the request.
 
 ## Collections
 Collections are a way of gathering related tools and workflows in an easily accessible location. 
