@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.7.0-alpha.2-SNAPSHOT
+  version: 1.7.0-alpha.4-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -3725,6 +3725,77 @@ paths:
                 $ref: "#/components/schemas/Organization"
       security:
         - BEARER: []
+  "/organizations/{organizationId}/star":
+    put:
+      tags:
+        - organizations
+      summary: Star an organization.
+      description: ""
+      operationId: starOrganization
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization to star.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StarRequest"
+        description: StarRequest to star an organization for a user
+        required: true
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+  "/organizations/{organizationId}/starredUsers":
+    get:
+      tags:
+        - organizations
+      summary: Returns list of users who starred the given approved organization.
+      description: ""
+      operationId: getStarredUsersForApprovedOrganization
+      parameters:
+        - name: organizationId
+          in: path
+          description: Get starred users of an approved organization by id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+  "/organizations/{organizationId}/unstar":
+    delete:
+      tags:
+        - organizations
+      summary: Unstar an organization.
+      description: ""
+      operationId: unstarOrganization
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization to unstar.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   "/organizations/{organizationId}/user":
     post:
       tags:
@@ -3920,6 +3991,24 @@ paths:
             application/json:
               schema:
                 type: boolean
+      security:
+        - BEARER: []
+  /users/starredOrganizations:
+    get:
+      tags:
+        - users
+      summary: Get the logged-in user's starred organizations.
+      description: ""
+      operationId: getStarredOrganizations
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
       security:
         - BEARER: []
   /users/starredTools:
@@ -6846,6 +6935,12 @@ components:
           type: string
           description: Logo URL
           pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
+        starredUsers:
+          type: array
+          description: This indicates the users that have starred this organization
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/User"
     OrganizationUser:
       type: object
       required:
