@@ -25,7 +25,7 @@ Versions of your tool for most tools are harvested from the list of Tags for an 
 
 For citing Dockstore as a paper, take a look at our [F1000 paper](http://dx.doi.org/10.12688/f1000research.10137.1).
 
-For citing the actual code, we recommend looking at our Zenodo entry. You will find a variety of citation styles and ways to export it at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.321679.svg)](https://doi.org/10.5281/zenodo.321679).
+For citing the actual code, we recommend looking at our Zenodo entry. You will find a variety of citation styles and ways to export it at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.321679.svg)](http://doi.org/10.5281/zenodo.2630727).
 
 ## How do I get more space inside my CWL tool running in a container?
 
