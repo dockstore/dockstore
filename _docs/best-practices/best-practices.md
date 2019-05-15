@@ -2,6 +2,8 @@
 title: CWL Best Practices
 permalink: /docs/publisher-tutorials/best-practices/
 ---
+<p>&nbsp;</p>
+
 {% include_relative best-practices-intro.md %}
 
 ## Authorship Metadata

@@ -2,6 +2,9 @@
 title: Nextflow Best Practices
 permalink: /docs/publisher-tutorials/nfl-best-practices/
 ---
+
+<p>&nbsp;</p> 
+
 {% include_relative best-practices-intro.md %}
 
 ## Authorship Metadata
