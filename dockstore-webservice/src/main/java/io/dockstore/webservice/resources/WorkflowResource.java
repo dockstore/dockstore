@@ -16,9 +16,13 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -102,6 +106,16 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
+import io.swagger.zenodo.client.ApiClient;
+import io.swagger.zenodo.client.api.ActionsApi;
+import io.swagger.zenodo.client.api.DepositsApi;
+import io.swagger.zenodo.client.api.FilesApi;
+import io.swagger.zenodo.client.model.Author;
+import io.swagger.zenodo.client.model.Deposit;
+import io.swagger.zenodo.client.model.DepositMetadata;
+import io.swagger.zenodo.client.model.DepositionFile;
+import io.swagger.zenodo.client.model.NestedDepositMetadata;
+import io.swagger.zenodo.client.model.RelatedIdentifier;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -668,7 +682,14 @@ public class WorkflowResource
         if (workflowVersion.getDoiStatus() != Version.DOIStatus.CREATED) {
             DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
             generator.createDOIForWorkflow(workflowId, workflowVersionId);
-            workflowVersion.setDoiStatus(Version.DOIStatus.REQUESTED);
+
+
+
+            registerZenodoDOIForWorkflow(workflow, workflowVersion);
+            //workflowVersion.setDoiStatus(Version.DOIStatus.CREATED);
+
+            //generator.createDOIForWorkflow(workflowId, workflowVersionId);
+            //workflowVersion.setDoiStatus(Version.DOIStatus.REQUESTED);
         }
 
         Workflow result = workflowDAO.findById(workflowId);
@@ -677,6 +698,94 @@ public class WorkflowResource
         return result.getWorkflowVersions();
 
     }
+
+
+    /**
+     * Register a Zenodo DOI for the workflow version
+     * @param workflow    workflow for which DOI is registered
+     * @param workflowVersion workflow version for which DOI is registered
+     */
+    private void registerZenodoDOIForWorkflow(Workflow workflow, WorkflowVersion workflowVersion) {
+
+
+        ApiClient zendoClient = new ApiClient();
+        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
+        String zenodoURL = "https://sandbox.zenodo.org/api";
+        zendoClient.setBasePath(zenodoURL);
+
+        String zenodoAccessToken = System.getProperty("ZENODO_TOKEN");
+        zendoClient.setApiKey(zenodoAccessToken);
+
+
+        // this is working through the quick start to make sure we can do normal operations
+        // http://developers.zenodo.org/#quickstart-upload
+        DepositsApi depositApi = new DepositsApi(zendoClient);
+
+        // take a look at the already published hmmer-docker deposit
+        //Deposit mydeposit = depositApi.getDeposit(291595);
+
+        Deposit deposit = new Deposit();
+        deposit.title("waltsZenodoDeposit");
+
+        Deposit returnDeposit = depositApi.createDeposit(deposit);
+        System.out.println(returnDeposit.toString());
+
+        // upload a new file
+        int depositionID = returnDeposit.getId();
+
+        FilesApi filesApi = new FilesApi(zendoClient);
+
+        java.nio.file.Path tempFile = null;
+        try {
+            tempFile = Files.createTempFile("test", "txt");
+            Files.write(tempFile, Collections.singletonList("foobar content"), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            LOG.error("Failed to create temp file when generating Zenodo DOI", e);
+        }
+
+        DepositionFile file = filesApi.createFile(depositionID, tempFile.toFile(), "test_file.txt");
+        System.out.println(file);
+
+        DepositMetadata depositMetadata = returnDeposit.getMetadata();
+
+        // add some metadata
+        returnDeposit.getMetadata().setTitle("foobar title");
+        returnDeposit.getMetadata().setUploadType(DepositMetadata.UploadTypeEnum.POSTER);
+        returnDeposit.getMetadata().setDescription("This is a first upload");
+
+        RelatedIdentifier relatedIdentifier = new RelatedIdentifier();
+        relatedIdentifier.setIdentifier("https://foowalt");
+        relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
+        returnDeposit.getMetadata().setRelatedIdentifiers(Arrays.asList(relatedIdentifier));
+
+        Author author1 = new Author();
+        //author1.setName("lastname1, firstname1");
+        author1.setName(workflow.getAuthor());
+        //Author author2 = new Author();
+        //author2.setName("lastname2, firstname2");
+        //returnDeposit.getMetadata().setCreators(Arrays.asList(author1, author2));
+        returnDeposit.getMetadata().setCreators(Arrays.asList(author1));
+
+        depositMetadata.setUploadType(DepositMetadata.UploadTypeEnum.SOFTWARE);
+        depositMetadata.setDescription(workflow.getDescription());
+
+        depositMetadata.setVersion(workflowVersion.getName());
+
+
+
+        NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
+        nestedDepositMetadata.setMetadata(returnDeposit.getMetadata());
+
+        depositApi.putDeposit(depositionID, nestedDepositMetadata);
+
+        // publish it
+        ActionsApi actionsApi = new ActionsApi(zendoClient);
+        Deposit publishedDeposit = actionsApi.publishDeposit(depositionID);
+        System.out.println(publishedDeposit);
+
+    }
+
+
 
     @PUT
     @Timed
