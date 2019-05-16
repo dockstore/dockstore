@@ -134,18 +134,12 @@ public class ProgressPrinter {
         final StringBuilder sb = new StringBuilder("\r[");
         if (spinnerIndex < INDETERMINATE_INDICATOR.length()) {
             sb.append(INDETERMINATE_INDICATOR);
-            for (int i = INDETERMINATE_INDICATOR.length(); i < SIZE_OF_PROGRESS_BAR; i++) {
-                sb.append(' ');
-            }
+            sb.append(" ".repeat(SIZE_OF_PROGRESS_BAR - INDETERMINATE_INDICATOR.length()));
         } else {
             final int limit = Math.min(spinnerIndex, SIZE_OF_PROGRESS_BAR - INDETERMINATE_INDICATOR.length());
-            for (int i = 0; i < limit; i++) {
-                sb.append(' ');
-            }
+            sb.append(" ".repeat(limit));
             sb.append(INDETERMINATE_INDICATOR);
-            for (int i = limit + INDETERMINATE_INDICATOR.length(); i < SIZE_OF_PROGRESS_BAR; i++) {
-                sb.append(' ');
-            }
+            sb.append(" ".repeat(SIZE_OF_PROGRESS_BAR - (limit + INDETERMINATE_INDICATOR.length())));
         }
         sb.append("] Unknown size");
         return sb.toString();
