@@ -108,11 +108,13 @@
         <!-- broad - cromwell stuff -->
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl4s-wom_2.11</artifactId>
+            <artifactId>wdl4s-wom_2.12</artifactId>
+            <version>0.15</version>
         </dependency>
         <dependency>
             <groupId>io.spray</groupId>
-            <artifactId>spray-json_2.11</artifactId>
+            <artifactId>spray-json_2.12</artifactId>
+            <version>1.3.2</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
