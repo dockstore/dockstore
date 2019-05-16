@@ -16,16 +16,17 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -63,6 +64,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -115,7 +117,6 @@ import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
 import io.swagger.zenodo.client.model.DepositionFile;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
-import io.swagger.zenodo.client.model.RelatedIdentifier;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -683,8 +684,6 @@ public class WorkflowResource
             DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
             generator.createDOIForWorkflow(workflowId, workflowVersionId);
 
-
-
             registerZenodoDOIForWorkflow(workflow, workflowVersion);
             //workflowVersion.setDoiStatus(Version.DOIStatus.CREATED);
 
@@ -725,16 +724,14 @@ public class WorkflowResource
         //Deposit mydeposit = depositApi.getDeposit(291595);
 
         Deposit deposit = new Deposit();
-        deposit.title("waltsZenodoDeposit");
-
         Deposit returnDeposit = depositApi.createDeposit(deposit);
-        System.out.println(returnDeposit.toString());
-
+        //System.out.println(returnDeposit.toString());
         // upload a new file
         int depositionID = returnDeposit.getId();
 
-        FilesApi filesApi = new FilesApi(zendoClient);
 
+        /*
+        FilesApi filesApi = new FilesApi(zendoClient);
         java.nio.file.Path tempFile = null;
         try {
             tempFile = Files.createTempFile("test", "txt");
@@ -745,18 +742,67 @@ public class WorkflowResource
 
         DepositionFile file = filesApi.createFile(depositionID, tempFile.toFile(), "test_file.txt");
         System.out.println(file);
+        */
+
+        // Add workflow version source files as a zip to the DOI upload deposit
+        // Borrow code from getWorkflowZip
+        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        java.nio.file.Path path = Paths.get(workflowVersion.getWorkingDirectory());
+        if (sourceFiles == null || sourceFiles.size() == 0) {
+            LOG.warn("no source files found to zip when creating DOI");
+        } else {
+
+            String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+            OutputStream outputStream;
+            try {
+                outputStream = new FileOutputStream(fileName);
+            } catch (FileNotFoundException fne) {
+                throw new CustomWebApplicationException("could not create file "
+                        + "outputstream for DOI zip file " + fileName,
+                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+            writeStreamAsZip(sourceFiles, outputStream, path);
+            java.nio.file.Path zipPath = Paths.get(fileName);
+            File zipFile = zipPath.toFile();
+
+            FilesApi filesApi = new FilesApi(zendoClient);
+            DepositionFile file = filesApi.createFile(depositionID, zipFile, fileName);
+        }
+
+
 
         DepositMetadata depositMetadata = returnDeposit.getMetadata();
-
         // add some metadata
-        returnDeposit.getMetadata().setTitle("foobar title");
-        returnDeposit.getMetadata().setUploadType(DepositMetadata.UploadTypeEnum.POSTER);
-        returnDeposit.getMetadata().setDescription("This is a first upload");
+        depositMetadata.setTitle(workflow.getWorkflowPath());
+        depositMetadata.setUploadType(DepositMetadata.UploadTypeEnum.SOFTWARE);
+        depositMetadata.setDescription(workflow.getDescription());
+        depositMetadata.setVersion(workflowVersion.getName());
 
-        RelatedIdentifier relatedIdentifier = new RelatedIdentifier();
-        relatedIdentifier.setIdentifier("https://foowalt");
-        relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
-        returnDeposit.getMetadata().setRelatedIdentifiers(Arrays.asList(relatedIdentifier));
+        // Use the workflow labels as Zendo free form keywords for this deposition.
+        Set<Label> workflowLabels = workflow.getLabels();
+        Iterator labelIter = workflowLabels.iterator();
+        List<String> labelList = new ArrayList<String>();
+        while (labelIter.hasNext()) {
+            String label = ((Label)labelIter.next()).getValue();
+            labelList.add(label);
+        }
+        depositMetadata.setKeywords(labelList);
+
+        /*
+        // Get the aliases for this workflow and add them to the deposit
+        // TODO uses aliases for a workflow version instead
+        Set<String> workflowAliases = workflow.getAliases().keySet();
+        Iterator iter = workflowAliases.iterator();
+        List<RelatedIdentifier> aliasList = new ArrayList<RelatedIdentifier>();
+        while (iter.hasNext()) {
+            RelatedIdentifier relatedIdentifier = new RelatedIdentifier();
+            String workflowAlias = ((String)iter.next());
+            relatedIdentifier.setIdentifier(workflowAlias);
+            relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
+            aliasList.add(relatedIdentifier);
+        }
+        depositMetadata.setRelatedIdentifiers(aliasList);
+        */
 
         Author author1 = new Author();
         //author1.setName("lastname1, firstname1");
@@ -764,18 +810,11 @@ public class WorkflowResource
         //Author author2 = new Author();
         //author2.setName("lastname2, firstname2");
         //returnDeposit.getMetadata().setCreators(Arrays.asList(author1, author2));
-        returnDeposit.getMetadata().setCreators(Arrays.asList(author1));
-
-        depositMetadata.setUploadType(DepositMetadata.UploadTypeEnum.SOFTWARE);
-        depositMetadata.setDescription(workflow.getDescription());
-
-        depositMetadata.setVersion(workflowVersion.getName());
-
+        depositMetadata.setCreators(Arrays.asList(author1));
 
 
         NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
         nestedDepositMetadata.setMetadata(returnDeposit.getMetadata());
-
         depositApi.putDeposit(depositionID, nestedDepositMetadata);
 
         // publish it
