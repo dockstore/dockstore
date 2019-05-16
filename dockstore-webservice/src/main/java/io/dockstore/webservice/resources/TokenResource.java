@@ -339,7 +339,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String googleLoginName = userinfo.getEmail();
         User user = userDAO.findByGoogleEmail(googleLoginName);
 
-        if (registerUser && !authUser.isPresent()) {
+        if (registerUser && authUser.isEmpty()) {
             if (user == null) {
                 user = new User();
                 // Pull user information from Google

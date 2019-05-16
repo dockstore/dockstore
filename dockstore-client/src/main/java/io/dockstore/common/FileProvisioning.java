@@ -244,8 +244,7 @@ public class FileProvisioning {
         //#1663
         //pre-encoded paths will also work
         //URI fileIdentifier = URI.create(filepath.replace(" ", "%20"));
-        URI fileIdentifier = URI.create(UrlEscapers.urlFragmentEscaper().escape(filepath));
-        return fileIdentifier;
+        return URI.create(UrlEscapers.urlFragmentEscaper().escape(filepath));
     }
 
     /**
@@ -285,7 +284,7 @@ public class FileProvisioning {
                         }
                         Files.createLink(localPath, potentialCachedFile);
                     } catch (IOException e) {
-                        LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
+                        LOG.error("Cannot create hard link to cached file, you may want to move your cache \n" + e.getMessage());
                         try {
                             Files.copy(potentialCachedFile, localPath);
                         } catch (IOException e1) {

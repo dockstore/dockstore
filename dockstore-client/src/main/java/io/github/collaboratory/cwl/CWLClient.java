@@ -614,10 +614,9 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         try {
             ArrayList<Map> filesArray = (ArrayList)entry;
             for (Map file : filesArray) {
-                Map lhm = file;
-                if ((lhm.containsKey("path") && lhm.get("path") instanceof String) || (lhm.containsKey("location") && lhm
+                if ((file.containsKey("path") && file.get("path") instanceof String) || (file.containsKey("location") && file
                         .get("location") instanceof String)) {
-                    String path = getPathOrLocation(lhm);
+                    String path = getPathOrLocation(file);
                     // notice I'm putting key:path together so they are unique in the hash
                     if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
                         inputSet.addAll(

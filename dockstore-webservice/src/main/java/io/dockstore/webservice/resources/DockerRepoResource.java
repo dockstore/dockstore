@@ -910,7 +910,7 @@ public class DockerRepoResource
         checkUserCanUpdate(user, tool);
         Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
-        if (!firstTag.isPresent()) {
+        if (firstTag.isEmpty()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
             throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
                 HttpStatus.SC_BAD_REQUEST);
@@ -944,7 +944,7 @@ public class DockerRepoResource
         checkUserCanUpdate(user, tool);
         Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
-        if (!firstTag.isPresent()) {
+        if (firstTag.isEmpty()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
             throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
                 HttpStatus.SC_BAD_REQUEST);
