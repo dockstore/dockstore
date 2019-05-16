@@ -17,8 +17,6 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -28,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
@@ -53,11 +52,14 @@ import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Config;
+import io.swagger.client.model.DescriptorLanguageBean;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.Permission;
 import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.RegistryBean;
 import io.swagger.client.model.SharedWorkflows;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
@@ -744,6 +746,24 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
+    public void testEnumMetadataEndpoints() throws ApiException {
+        ApiClient apiClient = getWebClient();
+        MetadataApi metadataApi = new MetadataApi(apiClient);
+        final List<RegistryBean> dockerRegistries = metadataApi.getDockerRegistries();
+        final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
+        assertNotNull(dockerRegistries);
+        assertNotNull(descriptorLanguages);
+    }
+
+    @Test
+    public void testCacheMetadataEndpoint() throws ApiException{
+        ApiClient apiClient = getWebClient();
+        MetadataApi metadataApi = new MetadataApi(apiClient);
+        final Map<String, Object> cachePerformance = metadataApi.getCachePerformance();
+        assertNotNull(cachePerformance);
+    }
+
+    @Test
     public void testRSSPlusSiteMap() throws ApiException, IOException, ParserConfigurationException, SAXException {
         ApiClient apiClient = getWebClient();
         MetadataApi metadataApi = new MetadataApi(apiClient);
@@ -801,6 +821,17 @@ public class SwaggerClientIT extends BaseIT {
         final Workflow updatedWorkflow = hostedApi.addZip(hostedWorkflow.getId(), new File(smartseqZip));
         // A version should now exist.
         Assert.assertEquals(1, updatedWorkflow.getWorkflowVersions().size());
+    }
+
+    /**
+     * Test that the config endpoint doesn't fail and validates one random property
+     */
+    @Test
+    public void testConfig() {
+        final ApiClient webClient = getWebClient();
+        final MetadataApi metadataApi = new MetadataApi(webClient);
+        final Config config = metadataApi.getConfig();
+        Assert.assertEquals("read:org,user:email", config.getGitHubScope());
     }
 
     /**

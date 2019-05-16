@@ -60,7 +60,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String quayClientID;
 
     @NotEmpty
-    private List<String> githubClientID;
+    private String githubClientID;
 
     @NotEmpty
     private String googleClientID;
@@ -82,7 +82,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String githubRedirectURI;
 
     @NotEmpty
-    private List<String> githubClientSecret;
+    private String githubClientSecret;
 
     @NotEmpty
     private String googleRedirectURI;
@@ -96,14 +96,31 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotEmpty
     private String gitlabClientSecret;
 
+    @NotEmpty
+    private String discourseUrl;
+
+    @NotEmpty
+    private String discourseKey;
+
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
 
     private String sqsURL;
 
+    private String toolTesterBucket = null;
+
     private String authorizerType = null;
 
     private List<String> externalGoogleClientIdPrefixes = new ArrayList<>();
+
+    @Valid
+    @NotNull
+    private UIConfig uiConfig;
+
+    @JsonProperty("toolTesterBucket")
+    public String getToolTesterBucket() {
+        return toolTesterBucket;
+    }
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -183,7 +200,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      */
     @JsonProperty
     @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-    public List<String> getGithubClientID() {
+    public String getGithubClientID() {
         return githubClientID;
     }
 
@@ -191,7 +208,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * @param githubClientID the githubClientID to set
      */
     @JsonProperty
-    public void setGithubClientID(List<String> githubClientID) {
+    public void setGithubClientID(String githubClientID) {
         this.githubClientID = githubClientID;
     }
 
@@ -216,7 +233,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      */
     @JsonProperty
     @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-    public List<String> getGithubClientSecret() {
+    public String getGithubClientSecret() {
         return githubClientSecret;
     }
 
@@ -224,7 +241,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * @param githubClientSecret the githubClientSecret to set
      */
     @JsonProperty
-    public void setGithubClientSecret(List<String> githubClientSecret) {
+    public void setGithubClientSecret(String githubClientSecret) {
         this.githubClientSecret = githubClientSecret;
     }
 
@@ -290,6 +307,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setGitlabClientSecret(String gitlabClientSecret) {
         this.gitlabClientSecret = gitlabClientSecret;
+    }
+
+    public String getDiscourseUrl() {
+        return discourseUrl;
+    }
+
+    public void setDiscourseUrl(String discourseUrl) {
+        this.discourseUrl = discourseUrl;
+    }
+
+    public String getDiscourseKey() {
+        return discourseKey;
+    }
+
+    public void setDiscourseKey(String discourseKey) {
+        this.discourseKey = discourseKey;
     }
 
     @JsonProperty("esconfiguration")
@@ -376,6 +409,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setLimitConfig(LimitConfig limitConfig) {
         this.limitConfig = limitConfig;
+    }
+
+    @JsonProperty
+    public UIConfig getUiConfig() {
+        return uiConfig;
     }
 
     /**
@@ -487,6 +525,188 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setWorkflowVersionLimit(int workflowVersionLimit) {
             this.workflowVersionLimit = workflowVersionLimit;
+        }
+    }
+
+    /**
+     * A subset of properties returned to the UI. Only a subset because some properties that will
+     * be used by the UI are also used by the web service and predate the existences of this class.
+     */
+    public static class UIConfig {
+
+        /**
+         * Must end with a slash
+         */
+        private String discourseUrl;
+
+        private String dnaStackImportUrl;
+        private String fireCloudImportUrl;
+        private String dnaNexusImportUrl;
+        private String terraImportUrl;
+
+        private String gitHubAuthUrl;
+        private String gitHubRedirectPath;
+        private String gitHubScope;
+
+        private String quayIoAuthUrl;
+        private String quayIoRedirectPath;
+        private String quayIoScope;
+
+        private String bitBucketAuthUrl;
+
+        private String gitlabAuthUrl;
+        private String gitlabRedirectPath;
+        private String gitlabScope;
+
+        private String googleScope;
+
+        private String cwlVisualizerUri;
+
+        private boolean enableLaunchWithFireCloud;
+
+
+        public String getDiscourseUrl() {
+            return discourseUrl;
+        }
+
+        public void setDiscourseUrl(String discourseUrl) {
+            this.discourseUrl = discourseUrl;
+        }
+
+        public String getDnaStackImportUrl() {
+            return dnaStackImportUrl;
+        }
+
+        public void setDnaStackImportUrl(String dnaStackImportUrl) {
+            this.dnaStackImportUrl = dnaStackImportUrl;
+        }
+
+        public String getFireCloudImportUrl() {
+            return fireCloudImportUrl;
+        }
+
+        public void setFireCloudImportUrl(String fireCloudImportUrl) {
+            this.fireCloudImportUrl = fireCloudImportUrl;
+        }
+
+        public String getDnaNexusImportUrl() {
+            return dnaNexusImportUrl;
+        }
+
+        public void setDnaNexusImportUrl(String dnaNexusImportUrl) {
+            this.dnaNexusImportUrl = dnaNexusImportUrl;
+        }
+
+        public String getTerraImportUrl() {
+            return terraImportUrl;
+        }
+
+        public void setTerraImportUrl(String terraImportUrl) {
+            this.terraImportUrl = terraImportUrl;
+        }
+
+        public String getGitHubAuthUrl() {
+            return gitHubAuthUrl;
+        }
+
+        public void setGitHubAuthUrl(String gitHubAuthUrl) {
+            this.gitHubAuthUrl = gitHubAuthUrl;
+        }
+
+        public String getGitHubRedirectPath() {
+            return gitHubRedirectPath;
+        }
+
+        public void setGitHubRedirectPath(String gitHubRedirectPath) {
+            this.gitHubRedirectPath = gitHubRedirectPath;
+        }
+
+        public String getGitHubScope() {
+            return gitHubScope;
+        }
+
+        public void setGitHubScope(String gitHubScope) {
+            this.gitHubScope = gitHubScope;
+        }
+
+        public String getQuayIoAuthUrl() {
+            return quayIoAuthUrl;
+        }
+
+        public void setQuayIoAuthUrl(String quayIoAuthUrl) {
+            this.quayIoAuthUrl = quayIoAuthUrl;
+        }
+
+        public String getQuayIoRedirectPath() {
+            return quayIoRedirectPath;
+        }
+
+        public void setQuayIoRedirectPath(String quayIoRedirectPath) {
+            this.quayIoRedirectPath = quayIoRedirectPath;
+        }
+
+        public String getQuayIoScope() {
+            return quayIoScope;
+        }
+
+        public void setQuayIoScope(String quayIoScope) {
+            this.quayIoScope = quayIoScope;
+        }
+
+        public String getBitBucketAuthUrl() {
+            return bitBucketAuthUrl;
+        }
+
+        public void setBitBucketAuthUrl(String bitBucketAuthUrl) {
+            this.bitBucketAuthUrl = bitBucketAuthUrl;
+        }
+
+        public String getGitlabAuthUrl() {
+            return gitlabAuthUrl;
+        }
+
+        public void setGitlabAuthUrl(String gitlabAuthUrl) {
+            this.gitlabAuthUrl = gitlabAuthUrl;
+        }
+
+        public String getGitlabRedirectPath() {
+            return gitlabRedirectPath;
+        }
+
+        public void setGitlabRedirectPath(String gitlabRedirectPath) {
+            this.gitlabRedirectPath = gitlabRedirectPath;
+        }
+
+        public String getGitlabScope() {
+            return gitlabScope;
+        }
+
+        public void setGitlabScope(String gitlabScope) {
+            this.gitlabScope = gitlabScope;
+        }
+
+        public String getGoogleScope() {
+            return googleScope;
+        }
+
+        public void setGoogleScope(String googleScope) {
+            this.googleScope = googleScope;
+        }
+
+        public String getCwlVisualizerUri() {
+            return cwlVisualizerUri;
+        }
+
+        public void setCwlVisualizerUri(String cwlVisualizerUri) {
+            this.cwlVisualizerUri = cwlVisualizerUri;
+        }
+
+        public boolean isEnableLaunchWithFireCloud() {
+            return enableLaunchWithFireCloud;
+        }
+
+        public void setEnableLaunchWithFireCloud(boolean enableLaunchWithFireCloud) {
+            this.enableLaunchWithFireCloud = enableLaunchWithFireCloud;
         }
     }
 }

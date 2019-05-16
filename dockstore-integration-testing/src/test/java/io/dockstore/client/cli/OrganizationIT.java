@@ -1,11 +1,13 @@
 package io.dockstore.client.cli;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -20,6 +22,8 @@ import io.swagger.client.model.Limits;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.StarRequest;
+import io.swagger.client.model.User;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1376,5 +1380,71 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to update a collection with an existing name.");
         }
+    }
+
+    @Test
+    public void testStarringOrganization() {
+        // Setup user
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+
+        // Setup admin
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        // Create org
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        Organization organization = createOrg(organizationsApi);
+
+        // Create user and star request body
+        UsersApi usersApi = new UsersApi(webClientUser2);
+        User user = usersApi.getUser();
+        List<User> users = new ArrayList<>();
+        users.add(user);
+        StarRequest body = new StarRequest();
+        body.setStar(false);
+
+        // Should only be able to star approved organizations
+        try {
+            organizationsApi.starOrganization(organization.getId(), body);
+            Assert.fail();
+        } catch (ApiException ex) {
+            Assert.assertEquals("Organization not found", ex.getMessage());
+        }
+
+        // Approve organization and star it
+        organizationsApiAdmin.approveOrganization(organization.getId());
+        organizationsApi.starOrganization(organization.getId(), body);
+
+        assertEquals(1, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
+        assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).get(0).getUsername());
+
+        // Should not be able to star twice
+        try {
+            organizationsApi.starOrganization(organization.getId(), body);
+            Assert.fail();
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains("You cannot star the organization"));
+        }
+
+
+        organizationsApi.unstarOrganization(organization.getId());
+        assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
+
+        // Should not be able to unstar twice
+        try {
+            organizationsApi.unstarOrganization(organization.getId());
+            Assert.fail();
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
+        }
+
+        // Test setting/getting starred users
+        organization.setStarredUsers(users);
+        assertEquals(1, organization.getStarredUsers().size());
+        assertEquals(user.getUsername(), organization.getStarredUsers().get(0).getUsername());
+
+        users.remove(user);
+        organization.setStarredUsers(users);
+        assertEquals(0, organization.getStarredUsers().size());
     }
 }

@@ -108,8 +108,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
 
-    private final List<String> githubClientID;
-    private final List<String> githubClientSecret;
+    private final String githubClientID;
+    private final String githubClientSecret;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final String gitlabClientID;

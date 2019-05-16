@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.User;
 import org.apache.http.HttpStatus;
 
@@ -181,5 +182,17 @@ public interface AuthenticatedResourceInterface {
                     HttpStatus.SC_FORBIDDEN);
             }
         }
+    }
+
+    /**
+     * Check if organization is null
+     *
+     * @param organization organization to check permissions for
+     */
+    default void checkOrganization(Organization organization) {
+        if (organization == null) {
+            throw new CustomWebApplicationException("Organization not found", HttpStatus.SC_NOT_FOUND);
+        }
+
     }
 }

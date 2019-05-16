@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.0-SNAPSHOT"
+  version: "1.7.0-alpha.4"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2535,6 +2535,55 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/CollectionOrganization"
+  /entries/{id}/topic:
+    post:
+      tags:
+      - "entries"
+      summary: "Create a discourse topic for an entry."
+      description: ""
+      operationId: "setDiscourseTopic"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the entry to add a topic to."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "categoryId"
+        in: "query"
+        description: "The id of the category to add a topic to, defaults to Automatic\
+          \ Tool and Workflow Threads (6)."
+        required: false
+        type: "integer"
+        default: 6
+        format: "int32"
+        enum:
+        - 6
+        - 9
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
+  /metadata/config.json:
+    get:
+      tags:
+      - "metadata"
+      summary: "Configuration for UI clients of the API"
+      description: "NO authentication"
+      operationId: "getConfig"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Config"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -2597,11 +2646,9 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
+            type: "object"
+            additionalProperties:
               type: "object"
-              additionalProperties:
-                type: "object"
   /metadata/rss:
     get:
       tags:
@@ -2665,8 +2712,10 @@ paths:
     get:
       tags:
       - "metadata"
-      summary: "List all published workflow and tool paths."
-      description: "NO authentication"
+      summary: "List all available workflow, tool, organization, and collection paths."
+      description: "List all available workflow, tool, organization, and collection\
+        \ paths. Available means published for tools/workflows, and approved for organizations\
+        \ and their respective collections."
       operationId: "sitemap"
       produces:
       - "text/html"
@@ -3426,6 +3475,77 @@ paths:
             $ref: "#/definitions/Organization"
       security:
       - BEARER: []
+  /organizations/{organizationId}/star:
+    put:
+      tags:
+      - "organizations"
+      summary: "Star an organization."
+      description: ""
+      operationId: "starOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization to star."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "StarRequest to star an organization for a user"
+        required: true
+        schema:
+          $ref: "#/definitions/StarRequest"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/starredUsers:
+    get:
+      tags:
+      - "organizations"
+      summary: "Returns list of users who starred the given approved organization."
+      description: ""
+      operationId: "getStarredUsersForApprovedOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Get starred users of an approved organization by id."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/User"
+  /organizations/{organizationId}/unstar:
+    delete:
+      tags:
+      - "organizations"
+      summary: "Unstar an organization."
+      description: ""
+      operationId: "unstarOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization to unstar."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
   /organizations/{organizationId}/user:
     post:
       tags:
@@ -3614,6 +3734,25 @@ paths:
           description: "successful operation"
           schema:
             type: "boolean"
+      security:
+      - BEARER: []
+  /users/starredOrganizations:
+    get:
+      tags:
+      - "users"
+      summary: "Get the logged-in user's starred organizations."
+      description: ""
+      operationId: "getStarredOrganizations"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Organization"
       security:
       - BEARER: []
   /users/starredTools:
@@ -4633,6 +4772,43 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
+  /workflows/path/workflow/{repository}/upsertVersion:
+    put:
+      tags:
+      - "workflows"
+      summary: "Add or update a workflow version for a given GitHub tag to all workflows\
+        \ associated with the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function."
+      operationId: "upsertVersions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "query"
+        description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/path/{repository}:
     get:
       tags:
@@ -5797,6 +5973,56 @@ definitions:
         type: "string"
       organizationDisplayName:
         type: "string"
+  Config:
+    type: "object"
+    properties:
+      discourseUrl:
+        type: "string"
+      dnaStackImportUrl:
+        type: "string"
+      fireCloudImportUrl:
+        type: "string"
+      dnaNexusImportUrl:
+        type: "string"
+      terraImportUrl:
+        type: "string"
+      gitHubAuthUrl:
+        type: "string"
+      gitHubRedirectPath:
+        type: "string"
+      gitHubScope:
+        type: "string"
+      quayIoAuthUrl:
+        type: "string"
+      quayIoRedirectPath:
+        type: "string"
+      quayIoScope:
+        type: "string"
+      bitBucketAuthUrl:
+        type: "string"
+      gitlabAuthUrl:
+        type: "string"
+      gitlabRedirectPath:
+        type: "string"
+      gitlabScope:
+        type: "string"
+      googleScope:
+        type: "string"
+      cwlVisualizerUri:
+        type: "string"
+      enableLaunchWithFireCloud:
+        type: "boolean"
+      githubClientId:
+        type: "string"
+      quayIoClientId:
+        type: "string"
+      bitBucketClientId:
+        type: "string"
+      gitlabClientId:
+        type: "string"
+      googleClientId:
+        type: "string"
+    description: "Configuration information for UI clients of the Dockstore webservice."
   DescriptorLanguageBean:
     type: "object"
     properties:
@@ -5834,12 +6060,12 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       custom_docker_registry_path:
         type: "string"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
         readOnly: true
       has_checker:
         type: "boolean"
@@ -5856,6 +6082,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6048,10 +6278,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6067,6 +6297,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6377,6 +6611,13 @@ definitions:
         position: 9
         description: "Logo URL"
         pattern: "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
+      starredUsers:
+        type: "array"
+        position: 10
+        description: "This indicates the users that have starred this organization"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/User"
   OrganizationUser:
     type: "object"
     required:
@@ -6530,7 +6771,6 @@ definitions:
     properties:
       star:
         type: "boolean"
-        readOnly: true
   Tag:
     type: "object"
     required:
@@ -7102,13 +7342,13 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       parent_id:
         type: "integer"
         format: "int64"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
         readOnly: true
       has_checker:
         type: "boolean"
@@ -7125,6 +7365,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

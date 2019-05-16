@@ -79,6 +79,55 @@ components:
         organizationName:
           type: string
       type: object
+    Config:
+      properties:
+        bitBucketAuthUrl:
+          type: string
+        bitBucketClientId:
+          type: string
+        cwlVisualizerUri:
+          type: string
+        discourseUrl:
+          type: string
+        dnaNexusImportUrl:
+          type: string
+        dnaStackImportUrl:
+          type: string
+        enableLaunchWithFireCloud:
+          type: boolean
+        fireCloudImportUrl:
+          type: string
+        gitHubAuthUrl:
+          type: string
+        gitHubRedirectPath:
+          type: string
+        gitHubScope:
+          type: string
+        githubClientId:
+          type: string
+        gitlabAuthUrl:
+          type: string
+        gitlabClientId:
+          type: string
+        gitlabRedirectPath:
+          type: string
+        gitlabScope:
+          type: string
+        googleClientId:
+          type: string
+        googleScope:
+          type: string
+        quayIoAuthUrl:
+          type: string
+        quayIoClientId:
+          type: string
+        quayIoRedirectPath:
+          type: string
+        quayIoScope:
+          type: string
+        terraImportUrl:
+          type: string
+      type: object
     DescriptorLanguageBean:
       properties:
         friendlyName:
@@ -147,6 +196,9 @@ components:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -258,6 +310,11 @@ components:
           minLength: 3
           pattern: '[a-zA-Z][a-zA-Z\d]*'
           type: string
+        starredUsers:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
         status:
           enum:
           - PENDING
@@ -622,11 +679,32 @@ components:
           type: string
         toolname:
           type: string
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+      type: object
+    ToolTesterLog:
+      properties:
+        filename:
+          type: string
+        logType:
+          enum:
+          - FULL
+          - SUMMARY
+          type: string
+        runner:
+          type: string
+        testFilename:
+          type: string
+        toolId:
+          type: string
+        toolVersionName:
+          type: string
       type: object
     User:
       properties:
@@ -781,6 +859,9 @@ components:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
         users:
           items:
             $ref: '#/components/schemas/User'
@@ -863,6 +944,26 @@ components:
         workingDirectory:
           type: string
       type: object
+  securitySchemes:
+    bearer:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
+externalDocs:
+  description: User documentation for dockstore
+  url: https://docs.dockstore.org/
+info:
+  contact:
+    email: theglobalalliance@genomicsandhealth.org
+    name: Dockstore@ga4gh
+    url: https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506
+  description: The Dockstore API, includes proprietary and GA4GH V1+V2 endpoints
+  license:
+    name: Apache 2.0
+    url: https://github.com/ga4gh/dockstore/blob/develop/LICENSE
+  termsOfService: http://swagger.io/terms/
+  title: Dockstore
+  version: 1.6.0
 openapi: 3.0.1
 paths:
   /api/ga4gh/v1/metadata:
@@ -1082,7 +1183,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       parameters:
       - in: path
         name: organization
@@ -1097,7 +1198,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       responses:
         default:
           content:
@@ -2798,6 +2899,50 @@ paths:
                   $ref: '#/components/schemas/CollectionOrganization'
                 type: array
           description: default response
+  /entries/{id}/topic:
+    post:
+      description: Create a discourse topic for an entry.
+      operationId: setDiscourseTopic
+      parameters:
+      - description: The id of the entry to add a topic to.
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: The id of the category to add a topic to, defaults to Automatic
+          Tool and Workflow Threads (6).
+        in: query
+        name: categoryId
+        required: true
+        schema:
+          default: 6
+          format: int32
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: default response
+      security:
+      - bearer: []
+  /metadata/config.json:
+    get:
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+          description: default response
+      summary: Configuration for UI clients of the API
+      tags:
+      - metadata
   /metadata/descriptorLanguageList:
     get:
       description: Get the list of descriptor languages supported on Dockstore, NO
@@ -2811,6 +2956,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/DescriptorLanguageBean'
                 type: array
+          description: List of descriptor languages
       summary: Get the list of descriptor languages supported on Dockstore
       tags:
       - metadata
@@ -2826,6 +2972,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/RegistryBean'
                 type: array
+          description: List of Docker registries
       summary: Get the list of docker registries supported on Dockstore
       tags:
       - metadata
@@ -2851,9 +2998,10 @@ paths:
           content:
             application/json:
               schema:
-                items:
+                additionalProperties:
                   type: string
-                type: array
+                type: object
+          description: Cache performance information
       summary: Get measures of cache performance
       tags:
       - metadata
@@ -2910,12 +3058,15 @@ paths:
             application/json:
               schema:
                 type: string
+          description: The requirements.txt file
       summary: Returns the file containing runner dependencies
       tags:
       - metadata
   /metadata/sitemap:
     get:
-      description: List all published workflow and tool paths, NO authentication
+      description: List all available workflow, tool, organization, and collection
+        paths. Available means published for tools/workflows, and approved for organizations
+        and their respective collections. NO authentication
       operationId: sitemap
       responses:
         default:
@@ -2927,7 +3078,7 @@ paths:
               schema:
                 type: string
           description: default response
-      summary: List all published workflow and tool paths
+      summary: List all available workflow, tool, organization, and collection paths.
       tags:
       - metadata
   /metadata/sourceControlList:
@@ -2942,6 +3093,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
                 type: array
+          description: List of source control repositories
       summary: Get the list of source controls supported on Dockstore
       tags:
       - metadata
@@ -3134,7 +3286,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -3554,6 +3706,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: default response
+  /organizations/{organizationId}/star:
+    put:
+      operationId: starOrganization
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+  /organizations/{organizationId}/starredUsers:
+    get:
+      operationId: getStarredUsersForApprovedOrganization
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/User'
+                type: array
+                uniqueItems: true
+          description: default response
+  /organizations/{organizationId}/unstar:
+    delete:
+      operationId: unstarOrganization
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
   /organizations/{organizationId}/user:
     delete:
       operationId: deleteUserRole
@@ -3692,6 +3904,88 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: default response
+  /toolTester/logs:
+    get:
+      operationId: getToolTesterLog
+      parameters:
+      - description: TRS Tool Id
+        example: '#workflow/github.com/dockstore/hello_world'
+        in: query
+        name: tool_id
+        required: true
+        schema:
+          type: string
+      - example: v1.0.0
+        in: query
+        name: tool_version_name
+        required: true
+        schema:
+          type: string
+      - example: hello_world.cwl.json
+        in: query
+        name: test_filename
+        required: true
+        schema:
+          type: string
+      - example: cwltool
+        in: query
+        name: runner
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: log_type
+        required: true
+        schema:
+          enum:
+          - FULL
+          - SUMMARY
+          type: string
+      - example: 1554477737092.log
+        in: query
+        name: filename
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: default response
+      summary: Get ToolTester log file
+      tags:
+      - toolTester
+  /toolTester/logs/search:
+    get:
+      operationId: search
+      parameters:
+      - description: TRS Tool Id
+        example: '#workflow/github.com/dockstore/hello_world'
+        in: query
+        name: tool_id
+        required: true
+        schema:
+          type: string
+      - example: v1.0.0
+        in: query
+        name: tool_version_name
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolTesterLog'
+                type: array
+          description: default response
+      summary: Search for ToolTester log files
+      tags:
+      - toolTester
   /users/checkUser/{username}:
     get:
       operationId: checkUserExists
@@ -3712,6 +4006,24 @@ paths:
             application/json:
               schema:
                 type: boolean
+          description: default response
+  /users/starredOrganizations:
+    get:
+      operationId: getStarredOrganizations
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Organization'
+                type: array
+                uniqueItems: true
           description: default response
   /users/starredTools:
     get:
@@ -3782,7 +4094,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -3941,7 +4253,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
@@ -4343,7 +4655,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4633,6 +4945,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+          description: default response
+  /workflows/path/workflow/{repository}/upsertVersion:
+    put:
+      operationId: upsertVersions
+      parameters:
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: gitReference
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
           description: default response
   /workflows/path/{repository}:
     get:
@@ -5598,3 +5937,5 @@ paths:
 tags:
 - description: description of the webservice itself
   name: metadata
+- description: Interactions with the Dockstore-support's ToolTester application
+  name: toolTester

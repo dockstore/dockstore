@@ -183,7 +183,6 @@ public abstract class SourceCodeRepoInterface {
             return workflow;
         }
 
-
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
         workflow.setMode(WorkflowMode.FULL);
 
@@ -525,7 +524,7 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId
      * @param version
      */
-    abstract void updateReferenceType(String repositoryId, Version version);
+    public abstract void updateReferenceType(String repositoryId, Version version);
 
     /**
      * Given a version of a tool or workflow, return the corresponding current commit id

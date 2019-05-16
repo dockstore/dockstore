@@ -23,6 +23,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -1340,5 +1342,49 @@ public class WorkflowIT extends BaseIT {
         if (!importedSourceFileTwo.isPresent()) {
             Assert.fail("Does not properly set the absolute path of the imported file.");
         }
+    }
+
+    /**
+     * NOTE: This test is not normally run. It is only for running locally to confirm that the discourse topic generation is working.
+     *
+     * Adds a discourse topic for a workflow (adds to a Automatic Tool and Workflow Threads - NEED TO DELETE TOPIC)
+     *
+     * Requires you to have the correct discourse information set in the dockstoreTest.yml
+     */
+    @Ignore
+    public void publishWorkflowAndTestDiscourseTopicCreation() {
+        // Category 9 => private testing category
+        final ApiClient curatorApiClient = getWebClient(CURATOR_USERNAME);
+        EntriesApi curatorEntriesApi = new EntriesApi(curatorApiClient);
+        final ApiClient userApiClient = getWebClient(USER_2_USERNAME);
+        WorkflowsApi userWorkflowsApi = new WorkflowsApi(userApiClient);
+
+        // Create a workflow with a random name
+        String workflowName = Long.toString(Instant.now().toEpochMilli());
+        userWorkflowsApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", workflowName, "cwl", "/workflows/dnaseq/transform.cwl.json");
+        final Workflow workflowByPathGithub = userWorkflowsApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW + "/" + workflowName, null);
+        final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId());
+
+        // Publish workflow
+        userWorkflowsApi.publish(workflow.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+
+        // Should not be able to create a topic in category 3 (for example)
+        Integer wrongCategoryId = 3;
+        try {
+            curatorEntriesApi.setDiscourseTopic(workflow.getId(), wrongCategoryId);
+            fail("Should not be able to set discourse topic.");
+        } catch (ApiException ex) {
+        }
+
+        // Should not be able to create a topic for the same workflow in category 9
+        Integer correctCategoryId = 9;
+        try {
+            curatorEntriesApi.setDiscourseTopic(workflow.getId(), correctCategoryId);
+            fail("Should still not be able to set discourse topic.");
+        } catch (ApiException ex) {
+        }
+
     }
 }
