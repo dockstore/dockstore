@@ -267,7 +267,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
      */
     @Override
     protected boolean isValidVersion(WorkflowVersion version) {
-        return !version.getValidations().stream().filter(Validation -> !Validation.isValid()).findFirst().isPresent();
+        return !version.getValidations().stream().anyMatch(Validation -> !Validation.isValid());
     }
 
     @Override

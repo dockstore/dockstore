@@ -620,7 +620,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         user.setHostedEntryCountLimit(limits.getHostedEntryCountLimit());
         user.setHostedEntryVersionsLimit(limits.getHostedEntryVersionLimit());
         // User could be cached by Dockstore or Google token -- invalidate all
-        tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        tokenDAO.findByUserId(user.getId()).forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
         return limits;
     }
 

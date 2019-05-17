@@ -591,6 +591,6 @@ public abstract class SourceCodeRepoInterface {
      * @return True if valid workflow version, false otherwise
      */
     public boolean isValidVersion(WorkflowVersion version) {
-        return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
+        return !version.getValidations().stream().anyMatch(versionValidation -> !versionValidation.isValid());
     }
 }

@@ -194,9 +194,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      */
     default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType, Optional<User> user) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
-        return sourceFiles.entrySet().stream()
-            .filter(entry -> entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor)
-            .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
+        return sourceFiles.values().stream()
+            .filter(sourceFileFileDescriptionImmutablePair -> sourceFileFileDescriptionImmutablePair.getLeft().getType().equals(fileType)
+                    && !sourceFileFileDescriptionImmutablePair.right.primaryDescriptor)
+            .map(ImmutablePair::getLeft).collect(Collectors.toList());
     }
 
     /**
@@ -208,8 +209,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      */
     default List<SourceFile> getAllSourceFiles(long workflowId, String tag, SourceFile.FileType fileType, Optional<User> user) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
-        return sourceFiles.entrySet().stream().filter(entry -> entry.getValue().getLeft().getType().equals(fileType))
-            .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
+        return sourceFiles.values().stream().filter(sourcePair -> sourcePair.getLeft().getType().equals(fileType))
+            .map(ImmutablePair::getLeft).collect(Collectors.toList());
     }
 
     /**

@@ -147,9 +147,9 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
                     List<Tool> tools = repos.getRepositories();
                     // tag all of these with where they came from
-                    tools.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO.toString()));
+                    tools.forEach(container -> container.setRegistry(Registry.QUAY_IO.toString()));
                     // not quite correct, they could be mixed but how can we tell from quay?
-                    tools.stream().forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
+                    tools.forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     toolList.addAll(tools);
                 } catch (IOException ex) {
                     LOG.warn(quayToken.getUsername() + " Exception: {}", ex);

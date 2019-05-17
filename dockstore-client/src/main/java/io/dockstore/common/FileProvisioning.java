@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -469,7 +470,7 @@ public class FileProvisioning {
                     String scheme = uri.getScheme();
                     // if there is a scheme involved, check to see if vfs can handle it
                     if (scheme != null) {
-                        boolean matchingScheme = Stream.of(schemes).anyMatch(s -> s.equals(scheme));
+                        boolean matchingScheme = Arrays.asList(schemes).contains(scheme);
                         if (!matchingScheme) {
                             System.out.println("No matching provision method for " + destPath + " , skipping");
                             return;
