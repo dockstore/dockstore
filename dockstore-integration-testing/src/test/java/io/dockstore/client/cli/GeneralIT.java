@@ -34,8 +34,10 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -801,6 +803,29 @@ public class GeneralIT extends BaseIT {
             failed = true;
         }
         assertTrue("Should throw an expection when not authorized.", failed);
+    }
+
+    @Test
+    public void testToolAlias() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        ContainersApi containersApi = new ContainersApi(webClient);
+        EntriesApi entryApi = new EntriesApi(webClient);
+
+        // Add tool and publish
+        DockstoreTool tool = containersApi.registerManual(getContainer());
+        DockstoreTool refresh = containersApi.refresh(tool.getId());
+
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        containersApi.publish(refresh.getId(), publishRequest);
+
+        // Add alias
+        Entry entry = entryApi.updateAliases(refresh.getId(), "foobar", "");
+        Assert.assertTrue("Should have alias foobar", entry.getAliases().containsKey("foobar"));
+
+        // Get tool by alias
+        DockstoreTool aliasTool = containersApi.getToolByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the tool by alias", aliasTool);
+
     }
 
     /**
