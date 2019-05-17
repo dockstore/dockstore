@@ -12,7 +12,7 @@ tar cvf secrets.tar dockstore-integration-testing/src/test/resources/config_file
 GIT_DIR=`pwd`
 # execute always in the same place to keep generated variable names consistent (sigh)
 # go to a nested dir for the new db testing to maintain a consistent variable name
-CUSTOM_DIR_NAME=discourse_category
+CUSTOM_DIR_NAME=discourse_category_fix
 rm -Rf /tmp/$CUSTOM_DIR_NAME
 mkdir -p /tmp/$CUSTOM_DIR_NAME
 
