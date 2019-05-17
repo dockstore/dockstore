@@ -138,7 +138,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         for (DockstoreTool container : containers) {
             String descriptor = "No";
             String automated = "No";
-            String description = "";
+            String description;
             String gitUrl = "";
 
             if (container.isIsPublished()) {
@@ -171,7 +171,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER);
 
         for (DockstoreTool container : containers) {
-            String description = "";
+            String description;
             String gitUrl = "";
 
             if (container.getGitUrl() != null && !container.getGitUrl().isEmpty()) {

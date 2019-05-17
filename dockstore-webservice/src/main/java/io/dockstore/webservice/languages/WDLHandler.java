@@ -207,7 +207,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      */
     public VersionTypeValidation validateEntrySet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
         File tempMainDescriptor = null;
-        String mainDescriptor = null;
+        String mainDescriptor;
 
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Collections.singletonList(SourceFile.FileType.DOCKSTORE_WDL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);

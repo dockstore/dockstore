@@ -121,7 +121,7 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
 
             DepositsApi depositApi = new DepositsApi(zenodoClient);
             Deposit deposit = new Deposit();
-            Deposit returnDeposit = null;
+            Deposit returnDeposit;
             try {
                 returnDeposit = depositApi.createDeposit(deposit);
                 // upload a new file

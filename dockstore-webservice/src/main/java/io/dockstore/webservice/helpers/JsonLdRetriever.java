@@ -42,7 +42,7 @@ public final class JsonLdRetriever {
     private JsonLdRetriever() { }
 
     private static String yaml2json(String yaml) {
-        String json = "";
+        String json;
 
         try {
             ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());

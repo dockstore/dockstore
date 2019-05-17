@@ -43,11 +43,11 @@ public class ToolVersionV1  {
     private String image = null;
 
     private List<DescriptorTypeEnum> descriptorType = new ArrayList<>();
-    private Boolean dockerfile = null;
+    private Boolean dockerfile;
 
     private String metaVersion = null;
 
-    private Boolean verified = null;
+    private Boolean verified;
 
     private String verifiedSource = null;
 
