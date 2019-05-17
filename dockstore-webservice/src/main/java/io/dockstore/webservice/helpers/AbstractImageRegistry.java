@@ -430,9 +430,9 @@ public abstract class AbstractImageRegistry {
         }
 
         // Update the tag with validation information
-        tag = validateTagDockerfile(tag, tool.isPrivateAccess());
-        tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
-        tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
+        validateTagDockerfile(tag, tool.isPrivateAccess());
+        validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
+        validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
 
         boolean isValidVersion = isValidVersion(tag);
         tag.setValid(isValidVersion);
@@ -479,7 +479,7 @@ public abstract class AbstractImageRegistry {
      * @param isPrivateAccess Is the tool private access
      * @return Tag with updated version validation for Dockerfile
      */
-    private Tag validateTagDockerfile(Tag tag, boolean isPrivateAccess) {
+    void validateTagDockerfile(Tag tag, boolean isPrivateAccess) {
         Optional<SourceFile> dockerfile = tag.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKERFILE)).findFirst();
         LanguageHandlerInterface.VersionTypeValidation validDockerfile;
         // Private tools don't require a dockerfile
@@ -492,7 +492,6 @@ public abstract class AbstractImageRegistry {
         }
         Validation dockerfileValidation = new Validation(SourceFile.FileType.DOCKERFILE, validDockerfile);
         tag.addOrUpdateValidation(dockerfileValidation);
-        return tag;
     }
 
     /**
@@ -502,7 +501,7 @@ public abstract class AbstractImageRegistry {
      * @param primaryDescriptorPath Path to the primary descriptor
      * @return Validated tag
      */
-    private Tag validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
+    void validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
         LanguageHandlerInterface.VersionTypeValidation isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
                 .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
         Validation descriptorValidation = new Validation(fileType, isValidDescriptor);
@@ -528,8 +527,6 @@ public abstract class AbstractImageRegistry {
             Validation testParameterValidation = new Validation(testParamType, isValidTestParameter);
             tag.addOrUpdateValidation(testParameterValidation);
         }
-
-        return tag;
     }
 
     /**
