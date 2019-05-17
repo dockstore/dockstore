@@ -792,7 +792,7 @@ public class WorkflowResource
         if (request.getPublish()) {
             elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
             if (c.getTopicId() == null) {
-                entryResource.createAndSetDiscourseTopic(id);
+                entryResource.createAndSetDiscourseTopic(id, false);
             }
         } else {
             elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);

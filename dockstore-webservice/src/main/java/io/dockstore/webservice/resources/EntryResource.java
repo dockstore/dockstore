@@ -143,15 +143,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @ApiParam(value = "The id of the entry to add a topic to.", required = true)
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
             @PathParam("id") Long id) {
-        return createAndSetDiscourseTopic(id);
+        return createAndSetDiscourseTopic(id, true);
     }
 
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
-     * @param id entry id;
+     * @param id entry id
+     * @param throwException whether or not to throw exception
      * @return Entry with discourse ID set
      */
-    public Entry createAndSetDiscourseTopic(Long id) {
+    public Entry createAndSetDiscourseTopic(Long id, boolean throwException) {
         Entry entry = this.toolDAO.getGenericEntryById(id);
 
         if (entry == null || !entry.getIsPublished()) {
@@ -210,12 +211,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             InlineResponse2005 response;
             try {
                 response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
+                entry.setTopicId(response.getId().longValue());
             } catch (ApiException ex) {
                 String message = "Could not add a topic to the given entry.";
                 LOG.error(message, ex);
-                throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
+                if (throwException) {
+                    throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
+                }
             }
-            entry.setTopicId(response.getId().longValue());
         }
 
         return entry;
