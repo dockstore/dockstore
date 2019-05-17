@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
@@ -613,10 +614,9 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         List<Pair<String, Path>> inputSet = new ArrayList<>();
         try {
             ArrayList<Map> filesArray = (ArrayList)entry;
-            for (Map file : filesArray) {
-                if ((file.containsKey("path") && file.get("path") instanceof String) || (file.containsKey("location") && file
-                        .get("location") instanceof String)) {
-                    String path = getPathOrLocation(file);
+            for (Map entryMap : filesArray) {
+                if (Stream.of("path", "location").allMatch(k -> entryMap.containsKey(k) && entryMap.get(k) instanceof String)) {
+                    String path = getPathOrLocation(entryMap);
                     // notice I'm putting key:path together so they are unique in the hash
                     if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
                         inputSet.addAll(
@@ -925,8 +925,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
                             if (exitingArray == null) {
                                 exitingArray = new JSONArray();
                             }
-                            for (Map linkedHashMap : (ArrayList<LinkedHashMap>)entry2) {
-                                Map<String, Object> param = linkedHashMap;
+                            for (Map<String, Object> param : (ArrayList<LinkedHashMap>)entry2) {
                                 String path = (String)param.get("path");
 
                                 this.modifySecondaryFiles(param, fileMap, paramName);
