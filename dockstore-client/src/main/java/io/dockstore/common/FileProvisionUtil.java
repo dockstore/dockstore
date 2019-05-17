@@ -129,7 +129,7 @@ public final class FileProvisionUtil {
         };
         System.out.println("Downloading: " + src.toString() + " to " + dest.toString());
 
-        long size = getSize(src).map(s -> s.longValue()).orElse(CopyStreamEvent.UNKNOWN_STREAM_SIZE);
+        long size = getSize(src).orElse(CopyStreamEvent.UNKNOWN_STREAM_SIZE);
 
         try (FileContent srcContent = src.getContent();
             FileContent destContent = dest.getContent();

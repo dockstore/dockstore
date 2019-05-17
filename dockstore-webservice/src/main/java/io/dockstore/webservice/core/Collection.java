@@ -137,7 +137,7 @@ public class Collection implements Serializable, Aliasable {
     }
 
     public Set<Entry> getEntries() {
-        return entries.stream().filter(entry -> entry.getIsPublished()).collect(Collectors.toSet());
+        return entries.stream().filter(Entry::getIsPublished).collect(Collectors.toSet());
     }
 
     public void setEntries(Set<Entry> entries) {

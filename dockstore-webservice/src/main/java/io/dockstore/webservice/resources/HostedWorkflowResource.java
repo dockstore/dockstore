@@ -219,7 +219,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = mainDescriptorOpt.map(sf -> sf.getPath()).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
+        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set

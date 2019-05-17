@@ -173,9 +173,7 @@ public class CWLHandler implements LanguageHandlerInterface {
             Object targetType = map.get(type);
             if (targetType instanceof Map) {
                 Map<String, ?> outputsMap = (Map<String, ?>)targetType;
-                outputsMap.forEach((k, v) -> {
-                    handlePotentialFormatEntry(fileFormats, v);
-                });
+                outputsMap.forEach((k, v) -> handlePotentialFormatEntry(fileFormats, v));
             } else if (targetType instanceof List) {
                 ((List)targetType).forEach(v -> {
                     handlePotentialFormatEntry(fileFormats, v);
