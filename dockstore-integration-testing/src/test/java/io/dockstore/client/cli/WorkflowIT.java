@@ -1351,7 +1351,7 @@ public class WorkflowIT extends BaseIT {
      *
      * Requires you to have the correct discourse information set in the dockstoreTest.yml
      */
-    @Test
+    @Ignore
     public void publishWorkflowAndTestDiscourseTopicCreation() {
         final ApiClient curatorApiClient = getWebClient(CURATOR_USERNAME);
         EntriesApi curatorEntriesApi = new EntriesApi(curatorApiClient);
