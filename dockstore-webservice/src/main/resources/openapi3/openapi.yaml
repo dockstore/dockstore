@@ -2106,6 +2106,22 @@ paths:
                   $ref: '#/components/schemas/Tag'
                 type: array
           description: default response
+  /containers/{alias}/aliases:
+    get:
+      operationId: getToolByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+          description: default response
   /containers/{containerId}:
     delete:
       operationId: deleteContainer

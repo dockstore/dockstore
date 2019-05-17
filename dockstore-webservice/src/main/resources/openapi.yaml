@@ -1812,6 +1812,27 @@ paths:
                   type: array
                   items:
                     type: object
+  "/containers/{alias}/aliases":
+    get:
+      tags:
+        - containers
+      summary: Retrieves a tool by alias.
+      description: ""
+      operationId: getToolByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DockstoreTool"
   "/containers/{containerId}":
     get:
       tags:
@@ -5239,7 +5260,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Retrieves an organization by alias.
+      summary: Retrieves an workflow by alias.
       description: ""
       operationId: getWorkflowByAlias
       parameters:
