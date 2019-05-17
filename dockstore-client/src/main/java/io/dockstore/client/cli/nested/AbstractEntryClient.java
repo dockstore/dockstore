@@ -805,7 +805,7 @@ public abstract class AbstractEntryClient<T> {
             }
         }
 
-        LanguageType content = checkFileContent(file);             //check the file content (wdl,cwl or "")
+        LanguageType content = checkFileContent(file);             // check the file content (wdl,cwl or "")
 
         if (ext.equals(LanguageType.CWL)) {
             if (content.equals(LanguageType.CWL)) {
@@ -991,7 +991,7 @@ public abstract class AbstractEntryClient<T> {
             out("Could not get WES section from config file");
         }
 
-        String wesEndpointUrl = ObjectUtils.firstNonNull(wesUrl, configSubNode.getString("url"));
+        String wesEndpointUrl = ObjectUtils.firstNonNull(wesUrl, Objects.requireNonNull(configSubNode).getString("url"));
         if (wesEndpointUrl == null || wesEndpointUrl.isEmpty()) {
             errorMessage("No WES URL found in config file and no WES URL entered on command line. Please add url: <url> to "
                     + "config file in a WES section or use --wes-url <url> option on the command line", CLIENT_ERROR);
