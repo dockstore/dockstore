@@ -57,7 +57,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
@@ -80,14 +79,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
-    public final Integer defaultDiscourseCategoryId = 6;
-    public final Integer testDiscourseCategoryId = 9;
-
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
+    private final String discourseCategoryId;
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
 
@@ -97,6 +94,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
+        discourseCategoryId = configuration.getDiscourseCategoryId();
 
         ApiClient apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -144,21 +142,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public Entry setDiscourseTopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "The id of the entry to add a topic to.", required = true)
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
-            @PathParam("id") Long id,
-            @ApiParam(value = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", defaultValue = "6", allowableValues = "6,9")
-            @Parameter(description = "The id of the category to add a topic to, defaults to Automatic Tool and Workflow Threads (6).", name = "categoryId", in = ParameterIn.QUERY, required = true,
-                    schema = @Schema(allowableValues = "6,9", defaultValue = "6"))
-            @QueryParam("categoryId") Integer categoryId) {
-        return createAndSetDiscourseTopic(id, categoryId);
+            @PathParam("id") Long id) {
+        return createAndSetDiscourseTopic(id);
     }
 
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
      * @param id entry id;
-     * @param categoryId category id (6 for automatic tools and workflows category)
      * @return Entry with discourse ID set
      */
-    public Entry createAndSetDiscourseTopic(Long id, Integer categoryId) {
+    public Entry createAndSetDiscourseTopic(Long id) {
         Entry entry = this.toolDAO.getGenericEntryById(id);
 
         if (entry == null || !entry.getIsPublished()) {
@@ -170,14 +163,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
 
         // Verify and set category
-        Integer category = defaultDiscourseCategoryId;
-        if (categoryId != null) {
-            if (categoryId.equals(testDiscourseCategoryId) || categoryId.equals(defaultDiscourseCategoryId)) {
-                category = categoryId;
-            } else {
-                throw new CustomWebApplicationException("Category " + categoryId + " is not a valid category.", HttpStatus.SC_BAD_REQUEST);
-            }
-        }
+        Integer category = Integer.parseInt(discourseCategoryId);
 
         // Create title and link to entry
         String entryLink = "https://dockstore.org/";

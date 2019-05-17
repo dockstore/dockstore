@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.4"
+  version: "1.7.0-alpha.5-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2551,17 +2551,6 @@ paths:
         required: true
         type: "integer"
         format: "int64"
-      - name: "categoryId"
-        in: "query"
-        description: "The id of the category to add a topic to, defaults to Automatic\
-          \ Tool and Workflow Threads (6)."
-        required: false
-        type: "integer"
-        default: 6
-        format: "int32"
-        enum:
-        - 6
-        - 9
       responses:
         200:
           description: "successful operation"
