@@ -53,6 +53,7 @@
         <httpcore.version>4.4.11</httpcore.version>
         <jetty-servlet.version>9.4.14.v20181114</jetty-servlet.version>
         <netty.version>4.1.33.Final</netty.version>
+        <scala.version>2.12.8</scala.version>
 
         <skipTests>false</skipTests>
         <skipClientITs>true</skipClientITs>
@@ -583,7 +584,7 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
-                <version>2.12.8</version>
+                <version>${scala.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.scalacheck</groupId>
@@ -605,7 +606,7 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
-                <version>2.12.8</version>
+                <version>${scala.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.spray</groupId>
