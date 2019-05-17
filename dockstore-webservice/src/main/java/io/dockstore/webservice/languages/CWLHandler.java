@@ -175,9 +175,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 Map<String, ?> outputsMap = (Map<String, ?>)targetType;
                 outputsMap.forEach((k, v) -> handlePotentialFormatEntry(fileFormats, v));
             } else if (targetType instanceof List) {
-                ((List)targetType).forEach(v -> {
-                    handlePotentialFormatEntry(fileFormats, v);
-                });
+                ((List)targetType).forEach(v -> handlePotentialFormatEntry(fileFormats, v));
             } else {
                 LOG.debug(type + " is not comprehensible.");
             }

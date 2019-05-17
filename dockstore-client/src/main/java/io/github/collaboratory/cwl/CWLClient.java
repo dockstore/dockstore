@@ -914,7 +914,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
                             exitingArray = new JSONArray();
                         }
                         org.json.simple.JSONObject newRecord = new org.json.simple.JSONObject();
-                        param.entrySet().forEach(paramEntry -> newRecord.put(paramEntry.getKey(), paramEntry.getValue()));
+                        param.forEach((key, value) -> newRecord.put(key, value));
                         exitingArray.add(newRecord);
                         newJSON.put(paramName, exitingArray);
                     } else if (entry2 instanceof ArrayList) {
@@ -936,7 +936,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
                                     LOG.info("NEW FULL PATH: {}", localPath);
                                 }
                                 org.json.simple.JSONObject newRecord = new org.json.simple.JSONObject();
-                                param.entrySet().forEach(paramEntry -> newRecord.put(paramEntry.getKey(), paramEntry.getValue()));
+                                param.forEach((key, value) -> newRecord.put(key, value));
                                 exitingArray.add(newRecord);
                             }
                             exitingArray2.add(exitingArray);

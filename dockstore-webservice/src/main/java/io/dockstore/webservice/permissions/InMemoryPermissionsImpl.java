@@ -75,15 +75,15 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     public Map<Role, List<String>> workflowsSharedWithUser(User user) {
         final String userKey = userKey(user);
         final Map<Role, List<String>> map = new HashMap<>();
-        resourceToUsersAndRolesMap.entrySet().forEach(e -> {
-            final Role role = e.getValue().get(userKey);
+        resourceToUsersAndRolesMap.forEach((key, value) -> {
+            final Role role = value.get(userKey);
             if (role != null) {
                 List<String> workflows = map.get(role);
                 if (workflows == null) {
                     workflows = new ArrayList<>();
                     map.put(role, workflows);
                 }
-                workflows.add(e.getKey());
+                workflows.add(key);
             }
         });
         return map;
