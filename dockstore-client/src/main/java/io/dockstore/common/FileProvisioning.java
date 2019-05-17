@@ -526,7 +526,7 @@ public class FileProvisioning {
         Map<ProvisionInterface, Collection<Pair<String, FileInfo>>> provisionInterfaceCollectionMap = map.asMap();
         for (Map.Entry<ProvisionInterface, Collection<Pair<String, FileInfo>>> entry : provisionInterfaceCollectionMap.entrySet()) {
             ProvisionInterface pInterface = entry.getKey();
-            Pair<String, FileInfo>[] pairs = entry.getValue().toArray(new Pair[entry.getValue().size()]);
+            Pair<String, FileInfo>[] pairs = entry.getValue().toArray(new Pair[0]);
             List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata()))
                     .collect(Collectors.toList());
             List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());

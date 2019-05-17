@@ -153,20 +153,13 @@ public class ToolVersionV1  {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("class ToolVersionV1 {\n");
 
-        sb.append("    name: ").append(toIndentedString(name)).append("\n");
-        sb.append("    url: ").append(toIndentedString(url)).append("\n");
-        sb.append("    id: ").append(toIndentedString(id)).append("\n");
-        sb.append("    image: ").append(toIndentedString(image)).append("\n");
-        sb.append("    descriptorType: ").append(toIndentedString(descriptorType)).append("\n");
-        sb.append("    dockerfile: ").append(toIndentedString(dockerfile)).append("\n");
-        sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
-        sb.append("    verified: ").append(toIndentedString(verified)).append("\n");
-        sb.append("    verifiedSource: ").append(toIndentedString(verifiedSource)).append("\n");
-        sb.append("}");
-        return sb.toString();
+        String sb = "class ToolVersionV1 {\n" + "    name: " + toIndentedString(name) + "\n" + "    url: " + toIndentedString(url) + "\n"
+                + "    id: " + toIndentedString(id) + "\n" + "    image: " + toIndentedString(image) + "\n" + "    descriptorType: "
+                + toIndentedString(descriptorType) + "\n" + "    dockerfile: " + toIndentedString(dockerfile) + "\n" + "    metaVersion: "
+                + toIndentedString(metaVersion) + "\n" + "    verified: " + toIndentedString(verified) + "\n" + "    verifiedSource: "
+                + toIndentedString(verifiedSource) + "\n" + "}";
+        return sb;
     }
 
     /**

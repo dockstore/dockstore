@@ -22,7 +22,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -209,7 +209,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         File tempMainDescriptor = null;
         String mainDescriptor = null;
 
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL));
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Collections.singletonList(SourceFile.FileType.DOCKSTORE_WDL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
 
         Map<String, String> validationMessageObject = new HashMap<>();

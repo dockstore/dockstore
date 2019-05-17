@@ -273,7 +273,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             if (!versionValidation.isValid() && versionValidation.getMessage() != null) {
                 Map<String, String> message = g.fromJson(versionValidation.getMessage(), HashMap.class);
                 for (Map.Entry<String, String> entry : message.entrySet()) {
-                    result.append(entry.getKey() + ": " + entry.getValue() + " ");
+                    result.append(entry.getKey()).append(": ").append(entry.getValue()).append(" ");
                 }
             }
         }

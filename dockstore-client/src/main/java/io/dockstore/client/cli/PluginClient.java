@@ -53,7 +53,7 @@ public final class PluginClient {
      * @param configFile
      */
     public static boolean handleCommand(List<String> args, INIConfiguration configFile) {
-        String[] argv = args.toArray(new String[args.size()]);
+        String[] argv = args.toArray(new String[0]);
         JCommander jc = new JCommander();
 
         CommandPlugin commandPlugin = new CommandPlugin();
