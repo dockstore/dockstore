@@ -523,7 +523,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFile ", e);
             // this is not so critical to warrant a http error code
         }
     }
@@ -542,7 +542,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFile ", e);
             // this is not so critical to warrant a http error code
         }
         return null;

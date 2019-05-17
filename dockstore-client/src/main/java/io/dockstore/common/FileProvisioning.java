@@ -285,7 +285,7 @@ public class FileProvisioning {
                         }
                         Files.createLink(localPath, potentialCachedFile);
                     } catch (IOException e) {
-                        LOG.error("Cannot create hard link to cached file, you may want to move your cache \n" + e.getMessage());
+                        LOG.error("Cannot create hard link to cached file, you may want to move your cache", e);
                         try {
                             Files.copy(potentialCachedFile, localPath);
                         } catch (IOException e1) {

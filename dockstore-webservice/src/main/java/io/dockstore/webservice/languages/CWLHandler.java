@@ -380,8 +380,8 @@ public class CWLHandler implements LanguageHandlerInterface {
                 } else {
                     return getJSONTableToolContent(nodeDockerInfo);
                 }
-            } catch (JsonParseException ex) {
-                LOG.error("The JSON file provided is invalid.", ex);
+            } catch (JsonParseException e) {
+                LOG.error("The JSON file provided is invalid.", e);
                 return null;
             }
         } else {

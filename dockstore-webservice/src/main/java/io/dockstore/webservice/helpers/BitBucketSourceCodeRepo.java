@@ -122,7 +122,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return files;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFile ", e);
             return null;
         }
     }
@@ -214,7 +214,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage());
+            LOG.error(gitUsername + ": apiexception on reading branches", e);
             // this is not so critical to warrant a http error code
         }
 
@@ -233,7 +233,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage());
+            LOG.error(gitUsername + ": apiexception on reading tags", e);
             // this is not so critical to warrant a http error code
         }
     }
@@ -253,7 +253,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 return tag.getTarget().getHash();
             }
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading commitid" + e.getMessage());
+            LOG.error(gitUsername + ": apiexception on reading commitid", e);
             // this is not so critical to warrant a http error code
         }
         return null;
