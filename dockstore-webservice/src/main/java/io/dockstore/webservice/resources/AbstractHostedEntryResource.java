@@ -252,7 +252,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @param sourceFiles
      */
     private void updateUnsetAbsolutePaths(Set<SourceFile> sourceFiles) {
-        sourceFiles.stream().forEach(sourceFile -> {
+        sourceFiles.forEach(sourceFile -> {
             if (sourceFile.getAbsolutePath() == null) {
                 sourceFile.setAbsolutePath(sourceFile.getPath());
             }

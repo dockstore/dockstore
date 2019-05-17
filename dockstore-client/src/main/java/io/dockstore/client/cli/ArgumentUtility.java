@@ -252,19 +252,18 @@ public final class ArgumentUtility {
     }
 
     static boolean flag(List<String> args, String flag) {
-
-        boolean found = false;
-        for (int i = 0; i < args.size(); i++) {
-            if (flag.equals(args.get(i))) {
-                if (found) {
-                    kill("dockstore: multiple instances of '%s'.", flag);
-                } else {
-                    found = true;
-                    args.remove(i);
-                }
-            }
+        if (args.contains(flag)) {
+            // remove it from list to check for duplicates
+            args.remove(flag);
+        } else {
+            return false;
         }
-        return found;
+
+        if (args.contains(flag)) {
+            kill("dockstore: multiple instances of '%s'.", flag);
+            return false;
+        }
+        return true;
     }
 
     public static String getGitRegistry(String gitUrl) {
