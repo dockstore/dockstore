@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.4"
+  version: "1.7.0-alpha.5-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -4932,6 +4932,26 @@ paths:
               $ref: "#/definitions/SharedWorkflows"
       security:
       - BEARER: []
+  /workflows/{alias}/aliases:
+    get:
+      tags:
+      - "workflows"
+      summary: "Retrieves an organization by alias."
+      description: ""
+      operationId: "getWorkflowByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
     post:
       tags:

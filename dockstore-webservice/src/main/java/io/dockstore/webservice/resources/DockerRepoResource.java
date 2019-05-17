@@ -1120,4 +1120,17 @@ public class DockerRepoResource
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("{alias}/aliases")
+    @ApiOperation(value = "Retrieves a tool by alias.", response = Tool.class)
+    public Tool getToolByAlias(@ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
+        final Tool tool = this.toolDAO.findByAlias(alias);
+        if (tool == null) {
+            throw new CustomWebApplicationException("Tool not found", HttpStatus.SC_NOT_FOUND);
+        }
+        return tool;
+    }
 }

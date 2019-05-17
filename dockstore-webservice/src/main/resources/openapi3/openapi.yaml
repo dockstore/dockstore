@@ -5095,6 +5095,22 @@ paths:
                   $ref: '#/components/schemas/WorkflowVersion'
                 type: array
           description: default response
+  /workflows/{alias}/aliases:
+    get:
+      operationId: getWorkflowByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
     post:
       operationId: registerCheckerWorkflow

@@ -1787,4 +1787,16 @@ public class WorkflowResource
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("{alias}/aliases")
+    @ApiOperation(value = "Retrieves an workflow by alias.", response = Workflow.class)
+    public Workflow getWorkflowByAlias(@ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
+        final Workflow workflow = this.workflowDAO.findByAlias(alias);
+        if (workflow == null) {
+            throw new CustomWebApplicationException("Workflow not found", HttpStatus.SC_NOT_FOUND);
+        }
+        return workflow;
+    }
 }
