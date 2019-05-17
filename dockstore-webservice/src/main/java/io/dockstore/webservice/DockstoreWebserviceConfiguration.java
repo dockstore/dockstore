@@ -102,8 +102,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotEmpty
     private String discourseKey;
 
-    @NotEmpty
-    private int discourseCategoryId;
+    @NotNull
+    private Integer discourseCategoryId;
 
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
@@ -328,11 +328,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.discourseKey = discourseKey;
     }
 
-    public int getDiscourseCategoryId() {
+    public Integer getDiscourseCategoryId() {
         return discourseCategoryId;
     }
 
-    public void setDiscourseCategoryId(int discourseCategoryId) {
+    public void setDiscourseCategoryId(Integer discourseCategoryId) {
         this.discourseCategoryId = discourseCategoryId;
     }
 

@@ -1351,7 +1351,7 @@ public class WorkflowIT extends BaseIT {
      *
      * Requires you to have the correct discourse information set in the dockstoreTest.yml
      */
-    @Ignore
+    @Test
     public void publishWorkflowAndTestDiscourseTopicCreation() {
         final ApiClient curatorApiClient = getWebClient(CURATOR_USERNAME);
         EntriesApi curatorEntriesApi = new EntriesApi(curatorApiClient);
@@ -1376,5 +1376,13 @@ public class WorkflowIT extends BaseIT {
         } catch (ApiException ex) {
         }
 
+        // Unpublish and publish, should not throw error
+        Workflow unpublishedWf = userWorkflowsApi.publish(workflow.getId(), new PublishRequest(){
+            public Boolean isPublish() { return false;}
+        });
+        Workflow publishedWf = userWorkflowsApi.publish(unpublishedWf.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+        assertEquals("Topic id should remain the same.", unpublishedWf.getTopicId(), publishedWf.getTopicId());
     }
 }
