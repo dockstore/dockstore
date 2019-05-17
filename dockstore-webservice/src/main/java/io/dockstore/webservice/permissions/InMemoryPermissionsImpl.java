@@ -225,10 +225,9 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
 
     private void checkIfOwner(User user, Workflow workflow, Map<String, Role> permissionMap) {
         final String userKey = userKey(user);
-        if (!workflow.getUsers().contains(user)) {
-            if (permissionMap == null || permissionMap.entrySet().stream().noneMatch(e -> e.getValue() == Role.OWNER && e.getKey().equals(userKey))) {
-                throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
-            }
+        if (!workflow.getUsers().contains(user) && (permissionMap == null || permissionMap.entrySet().stream().noneMatch(e ->
+                e.getValue() == Role.OWNER && e.getKey().equals(userKey)))) {
+            throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
         }
     }
 }
