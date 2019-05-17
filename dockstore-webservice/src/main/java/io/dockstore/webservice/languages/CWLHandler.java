@@ -16,7 +16,7 @@
 package io.dockstore.webservice.languages;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -684,7 +684,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Collections.singletonList(SourceFile.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
@@ -716,7 +716,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Collections.singletonList(SourceFile.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
