@@ -84,7 +84,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
-    private final String discourseCategoryId;
+    private final int discourseCategoryId;
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
 
@@ -143,16 +143,15 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @ApiParam(value = "The id of the entry to add a topic to.", required = true)
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
             @PathParam("id") Long id) {
-        return createAndSetDiscourseTopic(id, true);
+        return createAndSetDiscourseTopic(id);
     }
 
     /**
      * For a given entry, create a Discourse thread if applicable and set in database
      * @param id entry id
-     * @param throwException whether or not to throw exception
      * @return Entry with discourse ID set
      */
-    public Entry createAndSetDiscourseTopic(Long id, boolean throwException) {
+    public Entry createAndSetDiscourseTopic(Long id) throws CustomWebApplicationException {
         Entry entry = this.toolDAO.getGenericEntryById(id);
 
         if (entry == null || !entry.getIsPublished()) {
@@ -164,7 +163,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
 
         // Verify and set category
-        Integer category = Integer.parseInt(discourseCategoryId);
+        Integer category = discourseCategoryId;
 
         // Create title and link to entry
         String entryLink = "https://dockstore.org/";
@@ -215,9 +214,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             } catch (ApiException ex) {
                 String message = "Could not add a topic to the given entry.";
                 LOG.error(message, ex);
-                if (throwException) {
-                    throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
-                }
+                throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
             }
         }
 

@@ -621,7 +621,11 @@ public class DockerRepoResource
         if (request.getPublish()) {
             elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
             if (tool.getTopicId() == null) {
-                entryResource.createAndSetDiscourseTopic(id, false);
+                try {
+                    entryResource.createAndSetDiscourseTopic(id);
+                } catch (CustomWebApplicationException ex) {
+                    LOG.error("Error adding discourse topic.", ex);
+                }
             }
         } else {
             elasticManager.handleIndexUpdate(tool, ElasticMode.DELETE);
