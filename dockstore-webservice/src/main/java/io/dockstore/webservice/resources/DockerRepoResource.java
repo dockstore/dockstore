@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -756,19 +755,13 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        Set<String> verifiedSourcesArray = tool.getTags().stream()
-                .filter(Version::isVerified)
-                .map(v -> v.getVerifiedSource()).collect(Collectors.toSet());
-
-        JSONArray jsonArray;
         try {
-            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
+            return new JSONArray(
+                    tool.getTags().stream().filter(Version::isVerified).map(Version::getVerifiedSource).distinct().toArray()).toString();
         } catch (JSONException ex) {
             throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.",
                 HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-
-        return jsonArray.toString();
     }
 
     // Add for new descriptor types

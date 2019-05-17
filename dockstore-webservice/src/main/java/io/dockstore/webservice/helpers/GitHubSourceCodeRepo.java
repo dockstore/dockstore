@@ -612,9 +612,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Find existing version if it exists
             Optional<WorkflowVersion> existingVersion = workflow.getVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
             Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-            if (existingVersion.isPresent()) {
-                existingDefaults.put(gitReference, existingVersion.get());
-            }
+            existingVersion.ifPresent(workflowVersion -> existingDefaults.put(gitReference, workflowVersion));
 
             // Create version with sourcefiles and validate
             return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
