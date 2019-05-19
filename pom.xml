@@ -35,7 +35,7 @@
         <swagger-annotations-version>1.5.19</swagger-annotations-version>
         <openapi-annotations-version>2.0.6</openapi-annotations-version>
         <assertj.version>3.9.1</assertj.version>
-        <jackson.version>2.9.8</jackson.version>
+        <jackson.version>2.9.9</jackson.version>
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
@@ -1085,7 +1085,7 @@
                         <id>enforce</id>
                         <configuration>
                             <rules>
-                                <DependencyConvergence />
+                                <DependencyConvergence/>
                                 <requirePluginVersions>
                                     <message>Best Practice is to always define plugin versions!</message>
                                 </requirePluginVersions>
@@ -1096,14 +1096,14 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps />
+                                <requireUpperBoundDeps/>
                                 <requireMavenVersion>
                                     <version>3.5.4</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <version>11</version>
                                 </requireJavaVersion>
-                                <banDuplicatePomDependencyVersions />
+                                <banDuplicatePomDependencyVersions/>
                                 <bannedDependencies>
                                     <!-- currently, some of these dependencies are brought in transitively -->
                                     <searchTransitive>false</searchTransitive>
