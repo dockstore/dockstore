@@ -98,6 +98,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.Client.SCRIPT;
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.NEXTFLOW;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 
@@ -810,11 +811,13 @@ public abstract class AbstractEntryClient<T> {
 
         Optional<DescriptorLanguage> optContent = checkFileContent(file);             //check the file content (wdl,cwl or "")
 
-        if (optExt.isPresent() && optContent.isPresent()) {
+        if (optExt.isPresent()) {
             DescriptorLanguage ext = optExt.get();
-            DescriptorLanguage content = optContent.get();
+            final boolean cwlContentPresent = optContent.isPresent() && optContent.get().equals(CWL);
+            final boolean wdlContentPresent = optContent.isPresent() && optContent.get().equals(WDL);
+            final boolean nextflowContentPresent = optContent.isPresent() && optContent.get().equals(NEXTFLOW);
             if (ext.equals(CWL)) {
-                if (content.equals(CWL)) {
+                if (cwlContentPresent) {
                     // do not continue to check file if the cwl is invalid
                     if (!validateCWL(localFilePath)) {
                         return;
@@ -826,12 +829,12 @@ public abstract class AbstractEntryClient<T> {
                     } catch (IOException e) {
                         exceptionMessage(e, "IO error launching entry", IO_ERROR);
                     }
-                } else if (!content.equals(CWL) && descriptor == null) {
+                } else if (!cwlContentPresent && descriptor == null) {
                     //extension is cwl but the content is not cwl
                     out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-                } else if (!content.equals(CWL) && descriptor.equals(CWL_STRING)) {
+                } else if (!cwlContentPresent && descriptor.equals(CWL_STRING)) {
                     errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
-                } else if (content.equals(WDL) && descriptor.equals(WDL_STRING)) {
+                } else if (wdlContentPresent && descriptor.equals(WDL_STRING)) {
                     out("This is a WDL file.. Please put the correct extension to the entry file name.");
                     out("Launching entry file as a WDL file..");
                     try {
@@ -845,18 +848,18 @@ public abstract class AbstractEntryClient<T> {
                     errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
                 }
             } else if (ext.equals(WDL)) {
-                if (content.equals(WDL)) {
+                if (wdlContentPresent) {
                     try {
                         launchWdl(localFilePath, argsList, true);
                     } catch (ApiException e) {
                         exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                     }
-                } else if (!content.equals(WDL) && descriptor == null) {
+                } else if (!wdlContentPresent && descriptor == null) {
                     //extension is wdl but the content is not wdl
                     out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-                } else if (!content.equals(WDL) && descriptor.equals(WDL_STRING)) {
+                } else if (!wdlContentPresent && descriptor.equals(WDL_STRING)) {
                     errorMessage("Entry file is not a valid WDL file.", CLIENT_ERROR);
-                } else if (content.equals(CWL) && descriptor.equals(CWL_STRING)) {
+                } else if (cwlContentPresent && descriptor.equals(CWL_STRING)) {
                     out("This is a CWL file.. Please put the correct extension to the entry file name.");
                     out("Launching entry file as a CWL file..");
                     try {
@@ -871,14 +874,14 @@ public abstract class AbstractEntryClient<T> {
                 }
             } else if (ext.equals(DescriptorLanguage.NEXTFLOW)) {
                 // TODO: better error handling as with CWL and WDL
-                if (content.equals(DescriptorLanguage.NEXTFLOW)) {
+                if (nextflowContentPresent) {
                     try {
                         launchNextFlow(localFilePath, argsList, true);
                     } catch (ApiException e) {
                         exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                     }
-                } else if (!content.equals(DescriptorLanguage.NEXTFLOW) && descriptor == null) {
-                    //extension is wdl but the content is not wdl
+                } else if (!nextflowContentPresent && descriptor == null) {
+                    //extension is wdl but the content is not nextflow
                     out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
                 } else {
                     errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
@@ -908,6 +911,10 @@ public abstract class AbstractEntryClient<T> {
             } else {
                 errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
             }
+        }
+        if (optContent.isEmpty() && optExt.isEmpty()) {
+            // neither is present
+            errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
         }
     }
 

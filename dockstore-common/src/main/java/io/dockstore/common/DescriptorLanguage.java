@@ -18,6 +18,8 @@ package io.dockstore.common;
 
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * This enumerates the types of descriptor language that we can associate an entry with.
  *
@@ -97,7 +99,8 @@ public enum DescriptorLanguage {
 
     public static Optional<FileType> getFileType(String descriptorType) {
         for (DescriptorLanguage lang : values()) {
-            if (descriptorType.equalsIgnoreCase(lang.toString())) {
+            // this is tricky, since it is used by GA4GH, those APIs can use string of the form PLAIN_CWL
+            if ((StringUtils.containsIgnoreCase(descriptorType, lang.toString()))) {
                 return Optional.of(lang.getFileType());
             }
         }

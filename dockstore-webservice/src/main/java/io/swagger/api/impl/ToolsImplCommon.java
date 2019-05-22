@@ -177,8 +177,6 @@ public final class ToolsImplCommon {
                 //                    toolVersion.addDescriptorTypeItem(DescriptorType.SWL);
                 //                    break;
                 case NEXTFLOW:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
-                    break;
                 case NEXTFLOW_CONFIG:
                     toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
                     break;
