@@ -62,8 +62,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     EntryDAO(SessionFactory factory) {
         super(factory);
-        /**
-         * ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class
+        /*
+          ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class
          */
         this.typeOfT = (Class<T>)((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
@@ -143,10 +143,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
         EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
-        List<CollectionOrganization> collectionOrganizations = entityManager
+        return entityManager
                 .createNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId", CollectionOrganization.class)
                 .setParameter("entryId", entryId).getResultList();
-        return collectionOrganizations;
     }
 
     public T findPublishedById(long id) {
@@ -177,7 +176,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public long countAllPublished(Optional<String> filter) {
-        if (!filter.isPresent()) {
+        if (filter.isEmpty()) {
             return countAllPublished();
         }
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();

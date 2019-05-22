@@ -155,12 +155,12 @@
         <!-- broad - cromwell stuff -->
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl4s-wom_2.11</artifactId>
+            <artifactId>wdl4s-wom_2.12</artifactId>
         </dependency>
 
         <dependency>
             <groupId>io.spray</groupId>
-            <artifactId>spray-json_2.11</artifactId>
+            <artifactId>spray-json_2.12</artifactId>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -350,8 +350,8 @@
                             <usedDependencies>
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
                                 <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</usedDependency>
-                                <usedDependency>org.broadinstitute:wdl4s-wom_2.11</usedDependency>
-                                <usedDependency>io.spray:spray-json_2.11</usedDependency>
+                                <usedDependency>org.broadinstitute:wdl4s-wom_2.12</usedDependency>
+                                <usedDependency>io.spray:spray-json_2.12</usedDependency>
                             </usedDependencies>
 
                         </configuration>

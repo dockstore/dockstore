@@ -460,7 +460,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
             // Swagger does not fully copy the enum (leaves out properties), so we need to map Registry enum to RegistryEnum in DockstoreTool
             Optional<Registry> regEnum = getRegistryEnum(registry);
 
-            if (!regEnum.isPresent()) {
+            if (regEnum.isEmpty()) {
                 errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.",
                         Client.CLIENT_ERROR);
             }
@@ -481,7 +481,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 registryPath = getRegistryPath(registry);
             }
 
-            if (!registryPath.isPresent()) {
+            if (registryPath.isEmpty()) {
                 if (hasCustomDockerPath) {
                     errorMessage("The registry path is unavailable.", Client.CLIENT_ERROR);
                 } else {
@@ -719,7 +719,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
             List<Tag> tags = Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>());
             final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
 
-            if (!first.isPresent()) {
+            if (first.isEmpty()) {
                 errorMessage(versionName + " is not a valid tag for " + entry, Client.CLIENT_ERROR);
             }
             Tag tagToUpdate = first.get();

@@ -110,7 +110,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Timed
     @UnitOfWork
     @Override
-    @Path("{id}/aliases")
+    @Path("/{id}/aliases")
     @ApiOperation(nickname = "updateAliases", value = "Update the aliases linked to a entry in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Entry.class)
     public Entry updateAliases(@ApiParam(hidden = true) @Auth User user,

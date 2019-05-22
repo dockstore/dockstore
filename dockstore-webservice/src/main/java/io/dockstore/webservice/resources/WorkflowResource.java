@@ -1238,7 +1238,7 @@ public class WorkflowResource
         Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream()
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
-        if (!potentialWorfklowVersion.isPresent()) {
+        if (potentialWorfklowVersion.isEmpty()) {
             String msg = "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
@@ -1273,7 +1273,7 @@ public class WorkflowResource
         Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream()
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
-        if (!potentialWorfklowVersion.isPresent()) {
+        if (potentialWorfklowVersion.isEmpty()) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.");
             throw new CustomWebApplicationException(
                 "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.",
