@@ -31,7 +31,28 @@ paths:
   /deposit/depositions:
     get:
       summary: List of deposits
-      description: ''
+      description: 'List all depositions for the currently authenticated user'
+      parameters:
+        - in: path
+          name: query
+          type: string
+          description: 'Search query (using Elasticsearch query string syntax)'
+        - in: path
+          name: status
+          type: string
+          description: 'Filter result based on deposit status (either draft or published)'
+        - in: path
+          name: sort
+          type: string
+          description: 'Sort order (bestmatch or mostrecent). Prefix with minus to change form ascending to descending (e.g. -mostrecent)'
+        - in: path
+          name: page
+          type: integer
+          description: 'Page number for pagination'
+        - in: path
+          name: size
+          type: integer
+          description: 'Number of results to return per page'
       operationId: listDeposits
       tags:
         - deposits
