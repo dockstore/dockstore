@@ -26,7 +26,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.api.factories.MetadataApiServiceFactory;
 import io.swagger.api.impl.ApiVersionConverter;
 import io.swagger.model.MetadataV1;

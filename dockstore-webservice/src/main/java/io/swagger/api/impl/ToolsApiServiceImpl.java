@@ -511,7 +511,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         : toolTestsList).build();
             case DOCKERFILE:
                 Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
-                    .filter(sourcefile -> ((SourceFile)sourcefile).getType() == DescriptorLanguage.FileType.DOCKERFILE).findFirst();
+                    .filter(sourcefile -> ((SourceFile)sourcefile).getType() == DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
                     ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
                     dockerfile.setContent(potentialDockerfile.get().getContent());
@@ -754,7 +754,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private boolean isWDL(SourceFile sourceFile) {
         DescriptorLanguage.FileType type = sourceFile.getType();
-        return Arrays.asList(DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.DOCKERFILE, DescriptorLanguage.FileType.DOCKSTORE_WDL)
+        return Arrays.asList(WDL_TEST_JSON, DOCKERFILE, DOCKSTORE_WDL)
             .contains(type);
     }
 
@@ -778,7 +778,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private boolean isNFL(SourceFile sourceFile) {
         DescriptorLanguage.FileType type = sourceFile.getType();
-        return Arrays.asList(NEXTFLOW_CONFIG, DescriptorLanguage.FileType.DOCKERFILE, NEXTFLOW,
+        return Arrays.asList(NEXTFLOW_CONFIG, DOCKERFILE, NEXTFLOW,
             NEXTFLOW_TEST_PARAMS).contains(type);
     }
 

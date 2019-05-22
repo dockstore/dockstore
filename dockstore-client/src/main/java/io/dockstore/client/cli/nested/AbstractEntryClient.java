@@ -775,9 +775,9 @@ public abstract class AbstractEntryClient<T> {
      */
     Optional<DescriptorLanguage> checkFileExtension(String path) {
         if (FilenameUtils.getExtension(path).equalsIgnoreCase(CWL_STRING) || FilenameUtils.getExtension(path).equalsIgnoreCase("yaml") || FilenameUtils.getExtension(path).equalsIgnoreCase("yml")) {
-            return Optional.of(DescriptorLanguage.CWL);
+            return Optional.of(CWL);
         } else if (FilenameUtils.getExtension(path).equalsIgnoreCase(WDL_STRING)) {
-            return Optional.of(DescriptorLanguage.WDL);
+            return Optional.of(WDL);
         } else if (path.endsWith("nextflow.config")) {
             return Optional.of(DescriptorLanguage.NEXTFLOW);
         }
@@ -813,8 +813,8 @@ public abstract class AbstractEntryClient<T> {
         if (optExt.isPresent() && optContent.isPresent()) {
             DescriptorLanguage ext = optExt.get();
             DescriptorLanguage content = optContent.get();
-            if (ext.equals(DescriptorLanguage.CWL)) {
-                if (content.equals(DescriptorLanguage.CWL)) {
+            if (ext.equals(CWL)) {
+                if (content.equals(CWL)) {
                     // do not continue to check file if the cwl is invalid
                     if (!validateCWL(localFilePath)) {
                         return;
@@ -826,12 +826,12 @@ public abstract class AbstractEntryClient<T> {
                     } catch (IOException e) {
                         exceptionMessage(e, "IO error launching entry", IO_ERROR);
                     }
-                } else if (!content.equals(DescriptorLanguage.CWL) && descriptor == null) {
+                } else if (!content.equals(CWL) && descriptor == null) {
                     //extension is cwl but the content is not cwl
                     out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-                } else if (!content.equals(DescriptorLanguage.CWL) && descriptor.equals(CWL_STRING)) {
+                } else if (!content.equals(CWL) && descriptor.equals(CWL_STRING)) {
                     errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
-                } else if (content.equals(DescriptorLanguage.WDL) && descriptor.equals(WDL_STRING)) {
+                } else if (content.equals(WDL) && descriptor.equals(WDL_STRING)) {
                     out("This is a WDL file.. Please put the correct extension to the entry file name.");
                     out("Launching entry file as a WDL file..");
                     try {
@@ -844,19 +844,19 @@ public abstract class AbstractEntryClient<T> {
                 } else {
                     errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
                 }
-            } else if (ext.equals(DescriptorLanguage.WDL)) {
-                if (content.equals(DescriptorLanguage.WDL)) {
+            } else if (ext.equals(WDL)) {
+                if (content.equals(WDL)) {
                     try {
                         launchWdl(localFilePath, argsList, true);
                     } catch (ApiException e) {
                         exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                     }
-                } else if (!content.equals(DescriptorLanguage.WDL) && descriptor == null) {
+                } else if (!content.equals(WDL) && descriptor == null) {
                     //extension is wdl but the content is not wdl
                     out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-                } else if (!content.equals(DescriptorLanguage.WDL) && descriptor.equals(WDL_STRING)) {
+                } else if (!content.equals(WDL) && descriptor.equals(WDL_STRING)) {
                     errorMessage("Entry file is not a valid WDL file.", CLIENT_ERROR);
-                } else if (content.equals(DescriptorLanguage.CWL) && descriptor.equals(CWL_STRING)) {
+                } else if (content.equals(CWL) && descriptor.equals(CWL_STRING)) {
                     out("This is a CWL file.. Please put the correct extension to the entry file name.");
                     out("Launching entry file as a CWL file..");
                     try {
@@ -887,7 +887,7 @@ public abstract class AbstractEntryClient<T> {
         } else if (optContent.isPresent()) {
             DescriptorLanguage content = optContent.get();
             //no extension given
-            if (content.equals(DescriptorLanguage.CWL)) {
+            if (content.equals(CWL)) {
                 out("This is a CWL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a CWL file..");
                 try {
@@ -897,7 +897,7 @@ public abstract class AbstractEntryClient<T> {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            } else if (content.equals(DescriptorLanguage.WDL)) {
+            } else if (content.equals(WDL)) {
                 out("This is a WDL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 try {
@@ -1231,10 +1231,10 @@ public abstract class AbstractEntryClient<T> {
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(descriptor);
         switch (descriptorLanguage) {
         case CWL:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, DescriptorLanguage.CWL);
+            languageCLient = LanguageClientFactory.createLanguageCLient(this, CWL);
             break;
         case WDL:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, DescriptorLanguage.WDL);
+            languageCLient = LanguageClientFactory.createLanguageCLient(this, WDL);
             break;
         case NEXTFLOW:
             languageCLient = LanguageClientFactory.createLanguageCLient(this, DescriptorLanguage.NEXTFLOW);
