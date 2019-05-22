@@ -38,7 +38,7 @@ import io.dockstore.client.cli.nested.LauncherFiles;
 import io.dockstore.client.cli.nested.WESLauncher;
 import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
 import io.dockstore.common.Bridge;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.WDLFileProvisioning;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
@@ -65,9 +65,9 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
 
         BaseLauncher launcher;
         if (!abstractEntryClient.isWesCommand()) {
-            launcher = new CromwellLauncher(abstractEntryClient, LanguageType.WDL, SCRIPT.get());
+            launcher = new CromwellLauncher(abstractEntryClient, DescriptorLanguage.WDL, SCRIPT.get());
         } else {
-            launcher = new WESLauncher(abstractEntryClient, LanguageType.WDL, SCRIPT.get());
+            launcher = new WESLauncher(abstractEntryClient, DescriptorLanguage.WDL, SCRIPT.get());
         }
         this.setLauncher(launcher);
     }

@@ -34,6 +34,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -171,6 +172,10 @@ public final class ToolsImplCommon {
                 case DOCKSTORE_WDL:
                     toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
                     break;
+                // DOCKSTORE-2428 - demo how to add new workflow language
+                //                case DOCKSTORE_SWL:
+                //                    toolVersion.addDescriptorTypeItem(DescriptorType.SWL);
+                //                    break;
                 case NEXTFLOW:
                     toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
                     break;
@@ -370,8 +375,9 @@ public final class ToolsImplCommon {
      * @return The resulting GA4GH ToolTests
      */
     static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
-        SourceFile.FileType type = sourceFile.getType();
-        if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
+        DescriptorLanguage.FileType type = sourceFile.getType();
+        if (!type.equals(DescriptorLanguage.FileType.WDL_TEST_JSON) && !type.equals(DescriptorLanguage.FileType.CWL_TEST_JSON) && !type.equals(
+            DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS)) {
             LOG.error("This source file is not a recognized test file.");
         }
         ExtendedFileWrapper toolTests = new ExtendedFileWrapper();

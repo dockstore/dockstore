@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
@@ -36,7 +36,7 @@ public class CWLParseTest {
     @Test
     public void testOldMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.cwl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         Assert.assertEquals("incorrect author", "Keiran Raine", entry.getAuthor());
         Assert.assertEquals("incorrect email", "keiranmraine@gmail.com", entry.getEmail());
@@ -45,7 +45,7 @@ public class CWLParseTest {
     @Test
     public void testNewMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.cwl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
         Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
@@ -54,7 +54,7 @@ public class CWLParseTest {
     @Test
     public void testCombinedMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example3.cwl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
         Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());

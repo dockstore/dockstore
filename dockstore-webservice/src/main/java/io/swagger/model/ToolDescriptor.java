@@ -20,7 +20,7 @@ import java.util.Objects;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.common.DescriptorLanguage;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -46,7 +46,7 @@ public class ToolDescriptor {
     public ToolDescriptor(ExtendedFileWrapper fileWrapper) {
         this.descriptor = fileWrapper.getContent();
         this.url = fileWrapper.getUrl();
-        this.type = fileWrapper.getOriginalFile().getType() == SourceFile.FileType.DOCKSTORE_CWL ? DescriptorType.CWL : DescriptorType.WDL;
+        this.type = fileWrapper.getOriginalFile().getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL ? DescriptorType.CWL : DescriptorType.WDL;
     }
 
     public ToolDescriptor type(DescriptorType type) {

@@ -17,8 +17,8 @@ import java.util.Objects;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.Bridge;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.FileProvisioning;
-import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.CWLClient;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -36,7 +36,7 @@ public class CromwellLauncher extends BaseLauncher {
 
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
 
-    public CromwellLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+    public CromwellLauncher(AbstractEntryClient abstractEntryClient, DescriptorLanguage language, boolean script) {
         super(abstractEntryClient, language, script);
         setLauncherName("Cromwell");
     }
@@ -83,7 +83,7 @@ public class CromwellLauncher extends BaseLauncher {
     public List<String> buildRunCommand() {
         final List<String> runCommand;
         // Don't use imports option for WDL, only for CWL
-        if (zippedEntry == null || abstractEntryClient instanceof ToolClient || Objects.equals(languageType, LanguageType.WDL)) {
+        if (zippedEntry == null || abstractEntryClient instanceof ToolClient || Objects.equals(languageType, DescriptorLanguage.WDL)) {
             runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
         } else {
             runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", zippedEntry
@@ -99,9 +99,9 @@ public class CromwellLauncher extends BaseLauncher {
 
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
-        if (Objects.equals(languageType, LanguageType.WDL)) {
+        if (Objects.equals(languageType, DescriptorLanguage.WDL)) {
             handleWDLOutputProvisioning(stdout, stderr, wdlOutputTarget);
-        } else if (Objects.equals(languageType, LanguageType.CWL)) {
+        } else if (Objects.equals(languageType, DescriptorLanguage.CWL)) {
             handleCWLOutputProvisioning(stdout, stderr);
         }
     }

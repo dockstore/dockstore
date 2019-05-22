@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -383,7 +384,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         version.setCommitID(ref.getRight());
         String calculatedPath = version.getWorkflowPath();
 
-        SourceFile.FileType identifiedType = workflow.getFileType();
+        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
 
         // Grab workflow file from github
         try {
@@ -405,12 +406,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         SourceFile testJson = new SourceFile();
 
                         // Set Filetype
-                        if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-                            testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
-                        } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
-                            testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
-                        } else if (identifiedType.equals(SourceFile.FileType.NEXTFLOW_CONFIG)) {
-                            testJson.setType(SourceFile.FileType.NEXTFLOW_TEST_PARAMS);
+                        if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
+                            testJson.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
+                        } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
+                            testJson.setType(DescriptorLanguage.FileType.WDL_TEST_JSON);
+                        } else if (identifiedType.equals(DescriptorLanguage.FileType.NEXTFLOW_CONFIG)) {
+                            testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
                         }
 
                         testJson.setPath(workflow.getDefaultTestParameterFilePath());
@@ -495,7 +496,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
+    public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
         throw new UnsupportedOperationException("not implemented/needed for github");
     }
 

@@ -57,8 +57,8 @@ import io.dockstore.client.cli.nested.LauncherFiles;
 import io.dockstore.client.cli.nested.WESLauncher;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.FileProvisioning;
-import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
@@ -124,15 +124,15 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         BaseLauncher launcher;
         switch (cwlLauncherType) {
         case WES:
-            launcher = new WESLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get());
+            launcher = new WESLauncher(abstractEntryClient, DescriptorLanguage.CWL, SCRIPT.get());
             break;
         case CROMWELL:
-            launcher = new CromwellLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get());
+            launcher = new CromwellLauncher(abstractEntryClient, DescriptorLanguage.CWL, SCRIPT.get());
             LOG.info("Cromwell is currently in beta for CWL tools and workflows.");
             break;
         case CWL_TOOL:
         default:
-            launcher = new CwltoolLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get());
+            launcher = new CwltoolLauncher(abstractEntryClient, DescriptorLanguage.CWL, SCRIPT.get());
             break;
         }
         this.setLauncher(launcher);

@@ -44,6 +44,7 @@ import javax.ws.rs.core.SecurityContext;
 import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -71,11 +72,14 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.webservice.core.SourceFile.FileType.CWL_TEST_JSON;
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
-import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
+import static io.dockstore.common.DescriptorLanguage.FileType.CWL_TEST_JSON;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
+import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW;
+import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_CONFIG;
+import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS;
+import static io.dockstore.common.DescriptorLanguage.FileType.WDL_TEST_JSON;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
     private static final String GITHUB_PREFIX = "git@github.com:";
@@ -186,11 +190,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
-        SourceFile.FileType fileType = getFileType(type);
-        if (fileType == null) {
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
-        return getFileByToolVersionID(id, versionId, fileType, null,
+        return getFileByToolVersionID(id, versionId, fileType.get(), null,
             contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
     }
 
@@ -200,11 +204,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        SourceFile.FileType fileType = getFileType(type);
-        if (fileType == null) {
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
-        return getFileByToolVersionID(id, versionId, fileType, relativePath,
+        return getFileByToolVersionID(id, versionId, fileType.get(), relativePath,
             contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
     }
 
@@ -218,15 +222,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        SourceFile.FileType fileType = getFileType(type);
-        if (fileType == null) {
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
         boolean plainTextResponse =
             contextContainsPlainText(value) || type.toLowerCase().contains("plain");
-        switch (fileType) {
+        switch (fileType.get()) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
             return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, plainTextResponse, user);
@@ -236,28 +240,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         case NEXTFLOW:
         case NEXTFLOW_CONFIG:
         case NEXTFLOW_TEST_PARAMS:
-            return getFileByToolVersionID(id, versionId, SourceFile.FileType.NEXTFLOW_TEST_PARAMS, null, plainTextResponse, user);
+            return getFileByToolVersionID(id, versionId, NEXTFLOW_TEST_PARAMS, null, plainTextResponse, user);
         default:
             return Response.status(Status.BAD_REQUEST).build();
         }
-    }
-
-    private SourceFile.FileType getFileType(String format) {
-        SourceFile.FileType type;
-        if (StringUtils.containsIgnoreCase(format, "CWL")) {
-            type = DOCKSTORE_CWL;
-        } else if (StringUtils.containsIgnoreCase(format, "WDL")) {
-            type = DOCKSTORE_WDL;
-        } else if (StringUtils.containsIgnoreCase(format, "NFL")) {
-            type = SourceFile.FileType.NEXTFLOW_CONFIG;
-        } else if (Objects.equals("JSON", format)) {
-            // if JSON is specified
-            type = DOCKSTORE_CWL;
-        } else {
-            // TODO: no other descriptor formats implemented for now
-            type = null;
-        }
-        return type;
     }
 
     @Override
@@ -444,7 +430,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param unwrap       unwrap the file and present the descriptor sans wrapper model
      * @return a specific file wrapped in a response
      */
-    private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath,
+    private Response getFileByToolVersionID(String registryId, String versionId, DescriptorLanguage.FileType type, String relativePath,
         boolean unwrap, Optional<User> user) {
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
@@ -525,7 +511,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         : toolTestsList).build();
             case DOCKERFILE:
                 Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
-                    .filter(sourcefile -> ((SourceFile)sourcefile).getType() == SourceFile.FileType.DOCKERFILE).findFirst();
+                    .filter(sourcefile -> ((SourceFile)sourcefile).getType() == DescriptorLanguage.FileType.DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
                     ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
                     dockerfile.setContent(potentialDockerfile.get().getContent());
@@ -681,21 +667,24 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param fileType The SourceFile.FileType
      * @return The ToolFile.FileTypeEnum
      */
-    private ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(SourceFile.FileType fileType) {
+    private ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(DescriptorLanguage.FileType fileType) {
         switch (fileType) {
         case NEXTFLOW_TEST_PARAMS:
         case CWL_TEST_JSON:
+        // DOCKSTORE-2428 - demo how to add new workflow language
+        // case SWL_TEST_JSON:
         case WDL_TEST_JSON:
             return ToolFile.FileTypeEnum.TEST_FILE;
         case DOCKERFILE:
             return ToolFile.FileTypeEnum.CONTAINERFILE;
         case DOCKSTORE_WDL:
         case DOCKSTORE_CWL:
+        // DOCKSTORE-2428 - demo how to add new workflow language
+        // case DOCKSTORE_SWL:
+        case NEXTFLOW:
             return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
         case NEXTFLOW_CONFIG:
             return ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
-        case NEXTFLOW:
-            return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
         default:
             return ToolFile.FileTypeEnum.OTHER;
         }
@@ -738,6 +727,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return sourceFiles.stream().filter(this::isWDL).collect(Collectors.toList());
         case "NFL":
             return sourceFiles.stream().filter(this::isNFL).collect(Collectors.toList());
+        // DOCKSTORE-2428 - demo how to add new workflow language
+        // case "SWL":
+        //    return sourceFiles.stream().filter(this::isSWL).collect(Collectors.toList());
         default:
             throw new CustomWebApplicationException("Unknown descriptor type.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -750,7 +742,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @return true if the sourcefile is CWL-related, false otherwise
      */
     private boolean isCWL(SourceFile sourceFile) {
-        SourceFile.FileType type = sourceFile.getType();
+        DescriptorLanguage.FileType type = sourceFile.getType();
         return Arrays.asList(CWL_TEST_JSON, DOCKERFILE, DOCKSTORE_CWL).contains(type);
     }
 
@@ -761,10 +753,23 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @return true if the sourcefile is WDL-related, false otherwise
      */
     private boolean isWDL(SourceFile sourceFile) {
-        SourceFile.FileType type = sourceFile.getType();
-        return Arrays.asList(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL)
+        DescriptorLanguage.FileType type = sourceFile.getType();
+        return Arrays.asList(DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.DOCKERFILE, DescriptorLanguage.FileType.DOCKSTORE_WDL)
             .contains(type);
     }
+
+    // DOCKSTORE-2428 - demo how to add new workflow language
+    //    /**
+    //     * This checks whether the sourcefile is SWL
+    //     *
+    //     * @param sourceFile the sourcefile to check
+    //     * @return true if the sourcefile is SWL-related, false otherwise
+    //     */
+    //    private boolean isSWL(SourceFile sourceFile) {
+    //        DescriptorLanguage.FileType type = sourceFile.getType();
+    //        return Arrays.asList(DescriptorLanguage.FileType.SWL_TEST_JSON, DOCKSTORE_SWL)
+    //            .contains(type);
+    //    }
 
     /**
      * This checks whether the sourcefile is Nextflow
@@ -772,9 +777,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @return true if the sourcefile is WDL-related, false otherwise
      */
     private boolean isNFL(SourceFile sourceFile) {
-        SourceFile.FileType type = sourceFile.getType();
-        return Arrays.asList(SourceFile.FileType.NEXTFLOW_CONFIG, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.NEXTFLOW,
-            SourceFile.FileType.NEXTFLOW_TEST_PARAMS).contains(type);
+        DescriptorLanguage.FileType type = sourceFile.getType();
+        return Arrays.asList(NEXTFLOW_CONFIG, DescriptorLanguage.FileType.DOCKERFILE, NEXTFLOW,
+            NEXTFLOW_TEST_PARAMS).contains(type);
     }
 
     private String cleanRelativePath(String relativePath) {

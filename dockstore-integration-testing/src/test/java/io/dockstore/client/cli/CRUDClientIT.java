@@ -28,7 +28,6 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -56,6 +55,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -253,7 +253,7 @@ public class CRUDClientIT extends BaseIT {
         WorkflowsApi otherUserApi = new WorkflowsApi(getWebClient(USER_1_USERNAME));
         boolean thrownException = false;
         try {
-            otherUserApi.cwl(dockstoreWorkflow.getId(), first.get().getName());
+            otherUserApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
         } catch (ApiException e) {
             thrownException = true;
         }
@@ -265,8 +265,8 @@ public class CRUDClientIT extends BaseIT {
         workflowsApi.publish(dockstoreWorkflow.getId(), pub);
 
         // files should be visible afterwards
-        file = otherUserApi.cwl(dockstoreWorkflow.getId(), first.get().getName());
-        assertTrue(!file.getContent().isEmpty());
+        file = otherUserApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
+        assertFalse(file.getContent().isEmpty());
 
         // Check that absolute file gets set if not explicity set
         SourceFile file4 = new SourceFile();
@@ -285,7 +285,7 @@ public class CRUDClientIT extends BaseIT {
     @Test
     public void testWorkflowEditingWithAuthorMetadataCWL() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, LanguageType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -297,7 +297,7 @@ public class CRUDClientIT extends BaseIT {
     @Test
     public void testWorkflowEditingWithAuthorMetadataWDL() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, LanguageType.WDL.toString(), null, null);
+        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("metadata_example2.wdl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
@@ -415,7 +415,7 @@ public class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         thrown.expect(ApiException.class);
-        containersApi.addTestParameterFiles(hostedTool.getId(), new ArrayList<>(), LanguageType.CWL.toString(), "", "1");
+        containersApi.addTestParameterFiles(hostedTool.getId(), new ArrayList<>(), DescriptorLanguage.CWL.toString().toLowerCase(), "", "1");
     }
 
     /**
@@ -428,7 +428,7 @@ public class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         thrown.expect(ApiException.class);
-        containersApi.deleteTestParameterFiles(hostedTool.getId(), new ArrayList<>(), LanguageType.CWL.toString(), "1");
+        containersApi.deleteTestParameterFiles(hostedTool.getId(), new ArrayList<>(), DescriptorLanguage.CWL.toString(), "1");
     }
 
     /**
@@ -438,8 +438,8 @@ public class CRUDClientIT extends BaseIT {
     public void testWorkflowCreationInvalidDescriptorType(){
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
-        api.createHostedWorkflow("awesomeToolCwl", null, LanguageType.CWL.toString(), null, null);
-        api.createHostedWorkflow("awesomeToolWdl", null, LanguageType.WDL.toString(), null, null);
+        api.createHostedWorkflow("awesomeToolCwl", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
+        api.createHostedWorkflow("awesomeToolWdl", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
         api.createHostedWorkflow("awesomeToolCwll", null, "cwll", null, null);
     }
@@ -452,7 +452,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, LanguageType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
         workflowApi.refresh(hostedWorkflow.getId());
     }
@@ -466,7 +466,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, LanguageType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
         workflowApi.restub(hostedWorkflow.getId());
     }
@@ -479,7 +479,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, LanguageType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         Workflow newWorkflow = new Workflow();
         thrown.expect(ApiException.class);
         workflowApi.updateWorkflow(hostedWorkflow.getId(), newWorkflow);
@@ -493,7 +493,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, LanguageType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         Workflow newWorkflow = new Workflow();
         thrown.expect(ApiException.class);
         workflowApi.updateWorkflowPath(hostedWorkflow.getId(), newWorkflow);
@@ -507,7 +507,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, LanguageType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
         workflowApi.addTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "", "1");
     }
@@ -520,7 +520,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, LanguageType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
         workflowApi.deleteTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "1");
     }

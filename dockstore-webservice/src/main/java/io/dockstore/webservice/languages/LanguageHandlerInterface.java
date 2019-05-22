@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -118,7 +119,7 @@ public interface LanguageHandlerInterface {
      * @param fileType Test parameter file type
      * @return Pair of isValid and validationMessage
      */
-    default VersionTypeValidation checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
+    default VersionTypeValidation checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, DescriptorLanguage.FileType fileType) {
         Boolean isValid = true;
         Map<String, String> validationMessageObject = new HashMap<>();
         for (SourceFile sourcefile : sourcefiles) {
@@ -141,7 +142,7 @@ public interface LanguageHandlerInterface {
      * @param fileTypes
      * @return Filtered sourcefile set
      */
-    default Set<SourceFile> filterSourcefiles(Set<SourceFile> sourcefiles, List<SourceFile.FileType> fileTypes) {
+    default Set<SourceFile> filterSourcefiles(Set<SourceFile> sourcefiles, List<DescriptorLanguage.FileType> fileTypes) {
         return sourcefiles.stream()
                 .filter(sourcefile -> fileTypes.contains(sourcefile.getType()))
                 .collect(Collectors.toSet());

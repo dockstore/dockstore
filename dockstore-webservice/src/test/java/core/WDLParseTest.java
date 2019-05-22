@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -41,7 +42,7 @@ public class WDLParseTest {
     @Test
     public void testWDLMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.wdl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().contains("Chip Stewart"));
@@ -51,7 +52,7 @@ public class WDLParseTest {
     @Test
     public void testWDLMetadataExampleWithMerge() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example1.wdl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
@@ -61,7 +62,7 @@ public class WDLParseTest {
     @Test
     public void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
@@ -81,7 +82,7 @@ public class WDLParseTest {
             sourceFile.setContent(FileUtils.readFileToString(recursiveWDL, StandardCharsets.UTF_8));
             sourceFile.setAbsolutePath(recursiveWDL.getAbsolutePath());
             sourceFile.setPath(recursiveWDL.getAbsolutePath());
-            sourceFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
             Set<SourceFile> sourceFileSet = new HashSet<>();
             sourceFileSet.add(sourceFile);
             WDLHandler wdlHandler = new WDLHandler();

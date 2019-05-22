@@ -34,6 +34,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.SwaggerUtility;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -69,8 +70,8 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.swagger.client.model.DockstoreTool.ModeEnum.HOSTED;
 
 /**
@@ -1085,7 +1086,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         }
     }
 
-    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+    public SourceFile getDescriptorFromServer(String entry, DescriptorLanguage descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];
@@ -1099,10 +1100,10 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         }
 
         if (container != null) {
-            if (descriptorType.equals(CWL_STRING)) {
-                file = containersApi.cwl(container.getId(), tag);
-            } else if (descriptorType.equals(WDL_STRING)) {
-                file = containersApi.wdl(container.getId(), tag);
+            if (descriptorType.equals(CWL)) {
+                file = containersApi.primaryDescriptor(container.getId(), tag, DescriptorLanguage.CWL.toString());
+            } else if (descriptorType.equals(WDL)) {
+                file = containersApi.primaryDescriptor(container.getId(), tag, DescriptorLanguage.WDL.toString());
             } else {
                 throw new UnsupportedOperationException("other languages not supported yet");
             }

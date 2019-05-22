@@ -47,7 +47,7 @@ import io.cwl.avro.CWL;
 import io.dockstore.client.cli.CheckerClient;
 import io.dockstore.client.cli.Client;
 import io.dockstore.common.Bridge;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.CWLClient;
 import io.github.collaboratory.nextflow.NextFlowClient;
@@ -96,7 +96,9 @@ import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.Client.SCRIPT;
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 
 /**
@@ -250,10 +252,10 @@ public abstract class AbstractEntryClient<T> {
                 star(args);
                 break;
             case WDL_STRING:
-                descriptor(args, WDL_STRING);
+                descriptor(args, WDL);
                 break;
             case CWL_STRING:
-                descriptor(args, CWL_STRING);
+                descriptor(args, CWL);
                 break;
             case "refresh":
                 refresh(args);
@@ -359,7 +361,7 @@ public abstract class AbstractEntryClient<T> {
      * @param entry          a unique identifier for an entry, called a path for workflows and tools ex:
      *                       quay.io/collaboratory/seqware-bwa-workflow:develop for a tool
      */
-    private void handleDescriptor(String descriptorType, String entry) {
+    private void handleDescriptor(DescriptorLanguage descriptorType, String entry) {
         try {
             SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
@@ -441,7 +443,7 @@ public abstract class AbstractEntryClient<T> {
      */
     protected abstract void manualPublish(List<String> args);
 
-    public abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException, IOException;
+    public abstract SourceFile getDescriptorFromServer(String entry, DescriptorLanguage descriptorType) throws ApiException, IOException;
 
     /**
      * private helper methods
@@ -480,7 +482,7 @@ public abstract class AbstractEntryClient<T> {
         }
     }
 
-    private void descriptor(List<String> args, String descriptorType) {
+    private void descriptor(List<String> args, DescriptorLanguage descriptorType) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             descriptorHelp(descriptorType);
         } else {
@@ -726,14 +728,15 @@ public abstract class AbstractEntryClient<T> {
                 descriptorType = reqVal(args, "--descriptor-type");
                 descriptorType = descriptorType.toLowerCase();
                 boolean validType = false;
-                for (LanguageType type : LanguageType.values()) {
-                    if (type.toString().equals(descriptorType) && !"none".equals(descriptorType)) {
+                for (DescriptorLanguage type : DescriptorLanguage.values()) {
+                    if (type.toString().equalsIgnoreCase(descriptorType) && !"none".equalsIgnoreCase(descriptorType)) {
                         validType = true;
                         break;
                     }
                 }
+                final String joinedLanguages = Joiner.on(',').join(DescriptorLanguage.values());
                 if (!validType) {
-                    errorMessage("Only \'CWL\' and \'WDL\' are valid descriptor types", CLIENT_ERROR);
+                    errorMessage("Only " + joinedLanguages + " are valid descriptor types", CLIENT_ERROR);
                 }
             }
 
@@ -749,17 +752,17 @@ public abstract class AbstractEntryClient<T> {
      * Type.WDL if file content is WDL
      * Type.NONE if file content is neither WDL nor CWL
      */
-    LanguageType checkFileContent(File content) {
-        for (LanguageType type : LanguageType.values()) {
+    Optional<DescriptorLanguage> checkFileContent(File content) {
+        for (DescriptorLanguage type : DescriptorLanguage.values()) {
             Optional<LanguageClientInterface> languageCLient = LanguageClientFactory.createLanguageCLient(this, type);
             if (languageCLient.isPresent()) {
                 Boolean check = languageCLient.get().check(content);
                 if (check) {
-                    return type;
+                    return Optional.of(type);
                 }
             }
         }
-        return LanguageType.NONE;
+        return Optional.empty();
     }
 
     /**
@@ -770,15 +773,15 @@ public abstract class AbstractEntryClient<T> {
      * Type.WDL if file extension is WDL
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
-    LanguageType checkFileExtension(String path) {
+    Optional<DescriptorLanguage> checkFileExtension(String path) {
         if (FilenameUtils.getExtension(path).equalsIgnoreCase(CWL_STRING) || FilenameUtils.getExtension(path).equalsIgnoreCase("yaml") || FilenameUtils.getExtension(path).equalsIgnoreCase("yml")) {
-            return LanguageType.CWL;
+            return Optional.of(DescriptorLanguage.CWL);
         } else if (FilenameUtils.getExtension(path).equalsIgnoreCase(WDL_STRING)) {
-            return LanguageType.WDL;
+            return Optional.of(DescriptorLanguage.WDL);
         } else if (path.endsWith("nextflow.config")) {
-            return LanguageType.NEXTFLOW;
+            return Optional.of(DescriptorLanguage.NEXTFLOW);
         }
-        return LanguageType.NONE;
+        return Optional.empty();
     }
 
     /**
@@ -793,7 +796,7 @@ public abstract class AbstractEntryClient<T> {
         String invalidWorkflowMessage = "Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.";
 
         File file = new File(localFilePath);
-        LanguageType ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
+        Optional<DescriptorLanguage> optExt = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
         if (!file.exists() || file.isDirectory()) {
             if (getEntryType().equalsIgnoreCase("tool")) {
@@ -805,81 +808,86 @@ public abstract class AbstractEntryClient<T> {
             }
         }
 
-        LanguageType content = checkFileContent(file);             //check the file content (wdl,cwl or "")
+        Optional<DescriptorLanguage> optContent = checkFileContent(file);             //check the file content (wdl,cwl or "")
 
-        if (ext.equals(LanguageType.CWL)) {
-            if (content.equals(LanguageType.CWL)) {
-                // do not continue to check file if the cwl is invalid
-                if (!validateCWL(localFilePath)) {
-                    return;
+        if (optExt.isPresent() && optContent.isPresent()) {
+            DescriptorLanguage ext = optExt.get();
+            DescriptorLanguage content = optContent.get();
+            if (ext.equals(DescriptorLanguage.CWL)) {
+                if (content.equals(DescriptorLanguage.CWL)) {
+                    // do not continue to check file if the cwl is invalid
+                    if (!validateCWL(localFilePath)) {
+                        return;
+                    }
+                    try {
+                        launchCwl(localFilePath, argsList, true);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+                    } catch (IOException e) {
+                        exceptionMessage(e, "IO error launching entry", IO_ERROR);
+                    }
+                } else if (!content.equals(DescriptorLanguage.CWL) && descriptor == null) {
+                    //extension is cwl but the content is not cwl
+                    out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
+                } else if (!content.equals(DescriptorLanguage.CWL) && descriptor.equals(CWL_STRING)) {
+                    errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
+                } else if (content.equals(DescriptorLanguage.WDL) && descriptor.equals(WDL_STRING)) {
+                    out("This is a WDL file.. Please put the correct extension to the entry file name.");
+                    out("Launching entry file as a WDL file..");
+                    try {
+                        launchWdl(argsList, true);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+                    } catch (IOException e) {
+                        exceptionMessage(e, "IO error launching entry", IO_ERROR);
+                    }
+                } else {
+                    errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
                 }
-                try {
-                    launchCwl(localFilePath, argsList, true);
-                } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
+            } else if (ext.equals(DescriptorLanguage.WDL)) {
+                if (content.equals(DescriptorLanguage.WDL)) {
+                    try {
+                        launchWdl(localFilePath, argsList, true);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+                    }
+                } else if (!content.equals(DescriptorLanguage.WDL) && descriptor == null) {
+                    //extension is wdl but the content is not wdl
+                    out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
+                } else if (!content.equals(DescriptorLanguage.WDL) && descriptor.equals(WDL_STRING)) {
+                    errorMessage("Entry file is not a valid WDL file.", CLIENT_ERROR);
+                } else if (content.equals(DescriptorLanguage.CWL) && descriptor.equals(CWL_STRING)) {
+                    out("This is a CWL file.. Please put the correct extension to the entry file name.");
+                    out("Launching entry file as a CWL file..");
+                    try {
+                        launchCwl(localFilePath, argsList, true);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+                    } catch (IOException e) {
+                        exceptionMessage(e, "IO error launching entry", IO_ERROR);
+                    }
+                } else {
+                    errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
                 }
-            } else if (!content.equals(LanguageType.CWL) && descriptor == null) {
-                //extension is cwl but the content is not cwl
-                out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-            } else if (!content.equals(LanguageType.CWL) && descriptor.equals(CWL_STRING)) {
-                errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
-            } else if (content.equals(LanguageType.WDL) && descriptor.equals(WDL_STRING)) {
-                out("This is a WDL file.. Please put the correct extension to the entry file name.");
-                out("Launching entry file as a WDL file..");
-                try {
-                    launchWdl(argsList, true);
-                } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
+            } else if (ext.equals(DescriptorLanguage.NEXTFLOW)) {
+                // TODO: better error handling as with CWL and WDL
+                if (content.equals(DescriptorLanguage.NEXTFLOW)) {
+                    try {
+                        launchNextFlow(localFilePath, argsList, true);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+                    }
+                } else if (!content.equals(DescriptorLanguage.NEXTFLOW) && descriptor == null) {
+                    //extension is wdl but the content is not wdl
+                    out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
+                } else {
+                    errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
                 }
-            } else {
-                errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
             }
-        } else if (ext.equals(LanguageType.WDL)) {
-            if (content.equals(LanguageType.WDL)) {
-                try {
-                    launchWdl(localFilePath, argsList, true);
-                } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
-                }
-            } else if (!content.equals(LanguageType.WDL) && descriptor == null) {
-                //extension is wdl but the content is not wdl
-                out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-            } else if (!content.equals(LanguageType.WDL) && descriptor.equals(WDL_STRING)) {
-                errorMessage("Entry file is not a valid WDL file.", CLIENT_ERROR);
-            } else if (content.equals(LanguageType.CWL) && descriptor.equals(CWL_STRING)) {
-                out("This is a CWL file.. Please put the correct extension to the entry file name.");
-                out("Launching entry file as a CWL file..");
-                try {
-                    launchCwl(localFilePath, argsList, true);
-                } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
-                }
-            } else {
-                errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
-            }
-        } else if (ext.equals(LanguageType.NEXTFLOW)) {
-            // TODO: better error handling as with CWL and WDL
-            if (content.equals(LanguageType.NEXTFLOW)) {
-                try {
-                    launchNextFlow(localFilePath, argsList, true);
-                } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
-                }
-            } else if (!content.equals(LanguageType.NEXTFLOW) && descriptor == null) {
-                //extension is wdl but the content is not wdl
-                out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-            } else {
-                errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
-            }
-        } else {
+        } else if (optContent.isPresent()) {
+            DescriptorLanguage content = optContent.get();
             //no extension given
-            if (content.equals(LanguageType.CWL)) {
+            if (content.equals(DescriptorLanguage.CWL)) {
                 out("This is a CWL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a CWL file..");
                 try {
@@ -889,7 +897,7 @@ public abstract class AbstractEntryClient<T> {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            } else if (content.equals(LanguageType.WDL)) {
+            } else if (content.equals(DescriptorLanguage.WDL)) {
                 out("This is a WDL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 try {
@@ -1219,17 +1227,20 @@ public abstract class AbstractEntryClient<T> {
 
     LanguageClientInterface convertCLIStringToEnum(String descriptor) {
         // TODO: ugly mapping, need to refactor
-        Optional<LanguageClientInterface> languageCLient;
-        switch (descriptor) {
-        case CWL_STRING:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, LanguageType.CWL);
+        Optional<LanguageClientInterface> languageCLient = Optional.empty();
+        final DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(descriptor);
+        switch (descriptorLanguage) {
+        case CWL:
+            languageCLient = LanguageClientFactory.createLanguageCLient(this, DescriptorLanguage.CWL);
             break;
-        case WDL_STRING:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, LanguageType.WDL);
+        case WDL:
+            languageCLient = LanguageClientFactory.createLanguageCLient(this, DescriptorLanguage.WDL);
+            break;
+        case NEXTFLOW:
+            languageCLient = LanguageClientFactory.createLanguageCLient(this, DescriptorLanguage.NEXTFLOW);
             break;
         default:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, LanguageType.NEXTFLOW);
-            break;
+            // fall-through and throw exception when language unknown
         }
         if (languageCLient.isPresent()) {
             return languageCLient.get();
@@ -1420,13 +1431,13 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    private void descriptorHelp(String descriptorType) {
+    private void descriptorHelp(DescriptorLanguage descriptorType) {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " " + descriptorType + " --help");
         out("       dockstore " + getEntryType().toLowerCase() + " " + descriptorType + " [parameters]");
         out("");
         out("Description:");
-        out("  Grab a " + descriptorType.toUpperCase() + " document for a particular entry.");
+        out("  Grab a " + descriptorType.toString().toUpperCase() + " document for a particular entry.");
         out("");
         out("Required parameters:");
         out("  --entry <entry>              Complete " + getEntryType()
