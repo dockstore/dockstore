@@ -147,6 +147,7 @@ public class WorkflowResource
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
+    private static final Integer MAX_ITEMS_PER_PAGE = 50;
     private static final String PAGINATION_LIMIT = "100";
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
     private final ElasticManager elasticManager;
@@ -700,6 +701,26 @@ public class WorkflowResource
 
     }
 
+    /*
+    List<Deposit> depositList = null;
+    try {
+        String workflowPath = workflow.getWorkflowPath();
+
+        depositList = depositApi.listDeposits(null, "published", "mostrecent", 1, MAX_ITEMS_PER_PAGE);
+    } catch (ApiException e) {
+        LOG.error("Api exception. Could not list depositions on Zenodo. Error is " + e.getMessage());
+        throw new CustomWebApplicationException("Api exception. Could not list depositions on Zenodo.", HttpStatus.SC_BAD_REQUEST);
+    } catch (Exception ee) {
+        LOG.error("Could not list depositions on Zenodo. Error is " + ee.getMessage());
+        throw new CustomWebApplicationException("Could not list depositions on Zenodo.", HttpStatus.SC_BAD_REQUEST);
+    }
+
+    Iterator depositListIter = depositList.iterator();
+    //Deposit latestWorkflowVersionDOIDeposit = (Deposit)depositListIter.next();
+    while (depositListIter.hasNext()) {
+        Deposit aDeposit = ((Deposit)depositListIter.next());
+    }
+    */
 
     private DepositMetadata fillInMetadata(DepositMetadata depositMetadata, Workflow workflow, WorkflowVersion workflowVersion) {
 
@@ -774,26 +795,31 @@ public class WorkflowResource
         Deposit deposit = new Deposit();
         Deposit returnDeposit;
         String workflowVersionDoiURL = workflowVersion.getDoiURL();
-
-        List<Deposit> depositList = null;
-        try {
-            String workflowPath = workflow.getWorkflowPath();
-\            depositList = depositApi.listDeposits(workflowPath, "published", "mostrecent", 1, PAGINATION_LIMIT);
-        } catch (ApiException e) {
-            LOG.error("Could not list depositions on Zenodo. Error is " + e.getMessage());
-            throw new CustomWebApplicationException("Could not list depositions on Zenodo.", HttpStatus.SC_BAD_REQUEST);
+        if (workflowVersionDoiURL != null && !workflowVersionDoiURL.isEmpty()) {
+            LOG.error("Workflow version " + workflowVersion.getName() + " already has a DOI " + workflowVersionDoiURL +
+                    ". Dockstore will only create one DOI per version.");
+            throw new CustomWebApplicationException("Workflow version" + workflowVersion.getName() + " already has a DOI "
+                    + workflowVersionDoiURL + ". Dockstore will only create one DOI per version.", HttpStatus.SC_METHOD_NOT_ALLOWED);
         }
-
-        Iterator depositListIter = depositList.iterator();
-        //Deposit latestWorkflowVersionDOIDeposit = (Deposit)depositListIter.next();
-        while (depositListIter.hasNext()) {
-            Deposit aDeposit = ((Deposit)depositListIter.next());
+        String latestWorkflowVersionDOIURL = null;
+        Integer latestWorkflowVersionDepositID = 0;
+        Set<WorkflowVersion> setOfWorkflowVersions = workflow.getVersions();
+        Iterator iter = setOfWorkflowVersions.iterator();
+        while (iter.hasNext()) {
+            WorkflowVersion myWorkflowVersion = ((WorkflowVersion)iter.next());
+            latestWorkflowVersionDOIURL = myWorkflowVersion.getDoiURL();
+            if (latestWorkflowVersionDOIURL != null && !latestWorkflowVersionDOIURL.isEmpty()) {
+                String depositIdStr = latestWorkflowVersionDOIURL.substring(latestWorkflowVersionDOIURL.lastIndexOf(".") + 1).trim();
+                latestWorkflowVersionDepositID = Integer.parseInt(depositIdStr);
+                break;
+            }
         }
 
 
         int depositionID = 0;
         DepositMetadata depositMetadata = null;
-        if (workflowVersionDoiURL == null || ("").equals(workflowVersionDoiURL)) {
+
+        if (latestWorkflowVersionDOIURL == null || latestWorkflowVersionDOIURL.isEmpty()) {
             try {
                 returnDeposit = depositApi.createDeposit(deposit);
                 depositionID = returnDeposit.getId();
@@ -806,7 +832,7 @@ public class WorkflowResource
                 throw new CustomWebApplicationException("Could not create deposition on Zenodo.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            String depositIdStr = workflowVersionDoiURL.substring(workflowVersionDoiURL.lastIndexOf(".") + 1).trim();
+            String depositIdStr = latestWorkflowVersionDOIURL.substring(latestWorkflowVersionDOIURL.lastIndexOf(".") + 1).trim();
             int depositId = Integer.parseInt(depositIdStr);
             try {
                 returnDeposit = actionsApi.newDepositVersion(depositId);
@@ -820,8 +846,11 @@ public class WorkflowResource
                 returnDeposit = depositApi.getDeposit(depositionID);
 
                 depositMetadata = returnDeposit.getMetadata();
+
                 List myList = new ArrayList();
                 depositMetadata.setCommunities(myList);
+
+                depositMetadata = fillInMetadata(depositMetadata, workflow, workflowVersion);
 
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage());
@@ -890,6 +919,7 @@ public class WorkflowResource
         }
 
         workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
+
         System.out.println(publishedDeposit);
 
     }
