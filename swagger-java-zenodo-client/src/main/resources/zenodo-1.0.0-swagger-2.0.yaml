@@ -33,23 +33,23 @@ paths:
       summary: List of deposits
       description: 'List all depositions for the currently authenticated user'
       parameters:
-        - in: path
-          name: query
+        - in: query
+          name: q
           type: string
           description: 'Search query (using Elasticsearch query string syntax)'
-        - in: path
+        - in: query
           name: status
           type: string
           description: 'Filter result based on deposit status (either draft or published)'
-        - in: path
+        - in: query
           name: sort
           type: string
           description: 'Sort order (bestmatch or mostrecent). Prefix with minus to change form ascending to descending (e.g. -mostrecent)'
-        - in: path
+        - in: query
           name: page
           type: integer
           description: 'Page number for pagination'
-        - in: path
+        - in: query
           name: size
           type: integer
           description: 'Number of results to return per page'
