@@ -780,7 +780,7 @@ public abstract class AbstractEntryClient<T> {
         } else if (FilenameUtils.getExtension(path).equalsIgnoreCase(WDL_STRING)) {
             return Optional.of(WDL);
         } else if (path.endsWith("nextflow.config")) {
-            return Optional.of(DescriptorLanguage.NEXTFLOW);
+            return Optional.of(NEXTFLOW);
         }
         return Optional.empty();
     }
@@ -872,7 +872,7 @@ public abstract class AbstractEntryClient<T> {
                 } else {
                     errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
                 }
-            } else if (ext.equals(DescriptorLanguage.NEXTFLOW)) {
+            } else if (ext.equals(NEXTFLOW)) {
                 // TODO: better error handling as with CWL and WDL
                 if (nextflowContentPresent) {
                     try {
@@ -1244,7 +1244,7 @@ public abstract class AbstractEntryClient<T> {
             languageCLient = LanguageClientFactory.createLanguageCLient(this, WDL);
             break;
         case NEXTFLOW:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, DescriptorLanguage.NEXTFLOW);
+            languageCLient = LanguageClientFactory.createLanguageCLient(this, NEXTFLOW);
             break;
         default:
             // fall-through and throw exception when language unknown

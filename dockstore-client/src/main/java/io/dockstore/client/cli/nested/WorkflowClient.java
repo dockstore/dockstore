@@ -1131,7 +1131,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 if (descriptorType.equals(CWL)) {
                     file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.CWL.toString());
                 } else if (descriptorType.equals(WDL)) {
-                    file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.CWL.toString());
+                    file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.WDL.toString());
                 } else {
                     throw new UnsupportedOperationException("other languages not supported yet");
                 }
