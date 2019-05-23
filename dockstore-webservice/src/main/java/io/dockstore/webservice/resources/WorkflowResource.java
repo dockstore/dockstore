@@ -796,9 +796,9 @@ public class WorkflowResource
         Deposit returnDeposit;
         String workflowVersionDoiURL = workflowVersion.getDoiURL();
         if (workflowVersionDoiURL != null && !workflowVersionDoiURL.isEmpty()) {
-            LOG.error("Workflow version " + workflowVersion.getName() + " already has a DOI " + workflowVersionDoiURL +
+            LOG.error("Workflow version " + workflowVersion.getName() + " already has DOI " + workflowVersionDoiURL +
                     ". Dockstore will only create one DOI per version.");
-            throw new CustomWebApplicationException("Workflow version" + workflowVersion.getName() + " already has a DOI "
+            throw new CustomWebApplicationException("Workflow version " + workflowVersion.getName() + " already has DOI "
                     + workflowVersionDoiURL + ". Dockstore will only create one DOI per version.", HttpStatus.SC_METHOD_NOT_ALLOWED);
         }
         String latestWorkflowVersionDOIURL = null;
@@ -859,6 +859,15 @@ public class WorkflowResource
         }
         //System.out.println(returnDeposit.toString());
 
+        // Creating a new version copies the files from the previous version
+        // We want to delete these since we will upload a new set of files
+        FilesApi filesApi = new FilesApi(zendoClient);
+        List<DepositionFile> originalFilesInNewVersion = returnDeposit.getFiles();
+        Iterator filesIter = originalFilesInNewVersion.iterator();
+        while (filesIter.hasNext()) {
+            String fileIdStr = ((DepositionFile)filesIter.next()).getId();
+            filesApi.deleteFile(depositionID, fileIdStr);
+        }
 
         // Add workflow version source files as a zip to the DOI upload deposit
         // Borrow code from getWorkflowZip
@@ -885,7 +894,7 @@ public class WorkflowResource
             java.nio.file.Path zipPath = Paths.get(fileName);
             File zipFile = zipPath.toFile();
 
-            FilesApi filesApi = new FilesApi(zendoClient);
+            //FilesApi filesApi = new FilesApi(zendoClient);
             try {
                 DepositionFile file = filesApi.createFile(depositionID, zipFile, fileName);
             } catch (ApiException e) {
