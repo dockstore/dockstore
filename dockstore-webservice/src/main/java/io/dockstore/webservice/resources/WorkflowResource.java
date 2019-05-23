@@ -114,6 +114,7 @@ import io.swagger.zenodo.client.api.ActionsApi;
 import io.swagger.zenodo.client.api.DepositsApi;
 import io.swagger.zenodo.client.api.FilesApi;
 import io.swagger.zenodo.client.model.Author;
+import io.swagger.zenodo.client.model.Community;
 import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
 import io.swagger.zenodo.client.model.DepositionFile;
@@ -727,7 +728,10 @@ public class WorkflowResource
         // add some metadata
         depositMetadata.setTitle(workflow.getWorkflowPath());
         depositMetadata.setUploadType(DepositMetadata.UploadTypeEnum.SOFTWARE);
-        depositMetadata.setDescription(workflow.getDescription());
+        // A metadata description is required for Zenodo
+        String description = workflow.getDescription();
+        String descriptionStr = (description == null || description.isEmpty()) ? "n/a" : workflow.getDescription();
+        depositMetadata.setDescription(descriptionStr);
         depositMetadata.setVersion(workflowVersion.getName());
 
         // Use the workflow labels as Zendo free form keywords for this deposition.
@@ -758,13 +762,22 @@ public class WorkflowResource
 
         Author author1 = new Author();
         //author1.setName("lastname1, firstname1");
-        author1.setName(workflow.getAuthor());
+        String author = workflow.getAuthor();
+        String authorStr = (author == null || author.isEmpty()) ? "n/a" : workflow.getAuthor();
+        author1.setName(authorStr);
         //Author author2 = new Author();
         //author2.setName("lastname2, firstname2");
         //returnDeposit.getMetadata().setCreators(Arrays.asList(author1, author2));
         depositMetadata.setCreators(Arrays.asList(author1));
-        List myList = new ArrayList();
-        depositMetadata.setCommunities(myList);
+
+        // A communities entry must not be null but can be a null
+        // List for Zenodo
+        List<Community> communities = depositMetadata.getCommunities();
+
+        if (communities == null || communities.isEmpty()) {
+            List myList = new ArrayList();
+            depositMetadata.setCommunities(myList);
+        }
 
         return depositMetadata;
     }
@@ -829,7 +842,8 @@ public class WorkflowResource
 
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage());
-                throw new CustomWebApplicationException("Could not create deposition on Zenodo.", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
+                        + "Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
             String depositIdStr = latestWorkflowVersionDOIURL.substring(latestWorkflowVersionDOIURL.lastIndexOf(".") + 1).trim();
@@ -854,7 +868,8 @@ public class WorkflowResource
 
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage());
-                throw new CustomWebApplicationException("Could not create new deposition version on Zenodo.", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
+                        + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
             }
         }
         //System.out.println(returnDeposit.toString());
@@ -899,7 +914,8 @@ public class WorkflowResource
                 DepositionFile file = filesApi.createFile(depositionID, zipFile, fileName);
             } catch (ApiException e) {
                 LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage());
-                throw new CustomWebApplicationException("Could not create files for new version on Zenodo.", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
+                        + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
             }
         }
 
@@ -913,7 +929,8 @@ public class WorkflowResource
             depositApi.putDeposit(depositionID, nestedDepositMetadata);
         } catch (ApiException e) {
             LOG.error("Could not put deposition metadata on Zenodo. Error is " + e.getMessage());
-            throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo."
+                    + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
         }
 
         // publish it
@@ -924,7 +941,8 @@ public class WorkflowResource
             publishedDeposit = actionsApi.publishDeposit(depositionID);
         } catch (ApiException e) {
             LOG.error("Could not publish DOI on Zenodo. Error is " + e.getMessage());
-            throw new CustomWebApplicationException("Could not publish DOI on Zenodo.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Could not publish DOI on Zenodo."
+                    + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
         }
 
         workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
