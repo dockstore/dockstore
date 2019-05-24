@@ -6308,11 +6308,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified.Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created)Workflows-> For remote: When
+            refresh is hit, last time Github repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on
+            webservice.Tools-> For automated builds: last time tool/namespace
+            was refreshed Dockstore, tool info updated, default version
+            selected. For hosted tools: when you created the toolWorkflows-> For
+            remote: When refresh all is hit for first time. Hosted: Seems to be
+            time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -6382,7 +6391,10 @@ components:
         lastBuild:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last built
+          description: "Implementation specific timestamp for last built. For automated
+            builds: When refresh is hit, the last time the tool was built gets
+            stored here.If tool was never built on quay.io, then last build will
+            be null. N/A for hosted/manual path tools"
         tags:
           type: array
           description: Implementation specific tracking of valid build tags for the docker
@@ -6496,11 +6508,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified.Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created)Workflows-> For remote: When
+            refresh is hit, last time Github repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on
+            webservice.Tools-> For automated builds: last time tool/namespace
+            was refreshed Dockstore, tool info updated, default version
+            selected. For hosted tools: when you created the toolWorkflows-> For
+            remote: When refresh all is hit for first time. Hosted: Seems to be
+            time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -6920,7 +6941,9 @@ components:
         last_modified:
           type: string
           format: date-time
-          description: The last time this image was modified in the image registry
+          description: "Tool-> For automated builds: Last time specific tag was built. For
+            hosted: When version was createdWorkflow-> Remote: Last time version
+            on Github repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch
@@ -7439,6 +7462,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7494,11 +7521,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified.Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created)Workflows-> For remote: When
+            refresh is hit, last time Github repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on
+            webservice.Tools-> For automated builds: last time tool/namespace
+            was refreshed Dockstore, tool info updated, default version
+            selected. For hosted tools: when you created the toolWorkflows-> For
+            remote: When refresh all is hit for first time. Hosted: Seems to be
+            time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -7598,7 +7634,9 @@ components:
         last_modified:
           type: string
           format: date-time
-          description: The last time this image was modified in the image registry
+          description: "Tool-> For automated builds: Last time specific tag was built. For
+            hosted: When version was createdWorkflow-> Remote: Last time version
+            on Github repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch

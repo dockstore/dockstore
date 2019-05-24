@@ -133,20 +133,28 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "This is the email of the git organization", position = 6)
     private String email;
+
     @Column
     @ApiModelProperty(value = "This is the default version of the entry", position = 7)
     private String defaultVersion;
+
     @Column
     @JsonProperty("is_published")
     @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
     private boolean isPublished;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific timestamp for last modified", position = 9)
+    @ApiModelProperty(value = "Implementation specific timestamp for last modified."
+            + "Tools-> For automated/manual builds: N/A. For hosted: Last time a file was updated/created (new version created)"
+            + "Workflows-> For remote: When refresh is hit, last time Github repo was changed. Hosted: Last time a new version was made.", position = 9)
     private Date lastModified;
+
     @Column
-    @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice", position = 10)
+    @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice."
+            + "Tools-> For automated builds: last time tool/namespace was refreshed Dockstore, tool info updated, default version selected. For hosted tools: when you created the tool"
+            + "Workflows-> For remote: When refresh all is hit for first time. Hosted: Seems to be time created.", position = 10)
     private Date lastUpdated;
+
     @Column
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;

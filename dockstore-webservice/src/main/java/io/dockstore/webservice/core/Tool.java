@@ -120,7 +120,8 @@ public class Tool extends Entry<Tool, Tag> {
     private String registry;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific timestamp for last built", position = 25)
+    @ApiModelProperty(value = "Implementation specific timestamp for last built. For automated builds: When refresh is hit, the last time the tool was built gets stored here."
+            + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25)
     private Date lastBuild;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
