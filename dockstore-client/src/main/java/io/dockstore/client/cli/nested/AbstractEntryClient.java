@@ -117,14 +117,14 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  */
 public abstract class AbstractEntryClient<T> {
     private static final String WORKFLOW = "workflow";
-
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
-
     protected boolean isAdmin = false;
-    protected boolean isWesCommand = false;
-    protected boolean isLocalEntry = false;
-    protected String wesUri = null;
-    protected String wesAuth = null;
+
+    boolean isLocalEntry = false;
+
+    private boolean isWesCommand = false;
+    private String wesUri = null;
+    private String wesAuth = null;
 
     static String getCleanedDescription(String description) {
         description = MoreObjects.firstNonNull(description, "");
@@ -136,11 +136,11 @@ public abstract class AbstractEntryClient<T> {
         return description;
     }
 
-    public String getWesUri() {
+    String getWesUri() {
         return wesUri;
     }
 
-    public String getWesAuth() {
+    String getWesAuth() {
         return wesAuth;
     }
 
@@ -148,7 +148,7 @@ public abstract class AbstractEntryClient<T> {
         return isWesCommand;
     }
 
-    public boolean isLocalEntry() {
+    boolean isLocalEntry() {
         return isLocalEntry;
     }
 
@@ -832,9 +832,9 @@ public abstract class AbstractEntryClient<T> {
                 } else if (!cwlContentPresent && descriptor == null) {
                     //extension is cwl but the content is not cwl
                     out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-                } else if (!cwlContentPresent && descriptor.equals(CWL_STRING)) {
+                } else if (!cwlContentPresent && CWL_STRING.equals(descriptor)) {
                     errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
-                } else if (wdlContentPresent && descriptor.equals(WDL_STRING)) {
+                } else if (wdlContentPresent && WDL_STRING.equals(descriptor)) {
                     out("This is a WDL file.. Please put the correct extension to the entry file name.");
                     out("Launching entry file as a WDL file..");
                     try {
@@ -857,9 +857,9 @@ public abstract class AbstractEntryClient<T> {
                 } else if (!wdlContentPresent && descriptor == null) {
                     //extension is wdl but the content is not wdl
                     out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-                } else if (!wdlContentPresent && descriptor.equals(WDL_STRING)) {
+                } else if (!wdlContentPresent && WDL_STRING.equals(descriptor)) {
                     errorMessage("Entry file is not a valid WDL file.", CLIENT_ERROR);
-                } else if (cwlContentPresent && descriptor.equals(CWL_STRING)) {
+                } else if (cwlContentPresent && CWL_STRING.equals(descriptor)) {
                     out("This is a CWL file.. Please put the correct extension to the entry file name.");
                     out("Launching entry file as a CWL file..");
                     try {
@@ -872,7 +872,7 @@ public abstract class AbstractEntryClient<T> {
                 } else {
                     errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
                 }
-            } else if (ext.equals(NEXTFLOW)) {
+            } else if (NEXTFLOW.equals(ext)) {
                 // TODO: better error handling as with CWL and WDL
                 if (nextflowContentPresent) {
                     try {
@@ -890,7 +890,7 @@ public abstract class AbstractEntryClient<T> {
         } else if (optContent.isPresent()) {
             DescriptorLanguage content = optContent.get();
             //no extension given
-            if (content.equals(CWL)) {
+            if (CWL.equals(content)) {
                 out("This is a CWL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a CWL file..");
                 try {
@@ -900,7 +900,7 @@ public abstract class AbstractEntryClient<T> {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            } else if (content.equals(WDL)) {
+            } else if (WDL.equals(content)) {
                 out("This is a WDL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 try {
@@ -951,7 +951,7 @@ public abstract class AbstractEntryClient<T> {
      *
      * @param args
      */
-    protected void preValidateLaunchArguments(List<String> args) {
+    void preValidateLaunchArguments(List<String> args) {
         // Create a copy of args for prevalidation since optVals removes args from list
         List<String> argsCopy = new java.util.ArrayList(args);
         String jsonFile = optVal(argsCopy, "--json", null);
@@ -984,7 +984,7 @@ public abstract class AbstractEntryClient<T> {
      *
      * @param wesUrl URL to WES endpoint
      */
-    public WorkflowExecutionServiceApi getWorkflowExecutionServiceApi(String wesUrl, String wesCred) {
+    WorkflowExecutionServiceApi getWorkflowExecutionServiceApi(String wesUrl, String wesCred) {
         WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
 
         // Uncomment this code when Swagger Codegen generates correct Java
@@ -1015,7 +1015,7 @@ public abstract class AbstractEntryClient<T> {
             wesApiClient.setBasePath(wesEndpointUrl);
         }
 
-        /**
+        /*
          * Setup authentication credentials for the WES URL
          */
         String wesAuthorizationCredentials = ObjectUtils.firstNonNull(wesCred, configSubNode.getString("authorization"));
@@ -1040,7 +1040,7 @@ public abstract class AbstractEntryClient<T> {
      *
      * @param args Arguments entered into the CLI
      */
-    public void processWesCommands(final List<String> args) {
+    private void processWesCommands(final List<String> args) {
         this.wesUri = optVal(args, "--wes-url", null);
         this.wesAuth = optVal(args, "--wes-auth", null);
 
@@ -1258,7 +1258,7 @@ public abstract class AbstractEntryClient<T> {
     /**
      * Loads docker images from file system if there are any
      */
-    public void loadDockerImages() {
+    void loadDockerImages() {
         INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
         String dockerImageDirectory = config.getString("docker-images");
         if (!StringUtils.isBlank(dockerImageDirectory)) {
@@ -1295,7 +1295,7 @@ public abstract class AbstractEntryClient<T> {
     /**
      * help text output
      */
-    public void wesHelp() {
+    private void wesHelp() {
         printHelpHeader();
         out("Commands:");
         out("");
@@ -1310,7 +1310,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    protected void wesLaunchHelp() {
+    private void wesLaunchHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " wes launch --help");
         out("       dockstore " + getEntryType().toLowerCase() + " wes launch [parameters]");
@@ -1319,7 +1319,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    public void wesStatusHelp() {
+    private void wesStatusHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " wes status --help");
         out("       dockstore " + getEntryType().toLowerCase() + " wes status [parameters]");
@@ -1335,7 +1335,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    public void wesCancelHelp() {
+    private void wesCancelHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " wes cancel --help");
         out("       dockstore " + getEntryType().toLowerCase() + " wes cancel [parameters]");
@@ -1349,7 +1349,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    public void printWesHelpFooter() {
+    private void printWesHelpFooter() {
         out("Global Optional Parameters:");
         out("  --wes-url <WES URL>                 URL where the WES request should be sent, e.g. 'http://localhost:8080/ga4gh/wes/v1'");
         out("  --wes-auth <auth>                   Authorization credentials for the WES endpoint, e.g. 'Bearer 12345'");
@@ -1561,7 +1561,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    protected void downloadHelp() {
+    private void downloadHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " download --help");
         out("       dockstore " + getEntryType().toLowerCase() + " download [parameters]");
@@ -1577,7 +1577,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    protected void printLaunchHelpBody() {
+    private void printLaunchHelpBody() {
         out("");
         out("Description:");
         out("  Launch an entry locally.");

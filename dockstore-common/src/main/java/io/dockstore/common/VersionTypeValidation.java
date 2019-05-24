@@ -21,8 +21,8 @@ import java.util.Map;
  * Messages stored as to whether a particular workflow version is valid
  */
 public class VersionTypeValidation {
-    protected boolean isValid;
-    protected Map<String, String> message;
+    private boolean isValid;
+    private Map<String, String> message;
 
     /**
      * Map from the file path to the validation (error) message

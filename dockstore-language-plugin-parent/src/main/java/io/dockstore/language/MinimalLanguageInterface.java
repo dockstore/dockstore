@@ -80,7 +80,9 @@ public interface MinimalLanguageInterface {
     }
 
     /**
-     * Information that can be parsed from a workflow and would be useful to display to users
+     * Information that can be parsed from a specific version of a workflow and would be useful to display to users.
+     * This metadata will be displayed in a variety of ways via the dockstore UI (default metadata for the whole workflow,
+     * workflow version specific metadata might be displayed on pages/DOIs for specific versions)
      */
     class WorkflowMetadata {
         private String author;

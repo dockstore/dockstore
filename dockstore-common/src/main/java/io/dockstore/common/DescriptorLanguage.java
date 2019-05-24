@@ -16,6 +16,7 @@
 
 package io.dockstore.common;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -98,13 +99,10 @@ public enum DescriptorLanguage {
     }
 
     public static Optional<FileType> getFileType(String descriptorType) {
-        for (DescriptorLanguage lang : values()) {
-            // this is tricky, since it is used by GA4GH, those APIs can use string of the form PLAIN_CWL
-            if ((StringUtils.containsIgnoreCase(descriptorType, lang.toString()))) {
-                return Optional.of(lang.getFileType());
-            }
-        }
-        return Optional.empty();
+        // this is tricky, since it is used by GA4GH, those APIs can use string of the form PLAIN_CWL
+        // which is why we use StringUtils.containsIgnoreCase
+        return Arrays.stream(DescriptorLanguage.values())
+            .filter(lang -> StringUtils.containsIgnoreCase(descriptorType, lang.toString())).findFirst().map(DescriptorLanguage::getFileType);
     }
 
     public FileType getTestParamType() {
@@ -112,12 +110,7 @@ public enum DescriptorLanguage {
     }
 
     public static Optional<FileType> getTestParameterType(String descriptorType) {
-        for (DescriptorLanguage lang : values()) {
-            if (descriptorType.equalsIgnoreCase(lang.toString())) {
-                return Optional.of(lang.getTestParamType());
-            }
-        }
-        return Optional.empty();
+        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> descriptorType.equalsIgnoreCase(lang.toString())).findFirst().map(DescriptorLanguage::getTestParamType);
     }
 
     /**

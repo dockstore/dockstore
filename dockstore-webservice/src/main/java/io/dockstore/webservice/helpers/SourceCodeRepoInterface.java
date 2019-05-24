@@ -223,7 +223,7 @@ public abstract class SourceCodeRepoInterface {
      * @param type
      * @return
      */
-    Entry updateEntryMetadata(Entry entry, DescriptorLanguage type) {
+    Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
 
@@ -297,8 +297,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Parse file content and update
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        entry = anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles);
-        return entry;
+        return anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles);
     }
 
     /**
@@ -593,7 +592,7 @@ public abstract class SourceCodeRepoInterface {
      * @param version Version to check validation
      * @return True if valid workflow version, false otherwise
      */
-    public boolean isValidVersion(WorkflowVersion version) {
-        return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
+    private boolean isValidVersion(WorkflowVersion version) {
+        return version.getValidations().stream().allMatch(Validation::isValid);
     }
 }
