@@ -184,7 +184,11 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        workflow.setMode(WorkflowMode.FULL);
+        if (Objects.equals(existingWorkflow.get().getDescriptorType(), DescriptorLanguage.SERVICE.toString())) {
+            workflow.setMode(WorkflowMode.SERVICE);
+        } else {
+            workflow.setMode(WorkflowMode.FULL);
+        }
 
         // if it exists, extract paths from the previous workflow entry
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
@@ -571,6 +575,9 @@ public abstract class SourceCodeRepoInterface {
             // DOCKSTORE-2428 - demo how to add new workflow language
             // case DOCKSTORE_SWL:
             // these languages do not have test parameter files, so do not fail
+            break;
+        case DOCKSTORE_SERVICE_YML:
+            testParameterType = DescriptorLanguage.FileType.DOCKSTORE_SERVICE_TEST_JSON;
             break;
         default:
             throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);

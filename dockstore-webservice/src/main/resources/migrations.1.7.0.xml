@@ -44,43 +44,4 @@
     <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstratint">
         <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" referencedColumnNames="id" referencedTableName="organization"/>
     </changeSet>
-
-<changeSet author="dyuen (generated)" id="services">
-        <createTable tableName="service">
-            <column name="id" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="service_pkey"/>
-            </column>
-            <column name="author" type="VARCHAR(255)"/>
-            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="defaultversion" type="VARCHAR(255)"/>
-            <column name="description" type="TEXT"/>
-            <column name="email" type="VARCHAR(255)"/>
-            <column name="giturl" type="VARCHAR(255)"/>
-            <column name="ispublished" type="BOOLEAN"/>
-            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="topicid" type="BIGINT"/>
-            <column name="checkerid" type="BIGINT"/>
-            <column name="defaulttestparameterfilepath" type="TEXT"/>
-            <column name="defaultworkflowpath" type="TEXT"/>
-            <column name="descriptortype" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column defaultValueBoolean="false" name="ischecker" type="BOOLEAN"/>
-            <column defaultValue="STUB" name="mode" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="organization" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="repository" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="sourcecontrol" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="workflowname" type="TEXT"/>
-        </createTable>
-    </changeSet>
 </databaseChangeLog>

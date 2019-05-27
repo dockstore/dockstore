@@ -33,13 +33,14 @@ public enum DescriptorLanguage {
     // DOCKSTORE-2428 - demo how to add new workflow language
     //SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON)
     NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS),
-    SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON);
+    SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON);
 
     public static final String CWL_STRING = "cwl";
     public static final String WDL_STRING = "wdl";
     public static final String NFL_STRING = "nfl";
     // DOCKSTORE-2428 - demo how to add new workflow language
     // public static final String SWL_STRING = "swl";
+    public static final String DOCKSTORE_SERVICE = "DOCKSTORE_SERVICE";
     /**
      * this name is used in the workflow path
      */
@@ -95,9 +96,10 @@ public enum DescriptorLanguage {
             return WDL;
         case NFL_STRING:
             return NEXTFLOW;
+        case "service":
+            return SERVICE;
         // DOCKSTORE-2428 - demo how to add new workflow language
-        //
-        //case SWL_STRING:
+        // case SWL_STRING:
         //    return SWL;
         default:
             // fall-through and throw exception
@@ -134,9 +136,9 @@ public enum DescriptorLanguage {
      */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML, DOCKSTORE_SERVICE_TEST_JSON
+        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML, DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON
+        // DOCKSTORE_SWL, SWL_TEST_JSON
         // DOCKSTORE-2428 - demo how to add new workflow language
-        //,     DOCKSTORE_SWL, SWL_TEST_JSON
     }
 
     /**

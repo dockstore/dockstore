@@ -363,7 +363,13 @@ public class WorkflowResource
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(workflow.getGitUrl(), user);
 
         // do a full refresh when targeted like this
-        workflow.setMode(WorkflowMode.FULL);
+        // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
+        if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.SERVICE.toString())) {
+            workflow.setMode(WorkflowMode.SERVICE);
+        } else {
+            workflow.setMode(WorkflowMode.FULL);
+        }
+
         // look for checker workflows to associate with if applicable
         if (!workflow.isIsChecker() && workflow.getDescriptorType().equals(CWL.toString()) || workflow.getDescriptorType().equals(
             WDL.toString())) {
@@ -439,7 +445,7 @@ public class WorkflowResource
         return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
                 .stream()
                 .filter(workflow ->
-                        workflow.getMode() == WorkflowMode.FULL)
+                        workflow.getMode() == WorkflowMode.FULL || workflow.getMode() == WorkflowMode.SERVICE)
                 .collect(Collectors.toList());
     }
 
@@ -819,12 +825,19 @@ public class WorkflowResource
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services,
         @Context HttpServletResponse response) {
         // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
         List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
+        // TODO: make more efficient by handling via DAO query
+        if (services) {
+            workflows = workflows.stream().filter(Workflow::isService).collect(Collectors.toList());
+        } else {
+            workflows = workflows.stream().filter(workflow -> !workflow.isService()).collect(Collectors.toList());
+        }
         response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished(Optional.of(filter))));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.webservice.core.Entry;
@@ -41,7 +42,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             this.minimalLanguageInterface = workflowLanguagePluginClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             LOG.error("could not construct language plugin", e);
-            throw new RuntimeException();
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -85,6 +86,10 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             sourceFile.setContent(entry.getValue().getLeft());
             // DOCKSTORE-2428 - demo how to add new workflow language
             // sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SWL);
+            if (minimalLanguageInterface.isService()) {
+                // TODO: this needs to be more sophisticated
+                sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+            }
             sourceFile.setAbsolutePath(entry.getKey());
             results.put(entry.getKey(), sourceFile);
         }

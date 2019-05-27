@@ -48,6 +48,8 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
 
+import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
+
 /**
  * This describes one workflow in the dockstore, extending Entry with the fields necessary to describe workflows.
  * <p>
@@ -326,5 +328,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public void setIsChecker(boolean isChecker) {
         this.isChecker = isChecker;
+    }
+
+    @JsonProperty("is_service")
+    @ApiModelProperty(position = 50)
+    public boolean isService() {
+        return mode == SERVICE;
     }
 }

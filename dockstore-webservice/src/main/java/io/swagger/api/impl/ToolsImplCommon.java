@@ -176,6 +176,11 @@ public final class ToolsImplCommon {
                 //                case DOCKSTORE_SWL:
                 //                    toolVersion.addDescriptorTypeItem(DescriptorType.SWL);
                 //                    break;
+                // TODO not sure how to treat service languages
+                case DOCKSTORE_SERVICE_TEST_JSON:
+                case DOCKSTORE_SERVICE_YML:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
+                    break;
                 case NEXTFLOW:
                 case NEXTFLOW_CONFIG:
                     toolVersion.addDescriptorTypeItem(DescriptorType.NFL);

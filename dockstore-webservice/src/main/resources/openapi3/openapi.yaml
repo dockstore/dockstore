@@ -450,6 +450,8 @@ components:
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
           - DOCKSTORE_YML
+          - DOCKSTORE_SERVICE_YML
+          - DOCKSTORE_SERVICE_TEST_JSON
           type: string
         verifiedBySource:
           additionalProperties:
@@ -746,6 +748,8 @@ components:
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
           - DOCKSTORE_YML
+          - DOCKSTORE_SERVICE_YML
+          - DOCKSTORE_SERVICE_TEST_JSON
           type: string
         valid:
           type: boolean
@@ -811,6 +815,8 @@ components:
           type: boolean
         is_published:
           type: boolean
+        is_service:
+          type: boolean
         labels:
           items:
             $ref: '#/components/schemas/Label'
@@ -830,6 +836,7 @@ components:
           - FULL
           - STUB
           - HOSTED
+          - SERVICE
           type: string
         organization:
           type: string
@@ -1812,7 +1819,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -2805,7 +2812,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /entries/{id}/collections:
     get:
@@ -4573,7 +4580,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4943,6 +4950,11 @@ paths:
         schema:
           default: desc
           type: string
+      - in: query
+        name: services
+        schema:
+          default: false
+          type: boolean
       responses:
         default:
           content:

@@ -4791,6 +4791,12 @@ paths:
         enum:
         - "asc"
         - "desc"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -6497,6 +6503,8 @@ definitions:
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
         - "DOCKSTORE_YML"
+        - "DOCKSTORE_SERVICE_YML"
+        - "DOCKSTORE_SERVICE_TEST_JSON"
       content:
         type: "string"
         position: 2
@@ -6788,6 +6796,8 @@ definitions:
         - "CWL"
         - "WDL"
         - "NFL"
+        - "SWL"
+        - "DOCKSTORE_SERVICE"
       descriptor:
         type: "string"
         description: "The descriptor that represents this version of the tool."
@@ -6918,6 +6928,8 @@ definitions:
           - "CWL"
           - "WDL"
           - "NFL"
+          - "SWL"
+          - "DOCKSTORE_SERVICE"
       containerfile:
         type: "boolean"
         description: "Reports if this tool has a containerfile available."
@@ -7032,6 +7044,8 @@ definitions:
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
         - "DOCKSTORE_YML"
+        - "DOCKSTORE_SERVICE_YML"
+        - "DOCKSTORE_SERVICE_TEST_JSON"
       valid:
         type: "boolean"
         position: 2
@@ -7187,6 +7201,7 @@ definitions:
         - "FULL"
         - "STUB"
         - "HOSTED"
+        - "SERVICE"
       workflowName:
         type: "string"
         position: 14
@@ -7241,6 +7256,10 @@ definitions:
       source_control_provider:
         type: "string"
         position: 26
+        readOnly: true
+      is_service:
+        type: "boolean"
+        position: 50
         readOnly: true
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
