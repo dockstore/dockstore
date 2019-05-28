@@ -29,6 +29,14 @@ import io.swagger.api.ToolClassesApiService;
 import io.swagger.model.ToolClass;
 
 public class ToolClassesApiServiceImpl extends ToolClassesApiService {
+    static ToolClass getServiceClass() {
+        ToolClass type2 = new ToolClass();
+        type2.setName("Service");
+        type2.setId("2");
+        type2.setDescription("Service");
+        return type2;
+    }
+
     static ToolClass getWorkflowClass() {
         ToolClass type2 = new ToolClass();
         type2.setName("Workflow");

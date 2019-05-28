@@ -33,6 +33,7 @@ import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -262,7 +263,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow initializeWorkflow(String repositoryId) {
-        Workflow workflow = new Workflow();
+        Workflow workflow = new BioWorkflow();
 
         // Does this split not work if name has a slash?
         String[] id = repositoryId.split("/");

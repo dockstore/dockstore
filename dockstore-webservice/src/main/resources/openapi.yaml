@@ -7364,10 +7364,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parent_id:
-          type: integer
-          format: int64
-          readOnly: true
+        isChecker:
+          type: boolean
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         has_checker:
           type: boolean
           readOnly: true
@@ -7483,8 +7483,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/WorkflowVersion"
-        is_checker:
-          type: boolean
         full_workflow_path:
           type: string
           readOnly: true
@@ -7493,10 +7491,6 @@ components:
         source_control_provider:
           type: string
           readOnly: true
-        is_service:
-          type: boolean
-          readOnly: true
-      description: This describes one workflow in the dockstore
     WorkflowVersion:
       type: object
       required:

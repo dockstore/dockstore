@@ -151,7 +151,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JoinColumn(name = "checkerid")
     @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
     @ApiModelProperty(value = "The id of the associated checker workflow")
-    private Workflow checkerWorkflow;
+    private BioWorkflow checkerWorkflow;
 
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_aliases", columnNames = { "alias" }))
@@ -201,11 +201,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.aliases = aliases;
     }
 
-    public Workflow getCheckerWorkflow() {
+    public BioWorkflow getCheckerWorkflow() {
         return checkerWorkflow;
     }
 
-    public void setCheckerWorkflow(Workflow checkerWorkflow) {
+    public void setCheckerWorkflow(BioWorkflow checkerWorkflow) {
         this.checkerWorkflow = checkerWorkflow;
     }
 

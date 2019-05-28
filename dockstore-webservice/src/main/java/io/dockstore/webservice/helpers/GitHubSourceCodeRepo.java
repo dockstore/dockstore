@@ -38,6 +38,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
@@ -248,7 +249,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow initializeWorkflow(String repositoryId) {
-        Workflow workflow = new Workflow();
+        Workflow workflow = new BioWorkflow();
         // Get repository from API and setup workflow
         try {
             GHRepository repository = github.getRepository(repositoryId);

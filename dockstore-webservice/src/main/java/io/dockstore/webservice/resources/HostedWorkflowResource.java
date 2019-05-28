@@ -37,6 +37,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
@@ -145,7 +146,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     @Override
     protected Workflow getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
-        Workflow workflow = new Workflow();
+        Workflow workflow = new BioWorkflow();
         workflow.setMode(WorkflowMode.HOSTED);
         // TODO: We set the organization to the username of the user creating it. However, for gmail accounts this is an
         // email. This might not be a good idea. Especially if users don't want their emails displayed.

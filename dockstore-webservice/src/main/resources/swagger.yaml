@@ -7103,10 +7103,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parent_id:
-        type: "integer"
-        format: "int64"
-        readOnly: true
+      isChecker:
+        type: "boolean"
+      parentEntry:
+        $ref: "#/definitions/Entry"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7243,9 +7243,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
-      is_checker:
-        type: "boolean"
-        position: 23
       full_workflow_path:
         type: "string"
         position: 24
@@ -7257,11 +7254,6 @@ definitions:
         type: "string"
         position: 26
         readOnly: true
-      is_service:
-        type: "boolean"
-        position: 50
-        readOnly: true
-    description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"
     required:

@@ -23,7 +23,6 @@ import java.util.TreeSet;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -33,32 +32,28 @@ import javax.persistence.JoinTable;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
 
-import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
-
 /**
  * This describes one workflow in the dockstore, extending Entry with the fields necessary to describe workflows.
- * <p>
- * Logically, this currently means one WDL or CWL document that may refer to tools in turn.
  *
  * @author dyuen
  */
-@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore")
 @Entity
+// this is crazy, but it looks like JPA dies without this dummy value
+@Table(name = "foo")
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.countAllPublished", query = "SELECT COUNT(c.id)" + Workflow.PUBLISHED_QUERY),
@@ -71,10 +66,9 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true") })
-@DiscriminatorValue("workflow")
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
 @SuppressWarnings("checkstyle:magicnumber")
-public class Workflow extends Entry<Workflow, WorkflowVersion> {
+public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
 
@@ -122,17 +116,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     private final SortedSet<WorkflowVersion> workflowVersions;
 
-
-    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
-    @JsonIgnore
-    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
-    private Entry parentEntry;
-
-    @Column(columnDefinition = "boolean default false")
-    @JsonProperty("is_checker")
-    @ApiModelProperty(position = 23)
-    private boolean isChecker = false;
-
     public Workflow() {
         workflowVersions = new TreeSet<>();
     }
@@ -155,27 +138,16 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
 
-    @JsonProperty("parent_id")
-    public Long getParentId() {
-        if (parentEntry != null) {
-            return parentEntry.getId();
-        } else {
-            return null;
-        }
-    }
+
 
     @Override
     public Set<WorkflowVersion> getVersions() {
         return workflowVersions;
     }
 
-    public Entry getParentEntry() {
-        return parentEntry;
-    }
+    public abstract Entry getParentEntry();
 
-    public void setParentEntry(Entry parentEntry) {
-        this.parentEntry = parentEntry;
-    }
+    public abstract void setParentEntry(Entry parentEntry);
 
     /**
      * Copies some of the attributes of the source workflow to the target workflow
@@ -322,17 +294,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.sourceControl = sourceControl;
     }
 
-    public boolean isIsChecker() {
-        return this.isChecker;
-    }
+    public abstract boolean isIsChecker();
 
-    public void setIsChecker(boolean isChecker) {
-        this.isChecker = isChecker;
-    }
-
-    @JsonProperty("is_service")
-    @ApiModelProperty(position = 50)
-    public boolean isService() {
-        return mode == SERVICE;
-    }
+    public abstract void setIsChecker(boolean isChecker);
 }
