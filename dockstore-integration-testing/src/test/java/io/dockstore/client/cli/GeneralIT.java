@@ -805,26 +805,62 @@ public class GeneralIT extends BaseIT {
         assertTrue("Should throw an expection when not authorized.", failed);
     }
 
+    /**
+     * This tests that you can retrieve tools by alias (using optional auth)
+     */
     @Test
     public void testToolAlias() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         ContainersApi containersApi = new ContainersApi(webClient);
         EntriesApi entryApi = new EntriesApi(webClient);
 
-        // Add tool and publish
+        final ApiClient anonWebClient = getWebClient(false, null);
+        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
+
+        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
+        ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
+
+        // Add tool
         DockstoreTool tool = containersApi.registerManual(getContainer());
         DockstoreTool refresh = containersApi.refresh(tool.getId());
-
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        containersApi.publish(refresh.getId(), publishRequest);
 
         // Add alias
         Entry entry = entryApi.updateAliases(refresh.getId(), "foobar", "");
         Assert.assertTrue("Should have alias foobar", entry.getAliases().containsKey("foobar"));
 
-        // Get tool by alias
+        // Get unpublished tool by alias as owner
         DockstoreTool aliasTool = containersApi.getToolByAlias("foobar");
         Assert.assertNotNull("Should retrieve the tool by alias", aliasTool);
+
+        // Cannot get tool by alias as other user
+        try {
+            otherUserContainersApi.getToolByAlias("foobar");
+            assertTrue("Should not be able to retrieve tool.", false);
+        } catch (ApiException ex) {
+        }
+
+        // Cannot get tool by alias as anon user
+        try {
+            anonContainersApi.getToolByAlias("foobar");
+            assertTrue("Should not be able to retrieve tool.", false);
+        } catch (ApiException ex) {
+        }
+
+        // Publish tool
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        containersApi.publish(refresh.getId(), publishRequest);
+
+        // Get published tool by alias as owner
+        DockstoreTool publishedAliasTool = containersApi.getToolByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+
+        // Cannot get tool by alias as other user
+        publishedAliasTool = otherUserContainersApi.getToolByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+
+        // Cannot get tool by alias as anon user
+        publishedAliasTool = anonContainersApi.getToolByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
 
     }
 

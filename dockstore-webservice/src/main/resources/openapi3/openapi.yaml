@@ -2115,6 +2115,11 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -3196,7 +3201,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:
@@ -5120,6 +5125,11 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
