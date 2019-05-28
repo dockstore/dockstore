@@ -1789,14 +1789,15 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("{alias}/aliases")
-    @ApiOperation(value = "Retrieves an workflow by alias.", response = Workflow.class)
-    public Workflow getWorkflowByAlias(@ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
+    @ApiOperation(value = "Retrieves an workflow by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Workflow.class, authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
         final Workflow workflow = this.workflowDAO.findByAlias(alias);
-        if (workflow == null) {
-            throw new CustomWebApplicationException("Workflow not found", HttpStatus.SC_NOT_FOUND);
-        }
+        checkEntry(workflow);
+        optionalUserCheckEntry(user, workflow);
         return workflow;
     }
 }

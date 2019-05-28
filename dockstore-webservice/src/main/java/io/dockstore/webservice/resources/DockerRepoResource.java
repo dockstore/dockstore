@@ -1123,14 +1123,15 @@ public class DockerRepoResource
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("{alias}/aliases")
-    @ApiOperation(value = "Retrieves a tool by alias.", response = Tool.class)
-    public Tool getToolByAlias(@ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
+    @ApiOperation(value = "Retrieves a tool by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Tool.class, authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public Tool getToolByAlias(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
         final Tool tool = this.toolDAO.findByAlias(alias);
-        if (tool == null) {
-            throw new CustomWebApplicationException("Tool not found", HttpStatus.SC_NOT_FOUND);
-        }
+        checkEntry(tool);
+        optionalUserCheckEntry(user, tool);
         return tool;
     }
 }
