@@ -2773,18 +2773,6 @@ paths:
           schema:
             type: integer
             format: int64
-        - name: categoryId
-          in: query
-          description: The id of the category to add a topic to, defaults to Automatic Tool
-            and Workflow Threads (6).
-          required: false
-          schema:
-            type: integer
-            format: int32
-            enum:
-              - 6
-              - 9
-            default: 6
       responses:
         "200":
           description: successful operation

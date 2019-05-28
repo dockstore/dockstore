@@ -792,7 +792,11 @@ public class WorkflowResource
         if (request.getPublish()) {
             elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
             if (c.getTopicId() == null) {
-                entryResource.createAndSetDiscourseTopic(id, entryResource.defaultDiscourseCategoryId);
+                try {
+                    entryResource.createAndSetDiscourseTopic(id);
+                } catch (CustomWebApplicationException ex) {
+                    LOG.error("Error adding discourse topic.", ex);
+                }
             }
         } else {
             elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);

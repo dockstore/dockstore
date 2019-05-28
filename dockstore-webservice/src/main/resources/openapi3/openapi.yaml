@@ -2911,15 +2911,6 @@ paths:
         schema:
           format: int64
           type: integer
-      - description: The id of the category to add a topic to, defaults to Automatic
-          Tool and Workflow Threads (6).
-        in: query
-        name: categoryId
-        required: true
-        schema:
-          default: 6
-          format: int32
-          type: integer
       responses:
         default:
           content:
@@ -3286,7 +3277,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4094,7 +4085,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -4253,7 +4244,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId

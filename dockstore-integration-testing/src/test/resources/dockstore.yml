@@ -12,6 +12,7 @@ bitbucketClientID: <fill me in>
 bitbucketClientSecret: <fill me in>
 discourseKey: <fill me in>
 discourseUrl: <fill me in>
+discourseCategoryId: 9
 
 googleClientID: <fill me in>
 googleClientSecret: <fill me in>
