@@ -21,6 +21,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -33,7 +36,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -724,9 +726,9 @@ public class WorkflowResource
     */
 
     private DepositMetadata fillInMetadata(DepositMetadata depositMetadata, Workflow workflow, WorkflowVersion workflowVersion) {
-
         // add some metadata
         depositMetadata.setTitle(workflow.getWorkflowPath());
+        // The Zenodo deposit type for Dockstore will always be SOFTWARE
         depositMetadata.setUploadType(DepositMetadata.UploadTypeEnum.SOFTWARE);
         // A metadata description is required for Zenodo
         String description = workflow.getDescription();
@@ -734,7 +736,7 @@ public class WorkflowResource
         depositMetadata.setDescription(descriptionStr);
         depositMetadata.setVersion(workflowVersion.getName());
 
-        // Use the workflow labels as Zendo free form keywords for this deposition.
+        // Use the Dockstore workflow labels as Zendo free form keywords for this deposition.
         Set<Label> workflowLabels = workflow.getLabels();
         Iterator labelIter = workflowLabels.iterator();
         List<String> labelList = new ArrayList<String>();
@@ -770,16 +772,99 @@ public class WorkflowResource
         //returnDeposit.getMetadata().setCreators(Arrays.asList(author1, author2));
         depositMetadata.setCreators(Arrays.asList(author1));
 
-        // A communities entry must not be null but can be a null
+        // A communities entry must not be null, but it can be a null
         // List for Zenodo
         List<Community> communities = depositMetadata.getCommunities();
-
         if (communities == null || communities.isEmpty()) {
+            List myList = new ArrayList();
+            depositMetadata.setCommunities(myList);
+        } else if (communities.size() == 1 && communities.get(0).getId() == null) {
+            // Sometimes the list of communities contains one object
+            // with a null id when Zenodo copies the metadata.
+            // This will cause the call to publish to fail, so clear
+            // the list of communities in this case
             List myList = new ArrayList();
             depositMetadata.setCommunities(myList);
         }
 
+
+        // milliseconds
+        Date wfvDate = workflowVersion.getLastModified();
+
+        // Creating date format  ISO8601 format (YYYY-MM-DD)
+        // Format required by Zenodo
+        long lastModifiedDate = wfvDate.getTime();
+        LocalDate date =
+                Instant.ofEpochMilli(lastModifiedDate).atZone(ZoneId.systemDefault()).toLocalDate();
+        //LocalDate date = LocalDate.ofEpochDay(lastModifiedDate);
+
+
+        //DateFormat wfvDateSimple = new SimpleDateFormat("YYYY-MM-DD");
+        // Format Date according to the given format
+        //wfvDateSimple.format(wfvDate);
+        //String pubDate = wfvDateSimple.toString();
+        depositMetadata.setPublicationDate(date.toString());
+
         return depositMetadata;
+    }
+
+    /**
+     * Provision files to upload to Zenodo
+     * @param zendoClient Zenodo api client
+     * @param returnDeposit Deposit object for the new version
+     * @param depositionID ID of Zendo deposit to which files will be attached
+     * @param workflow    workflow for which DOI is registered
+     * @param workflowVersion workflow version for which DOI is registered
+     */
+    private void provisionWorkflowVersionUploadFiles(ApiClient zendoClient, Deposit returnDeposit,
+            int depositionID, Workflow workflow, WorkflowVersion workflowVersion) {
+        // Creating a new version copies the files from the previous version
+        // We want to delete these since we will upload a new set of files
+        // if creating a comletely new deposit this should not cause a problem
+        FilesApi filesApi = new FilesApi(zendoClient);
+        List<DepositionFile> originalFilesInNewVersion = returnDeposit.getFiles();
+        Iterator filesIter = originalFilesInNewVersion.iterator();
+        while (filesIter.hasNext()) {
+            String fileIdStr = ((DepositionFile)filesIter.next()).getId();
+            filesApi.deleteFile(depositionID, fileIdStr);
+        }
+
+        // Add workflow version source files as a zip to the DOI upload deposit
+        // Borrow code from getWorkflowZip
+        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        java.nio.file.Path path = Paths.get(workflowVersion.getWorkingDirectory());
+        if (sourceFiles == null || sourceFiles.size() == 0) {
+            LOG.warn("No source files found to zip when creating DOI");
+            throw new CustomWebApplicationException("No source files found to"
+                    + " upload when creating DOI. Zenodo requires at lease one file"
+                    + " to be uploaded in order to create a DOI.", HttpStatus.SC_BAD_REQUEST);
+        } else {
+            //String uuid = UUID.randomUUID().toString();
+            String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+            // NOTE: put a uuid in the filename so we can test creating a new version DOI.
+            // Zenodo cannot add a file that has
+            // the same name as one already present for a workflow version
+            //String fileName = uuid + "-" + workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+            OutputStream outputStream;
+            try {
+                outputStream = new FileOutputStream(fileName);
+            } catch (FileNotFoundException fne) {
+                throw new CustomWebApplicationException("could not create file "
+                        + "outputstream for DOI zip file for upload to Zenodo." + fileName,
+                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+            writeStreamAsZip(sourceFiles, outputStream, path);
+            java.nio.file.Path zipPath = Paths.get(fileName);
+            File zipFile = zipPath.toFile();
+
+            try {
+                DepositionFile file = filesApi.createFile(depositionID, zipFile, fileName);
+            } catch (ApiException e) {
+                LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage());
+                throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
+                        + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
     }
 
     /**
@@ -796,24 +881,26 @@ public class WorkflowResource
         String zenodoAccessToken = System.getProperty("ZENODO_TOKEN");
         zendoClient.setApiKey(zenodoAccessToken);
 
-
-        // this is working through the quick start to make sure we can do normal operations
-        // http://developers.zenodo.org/#quickstart-upload
         DepositsApi depositApi = new DepositsApi(zendoClient);
-
         ActionsApi actionsApi = new ActionsApi(zendoClient);
 
-        // take a look at the already published hmmer-docker deposit
-        //Deposit mydeposit = depositApi.getDeposit(291595);
         Deposit deposit = new Deposit();
         Deposit returnDeposit;
         String workflowVersionDoiURL = workflowVersion.getDoiURL();
         if (workflowVersionDoiURL != null && !workflowVersionDoiURL.isEmpty()) {
-            LOG.error("Workflow version " + workflowVersion.getName() + " already has DOI " + workflowVersionDoiURL +
-                    ". Dockstore will only create one DOI per version.");
+            LOG.error("Workflow version " + workflowVersion.getName() + " already has DOI " + workflowVersionDoiURL
+                    + ". Dockstore will only create one DOI per version.");
             throw new CustomWebApplicationException("Workflow version " + workflowVersion.getName() + " already has DOI "
                     + workflowVersionDoiURL + ". Dockstore will only create one DOI per version.", HttpStatus.SC_METHOD_NOT_ALLOWED);
         }
+
+        // Find out if this workflow already has at least one
+        // version that has been assigned a DOI
+        // If a version DOI exists, we will create another version DOI
+        // instead of creating a new workflow concept DOI and version DOI
+        // Get the ID of one of the workflow version DOIs
+        // because Zenodo requires that we use it to create the next
+        // workflow version DOI
         String latestWorkflowVersionDOIURL = null;
         Integer latestWorkflowVersionDepositID = 0;
         Set<WorkflowVersion> setOfWorkflowVersions = workflow.getVersions();
@@ -834,6 +921,9 @@ public class WorkflowResource
 
         if (latestWorkflowVersionDOIURL == null || latestWorkflowVersionDOIURL.isEmpty()) {
             try {
+                // No DOI has been assigned to any version of the workflow yet
+                // So create a new deposit which will enable creation of a new
+                // concept DOI and new version DOI
                 returnDeposit = depositApi.createDeposit(deposit);
                 depositionID = returnDeposit.getId();
                 depositMetadata = returnDeposit.getMetadata();
@@ -849,21 +939,24 @@ public class WorkflowResource
             String depositIdStr = latestWorkflowVersionDOIURL.substring(latestWorkflowVersionDOIURL.lastIndexOf(".") + 1).trim();
             int depositId = Integer.parseInt(depositIdStr);
             try {
+                // A DOI was assigned to a workflow version so we will
+                // use the ID associated with the workflow version DOI
+                // to create a new workflow version DOI
                 returnDeposit = actionsApi.newDepositVersion(depositId);
+                // The response body of this action is NOT the new version deposit,
+                // but the original resource. The new version deposition can be
+                // accessed through the "latest_draft" under "links" in the response body.
                 Object links = returnDeposit.getLinks();
                 //LinkedHashMap lhm = (LinkedHashMap)returnDeposit.getLinks();
                 String depositURL = (String)((LinkedHashMap)links).get("latest_draft");
 
                 //String depositURL = (String)lhm.get("latest_draft");
                 String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
+                // Get the deposit object for the new workflow version DOI
                 depositionID = Integer.parseInt(depositionIDStr);
                 returnDeposit = depositApi.getDeposit(depositionID);
 
                 depositMetadata = returnDeposit.getMetadata();
-
-                List myList = new ArrayList();
-                depositMetadata.setCommunities(myList);
-
                 depositMetadata = fillInMetadata(depositMetadata, workflow, workflowVersion);
 
             } catch (ApiException e) {
@@ -872,56 +965,9 @@ public class WorkflowResource
                         + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
             }
         }
-        //System.out.println(returnDeposit.toString());
 
-        // Creating a new version copies the files from the previous version
-        // We want to delete these since we will upload a new set of files
-        FilesApi filesApi = new FilesApi(zendoClient);
-        List<DepositionFile> originalFilesInNewVersion = returnDeposit.getFiles();
-        Iterator filesIter = originalFilesInNewVersion.iterator();
-        while (filesIter.hasNext()) {
-            String fileIdStr = ((DepositionFile)filesIter.next()).getId();
-            filesApi.deleteFile(depositionID, fileIdStr);
-        }
-
-        // Add workflow version source files as a zip to the DOI upload deposit
-        // Borrow code from getWorkflowZip
-        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-        java.nio.file.Path path = Paths.get(workflowVersion.getWorkingDirectory());
-        if (sourceFiles == null || sourceFiles.size() == 0) {
-            LOG.warn("no source files found to zip when creating DOI");
-        } else {
-
-            String uuid = UUID.randomUUID().toString();
-            //String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
-            // NOTE: put a uuid in the filename so we can test creating a new version DOI. Zenodo cannot add a file that has
-            // the same name as one already present for a workflow version
-            String fileName = uuid + "-" + workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
-            OutputStream outputStream;
-            try {
-                outputStream = new FileOutputStream(fileName);
-            } catch (FileNotFoundException fne) {
-                throw new CustomWebApplicationException("could not create file "
-                        + "outputstream for DOI zip file " + fileName,
-                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-            writeStreamAsZip(sourceFiles, outputStream, path);
-            java.nio.file.Path zipPath = Paths.get(fileName);
-            File zipFile = zipPath.toFile();
-
-            //FilesApi filesApi = new FilesApi(zendoClient);
-            try {
-                DepositionFile file = filesApi.createFile(depositionID, zipFile, fileName);
-            } catch (ApiException e) {
-                LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage());
-                throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
-                        + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
-            }
-        }
-
-
-
-
+        provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit,
+                depositionID, workflow, workflowVersion);
 
         NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
         nestedDepositMetadata.setMetadata(depositMetadata);
@@ -934,8 +980,6 @@ public class WorkflowResource
         }
 
         // publish it
-        //ActionsApi actionsApi = new ActionsApi(zendoClient);
-
         Deposit publishedDeposit;
         try {
             publishedDeposit = actionsApi.publishDeposit(depositionID);
@@ -946,9 +990,6 @@ public class WorkflowResource
         }
 
         workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
-
-        System.out.println(publishedDeposit);
-
     }
 
 
