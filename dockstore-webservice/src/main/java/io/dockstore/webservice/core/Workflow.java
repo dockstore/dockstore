@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -37,7 +38,7 @@ import javax.persistence.OrderBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
@@ -288,54 +289,20 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.descriptorType;
     }
 
-    public LanguageType determineWorkflowType() {
-        LanguageType fileType;
-        if (this.getDescriptorType().equalsIgnoreCase(LanguageType.WDL.toString())) {
-            fileType = LanguageType.WDL;
-        } else if (this.getDescriptorType().equalsIgnoreCase(LanguageType.CWL.toString())) {
-            fileType = LanguageType.CWL;
-        } else {
-            fileType = LanguageType.NEXTFLOW;
-        }
-        return fileType;
+    public DescriptorLanguage determineWorkflowType() {
+        return DescriptorLanguage.convertShortStringToEnum(this.descriptorType);
     }
 
     @JsonIgnore
-    public SourceFile.FileType getFileType() {
-        return getFileType(this.descriptorType);
-    }
-
-    public static SourceFile.FileType getFileType(String descriptorType) {
-        SourceFile.FileType fileType;
-        if (descriptorType.equalsIgnoreCase(LanguageType.WDL.toString())) {
-            fileType = SourceFile.FileType.DOCKSTORE_WDL;
-        } else if (descriptorType.equalsIgnoreCase(LanguageType.CWL.toString())) {
-            fileType = SourceFile.FileType.DOCKSTORE_CWL;
-        } else if (descriptorType.equalsIgnoreCase(LanguageType.NEXTFLOW.toString())) {
-            fileType = SourceFile.FileType.NEXTFLOW_CONFIG;
-        } else {
-            throw new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST);
-        }
-        return fileType;
+    public DescriptorLanguage.FileType getFileType() {
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(this.descriptorType);
+        return fileType.orElseThrow(() -> new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST));
     }
 
     @JsonIgnore
-    public SourceFile.FileType getTestParameterType() {
-        return getTestParameterType(this.descriptorType);
-    }
-
-    public static SourceFile.FileType getTestParameterType(String descriptorType) {
-        SourceFile.FileType fileType;
-        if (descriptorType.equalsIgnoreCase(LanguageType.WDL.toString())) {
-            fileType = SourceFile.FileType.WDL_TEST_JSON;
-        } else if (descriptorType.equalsIgnoreCase(LanguageType.CWL.toString())) {
-            fileType = SourceFile.FileType.CWL_TEST_JSON;
-        } else if (descriptorType.equalsIgnoreCase(LanguageType.NEXTFLOW.toString())) {
-            fileType = SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
-        } else {
-            throw new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST);
-        }
-        return fileType;
+    public DescriptorLanguage.FileType getTestParameterType() {
+        final Optional<DescriptorLanguage.FileType> testParameterType = DescriptorLanguage.getTestParameterType(this.descriptorType);
+        return testParameterType.orElseThrow(() -> new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST));
     }
 
     public String getDefaultTestParameterFilePath() {

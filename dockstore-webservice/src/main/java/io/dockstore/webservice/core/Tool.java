@@ -39,7 +39,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -230,15 +230,15 @@ public class Tool extends Entry<Tool, Tag> {
     @JsonProperty
     @ApiModelProperty(position = 28)
     public List<String> getDescriptorType() {
-        Set<SourceFile.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
-        boolean supportsCWL = set.contains(SourceFile.FileType.DOCKSTORE_CWL);
-        boolean supportsWDL = set.contains(SourceFile.FileType.DOCKSTORE_WDL);
+        Set<DescriptorLanguage.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
+        boolean supportsCWL = set.contains(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        boolean supportsWDL = set.contains(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         List<String> languages = new ArrayList<>();
         if (supportsCWL) {
-            languages.add(LanguageType.CWL.toString());
+            languages.add(DescriptorLanguage.CWL.toString().toUpperCase());
         }
         if (supportsWDL) {
-            languages.add(LanguageType.WDL.toString());
+            languages.add(DescriptorLanguage.WDL.toString().toUpperCase());
         }
         return languages;
     }

@@ -2172,35 +2172,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Tool'
           description: default response
-  /containers/{containerId}/cwl:
+  /containers/{containerId}/descriptor/{relative-path}:
     get:
-      operationId: cwl
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /containers/{containerId}/cwl/{relative-path}:
-    get:
-      operationId: secondaryCwlPath
+      operationId: secondaryDescriptorPath
       parameters:
       - in: path
         name: containerId
@@ -2215,6 +2189,10 @@ paths:
       - in: path
         name: relative-path
         required: true
+        schema:
+          type: string
+      - in: query
+        name: language
         schema:
           type: string
       requestBody:
@@ -2280,6 +2258,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
+          description: default response
+  /containers/{containerId}/primaryDescriptor:
+    get:
+      operationId: primaryDescriptor
+      parameters:
+      - in: path
+        name: containerId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: tag
+        schema:
+          type: string
+      - in: query
+        name: language
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
           description: default response
   /containers/{containerId}/publish:
     post:
@@ -2356,9 +2364,9 @@ paths:
                 type: array
                 uniqueItems: true
           description: default response
-  /containers/{containerId}/secondaryCwl:
+  /containers/{containerId}/secondaryDescriptors:
     get:
-      operationId: secondaryCwl
+      operationId: secondaryDescriptors
       parameters:
       - in: path
         name: containerId
@@ -2370,32 +2378,8 @@ paths:
         name: tag
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-                type: array
-          description: default response
-  /containers/{containerId}/secondaryWdl:
-    get:
-      operationId: secondaryWdl
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
       - in: query
-        name: tag
+        name: language
         schema:
           type: string
       requestBody:
@@ -2748,63 +2732,6 @@ paths:
                   $ref: '#/components/schemas/Tag'
                 type: array
                 uniqueItems: true
-          description: default response
-  /containers/{containerId}/wdl:
-    get:
-      operationId: wdl
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /containers/{containerId}/wdl/{relative-path}:
-    get:
-      operationId: secondaryWdlPath
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      - in: path
-        name: relative-path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
           description: default response
   /containers/{toolId}/defaultVersion:
     put:
@@ -5168,63 +5095,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
-  /workflows/{workflowId}/cwl:
-    get:
-      operationId: cwl_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /workflows/{workflowId}/cwl/{relative-path}:
-    get:
-      operationId: secondaryCwlPath_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      - in: path
-        name: relative-path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
   /workflows/{workflowId}/dag/{workflowVersionId}:
     get:
       operationId: getWorkflowDag
@@ -5275,6 +5145,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
+  /workflows/{workflowId}/descriptor/{relative-path}:
+    get:
+      operationId: secondaryDescriptorPath_1
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: tag
+        schema:
+          type: string
+      - in: path
+        name: relative-path
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: language
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+          description: default response
   /workflows/{workflowId}/labels:
     put:
       operationId: updateLabels_1
@@ -5301,9 +5206,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
-  /workflows/{workflowId}/nextflow:
+  /workflows/{workflowId}/primaryDescriptor:
     get:
-      operationId: nextflow
+      operationId: primaryDescriptor_1
       parameters:
       - in: path
         name: workflowId
@@ -5315,35 +5220,8 @@ paths:
         name: tag
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /workflows/{workflowId}/nextflow/{relative-path}:
-    get:
-      operationId: secondaryNextFlowPath
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
       - in: query
-        name: tag
-        schema:
-          type: string
-      - in: path
-        name: relative-path
-        required: true
+        name: language
         schema:
           type: string
       requestBody:
@@ -5477,9 +5355,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
-  /workflows/{workflowId}/secondaryCwl:
+  /workflows/{workflowId}/secondaryDescriptors:
     get:
-      operationId: secondaryCwl_1
+      operationId: secondaryDescriptors_1
       parameters:
       - in: path
         name: workflowId
@@ -5491,60 +5369,8 @@ paths:
         name: tag
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-                type: array
-          description: default response
-  /workflows/{workflowId}/secondaryNextflow:
-    get:
-      operationId: secondaryNextflow
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
       - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-                type: array
-          description: default response
-  /workflows/{workflowId}/secondaryWdl:
-    get:
-      operationId: secondaryWdl_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
+        name: language
         schema:
           type: string
       requestBody:
@@ -5816,63 +5642,6 @@ paths:
                   $ref: '#/components/schemas/WorkflowVersion'
                 type: array
                 uniqueItems: true
-          description: default response
-  /workflows/{workflowId}/wdl:
-    get:
-      operationId: wdl_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /workflows/{workflowId}/wdl/{relative-path}:
-    get:
-      operationId: secondaryWdlPath_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      - in: path
-        name: relative-path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
           description: default response
   /workflows/{workflowId}/workflowVersions:
     put:

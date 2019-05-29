@@ -21,6 +21,7 @@ import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
@@ -57,7 +58,7 @@ public final class ApiVersionConverter {
                 } else if (innerObject instanceof ExtendedFileWrapper) {
                     // v1 annoying expects a 1 Dockerfile list to be returned unwrapped
                     Object extendedWrapperConverted = getExtendedWrapperConverted((ExtendedFileWrapper)innerObject);
-                    if (arrayList.size() == 1 && ((ExtendedFileWrapper)innerObject).getOriginalFile().getType() == SourceFile.FileType.DOCKERFILE) {
+                    if (arrayList.size() == 1 && ((ExtendedFileWrapper)innerObject).getOriginalFile().getType() == DescriptorLanguage.FileType.DOCKERFILE) {
                         return getResponse(extendedWrapperConverted, response.getHeaders());
                     }
                     newArrayList.add(extendedWrapperConverted);
@@ -88,7 +89,7 @@ public final class ApiVersionConverter {
     }
 
     private static Object getExtendedWrapperConverted(ExtendedFileWrapper wrapper) {
-        if (wrapper.getOriginalFile().getType() == SourceFile.FileType.DOCKERFILE) {
+        if (wrapper.getOriginalFile().getType() == DescriptorLanguage.FileType.DOCKERFILE) {
             return new ToolDockerfile(wrapper);
         } else if (SourceFile.TEST_FILE_TYPES.contains(wrapper.getOriginalFile().getType())) {
             return new ToolTestsV1(wrapper);

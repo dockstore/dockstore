@@ -31,7 +31,8 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ComparisonChain;
-import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -57,7 +58,7 @@ public class Validation implements Comparable<Validation> {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
-    private SourceFile.FileType type;
+    private DescriptorLanguage.FileType type;
 
     @Column
     @ApiModelProperty(value = "Is the file type valid", required = true, position = 2)
@@ -80,7 +81,7 @@ public class Validation implements Comparable<Validation> {
 
     }
 
-    public Validation(SourceFile.FileType fileType, boolean valid, Map message) {
+    public Validation(DescriptorLanguage.FileType fileType, boolean valid, Map message) {
         this.type = fileType;
         this.valid = valid;
         this.message = new JSONObject(message).toString();
@@ -92,7 +93,7 @@ public class Validation implements Comparable<Validation> {
         this.message = versionValidation.getMessage();
     }
 
-    public Validation(SourceFile.FileType fileType, LanguageHandlerInterface.VersionTypeValidation validMessagePair) {
+    public Validation(DescriptorLanguage.FileType fileType, VersionTypeValidation validMessagePair) {
         this.type = fileType;
         this.valid = validMessagePair.isValid();
         this.message = new JSONObject(validMessagePair.getMessage()).toString();
@@ -128,11 +129,11 @@ public class Validation implements Comparable<Validation> {
         this.message = message;
     }
 
-    public SourceFile.FileType getType() {
+    public DescriptorLanguage.FileType getType() {
         return type;
     }
 
-    public void setType(SourceFile.FileType type) {
+    public void setType(DescriptorLanguage.FileType type) {
         this.type = type;
     }
 

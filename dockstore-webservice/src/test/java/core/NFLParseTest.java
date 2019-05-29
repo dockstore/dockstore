@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
@@ -38,7 +38,7 @@ public class NFLParseTest {
     @Test
     public void testNFLCoreMetadataNoAuthorExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-chipseq/nextflow.config");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.NEXTFLOW_CONFIG);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertNull("incorrect author", entry.getAuthor());
@@ -48,7 +48,7 @@ public class NFLParseTest {
     @Test
     public void testNFLCoreMetadataWithAuthorExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-rnaseq/nextflow.config");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.NEXTFLOW_CONFIG);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
@@ -58,7 +58,7 @@ public class NFLParseTest {
     @Test
     public void testNFLNotCoreExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-ampa/nextflow.config");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.NEXTFLOW_CONFIG);
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertEquals("incorrect description", "Fast automated prediction of protein antimicrobial regions", entry.getDescription());

@@ -24,7 +24,7 @@ import io.dockstore.client.cli.nested.BaseLanguageClient;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NextflowLauncher;
 import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NextflowUtilities;
 import io.swagger.client.ApiException;
 import org.apache.commons.configuration2.Configuration;
@@ -41,7 +41,7 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
     private static final Logger LOG = LoggerFactory.getLogger(NextFlowClient.class);
 
     public NextFlowClient(AbstractEntryClient abstractEntryClient) {
-        super(abstractEntryClient, new NextflowLauncher(abstractEntryClient, LanguageType.NEXTFLOW, SCRIPT.get()));
+        super(abstractEntryClient, new NextflowLauncher(abstractEntryClient, DescriptorLanguage.NEXTFLOW, SCRIPT.get()));
     }
 
     @Override

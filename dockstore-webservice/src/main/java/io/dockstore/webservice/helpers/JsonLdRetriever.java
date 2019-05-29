@@ -28,6 +28,7 @@ import com.github.jsonldjava.core.JsonLdError;
 import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.core.JsonLdProcessor;
 import com.github.jsonldjava.utils.JsonUtils;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -231,7 +232,7 @@ public final class JsonLdRetriever {
 
         if (defaultTag != null) {
             for (SourceFile file : defaultTag.getSourceFiles()) {
-                if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
+                if (file.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
                     return yaml2json(file.getContent()).replaceAll("\"", "\\\"");
                 }
             }

@@ -13,6 +13,7 @@ import java.util.zip.ZipFile;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import org.apache.commons.io.FileUtils;
@@ -71,7 +72,7 @@ public final class ZipSourceFileHelper {
      * @throws CustomWebApplicationException if there is an error reading the zip, e.g., if the content is not a valid zip
      * @throws CustomWebApplicationException there is no valid .dockstore.yml in the zip
      */
-    public static SourceFiles sourceFilesFromInputStream(InputStream payload, SourceFile.FileType fileType) {
+    public static SourceFiles sourceFilesFromInputStream(InputStream payload, DescriptorLanguage.FileType fileType) {
         File tempDir = null;
         try {
             tempDir = Files.createTempDir();
@@ -121,7 +122,7 @@ public final class ZipSourceFileHelper {
      * @param workflowFileType
      * @return
      */
-    protected static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
+    protected static SourceFiles sourceFilesFromZip(ZipFile zipFile, DescriptorLanguage.FileType workflowFileType) {
         DockstoreYaml dockstoreYml = readAndPrevalidateDockstoreYml(zipFile);
         final String primaryDescriptor = dockstoreYml.primaryDescriptor;
         List<String> testParameterFiles = dockstoreYml.testParameterFiles;
@@ -139,7 +140,7 @@ public final class ZipSourceFileHelper {
                         if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
                             sourceFile.setType(paramFileType(workflowFileType));
                         } else if (".dockstore.yml".equals(zipEntry.getName())) {
-                            sourceFile.setType(SourceFile.FileType.DOCKSTORE_YML);
+                            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
                         } else {
                             sourceFile.setType(workflowFileType);
                         }
@@ -164,7 +165,7 @@ public final class ZipSourceFileHelper {
         return "/" + name;
     }
 
-    private static void checkWorkflowType(SourceFile.FileType workflowFileType, String theName) {
+    private static void checkWorkflowType(DescriptorLanguage.FileType workflowFileType, String theName) {
         switch (workflowFileType) {
         case DOCKSTORE_CWL:
             if (!theName.toLowerCase().endsWith(".cwl")) {
@@ -188,14 +189,14 @@ public final class ZipSourceFileHelper {
      * @return
      * @throws CustomWebApplicationException if workFileType is not the file type of a descriptor
      */
-    private static SourceFile.FileType paramFileType(SourceFile.FileType workFileType) {
+    private static DescriptorLanguage.FileType paramFileType(DescriptorLanguage.FileType workFileType) {
         switch (workFileType) {
         case DOCKSTORE_CWL:
-            return SourceFile.FileType.CWL_TEST_JSON;
+            return DescriptorLanguage.FileType.CWL_TEST_JSON;
         case DOCKSTORE_WDL:
-            return SourceFile.FileType.WDL_TEST_JSON;
+            return DescriptorLanguage.FileType.WDL_TEST_JSON;
         case NEXTFLOW:
-            return SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
+            return DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS;
         default:
             throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
         }

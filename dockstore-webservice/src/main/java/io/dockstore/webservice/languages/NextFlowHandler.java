@@ -34,7 +34,9 @@ import java.util.stream.Stream;
 import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NextflowUtilities;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -113,7 +115,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         for (String filename : suspectedConfigImports) {
             String filenameAbsolutePath = convertRelativePathToAbsolutePath(filepath, filename);
             Optional<SourceFile> sourceFile = sourceCodeRepoInterface
-                .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, filenameAbsolutePath);
+                .readFile(repositoryId, version, DescriptorLanguage.FileType.NEXTFLOW, filenameAbsolutePath);
             if (sourceFile.isPresent()) {
                 sourceFile.get().setPath(filename);
                 imports.put(filename, sourceFile.get());
@@ -133,7 +135,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             List<String> libraries = sourceCodeRepoInterface.listFiles(repositoryId, lib, version.getReference());
             for (String library : libraries) {
                 Optional<SourceFile> librarySourceFile = sourceCodeRepoInterface
-                    .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, FilenameUtils.concat(lib, library));
+                    .readFile(repositoryId, version, DescriptorLanguage.FileType.NEXTFLOW, FilenameUtils.concat(lib, library));
                 librarySourceFile.ifPresent(sourceFile -> imports.put(lib + "/" + library, sourceFile));
             }
         }

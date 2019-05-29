@@ -38,7 +38,7 @@ import com.google.common.base.Joiner;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
 import io.dockstore.client.cli.SwaggerUtility;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -79,9 +79,8 @@ import static io.dockstore.client.cli.Client.COMMAND_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
-import static io.dockstore.common.DescriptorLanguage.NFL_STRING;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.WDL;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -423,9 +422,10 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         Workflow workflow = getDockstoreWorkflowByPath(path);
                         String descriptor = workflow.getDescriptorType();
                         LanguageClientInterface languageClientInterface = convertCLIStringToEnum(descriptor);
+                        DescriptorLanguage language = DescriptorLanguage.convertShortStringToEnum(descriptor);
 
-                        switch (descriptor) {
-                        case CWL_STRING:
+                        switch (language) {
+                        case CWL:
                             if (!(yamlRun != null ^ jsonRun != null)) {
                                 errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
                             } else {
@@ -436,8 +436,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                                 }
                             }
                             break;
-                        case WDL_STRING:
-                        case NFL_STRING:
+                        case WDL:
+                        case NEXTFLOW:
                             if (jsonRun == null) {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {
@@ -481,16 +481,17 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
      */
     private void checkEntryFile(String entry, String jsonRun, String yamlRun, String wdlOutputTarget, String uuid) {
         File file = new File(entry);
-        LanguageType ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
+        Optional<DescriptorLanguage> optExt = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
         if (!file.exists() || file.isDirectory()) {
             errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow?",
                     ENTRY_NOT_FOUND);
         }
-        Optional<LanguageClientInterface> languageCLientOptional = LanguageClientFactory.createLanguageCLient(this, ext);
+        Optional<LanguageClientInterface> languageCLientOptional = LanguageClientFactory.createLanguageCLient(this, optExt.get());
         LanguageClientInterface languageCLient = languageCLientOptional.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
         // TODO: limitations of merged but non-cleaned up interface are apparent here
         try {
+            DescriptorLanguage ext = optExt.get();
             switch (ext) {
             case CWL:
                 languageCLient.launch(entry, true, yamlRun, jsonRun, null, uuid);
@@ -502,8 +503,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 languageCLient.launch(entry, true, null, jsonRun, null, uuid);
                 break;
             default:
-                LanguageType content = checkFileContent(file);             //check the file content (wdl,cwl or "")
-                switch (content) {
+                Optional<DescriptorLanguage> content = checkFileContent(file);             //check the file content (wdl,cwl or "")
+                switch (content.get()) {
                 case CWL:
                     out("This is a CWL file.. Please put an extension to the entry file name.");
                     out("Launching entry file as a CWL file..");
@@ -1106,7 +1107,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         printHelpFooter();
     }
 
-    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+    public SourceFile getDescriptorFromServer(String entry, DescriptorLanguage descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];
@@ -1127,10 +1128,10 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
         if (valid) {
             try {
-                if (descriptorType.equals(CWL_STRING)) {
-                    file = workflowsApi.cwl(workflow.getId(), version);
-                } else if (descriptorType.equals(WDL_STRING)) {
-                    file = workflowsApi.wdl(workflow.getId(), version);
+                if (descriptorType.equals(CWL)) {
+                    file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.CWL.toString());
+                } else if (descriptorType.equals(WDL)) {
+                    file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.WDL.toString());
                 } else {
                     throw new UnsupportedOperationException("other languages not supported yet");
                 }

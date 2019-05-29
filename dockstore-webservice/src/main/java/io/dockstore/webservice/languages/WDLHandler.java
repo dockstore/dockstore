@@ -38,6 +38,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import io.dockstore.common.Bridge;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -209,7 +211,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         File tempMainDescriptor = null;
         String mainDescriptor = null;
 
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_WDL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
 
         Map<String, String> validationMessageObject = new HashMap<>();
@@ -234,9 +236,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                 for (SourceFile sourceFile : filteredSourceFiles) {
                     if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath) && sourceFile.getContent() != null) {
                         if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
-                            if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
+                            if (Objects.equals(sourceFile.getType(), DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
                                 validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
-                            } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
+                            } else if (Objects.equals(sourceFile.getType(), DescriptorLanguage.FileType.WDL_TEST_JSON)) {
                                 validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
                             } else {
                                 validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
@@ -321,7 +323,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.WDL_TEST_JSON);
+        return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.WDL_TEST_JSON);
     }
 
     @Override
@@ -332,7 +334,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
             SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String currentFilePath) {
-        SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
+        DescriptorLanguage.FileType fileType = DescriptorLanguage.FileType.DOCKSTORE_WDL;
 
         // Use matcher to get imports
         String[] lines = StringUtils.split(content, '\n');
@@ -361,7 +363,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
                 importFile.setContent(fileResponse);
                 importFile.setPath(importPath);
-                importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
                 importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(importFile.getPath(), importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));

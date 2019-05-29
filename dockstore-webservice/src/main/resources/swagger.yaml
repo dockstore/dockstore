@@ -1681,42 +1681,14 @@ paths:
           description: "Invalid "
       security:
       - BEARER: []
-  /containers/{containerId}/cwl:
+  /containers/{containerId}/descriptor/{relative-path}:
     get:
       tags:
       - "containers"
-      summary: "Get the primary CWL descriptor file on Github."
+      summary: "Get the corresponding descriptor file."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
-      operationId: "cwl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/cwl/{relative-path}:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the corresponding CWL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryCwlPath"
+      operationId: "secondaryDescriptorPath"
       produces:
       - "application/json"
       parameters:
@@ -1733,6 +1705,10 @@ paths:
       - name: "relative-path"
         in: "path"
         required: true
+        type: "string"
+      - name: "language"
+        in: "query"
+        required: false
         type: "string"
       responses:
         200:
@@ -1803,6 +1779,38 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
+  /containers/{containerId}/primaryDescriptor:
+    get:
+      tags:
+      - "containers"
+      summary: "Get the primary descriptor file."
+      description: "Does not require authentication for published tools, authentication\
+        \ can be provided for restricted tools"
+      operationId: "primaryDescriptor"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "language"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
       security:
       - BEARER: []
   /containers/{containerId}/publish:
@@ -1888,14 +1896,14 @@ paths:
               $ref: "#/definitions/Tag"
       security:
       - BEARER: []
-  /containers/{containerId}/secondaryCwl:
+  /containers/{containerId}/secondaryDescriptors:
     get:
       tags:
       - "containers"
-      summary: "Get a list of secondary CWL files from Git."
+      summary: "Get a list of secondary descriptor files."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
-      operationId: "secondaryCwl"
+      operationId: "secondaryDescriptors"
       produces:
       - "application/json"
       parameters:
@@ -1909,33 +1917,7 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/secondaryWdl:
-    get:
-      tags:
-      - "containers"
-      summary: "Get a list of secondary WDL files from Git."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryWdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
         type: "string"
@@ -2094,7 +2076,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding WDL test parameter files."
+      summary: "Get the corresponding test parameter files."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "getTestParameterFiles"
@@ -2358,66 +2340,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tag"
-      security:
-      - BEARER: []
-  /containers/{containerId}/wdl:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the primary WDL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "wdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/wdl/{relative-path}:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the corresponding WDL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryWdlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
       security:
       - BEARER: []
   /containers/{toolId}/defaultVersion:
@@ -5022,66 +4944,6 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/cwl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the primary CWL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "cwl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/cwl/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding CWL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryCwlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
   /workflows/{workflowId}/dag/{workflowVersionId}:
     get:
       tags:
@@ -5141,6 +5003,42 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+  /workflows/{workflowId}/descriptor/{relative-path}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding CWL descriptor file on Github."
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
+      operationId: "secondaryDescriptorPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "language"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
+      security:
+      - BEARER: []
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -5177,14 +5075,14 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/nextflow:
+  /workflows/{workflowId}/primaryDescriptor:
     get:
       tags:
       - "workflows"
-      summary: "Get the nextflow.config file on Github."
+      summary: "Get the primary descriptor file."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
-      operationId: "nextflow"
+      operationId: "primaryDescriptor"
       produces:
       - "application/json"
       parameters:
@@ -5198,37 +5096,9 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/nextflow/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding nextflow documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryNextFlowPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
         type: "string"
       responses:
         200:
@@ -5373,14 +5243,14 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/secondaryCwl:
+  /workflows/{workflowId}/secondaryDescriptors:
     get:
       tags:
       - "workflows"
       summary: "Get the corresponding cwl documents on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
-      operationId: "secondaryCwl"
+      operationId: "secondaryDescriptors"
       produces:
       - "application/json"
       parameters:
@@ -5394,63 +5264,7 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/secondaryNextflow:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding Nextflow documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryNextflow"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/secondaryWdl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding wdl documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryWdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
         type: "string"
@@ -5756,66 +5570,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/WorkflowVersion"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/wdl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the primary WDL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "wdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/wdl/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding WDL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryWdlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
       security:
       - BEARER: []
   /workflows/{workflowId}/workflowVersions:

@@ -53,6 +53,8 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -61,7 +63,6 @@ import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -112,8 +113,8 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
@@ -364,9 +365,10 @@ public class WorkflowResource
         // do a full refresh when targeted like this
         workflow.setMode(WorkflowMode.FULL);
         // look for checker workflows to associate with if applicable
-        if (!workflow.isIsChecker() && workflow.getDescriptorType().equals(CWL_STRING) || workflow.getDescriptorType().equals(WDL_STRING)) {
+        if (!workflow.isIsChecker() && workflow.getDescriptorType().equals(CWL.toString()) || workflow.getDescriptorType().equals(
+            WDL.toString())) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
-            String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType().equals(CWL_STRING) ? CWL_CHECKER : WDL_CHECKER);
+            String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType().equals(CWL.toString()) ? CWL_CHECKER : WDL_CHECKER);
             Workflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false);
             if (byPath != null && workflow.getCheckerWorkflow() == null) {
                 workflow.setCheckerWorkflow(byPath);
@@ -1090,115 +1092,46 @@ public class WorkflowResource
 
     @GET
     @Timed
-    @UnitOfWork
-    @Path("/{workflowId}/cwl")
-    @ApiOperation(value = "Get the primary CWL descriptor file on Github.", tags = {
+    @UnitOfWork(readOnly = true)
+    @Path("/{workflowId}/primaryDescriptor")
+    @ApiOperation(value = "Get the primary descriptor file.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile cwl(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL, user);
+    public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag, @QueryParam("language") String language) {
+        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        return getSourceFile(workflowId, tag, fileType, user);
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/wdl")
-    @ApiOperation(value = "Get the primary WDL descriptor file on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile wdl(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/nextflow")
-    @ApiOperation(value = "Get the nextflow.config file on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile nextflow(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getSourceFile(workflowId, tag, FileType.NEXTFLOW_CONFIG, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/cwl/{relative-path}")
+    @Path("/{workflowId}/descriptor/{relative-path}")
     @ApiOperation(value = "Get the corresponding CWL descriptor file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile secondaryCwlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path) {
-        return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path, user);
+        @PathParam("relative-path") String path, @QueryParam("language") String language) {
+        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        return getSourceFileByPath(workflowId, tag, fileType, path, user);
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/wdl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding WDL descriptor file on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile secondaryWdlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path) {
-        return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/nextflow/{relative-path}")
-    @ApiOperation(value = "Get the corresponding nextflow documents on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile secondaryNextFlowPath(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path) {
-
-        return getSourceFileByPath(workflowId, tag, FileType.NEXTFLOW, path, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/secondaryCwl")
+    @Path("/{workflowId}/secondaryDescriptors")
     @ApiOperation(value = "Get the corresponding cwl documents on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> secondaryCwl(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL, user);
+    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
+        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        return getAllSecondaryFiles(workflowId, tag, fileType, user);
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/secondaryWdl")
-    @ApiOperation(value = "Get the corresponding wdl documents on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> secondaryWdl(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL, user);
-    }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/secondaryNextflow")
-    @ApiOperation(value = "Get the corresponding Nextflow documents on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> secondaryNextflow(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getAllSecondaryFiles(workflowId, tag, FileType.NEXTFLOW, user);
-    }
 
     @GET
     @Timed

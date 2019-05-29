@@ -46,6 +46,8 @@ import javax.ws.rs.core.StreamingOutput;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -53,7 +55,6 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -747,7 +748,7 @@ public class DockerRepoResource
     public SourceFile dockerfile(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, FileType.DOCKERFILE, user);
+        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user);
     }
 
     @GET
@@ -779,88 +780,55 @@ public class DockerRepoResource
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/{containerId}/cwl")
-    @ApiOperation(value = "Get the primary CWL descriptor file on Github.", tags = {
+    @Path("/{containerId}/primaryDescriptor")
+    @ApiOperation(value = "Get the primary descriptor file.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile cwl(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
-        return getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL, user);
+    public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
+        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        return getSourceFile(containerId, tag, fileType, user);
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/{containerId}/wdl")
-    @ApiOperation(value = "Get the primary WDL descriptor file on Github.", tags = {
+    @Path("/{containerId}/descriptor/{relative-path}")
+    @ApiOperation(value = "Get the corresponding descriptor file.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile wdl(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
-        return getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{containerId}/cwl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding CWL descriptor file on Github.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile secondaryCwlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path) {
-        return getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_CWL, path, user);
+        @PathParam("relative-path") String path, @QueryParam("language") String language) {
+        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        return getSourceFileByPath(containerId, tag, fileType, path, user);
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/{containerId}/wdl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding WDL descriptor file on Github.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile secondaryWdlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path) {
-        return getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_WDL, path, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{containerId}/secondaryCwl")
-    @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = {
+    @Path("/{containerId}/secondaryDescriptors")
+    @ApiOperation(value = "Get a list of secondary descriptor files.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> secondaryCwl(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
-        return getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_CWL, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{containerId}/secondaryWdl")
-    @ApiOperation(value = "Get a list of secondary WDL files from Git.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> secondaryWdl(@ApiParam(hidden = true) @Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
-        return getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL, user);
+    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
+        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        return getAllSecondaryFiles(containerId, tag, fileType, user);
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{containerId}/testParameterFiles")
-    @ApiOperation(value = "Get the corresponding WDL test parameter files.", tags = {
+    @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL, NFL") @QueryParam("descriptorType") String descriptorType) {
-        return getAllSourceFiles(containerId, tag, Workflow.getTestParameterType(descriptorType), user);
+        final FileType testParameterType = DescriptorLanguage.getTestParameterType(descriptorType).orElseThrow(() -> new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST));
+        return getAllSourceFiles(containerId, tag, testParameterType, user);
     }
 
     /**
@@ -925,7 +893,7 @@ public class DockerRepoResource
 
         // Add new test parameter files
         FileType fileType =
-            (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+            (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
         createTestParameters(testParameterPaths, tag, sourceFiles, fileType, fileDAO);
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tag.getSourceFiles();
@@ -959,7 +927,7 @@ public class DockerRepoResource
 
         // Remove test parameter files
         FileType fileType =
-            (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+            (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
             sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);
         }

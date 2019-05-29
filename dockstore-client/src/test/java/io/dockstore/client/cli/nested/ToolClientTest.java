@@ -16,6 +16,7 @@
 package io.dockstore.client.cli.nested;
 
 import io.dockstore.client.cli.Client;
+import io.dockstore.common.DescriptorLanguage;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
@@ -52,9 +53,9 @@ public class ToolClientTest {
         ApiException apiException = Mockito.mock(ApiException.class);
         when(apiException.getCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
         when(dockstoreTool.getId()).thenReturn(CONTAINER_ID);
-        when(containersApi.cwl(CONTAINER_ID, MISSING_TAG)).thenThrow(apiException);
-        when(containersApi.cwl(CONTAINER_ID, null)).thenThrow(apiException);
-        when(containersApi.cwl(CONTAINER_ID, GOOD_TAG)).thenReturn(Mockito.mock(SourceFile.class));
+        when(containersApi.primaryDescriptor(CONTAINER_ID, MISSING_TAG, DescriptorLanguage.CWL.toString())).thenThrow(apiException);
+        when(containersApi.primaryDescriptor(CONTAINER_ID, null, DescriptorLanguage.CWL.toString())).thenThrow(apiException);
+        when(containersApi.primaryDescriptor(CONTAINER_ID, GOOD_TAG, DescriptorLanguage.CWL.toString())).thenReturn(Mockito.mock(SourceFile.class));
         when(containersApi
                 .getPublishedContainerByToolPath(REPOSITORY, null))
                 .thenReturn(dockstoreTool);
@@ -65,7 +66,7 @@ public class ToolClientTest {
         ToolClient toolClient = new ToolClient(containersApi, containertagsApi, usersApi, client, false);
         boolean exceptionThrown = false;
         try {
-            toolClient.getDescriptorFromServer(REPOSITORY + ":" + MISSING_TAG, "cwl");
+            toolClient.getDescriptorFromServer(REPOSITORY + ":" + MISSING_TAG, DescriptorLanguage.CWL);
         }
         catch (Exception ex) {
             exceptionThrown = true;
@@ -78,7 +79,7 @@ public class ToolClientTest {
         ToolClient toolClient = new ToolClient(containersApi, containertagsApi, usersApi, client, false);
         boolean exceptionThrown = false;
         try {
-            toolClient.getDescriptorFromServer(REPOSITORY , "cwl");
+            toolClient.getDescriptorFromServer(REPOSITORY , DescriptorLanguage.CWL);
         }
         catch (Exception ex) {
             exceptionThrown = true;
@@ -89,7 +90,7 @@ public class ToolClientTest {
     @Test
     public void getDescriptorFromServer_goodTag() {
         ToolClient toolClient = new ToolClient(containersApi, containertagsApi, usersApi, client, false);
-        SourceFile cwl = toolClient.getDescriptorFromServer(REPOSITORY + ":" + GOOD_TAG, "cwl");
+        SourceFile cwl = toolClient.getDescriptorFromServer(REPOSITORY + ":" + GOOD_TAG, DescriptorLanguage.CWL);
         Assert.assertNotNull(cwl);
     }
 }

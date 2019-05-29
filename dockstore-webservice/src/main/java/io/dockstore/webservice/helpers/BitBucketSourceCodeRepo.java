@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.GenericType;
 
 import com.google.common.base.Strings;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -175,7 +176,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
      * @return source file
      */
     @Override
-    public SourceFile getSourceFile(String path, String repositoryId, String branch, SourceFile.FileType type) {
+    public SourceFile getSourceFile(String path, String repositoryId, String branch, DescriptorLanguage.FileType type) {
         // TODO: should we even be creating a sourcefile before checking that it is valid?
         // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
         SourceFile file = null;
@@ -296,7 +297,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     version.setLastModified(Date.from(date.toInstant()));
                     String calculatedPath = version.getWorkflowPath();
                     // Now grab source files
-                    SourceFile.FileType identifiedType = workflow.getFileType();
+                    DescriptorLanguage.FileType identifiedType = workflow.getFileType();
                     // TODO: No exceptions are caught here in the event of a failed call
                     SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 

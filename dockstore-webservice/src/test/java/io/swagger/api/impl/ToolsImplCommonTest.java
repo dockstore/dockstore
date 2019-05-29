@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -58,7 +59,7 @@ public class ToolsImplCommonTest {
     @Test
     public void wdlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+        sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setAbsolutePath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
@@ -73,7 +74,7 @@ public class ToolsImplCommonTest {
     @Test
     public void cwlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(SourceFile.FileType.DOCKSTORE_CWL);
+        sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         sourceFile.setPath("/Dockstore.cwl");
         sourceFile.setAbsolutePath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
@@ -122,13 +123,13 @@ public class ToolsImplCommonTest {
         tag.setValid(true);
         SourceFile sourceFile = new SourceFile();
         sourceFile.setId(0);
-        sourceFile.setType(SourceFile.FileType.DOCKERFILE);
+        sourceFile.setType(DescriptorLanguage.FileType.DOCKERFILE);
         sourceFile.setContent("TEST DOCKERFILE");
         sourceFile.setPath("/Dockerfile");
         sourceFile.setAbsolutePath("/Dockerfile");
         SourceFile sourceFile2 = new SourceFile();
         sourceFile2.setId(1);
-        sourceFile2.setType(SourceFile.FileType.DOCKSTORE_CWL);
+        sourceFile2.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         sourceFile2.setContent("TEST CWL");
         sourceFile2.setPath("/Dockstore.cwl");
         sourceFile2.setAbsolutePath("/Dockstore.cwl");
@@ -213,7 +214,7 @@ public class ToolsImplCommonTest {
         String json;
         SourceFile actualSourceFile1 = new SourceFile();
         actualSourceFile1.setId(461402);
-        actualSourceFile1.setType(SourceFile.FileType.DOCKSTORE_WDL);
+        actualSourceFile1.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         actualSourceFile1.setContent(PLACEHOLDER_CONTENT);
         actualSourceFile1.setPath("/pcawg-cgp-somatic-workflow.wdl");
         actualSourceFile1.setAbsolutePath("/pcawg-cgp-somatic-workflow.wdl");
@@ -345,7 +346,7 @@ public class ToolsImplCommonTest {
     @Test
     public void sourceFileToToolTests() {
         SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(SourceFile.FileType.CWL_TEST_JSON);
+        sourceFile.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
         sourceFile.setPath("/test.cwl.json");
         sourceFile.setAbsolutePath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);

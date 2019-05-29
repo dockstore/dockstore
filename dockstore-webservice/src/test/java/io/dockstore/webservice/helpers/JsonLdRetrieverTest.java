@@ -27,7 +27,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Test;
 
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static org.junit.Assert.assertEquals;
 
 /**

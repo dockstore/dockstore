@@ -33,7 +33,8 @@ import javax.validation.constraints.NotNull;
 
 import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -81,7 +82,7 @@ public abstract class SourceCodeRepoInterface {
      * @param files the files collection we want to add to
      * @param fileType the type of file
      */
-    void readFile(String repositoryId, Version tag, Collection<SourceFile> files, SourceFile.FileType fileType, String path) {
+    void readFile(String repositoryId, Version tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
         Optional<SourceFile> sourceFile = this.readFile(repositoryId, tag, fileType, path);
         sourceFile.ifPresent(files::add);
     }
@@ -92,7 +93,7 @@ public abstract class SourceCodeRepoInterface {
      * @param tag the version of source control we want to read from
      * @param fileType the type of file
      */
-    public Optional<SourceFile> readFile(String repositoryId, Version tag, SourceFile.FileType fileType, String path) {
+    public Optional<SourceFile> readFile(String repositoryId, Version tag, DescriptorLanguage.FileType fileType, String path) {
         String fileResponse = this.readGitRepositoryFile(repositoryId, fileType, tag, path);
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
@@ -174,7 +175,7 @@ public abstract class SourceCodeRepoInterface {
         // Determine if workflow should be returned as a STUB or FULL
         if (existingWorkflow.isEmpty()) {
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
-            workflow.setDescriptorType(LanguageType.CWL.toString());
+            workflow.setDescriptorType(DescriptorLanguage.CWL.toString().toLowerCase());
             return workflow;
         }
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
@@ -222,7 +223,7 @@ public abstract class SourceCodeRepoInterface {
      * @param type
      * @return
      */
-    Entry updateEntryMetadata(Entry entry, LanguageType type) {
+    Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
 
@@ -253,9 +254,9 @@ public abstract class SourceCodeRepoInterface {
             for (Tag tag : ((Tool)entry).getVersions()) {
                 if (tag.getReference() != null && tag.getReference().equals(branch)) {
                     sourceFiles = tag.getSourceFiles();
-                    if (type == LanguageType.CWL) {
+                    if (type == DescriptorLanguage.CWL) {
                         filePath = tag.getCwlPath();
-                    } else if (type == LanguageType.WDL) {
+                    } else if (type == DescriptorLanguage.WDL) {
                         filePath = tag.getWdlPath();
                     } else {
                         throw new UnsupportedOperationException("tool is not a CWL or WDL file");
@@ -296,8 +297,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Parse file content and update
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        entry = anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles);
-        return entry;
+        return anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles);
     }
 
     /**
@@ -389,7 +389,7 @@ public abstract class SourceCodeRepoInterface {
      * @return workflow version
      */
     WorkflowVersion combineVersionAndSourcefile(String repositoryId, SourceFile sourceFile, Workflow workflow,
-        SourceFile.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
+        DescriptorLanguage.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         if (sourceFile != null && sourceFile.getContent() != null) {
@@ -401,7 +401,7 @@ public abstract class SourceCodeRepoInterface {
         // Look for test parameter files if existing workflow
         if (existingDefaults.get(version.getName()) != null) {
             WorkflowVersion existingVersion = existingDefaults.get(version.getName());
-            SourceFile.FileType workflowDescriptorType = workflow.getTestParameterType();
+            DescriptorLanguage.FileType workflowDescriptorType = workflow.getTestParameterType();
 
             List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream()
                 .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
@@ -435,7 +435,7 @@ public abstract class SourceCodeRepoInterface {
      * @param specificPath if specified, look for a specific file, otherwise return the "default" for a fileType
      * @return  a FileResponse instance
      */
-    public String readGitRepositoryFile(String repositoryId, SourceFile.FileType fileType, Version version, String specificPath) {
+    public String readGitRepositoryFile(String repositoryId, DescriptorLanguage.FileType fileType, Version version, String specificPath) {
 
         final String reference = version.getReference();
 
@@ -459,14 +459,14 @@ public abstract class SourceCodeRepoInterface {
         } else if (version instanceof Tag) {
             Tag tag = (Tag)version;
             // Add for new descriptor types
-            if (fileType == SourceFile.FileType.DOCKERFILE) {
+            if (fileType == DescriptorLanguage.FileType.DOCKERFILE) {
                 fileName = tag.getDockerfilePath();
-            } else if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
+            } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
                 if (Strings.isNullOrEmpty(tag.getCwlPath())) {
                     return null;
                 }
                 fileName = tag.getCwlPath();
-            } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
+            } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
                 if (Strings.isNullOrEmpty(tag.getWdlPath())) {
                     return null;
                 }
@@ -484,7 +484,7 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    public Map<String, SourceFile> resolveImports(String repositoryId, String content, SourceFile.FileType fileType, Version version, String filepath) {
+    public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
     }
@@ -493,21 +493,21 @@ public abstract class SourceCodeRepoInterface {
      * The following methods were duplicated code, but are not well designed for this interface
      */
 
-    public abstract SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type);
+    public abstract SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type);
 
     void createTestParameterFiles(Workflow workflow, String id, String branchName, WorkflowVersion version,
-        SourceFile.FileType identifiedType) {
+        DescriptorLanguage.FileType identifiedType) {
         if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
             // Set Filetype
-            SourceFile.FileType testJsonType = null;
-            if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-                testJsonType = SourceFile.FileType.CWL_TEST_JSON;
-            } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
-                testJsonType = SourceFile.FileType.WDL_TEST_JSON;
+            DescriptorLanguage.FileType testJsonType = null;
+            if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
+                testJsonType = DescriptorLanguage.FileType.CWL_TEST_JSON;
+            } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
+                testJsonType = DescriptorLanguage.FileType.WDL_TEST_JSON;
             }
 
             // Check if test parameter file has already been added
-            final SourceFile.FileType finalFileType = testJsonType;
+            final DescriptorLanguage.FileType finalFileType = testJsonType;
             long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == finalFileType).count();
             if (duplicateCount == 0) {
                 SourceFile testJsonSourceFile = getSourceFile(workflow.getDefaultTestParameterFilePath(), id, branchName, testJsonType);
@@ -541,41 +541,43 @@ public abstract class SourceCodeRepoInterface {
      */
     public WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
-        SourceFile.FileType identifiedType = entry.getFileType();
+        DescriptorLanguage.FileType identifiedType = entry.getFileType();
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects
                 .equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
         if (mainDescriptor.isPresent()) {
-            LanguageHandlerInterface.VersionTypeValidation validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            VersionTypeValidation validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
             version.addOrUpdateValidation(descriptorValidation);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
             validationMessage.put(mainDescriptorPath, "Missing the primary descriptor.");
-            LanguageHandlerInterface.VersionTypeValidation noPrimaryDescriptor = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
+            VersionTypeValidation noPrimaryDescriptor = new VersionTypeValidation(false, validationMessage);
             Validation noPrimaryDescriptorValidation = new Validation(identifiedType, noPrimaryDescriptor);
             version.addOrUpdateValidation(noPrimaryDescriptorValidation);
         }
 
         // Validate test parameter set
-        SourceFile.FileType testParameterType = null;
+        DescriptorLanguage.FileType testParameterType = null;
         switch (identifiedType) {
         case DOCKSTORE_CWL:
-            testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            testParameterType = DescriptorLanguage.FileType.CWL_TEST_JSON;
             break;
         case DOCKSTORE_WDL:
-            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
             break;
         case NEXTFLOW_CONFIG:
-            // Nextflow does not have test parameter files, so do not fail
+            // DOCKSTORE-2428 - demo how to add new workflow language
+            // case DOCKSTORE_SWL:
+            // these languages do not have test parameter files, so do not fail
             break;
         default:
             throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
         }
 
         if (testParameterType != null) {
-            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
             Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
             version.addOrUpdateValidation(testParameterValidation);
         }
@@ -590,7 +592,7 @@ public abstract class SourceCodeRepoInterface {
      * @param version Version to check validation
      * @return True if valid workflow version, false otherwise
      */
-    public boolean isValidVersion(WorkflowVersion version) {
-        return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
+    private boolean isValidVersion(WorkflowVersion version) {
+        return version.getValidations().stream().allMatch(Validation::isValid);
     }
 }

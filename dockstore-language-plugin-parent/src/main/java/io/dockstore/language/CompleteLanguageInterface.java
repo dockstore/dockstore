@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 OICR
+ *    Copyright 2019 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,23 +13,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.common;
+package io.dockstore.language;
 
 /**
- * Looks redundant with DescriptorType with some case-changes.
- * Moved here from dockstore-client.
+ * Complete interface for new languages
+ *
+ * TODO: DAG interface methods
  */
-public enum LanguageType {
-    CWL("cwl"), WDL("wdl"), NEXTFLOW("nfl"), NONE("none");
-    public final String desc;
-
-    LanguageType(String name) {
-        desc = name;
-    }
-
-    @Override
-    public String toString() {
-        return desc;
-    }
+public interface CompleteLanguageInterface extends RecommendedLanguageInterface {
 
 }

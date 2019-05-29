@@ -39,7 +39,7 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 
 public class ElasticManagerIT {
     private static ElasticManager manager;

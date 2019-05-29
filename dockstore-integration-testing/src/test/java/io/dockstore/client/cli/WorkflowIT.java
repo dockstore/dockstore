@@ -41,7 +41,7 @@ import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
@@ -526,7 +526,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
@@ -580,7 +580,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null);
@@ -610,7 +610,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null);
@@ -665,7 +665,7 @@ public class WorkflowIT extends BaseIT {
         Workflow mtaNf = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         mtaNf.setWorkflowPath("/nextflow.config");
-        mtaNf.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        mtaNf.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
         workflowApi.refresh(mtaNf.getId());
         // publish this way? (why is the auto-generated variable private?)
@@ -1120,13 +1120,13 @@ public class WorkflowIT extends BaseIT {
         assertNull(workflow.getWorkflowName());
 
         // test out methods to access secondary files
-        final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
+        final List<SourceFile> masterImports = workflowApi.secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
         assertEquals("should find 2 imports, found " + masterImports.size(), 2, masterImports.size());
-        final SourceFile master = workflowApi.cwl(workflow.getId(), "master");
+        final SourceFile master = workflowApi.primaryDescriptor(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
         assertTrue("master content incorrect", master.getContent().contains("untar") && master.getContent().contains("compile"));
 
         // get secondary files by path
-        SourceFile argumentsTool = workflowApi.secondaryCwlPath(workflow.getId(), "arguments.cwl", "master");
+        SourceFile argumentsTool = workflowApi.secondaryDescriptorPath(workflow.getId(), "arguments.cwl", "master", DescriptorLanguage.CWL.toString());
         assertTrue("argumentstool content incorrect", argumentsTool.getContent().contains("Example trivial wrapper for Java 7 compiler"));
     }
 
@@ -1160,9 +1160,9 @@ public class WorkflowIT extends BaseIT {
 
         // test out methods to access secondary files
 
-        final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
+        final List<SourceFile> masterImports = workflowApi.secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
         assertEquals("should find 3 imports, found " + masterImports.size(), 3, masterImports.size());
-        final List<SourceFile> rootImports = workflowApi.secondaryCwl(workflow.getId(), "rootTest");
+        final List<SourceFile> rootImports = workflowApi.secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
         assertEquals("should find 0 imports, found " + rootImports.size(), 0, rootImports.size());
 
         // next, change a path for the root imports version
@@ -1170,9 +1170,9 @@ public class WorkflowIT extends BaseIT {
         workflowVersions.stream().filter(v -> v.getName().equals("rootTest")).findFirst().get().setWorkflowPath("/cnv.cwl");
         workflowApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
         workflowApi.refresh(workflowByPathGithub.getId());
-        final List<SourceFile> newMasterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
+        final List<SourceFile> newMasterImports = workflowApi.secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
         assertEquals("should find 3 imports, found " + newMasterImports.size(), 3, newMasterImports.size());
-        final List<SourceFile> newRootImports = workflowApi.secondaryCwl(workflow.getId(), "rootTest");
+        final List<SourceFile> newRootImports = workflowApi.secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
         assertEquals("should find 3 imports, found " + newRootImports.size(), 3, newRootImports.size());
 
         workflowApi.publish(workflow.getId(), new PublishRequest(){
