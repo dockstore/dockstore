@@ -24,12 +24,15 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.ServiceDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -44,6 +47,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -66,6 +70,7 @@ public class ServiceIT extends BaseIT {
     private WorkflowDAO workflowDAO;
     private ServiceDAO serviceDAO;
     private Session session;
+    private UserDAO userDAO;
 
     @Before
     public void setup() {
@@ -74,6 +79,7 @@ public class ServiceIT extends BaseIT {
 
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
+        this.userDAO = new UserDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -114,13 +120,22 @@ public class ServiceIT extends BaseIT {
 
     @Test
     public void testProprietaryAPI() {
-        new CreateContent().invoke();
+        final CreateContent invoke = new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         WorkflowsApi client = new WorkflowsApi(webClient);
         final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true);
         final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false);
         assertTrue(workflows.size() >= 2 && workflows.stream().noneMatch(workflow -> workflow.getDescriptorType().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         assertTrue(services.size() >= 1 && services.stream().allMatch(workflow -> workflow.getDescriptorType().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
+
+        // try some standard things we would like services to be able to do
+        client.starEntry(invoke.getServiceID(), new StarRequest().star(true));
+        client.updateLabels(invoke.getServiceID(), "foo,batman,chicken", "");
+
+        // did it happen?
+        final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
+        assertFalse(workflow.getStarredUsers().isEmpty());
+        assertTrue(workflow.getLabels().stream().anyMatch(label -> "batman".equals(label.getValue())));
     }
 
     private class CreateContent {
@@ -151,6 +166,7 @@ public class ServiceIT extends BaseIT {
             testWorkflow.setOrganization("shield");
             testWorkflow.setRepository("shield_repo");
 
+
             Service testService = new Service();
             testService.setDescription("test service");
             testService.setIsPublished(true);
@@ -166,6 +182,13 @@ public class ServiceIT extends BaseIT {
             test2Service.setDescriptorType(DescriptorLanguage.SERVICE.toString());
             test2Service.setOrganization("hydra");
             test2Service.setRepository("hydra_repo");
+
+            // add all users to all things for now
+            for(User user : userDAO.findAll()){
+                testWorkflow.addUser(user);
+                testService.addUser(user);
+                test2Service.addUser(user);
+            }
 
             workflowID = workflowDAO.create(testWorkflow);
             serviceID = serviceDAO.create(testService);

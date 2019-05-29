@@ -67,7 +67,6 @@
             <column name="descriptortype" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column defaultValueBoolean="false" name="ischecker" type="BOOLEAN"/>
             <column defaultValue="STUB" name="mode" type="TEXT">
                 <constraints nullable="false"/>
             </column>
@@ -82,5 +81,11 @@
             </column>
             <column name="workflowname" type="TEXT"/>
         </createTable>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="modify_versions_for_services">
+        <addColumn tableName="workflowversion">
+            <column name="subclass" type="int4"/>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

@@ -27,6 +27,8 @@ import io.swagger.annotations.ApiModel;
 @Table(name = "service")
 public class Service extends Workflow {
 
+    public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM }
+
     @Override
     public Entry getParentEntry() {
         return null;

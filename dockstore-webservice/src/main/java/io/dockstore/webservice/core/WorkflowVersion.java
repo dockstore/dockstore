@@ -44,6 +44,13 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Path for the workflow", position = 12)
     private String workflowPath;
 
+    /**
+     * In theory, this should be in a ServiceVersion.
+     * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
+     */
+    @ApiModelProperty(value = "The subclass of this for services.")
+    private Service.SubClass subClass = null;
+
     public WorkflowVersion() {
         super();
     }
@@ -107,5 +114,13 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("id", id).add("name", name).add("reference", reference).toString();
+    }
+
+    public Service.SubClass getSubClass() {
+        return subClass;
+    }
+
+    public void setSubClass(Service.SubClass subClass) {
+        this.subClass = subClass;
     }
 }

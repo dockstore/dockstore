@@ -930,6 +930,13 @@ components:
             $ref: '#/components/schemas/SourceFile'
           type: array
           uniqueItems: true
+        subClass:
+          enum:
+          - DOCKER_COMPOSE
+          - SWARM
+          - KUBERNETES
+          - HELM
+          type: string
         valid:
           type: boolean
         validations:
@@ -3102,7 +3109,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:

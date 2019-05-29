@@ -7280,6 +7280,14 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Validation"
+      subClass:
+        type: "string"
+        description: "The subclass of this for services."
+        enum:
+        - "DOCKER_COMPOSE"
+        - "SWARM"
+        - "KUBERNETES"
+        - "HELM"
       workingDirectory:
         type: "string"
       last_modified:
