@@ -5263,7 +5263,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Retrieves an workflow by alias.
+      summary: Retrieves a workflow by alias.
       description: Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
       operationId: getWorkflowByAlias

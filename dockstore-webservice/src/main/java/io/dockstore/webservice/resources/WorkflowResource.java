@@ -1791,7 +1791,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{alias}/aliases")
-    @ApiOperation(value = "Retrieves an workflow by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Workflow.class, authorizations = {
+    @ApiOperation(value = "Retrieves a workflow by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Workflow.class, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
