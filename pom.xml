@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.7.0-alpha.5-SNAPSHOT</version>
+    <version>1.7.0-alpha.5</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -69,7 +69,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.6.0</tag>
+        <tag>1.7.0-alpha.5</tag>
     </scm>
 
     <repositories>
@@ -1086,7 +1086,7 @@
                         <id>enforce</id>
                         <configuration>
                             <rules>
-                                <DependencyConvergence/>
+                                <DependencyConvergence />
                                 <requirePluginVersions>
                                     <message>Best Practice is to always define plugin versions!</message>
                                 </requirePluginVersions>
@@ -1097,14 +1097,14 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps/>
+                                <requireUpperBoundDeps />
                                 <requireMavenVersion>
                                     <version>3.5.4</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <version>11</version>
                                 </requireJavaVersion>
-                                <banDuplicatePomDependencyVersions/>
+                                <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
                                     <!-- currently, some of these dependencies are brought in transitively -->
                                     <searchTransitive>false</searchTransitive>
