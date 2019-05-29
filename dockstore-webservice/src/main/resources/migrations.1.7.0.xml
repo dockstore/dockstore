@@ -81,11 +81,14 @@
             </column>
             <column name="workflowname" type="TEXT"/>
         </createTable>
-    </changeSet>
 
-    <changeSet author="dyuen (generated)" id="modify_versions_for_services">
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="service" constraintName="checker_workflows_for_services" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+
         <addColumn tableName="workflowversion">
             <column name="subclass" type="int4"/>
         </addColumn>
+
+        <!-- workflows can be in two tables, workflow or service and unfortunately we cannot constrain across tables-->
+        <dropForeignKeyConstraint baseTableName="workflow_workflowversion" constraintName="fkl8yg13ahjhtn0notrlf3amwwi"/>
     </changeSet>
 </databaseChangeLog>

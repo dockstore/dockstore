@@ -149,7 +149,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore
     @JoinColumn(name = "checkerid")
-    @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
+    @OneToOne(targetEntity = BioWorkflow.class, fetch = FetchType.EAGER)
     @ApiModelProperty(value = "The id of the associated checker workflow")
     private BioWorkflow checkerWorkflow;
 
