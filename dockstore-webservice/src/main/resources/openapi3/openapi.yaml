@@ -2106,6 +2106,27 @@ paths:
                   $ref: '#/components/schemas/Tag'
                 type: array
           description: default response
+  /containers/{alias}/aliases:
+    get:
+      operationId: getToolByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+          description: default response
   /containers/{containerId}:
     delete:
       operationId: deleteContainer
@@ -5012,6 +5033,27 @@ paths:
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
                 type: array
+          description: default response
+  /workflows/{alias}/aliases:
+    get:
+      operationId: getWorkflowByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
     post:

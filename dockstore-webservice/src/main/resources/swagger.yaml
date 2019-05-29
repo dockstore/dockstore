@@ -1602,6 +1602,29 @@ paths:
               type: "array"
               items:
                 type: "object"
+  /containers/{alias}/aliases:
+    get:
+      tags:
+      - "containers"
+      summary: "Retrieves a tool by alias."
+      description: "Does not require authentication for published tools, authentication\
+        \ can be provided for restricted tools"
+      operationId: "getToolByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
   /containers/{containerId}:
     get:
       tags:
@@ -4841,6 +4864,29 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SharedWorkflows"
+      security:
+      - BEARER: []
+  /workflows/{alias}/aliases:
+    get:
+      tags:
+      - "workflows"
+      summary: "Retrieves a workflow by alias."
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
+      operationId: "getWorkflowByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:

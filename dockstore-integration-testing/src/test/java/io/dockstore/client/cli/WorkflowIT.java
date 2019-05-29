@@ -1308,6 +1308,10 @@ public class WorkflowIT extends BaseIT {
         // remove a few aliases
         entry = genericApi.updateAliases(workflow.getId(), "foobar, test workflow", "");
         Assert.assertTrue("entry is missing expected aliases", entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 2);
+
+        // Get workflow by alias
+        Workflow aliasWorkflow = workflowApi.getWorkflowByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the workflow by alias", aliasWorkflow);
     }
 
     /**
