@@ -725,7 +725,7 @@ public class WorkflowResource
     }
     */
 
-    private DepositMetadata fillInMetadata(DepositMetadata depositMetadata, Workflow workflow, WorkflowVersion workflowVersion) {
+    private void fillInMetadata(DepositMetadata depositMetadata, Workflow workflow, WorkflowVersion workflowVersion) {
         // add some metadata
         depositMetadata.setTitle(workflow.getWorkflowPath());
         // The Zenodo deposit type for Dockstore will always be SOFTWARE
@@ -739,7 +739,7 @@ public class WorkflowResource
         // Use the Dockstore workflow labels as Zendo free form keywords for this deposition.
         Set<Label> workflowLabels = workflow.getLabels();
         Iterator labelIter = workflowLabels.iterator();
-        List<String> labelList = new ArrayList<String>();
+        List<String> labelList = new ArrayList<>();
         while (labelIter.hasNext()) {
             String label = ((Label)labelIter.next()).getValue();
             labelList.add(label);
@@ -748,7 +748,7 @@ public class WorkflowResource
 
         /*
         // Get the aliases for this workflow and add them to the deposit
-        // TODO uses aliases for a workflow version instead
+        // TODO use aliases for a workflow version instead
         Set<String> workflowAliases = workflow.getAliases().keySet();
         Iterator iter = workflowAliases.iterator();
         List<RelatedIdentifier> aliasList = new ArrayList<RelatedIdentifier>();
@@ -762,28 +762,24 @@ public class WorkflowResource
         depositMetadata.setRelatedIdentifiers(aliasList);
         */
 
-        Author author1 = new Author();
-        //author1.setName("lastname1, firstname1");
-        String author = workflow.getAuthor();
-        String authorStr = (author == null || author.isEmpty()) ? "n/a" : workflow.getAuthor();
-        author1.setName(authorStr);
-        //Author author2 = new Author();
-        //author2.setName("lastname2, firstname2");
-        //returnDeposit.getMetadata().setCreators(Arrays.asList(author1, author2));
-        depositMetadata.setCreators(Arrays.asList(author1));
+        String wfAuthor = workflow.getAuthor();
+        String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "n/a" : workflow.getAuthor();
+        Author author = new Author();
+        author.setName(authorStr);
+        depositMetadata.setCreators(Arrays.asList(author));
 
         // A communities entry must not be null, but it can be a null
         // List for Zenodo
         List<Community> communities = depositMetadata.getCommunities();
         if (communities == null || communities.isEmpty()) {
-            List myList = new ArrayList();
+            List<Community> myList = new ArrayList<>();
             depositMetadata.setCommunities(myList);
         } else if (communities.size() == 1 && communities.get(0).getId() == null) {
             // Sometimes the list of communities contains one object
             // with a null id when Zenodo copies the metadata.
             // This will cause the call to publish to fail, so clear
             // the list of communities in this case
-            List myList = new ArrayList();
+            List<Community> myList = new ArrayList<>();
             depositMetadata.setCommunities(myList);
         }
 
@@ -799,8 +795,6 @@ public class WorkflowResource
         LocalDate date =
                 Instant.ofEpochMilli(lastModifiedDate).atZone(ZoneId.systemDefault()).toLocalDate();
         depositMetadata.setPublicationDate(date.toString());
-
-        return depositMetadata;
     }
 
     /**
@@ -897,15 +891,12 @@ public class WorkflowResource
         // because Zenodo requires that we use it to create the next
         // workflow version DOI
         String latestWorkflowVersionDOIURL = null;
-        Integer latestWorkflowVersionDepositID = 0;
         Set<WorkflowVersion> setOfWorkflowVersions = workflow.getVersions();
         Iterator iter = setOfWorkflowVersions.iterator();
         while (iter.hasNext()) {
             WorkflowVersion myWorkflowVersion = ((WorkflowVersion)iter.next());
             latestWorkflowVersionDOIURL = myWorkflowVersion.getDoiURL();
             if (latestWorkflowVersionDOIURL != null && !latestWorkflowVersionDOIURL.isEmpty()) {
-                String depositIdStr = latestWorkflowVersionDOIURL.substring(latestWorkflowVersionDOIURL.lastIndexOf(".") + 1).trim();
-                latestWorkflowVersionDepositID = Integer.parseInt(depositIdStr);
                 break;
             }
         }
@@ -923,7 +914,7 @@ public class WorkflowResource
                 depositionID = returnDeposit.getId();
                 depositMetadata = returnDeposit.getMetadata();
 
-                depositMetadata = fillInMetadata(depositMetadata, workflow, workflowVersion);
+                fillInMetadata(depositMetadata, workflow, workflowVersion);
 
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage());
@@ -952,7 +943,7 @@ public class WorkflowResource
                 returnDeposit = depositApi.getDeposit(depositionID);
 
                 depositMetadata = returnDeposit.getMetadata();
-                depositMetadata = fillInMetadata(depositMetadata, workflow, workflowVersion);
+                fillInMetadata(depositMetadata, workflow, workflowVersion);
 
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage());
