@@ -787,22 +787,17 @@ public class WorkflowResource
             depositMetadata.setCommunities(myList);
         }
 
-
-        // milliseconds
+        // get last modified time of workflow version in milliseconds
+        // after Jan 1, 1970. The idea is that this will usually be
+        // the date when the workflow was published
+        // in Dockstore; we will set the Zenodo publication
+        // date to the Dockstore publication date
         Date wfvDate = workflowVersion.getLastModified();
-
         // Creating date format  ISO8601 format (YYYY-MM-DD)
         // Format required by Zenodo
         long lastModifiedDate = wfvDate.getTime();
         LocalDate date =
                 Instant.ofEpochMilli(lastModifiedDate).atZone(ZoneId.systemDefault()).toLocalDate();
-        //LocalDate date = LocalDate.ofEpochDay(lastModifiedDate);
-
-
-        //DateFormat wfvDateSimple = new SimpleDateFormat("YYYY-MM-DD");
-        // Format Date according to the given format
-        //wfvDateSimple.format(wfvDate);
-        //String pubDate = wfvDateSimple.toString();
         depositMetadata.setPublicationDate(date.toString());
 
         return depositMetadata;
@@ -820,7 +815,7 @@ public class WorkflowResource
             int depositionID, Workflow workflow, WorkflowVersion workflowVersion) {
         // Creating a new version copies the files from the previous version
         // We want to delete these since we will upload a new set of files
-        // if creating a comletely new deposit this should not cause a problem
+        // if creating a completely new deposit this should not cause a problem
         FilesApi filesApi = new FilesApi(zendoClient);
         List<DepositionFile> originalFilesInNewVersion = returnDeposit.getFiles();
         Iterator filesIter = originalFilesInNewVersion.iterator();
@@ -839,19 +834,19 @@ public class WorkflowResource
                     + " upload when creating DOI. Zenodo requires at lease one file"
                     + " to be uploaded in order to create a DOI.", HttpStatus.SC_BAD_REQUEST);
         } else {
-            //String uuid = UUID.randomUUID().toString();
             String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
             // NOTE: put a uuid in the filename so we can test creating a new version DOI.
             // Zenodo cannot add a file that has
             // the same name as one already present for a workflow version
+            //String uuid = UUID.randomUUID().toString();
             //String fileName = uuid + "-" + workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
             OutputStream outputStream;
             try {
                 outputStream = new FileOutputStream(fileName);
             } catch (FileNotFoundException fne) {
-                throw new CustomWebApplicationException("could not create file "
-                        + "outputstream for DOI zip file for upload to Zenodo." + fileName,
-                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Could not create file " + fileName
+                        + " outputstream for DOI zip file for upload to Zenodo."
+                        + " Error is " + fne.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             writeStreamAsZip(sourceFiles, outputStream, path);
             java.nio.file.Path zipPath = Paths.get(fileName);
@@ -862,7 +857,7 @@ public class WorkflowResource
             } catch (ApiException e) {
                 LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage());
                 throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
-                        + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
+                        + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
         }
     }
@@ -933,7 +928,7 @@ public class WorkflowResource
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage());
                 throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
-                        + "Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
+                        + "Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
         } else {
             String depositIdStr = latestWorkflowVersionDOIURL.substring(latestWorkflowVersionDOIURL.lastIndexOf(".") + 1).trim();
@@ -962,7 +957,7 @@ public class WorkflowResource
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage());
                 throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
-                        + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
+                        + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
         }
 
@@ -976,7 +971,7 @@ public class WorkflowResource
         } catch (ApiException e) {
             LOG.error("Could not put deposition metadata on Zenodo. Error is " + e.getMessage());
             throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo."
-                    + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
+                    + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
         // publish it
@@ -986,7 +981,7 @@ public class WorkflowResource
         } catch (ApiException e) {
             LOG.error("Could not publish DOI on Zenodo. Error is " + e.getMessage());
             throw new CustomWebApplicationException("Could not publish DOI on Zenodo."
-                    + " Error is \" + e.getMessage()", HttpStatus.SC_BAD_REQUEST);
+                    + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
         workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
