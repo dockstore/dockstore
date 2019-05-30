@@ -387,7 +387,7 @@ public class Tool extends Entry<Tool, Tag> {
     @JsonProperty("defaultCWLTestParameterFile")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true, position = 18)
     public String getDefaultTestCwlParameterFile() {
-        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.DOCKERFILE, "/test.json");
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.CWL_TEST_JSON, "/test.json");
     }
 
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {

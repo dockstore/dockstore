@@ -92,27 +92,51 @@
         <dropForeignKeyConstraint baseTableName="workflow_workflowversion" constraintName="fkl8yg13ahjhtn0notrlf3amwwi"/>
     </changeSet>
 
-    <changeSet author="dyuen (generated)" id="example_default_path_general">
+    <changeSet author="dyuen (generated)" id="example_default_path_general_for_tools">
         <createTable tableName="entry_defaultpaths">
             <column name="entry_id" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="entry_defaultpaths_pkey"/>
+                <constraints nullable="false"/>
             </column>
-            <column name="defaultpaths" type="VARCHAR(255)"/>
-            <column name="defaultpaths_key" type="VARCHAR(255)">
-                <constraints primaryKey="true" primaryKeyName="entry_defaultpaths_pkey"/>
+            <column name="path" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="filetype" type="varchar(255)">
+                <constraints nullable="false"/>
             </column>
         </createTable>
+        <addUniqueConstraint columnNames="entry_id, filetype, path" constraintName="unique_paths" tableName="entry_defaultpaths"/>
+        <addPrimaryKey columnNames="entry_id, filetype" constraintName="entry_defaultpaths_pkey" tableName="entry_defaultpaths"/>
         <sql dbms="postgresql">
-            insert into entry_defaultpaths select id as entry_id, defaultdockerfilepath as defaultpaths, 'DOCKERFILE' as defaultpaths_key from tool;
-            insert into entry_defaultpaths select id as entry_id, defaultcwlpath as defaultpaths, 'DOCKSTORE_CWL' as defaultpaths_key from tool;
-            insert into entry_defaultpaths select id as entry_id, defaultwdlpath as defaultpaths, 'DOCKSTORE_WDL' as defaultpaths_key from tool;
-            insert into entry_defaultpaths select id as entry_id, defaulttestcwlparameterfile as defaultpaths, 'CWL_TEST_JSON' as defaultpaths_key from tool;
-            insert into entry_defaultpaths select id as entry_id, defaulttestwdlparameterfile as defaultpaths, 'WDL_TEST_JSON' as defaultpaths_key from tool;
+            insert into entry_defaultpaths select id as entry_id, defaultdockerfilepath as path, 'DOCKERFILE' as filetype from tool where defaultdockerfilepath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaultcwlpath as path, 'DOCKSTORE_CWL' as filetype from tool where defaultcwlpath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaultwdlpath as path, 'DOCKSTORE_WDL' as filetype from tool where defaultwdlpath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaulttestcwlparameterfile as path, 'CWL_TEST_JSON' as filetype from tool where defaulttestcwlparameterfile is not null;
+            insert into entry_defaultpaths select id as entry_id, defaulttestwdlparameterfile as path, 'WDL_TEST_JSON' as filetype from tool where defaulttestwdlparameterfile is not null;
         </sql>
         <dropColumn tableName="tool" columnName="defaultdockerfilepath"/>
         <dropColumn tableName="tool" columnName="defaultcwlpath"/>
         <dropColumn tableName="tool" columnName="defaultwdlpath"/>
         <dropColumn tableName="tool" columnName="defaulttestcwlparameterfile"/>
         <dropColumn tableName="tool" columnName="defaulttestwdlparameterfile"/>
+
+        <sql dbms="postgresql">
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'DOCKSTORE_CWL' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'cwl';
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'DOCKSTORE_WDL' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'wdl';
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'NEXTFLOW_CONFIG' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'nfl';
+
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'CWL_TEST_JSON' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'cwl';
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'WDL_TEST_JSON' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'wdl';
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'NEXTFLOW_TEST_PARAMS' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'nfl';
+        </sql>
+        <dropColumn tableName="workflow" columnName="defaultworkflowpath"/>
+        <dropColumn tableName="workflow" columnName="defaulttestparameterfilepath"/>
+        <dropColumn columnName="defaulttestparameterfilepath" tableName="service"/>
+        <dropColumn columnName="defaultworkflowpath" tableName="service"/>
+
+        <!-- set constraints -->
+        <sql dbms="postgresql">
+            DELETE FROM entry_defaultpaths WHERE path IS NULL OR path = '';
+            ALTER TABLE entry_defaultpaths ADD CONSTRAINT path_check CHECK (path &lt;&gt; '');
+        </sql>
     </changeSet>
 </databaseChangeLog>

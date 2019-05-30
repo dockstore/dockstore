@@ -52,7 +52,7 @@ import org.hibernate.annotations.Check;
  * @author dyuen
  */
 @Entity
-// this is crazy, but it looks like JPA dies without this dummy value
+// this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
 @Table(name = "foo")
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
@@ -98,17 +98,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 18)
     private String descriptorType;
 
-    // Add for new descriptor types
-    @Column(columnDefinition = "text")
-    @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 19)
-    private String defaultWorkflowPath = "/Dockstore.cwl";
-
-    @Column(columnDefinition = "text")
-    @JsonProperty("defaultTestParameterFilePath")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 20)
-    private String defaultTestParameterFilePath = "/test.json";
-
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
@@ -136,9 +125,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         }
         return super.getGitUrl();
     }
-
-
-
 
     @Override
     public Set<WorkflowVersion> getVersions() {
@@ -208,13 +194,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     // Add for new descriptor types
-    @JsonProperty
+    @JsonProperty("workflow_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 19)
     public String getDefaultWorkflowPath() {
-        return defaultWorkflowPath;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.getFileType(this.descriptorType).orElse(DescriptorLanguage.FileType.DOCKSTORE_CWL), "/Dockstore.cwl");
     }
 
     public void setDefaultWorkflowPath(String defaultWorkflowPath) {
-        this.defaultWorkflowPath = defaultWorkflowPath;
+        getDefaultPaths().put(DescriptorLanguage.getFileType(this.descriptorType).orElse(DescriptorLanguage.FileType.DOCKSTORE_CWL), defaultWorkflowPath);
     }
 
     @JsonProperty
@@ -279,12 +266,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return testParameterType.orElseThrow(() -> new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST));
     }
 
+    @JsonProperty("defaultTestParameterFilePath")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 20)
     public String getDefaultTestParameterFilePath() {
-        return defaultTestParameterFilePath;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.getTestParameterType(this.descriptorType).orElse(DescriptorLanguage.FileType.CWL_TEST_JSON), "/Dockstore.cwl");
     }
 
     public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
-        this.defaultTestParameterFilePath = defaultTestParameterFilePath;
+        getDefaultPaths().put(DescriptorLanguage.getTestParameterType(this.descriptorType).orElse(DescriptorLanguage.FileType.CWL_TEST_JSON), defaultTestParameterFilePath);
     }
     public SourceControl getSourceControl() {
         return sourceControl;

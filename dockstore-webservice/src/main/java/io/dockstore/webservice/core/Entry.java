@@ -27,6 +27,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -181,6 +182,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyEnumerated(EnumType.STRING)
+    @Column(name = "path", nullable = false, columnDefinition = "varchar(255) not null check (path <> '')")
+    @MapKeyColumn(name = "filetype")
+    @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
     public Entry() {
@@ -483,16 +487,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public Map<DescriptorLanguage.FileType, String> getDefaultPaths() {
-        // TODO: must be a way to constain empty (and null values) via JPA annotation
-        defaultPaths.values().removeIf(String::isEmpty);
-        defaultPaths.values().removeIf(Objects::isNull);
         return defaultPaths;
     }
 
     public void setDefaultPaths(Map<DescriptorLanguage.FileType, String> defaultPaths) {
-        // TODO: must be a way to constain empty (and null values) via JPA annotation
-        defaultPaths.values().removeIf(String::isEmpty);
-        defaultPaths.values().removeIf(Objects::isNull);
         this.defaultPaths = defaultPaths;
     }
 }
