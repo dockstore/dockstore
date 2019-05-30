@@ -97,6 +97,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String gitlabClientSecret;
 
     @NotEmpty
+    private String zenodoClientID;
+
+    @NotEmpty
+    private String zenodoRedirectURI;
+
+    @NotEmpty
+    private String zenodoClientSecret;
+
+    @NotEmpty
     private String discourseUrl;
 
     @NotEmpty
@@ -310,6 +319,30 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setGitlabClientSecret(String gitlabClientSecret) {
         this.gitlabClientSecret = gitlabClientSecret;
+    }
+
+    public String getZenodoClientID() {
+        return zenodoClientID;
+    }
+
+    public void setZenodoClientID(String zenodoClientID) {
+        this.zenodoClientID = zenodoClientID;
+    }
+
+    public String getZenodoRedirectURI() {
+        return zenodoRedirectURI;
+    }
+
+    public void setZenodoRedirectURI(String zenodoRedirectURI) {
+        this.zenodoRedirectURI = zenodoRedirectURI;
+    }
+
+    public String getZenodoClientSecret() {
+        return zenodoClientSecret;
+    }
+
+    public void setZenodoClientSecret(String zenodoClientSecret) {
+        this.zenodoClientSecret = zenodoClientSecret;
     }
 
     public String getDiscourseUrl() {
@@ -569,6 +602,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String gitlabRedirectPath;
         private String gitlabScope;
 
+        private String zenodoAuthUrl;
+        private String zenodoRedirectPath;
+        private String zenodoScope;
+
         private String googleScope;
 
         private String cwlVisualizerUri;
@@ -695,6 +732,32 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         public void setGitlabScope(String gitlabScope) {
             this.gitlabScope = gitlabScope;
         }
+
+
+        public String getZenodoAuthUrl() {
+            return zenodoAuthUrl;
+        }
+
+        public void setZenodoAuthUrl(String zenodoAuthUrl) {
+            this.zenodoAuthUrl = zenodoAuthUrl;
+        }
+
+        public String getZenodoRedirectPath() {
+            return zenodoRedirectPath;
+        }
+
+        public void setZenodoRedirectPath(String zenodoRedirectPath) {
+            this.zenodoRedirectPath = zenodoRedirectPath;
+        }
+
+        public String getZenodoScope() {
+            return zenodoScope;
+        }
+
+        public void setZenodoScope(String zenodoScope) {
+            this.zenodoScope = zenodoScope;
+        }
+
 
         public String getGoogleScope() {
             return googleScope;
