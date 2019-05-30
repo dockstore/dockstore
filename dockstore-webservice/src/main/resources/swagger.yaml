@@ -1169,7 +1169,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new zenodo.org token."
+      summary: "Add a new zenodo.org token, used by accounts page."
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
