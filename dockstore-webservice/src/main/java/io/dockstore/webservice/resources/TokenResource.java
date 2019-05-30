@@ -103,6 +103,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
+    private static final String ZENODO_URL = "https://sandbox.zenodo.org";
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     private final TokenDAO tokenDAO;
@@ -115,6 +116,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String gitlabClientID;
     private final String gitlabRedirectUri;
     private final String gitlabClientSecret;
+    private final String zenodoClientID;
+    private final String zenodoRedirectUri;
+    private final String zenodoClientSecret;
     private final String googleClientID;
     private final String googleClientSecret;
     private final HttpClient client;
@@ -131,6 +135,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.gitlabClientID = configuration.getGitlabClientID();
         this.gitlabClientSecret = configuration.getGitlabClientSecret();
         this.gitlabRedirectUri = configuration.getGitlabRedirectURI();
+        this.zenodoClientID = configuration.getZenodoClientID();
+        this.zenodoClientSecret = configuration.getZenodoClientSecret();
+        this.zenodoRedirectUri = configuration.getZenodoRedirectURI();
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
         this.client = client;
@@ -275,6 +282,63 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
         }
 
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/zenodo.org")
+    @ApiOperation(value = "Add a new zenodo.org token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
+            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
+                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    public Token addZenodoToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                JSON_FACTORY, new GenericUrl(ZENODO_URL + "oauth/token"),
+                new ClientParametersAuthentication(zenodoClientID, zenodoClientSecret), zenodoClientID,
+                ZENODO_URL + "oauth/authorize").build();
+
+        LOG.info("About to try and grab Zenodo access token");
+        String accessToken;
+        try {
+            TokenResponse tokenResponse = flow.newTokenRequest(code)
+                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).setGrantType("authorization_code")
+                    .setRedirectUri(zenodoRedirectUri).execute();
+            accessToken = tokenResponse.getAccessToken();
+        } catch (IOException e) {
+            LOG.error("Retrieving Zenodo access token was unsuccessful");
+            throw new CustomWebApplicationException("Could not retrieve zenodo.org token based on code", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        String url = ZENODO_URL + "/api/user"; //????? what should the path be for Zenodo????
+
+        Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
+        String username = getUserName(url, asString);
+
+        if (user != null) {
+            List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
+
+            if (tokens.isEmpty()) {
+                Token token = new Token();
+                token.setTokenSource(TokenType.ZENODO_ORG);
+                token.setContent(accessToken);
+                token.setUserId(user.getId());
+                if (username != null) {
+                    token.setUsername(username);
+                } else {
+                    LOG.info("zenodo.org token user name is null, did not create token");
+                    throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
+                }
+                long create = tokenDAO.create(token);
+                LOG.info("Zenodo token created for {}", user.getUsername());
+                return tokenDAO.findById(create);
+            } else {
+                LOG.info("Zenodo token already exists for {}", user.getUsername());
+                throw new CustomWebApplicationException("Zenodo token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
+            }
+        } else {
+            LOG.info("Could not find user");
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+        }
     }
 
     private String getCodeFromSatellizerObject(JsonObject satellizerObject) {
