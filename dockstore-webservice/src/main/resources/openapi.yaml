@@ -1358,6 +1358,30 @@ paths:
                 $ref: "#/components/schemas/Token"
       security:
         - BEARER: []
+  /auth/tokens/zenodo.org:
+    get:
+      tags:
+        - tokens
+      summary: Add a new zenodo.org token.
+      description: This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI
+        which should resolve here
+      operationId: addZenodoToken
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+      security:
+        - BEARER: []
   "/auth/tokens/{tokenId}":
     get:
       tags:
@@ -6171,6 +6195,12 @@ components:
           type: string
         gitlabScope:
           type: string
+        zenodoAuthUrl:
+          type: string
+        zenodoRedirectPath:
+          type: string
+        zenodoScope:
+          type: string
         googleScope:
           type: string
         cwlVisualizerUri:
@@ -6184,6 +6214,8 @@ components:
         bitBucketClientId:
           type: string
         gitlabClientId:
+          type: string
+        zenodoClientId:
           type: string
         googleClientId:
           type: string
@@ -6232,6 +6264,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6247,10 +6283,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6420,6 +6452,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6435,10 +6471,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7401,6 +7433,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7416,10 +7452,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
