@@ -91,4 +91,28 @@
         <!-- workflows can be in two tables, workflow or service and unfortunately we cannot constrain across tables-->
         <dropForeignKeyConstraint baseTableName="workflow_workflowversion" constraintName="fkl8yg13ahjhtn0notrlf3amwwi"/>
     </changeSet>
+
+    <changeSet author="dyuen (generated)" id="example_default_path_general">
+        <createTable tableName="entry_defaultpaths">
+            <column name="entry_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="entry_defaultpaths_pkey"/>
+            </column>
+            <column name="defaultpaths" type="VARCHAR(255)"/>
+            <column name="defaultpaths_key" type="VARCHAR(255)">
+                <constraints primaryKey="true" primaryKeyName="entry_defaultpaths_pkey"/>
+            </column>
+        </createTable>
+        <sql dbms="postgresql">
+            insert into entry_defaultpaths select id as entry_id, defaultdockerfilepath as defaultpaths, 'DOCKERFILE' as defaultpaths_key from tool;
+            insert into entry_defaultpaths select id as entry_id, defaultcwlpath as defaultpaths, 'DOCKSTORE_CWL' as defaultpaths_key from tool;
+            insert into entry_defaultpaths select id as entry_id, defaultwdlpath as defaultpaths, 'DOCKSTORE_WDL' as defaultpaths_key from tool;
+            insert into entry_defaultpaths select id as entry_id, defaulttestcwlparameterfile as defaultpaths, 'CWL_TEST_JSON' as defaultpaths_key from tool;
+            insert into entry_defaultpaths select id as entry_id, defaulttestwdlparameterfile as defaultpaths, 'WDL_TEST_JSON' as defaultpaths_key from tool;
+        </sql>
+        <dropColumn tableName="tool" columnName="defaultdockerfilepath"/>
+        <dropColumn tableName="tool" columnName="defaultcwlpath"/>
+        <dropColumn tableName="tool" columnName="defaultwdlpath"/>
+        <dropColumn tableName="tool" columnName="defaulttestcwlparameterfile"/>
+        <dropColumn tableName="tool" columnName="defaulttestwdlparameterfile"/>
+    </changeSet>
 </databaseChangeLog>

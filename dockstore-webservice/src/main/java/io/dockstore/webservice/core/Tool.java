@@ -76,8 +76,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true") })
 // @formatter:off
-@Check(constraints = "(defaultwdlpath is not null or defaultcwlpath is not null) "
-    + "and (toolname NOT LIKE '\\_%')")
+@Check(constraints = "(toolname NOT LIKE '\\_%')")
 // @formatter:on
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tool extends Entry<Tool, Tag> {
@@ -92,32 +91,6 @@ public class Tool extends Entry<Tool, Tag> {
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true, position = 14)
     private String name;
-
-    @Column(columnDefinition = "text", nullable = false)
-    @JsonProperty("default_dockerfile_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true, position = 15)
-    private String defaultDockerfilePath = "/Dockerfile";
-
-    // Add for new descriptor types
-    @Column(columnDefinition = "text")
-    @JsonProperty("default_cwl_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true, position = 16)
-    private String defaultCwlPath = "/Dockstore.cwl";
-
-    @Column(columnDefinition = "text default '/Dockstore.wdl'")
-    @JsonProperty("default_wdl_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true, position = 17)
-    private String defaultWdlPath = "/Dockstore.wdl";
-
-    @Column(columnDefinition = "text")
-    @JsonProperty("defaultCWLTestParameterFile")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true, position = 18)
-    private String defaultTestCwlParameterFile = "/test.json";
-
-    @Column(columnDefinition = "text")
-    @JsonProperty("defaultWDLTestParameterFile")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true, position = 19)
-    private String defaultTestWdlParameterFile = "/test.json";
 
     @Column
     @JsonProperty("tool_maintainer_email")
@@ -225,6 +198,7 @@ public class Tool extends Entry<Tool, Tag> {
 
     /**
      * Calculated property for demonstrating search by language, inefficient
+     *
      * @return the languages that this tool supports
      */
     @JsonProperty
@@ -273,32 +247,34 @@ public class Tool extends Entry<Tool, Tag> {
         this.mode = mode;
     }
 
-    @JsonProperty
+    @JsonProperty("default_dockerfile_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true, position = 15)
     public String getDefaultDockerfilePath() {
-        return defaultDockerfilePath;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.DOCKERFILE, "/Dockerfile");
     }
 
     public void setDefaultDockerfilePath(String defaultDockerfilePath) {
-        this.defaultDockerfilePath = defaultDockerfilePath;
+        getDefaultPaths().put(DescriptorLanguage.FileType.DOCKERFILE, defaultDockerfilePath);
     }
 
-    // Add for new descriptor types
-    @JsonProperty
+    @JsonProperty("default_cwl_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true, position = 16)
     public String getDefaultCwlPath() {
-        return defaultCwlPath;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.DOCKSTORE_CWL, "/Dockstore.cwl");
     }
 
     public void setDefaultCwlPath(String defaultCwlPath) {
-        this.defaultCwlPath = defaultCwlPath;
+        getDefaultPaths().put(DescriptorLanguage.FileType.DOCKSTORE_CWL, defaultCwlPath);
     }
 
-    @JsonProperty
+    @JsonProperty("default_wdl_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true, position = 17)
     public String getDefaultWdlPath() {
-        return defaultWdlPath;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.DOCKSTORE_WDL, "/Dockstore.wdl");
     }
 
     public void setDefaultWdlPath(String defaultWdlPath) {
-        this.defaultWdlPath = defaultWdlPath;
+        getDefaultPaths().put(DescriptorLanguage.FileType.DOCKSTORE_WDL, defaultWdlPath);
     }
 
     @JsonProperty
@@ -398,20 +374,24 @@ public class Tool extends Entry<Tool, Tag> {
         this.privateAccess = privateAccess;
     }
 
+    @JsonProperty("defaultWDLTestParameterFile")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true, position = 19)
     public String getDefaultTestWdlParameterFile() {
-        return defaultTestWdlParameterFile;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.WDL_TEST_JSON, "/test.json");
     }
 
     public void setDefaultTestWdlParameterFile(String defaultTestWdlParameterFile) {
-        this.defaultTestWdlParameterFile = defaultTestWdlParameterFile;
+        getDefaultPaths().put(DescriptorLanguage.FileType.WDL_TEST_JSON, defaultTestWdlParameterFile);
     }
 
+    @JsonProperty("defaultCWLTestParameterFile")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true, position = 18)
     public String getDefaultTestCwlParameterFile() {
-        return defaultTestCwlParameterFile;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.DOCKERFILE, "/test.json");
     }
 
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
-        this.defaultTestCwlParameterFile = defaultTestCwlParameterFile;
+        getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
     }
 
 }

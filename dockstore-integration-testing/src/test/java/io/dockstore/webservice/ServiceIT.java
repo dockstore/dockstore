@@ -16,6 +16,7 @@
 package io.dockstore.webservice;
 
 import java.util.List;
+import java.util.Map;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
@@ -138,6 +139,15 @@ public class ServiceIT extends BaseIT {
         assertTrue(workflow.getLabels().stream().anyMatch(label -> "batman".equals(label.getValue())));
     }
 
+    @Test
+    public void testGeneralDefaultPathMechanism() {
+        final CreateContent invoke = new CreateContent().invoke();
+        final ApiClient webClient = getWebClient(true, false);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        // did it happen?
+        final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
+    }
+
     private class CreateContent {
         private long workflowID;
         private long serviceID;
@@ -182,6 +192,12 @@ public class ServiceIT extends BaseIT {
             test2Service.setDescriptorType(DescriptorLanguage.SERVICE.toString());
             test2Service.setOrganization("hydra");
             test2Service.setRepository("hydra_repo");
+
+            final Map<DescriptorLanguage.FileType, String> defaultPaths = test2Service.getDefaultPaths();
+            for(DescriptorLanguage.FileType val : DescriptorLanguage.FileType.values()){
+                defaultPaths.put(val, "path for " + val);
+            }
+            test2Service.setDefaultPaths(defaultPaths);
 
             // add all users to all things for now
             for(User user : userDAO.findAll()){

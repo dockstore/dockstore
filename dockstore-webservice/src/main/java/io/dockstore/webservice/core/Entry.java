@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -40,6 +41,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyEnumerated;
 import javax.persistence.NamedNativeQueries;
 import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQueries;
@@ -55,6 +57,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -171,6 +174,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
     private Long topicId;
+
+    /**
+     * Example of generalizing concept of default paths across tools, workflows
+     */
+    @JsonIgnore
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyEnumerated(EnumType.STRING)
+    private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
     public Entry() {
         users = new TreeSet<>();
@@ -469,5 +480,19 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public int compareTo(@NotNull Entry that) {
         return ComparisonChain.start().compare(this.getId(), that.getId(), Ordering.natural().nullsLast())
             .result();
+    }
+
+    public Map<DescriptorLanguage.FileType, String> getDefaultPaths() {
+        // TODO: must be a way to constain empty (and null values) via JPA annotation
+        defaultPaths.values().removeIf(String::isEmpty);
+        defaultPaths.values().removeIf(Objects::isNull);
+        return defaultPaths;
+    }
+
+    public void setDefaultPaths(Map<DescriptorLanguage.FileType, String> defaultPaths) {
+        // TODO: must be a way to constain empty (and null values) via JPA annotation
+        defaultPaths.values().removeIf(String::isEmpty);
+        defaultPaths.values().removeIf(Objects::isNull);
+        this.defaultPaths = defaultPaths;
     }
 }
