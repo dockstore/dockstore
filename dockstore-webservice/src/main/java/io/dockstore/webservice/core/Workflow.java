@@ -200,6 +200,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return getDefaultPaths().getOrDefault(DescriptorLanguage.getFileType(this.descriptorType).orElse(DescriptorLanguage.FileType.DOCKSTORE_CWL), "/Dockstore.cwl");
     }
 
+    //TODO: odd side effect, this means that if the descriptor language is set wrong, we will get or set the wrong the default paths
     public void setDefaultWorkflowPath(String defaultWorkflowPath) {
         getDefaultPaths().put(DescriptorLanguage.getFileType(this.descriptorType).orElse(DescriptorLanguage.FileType.DOCKSTORE_CWL), defaultWorkflowPath);
     }

@@ -1304,9 +1304,10 @@ public class WorkflowResource
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
         }
+        // hmmm, will need to set the descriptor type now before the default path, lest the wrong language be recorded till we get multiple language workflows
+        newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
-        newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
         final long workflowID = workflowDAO.create(newWorkflow);
@@ -1653,6 +1654,7 @@ public class WorkflowResource
         // Create checker workflow
         BioWorkflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setMode(WorkflowMode.STUB);
+        checkerWorkflow.setDescriptorType(descriptorType);
         checkerWorkflow.setDefaultWorkflowPath(checkerWorkflowPath);
         checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
         checkerWorkflow.setOrganization(organization);
@@ -1662,7 +1664,6 @@ public class WorkflowResource
         checkerWorkflow.setGitUrl(gitUrl);
         checkerWorkflow.setLastUpdated(lastUpdated);
         checkerWorkflow.setWorkflowName(workflowName);
-        checkerWorkflow.setDescriptorType(descriptorType);
         checkerWorkflow.setIsChecker(true);
 
         // Deal with possible custom default test parameter file

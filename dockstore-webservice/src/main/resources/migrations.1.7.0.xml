@@ -135,8 +135,11 @@
 
         <!-- set constraints -->
         <sql dbms="postgresql">
-            DELETE FROM entry_defaultpaths WHERE path IS NULL OR path = '';
-            ALTER TABLE entry_defaultpaths ADD CONSTRAINT path_check CHECK (path &lt;&gt; '');
+            DELETE FROM entry_defaultpaths WHERE path IS NULL;
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE tool ADD CHECK (toolname !~~ '\_%'::text);
         </sql>
     </changeSet>
 </databaseChangeLog>

@@ -182,7 +182,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyEnumerated(EnumType.STRING)
-    @Column(name = "path", nullable = false, columnDefinition = "varchar(255) not null check (path <> '')")
+    @Column(name = "path", nullable = false)
     @MapKeyColumn(name = "filetype")
     @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
