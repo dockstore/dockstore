@@ -30,9 +30,9 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
  */
-@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore")
+@ApiModel(value = "BioWorkflow", description = "This describes one workflow in the dockstore")
 @Entity
-@DiscriminatorValue("workflow")
+@DiscriminatorValue("bioworkflow")
 @Table(name = "workflow")
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {

@@ -12,6 +12,16 @@ components:
             $ref: '#/components/schemas/Alias'
           type: object
       type: object
+    BioWorkflow:
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+      properties:
+        is_checker:
+          type: boolean
+        parent_id:
+          format: int64
+          type: integer
+      type: object
     Collection:
       description: Collection in an organization, collects entries
       properties:
@@ -408,6 +418,10 @@ components:
         url:
           type: string
       type: object
+    Service:
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+      type: object
     SharedWorkflows:
       properties:
         role:
@@ -771,6 +785,8 @@ components:
           type: boolean
       type: object
     Workflow:
+      discriminator:
+        propertyName: type
       properties:
         aliases:
           additionalProperties:
@@ -3215,7 +3231,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:

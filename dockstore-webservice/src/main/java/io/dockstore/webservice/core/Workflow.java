@@ -37,9 +37,12 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.Cascade;
@@ -51,6 +54,7 @@ import org.hibernate.annotations.Check;
  *
  * @author dyuen
  */
+@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class}, discriminator = "type")
 @Entity
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
 @Table(name = "foo")
@@ -68,6 +72,9 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true") })
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
 @SuppressWarnings("checkstyle:magicnumber")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+@JsonSubTypes({ @JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
+    @JsonSubTypes.Type(value = Service.class, name = "Service") })
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
@@ -105,11 +112,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     private final SortedSet<WorkflowVersion> workflowVersions;
 
-    public Workflow() {
+    protected Workflow() {
         workflowVersions = new TreeSet<>();
     }
 
-    public Workflow(long id, String workflowName) {
+    protected Workflow(long id, String workflowName) {
         super(id);
         // this.userId = userId;
         this.workflowName = workflowName;

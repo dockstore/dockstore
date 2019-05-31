@@ -6028,6 +6028,18 @@ components:
       properties:
         content:
           type: string
+    BioWorkflow:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - type: object
+          properties:
+            parent_id:
+              type: integer
+              format: int64
+              readOnly: true
+            is_checker:
+              type: boolean
+          description: This describes one workflow in the dockstore
     Collection:
       type: object
       required:
@@ -6760,6 +6772,13 @@ components:
           type: string
         enum:
           type: string
+    Service:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - type: object
+          properties: {}
+          description: This describes one service in the dockstore as a special degenerate
+            case of a workflow
     SharedWorkflows:
       type: object
       properties:
@@ -7344,6 +7363,8 @@ components:
         - repository
         - sourceControl
         - workflow_path
+      discriminator:
+        propertyName: type
       properties:
         id:
           type: integer
@@ -7491,6 +7512,7 @@ components:
         source_control_provider:
           type: string
           readOnly: true
+      description: This describes one workflow in the dockstore
     WorkflowVersion:
       type: object
       required:

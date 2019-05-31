@@ -5649,6 +5649,19 @@ definitions:
     properties:
       content:
         type: "string"
+  BioWorkflow:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties:
+        parent_id:
+          type: "integer"
+          format: "int64"
+          readOnly: true
+        is_checker:
+          type: "boolean"
+          position: 23
+      description: "This describes one workflow in the dockstore"
   Collection:
     type: "object"
     required:
@@ -6452,6 +6465,13 @@ definitions:
         type: "string"
       enum:
         type: "string"
+  Service:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties: {}
+      description: "This describes one service in the dockstore as a special degenerate\
+        \ case of a workflow"
   SharedWorkflows:
     type: "object"
     properties:
@@ -7083,6 +7103,7 @@ definitions:
     - "repository"
     - "sourceControl"
     - "workflow_path"
+    discriminator: "type"
     properties:
       id:
         type: "integer"
@@ -7254,6 +7275,7 @@ definitions:
         type: "string"
         position: 26
         readOnly: true
+    description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"
     required:

@@ -164,7 +164,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String substring = url.substring(BITBUCKET_V2_API_URL.length() - 1);
         return apiClient
             .invokeAPI(substring, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/json", "application/json",
-                new String[] { "api_key", "basic", "oauth2" }, type);
+                new String[] { "api_key", "basic", "oauth2" }, type).getData();
     }
 
     /**

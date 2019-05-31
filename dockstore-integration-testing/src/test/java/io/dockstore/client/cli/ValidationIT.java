@@ -208,6 +208,7 @@ public class ValidationIT extends BaseIT {
         WorkflowsApi workflowsApi = setupWorkflowWebService();
 
         // Register a workflow
+        workflowsApi.getApiClient().setDebugging(true);
         Workflow workflow = workflowsApi.manualRegister("GitHub", "DockstoreTestUser2/TestEntryValidation", "/validWorkflow.cwl", "testname", "cwl", "/test.json");
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));

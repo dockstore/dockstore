@@ -419,10 +419,11 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // look for a mutated version and delete it first (can happen due to leading slash)
-        Set<SourceFile> collect = sourceFileSet.stream().filter(
-            file -> file.getPath().equals(sourceFile.getPath()) || file.getPath()
+        if (sourceFile != null) {
+            Set<SourceFile> collect = sourceFileSet.stream().filter(file -> file.getPath().equals(sourceFile.getPath()) || file.getPath()
                 .equals(StringUtils.stripStart(sourceFile.getPath(), "/"))).collect(Collectors.toSet());
-        sourceFileSet.removeAll(collect);
+            sourceFileSet.removeAll(collect);
+        }
         // add extra source files here (dependencies from "main" descriptor)
         if (sourceFileSet.size() > 0) {
             version.getSourceFiles().addAll(sourceFileSet);

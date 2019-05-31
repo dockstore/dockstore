@@ -391,7 +391,7 @@ public class WorkflowResource
         FileFormatHelper.updateFileFormats(newWorkflow.getVersions(), fileFormatDAO);
 
         // Refresh checker workflow
-        if (!((BioWorkflow)workflow).isIsChecker() && workflow.getCheckerWorkflow() != null) {
+        if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
         // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
