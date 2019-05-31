@@ -37,6 +37,7 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dockstore.common.DescriptorLanguage;
@@ -71,6 +72,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true") })
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
+@JsonPropertyOrder("descriptorType")
 @SuppressWarnings("checkstyle:magicnumber")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({ @JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
@@ -277,7 +279,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JsonProperty("defaultTestParameterFilePath")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 20)
     public String getDefaultTestParameterFilePath() {
-        return getDefaultPaths().getOrDefault(DescriptorLanguage.getTestParameterType(this.descriptorType).orElse(DescriptorLanguage.FileType.CWL_TEST_JSON), "/Dockstore.cwl");
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.getTestParameterType(this.descriptorType).orElse(DescriptorLanguage.FileType.CWL_TEST_JSON), "/test.json");
     }
 
     public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {

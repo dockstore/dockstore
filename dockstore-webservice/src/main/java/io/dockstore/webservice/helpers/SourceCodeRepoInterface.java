@@ -248,7 +248,7 @@ public abstract class SourceCodeRepoInterface {
         Set<SourceFile> sourceFiles = null;
 
         // If entry is a tool
-        if (entry.getClass().equals(Tool.class)) {
+        if (entry instanceof Tool) {
             // If no tags exist on quay
             if (((Tool)entry).getVersions().size() == 0) {
                 return entry;
@@ -270,7 +270,8 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // If entry is a workflow
-        if (entry.getClass().equals(Workflow.class)) {
+
+        if (entry instanceof Workflow) {
             // Find filepath to parse
             for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
                 if (workflowVersion.getReference().equals(branch)) {
