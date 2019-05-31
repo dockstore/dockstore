@@ -6177,6 +6177,8 @@ components:
           type: string
         enableLaunchWithFireCloud:
           type: boolean
+        tagManagerId:
+          type: string
         githubClientId:
           type: string
         quayIoClientId:
