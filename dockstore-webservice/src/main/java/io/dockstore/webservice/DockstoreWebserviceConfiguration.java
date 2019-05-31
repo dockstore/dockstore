@@ -18,6 +18,7 @@ package io.dockstore.webservice;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -575,6 +576,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private boolean enableLaunchWithFireCloud;
 
+        private Optional<String> tagManagerId;
+
 
         public String getDiscourseUrl() {
             return discourseUrl;
@@ -719,5 +722,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         public void setEnableLaunchWithFireCloud(boolean enableLaunchWithFireCloud) {
             this.enableLaunchWithFireCloud = enableLaunchWithFireCloud;
         }
+
+        public Optional<String> getTagManagerId() {
+            return tagManagerId;
+        }
+
+        public void setTagManagerId(Optional<String> tagManagerId) {
+            this.tagManagerId = tagManagerId;
+        }
+
     }
 }
