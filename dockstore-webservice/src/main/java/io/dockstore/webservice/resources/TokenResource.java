@@ -103,7 +103,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
-    private static final String ZENODO_URL = "https://sandbox.zenodo.org";
+    private static final String ZENODO_URL = "https://sandbox.zenodo.org/";
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     private final TokenDAO tokenDAO;
@@ -606,28 +606,32 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addZenodoToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
-        if (code.isEmpty()) {
-            throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
-        }
+        //if (code.isEmpty()) {
+        //    throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
+        //}
 
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                 JSON_FACTORY, new GenericUrl(ZENODO_URL + "oauth/token"),
                 new ClientParametersAuthentication(zenodoClientID, zenodoClientSecret), zenodoClientID,
                 ZENODO_URL + "oauth/authorize").build();
 
+        LOG.info("About to try and grab zenodo access token");
         String accessToken;
         String refreshToken;
         try {
-            TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList("user:email"))
-                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+            TokenResponse tokenResponse = flow.newTokenRequest(code)
+                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).setGrantType("authorization_code")
+                    .setRedirectUri(zenodoRedirectUri).execute();
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();
         } catch (IOException e) {
-            LOG.error("Retrieving accessToken was unsuccessful");
-            throw new CustomWebApplicationException("Could not retrieve zenodo.org token based on code", HttpStatus.SC_BAD_REQUEST);
+            LOG.error("Retrieving zenodo access token was unsuccessful");
+            throw new CustomWebApplicationException("Could not retrieve zenodo token based on code", HttpStatus.SC_BAD_REQUEST);
         }
 
-        String url = ZENODO_URL + "api/user";
+
+
+        //String url = ZENODO_URL + "api/user";
         //Optional<String> asString2 = ResourceUtilities.asString(url, accessToken, client);
         //String username = getUserName(url, asString2);
         String username = null;
@@ -644,8 +648,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 if (username != null) {
                     token.setUsername(username);
                 } else {
-                    LOG.info("Zenodo.org token username is null, did not create token");
-                    throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
+                    // There doesn't seem to be a Zenodo API to get the user name
+                    // so just assign the Dockstore user name
+                    // TODO figure out how to get the Zenodo user name
+                    token.setUsername(user.getUsername());
+                    //LOG.info("Zenodo.org token username is null, did not create token");
+                    //throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
                 }
                 long create = tokenDAO.create(token);
                 LOG.info("Zenodo token created for {}", user.getUsername());
