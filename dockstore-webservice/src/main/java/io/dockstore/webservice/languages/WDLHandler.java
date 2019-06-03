@@ -40,6 +40,7 @@ import com.google.common.io.Files;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -254,12 +255,26 @@ public class WDLHandler implements LanguageHandlerInterface {
                 Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 checkForRecursiveHTTPImports(content, new HashSet<>());
+
+
+                WdlBridge wdlBridge = new WdlBridge();
+                boolean isDraft3 = wdlBridge.isDraft3(tempMainDescriptor.getAbsolutePath());
                 if (Objects.equals(type, "tool")) {
-                    bridge.isValidTool(tempMainDescriptor);
+                    // If draft-3 (version 1.0), use the new parsing code
+                    if (isDraft3) {
+                        wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath());
+                    } else {
+                        bridge.isValidTool(tempMainDescriptor);
+                    }
                 } else {
-                    bridge.isValidWorkflow(tempMainDescriptor);
+                    // If draft-3 (version 1.0), use the new parsing code
+                    if (isDraft3) {
+                        wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath());
+                    } else {
+                        bridge.isValidWorkflow(tempMainDescriptor);
+                    }
                 }
-            } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
+            } catch (WdlParser.SyntaxError | wdl.draft3.parser.WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 return new VersionTypeValidation(false, validationMessageObject);
             } catch (NoSuchMethodException e) {
