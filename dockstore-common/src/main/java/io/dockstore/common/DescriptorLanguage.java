@@ -99,7 +99,7 @@ public enum DescriptorLanguage {
     }
 
     public String getLowerShortName() {
-        return shortName;
+        return shortName.toLowerCase();
     }
 
     public String getFriendlyName() {

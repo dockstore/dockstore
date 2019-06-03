@@ -565,31 +565,12 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Validate test parameter set
-        DescriptorLanguage.FileType testParameterType = null;
-        switch (identifiedType) {
-        case DOCKSTORE_CWL:
-            testParameterType = DescriptorLanguage.FileType.CWL_TEST_JSON;
-            break;
-        case DOCKSTORE_WDL:
-            testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
-            break;
-        case NEXTFLOW_CONFIG:
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // case DOCKSTORE_SWL:
-            // these languages do not have test parameter files, so do not fail
-            break;
-        case DOCKSTORE_SERVICE_YML:
-            testParameterType = DescriptorLanguage.FileType.DOCKSTORE_SERVICE_TEST_JSON;
-            break;
-        default:
-            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        if (testParameterType != null) {
-            VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
-            version.addOrUpdateValidation(testParameterValidation);
-        }
+        DescriptorLanguage.FileType testParameterType = DescriptorLanguage.getTestParameterType(entry.getDescriptorType()).orElseThrow(
+            () -> new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST));
+        VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType)
+            .validateTestParameterSet(sourceFiles);
+        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+        version.addOrUpdateValidation(testParameterValidation);
 
         version.setValid(isValidVersion(version));
 
