@@ -104,7 +104,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     private SourceControl sourceControl;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 18)
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18)
     private String descriptorType;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
@@ -204,7 +204,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     // Add for new descriptor types
     @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 19)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the primary descriptor document", required = true, position = 19)
     public String getDefaultWorkflowPath() {
         return getDefaultPaths().getOrDefault(DescriptorLanguage.getFileType(this.descriptorType).orElse(DescriptorLanguage.FileType.DOCKSTORE_CWL), "/Dockstore.cwl");
     }

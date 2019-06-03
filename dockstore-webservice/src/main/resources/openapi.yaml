@@ -7487,12 +7487,12 @@ components:
             or n/a?, required: GA4GH"
         descriptorType:
           type: string
-          description: This is a descriptor type for the workflow, either CWL or WDL
-            (Defaults to CWL)
+          description: This is a descriptor type for the workflow, either CWL, WDL, or
+            Nextflow (Defaults to CWL)
         workflow_path:
           type: string
           description: This indicates for the associated git repository, the default path
-            to the CWL document
+            to the primary descriptor document
         defaultTestParameterFilePath:
           type: string
           description: This indicates for the associated git repository, the default path

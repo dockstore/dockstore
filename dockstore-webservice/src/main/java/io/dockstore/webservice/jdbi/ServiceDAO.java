@@ -21,7 +21,7 @@ import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
 /**
- * @author xliu
+ * @author dyuen
  */
 public class ServiceDAO extends AbstractDAO<Service> {
     public ServiceDAO(SessionFactory sessionFactory) {
