@@ -575,6 +575,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private boolean enableLaunchWithFireCloud;
 
+        private String tagManagerId;
+
 
         public String getDiscourseUrl() {
             return discourseUrl;
@@ -719,5 +721,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         public void setEnableLaunchWithFireCloud(boolean enableLaunchWithFireCloud) {
             this.enableLaunchWithFireCloud = enableLaunchWithFireCloud;
         }
+
+        public String getTagManagerId() {
+            return tagManagerId;
+        }
+
+        public void setTagManagerId(String tagManagerId) {
+            this.tagManagerId = tagManagerId;
+        }
+
     }
 }
