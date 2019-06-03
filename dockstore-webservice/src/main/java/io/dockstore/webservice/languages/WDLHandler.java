@@ -256,8 +256,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 checkForRecursiveHTTPImports(content, new HashSet<>());
 
-
                 WdlBridge wdlBridge = new WdlBridge();
+                wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+
                 boolean isDraft3 = wdlBridge.isDraft3(tempMainDescriptor.getAbsolutePath());
                 if (Objects.equals(type, "tool")) {
                     // If draft-3 (version 1.0), use the new parsing code
