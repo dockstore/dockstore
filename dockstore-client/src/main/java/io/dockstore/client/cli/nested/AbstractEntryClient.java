@@ -1232,26 +1232,9 @@ public abstract class AbstractEntryClient<T> {
     }
 
     LanguageClientInterface convertCLIStringToEnum(String descriptor) {
-        // TODO: ugly mapping, need to refactor
-        Optional<LanguageClientInterface> languageCLient = Optional.empty();
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(descriptor);
-        switch (descriptorLanguage) {
-        case CWL:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, CWL);
-            break;
-        case WDL:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, WDL);
-            break;
-        case NEXTFLOW:
-            languageCLient = LanguageClientFactory.createLanguageCLient(this, NEXTFLOW);
-            break;
-        default:
-            // fall-through and throw exception when language unknown
-        }
-        if (languageCLient.isPresent()) {
-            return languageCLient.get();
-        }
-        throw new UnsupportedOperationException("language not supported yet");
+        Optional<LanguageClientInterface> languageCLient = LanguageClientFactory.createLanguageCLient(this, descriptorLanguage);
+        return languageCLient.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
     }
 
     /**
