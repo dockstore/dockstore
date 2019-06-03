@@ -89,7 +89,6 @@ uiConfig:
   # Must end with a slash
   discourseUrl: https://discuss.dockstore.org/
   dnaStackImportUrl: https://app.dnastack.com/#/app/workflow/import/dockstore
-  fireCloudImportUrl: https://portal.firecloud.org/#import/dockstore
   dnaNexusImportUrl: https://platform.dnanexus.com/panx/tools/import-workflow
   terraImportUrl: https://app.terra.bio/#import-tool/dockstore
 
@@ -110,8 +109,5 @@ uiConfig:
   googleScope: profile email
 
   cwlVisualizerUri: https://view.commonwl.org
-
-  enableLaunchWithFireCloud: true
-
   tagManagerId: <fill me in>
 

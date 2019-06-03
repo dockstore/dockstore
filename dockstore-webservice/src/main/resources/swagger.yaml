@@ -5788,8 +5788,6 @@ definitions:
         type: "string"
       dnaStackImportUrl:
         type: "string"
-      fireCloudImportUrl:
-        type: "string"
       dnaNexusImportUrl:
         type: "string"
       terraImportUrl:
@@ -5818,8 +5816,6 @@ definitions:
         type: "string"
       cwlVisualizerUri:
         type: "string"
-      enableLaunchWithFireCloud:
-        type: "boolean"
       tagManagerId:
         type: "string"
       githubClientId:
@@ -5877,6 +5873,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5892,10 +5892,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6092,6 +6088,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6107,10 +6107,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7176,6 +7172,10 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7191,10 +7191,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
