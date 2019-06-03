@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -44,8 +43,8 @@ import org.yaml.snakeyaml.introspector.PropertyUtils;
  */
 public final class ZipSourceFileHelper {
 
-    public static final int ZIP_SIZE_LIMIT = 100_000;
-    public static final int ZIP_ENTRIES_LIMIT = 100;
+    private static final int ZIP_SIZE_LIMIT = 100_000;
+    private static final int ZIP_ENTRIES_LIMIT = 100;
     private static final Logger LOG = LoggerFactory.getLogger(ZipSourceFileHelper.class);
 
     private ZipSourceFileHelper() {
@@ -148,7 +147,7 @@ public final class ZipSourceFileHelper {
                         sourceFile.setAbsolutePath(addLeadingSlashIfNecessary(zipEntry.getName()));
                         sourceFile.setContent(getContent(zipFile, zipEntry));
                         return sourceFile;
-                    }).filter(Objects::nonNull).collect(Collectors.toList());
+                    }).collect(Collectors.toList());
             return new SourceFiles(
                     // Guaranteed to find primary descriptor, or we would have thrown, above
                     sourceFiles.stream().filter(sf -> sf.getPath().equals(primaryDescriptor)).findFirst().get(), sourceFiles);

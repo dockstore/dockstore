@@ -33,6 +33,8 @@ public final class LanguageHandlerFactory {
         // DOCKSTORE-2428 - demo how to add new workflow language
         //        case SWL:
         //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
+        case SERVICE:
+            return new LanguagePluginHandler(ServicePrototypePlugin.class);
         default:
             throw new UnsupportedOperationException("language not known");
         }
@@ -49,6 +51,8 @@ public final class LanguageHandlerFactory {
         // DOCKSTORE-2428 - demo how to add new workflow language
         //        case DOCKSTORE_SWL:
         //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
+        case DOCKSTORE_SERVICE_YML:
+            return new LanguagePluginHandler(ServicePrototypePlugin.class);
         default:
             throw new UnsupportedOperationException("language not known");
         }

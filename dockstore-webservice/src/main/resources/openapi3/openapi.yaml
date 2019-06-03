@@ -12,6 +12,16 @@ components:
             $ref: '#/components/schemas/Alias'
           type: object
       type: object
+    BioWorkflow:
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+      properties:
+        is_checker:
+          type: boolean
+        parent_id:
+          format: int64
+          type: integer
+      type: object
     Collection:
       description: Collection in an organization, collects entries
       properties:
@@ -410,6 +420,10 @@ components:
         url:
           type: string
       type: object
+    Service:
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+      type: object
     SharedWorkflows:
       properties:
         role:
@@ -452,6 +466,8 @@ components:
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
           - DOCKSTORE_YML
+          - DOCKSTORE_SERVICE_YML
+          - DOCKSTORE_SERVICE_TEST_JSON
           type: string
         verifiedBySource:
           additionalProperties:
@@ -748,6 +764,8 @@ components:
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
           - DOCKSTORE_YML
+          - DOCKSTORE_SERVICE_YML
+          - DOCKSTORE_SERVICE_TEST_JSON
           type: string
         valid:
           type: boolean
@@ -769,6 +787,8 @@ components:
           type: boolean
       type: object
     Workflow:
+      discriminator:
+        propertyName: type
       properties:
         aliases:
           additionalProperties:
@@ -809,7 +829,7 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
-        is_checker:
+        isChecker:
           type: boolean
         is_published:
           type: boolean
@@ -832,6 +852,7 @@ components:
           - FULL
           - STUB
           - HOSTED
+          - SERVICE
           type: string
         organization:
           type: string
@@ -840,9 +861,8 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
-        parent_id:
-          format: int64
-          type: integer
+        parentEntry:
+          $ref: '#/components/schemas/Entry'
         path:
           type: string
         repository:
@@ -928,6 +948,13 @@ components:
             $ref: '#/components/schemas/SourceFile'
           type: array
           uniqueItems: true
+        subClass:
+          enum:
+          - DOCKER_COMPOSE
+          - SWARM
+          - KUBERNETES
+          - HELM
+          type: string
         valid:
           type: boolean
         validations:
@@ -4035,7 +4062,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -4194,7 +4221,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
@@ -4596,7 +4623,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4966,6 +4993,11 @@ paths:
         schema:
           default: desc
           type: string
+      - in: query
+        name: services
+        schema:
+          default: false
+          type: boolean
       responses:
         default:
           content:

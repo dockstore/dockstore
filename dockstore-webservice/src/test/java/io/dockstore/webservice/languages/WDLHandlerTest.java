@@ -5,14 +5,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Matcher;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,7 +19,7 @@ public class WDLHandlerTest {
     @Test
     public void getWorkflowContent() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
-        final Workflow workflow = new Workflow();
+        final Workflow workflow = new BioWorkflow();
         workflow.setAuthor("Jane Doe");
         workflow.setDescription("A good description");
         workflow.setEmail("janedoe@example.org");

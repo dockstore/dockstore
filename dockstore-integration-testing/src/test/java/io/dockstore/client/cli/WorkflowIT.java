@@ -729,16 +729,16 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // should start with nothing published
-        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null).isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
         usersApi.refreshWorkflows(userId);
-        assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null).isEmpty());
+        assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
         // ensure that sorting or filtering don't expose unpublished workflows
-        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, "descriptorType", "asc").isEmpty());
-        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, "hello", null, null).isEmpty());
-        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, "hello", "descriptorType", "asc").isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, "descriptorType", "asc", false).isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, "hello", null, null, false).isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, "hello", "descriptorType", "asc", false).isEmpty());
 
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
@@ -749,8 +749,8 @@ public class WorkflowIT extends BaseIT {
         // publish one
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         workflowApi.publish(workflowByPath.getId(), publishRequest);
-        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 1,
-            workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
+        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(), 1,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size());
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId(), null);
         assertNotNull("did not get published workflow", publishedWorkflow);
         final Workflow publishedWorkflowByPath = workflowApi.getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
@@ -762,20 +762,20 @@ public class WorkflowIT extends BaseIT {
             workflowApi.refresh(workflow.getId());
             workflowApi.publish(workflow.getId(), publishRequest);
         });
-        List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null);
+        List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null, false);
         // test offset
-        assertEquals("offset does not seem to be working", workflowApi.allPublishedWorkflows("1", null, null, null, null).get(0).getId(),
+        assertEquals("offset does not seem to be working", workflowApi.allPublishedWorkflows("1", null, null, null, null, false).get(0).getId(),
             workflows.get(1).getId());
         // test limit
-        assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null).size());
+        assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null, false).size());
         // test custom sort column
-        List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc");
-        List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc");
+        List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc", false);
+        List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc", false);
         assertEquals("sort by id does not seem to be working", ascId.get(0).getId(), descId.get(descId.size() - 1).getId());
         // test filter
-        List<Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
+        List<Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null, false);
         assertEquals(1, filteredLowercase.size());
-        List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE" , "stars", null);
+        List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE" , "stars", null, false);
         assertEquals(1, filteredUppercase.size());
         assertEquals(filteredLowercase, filteredUppercase);
     }
@@ -823,8 +823,8 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
 
         // Assert some things
-        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 1,
-            workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
+        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(), 1,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size());
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
         assertEquals("One workflow is in full mode", 1, count3);

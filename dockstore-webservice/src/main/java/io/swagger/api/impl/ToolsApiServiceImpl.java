@@ -72,9 +72,12 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.common.DescriptorLanguage.DOCKSTORE_SERVICE;
 import static io.dockstore.common.DescriptorLanguage.FileType.CWL_TEST_JSON;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_SERVICE_TEST_JSON;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
 import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW;
 import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_CONFIG;
@@ -673,6 +676,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         case CWL_TEST_JSON:
         // DOCKSTORE-2428 - demo how to add new workflow language
         // case SWL_TEST_JSON:
+        case DOCKSTORE_SERVICE_TEST_JSON:
         case WDL_TEST_JSON:
             return ToolFile.FileTypeEnum.TEST_FILE;
         case DOCKERFILE:
@@ -681,6 +685,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         case DOCKSTORE_CWL:
         // DOCKSTORE-2428 - demo how to add new workflow language
         // case DOCKSTORE_SWL:
+        case DOCKSTORE_SERVICE_YML:
         case NEXTFLOW:
             return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
         case NEXTFLOW_CONFIG:
@@ -730,6 +735,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         // DOCKSTORE-2428 - demo how to add new workflow language
         // case "SWL":
         //    return sourceFiles.stream().filter(this::isSWL).collect(Collectors.toList());
+        case DOCKSTORE_SERVICE:
+            return sourceFiles.stream().filter(this::isService).collect(Collectors.toList());
         default:
             throw new CustomWebApplicationException("Unknown descriptor type.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -770,6 +777,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     //        return Arrays.asList(DescriptorLanguage.FileType.SWL_TEST_JSON, DOCKSTORE_SWL)
     //            .contains(type);
     //    }
+
+    /**
+     * This checks whether the sourcefile is a service
+     *
+     * @param sourceFile the sourcefile to check
+     * @return true if the sourcefile is service-related, false otherwise
+     */
+    private boolean isService(SourceFile sourceFile) {
+        DescriptorLanguage.FileType type = sourceFile.getType();
+        return Arrays.asList(DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON)
+            .contains(type);
+    }
 
     /**
      * This checks whether the sourcefile is Nextflow

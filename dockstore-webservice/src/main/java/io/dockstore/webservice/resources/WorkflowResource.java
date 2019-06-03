@@ -60,7 +60,9 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -363,13 +365,19 @@ public class WorkflowResource
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(workflow.getGitUrl(), user);
 
         // do a full refresh when targeted like this
-        workflow.setMode(WorkflowMode.FULL);
+        // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
+        if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.SERVICE.toString())) {
+            workflow.setMode(WorkflowMode.SERVICE);
+        } else {
+            workflow.setMode(WorkflowMode.FULL);
+        }
+
         // look for checker workflows to associate with if applicable
-        if (!workflow.isIsChecker() && workflow.getDescriptorType().equals(CWL.toString()) || workflow.getDescriptorType().equals(
+        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType().equals(CWL.toString()) || workflow.getDescriptorType().equals(
             WDL.toString())) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
             String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType().equals(CWL.toString()) ? CWL_CHECKER : WDL_CHECKER);
-            Workflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false);
+            BioWorkflow byPath = (BioWorkflow)workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false);
             if (byPath != null && workflow.getCheckerWorkflow() == null) {
                 workflow.setCheckerWorkflow(byPath);
             }
@@ -439,7 +447,7 @@ public class WorkflowResource
         return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
                 .stream()
                 .filter(workflow ->
-                        workflow.getMode() == WorkflowMode.FULL)
+                        workflow.getMode() == WorkflowMode.FULL || workflow.getMode() == WorkflowMode.SERVICE)
                 .collect(Collectors.toList());
     }
 
@@ -819,10 +827,12 @@ public class WorkflowResource
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services,
         @Context HttpServletResponse response) {
         // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
-        List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
+        List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder, (Class<Workflow>)(services
+            ? Service.class : BioWorkflow.class));
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished(Optional.of(filter))));
@@ -1294,9 +1304,10 @@ public class WorkflowResource
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
         }
+        // hmmm, will need to set the descriptor type now before the default path, lest the wrong language be recorded till we get multiple language workflows
+        newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
-        newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
         final long workflowID = workflowDAO.create(newWorkflow);
@@ -1641,8 +1652,9 @@ public class WorkflowResource
         }
 
         // Create checker workflow
-        Workflow checkerWorkflow = new Workflow();
+        BioWorkflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setMode(WorkflowMode.STUB);
+        checkerWorkflow.setDescriptorType(descriptorType);
         checkerWorkflow.setDefaultWorkflowPath(checkerWorkflowPath);
         checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
         checkerWorkflow.setOrganization(organization);
@@ -1652,7 +1664,6 @@ public class WorkflowResource
         checkerWorkflow.setGitUrl(gitUrl);
         checkerWorkflow.setLastUpdated(lastUpdated);
         checkerWorkflow.setWorkflowName(workflowName);
-        checkerWorkflow.setDescriptorType(descriptorType);
         checkerWorkflow.setIsChecker(true);
 
         // Deal with possible custom default test parameter file
@@ -1665,7 +1676,7 @@ public class WorkflowResource
         // Persist checker workflow
         long id = workflowDAO.create(checkerWorkflow);
         checkerWorkflow.addUser(user);
-        checkerWorkflow = workflowDAO.findById(id);
+        checkerWorkflow = (BioWorkflow)workflowDAO.findById(id);
         elasticManager.handleIndexUpdate(checkerWorkflow, ElasticMode.UPDATE);
 
         // Update original entry with checker id
