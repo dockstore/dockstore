@@ -25,7 +25,6 @@ import java.util.UUID;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -56,6 +55,7 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -132,7 +132,7 @@ public class LimitedCRUDClientIT {
     public void testToolCreation(){
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
@@ -155,11 +155,11 @@ public class LimitedCRUDClientIT {
 
         // test repeated workflow creation up to limit
         for(int i = 1; i < SYSTEM_LIMIT; i++) {
-            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         }
 
         thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeTool" + 10, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        api.createHostedTool("awesomeTool" + 10, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
     }
 
     @Test
@@ -173,25 +173,25 @@ public class LimitedCRUDClientIT {
         Limits limits = new Limits();
         limits.setHostedEntryCountLimit(NEW_LIMITS);
         usersApi.setUserLimits(user.getId(), limits);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
 
         // test repeated workflow creation up to limit
         for(int i = 1; i <= NEW_LIMITS - 1; i++) {
-            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         }
 
         thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
     }
 
     @Test
     public void testToolVersionCreation() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles();
 
@@ -219,7 +219,7 @@ public class LimitedCRUDClientIT {
         usersApi.setUserLimits(user.getId(), limits);
 
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles();
         api.editHostedTool(hostedTool.getId(), sourceFiles);

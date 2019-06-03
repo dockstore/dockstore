@@ -79,8 +79,6 @@ import static io.dockstore.client.cli.Client.COMMAND_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.common.DescriptorLanguage.WDL;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -1128,13 +1126,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
         if (valid) {
             try {
-                if (descriptorType.equals(CWL)) {
-                    file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.CWL.toString());
-                } else if (descriptorType.equals(WDL)) {
-                    file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.WDL.toString());
-                } else {
-                    throw new UnsupportedOperationException("other languages not supported yet");
-                }
+                file = workflowsApi.primaryDescriptor(workflow.getId(), version, descriptorType.toString());
             } catch (ApiException ex) {
                 if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
                     exceptionMessage(ex, "Invalid version", Client.API_ERROR);

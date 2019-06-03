@@ -16,7 +16,7 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -76,9 +76,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true") })
-// @formatter:off
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
-// @formatter:on
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tool extends Entry<Tool, Tag> {
 
@@ -206,16 +204,8 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(position = 28)
     public List<String> getDescriptorType() {
         Set<DescriptorLanguage.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
-        boolean supportsCWL = set.contains(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        boolean supportsWDL = set.contains(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        List<String> languages = new ArrayList<>();
-        if (supportsCWL) {
-            languages.add(DescriptorLanguage.CWL.toString().toUpperCase());
-        }
-        if (supportsWDL) {
-            languages.add(DescriptorLanguage.WDL.toString().toUpperCase());
-        }
-        return languages;
+        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
+            .map(lang -> lang.toString().toUpperCase()).collect(Collectors.toList());
     }
 
     @JsonProperty

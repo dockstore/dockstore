@@ -37,7 +37,6 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -85,6 +84,7 @@ import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -805,9 +805,9 @@ public class SwaggerClientIT extends BaseIT {
     public void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
     }
 
     @Test

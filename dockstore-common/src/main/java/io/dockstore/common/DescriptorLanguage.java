@@ -28,19 +28,28 @@ import org.apache.commons.lang3.StringUtils;
  */
 public enum DescriptorLanguage {
     // Add new descriptor language here
-    CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON),
-    WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON),
+    CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
+        }
+    },
+    WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
+        }
+    },
     // DOCKSTORE-2428 - demo how to add new workflow language
     //SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON)
-    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS),
+    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.NEXTFLOW;
+        }
+    },
     SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON);
 
-    public static final String CWL_STRING = "cwl";
-    public static final String WDL_STRING = "wdl";
-    public static final String NFL_STRING = "nfl";
-    // DOCKSTORE-2428 - demo how to add new workflow language
-    // public static final String SWL_STRING = "swl";
-    public static final String DOCKSTORE_SERVICE = "DOCKSTORE_SERVICE";
     /**
      * this name is used in the workflow path
      */
@@ -78,8 +87,18 @@ public enum DescriptorLanguage {
         this.serviceLanguage = serviceLanguage;
     }
 
+
+
     @Override
     public String toString() {
+        return shortName;
+    }
+
+    public String getShortName() {
+        return shortName;
+    }
+
+    public String getLowerShortName() {
         return shortName;
     }
 
@@ -88,23 +107,9 @@ public enum DescriptorLanguage {
     }
 
     public static DescriptorLanguage convertShortStringToEnum(String descriptor) {
-        String lowerDescriptor = descriptor.toLowerCase();
-        switch (lowerDescriptor) {
-        case CWL_STRING:
-            return CWL;
-        case WDL_STRING:
-            return WDL;
-        case NFL_STRING:
-            return NEXTFLOW;
-        case "service":
-            return SERVICE;
-        // DOCKSTORE-2428 - demo how to add new workflow language
-        // case SWL_STRING:
-        //    return SWL;
-        default:
-            // fall-through and throw exception
-        }
-        throw new UnsupportedOperationException("language not supported yet");
+        final Optional<DescriptorLanguage> first = Arrays.stream(DescriptorLanguage.values())
+            .filter(lang -> lang.getShortName().equalsIgnoreCase(descriptor)).findFirst();
+        return first.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
     }
 
     public FileType getFileType() {
@@ -131,6 +136,10 @@ public enum DescriptorLanguage {
 
     public boolean isServiceLanguage() {
         return serviceLanguage;
+    }
+
+    public boolean isRelevantFileType(FileType type) {
+        return type == fileType || type == testParamType;
     }
 
     /**

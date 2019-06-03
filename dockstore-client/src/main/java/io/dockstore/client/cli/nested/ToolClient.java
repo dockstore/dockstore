@@ -70,8 +70,6 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.swagger.client.model.DockstoreTool.ModeEnum.HOSTED;
 
 /**
@@ -1100,13 +1098,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         }
 
         if (container != null) {
-            if (descriptorType.equals(CWL)) {
-                file = containersApi.primaryDescriptor(container.getId(), tag, DescriptorLanguage.CWL.toString());
-            } else if (descriptorType.equals(WDL)) {
-                file = containersApi.primaryDescriptor(container.getId(), tag, DescriptorLanguage.WDL.toString());
-            } else {
-                throw new UnsupportedOperationException("other languages not supported yet");
-            }
+            file = containersApi.primaryDescriptor(container.getId(), tag, descriptorType.toString());
         } else {
             errorMessage("No tool found with path " + entry, Client.API_ERROR);
         }
