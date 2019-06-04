@@ -606,9 +606,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addZenodoToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
-        //if (code.isEmpty()) {
-        //    throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
-        //}
+        if (code.isEmpty()) {
+            throw new CustomWebApplicationException("Please provide a Zenodo access code", HttpStatus.SC_BAD_REQUEST);
+        }
 
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                 JSON_FACTORY, new GenericUrl(ZENODO_URL + "oauth/token"),
@@ -625,16 +625,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();
         } catch (IOException e) {
-            LOG.error("Retrieving zenodo access token was unsuccessful");
-            throw new CustomWebApplicationException("Could not retrieve zenodo token based on code", HttpStatus.SC_BAD_REQUEST);
+            LOG.error("Retrieving zenodo access token was unsuccessful. Error message is {}", e.getMessage());
+            throw new CustomWebApplicationException("Could not retrieve zenodo token based on code" + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
-
-
-
-        //String url = ZENODO_URL + "api/user";
-        //Optional<String> asString2 = ResourceUtilities.asString(url, accessToken, client);
-        //String username = getUserName(url, asString2);
-        String username = null;
 
         if (user != null) {
             List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
@@ -645,16 +638,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 token.setContent(accessToken);
                 token.setRefreshToken(refreshToken);
                 token.setUserId(user.getId());
-                if (username != null) {
-                    token.setUsername(username);
-                } else {
-                    // There doesn't seem to be a Zenodo API to get the user name
-                    // so just assign the Dockstore user name
-                    // TODO figure out how to get the Zenodo user name
-                    token.setUsername(user.getUsername());
-                    //LOG.info("Zenodo.org token username is null, did not create token");
-                    //throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
-                }
+                token.setUsername("");
                 long create = tokenDAO.create(token);
                 LOG.info("Zenodo token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
@@ -664,7 +648,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             }
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
         }
     }
 
