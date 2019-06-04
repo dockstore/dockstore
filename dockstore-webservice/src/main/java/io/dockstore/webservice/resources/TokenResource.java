@@ -616,7 +616,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 new ClientParametersAuthentication(zenodoClientID, zenodoClientSecret), zenodoClientID,
                 zenodoUrl + "/oauth/authorize").build();
 
-        LOG.info("About to try and grab zenodo access token");
+        LOG.info("About to request zenodo access token");
         String accessToken;
         String refreshToken;
         try {
@@ -626,8 +626,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();
         } catch (IOException e) {
-            LOG.error("Retrieving zenodo access token was unsuccessful. Error message is {}", e.getMessage());
-            throw new CustomWebApplicationException("Could not retrieve zenodo token based on code" + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            LOG.error("Retrieving zenodo access token was unsuccessful.", e);
+            throw new CustomWebApplicationException("Could not retrieve zenodo token based on code " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
         if (user != null) {
