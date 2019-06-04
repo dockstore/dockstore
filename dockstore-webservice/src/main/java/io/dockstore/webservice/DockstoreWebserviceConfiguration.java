@@ -103,6 +103,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String zenodoRedirectURI;
 
     @NotEmpty
+    private String zenodoUrl;
+
+    @NotEmpty
     private String zenodoClientSecret;
 
     @NotEmpty
@@ -335,6 +338,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setZenodoRedirectURI(String zenodoRedirectURI) {
         this.zenodoRedirectURI = zenodoRedirectURI;
+    }
+
+    public String getZenodoUrl() {
+        return zenodoUrl;
+    }
+
+    public void setZenodoUrl(String zenodoUrl) {
+        this.zenodoUrl = zenodoUrl;
     }
 
     public String getZenodoClientSecret() {
