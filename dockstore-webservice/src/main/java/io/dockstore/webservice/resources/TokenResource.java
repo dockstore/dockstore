@@ -103,7 +103,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
-    private static final String ZENODO_URL = "https://sandbox.zenodo.org/";
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     private final TokenDAO tokenDAO;
@@ -118,6 +117,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String gitlabClientSecret;
     private final String zenodoClientID;
     private final String zenodoRedirectUri;
+    private final String zenodoUrl;
     private final String zenodoClientSecret;
     private final String googleClientID;
     private final String googleClientSecret;
@@ -138,6 +138,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.zenodoClientID = configuration.getZenodoClientID();
         this.zenodoClientSecret = configuration.getZenodoClientSecret();
         this.zenodoRedirectUri = configuration.getZenodoRedirectURI();
+        this.zenodoUrl = configuration.getZenodoUrl();
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
         this.client = client;
@@ -611,9 +612,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                JSON_FACTORY, new GenericUrl(ZENODO_URL + "oauth/token"),
+                JSON_FACTORY, new GenericUrl(zenodoUrl + "/oauth/token"),
                 new ClientParametersAuthentication(zenodoClientID, zenodoClientSecret), zenodoClientID,
-                ZENODO_URL + "oauth/authorize").build();
+                zenodoUrl + "/oauth/authorize").build();
 
         LOG.info("About to try and grab zenodo access token");
         String accessToken;
