@@ -31,7 +31,7 @@ public enum TokenType {
     @JsonProperty("dockstore") DOCKSTORE("dockstore", false),
     @JsonProperty("bitbucket.org") BITBUCKET_ORG("bitbucket.org", true),
     @JsonProperty("gitlab.com") GITLAB_COM("gitlab.com", true),
-    @JsonProperty("zenodo.org") ZENODO_ORG("zenodo.org", true),
+    @JsonProperty("zenodo.org") ZENODO_ORG("zenodo.org", false),
     @JsonProperty("google.com") GOOGLE_COM("google.com", false);
     private final String friendlyName;
     private final boolean sourceControlToken;
