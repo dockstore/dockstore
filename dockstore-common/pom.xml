@@ -251,6 +251,17 @@
             <version>41</version>
         </dependency>
         <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>cromwell-common_2.12</artifactId>
+            <version>41</version>
+        </dependency>
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
+            <version>41</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.typelevel</groupId>
             <artifactId>cats-core_2.12</artifactId>
             <version>1.5.0</version>
