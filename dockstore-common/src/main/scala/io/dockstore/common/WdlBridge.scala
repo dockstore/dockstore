@@ -86,6 +86,7 @@ class WdlBridge {
     val draft3Factory = new WdlDraft3LanguageFactory(ConfigFactory.empty())
     val filePathObj = DefaultPathBuilder.build(filePath).get
 
+    // Resolve from mapping, local filesystem, or http import
     val mapResolver = MapResolver()
     mapResolver.setSecondaryFiles(secondaryWdlFiles)
 

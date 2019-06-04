@@ -94,4 +94,38 @@ public class WDLParseTest {
             Assert.assertEquals("Error parsing workflow. You may have a recursive import.", e.getErrorMessage());
         }
     }
+
+    /**
+     * Tests that Dockstore can handle a WDL 1.0 workflow using HTTP and map import
+     * Error parsing will throw an exception, but with no error should just pass
+     */
+    @Test
+    public void testDraft3Code() {
+        String type = "workflow";
+        File primaryWDL = new File(ResourceHelpers.resourceFilePath("importTesting.wdl"));
+        File importedWDL = new File(ResourceHelpers.resourceFilePath("md5sum.wdl"));
+        String primaryDescriptorFilePath = primaryWDL.getAbsolutePath();
+        SourceFile sourceFile = new SourceFile();
+        SourceFile importedFile = new SourceFile();
+        try {
+            sourceFile.setContent(FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8));
+            sourceFile.setAbsolutePath(primaryWDL.getAbsolutePath());
+            sourceFile.setPath(primaryWDL.getAbsolutePath());
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+
+            importedFile.setContent(FileUtils.readFileToString(importedWDL, StandardCharsets.UTF_8));
+            importedFile.setAbsolutePath(importedWDL.getAbsolutePath());
+            importedFile.setPath("./md5sum.wdl");
+            importedFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+
+            Set<SourceFile> sourceFileSet = new HashSet<>();
+            sourceFileSet.add(sourceFile);
+            sourceFileSet.add(importedFile);
+
+            WDLHandler wdlHandler = new WDLHandler();
+            wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
+        } catch (Exception e) {
+            Assert.fail("Should properly parse file and imports.");
+        }
+    }
 }
