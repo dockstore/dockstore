@@ -103,10 +103,6 @@ components:
           type: string
         dnaStackImportUrl:
           type: string
-        enableLaunchWithFireCloud:
-          type: boolean
-        fireCloudImportUrl:
-          type: string
         gitHubAuthUrl:
           type: string
         gitHubRedirectPath:
@@ -1212,7 +1208,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       parameters:
       - in: path
         name: organization
@@ -1227,7 +1223,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       responses:
         default:
           content:
