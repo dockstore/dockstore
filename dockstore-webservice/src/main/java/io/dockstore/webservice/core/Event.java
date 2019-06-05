@@ -58,7 +58,7 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "workflowId", referencedColumnName = "id")
     @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
-    private Workflow workflow;
+    private BioWorkflow workflow;
 
     @ManyToOne
     @JoinColumn(name = "collectionId", referencedColumnName = "id")
@@ -85,7 +85,7 @@ public class Event {
     private Timestamp dbUpdateDate;
 
     public Event() { }
-    public Event(User user, Organization organization, Collection collection, Workflow workflow, Tool tool, User initiatorUser, EventType type) {
+    public Event(User user, Organization organization, Collection collection, BioWorkflow workflow, Tool tool, User initiatorUser, EventType type) {
         this.user = user;
         this.organization = organization;
         this.collection = collection;
@@ -131,7 +131,7 @@ public class Event {
         return workflow;
     }
 
-    public void setWorkflow(Workflow workflow) {
+    public void setWorkflow(BioWorkflow workflow) {
         this.workflow = workflow;
     }
 
@@ -197,7 +197,8 @@ public class Event {
         private User user;
         private Organization organization;
         private Tool tool;
-        private Workflow workflow;
+        private BioWorkflow bioWorkflow;
+        private Service service;
         private Collection collection;
         private User initiatorUser;
         private EventType type;
@@ -219,8 +220,13 @@ public class Event {
             return this;
         }
 
-        public Builder withWorkflow(Workflow workflow) {
-            this.workflow = workflow;
+        public Builder withService(Service service) {
+            this.service = service;
+            return this;
+        }
+
+        public Builder withBioWorkflow(BioWorkflow workflow) {
+            this.bioWorkflow = workflow;
             return this;
         }
 
@@ -244,7 +250,7 @@ public class Event {
             event.user = this.user;
             event.organization = this.organization;
             event.tool = this.tool;
-            event.workflow = this.workflow;
+            event.workflow = this.bioWorkflow;
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;
             event.type = this.type;

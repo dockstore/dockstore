@@ -816,7 +816,7 @@ public abstract class AbstractEntryClient<T> {
             final boolean cwlContentPresent = optContent.isPresent() && optContent.get().equals(CWL);
             final boolean wdlContentPresent = optContent.isPresent() && optContent.get().equals(WDL);
             final boolean nextflowContentPresent = optContent.isPresent() && optContent.get().equals(NEXTFLOW);
-            if (ext.equals(CWL)) {
+            if (CWL.equals(ext)) {
                 if (cwlContentPresent) {
                     // do not continue to check file if the cwl is invalid
                     if (!validateCWL(localFilePath)) {
@@ -847,7 +847,7 @@ public abstract class AbstractEntryClient<T> {
                 } else {
                     errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
                 }
-            } else if (ext.equals(WDL)) {
+            } else if (WDL.equals(ext)) {
                 if (wdlContentPresent) {
                     try {
                         launchWdl(localFilePath, argsList, true);
