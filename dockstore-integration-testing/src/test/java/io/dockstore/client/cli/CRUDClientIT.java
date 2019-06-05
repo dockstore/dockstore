@@ -128,7 +128,7 @@ public class CRUDClientIT extends BaseIT {
         dockerfile.setPath("/Dockerfile");
         dockerfile.setAbsolutePath("/Dockerfile");
         DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
-        Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
+        Optional<Tag> first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
         assertTrue("a tool lacks a date", dockstoreTool.getLastModifiedDate() != null && dockstoreTool.getLastModified() != 0);
 
@@ -139,7 +139,7 @@ public class CRUDClientIT extends BaseIT {
         file2.setAbsolutePath("/test.json");
         // add one file and include the old one implicitly
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file2));
-        first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
+        first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 3, first.get().getSourceFiles().size());
         String revisionWithTestFile = first.get().getName();
 
@@ -147,15 +147,15 @@ public class CRUDClientIT extends BaseIT {
         file2.setContent(null);
 
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, file2, dockerfile));
-        first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
+        first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
         dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "1");
-        assertEquals("should only be two revisions", 2, dockstoreTool.getTags().size());
+        assertEquals("should only be two revisions", 2, dockstoreTool.getWorkflowVersions().size());
 
         //check that all revisions have editing users
-        long count = dockstoreTool.getTags().stream().filter(tag -> tag.getVersionEditor() != null).count();
-        assertEquals("all versions do not seem to have editors", count, dockstoreTool.getTags().size());
+        long count = dockstoreTool.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
+        assertEquals("all versions do not seem to have editors", count, dockstoreTool.getWorkflowVersions().size());
 
         // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publically
         ContainersApi otherUserApi = new ContainersApi(getWebClient(USER_1_USERNAME));
@@ -376,7 +376,7 @@ public class CRUDClientIT extends BaseIT {
         dockerfile.setPath("/Dockerfile");
         dockerfile.setAbsolutePath("/Dockerfile");
         DockstoreTool dockstoreTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
-        Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
+        Optional<Tag> first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
         // Update the default version of the tool

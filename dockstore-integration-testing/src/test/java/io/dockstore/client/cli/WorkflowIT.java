@@ -1017,19 +1017,19 @@ public class WorkflowIT extends BaseIT {
         toolApi.publish(registeredTool.getId(), publishRequest);
 
         // look that branches and tags are typed correctly for tools
-        assertTrue("should see at least 6 branches",registeredTool.getTags().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.BRANCH).count() >= 1);
-        assertTrue("should see at least 6 tags",registeredTool.getTags().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.TAG).count() >= 2);
+        assertTrue("should see at least 6 branches",registeredTool.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.BRANCH).count() >= 1);
+        assertTrue("should see at least 6 tags",registeredTool.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.TAG).count() >= 2);
 
         assertTrue("did not pick up description from $include", registeredTool.getDescription().contains("A Docker container for PCAP-core."));
         assertEquals("did not import mixin and includes properly", 5,
-            registeredTool.getTags().stream().filter(tag -> Objects.equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles()
+            registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles()
                 .size());
         assertEquals("did not import symbolic links to folders properly", 5,
-            registeredTool.getTags().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles()
+            registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles()
                 .size());
         // check that commit ids look properly recorded
         // check on commit ids for github
-        boolean allHaveCommitIds = registeredTool.getTags().stream().noneMatch(version -> version.getCommitID().isEmpty());
+        boolean allHaveCommitIds = registeredTool.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
         assertTrue("not all tools seem to have commit ids", allHaveCommitIds);
 
         // check on URLs for workflows via ga4gh calls

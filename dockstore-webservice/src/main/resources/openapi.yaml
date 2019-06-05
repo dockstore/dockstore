@@ -6250,6 +6250,11 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
+        workflowVersions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Tag"
         custom_docker_registry_path:
           type: string
           readOnly: true
@@ -6387,13 +6392,6 @@ components:
           type: string
           format: date-time
           description: Implementation specific timestamp for last built
-        tags:
-          type: array
-          description: Implementation specific tracking of valid build tags for the docker
-            container
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Tag"
         path:
           type: string
         descriptorType:
@@ -6441,6 +6439,12 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
+        workflowVersions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
+              ockstore"
         has_checker:
           type: boolean
           readOnly: true
@@ -7671,3 +7675,94 @@ components:
           type: string
           description: This is the commit id for the source control that the files belong to
       description: This describes one workflow version associated with a workflow.
+    Base_class_for_versions_of_entries_in_the_Dockstore:
+      type: object
+      required:
+        - name
+        - reference
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the tag in this web service
+          readOnly: true
+        referenceType:
+          type: string
+          description: This indicates the type of git (or other source control) reference
+          enum:
+            - COMMIT
+            - TAG
+            - BRANCH
+            - NOT_APPLICABLE
+            - UNSET
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Validation"
+        workingDirectory:
+          type: string
+        last_modified:
+          type: string
+          format: date-time
+          description: The last time this image was modified in the image registry
+        reference:
+          type: string
+          description: git commit/tag/branch
+        sourceFiles:
+          type: array
+          description: Cached files for each version. Includes Dockerfile and Descriptor
+            files
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/SourceFile"
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
+        valid:
+          type: boolean
+          description: Implementation specific, whether this tag has valid files from
+            source code repo
+        name:
+          type: string
+          description: Implementation specific, can be a quay.io or docker hub tag name
+        dirtyBit:
+          type: boolean
+          description: True if user has altered the tag
+        verified:
+          type: boolean
+          description: Whether this version has been verified or not
+        verifiedSource:
+          type: string
+          description: Verified source for the version
+        doiURL:
+          type: string
+          description: This is a URL for the DOI for the version of the entry
+        doiStatus:
+          type: string
+          description: This indicates the DOI status
+          enum:
+            - NOT_REQUESTED
+            - REQUESTED
+            - CREATED
+        versionEditor:
+          $ref: "#/components/schemas/User"
+        input_file_formats:
+          type: array
+          description: File formats for describing the input file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        output_file_formats:
+          type: array
+          description: File formats for describing the output file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        commitID:
+          type: string
+          description: This is the commit id for the source control that the files belong to

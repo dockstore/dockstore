@@ -288,7 +288,7 @@ public class DockerRepoResource
         Hibernate.initialize(tool.getUsers());
 
         if (checkIncludes(include, "validations")) {
-            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+            tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
 
         return tool;
@@ -399,7 +399,7 @@ public class DockerRepoResource
         checkUser(user, foundTool);
 
         //update the workflow path in all workflowVersions
-        Set<Tag> tags = foundTool.getTags();
+        Set<Tag> tags = foundTool.getWorkflowVersions();
         for (Tag tag : tags) {
             if (!tag.isDirtyBit()) {
                 tag.setCwlPath(tool.getDefaultCwlPath());
@@ -436,7 +436,7 @@ public class DockerRepoResource
         checkEntry(tool);
 
         if (checkIncludes(include, "validations")) {
-            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+            tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
         return filterContainersForHiddenTags(tool);
     }
@@ -474,12 +474,12 @@ public class DockerRepoResource
         tool.addUser(user);
         // create dependent Tags before creating tool
         Set<Tag> createdTags = new HashSet<>();
-        for (Tag tag : tool.getTags()) {
+        for (Tag tag : tool.getWorkflowVersions()) {
             final long l = tagDAO.create(tag);
             createdTags.add(tagDAO.findById(l));
         }
-        tool.getTags().clear();
-        tool.getTags().addAll(createdTags);
+        tool.getWorkflowVersions().clear();
+        tool.getWorkflowVersions().addAll(createdTags);
         // create dependent Labels before creating tool
         Set<Label> createdLabels = new HashSet<>();
         for (Label label : tool.getLabels()) {
@@ -554,7 +554,7 @@ public class DockerRepoResource
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
 
-        tool.getTags().clear();
+        tool.getWorkflowVersions().clear();
         toolDAO.delete(tool);
 
         tool = toolDAO.findById(containerId);
@@ -585,7 +585,7 @@ public class DockerRepoResource
         if (request.getPublish()) {
             boolean validTag = false;
 
-            Set<Tag> tags = tool.getTags();
+            Set<Tag> tags = tool.getWorkflowVersions();
             for (Tag tag : tags) {
                 if (tag.isValid()) {
                     validTag = true;
@@ -697,7 +697,7 @@ public class DockerRepoResource
         checkUser(user, tool);
 
         if (checkIncludes(include, "validations")) {
-            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+            tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
         return tool;
     }
@@ -714,7 +714,7 @@ public class DockerRepoResource
             checkEntry(tool);
 
             if (checkIncludes(include, "validations")) {
-                tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+                tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
             }
             filterContainersForHiddenTags(tool);
             return tool;
@@ -735,7 +735,7 @@ public class DockerRepoResource
 
         checkUser(user, repository);
 
-        return new ArrayList<>(repository.getTags());
+        return new ArrayList<>(repository.getWorkflowVersions());
     }
 
     @GET
@@ -761,9 +761,9 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        Set<String> verifiedSourcesArray = tool.getTags().stream()
+        Set<String> verifiedSourcesArray = tool.getWorkflowVersions().stream()
                 .filter(Version::isVerified)
-                .map(v -> v.getVerifiedSource()).collect(Collectors.toSet());
+                .map(Version::getVerifiedSource).collect(Collectors.toSet());
 
         JSONArray jsonArray;
         try {
@@ -880,7 +880,7 @@ public class DockerRepoResource
         checkEntry(tool);
         checkNotHosted(tool);
         checkUserCanUpdate(user, tool);
-        Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
+        Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
@@ -914,7 +914,7 @@ public class DockerRepoResource
         checkEntry(tool);
         checkNotHosted(tool);
         checkUserCanUpdate(user, tool);
-        Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
+        Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
@@ -1079,7 +1079,7 @@ public class DockerRepoResource
             }
         }
 
-        Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
+        Tag tag = tool.getWorkflowVersions().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
             .orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
         if (sourceFiles == null || sourceFiles.size() == 0) {

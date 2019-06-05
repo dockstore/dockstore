@@ -257,7 +257,7 @@ public abstract class AbstractImageRegistry {
     private void updateTags(List<Tag> newTags, @NotNull Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO) {
         // Get all existing tags
-        List<Tag> existingTags = new ArrayList<>(tool.getTags());
+        List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
 
         if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
@@ -332,13 +332,13 @@ public abstract class AbstractImageRegistry {
             boolean allAutomated = true;
             for (Tag tag : existingTags) {
                 // create and add a tag if it does not already exist
-                if (!tool.getTags().contains(tag)) {
+                if (!tool.getWorkflowVersions().contains(tag)) {
                     LOG.info(tool.getToolPath() + " : Updating tag {}", tag.getName());
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
 
-                    tool.addTag(tag);
+                    tool.addWorkflowVersion(tag);
 
                     if (!tag.isAutomated()) {
                         allAutomated = false;
@@ -352,7 +352,7 @@ public abstract class AbstractImageRegistry {
                 t.getSourceFiles().clear();
                 t.getValidations().clear();
                 // tagDAO.delete(t);
-                tool.getTags().remove(t);
+                tool.getWorkflowVersions().remove(t);
             }
 
             if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
@@ -367,7 +367,7 @@ public abstract class AbstractImageRegistry {
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
         if (sourceCodeRepoInterface != null) {
             // Grab files for each version/tag and check if valid
-            Set<Tag> tags = tool.getTags();
+            Set<Tag> tags = tool.getWorkflowVersions();
             for (Tag tag : tags) {
                 // check to see whether the commit id has changed
                 updateFiles(tool, tag, fileDAO, sourceCodeRepoInterface, sourceCodeRepoInterface.gitUsername);
@@ -390,9 +390,9 @@ public abstract class AbstractImageRegistry {
             }
 
         }
-        FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
+        FileFormatHelper.updateFileFormats(tool.getWorkflowVersions(), fileFormatDAO);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
-        tool.getTags().forEach(tagDAO::create);
+        tool.getWorkflowVersions().forEach(tagDAO::create);
         toolDAO.create(tool);
     }
 
@@ -696,7 +696,7 @@ public abstract class AbstractImageRegistry {
 
             if (c.getUsers().isEmpty()) {
                 LOG.info(user.getUsername() + ": DELETING: {}", c.getPath());
-                c.getTags().clear();
+                c.getWorkflowVersions().clear();
                 toolDAO.delete(c);
             }
         }

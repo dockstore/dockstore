@@ -189,7 +189,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         final WorkflowVersion version = getVersion(workflow);
         this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
         version.setWorkflowPath(sourceFiles.getPrimaryDescriptor().getPath());
-        version.setName(calculateNextVersionName(workflow.getVersions()));
+        version.setName(calculateNextVersionName(workflow.getWorkflowVersions()));
         return this.saveVersion(user, entryId, workflow, version, new HashSet<>(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
     }
 

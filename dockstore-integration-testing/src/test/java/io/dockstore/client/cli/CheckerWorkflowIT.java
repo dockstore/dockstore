@@ -107,9 +107,9 @@ public class CheckerWorkflowIT extends BaseIT {
         DockstoreTool refresh = containersApi.refresh(githubTool.getId());
 
         // Check if the output file format is added to the file_formats property
-        assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671"))));
+        assertTrue(refresh.getWorkflowVersions().stream().anyMatch(tag -> tag.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671"))));
         assertTrue(refresh.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671")));
-        assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
+        assertTrue(refresh.getWorkflowVersions().stream().anyMatch(tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
         assertTrue(refresh.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
 
         // Add checker workflow

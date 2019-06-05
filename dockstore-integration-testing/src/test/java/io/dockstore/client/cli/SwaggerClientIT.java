@@ -255,7 +255,7 @@ public class SwaggerClientIT extends BaseIT {
         tag.getSourceFiles().add(testParameterFile2);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        c.setTags(tags);
+        c.setWorkflowVersions(tags);
 
         return c;
     }
@@ -391,7 +391,7 @@ public class SwaggerClientIT extends BaseIT {
         Tag tag = tags.get(0);
 
         // verify master branch
-        assertTrue(!tag.isVerified());
+        assertFalse(tag.isVerified());
         assertNull(tag.getVerifiedSource());
         VerifyRequest request = SwaggerUtility.createVerifyRequest(true, "test-source");
         containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(), request);
@@ -453,7 +453,7 @@ public class SwaggerClientIT extends BaseIT {
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         c.setIsPublished(true);
-        final Tag tag = c.getTags().get(0);
+        final Tag tag = c.getWorkflowVersions().get(0);
         tag.setVerified(true);
         tag.setVerifiedSource("funky source");
         containersApi.registerManual(c);
@@ -538,16 +538,16 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
-        c.getTags().get(0).setHidden(true);
+        c.getWorkflowVersions().get(0).setHidden(true);
         c = containersApi.registerManual(c);
 
-        assertEquals("should see one tag as an admin, saw " + c.getTags().size(), 1, c.getTags().size());
+        assertEquals("should see one tag as an admin, saw " + c.getWorkflowVersions().size(), 1, c.getWorkflowVersions().size());
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId(), null);
-        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), 0,
-            registeredContainer.getTags().size());
+        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getWorkflowVersions().size(), 0,
+            registeredContainer.getWorkflowVersions().size());
     }
 
     @Test
@@ -559,7 +559,7 @@ public class SwaggerClientIT extends BaseIT {
 
         List<Token> tokens = usersApi.getUserTokens(user.getId());
 
-        assertTrue(!tokens.isEmpty());
+        assertFalse(tokens.isEmpty());
     }
 
 

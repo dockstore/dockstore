@@ -201,10 +201,10 @@ public class WorkflowResource
         workflow.setMode(WorkflowMode.STUB);
 
         // go through and delete versions for a stub
-        for (WorkflowVersion version : workflow.getVersions()) {
+        for (WorkflowVersion version : workflow.getWorkflowVersions()) {
             workflowVersionDAO.delete(version);
         }
-        workflow.getVersions().clear();
+        workflow.getWorkflowVersions().clear();
 
         // Do we maintain the checker workflow association? For now we won't
         workflow.setCheckerWorkflow(null);
@@ -388,7 +388,7 @@ public class WorkflowResource
             .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
-        FileFormatHelper.updateFileFormats(newWorkflow.getVersions(), fileFormatDAO);
+        FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
 
         // Refresh checker workflow
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
@@ -430,7 +430,7 @@ public class WorkflowResource
 
             // Update each workflow with reference types
             for (Workflow workflow : workflows) {
-                Set<WorkflowVersion> versions = workflow.getVersions();
+                Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
                 versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
             }
         }
@@ -473,7 +473,7 @@ public class WorkflowResource
         }
 
         // Then copy over content that changed
-        for (WorkflowVersion version : newWorkflow.getVersions()) {
+        for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
             if (existingVersionMap.containsKey(version.getName())) {
                 workflowVersionFromDB.update(version);
@@ -481,7 +481,7 @@ public class WorkflowResource
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
-                workflow.getVersions().add(workflowVersionFromDB);
+                workflow.getWorkflowVersions().add(workflowVersionFromDB);
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
             }
 
@@ -706,7 +706,7 @@ public class WorkflowResource
         checkNotHosted(wf);
 
         //update the workflow path in all workflowVersions
-        Set<WorkflowVersion> versions = wf.getVersions();
+        Set<WorkflowVersion> versions = wf.getWorkflowVersions();
         for (WorkflowVersion version : versions) {
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
@@ -774,7 +774,7 @@ public class WorkflowResource
 
         if (request.getPublish()) {
             boolean validTag = false;
-            Set<WorkflowVersion> versions = c.getVersions();
+            Set<WorkflowVersion> versions = c.getWorkflowVersions();
             for (WorkflowVersion workflowVersion : versions) {
                 if (workflowVersion.isValid()) {
                     validTag = true;
@@ -1072,7 +1072,7 @@ public class WorkflowResource
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findPublishedById(workflowId);
         checkEntry(repository);
-        return new ArrayList<>(repository.getVersions());
+        return new ArrayList<>(repository.getWorkflowVersions());
     }
 
     @GET
@@ -1353,7 +1353,7 @@ public class WorkflowResource
 
         // create a map for quick lookup
         Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();
-        for (WorkflowVersion version : w.getVersions()) {
+        for (WorkflowVersion version : w.getWorkflowVersions()) {
             mapOfExistingWorkflowVersions.put(version.getId(), version);
         }
 
@@ -1373,7 +1373,7 @@ public class WorkflowResource
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getVersions();
+        return result.getWorkflowVersions();
     }
 
     @GET
@@ -1463,7 +1463,7 @@ public class WorkflowResource
      * @return WorkflowVersion
      */
     private WorkflowVersion getWorkflowVersion(Workflow workflow, Long workflowVersionId) {
-        Set<WorkflowVersion> workflowVersions = workflow.getVersions();
+        Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
         WorkflowVersion workflowVersion = null;
 
         for (WorkflowVersion wv : workflowVersions) {
@@ -1693,7 +1693,7 @@ public class WorkflowResource
      */
     private void initializeValidations(String include, Workflow workflow) {
         if (checkIncludes(include, "validations")) {
-            workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
+            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
     }
 

@@ -208,7 +208,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // update each workflow with reference types
-        Set<WorkflowVersion> versions = workflow.getVersions();
+        Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
         versions.forEach(version -> updateReferenceType(repositoryId, version));
 
         // Get metadata for workflow and update workflow with it
@@ -246,12 +246,12 @@ public abstract class SourceCodeRepoInterface {
         // If entry is a tool
         if (entry instanceof Tool) {
             // If no tags exist on quay
-            if (((Tool)entry).getVersions().size() == 0) {
+            if (entry.getWorkflowVersions().isEmpty()) {
                 return entry;
             }
 
             // Find filepath to parse
-            for (Tag tag : ((Tool)entry).getVersions()) {
+            for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
                 if (tag.getReference() != null && tag.getReference().equals(branch)) {
                     sourceFiles = tag.getSourceFiles();
                     if (type == DescriptorLanguage.CWL) {
@@ -269,7 +269,7 @@ public abstract class SourceCodeRepoInterface {
 
         if (entry instanceof Workflow) {
             // Find filepath to parse
-            for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
+            for (WorkflowVersion workflowVersion : ((Workflow)entry).getWorkflowVersions()) {
                 if (workflowVersion.getReference().equals(branch)) {
                     filePath = workflowVersion.getWorkflowPath();
                     sourceFiles = workflowVersion.getSourceFiles();
@@ -328,13 +328,13 @@ public abstract class SourceCodeRepoInterface {
     String getBranchNameFromDefaultVersion(Entry entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
-            for (Tag tag : ((Tool)entry).getVersions()) {
+            for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
                 if (Objects.equals(tag.getName(), defaultVersion)) {
                     return tag.getReference();
                 }
             }
         } else if (entry instanceof Workflow) {
-            for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
+            for (WorkflowVersion workflowVersion : ((Workflow)entry).getWorkflowVersions()) {
                 if (Objects.equals(workflowVersion.getName(), defaultVersion)) {
                     return workflowVersion.getReference();
                 }

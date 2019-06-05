@@ -115,7 +115,7 @@ public final class ToolsImplCommon {
             String returnName = constructName(Arrays.asList(name, toolName));
             tool.setToolname(returnName);
             tool.setOrganization(castedContainer.getNamespace());
-            inputVersions = castedContainer.getTags();
+            inputVersions = castedContainer.getWorkflowVersions();
         } else if (container instanceof Workflow) {
             // workflow specific
             Workflow workflow = (Workflow)container;

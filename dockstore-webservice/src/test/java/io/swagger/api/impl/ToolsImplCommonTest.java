@@ -135,7 +135,7 @@ public class ToolsImplCommonTest {
         sourceFile2.setAbsolutePath("/Dockstore.cwl");
         tag.addSourceFile(sourceFile);
         tag.addSourceFile(sourceFile2);
-        tool.addTag(tag);
+        tool.addWorkflowVersion(tag);
         tool.setCheckerWorkflow(null);
         Tool expectedTool = new Tool();
         if (toolname != null) {

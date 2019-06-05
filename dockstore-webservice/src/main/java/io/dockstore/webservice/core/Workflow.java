@@ -136,11 +136,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return super.getGitUrl();
     }
 
-    @Override
-    public Set<WorkflowVersion> getVersions() {
-        return workflowVersions;
-    }
-
     public abstract Entry getParentEntry();
 
     public abstract void setParentEntry(Entry parentEntry);
@@ -184,16 +179,9 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return workflowName;
     }
 
+    @Override
     public Set<WorkflowVersion> getWorkflowVersions() {
         return workflowVersions;
-    }
-
-    public void addWorkflowVersion(WorkflowVersion workflowVersion) {
-        workflowVersions.add(workflowVersion);
-    }
-
-    public boolean removeWorkflowVersion(WorkflowVersion workflowVersion) {
-        return workflowVersions.remove(workflowVersion);
     }
 
     /**

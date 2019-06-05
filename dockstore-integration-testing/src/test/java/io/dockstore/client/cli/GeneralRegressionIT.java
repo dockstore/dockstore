@@ -128,7 +128,7 @@ public class GeneralRegressionIT extends BaseIT {
         tag.getSourceFiles().add(fileDockerFile);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        c.setTags(tags);
+        c.setWorkflowVersions(tags);
         return c;
     }
 

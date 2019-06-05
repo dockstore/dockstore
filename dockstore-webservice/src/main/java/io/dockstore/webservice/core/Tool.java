@@ -140,7 +140,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @Override
-    public Set<Tag> getVersions() {
+    public Set<Tag> getWorkflowVersions() {
         return tags;
     }
 
@@ -203,7 +203,7 @@ public class Tool extends Entry<Tool, Tag> {
     @JsonProperty
     @ApiModelProperty(position = 28)
     public List<String> getDescriptorType() {
-        Set<DescriptorLanguage.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
+        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
         return Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
             .map(lang -> lang.toString().toUpperCase()).collect(Collectors.toList());
     }
@@ -215,18 +215,6 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setLastBuild(Date lastBuild) {
         this.lastBuild = lastBuild;
-    }
-
-    public Set<Tag> getTags() {
-        return tags;
-    }
-
-    public boolean addTag(Tag tag) {
-        return tags.add(tag);
-    }
-
-    public boolean removeTag(Tag tag) {
-        return tags.remove(tag);
     }
 
     @JsonProperty

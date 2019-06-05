@@ -225,7 +225,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             versionOptional = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
         } else if (entry instanceof Tool) {
             Tool tool = (Tool)entry;
-            Set<Tag> versions = tool.getVersions();
+            Set<Tag> versions = tool.getWorkflowVersions();
             versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();

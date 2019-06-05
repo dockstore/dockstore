@@ -453,11 +453,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         Optional<? extends Version> entryVersion;
         if (entry instanceof Tool) {
             Tool toolEntry = (Tool)entry;
-            entryVersion = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
+            entryVersion = toolEntry.getWorkflowVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
                 .findFirst();
         } else {
             Workflow workflowEntry = (Workflow)entry;
-            entryVersion = workflowEntry.getVersions().stream()
+            entryVersion = workflowEntry.getWorkflowVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
         }
 
@@ -641,7 +641,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
         } else if (entry instanceof Tool) {
             Tool tool = (Tool)entry;
-            Set<Tag> versions = tool.getVersions();
+            Set<Tag> versions = tool.getWorkflowVersions();
             Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
             if (first.isPresent()) {
                 Tag tag = first.get();
