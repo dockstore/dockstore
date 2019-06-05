@@ -13,6 +13,10 @@ bitbucketClientSecret: <fill me in>
 discourseKey: <fill me in>
 discourseUrl: <fill me in>
 discourseCategoryId: 9
+zenodoClientID: <fill me in>
+zenodoClientSecret: <fill me in>
+zenodoRedirectURI: http://<fill me in>:8080/auth/zenodo.org
+zenodoUrl: https://zenodo.org
 
 googleClientID: <fill me in>
 googleClientSecret: <fill me in>
@@ -106,6 +110,10 @@ uiConfig:
   gitlabAuthUrl: https://gitlab.com/oauth/authorize
   gitlabRedirectPath: /auth/gitlab.com
   gitlabScope: api
+
+  zenodoAuthUrl: https://zenodo.org/oauth/authorize
+  zenodoRedirectPath: /auth/zenodo.org
+  zenodoScope: deposit:write deposit:actions
 
   googleScope: profile email
 
