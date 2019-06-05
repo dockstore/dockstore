@@ -954,7 +954,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
                     }
 
-                    workflow.setDescriptorType(Workflow.DescriptorTypeEnum.fromValue(descriptorType.toLowerCase()));
+                    workflow.setDescriptorType(Workflow.DescriptorTypeEnum.fromValue(descriptorType.toUpperCase()));
                 } else if (!descriptorType.equalsIgnoreCase(workflow.getDescriptorType().getValue())) {
                     errorMessage(
                             "You cannot change the descriptor type of a FULL workflow. Revert it to a STUB if you wish to change descriptor type.",

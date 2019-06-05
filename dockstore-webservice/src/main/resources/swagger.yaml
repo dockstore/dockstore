@@ -7294,6 +7294,11 @@ definitions:
         position: 18
         description: "This is a descriptor type for the workflow, either CWL, WDL,\
           \ or Nextflow (Defaults to CWL)"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "NEXTFLOW"
+        - "SERVICE"
       workflow_path:
         type: "string"
         position: 19
