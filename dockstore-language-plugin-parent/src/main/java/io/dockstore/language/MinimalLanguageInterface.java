@@ -33,6 +33,14 @@ import org.apache.commons.lang3.tuple.Pair;
 public interface MinimalLanguageInterface {
 
     /**
+     * Identifies whether this language is for services
+     * @return true for things like docker-compose, kubernetes, etc.
+     */
+    default boolean isService() {
+        return false;
+    }
+
+    /**
      * Validate a filename path that might be entered by your user (i.e. is "/Dockstore.wdl" a valid path to the "first" descriptor).
      * This is used to distinguish between multiple workflows that may be stored in one repo.
      *

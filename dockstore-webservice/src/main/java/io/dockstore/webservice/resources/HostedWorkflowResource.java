@@ -37,6 +37,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
@@ -145,7 +146,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     @Override
     protected Workflow getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
-        Workflow workflow = new Workflow();
+        Workflow workflow = new BioWorkflow();
         workflow.setMode(WorkflowMode.HOSTED);
         // TODO: We set the organization to the username of the user creating it. However, for gmail accounts this is an
         // email. This might not be a good idea. Especially if users don't want their emails displayed.
@@ -189,7 +190,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
         version.setWorkflowPath(sourceFiles.getPrimaryDescriptor().getPath());
         version.setName(calculateNextVersionName(workflow.getVersions()));
-        return this.saveVersion(user, entryId, workflow, version, new HashSet(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
+        return this.saveVersion(user, entryId, workflow, version, new HashSet<>(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
     }
 
     @Override
@@ -220,7 +221,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         DescriptorLanguage.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = mainDescriptorOpt.map(sf -> sf.getPath()).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
+        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
@@ -268,7 +269,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
      */
     @Override
     protected boolean isValidVersion(WorkflowVersion version) {
-        return !version.getValidations().stream().filter(Validation -> !Validation.isValid()).findFirst().isPresent();
+        return version.getValidations().stream().allMatch(Validation::isValid);
     }
 
     @Override

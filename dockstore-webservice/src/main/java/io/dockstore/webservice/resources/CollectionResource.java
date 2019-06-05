@@ -17,15 +17,16 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -192,9 +193,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .withInitiatorUser(user)
                 .withType(Event.EventType.ADD_TO_COLLECTION);
 
-        if (entryAndCollection.getLeft() instanceof Workflow) {
-            eventBuild = eventBuild.withWorkflow((Workflow)entryAndCollection.getLeft());
-        } else {
+        if (entryAndCollection.getLeft() instanceof BioWorkflow) {
+            eventBuild = eventBuild.withBioWorkflow((BioWorkflow)entryAndCollection.getLeft());
+        } else if (entryAndCollection.getLeft() instanceof Service) {
+            eventBuild = eventBuild.withService((Service)entryAndCollection.getLeft());
+        } else if (entryAndCollection.getLeft() instanceof Tool) {
             eventBuild = eventBuild.withTool((Tool)entryAndCollection.getLeft());
         }
 
@@ -228,9 +231,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .withInitiatorUser(user)
                 .withType(Event.EventType.REMOVE_FROM_COLLECTION);
 
-        if (entryAndCollection.getLeft() instanceof Workflow) {
-            eventBuild = eventBuild.withWorkflow((Workflow)entryAndCollection.getLeft());
-        } else {
+        if (entryAndCollection.getLeft() instanceof BioWorkflow) {
+            eventBuild = eventBuild.withBioWorkflow((BioWorkflow)entryAndCollection.getLeft());
+        } else if (entryAndCollection.getLeft() instanceof Service) {
+            eventBuild = eventBuild.withService((Service)entryAndCollection.getLeft());
+        } else if (entryAndCollection.getLeft() instanceof Tool) {
             eventBuild = eventBuild.withTool((Tool)entryAndCollection.getLeft());
         }
 

@@ -31,6 +31,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.client.JerseyClientBuilder;
@@ -115,7 +116,7 @@ public class RefreshByOrgIT {
         usersURLPrefix = "http://localhost:%d/users/" + id;
         checkInitialDB();
         // insert a non-existent tool to be deleted during refresh
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("insert into tool (id, giturl, defaultdockerfilepath, mode, name, namespace, registry, ispublished) select 100, giturl, defaultdockerfilepath, mode, 'newtool', namespace, registry, ispublished from tool where id = 2;");
+        CommonTestUtilities.getTestingPostgres().runUpdateStatement("insert into tool (id, giturl, mode, name, namespace, registry, ispublished) select 100, giturl, mode, 'newtool', namespace, registry, ispublished from tool where id = 2;");
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("insert into user_entry (userid, entryid) values (1, 100)");
         Long count = CommonTestUtilities.getTestingPostgres()
             .runSelectStatement("select count(*) from tool where id = 100;", new ScalarHandler<>());
@@ -295,7 +296,7 @@ public class RefreshByOrgIT {
         Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
-        return objectMapper.readValue(entity, new TypeReference<List<Workflow>>() {
+        return objectMapper.readValue(entity, new TypeReference<List<BioWorkflow>>() {
         });
     }
 

@@ -6188,8 +6188,6 @@ components:
           type: string
         dnaStackImportUrl:
           type: string
-        fireCloudImportUrl:
-          type: string
         dnaNexusImportUrl:
           type: string
         terraImportUrl:
@@ -6224,8 +6222,6 @@ components:
           type: string
         cwlVisualizerUri:
           type: string
-        enableLaunchWithFireCloud:
-          type: boolean
         tagManagerId:
           type: string
         githubClientId:
@@ -7467,10 +7463,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parentEntry:
-          $ref: "#/components/schemas/Entry"
         isChecker:
           type: boolean
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         last_modified_date:
           type: string
           format: date-time

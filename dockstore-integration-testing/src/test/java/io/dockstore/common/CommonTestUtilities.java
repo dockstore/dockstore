@@ -167,8 +167,11 @@ public final class CommonTestUtilities {
      */
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating samepaths migrations");
-        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "samepaths");
+        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0");
+
     }
 
 

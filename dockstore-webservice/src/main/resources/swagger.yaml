@@ -5811,8 +5811,6 @@ definitions:
         type: "string"
       dnaStackImportUrl:
         type: "string"
-      fireCloudImportUrl:
-        type: "string"
       dnaNexusImportUrl:
         type: "string"
       terraImportUrl:
@@ -5847,8 +5845,6 @@ definitions:
         type: "string"
       cwlVisualizerUri:
         type: "string"
-      enableLaunchWithFireCloud:
-        type: "boolean"
       tagManagerId:
         type: "string"
       githubClientId:
@@ -7203,10 +7199,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parentEntry:
-        $ref: "#/definitions/Entry"
       isChecker:
         type: "boolean"
+      parentEntry:
+        $ref: "#/definitions/Entry"
       last_modified_date:
         type: "string"
         format: "date-time"
