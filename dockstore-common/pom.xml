@@ -172,10 +172,6 @@
                     <artifactId>refined_2.12</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>io.circe</groupId>
-                    <artifactId>circe-core_2.12</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-text</artifactId>
                 </exclusion>
@@ -248,17 +244,17 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell-wom_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell-common_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
         </dependency>
 
         <dependency>
@@ -266,7 +262,6 @@
             <artifactId>cats-core_2.12</artifactId>
             <version>1.5.0</version>
         </dependency>
-
 
         <dependency>
             <groupId>io.spray</groupId>

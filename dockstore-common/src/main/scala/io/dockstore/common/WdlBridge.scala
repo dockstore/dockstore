@@ -14,7 +14,6 @@ import wom.executable.WomBundle
 import cats.syntax.validated._
 import common.Checked
 import common.validation.Checked._
-import common.validation.Validation._
 import cromwell.languages.util.ImportResolver
 
 import scala.collection.JavaConverters._
@@ -30,21 +29,17 @@ class WdlBridge {
     println("WdlBridge")
   }
 
+  /**
+    * Set the secondary files (imports)
+    * @param secondaryFiles
+    */
   def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]): Unit = {
     secondaryWdlFiles = secondaryFiles
   }
 
   /**
-    * Create an input parameter file for the given workflow
-    * @param filePath
-    */
-  def getInputs(filePath: String) = {
-    val bundle = getBundle(filePath)
-  }
-
-  /**
     * Validates the workflow given by filePath
-    * @param filePath
+    * @param filePath absolute path to file
     */
   @throws(classOf[WdlParser.SyntaxError])
   def validateWorkflow(filePath: String) = {
@@ -57,7 +52,7 @@ class WdlBridge {
 
   /**
     * Validates the tool given by filePath
-    * @param filePath
+    * @param filePath absolute path to file
     */
   @throws(classOf[WdlParser.SyntaxError])
   def validateTool(filePath: String) = {
@@ -67,7 +62,7 @@ class WdlBridge {
   /**
     * Returns true if the file is likely v1.0, false otherwise.
     * Will only look at the primary descriptor.
-    * @param filePath
+    * @param filePath absolute path to file
     * @return whether file looks parsable or not
     */
   def isDraft3(filePath: String) : Boolean = {
@@ -78,7 +73,7 @@ class WdlBridge {
 
   /**
     * Get the WomBundle for a workflow
-    * @param filePath
+    * @param filePath absolute path to file
     * @return WomBundle
     */
   def getBundle(filePath: String): common.Checked[WomBundle] = {
@@ -98,7 +93,7 @@ class WdlBridge {
 
   /**
     * Read the given file into a string
-    * @param filePath
+    * @param filePath absolute path to file
     * @return Content of file as a string
     */
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get

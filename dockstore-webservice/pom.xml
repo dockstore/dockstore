@@ -686,7 +686,7 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
         </dependency>
 
         <dependency>

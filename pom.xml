@@ -54,6 +54,7 @@
         <jetty-servlet.version>9.4.14.v20181114</jetty-servlet.version>
         <netty.version>4.1.33.Final</netty.version>
         <scala.version>2.12.8</scala.version>
+        <cromwell.version>41</cromwell.version>
 
         <skipTests>false</skipTests>
         <skipClientITs>true</skipClientITs>
