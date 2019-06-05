@@ -65,6 +65,7 @@ import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -526,7 +527,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
+        workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NEXTFLOW);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
@@ -580,7 +581,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
+        workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NEXTFLOW);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null);
@@ -610,7 +611,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
+        workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NEXTFLOW);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null);
@@ -665,7 +666,7 @@ public class WorkflowIT extends BaseIT {
         Workflow mtaNf = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         mtaNf.setWorkflowPath("/nextflow.config");
-        mtaNf.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
+        mtaNf.setDescriptorType(DescriptorTypeEnum.NEXTFLOW);
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
         workflowApi.refresh(mtaNf.getId());
         // publish this way? (why is the auto-generated variable private?)

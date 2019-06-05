@@ -35,7 +35,6 @@ import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -48,7 +47,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,7 +173,7 @@ public abstract class SourceCodeRepoInterface {
         // Determine if workflow should be returned as a STUB or FULL
         if (existingWorkflow.isEmpty()) {
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
-            workflow.setDescriptorType(DescriptorLanguage.CWL.toString().toLowerCase());
+            workflow.setDescriptorType(DescriptorLanguage.CWL);
             return workflow;
         }
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
@@ -184,7 +182,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (Objects.equals(existingWorkflow.get().getDescriptorType(), DescriptorLanguage.SERVICE.toString())) {
+        if (Objects.equals(existingWorkflow.get().getDescriptorType(), DescriptorLanguage.SERVICE)) {
             workflow.setMode(WorkflowMode.SERVICE);
         } else {
             workflow.setMode(WorkflowMode.FULL);
@@ -192,14 +190,12 @@ public abstract class SourceCodeRepoInterface {
 
         // if it exists, extract paths from the previous workflow entry
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-        if (existingWorkflow.isPresent()) {
-            // Copy over existing workflow versions
-            existingWorkflow.get().getWorkflowVersions()
-                    .forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
+        // Copy over existing workflow versions
+        existingWorkflow.get().getWorkflowVersions()
+                .forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
 
-            // Copy workflow information from source (existingWorkflow) to target (workflow)
-            existingWorkflow.get().copyWorkflow(workflow);
-        }
+        // Copy workflow information from source (existingWorkflow) to target (workflow)
+        existingWorkflow.get().copyWorkflow(workflow);
 
         // Create branches and associated source files
         workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
@@ -216,7 +212,7 @@ public abstract class SourceCodeRepoInterface {
         versions.forEach(version -> updateReferenceType(repositoryId, version));
 
         // Get metadata for workflow and update workflow with it
-        updateEntryMetadata(workflow, workflow.determineWorkflowType());
+        updateEntryMetadata(workflow, workflow.getDescriptorType());
         return workflow;
     }
 
@@ -565,11 +561,9 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Validate test parameter set
-        DescriptorLanguage.FileType testParameterType = DescriptorLanguage.getTestParameterType(entry.getDescriptorType()).orElseThrow(
-            () -> new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST));
         VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType)
             .validateTestParameterSet(sourceFiles);
-        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+        Validation testParameterValidation = new Validation(entry.getTestParameterType(), validTestParameterSet);
         version.addOrUpdateValidation(testParameterValidation);
 
         version.setValid(isValidVersion(version));
