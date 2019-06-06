@@ -103,10 +103,6 @@ components:
           type: string
         dnaStackImportUrl:
           type: string
-        enableLaunchWithFireCloud:
-          type: boolean
-        fireCloudImportUrl:
-          type: string
         gitHubAuthUrl:
           type: string
         gitHubRedirectPath:

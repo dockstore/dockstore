@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.6-SNAPSHOT"
+  version: "1.7.0-alpha.7-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -5898,8 +5898,6 @@ definitions:
         type: "string"
       dnaStackImportUrl:
         type: "string"
-      fireCloudImportUrl:
-        type: "string"
       dnaNexusImportUrl:
         type: "string"
       terraImportUrl:
@@ -5928,8 +5926,6 @@ definitions:
         type: "string"
       cwlVisualizerUri:
         type: "string"
-      enableLaunchWithFireCloud:
-        type: "boolean"
       tagManagerId:
         type: "string"
       githubClientId:
