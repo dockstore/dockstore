@@ -7140,7 +7140,6 @@ components:
             - CWL
             - WDL
             - NFL
-            - SWL
             - DOCKSTORE_SERVICE
         descriptor:
           type: string
@@ -7272,7 +7271,6 @@ components:
               - CWL
               - WDL
               - NFL
-              - SWL
               - DOCKSTORE_SERVICE
         containerfile:
           type: boolean

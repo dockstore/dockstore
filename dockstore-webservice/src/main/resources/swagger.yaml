@@ -6976,7 +6976,6 @@ definitions:
         - "CWL"
         - "WDL"
         - "NFL"
-        - "SWL"
         - "DOCKSTORE_SERVICE"
       descriptor:
         type: "string"
@@ -7108,7 +7107,6 @@ definitions:
           - "CWL"
           - "WDL"
           - "NFL"
-          - "SWL"
           - "DOCKSTORE_SERVICE"
       containerfile:
         type: "boolean"
