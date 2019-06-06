@@ -883,9 +883,9 @@ components:
           type: string
         descriptorType:
           enum:
-          - CWL
-          - WDL
-          - NFL
+          - cwl
+          - wdl
+          - nfl
           - service
           type: string
         email:
@@ -3223,7 +3223,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:

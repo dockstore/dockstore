@@ -91,7 +91,7 @@ public enum DescriptorLanguage {
 
     @Override
     public String toString() {
-        return shortName;
+        return getLowerShortName();
     }
 
     public String getShortName() {
