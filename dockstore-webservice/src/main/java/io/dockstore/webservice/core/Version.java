@@ -86,7 +86,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column
     @JsonProperty("last_modified")
-    @ApiModelProperty(value = "Tool-> For automated builds: Last time specific tag was built. For hosted: When version was created"
+    @ApiModelProperty(value = "Tool-> For automated builds: Last time specific tag was built. For hosted: When version was created "
             + "Workflow-> Remote: Last time version on Github repo was changed. Hosted: time version created", position = 1)
     Date lastModified;
 

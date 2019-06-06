@@ -6308,20 +6308,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: "Implementation specific timestamp for last modified.Tools-> For
+          description: "Implementation specific timestamp for last modified. Tools-> For
             automated/manual builds: N/A. For hosted: Last time a file was
-            updated/created (new version created)Workflows-> For remote: When
+            updated/created (new version created). Workflows-> For remote: When
             refresh is hit, last time Github repo was changed. Hosted: Last time
             a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: "Implementation specific timestamp for last updated on
-            webservice.Tools-> For automated builds: last time tool/namespace
-            was refreshed Dockstore, tool info updated, default version
-            selected. For hosted tools: when you created the toolWorkflows-> For
-            remote: When refresh all is hit for first time. Hosted: Seems to be
-            time created."
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -6393,8 +6393,8 @@ components:
           format: date-time
           description: "Implementation specific timestamp for last built. For automated
             builds: When refresh is hit, the last time the tool was built gets
-            stored here.If tool was never built on quay.io, then last build will
-            be null. N/A for hosted/manual path tools"
+            stored here. If tool was never built on quay.io, then last build
+            will be null. N/A for hosted/manual path tools"
         tags:
           type: array
           description: Implementation specific tracking of valid build tags for the docker
@@ -6508,20 +6508,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: "Implementation specific timestamp for last modified.Tools-> For
+          description: "Implementation specific timestamp for last modified. Tools-> For
             automated/manual builds: N/A. For hosted: Last time a file was
-            updated/created (new version created)Workflows-> For remote: When
+            updated/created (new version created). Workflows-> For remote: When
             refresh is hit, last time Github repo was changed. Hosted: Last time
             a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: "Implementation specific timestamp for last updated on
-            webservice.Tools-> For automated builds: last time tool/namespace
-            was refreshed Dockstore, tool info updated, default version
-            selected. For hosted tools: when you created the toolWorkflows-> For
-            remote: When refresh all is hit for first time. Hosted: Seems to be
-            time created."
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -6942,8 +6942,8 @@ components:
           type: string
           format: date-time
           description: "Tool-> For automated builds: Last time specific tag was built. For
-            hosted: When version was createdWorkflow-> Remote: Last time version
-            on Github repo was changed. Hosted: time version created"
+            hosted: When version was created Workflow-> Remote: Last time
+            version on Github repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch
@@ -7521,20 +7521,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: "Implementation specific timestamp for last modified.Tools-> For
+          description: "Implementation specific timestamp for last modified. Tools-> For
             automated/manual builds: N/A. For hosted: Last time a file was
-            updated/created (new version created)Workflows-> For remote: When
+            updated/created (new version created). Workflows-> For remote: When
             refresh is hit, last time Github repo was changed. Hosted: Last time
             a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: "Implementation specific timestamp for last updated on
-            webservice.Tools-> For automated builds: last time tool/namespace
-            was refreshed Dockstore, tool info updated, default version
-            selected. For hosted tools: when you created the toolWorkflows-> For
-            remote: When refresh all is hit for first time. Hosted: Seems to be
-            time created."
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -7635,8 +7635,8 @@ components:
           type: string
           format: date-time
           description: "Tool-> For automated builds: Last time specific tag was built. For
-            hosted: When version was createdWorkflow-> Remote: Last time version
-            on Github repo was changed. Hosted: time version created"
+            hosted: When version was created Workflow-> Remote: Last time
+            version on Github repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch

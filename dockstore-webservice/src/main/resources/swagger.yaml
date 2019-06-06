@@ -5941,19 +5941,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified.Tools->\
+        description: "Implementation specific timestamp for last modified. Tools->\
           \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
-          \ (new version created)Workflows-> For remote: When refresh is hit, last\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
           \ time Github repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice.Tools->\
-          \ For automated builds: last time tool/namespace was refreshed Dockstore,\
-          \ tool info updated, default version selected. For hosted tools: when you\
-          \ created the toolWorkflows-> For remote: When refresh all is hit for first\
-          \ time. Hosted: Seems to be time created."
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -6039,7 +6040,7 @@ definitions:
         position: 25
         description: "Implementation specific timestamp for last built. For automated\
           \ builds: When refresh is hit, the last time the tool was built gets stored\
-          \ here.If tool was never built on quay.io, then last build will be null.\
+          \ here. If tool was never built on quay.io, then last build will be null.\
           \ N/A for hosted/manual path tools"
       tags:
         type: "array"
@@ -6166,19 +6167,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified.Tools->\
+        description: "Implementation specific timestamp for last modified. Tools->\
           \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
-          \ (new version created)Workflows-> For remote: When refresh is hit, last\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
           \ time Github repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice.Tools->\
-          \ For automated builds: last time tool/namespace was refreshed Dockstore,\
-          \ tool info updated, default version selected. For hosted tools: when you\
-          \ created the toolWorkflows-> For remote: When refresh all is hit for first\
-          \ time. Hosted: Seems to be time created."
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -6634,7 +6636,7 @@ definitions:
         format: "date-time"
         position: 1
         description: "Tool-> For automated builds: Last time specific tag was built.\
-          \ For hosted: When version was createdWorkflow-> Remote: Last time version\
+          \ For hosted: When version was created Workflow-> Remote: Last time version\
           \ on Github repo was changed. Hosted: time version created"
       reference:
         type: "string"
@@ -7263,19 +7265,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified.Tools->\
+        description: "Implementation specific timestamp for last modified. Tools->\
           \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
-          \ (new version created)Workflows-> For remote: When refresh is hit, last\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
           \ time Github repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice.Tools->\
-          \ For automated builds: last time tool/namespace was refreshed Dockstore,\
-          \ tool info updated, default version selected. For hosted tools: when you\
-          \ created the toolWorkflows-> For remote: When refresh all is hit for first\
-          \ time. Hosted: Seems to be time created."
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -7391,7 +7394,7 @@ definitions:
         format: "date-time"
         position: 1
         description: "Tool-> For automated builds: Last time specific tag was built.\
-          \ For hosted: When version was createdWorkflow-> Remote: Last time version\
+          \ For hosted: When version was created Workflow-> Remote: Last time version\
           \ on Github repo was changed. Hosted: time version created"
       reference:
         type: "string"
