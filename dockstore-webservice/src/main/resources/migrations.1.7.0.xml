@@ -154,8 +154,8 @@
         <setColumnRemarks columnName="lastbuild" tableName="tool" remarks="For automated builds: When refresh is hit, the last time the tool was built gets stored here. If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools"/>
         <setColumnRemarks columnName="lastmodified" tableName="tag" remarks="For automated builds: Last time specific tag was built. For hosted: When version was created"/>
         <setColumnRemarks columnName="lastmodified" tableName="tool" remarks="For automated builds: N/A. For hosted: Last time a file was updated (new version created)"/>
-        <setColumnRemarks columnName="lastmodified" tableName="workflow" remarks="For remote: When refresh is hit, the last time Github repo was changed is recorded. Hosted: Last time a new version was made."/>
-        <setColumnRemarks columnName="lastmodified" tableName="workflowversion" remarks="Remote: Last time version on Github repo was changed. Hosted: time version created"/>
+        <setColumnRemarks columnName="lastmodified" tableName="workflow" remarks="For remote: When refresh is hit, the last time GitHub repo was changed is recorded. Hosted: Last time a new version was made."/>
+        <setColumnRemarks columnName="lastmodified" tableName="workflowversion" remarks="Remote: Last time version on GitHub repo was changed. Hosted: time version created"/>
         <setColumnRemarks columnName="lastupdated" tableName="tool" remarks="For automated builds: last time tool/namespace was refreshed Dockstore, tool info updated, default version selected. For hosted tools: when you created the tool"/>
         <setColumnRemarks columnName="lastupdated" tableName="workflow" remarks="For remote: When refresh all is hit for first time. Hosted: Time created."/>
     </changeSet>

@@ -12,11 +12,11 @@ COMMENT ON COLUMN tool.dbupdatedate IS 'For automated builds: Last time tool/nam
 COMMENT ON COLUMN tag.lastmodified IS 'For automated builds: Last time specific tag was built. For hosted: When version was created';
 COMMENT ON COLUMN tag.dbcreatedate IS 'For automated builds and hosted/manual path: Time registered on Dockstore, either by refresh or manual register. Can be blank as this column was added in 2018.';
 COMMENT ON COLUMN tag.dbupdatedate IS 'For automated builds and hosted/manual path: Time created or last time version tab was edited (under actions in version tab). Basically anytime db entry modified';
-COMMENT ON COLUMN workflow.lastmodified IS 'For remote: When refresh is hit, the last time Github repo was changed is recorded. Hosted: Last time a new version was made.';
+COMMENT ON COLUMN workflow.lastmodified IS 'For remote: When refresh is hit, the last time GitHub repo was changed is recorded. Hosted: Last time a new version was made.';
 COMMENT ON COLUMN workflow.lastupdated IS 'For remote: When refresh all is hit for first time. Hosted: Time created.';
 COMMENT ON COLUMN workflow.dbcreatedate IS 'Remote: When workflow is refreshed for first time. Hosted: Time created';
 COMMENT ON COLUMN workflow.dbupdatedate IS 'For remote: When refresh all is hit for first time, update workflow info (like path information), or add checker workflow. Hosted: Time created. Basically anytime db entry modified.';
-COMMENT ON COLUMN workflowversion.lastmodified IS 'Remote: Last time version on Github repo was changed. Hosted: time version created';
+COMMENT ON COLUMN workflowversion.lastmodified IS 'Remote: Last time version on GitHub repo was changed. Hosted: time version created';
 COMMENT ON COLUMN workflowversion.dbcreatedate IS 'Remote: When workflow was refreshed for first time. Hosted: time version created';
 COMMENT ON COLUMN workflowversion.dbupdatedate IS 'Remote: When workflow was refreshed for the first time or last time version was edited under action column in versions tab. Hosted: time version created or last time version was edited under actions column in versions tab. Basically anytime db entry modified';
 -- postgres partial indexes seem unsupported https://stackoverflow.com/questions/12025844/how-to-annotate-unique-constraint-with-where-clause-in-jpa

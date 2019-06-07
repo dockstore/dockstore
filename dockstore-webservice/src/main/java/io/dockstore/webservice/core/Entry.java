@@ -146,7 +146,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last modified. "
             + "Tools-> For automated/manual builds: N/A. For hosted: Last time a file was updated/created (new version created). "
-            + "Workflows-> For remote: When refresh is hit, last time Github repo was changed. Hosted: Last time a new version was made.", position = 9)
+            + "Workflows-> For remote: When refresh is hit, last time GitHub repo was changed. Hosted: Last time a new version was made.", position = 9)
     private Date lastModified;
 
     @Column

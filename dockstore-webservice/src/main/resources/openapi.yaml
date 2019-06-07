@@ -6311,7 +6311,7 @@ components:
           description: "Implementation specific timestamp for last modified. Tools-> For
             automated/manual builds: N/A. For hosted: Last time a file was
             updated/created (new version created). Workflows-> For remote: When
-            refresh is hit, last time Github repo was changed. Hosted: Last time
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
             a new version was made."
         lastUpdated:
           type: string
@@ -6511,7 +6511,7 @@ components:
           description: "Implementation specific timestamp for last modified. Tools-> For
             automated/manual builds: N/A. For hosted: Last time a file was
             updated/created (new version created). Workflows-> For remote: When
-            refresh is hit, last time Github repo was changed. Hosted: Last time
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
             a new version was made."
         lastUpdated:
           type: string
@@ -6943,7 +6943,7 @@ components:
           format: date-time
           description: "Tool-> For automated builds: Last time specific tag was built. For
             hosted: When version was created Workflow-> Remote: Last time
-            version on Github repo was changed. Hosted: time version created"
+            version on GitHub repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch
@@ -7524,7 +7524,7 @@ components:
           description: "Implementation specific timestamp for last modified. Tools-> For
             automated/manual builds: N/A. For hosted: Last time a file was
             updated/created (new version created). Workflows-> For remote: When
-            refresh is hit, last time Github repo was changed. Hosted: Last time
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
             a new version was made."
         lastUpdated:
           type: string
@@ -7636,7 +7636,7 @@ components:
           format: date-time
           description: "Tool-> For automated builds: Last time specific tag was built. For
             hosted: When version was created Workflow-> Remote: Last time
-            version on Github repo was changed. Hosted: time version created"
+            version on GitHub repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch
