@@ -56,7 +56,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wdl.draft3.parser.WdlParser;
+import wdl.draft2.parser.WdlParser;
 
 /**
  * This class will eventually handle support for understanding WDL
