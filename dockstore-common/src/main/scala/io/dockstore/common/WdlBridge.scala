@@ -25,7 +25,6 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 import wom.expression.WomExpression
 import wom.graph.{ExternalGraphInputNode, OptionalGraphInputNode, OptionalGraphInputNodeWithDefault, RequiredGraphInputNode}
-import wom.types
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
 
 
@@ -54,10 +53,6 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   def validateWorkflow(filePath: String) = {
     val bundle = getBundle(filePath)
-    // isLeft == true => invalid
-    if (bundle.isLeft) {
-      throw new WdlParser.SyntaxError(bundle.left.get.head)
-    }
   }
 
   /**
@@ -68,12 +63,8 @@ class WdlBridge {
   def validateTool(filePath: String) = {
     validateWorkflow(filePath)
     val bundle = getBundle(filePath)
-    if (bundle.isRight) {
-      if (bundle.right.get.toExecutableCallable.right.get.taskCallNodes.seq.size > 1) {
-        throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
-      }
-    } else {
-      throw new WdlParser.SyntaxError(bundle.left.get.head)
+    if (bundle.right.get.toExecutableCallable.right.get.taskCallNodes.seq.size > 1) {
+      throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
     }
 
     // TODO:
@@ -90,14 +81,10 @@ class WdlBridge {
   def getInputFiles(filePath: String):  util.HashMap[String, String] = {
     val inputList = new util.HashMap[String, String]()
     val bundle = getBundle(filePath)
-    if (bundle.isRight) {
-      bundle.right.get.primaryCallable.get.inputs
-        .filter(input => input.womType.toString.equals("WomSingleFileType") || input.womType.toString.equals("WomArrayType(WomSingleFileType)"))
-        .foreach(input => inputList.put(input.localName.value, input.womType.toString))
-      inputList
-    } else {
-      throw new WdlParser.SyntaxError(bundle.left.get.head)
-    }
+    bundle.right.get.primaryCallable.get.inputs
+      .filter(input => input.womType.toString.equals("WomSingleFileType") || input.womType.toString.equals("WomArrayType(WomSingleFileType)"))
+      .foreach(input => inputList.put(input.localName.value, input.womType.toString))
+    inputList
   }
 
   /**
@@ -110,14 +97,10 @@ class WdlBridge {
   def getOutputFiles(filePath: String): util.List[String] = {
     val outputList = new util.ArrayList[String]()
     val bundle = getBundle(filePath)
-    if (bundle.isRight) {
-      bundle.right.get.primaryCallable.get.outputs
-        .filter(output => output.womType.toString.equals("WomSingleFileType") || output.womType.toString.equals("WomArrayType(WomSingleFileType)"))
-        .foreach(output => outputList.add(output.localName.value))
-      outputList
-    } else {
-      throw new WdlParser.SyntaxError(bundle.left.get.head)
-    }
+    bundle.right.get.primaryCallable.get.outputs
+      .filter(output => output.womType.toString.equals("WomSingleFileType") || output.womType.toString.equals("WomArrayType(WomSingleFileType)"))
+      .foreach(output => outputList.add(output.localName.value))
+    outputList
   }
 
   /**
@@ -128,14 +111,12 @@ class WdlBridge {
   def getImportMap(filePath: String): util.LinkedHashMap[String, String] = {
     val importMap = new util.LinkedHashMap[String, String]()
     val bundle = getBundle(filePath)
-    if (bundle.isRight) {
-      bundle.right.get.toExecutableCallable.right.get.taskCallNodes
-        .foreach(call => {
-          val callName = "dockstore_" + call.identifier.fullyQualifiedName.value
-          val path = "no path"
-          importMap.put(callName, path)
-        })
-    }
+    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+      .foreach(call => {
+        val callName = "dockstore_" + call.identifier.fullyQualifiedName.value
+        val path = "no path"
+        importMap.put(callName, path)
+      })
     importMap
   }
 
@@ -147,20 +128,18 @@ class WdlBridge {
   def getCallsToDependencies(filePath: String): util.LinkedHashMap[String, util.List[String]] = {
     val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
     val bundle = getBundle(filePath)
-    if (bundle.isRight) {
-      bundle.right.get.toExecutableCallable.right.get.graph.calls
-        .foreach(call => {
-          val dependencies = new util.ArrayList[String]()
-          call.inputPorts
-            .foreach(inputPort => {
-              inputPort.upstream.graphNode.inputPorts
-                .foreach(input => {
-                  dependencies.add(input.name)
-                })
-            })
-          dependencyMap.put(call.identifier.fullyQualifiedName.value, dependencies)
-        })
-    }
+    bundle.right.get.toExecutableCallable.right.get.graph.calls
+      .foreach(call => {
+        val dependencies = new util.ArrayList[String]()
+        call.inputPorts
+          .foreach(inputPort => {
+            inputPort.upstream.graphNode.inputPorts
+              .foreach(input => {
+                dependencies.add(input.name)
+              })
+          })
+        dependencyMap.put(call.identifier.fullyQualifiedName.value, dependencies)
+      })
     dependencyMap
   }
 
@@ -174,21 +153,17 @@ class WdlBridge {
   def getCallsToDockerMap(filePath: String): util.LinkedHashMap[String, String] = {
     val callsToDockerMap = new util.LinkedHashMap[String, String]()
     val bundle = getBundle(filePath)
-    if (bundle.isRight) {
-      bundle.right.get.toExecutableCallable.right.get.taskCallNodes
-        .foreach(call => {
-          val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
-          val callName = "dockstore_" + call.identifier.fullyQualifiedName.value
-          var dockerString = "";
-          if (dockerAttribute.isDefined) {
-            dockerString = dockerAttribute.get.sourceString.replaceAll("\"", "")
-          }
-          callsToDockerMap.put(callName, dockerString)
-        })
-      callsToDockerMap
-    } else {
-      throw new WdlParser.SyntaxError(bundle.left.get.head)
-    }
+    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+      .foreach(call => {
+        val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
+        val callName = "dockstore_" + call.identifier.fullyQualifiedName.value
+        var dockerString = "";
+        if (dockerAttribute.isDefined) {
+          dockerString = dockerAttribute.get.sourceString.replaceAll("\"", "")
+        }
+        callsToDockerMap.put(callName, dockerString)
+      })
+    callsToDockerMap
   }
 
   /**
@@ -200,13 +175,9 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   def getParameterFile(filePath: String): String = {
     val bundle = getBundle(filePath)
-    if (bundle.isRight) {
-      val inputs = bundle.right.get.primaryCallable.get.inputs
-      ""
-      bundle.right.get.toExecutableCallable.right.get.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
-    } else {
-      throw new WdlParser.SyntaxError(bundle.left.get.head)
-    }
+    val inputs = bundle.right.get.primaryCallable.get.inputs
+    ""
+    bundle.right.get.toExecutableCallable.right.get.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
   }
 
   private def inputNodeWriter(showOptionals: Boolean): JsonWriter[Set[ExternalGraphInputNode]] = set => {
@@ -246,7 +217,12 @@ class WdlBridge {
     lazy val importResolvers: List[ImportResolver] =
       DirectoryResolver.localFilesystemResolvers(Some(filePathObj)) :+ HttpResolver(relativeTo = None) :+ mapResolver
 
-    factory.getWomBundle(fileContent, "{}", importResolvers, List(factory))
+    val bundle = factory.getWomBundle(fileContent, "{}", importResolvers, List(factory))
+    if (bundle.isRight) {
+      bundle
+    } else {
+      throw new WdlParser.SyntaxError(bundle.left.get.head)
+    }
   }
 
   /**
