@@ -103,9 +103,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
+    // DOCKSTORE-2428 - demo how to add new workflow language - need to modify allowableValues below
+    // using upper case even though the actual values are lower case to maintain backwards compatibility with the UI (will need to make
+    // the change both here and in tool)
     @Column(nullable = false)
     @Convert(converter = DescriptorLanguageConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18)
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18, allowableValues = "CWL, WDL, NFL, SERVICE")
     private DescriptorLanguage descriptorType;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)

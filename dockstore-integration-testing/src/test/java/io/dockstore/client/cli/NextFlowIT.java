@@ -73,7 +73,7 @@ public class NextFlowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NEXTFLOW);
+        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null);
@@ -105,7 +105,7 @@ public class NextFlowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NEXTFLOW);
+        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null);
@@ -136,7 +136,7 @@ public class NextFlowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NEXTFLOW);
+        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null);

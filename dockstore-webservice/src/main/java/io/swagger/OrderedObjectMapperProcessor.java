@@ -15,7 +15,6 @@
  */
 package io.swagger;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -31,8 +30,5 @@ public class OrderedObjectMapperProcessor implements ObjectMapperProcessor {
     public void processYamlObjectMapper(ObjectMapper mapper) {
         mapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
         mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-        // use toString for DescriptorLanguage
-        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
     }
 }

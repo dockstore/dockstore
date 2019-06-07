@@ -19,6 +19,7 @@ package io.dockstore.common;
 import java.util.Arrays;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -91,13 +92,14 @@ public enum DescriptorLanguage {
 
     @Override
     public String toString() {
-        return getLowerShortName();
+        return shortName;
     }
 
     public String getShortName() {
         return shortName;
     }
 
+    @JsonValue
     public String getLowerShortName() {
         return shortName.toLowerCase();
     }
