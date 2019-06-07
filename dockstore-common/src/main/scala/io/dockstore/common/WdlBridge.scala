@@ -113,7 +113,7 @@ class WdlBridge {
     val bundle = getBundle(filePath)
     bundle.right.get.toExecutableCallable.right.get.taskCallNodes
       .foreach(call => {
-        val callName = "dockstore_" + call.identifier.fullyQualifiedName.value
+        val callName = call.identifier.fullyQualifiedName.value
         val path = "no path"
         importMap.put(callName, path)
       })
@@ -135,10 +135,15 @@ class WdlBridge {
           .foreach(inputPort => {
             inputPort.upstream.graphNode.inputPorts
               .foreach(input => {
-                dependencies.add(input.name)
+                var inputName = input.upstream.identifier.fullyQualifiedName.value
+                val lastPeriodIndex = inputName.lastIndexOf(".")
+                if (lastPeriodIndex != -1) {
+                  inputName = inputName.substring(0, lastPeriodIndex)
+                  dependencies.add("dockstore_" + inputName)
+                }
               })
           })
-        dependencyMap.put(call.identifier.fullyQualifiedName.value, dependencies)
+        dependencyMap.put("dockstore_" + call.identifier.fullyQualifiedName.value, dependencies)
       })
     dependencyMap
   }
@@ -176,7 +181,6 @@ class WdlBridge {
   def getParameterFile(filePath: String): String = {
     val bundle = getBundle(filePath)
     val inputs = bundle.right.get.primaryCallable.get.inputs
-    ""
     bundle.right.get.toExecutableCallable.right.get.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
   }
 
