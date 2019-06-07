@@ -5980,7 +5980,7 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      workflowVersions:
+      tags:
         type: "array"
         uniqueItems: true
         items:
@@ -6146,6 +6146,14 @@ definitions:
         format: "date-time"
         position: 25
         description: "Implementation specific timestamp for last built"
+      workflowVersions:
+        type: "array"
+        position: 26
+        description: "Implementation specific tracking of valid build tags for the\
+          \ docker container"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Tag"
       path:
         type: "string"
         position: 27
@@ -7278,10 +7286,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parentEntry:
-        $ref: "#/definitions/Entry"
       isChecker:
         type: "boolean"
+      parentEntry:
+        $ref: "#/definitions/Entry"
       has_checker:
         type: "boolean"
         readOnly: true

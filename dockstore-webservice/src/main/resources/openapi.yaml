@@ -6246,7 +6246,7 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        workflowVersions:
+        tags:
           type: array
           uniqueItems: true
           items:
@@ -6388,6 +6388,13 @@ components:
           type: string
           format: date-time
           description: Implementation specific timestamp for last built
+        workflowVersions:
+          type: array
+          description: Implementation specific tracking of valid build tags for the docker
+            container
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Tag"
         path:
           type: string
         descriptorType:
@@ -7433,10 +7440,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parentEntry:
-          $ref: "#/components/schemas/Entry"
         isChecker:
           type: boolean
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         has_checker:
           type: boolean
           readOnly: true

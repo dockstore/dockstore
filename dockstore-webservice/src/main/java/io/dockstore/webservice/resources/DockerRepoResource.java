@@ -38,9 +38,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
@@ -708,7 +710,7 @@ public class DockerRepoResource
     @Path("/path/tool/{repository}/published")
     @ApiOperation(value = "Get a published tool by the specific tool path.", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include, @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
@@ -717,6 +719,24 @@ public class DockerRepoResource
                 tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
             }
             filterContainersForHiddenTags(tool);
+
+            // for backwards compatibility for 1.6.0 clients, return versions as tags
+            // this seems sufficient to maintain backwards compatibility for launching
+            try {
+                final List<String> strings = containerContext.getHeaders().get("User-Agent");
+                strings.forEach(s -> {
+                    final String[] split = s.split("/");
+                    if (split[0].equals("Dockstore-CLI")) {
+                        com.github.zafarkhaja.semver.Version clientVersion = com.github.zafarkhaja.semver.Version.valueOf(split[1]);
+                        com.github.zafarkhaja.semver.Version v17 = com.github.zafarkhaja.semver.Version.valueOf("1.7.0");
+                        if (clientVersion.lessThan(v17)) {
+                            tool.setTags(tool.getWorkflowVersions());
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                LOG.debug("encountered a user agent that we could not parse, meh", e);
+            }
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new CustomWebApplicationException(path + " not found", HttpStatus.SC_NOT_FOUND);

@@ -36,8 +36,10 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
@@ -124,24 +126,43 @@ public class Tool extends Entry<Tool, Tag> {
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
+    @JsonAlias({ "tags", "workflowVersions"})
     @OrderBy("id")
     @Cascade(CascadeType.DETACH)
-    private final SortedSet<Tag> tags;
+    private final SortedSet<Tag> workflowVersions;
+
+    @Transient
+    @JsonProperty
+    private Set<Tag> tags = null;
 
     public Tool() {
-        tags = new TreeSet<>();
+        workflowVersions = new TreeSet<>();
     }
 
     public Tool(long id, String name) {
         super(id);
         // this.userId = userId;
         this.name = name;
-        tags = new TreeSet<>();
+        workflowVersions = new TreeSet<>();
     }
 
+    // compromise: this sucks, but setting the json property to tags allows for backwards compatibility of existing clients
+    // the method name being standardized allows for simpler coding going forward
     @Override
     public Set<Tag> getWorkflowVersions() {
+        return workflowVersions;
+    }
+
+    // TODO: remove when all clients are on 1.7.0
+    @Deprecated
+    public Set<Tag> getTags() {
         return tags;
+    }
+
+    // TODO: remove when all clients are on 1.7.0
+    @Deprecated
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
     }
 
     /**
@@ -372,5 +393,4 @@ public class Tool extends Entry<Tool, Tag> {
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
         getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
     }
-
 }
