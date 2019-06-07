@@ -67,9 +67,17 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   def validateTool(filePath: String) = {
     validateWorkflow(filePath)
+    val bundle = getBundle(filePath)
+    if (bundle.isRight) {
+      if (bundle.right.get.toExecutableCallable.right.get.taskCallNodes.seq.size > 1) {
+        throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
+      }
+    } else {
+      throw new WdlParser.SyntaxError(bundle.left.get.head)
+    }
+
     // TODO:
-    // Ensure only one task
-    // Ensure there is an associated docker file
+    // Ensure there is an associated docker file (runtime attributes "docker")
   }
 
   /**
@@ -107,6 +115,77 @@ class WdlBridge {
         .filter(output => output.womType.toString.equals("WomSingleFileType") || output.womType.toString.equals("WomArrayType(WomSingleFileType)"))
         .foreach(output => outputList.add(output.localName.value))
       outputList
+    } else {
+      throw new WdlParser.SyntaxError(bundle.left.get.head)
+    }
+  }
+
+  /**
+    * Create a mapping of import namespace to uri
+    * @param filePath
+    * @return Map
+    */
+  def getImportMap(filePath: String): util.LinkedHashMap[String, String] = {
+    val importMap = new util.LinkedHashMap[String, String]()
+    val bundle = getBundle(filePath)
+    if (bundle.isRight) {
+      bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+        .foreach(call => {
+          val callName = "dockstore_" + call.identifier.fullyQualifiedName.value
+          val path = "no path"
+          importMap.put(callName, path)
+        })
+    }
+    importMap
+  }
+
+  /**
+    * Create a mapping of calls to dependencies
+    * @param filePath
+    * @return Map
+    */
+  def getCallsToDependencies(filePath: String): util.LinkedHashMap[String, util.List[String]] = {
+    val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
+    val bundle = getBundle(filePath)
+    if (bundle.isRight) {
+      bundle.right.get.toExecutableCallable.right.get.graph.calls
+        .foreach(call => {
+          val dependencies = new util.ArrayList[String]()
+          call.inputPorts
+            .foreach(inputPort => {
+              inputPort.upstream.graphNode.inputPorts
+                .foreach(input => {
+                  dependencies.add(input.name)
+                })
+            })
+          dependencyMap.put(call.identifier.fullyQualifiedName.value, dependencies)
+        })
+    }
+    dependencyMap
+  }
+
+
+  /**
+    * Create a mapping of calls to docker images
+    * @param filePath
+    * @return Map
+    */
+  @throws(classOf[WdlParser.SyntaxError])
+  def getCallsToDockerMap(filePath: String): util.LinkedHashMap[String, String] = {
+    val callsToDockerMap = new util.LinkedHashMap[String, String]()
+    val bundle = getBundle(filePath)
+    if (bundle.isRight) {
+      bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+        .foreach(call => {
+          val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
+          val callName = "dockstore_" + call.identifier.fullyQualifiedName.value
+          var dockerString = "";
+          if (dockerAttribute.isDefined) {
+            dockerString = dockerAttribute.get.sourceString.replaceAll("\"", "")
+          }
+          callsToDockerMap.put(callName, dockerString)
+        })
+      callsToDockerMap
     } else {
       throw new WdlParser.SyntaxError(bundle.left.get.head)
     }

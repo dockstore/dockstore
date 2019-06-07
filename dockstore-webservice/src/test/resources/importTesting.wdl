@@ -1,34 +1,39 @@
-version 1.0
-
-import "./md5sum.wdl" as importedMapTask
-import "https://raw.githubusercontent.com/DockstoreTestUser2/wdl-1.0-workflow/master/hello.wdl" as importedHttpTask
-
-task test {
-
-    #This comment will not be included within the command
-    command <<<
-        #This comment WILL be included within the command after it has been parsed
-        echo 'Hello World'
-    >>>
-
-    output {
-        String result = read_string(stdout())
-    }
+task ps {
+  command {
+    ps
+  }
+  output {
+    File procs = stdout()
+  }
 }
 
-
-workflow wf {
-  input {
-    Int number  #This comment comes after a variable declaration
+task cgrep {
+  String pattern
+  File in_file
+  command {
+    grep '${pattern}' ${in_file} | wc -l
   }
-
-  #You can have comments anywhere in the workflow
-  call test
-  call importedMapTask.md5
-  call importedHttpTask.hello
-
-  output { #You can also put comments after braces
-    String result = test.result
+  output {
+    Int count = read_int(stdout())
   }
+}
 
+task wc {
+  File in_file
+  command {
+    cat ${in_file} | wc -l
+  }
+  output {
+    Int count = read_int(stdout())
+  }
+}
+
+workflow three_step {
+  call ps
+  call cgrep {
+    input: in_file=ps.procs
+  }
+  call wc {
+    input: in_file=ps.procs
+  }
 }

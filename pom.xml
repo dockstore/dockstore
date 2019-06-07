@@ -720,11 +720,6 @@
                 <version>20180130</version>
             </dependency>
             <dependency>
-                <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl4s-wom_2.12</artifactId>
-                <version>0.15</version>
-            </dependency>
-            <dependency>
                 <groupId>ro.fortsoft.pf4j</groupId>
                 <artifactId>pf4j</artifactId>
                 <version>1.1.1</version>
@@ -1348,7 +1343,7 @@
                             <append>true</append>
                             <excludes>
                                 <exclude>io/dockstore/webservice/resources/Description.*</exclude>
-                                <exclude>io/dockstore/common/Bridge.*</exclude>
+                                <exclude>io/dockstore/common/WdlBridge.*</exclude>
                                 <!-- exclude client classes, but not the server classes to help guide tests -->
                                 <exclude>io/swagger/client/**/*</exclude>
                                 <exclude>io/swagger/client/*</exclude>

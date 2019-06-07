@@ -37,7 +37,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import io.dockstore.common.Bridge;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.WdlBridge;
@@ -57,7 +56,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wdl4s.parser.WdlParser;
+import wdl.draft3.parser.WdlParser;
 
 /**
  * This class will eventually handle support for understanding WDL
@@ -250,8 +249,6 @@ public class WDLHandler implements LanguageHandlerInterface {
                     }
                 }
                 tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
-                Bridge bridge = new Bridge(tempMainDescriptor.getParent());
-                bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
                 Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 checkForRecursiveHTTPImports(content, new HashSet<>());
@@ -259,15 +256,10 @@ public class WDLHandler implements LanguageHandlerInterface {
                 WdlBridge wdlBridge = new WdlBridge();
                 wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
 
-                boolean isDraft3 = wdlBridge.isDraft3(tempMainDescriptor.getAbsolutePath());
                 if (Objects.equals(type, "tool")) {
                     wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath());
                 } else {
                     wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath());
-                    String paramFileContent = wdlBridge.getParameterFile(tempMainDescriptor.getAbsolutePath());
-                    List<String> outputFiles = wdlBridge.getOutputFiles(tempMainDescriptor.getAbsolutePath());
-                    wdlBridge.getInputFiles(tempMainDescriptor.getAbsolutePath());
-
                 }
             } catch (wdl.draft3.parser.WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
@@ -400,18 +392,20 @@ public class WDLHandler implements LanguageHandlerInterface {
         // The use of temporary files is not needed here and might cause new problems
         try {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
-            Bridge bridge = new Bridge(tempMainDescriptor.getParent());
-            bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
 
+            WdlBridge wdlBridge = new WdlBridge();
+            wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+
             // Iterate over each call, grab docker containers
-            Map<String, String> callsToDockerMap = bridge.getCallsToDockerMap(tempMainDescriptor);
+            Map<String, String> callsToDockerMap = wdlBridge.getCallsToDockerMap(tempMainDescriptor.getAbsolutePath());
+
             // Iterate over each call, determine dependencies
-            Map<String, List<String>> callsToDependencies = bridge.getCallsToDependencies(tempMainDescriptor);
+            Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(tempMainDescriptor.getAbsolutePath());
             toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
             // Get import files
-            namespaceToPath = bridge.getImportMap(tempMainDescriptor);
-        } catch (IOException | WdlParser.SyntaxError e) {
+            namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath());
+        } catch (IOException | wdl.draft3.parser.WdlParser.SyntaxError e) {
             throw new CustomWebApplicationException("could not process wdl into DAG: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);

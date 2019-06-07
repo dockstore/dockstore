@@ -16,7 +16,6 @@ import java.util.Objects;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-import io.dockstore.common.Bridge;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;

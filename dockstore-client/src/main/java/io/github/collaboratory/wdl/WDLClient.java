@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
@@ -37,7 +36,6 @@ import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.LauncherFiles;
 import io.dockstore.client.cli.nested.WESLauncher;
 import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
-import io.dockstore.common.Bridge;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dockstore.common.WdlBridge;

@@ -106,45 +106,6 @@
             <artifactId>jackson-annotations</artifactId>
         </dependency>
         <!-- broad - cromwell stuff -->
-        <dependency>
-            <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl4s-wom_2.12</artifactId>
-            <version>0.15</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.typelevel</groupId>
-                    <artifactId>cats-kernel_2.12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.typelevel</groupId>
-                    <artifactId>machinist_2.12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.github.mpilquist</groupId>
-                    <artifactId>simulacrum_2.12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.typelevel</groupId>
-                    <artifactId>cats-macros_2.12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.typesafe.scala-logging</groupId>
-                    <artifactId>scala-logging_2.12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.iheart</groupId>
-                    <artifactId>ficus_2.12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.typesafe</groupId>
-                    <artifactId>config</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.typelevel</groupId>
-                    <artifactId>cats-core_2.12</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
 
         <dependency>
             <groupId>org.broadinstitute</groupId>
@@ -319,16 +280,6 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
-            <version>${cromwell.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-transforms-draft2_2.12</artifactId>
-            <version>${cromwell.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell-wdl-transforms-biscayne_2.12</artifactId>
             <version>${cromwell.version}</version>
         </dependency>
 
