@@ -49,6 +49,7 @@ import io.dockstore.client.cli.Client;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Utilities;
+import io.dockstore.common.WdlBridge;
 import io.github.collaboratory.cwl.CWLClient;
 import io.github.collaboratory.nextflow.NextFlowClient;
 import io.github.collaboratory.wdl.WDLClient;
@@ -651,8 +652,8 @@ public abstract class AbstractEntryClient<T> {
             File wdlFile = new File(wdlPath);
             final List<String> wdlDocuments = Lists.newArrayList(wdlFile.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge bridge = new Bridge(wdlFile.getParent());
-            String inputs = bridge.inputs(wdlList);
+            WdlBridge wdlBridge = new WdlBridge();
+            String inputs = wdlBridge.getParameterFile(wdlFile.getAbsolutePath());
             out(inputs);
         }
     }

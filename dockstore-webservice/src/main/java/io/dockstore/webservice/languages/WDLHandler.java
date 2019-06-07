@@ -261,30 +261,17 @@ public class WDLHandler implements LanguageHandlerInterface {
 
                 boolean isDraft3 = wdlBridge.isDraft3(tempMainDescriptor.getAbsolutePath());
                 if (Objects.equals(type, "tool")) {
-                    // If draft-3 (version 1.0), use the new parsing code
-                    if (isDraft3) {
-                        wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath());
-                    } else {
-                        bridge.isValidTool(tempMainDescriptor);
-                    }
+                    wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath());
                 } else {
-                    // If draft-3 (version 1.0), use the new parsing code
-                    if (isDraft3) {
-                        wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath());
-                    } else {
-                        bridge.isValidWorkflow(tempMainDescriptor);
-                    }
+                    wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath());
+                    String paramFileContent = wdlBridge.getParameterFile(tempMainDescriptor.getAbsolutePath());
+                    List<String> outputFiles = wdlBridge.getOutputFiles(tempMainDescriptor.getAbsolutePath());
+                    wdlBridge.getInputFiles(tempMainDescriptor.getAbsolutePath());
+
                 }
-            } catch (WdlParser.SyntaxError | wdl.draft3.parser.WdlParser.SyntaxError | IllegalArgumentException e) {
+            } catch (wdl.draft3.parser.WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 return new VersionTypeValidation(false, validationMessageObject);
-            } catch (NoSuchMethodException e) {
-                //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
-                // https://github.com/ga4gh/dockstore/issues/2139
-                validationMessageObject.put(primaryDescriptorFilePath,
-                        "Unknown methods were found, indicating that this may be a WDL 1.0 file. Currently Dockstore cannot parse WDL 1.0, so validation has been skipped. It is likely that the import processing and DAG generation will be broken.\n"
-                                + e.getMessage());
-                return new VersionTypeValidation(true, validationMessageObject);
             } catch (CustomWebApplicationException e) {
                 throw e;
             } catch (Exception e) {

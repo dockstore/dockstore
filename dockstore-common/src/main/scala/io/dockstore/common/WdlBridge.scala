@@ -7,6 +7,7 @@ import java.util
 import com.typesafe.config.ConfigFactory
 import common.validation.ErrorOr.ErrorOr
 import cromwell.core.path.DefaultPathBuilder
+import cromwell.languages.LanguageFactory
 import cromwell.languages.util.ImportResolver.{DirectoryResolver, HttpResolver, ImportResolver, ResolvedImportBundle}
 import languages.wdl.draft3.WdlDraft3LanguageFactory
 import wdl.draft3.parser.WdlParser
@@ -15,9 +16,18 @@ import cats.syntax.validated._
 import common.Checked
 import common.validation.Checked._
 import cromwell.languages.util.ImportResolver
+import languages.wdl.biscayne.WdlBiscayneLanguageFactory
+import languages.wdl.draft2.WdlDraft2LanguageFactory
 
 import scala.collection.JavaConverters._
 import scala.util.Try
+import spray.json._
+import spray.json.DefaultJsonProtocol._
+import wom.expression.WomExpression
+import wom.graph.{ExternalGraphInputNode, OptionalGraphInputNode, OptionalGraphInputNodeWithDefault, RequiredGraphInputNode}
+import wom.types
+import wom.types.{WomCompositeType, WomOptionalType, WomType}
+
 
 /**
   * A bridge class for interacting with the WDL draft-3/1.0
@@ -57,18 +67,87 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   def validateTool(filePath: String) = {
     validateWorkflow(filePath)
+    // TODO:
+    // Ensure only one task
+    // Ensure there is an associated docker file
   }
 
   /**
-    * Returns true if the file is likely v1.0, false otherwise.
-    * Will only look at the primary descriptor.
-    * @param filePath absolute path to file
-    * @return whether file looks parsable or not
+    * Create a map of file inputs names to paths
+    * @param filePath
+    * @throws wdl.draft3.parser.WdlParser.SyntaxError
+    * @return
     */
-  def isDraft3(filePath: String) : Boolean = {
-    val draft3Factory = new WdlDraft3LanguageFactory(ConfigFactory.empty())
-    val fileContent = readFile(filePath)
-    draft3Factory.looksParsable(fileContent)
+  @throws(classOf[WdlParser.SyntaxError])
+  def getInputFiles(filePath: String):  util.HashMap[String, String] = {
+    val inputList = new util.HashMap[String, String]()
+    val bundle = getBundle(filePath)
+    if (bundle.isRight) {
+      bundle.right.get.primaryCallable.get.inputs
+        .filter(input => input.womType.toString.equals("WomSingleFileType") || input.womType.toString.equals("WomArrayType(WomSingleFileType)"))
+        .foreach(input => inputList.put(input.localName.value, input.womType.toString))
+      inputList
+    } else {
+      throw new WdlParser.SyntaxError(bundle.left.get.head)
+    }
+  }
+
+  /**
+    * Create a list of all output files for the workflow
+    * @param filePath
+    * @throws wdl.draft3.parser.WdlParser.SyntaxError
+    * @return
+    */
+  @throws(classOf[WdlParser.SyntaxError])
+  def getOutputFiles(filePath: String): util.List[String] = {
+    val outputList = new util.ArrayList[String]()
+    val bundle = getBundle(filePath)
+    if (bundle.isRight) {
+      bundle.right.get.primaryCallable.get.outputs
+        .filter(output => output.womType.toString.equals("WomSingleFileType") || output.womType.toString.equals("WomArrayType(WomSingleFileType)"))
+        .foreach(output => outputList.add(output.localName.value))
+      outputList
+    } else {
+      throw new WdlParser.SyntaxError(bundle.left.get.head)
+    }
+  }
+
+  /**
+    * Get a parameter file as a string
+    * @param filePath
+    * @throws wdl.draft3.parser.WdlParser.SyntaxError
+    * @return
+    */
+  @throws(classOf[WdlParser.SyntaxError])
+  def getParameterFile(filePath: String): String = {
+    val bundle = getBundle(filePath)
+    if (bundle.isRight) {
+      val inputs = bundle.right.get.primaryCallable.get.inputs
+      ""
+      bundle.right.get.toExecutableCallable.right.get.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
+    } else {
+      throw new WdlParser.SyntaxError(bundle.left.get.head)
+    }
+  }
+
+  private def inputNodeWriter(showOptionals: Boolean): JsonWriter[Set[ExternalGraphInputNode]] = set => {
+
+    val valueMap: Seq[(String, JsValue)] = set.toList collect {
+      case RequiredGraphInputNode(_, womType, nameInInputSet, _) => nameInInputSet -> womTypeToJson(womType, None)
+      case OptionalGraphInputNode(_, womOptionalType, nameInInputSet, _) if showOptionals => nameInInputSet -> womTypeToJson(womOptionalType, None)
+      case OptionalGraphInputNodeWithDefault(_, womType, default, nameInInputSet, _) if showOptionals => nameInInputSet -> womTypeToJson(womType, Option(default))
+    }
+
+    valueMap.toMap.toJson
+  }
+
+  private def womTypeToJson(womType: WomType, default: Option[WomExpression]): JsValue = (womType, default) match {
+    case (WomCompositeType(typeMap, _), _) => JsObject(
+      typeMap.map { case (name, wt) => name -> womTypeToJson(wt, None) }
+    )
+    case (_, Some(d)) => JsString(s"${womType.stableName} (optional, default = ${d.sourceString})")
+    case (_: WomOptionalType, _) => JsString(s"${womType.stableName} (optional)")
+    case (_, _) => JsString(s"${womType.stableName}")
   }
 
   /**
@@ -78,7 +157,7 @@ class WdlBridge {
     */
   def getBundle(filePath: String): common.Checked[WomBundle] = {
     val fileContent = readFile(filePath)
-    val draft3Factory = new WdlDraft3LanguageFactory(ConfigFactory.empty())
+    val factory = getLanguageFactory(fileContent)
     val filePathObj = DefaultPathBuilder.build(filePath).get
 
     // Resolve from mapping, local filesystem, or http import
@@ -88,7 +167,61 @@ class WdlBridge {
     lazy val importResolvers: List[ImportResolver] =
       DirectoryResolver.localFilesystemResolvers(Some(filePathObj)) :+ HttpResolver(relativeTo = None) :+ mapResolver
 
-    draft3Factory.getWomBundle(fileContent, "{}", importResolvers, List(draft3Factory))
+    factory.getWomBundle(fileContent, "{}", importResolvers, List(factory))
+  }
+
+  /**
+    * Retrieve the language factory for the given primary descriptor file
+    * @param fileContent
+    * @return
+    */
+  def getLanguageFactory(fileContent: String) : LanguageFactory = {
+    val languageFactory =
+      List(
+        new WdlDraft3LanguageFactory(ConfigFactory.empty()),
+        new WdlBiscayneLanguageFactory(ConfigFactory.empty()))
+      .find(_.looksParsable(fileContent))
+      .getOrElse(new WdlDraft2LanguageFactory(ConfigFactory.empty()))
+
+    return languageFactory
+  }
+
+  /**
+    * Returns true if the file is likely v1.0, false otherwise.
+    * Will only look at the primary descriptor.
+    * @param filePath absolute path to file
+    * @return whether file looks parsable or not
+    */
+  def isDraft3(filePath: String) : Boolean = {
+    val factory = new WdlDraft3LanguageFactory(ConfigFactory.empty())
+    val fileContent = readFile(filePath)
+    factory.looksParsable(fileContent)
+  }
+
+  /**
+    * Returns true if the file is likely draft-2, false otherwise.
+    * Will only look at the primary descriptor.
+    *
+    * @param filePath absolute path to file
+    * @return whether file looks parsable or not
+    */
+  def isDraft2(filePath: String) : Boolean = {
+    val factory = new WdlDraft2LanguageFactory(ConfigFactory.empty())
+    val fileContent = readFile(filePath)
+    factory.looksParsable(fileContent)
+  }
+
+  /**
+    * Returns true if the file is likely Biscayne, false otherwise.
+    * Will only look at the primary descriptor.
+    *
+    * @param filePath absolute path to file
+    * @return whether file looks parsable or not
+    */
+  def isBiscayne(filePath: String) : Boolean = {
+    val factory = new WdlBiscayneLanguageFactory(ConfigFactory.empty())
+    val fileContent = readFile(filePath)
+    factory.looksParsable(fileContent)
   }
 
   /**
@@ -97,7 +230,6 @@ class WdlBridge {
     * @return Content of file as a string
     */
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get
-
 }
 
 /**

@@ -40,11 +40,13 @@ import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.WDLFileProvisioning;
+import io.dockstore.common.WdlBridge;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.exec.ExecuteException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import wdl.draft3.parser.WdlParser;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -101,12 +103,12 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     @Override
     public File provisionInputFiles() {
         // Get list of input files
-        Bridge bridge = new Bridge(localPrimaryDescriptorFile.getParent());
         Map<String, String> wdlInputs = null;
+        WdlBridge wdlBridge = new WdlBridge();
         try {
-            wdlInputs = bridge.getInputFiles(localPrimaryDescriptorFile);
-        } catch (NullPointerException e) {
-            exceptionMessage(e, "Could not get WDL imports: " + e.getMessage(), API_ERROR);
+            wdlInputs = wdlBridge.getInputFiles(localPrimaryDescriptorFile.getAbsolutePath());
+        } catch (Exception ex) {
+            exceptionMessage(ex, "Problem parsing WDL file: " + ex.getMessage(), API_ERROR);
         }
 
         // Convert parameter JSON to a map
@@ -242,10 +244,13 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         final File primaryFile = abstractEntryClient.downloadTargetEntry(entry, ToolDescriptor.TypeEnum.WDL, true, tempDir);
 
         if (json) {
-            final List<String> wdlDocuments = Lists.newArrayList(primaryFile.getAbsolutePath());
-            final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge b = new Bridge(primaryFile.getParent());
-            return b.inputs(wdlList);
+            WdlBridge wdlBridge = new WdlBridge();
+            try {
+                String parameterFile = wdlBridge.getParameterFile(primaryFile.getAbsolutePath());
+                return parameterFile;
+            } catch (WdlParser.SyntaxError ex) {
+                throw new IOException(ex.getMessage());
+            }
         }
         return null;
     }
