@@ -68,8 +68,13 @@ class WdlBridge {
       throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
     }
 
-    // TODO:
-    // Ensure there is an associated docker file (runtime attributes "docker")
+    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+      .foreach(call => {
+        val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
+        if (!dockerAttribute.isDefined) {
+          throw new WdlParser.SyntaxError(call.identifier.localName + " requires an associated docker container to make this a valid Dockstore tool.")
+        }
+      })
   }
 
   /**
