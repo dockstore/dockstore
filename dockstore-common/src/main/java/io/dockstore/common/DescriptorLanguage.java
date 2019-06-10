@@ -96,11 +96,11 @@ public enum DescriptorLanguage {
         return shortName;
     }
 
+    @JsonValue
     public String getShortName() {
         return shortName;
     }
 
-    @JsonValue
     public String getLowerShortName() {
         return shortName.toLowerCase();
     }
