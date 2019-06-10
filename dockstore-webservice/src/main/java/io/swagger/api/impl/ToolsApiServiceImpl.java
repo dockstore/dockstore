@@ -41,6 +41,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
 import avro.shaded.com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
@@ -152,13 +153,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value,
         Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        String newVersionId;
         try {
-            versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
+            newVersionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
         Entry entry = getEntry(parsedID, user);
-        return buildToolResponse(entry, versionId, false);
+        return buildToolResponse(entry, newVersionId, false);
     }
 
     public Entry<?, ?> getEntry(ParsedRegistryID parsedID, Optional<User> user) {
@@ -347,10 +349,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
         }
 
-        if (limit == null) {
-            limit = DEFAULT_PAGE_SIZE;
-        }
-        List<List<io.swagger.model.Tool>> pagedResults = Lists.partition(results, limit);
+        final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
+
+        List<List<io.swagger.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
         int offsetInteger = 0;
         if (offset != null) {
             offsetInteger = Integer.parseInt(offset);
@@ -362,7 +363,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
-        responseBuilder.header("current_limit", limit);
+        responseBuilder.header("current_limit", actualLimit);
         try {
             int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
             responseBuilder.header("self_link",
@@ -378,7 +379,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             handleParameter(description, "description", filters);
             handleParameter(author, "author", filters);
             handleParameter(registry, "registry", filters);
-            handleParameter(limit.toString(), "limit", filters);
+            handleParameter(String.valueOf(actualLimit), "limit", filters);
 
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,

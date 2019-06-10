@@ -17,6 +17,7 @@
 package io.dockstore.common;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -141,7 +142,7 @@ public enum DescriptorLanguage {
     }
 
     public boolean isRelevantFileType(FileType type) {
-        return type == fileType || type == testParamType;
+        return Objects.equals(type, fileType) || Objects.equals(type, testParamType);
     }
 
     /**

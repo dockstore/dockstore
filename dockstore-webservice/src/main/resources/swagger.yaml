@@ -6980,7 +6980,7 @@ definitions:
         - "CWL"
         - "WDL"
         - "NFL"
-        - "DOCKSTORE_SERVICE"
+        - "SERVICE"
       descriptor:
         type: "string"
         description: "The descriptor that represents this version of the tool."
@@ -7111,7 +7111,7 @@ definitions:
           - "CWL"
           - "WDL"
           - "NFL"
-          - "DOCKSTORE_SERVICE"
+          - "SERVICE"
       containerfile:
         type: "boolean"
         description: "Reports if this tool has a containerfile available."
@@ -7411,7 +7411,7 @@ definitions:
         enum:
         - "CWL"
         - "WDL"
-        - "NFL"
+        - "NEXTFLOW"
         - "SERVICE"
       workflow_path:
         type: "string"

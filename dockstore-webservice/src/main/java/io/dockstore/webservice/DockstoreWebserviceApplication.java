@@ -209,10 +209,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.registerModule(new Hibernate5Module());
         objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
-        // use toString for DescriptorLanguage
         objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
         objectMapper.enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
+        objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     }
 
     @Override
