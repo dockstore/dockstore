@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import wdl.draft2.model.WdlGraphNode
 import wom.expression.WomExpression
 import wom.graph.{ExternalGraphInputNode, OptionalGraphInputNode, OptionalGraphInputNodeWithDefault, RequiredGraphInputNode}
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
@@ -135,23 +136,24 @@ class WdlBridge {
         dependencyMap.put("dockstore_" + callName, new util.ArrayList[String]())
       })
 
-    bundle.right.get.toExecutableCallable.right.get.graph.calls
-      .foreach(call => {
-        val dependencies = new util.ArrayList[String]()
-        call.inputPorts
-          .foreach(inputPort => {
-            inputPort.upstream.graphNode.inputPorts
-              .foreach(input => {
-                var inputName = input.upstream.identifier.localName.value
-                val lastPeriodIndex = inputName.lastIndexOf(".")
-                if (lastPeriodIndex != -1) {
-                  inputName = inputName.substring(0, lastPeriodIndex)
-                  dependencies.add("dockstore_" + inputName)
-                }
-              })
-          })
-        dependencyMap.replace("dockstore_" + call.identifier.localName.value, dependencies)
-      })
+    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+        .foreach(call => {
+          val dependencies = new util.ArrayList[String]()
+          call.inputDefinitionMappings
+            .foreach(inputMap => {
+              inputMap._2.head.get.graphNode.inputPorts
+                .foreach(inputPorts => {
+                  var inputName = inputPorts.name
+                  val lastPeriodIndex = inputName.lastIndexOf(".")
+                  if (lastPeriodIndex != -1) {
+                    inputName = inputName.substring(0, lastPeriodIndex)
+                    dependencies.add("dockstore_" + inputName)
+                  }
+                })
+            })
+          dependencyMap.replace("dockstore_" + call.identifier.localName.value, dependencies)
+
+        })
 
     dependencyMap
   }
