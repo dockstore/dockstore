@@ -113,7 +113,7 @@ class WdlBridge {
     val bundle = getBundle(filePath)
     bundle.right.get.toExecutableCallable.right.get.taskCallNodes
       .foreach(call => {
-        val callName = call.identifier.fullyQualifiedName.value
+        val callName = call.identifier.localName.value
         val path = "no path"
         importMap.put(callName, path)
       })
@@ -128,6 +128,13 @@ class WdlBridge {
   def getCallsToDependencies(filePath: String): util.LinkedHashMap[String, util.List[String]] = {
     val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
     val bundle = getBundle(filePath)
+
+    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+      .foreach(call => {
+        val callName = call.identifier.localName.value
+        dependencyMap.put("dockstore_" + callName, new util.ArrayList[String]())
+      })
+
     bundle.right.get.toExecutableCallable.right.get.graph.calls
       .foreach(call => {
         val dependencies = new util.ArrayList[String]()
@@ -135,7 +142,7 @@ class WdlBridge {
           .foreach(inputPort => {
             inputPort.upstream.graphNode.inputPorts
               .foreach(input => {
-                var inputName = input.upstream.identifier.fullyQualifiedName.value
+                var inputName = input.upstream.identifier.localName.value
                 val lastPeriodIndex = inputName.lastIndexOf(".")
                 if (lastPeriodIndex != -1) {
                   inputName = inputName.substring(0, lastPeriodIndex)
@@ -143,8 +150,9 @@ class WdlBridge {
                 }
               })
           })
-        dependencyMap.put("dockstore_" + call.identifier.fullyQualifiedName.value, dependencies)
+        dependencyMap.replace("dockstore_" + call.identifier.localName.value, dependencies)
       })
+
     dependencyMap
   }
 
@@ -161,8 +169,8 @@ class WdlBridge {
     bundle.right.get.toExecutableCallable.right.get.taskCallNodes
       .foreach(call => {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
-        val callName = "dockstore_" + call.identifier.fullyQualifiedName.value
-        var dockerString = "";
+        val callName = "dockstore_" + call.identifier.localName.value
+        var dockerString = ""
         if (dockerAttribute.isDefined) {
           dockerString = dockerAttribute.get.sourceString.replaceAll("\"", "")
         }
