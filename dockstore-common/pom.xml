@@ -282,6 +282,11 @@
             <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
             <version>${cromwell.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.chuusai</groupId>
+            <artifactId>shapeless_2.12</artifactId>
+            <version>2.3.3</version>
+        </dependency>
 
         <dependency>
             <groupId>org.typelevel</groupId>

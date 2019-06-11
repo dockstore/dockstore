@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import wdl.draft2.model.WdlGraphNode
 import wom.expression.WomExpression
 import wom.graph.{ExternalGraphInputNode, OptionalGraphInputNode, OptionalGraphInputNodeWithDefault, RequiredGraphInputNode}
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
