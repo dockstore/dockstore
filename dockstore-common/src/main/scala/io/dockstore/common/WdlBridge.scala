@@ -53,6 +53,10 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   def validateWorkflow(filePath: String) = {
     val bundle = getBundle(filePath)
+
+    if (!bundle.right.get.primaryCallable.isDefined) {
+      throw new WdlParser.SyntaxError("Workflow is missing a workflow declaration.")
+    }
   }
 
   /**
@@ -86,9 +90,10 @@ class WdlBridge {
   def getInputFiles(filePath: String):  util.HashMap[String, String] = {
     val inputList = new util.HashMap[String, String]()
     val bundle = getBundle(filePath)
+    val workflowName = bundle.right.get.primaryCallable.get.name
     bundle.right.get.primaryCallable.get.inputs
-      .filter(input => input.womType.toString.equals("WomSingleFileType") || input.womType.toString.equals("WomArrayType(WomSingleFileType)"))
-      .foreach(input => inputList.put(input.localName.value, input.womType.toString))
+      .filter(input => input.womType.stableName.toString.equals("File") || input.womType.stableName.toString.equals("Array[File]"))
+      .foreach(input => inputList.put(workflowName + "." + input.name, input.womType.stableName.toString))
     inputList
   }
 
@@ -102,9 +107,10 @@ class WdlBridge {
   def getOutputFiles(filePath: String): util.List[String] = {
     val outputList = new util.ArrayList[String]()
     val bundle = getBundle(filePath)
+    val workflowName = bundle.right.get.primaryCallable.get.name
     bundle.right.get.primaryCallable.get.outputs
-      .filter(output => output.womType.toString.equals("WomSingleFileType") || output.womType.toString.equals("WomArrayType(WomSingleFileType)"))
-      .foreach(output => outputList.add(output.localName.value))
+      .filter(output => output.womType.stableName.toString.equals("File") || output.womType.stableName.toString.equals("Array[File]"))
+      .foreach(output => outputList.add(workflowName + "." + output.name))
     outputList
   }
 
