@@ -72,7 +72,10 @@ public class WDLHandler implements LanguageHandlerInterface {
         wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
 
         try {
-            List<Map<String, String>> metadata = wdlBridge.getMetadata(filepath);
+            File tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
+
+            List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath());
             Set<String> authors = new HashSet<>();
             Set<String> emails = new HashSet<>();
             final String[] mainDescription = { null };
@@ -112,6 +115,9 @@ public class WDLHandler implements LanguageHandlerInterface {
         } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
             LOG.error("Unable to parse WDL file " + filepath);
             clearMetadata(entry);
+            return entry;
+        } catch (IOException ex) {
+            LOG.error("Error writting file");
             return entry;
         }
         return entry;
