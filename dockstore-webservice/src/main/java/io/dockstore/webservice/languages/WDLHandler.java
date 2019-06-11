@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,13 +42,10 @@ import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -70,65 +66,56 @@ public class WDLHandler implements LanguageHandlerInterface {
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
+        WdlBridge wdlBridge = new WdlBridge();
+        Map<String, String> secondaryFiles = new HashMap<>();
+        sourceFiles.stream().forEach(file -> {
+            secondaryFiles.put(file.getAbsolutePath(), file.getContent());
+        });
+        wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
+
         try {
-            WdlParser parser = new WdlParser();
-            WdlParser.TokenStream tokens;
-            if (entry.getClass().equals(Tool.class)) {
-                tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Tool)entry).getDefaultWdlPath())));
-            } else {
-                tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Workflow)entry).getDefaultWorkflowPath())));
-            }
-            WdlParser.Ast ast = (WdlParser.Ast)parser.parse(tokens).toAst();
-
-            if (ast == null) {
-                LOG.error(MessageFormat.format("Unable to parse WDL file {0}", filepath));
-                clearMetadata(entry);
-                return entry;
-            } else {
-                LOG.info("Repository has Dockstore.wdl");
-            }
-
+            List<Map<String, String>> metadata = wdlBridge.getMetadata(filepath);
             Set<String> authors = new HashSet<>();
             Set<String> emails = new HashSet<>();
-            final String[] description = { null };
+            final String[] mainDescription = { null };
 
-            // go rummaging through tasks to look for possible emails and authors
-            WdlParser.AstList body = (WdlParser.AstList)ast.getAttribute("body");
-            // rummage through tasks, each task should have at most one meta
-            body.stream().filter(node -> node instanceof WdlParser.Ast && (((WdlParser.Ast)node).getName().equals("Task") || ((WdlParser.Ast)node).getName().equals("Workflow"))).forEach(node -> {
-                List<WdlParser.Ast> meta = extractTargetFromAST(node, "Meta");
-                if (meta != null) {
-                    Map<String, WdlParser.AstNode> attributes = meta.get(0).getAttributes();
-                    attributes.values().forEach(value -> {
-                        String email = extractRuntimeAttributeFromAST(value, "email");
-                        if (email != null) {
-                            emails.add(email);
-                        }
-                        String author = extractRuntimeAttributeFromAST(value, "author");
-                        if (author != null) {
-                            authors.add(author);
-                        }
-                        String localDesc = extractRuntimeAttributeFromAST(value, "description");
-                        if (!Strings.isNullOrEmpty(localDesc)) {
-                            description[0] = localDesc;
-                        }
-                    });
+            metadata.stream().forEach(metaBlock -> {
+                String author = metaBlock.get("author");
+                String[] callAuthors = author != null ? author.split(",") : null;
+                if (callAuthors != null) {
+                    for (String callAuthor : callAuthors) {
+                        authors.add(callAuthor.trim());
+                    }
+                }
+
+                String email = metaBlock.get("email");
+                String[] callEmails = email != null ? email.split(",") : null;
+                if (callEmails != null) {
+                    for (String callEmail : callEmails) {
+                        emails.add(callEmail.trim());
+                    }
+                }
+
+                String description = metaBlock.get("description");
+                if (description != null && !description.isEmpty() && !description.isBlank()) {
+                    mainDescription[0] = description;
                 }
             });
-            if (!authors.isEmpty() || entry.getAuthor() == null) {
+
+            if (!authors.isEmpty()) {
                 entry.setAuthor(Joiner.on(", ").join(authors));
             }
-            if (!emails.isEmpty() || entry.getEmail() == null) {
+            if (!emails.isEmpty()) {
                 entry.setEmail(Joiner.on(", ").join(emails));
             }
-            if (!Strings.isNullOrEmpty(description[0])) {
-                entry.setDescription(description[0]);
+            if (!Strings.isNullOrEmpty(mainDescription[0])) {
+                entry.setDescription(mainDescription[0]);
             }
-        } catch (WdlParser.SyntaxError syntaxError) {
-            LOG.error(MessageFormat.format("Unable to parse WDL file {0}", filepath), syntaxError);
+        } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
+            LOG.error("Unable to parse WDL file " + filepath);
             clearMetadata(entry);
+            return entry;
         }
-
         return entry;
     }
 

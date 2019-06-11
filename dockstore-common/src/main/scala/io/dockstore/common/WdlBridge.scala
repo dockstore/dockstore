@@ -23,9 +23,12 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import wom.callable.{CallableTaskDefinition, WorkflowDefinition}
 import wom.expression.WomExpression
 import wom.graph.{ExternalGraphInputNode, OptionalGraphInputNode, OptionalGraphInputNodeWithDefault, RequiredGraphInputNode}
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
+
+import scala.collection.JavaConverters
 
 
 /**
@@ -78,6 +81,32 @@ class WdlBridge {
           throw new WdlParser.SyntaxError(call.identifier.localName + " requires an associated docker container to make this a valid Dockstore tool.")
         }
       })
+  }
+
+  /**
+    * Retrieves the metadata object for a given workflow
+    * @param filePath
+    * @throws wdl.draft3.parser.WdlParser.SyntaxError
+    * @return Metadata in mapping of String to String
+    */
+  @throws(classOf[WdlParser.SyntaxError])
+  def getMetadata(filePath: String) = {
+    val bundle = getBundle(filePath)
+    val metadataList = new util.ArrayList[util.Map[String, String]]()
+    bundle.right.get.allCallables.foreach(callable => {
+      if (callable._2.isInstanceOf[WorkflowDefinition]) {
+        val metadata = JavaConverters.mapAsJavaMap(callable._2.asInstanceOf[WorkflowDefinition].meta)
+        if (!metadata.isEmpty) {
+          metadataList.add(metadata)
+        }
+      } else if (callable._2.isInstanceOf[CallableTaskDefinition]) {
+        val metadata = JavaConverters.mapAsJavaMap(callable._2.asInstanceOf[CallableTaskDefinition].meta)
+        if (!metadata.isEmpty) {
+          metadataList.add(metadata)
+        }
+      }
+    })
+    metadataList
   }
 
   /**

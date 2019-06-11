@@ -56,7 +56,7 @@ public class WDLParseTest {
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertTrue("incorrect email", entry.getEmail().isEmpty());
+        assertTrue("incorrect email", entry.getEmail() == null);
     }
 
     @Test
