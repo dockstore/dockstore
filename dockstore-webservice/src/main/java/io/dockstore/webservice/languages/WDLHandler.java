@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
@@ -52,7 +51,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wdl.draft2.parser.WdlParser;
 
 /**
  * This class will eventually handle support for understanding WDL
@@ -123,68 +121,6 @@ public class WDLHandler implements LanguageHandlerInterface {
         entry.setAuthor(null);
         entry.setEmail(null);
         entry.setDescription(WDL_SYNTAX_ERROR);
-    }
-
-    private String extractRuntimeAttributeFromAST(WdlParser.AstNode node, String key) {
-        if (node == null) {
-            return null;
-        }
-        if (node instanceof WdlParser.AstList) {
-            WdlParser.AstList astList = (WdlParser.AstList)node;
-            for (WdlParser.AstNode listMember : astList) {
-                String result = extractRuntimeAttributeFromAST(listMember, key);
-                if (result != null) {
-                    return result;
-                }
-            }
-        }
-        if (node instanceof WdlParser.Ast) {
-            WdlParser.Ast nodeAst = (WdlParser.Ast)node;
-            if (nodeAst.getAttribute("key") instanceof WdlParser.Terminal && (((WdlParser.Terminal)nodeAst.getAttribute("key"))
-                    .getSourceString().equalsIgnoreCase(key))) {
-                return ((WdlParser.Terminal)nodeAst.getAttribute("value")).getSourceString();
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Grabs the path in the AST to the desired child node
-     *
-     * @param node    a potential parent of the target node
-     * @param keyword keyword to look for
-     * @return a list of the nodes in the path to the keyword node, terminal first
-     */
-    private List<WdlParser.Ast> extractTargetFromAST(WdlParser.AstNode node, String keyword) {
-        if (node == null) {
-            return null;
-        }
-        if (node instanceof WdlParser.Ast) {
-            WdlParser.Ast ast = (WdlParser.Ast)node;
-            if (ast.getName().equalsIgnoreCase(keyword)) {
-                return Lists.newArrayList(ast);
-            }
-            Map<String, WdlParser.AstNode> attributes = ast.getAttributes();
-            for (java.util.Map.Entry<String, WdlParser.AstNode> entry : attributes.entrySet()) {
-                if (entry.getValue() instanceof WdlParser.Ast) {
-                    List<WdlParser.Ast> target = extractTargetFromAST(entry.getValue(), keyword);
-                    if (target != null) {
-                        target.add(ast);
-                        return target;
-                    }
-                } else if (entry.getValue() instanceof WdlParser.AstList) {
-                    for (WdlParser.AstNode listNode : ((WdlParser.AstList)entry.getValue())) {
-                        List<WdlParser.Ast> target = extractTargetFromAST(listNode, keyword);
-                        if (target != null) {
-                            target.add(ast);
-                            return target;
-                        }
-                    }
-                }
-            }
-
-        }
-        return null;
     }
 
     /**
