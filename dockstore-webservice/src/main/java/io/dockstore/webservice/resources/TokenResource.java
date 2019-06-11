@@ -118,6 +118,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String zenodoClientID;
     private final String zenodoRedirectUri;
     private final String zenodoUrl;
+    private final String zenodoAuthUrl;
     private final String zenodoClientSecret;
     private final String googleClientID;
     private final String googleClientSecret;
@@ -139,6 +140,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.zenodoClientSecret = configuration.getZenodoClientSecret();
         this.zenodoRedirectUri = configuration.getZenodoRedirectURI();
         this.zenodoUrl = configuration.getZenodoUrl();
+        this.zenodoAuthUrl = configuration.getUiConfig().getZenodoAuthUrl();
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
         this.client = client;
@@ -614,7 +616,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                 JSON_FACTORY, new GenericUrl(zenodoUrl + "/oauth/token"),
                 new ClientParametersAuthentication(zenodoClientID, zenodoClientSecret), zenodoClientID,
-                zenodoUrl + "/oauth/authorize").build();
+                zenodoAuthUrl).build();
 
         LOG.info("About to request zenodo access token");
         String accessToken;
