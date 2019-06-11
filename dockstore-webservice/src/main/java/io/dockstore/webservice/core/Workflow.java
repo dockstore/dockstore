@@ -103,9 +103,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
+    // DOCKSTORE-2428 - demo how to add new workflow language
+    // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
     @Convert(converter = DescriptorLanguageConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18)
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18, allowableValues = "CWL, WDL, NFL, service")
     private DescriptorLanguage descriptorType;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)

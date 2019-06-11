@@ -7442,8 +7442,8 @@ definitions:
         enum:
         - "CWL"
         - "WDL"
-        - "NEXTFLOW"
-        - "SERVICE"
+        - "NFL"
+        - "service"
       workflow_path:
         type: "string"
         position: 19

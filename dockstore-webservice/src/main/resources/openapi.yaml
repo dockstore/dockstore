@@ -7579,8 +7579,8 @@ components:
           enum:
             - CWL
             - WDL
-            - NEXTFLOW
-            - SERVICE
+            - NFL
+            - service
         workflow_path:
           type: string
           description: This indicates for the associated git repository, the default path
