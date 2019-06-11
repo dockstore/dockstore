@@ -57,13 +57,11 @@ import org.slf4j.LoggerFactory;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-    public static final String WDL_SYNTAX_ERROR = "There is a syntax error or your WDL version is greater than draft-2. Please check the WDL file.";
+    public static final String WDL_SYNTAX_ERROR = "There is a syntax error, please ensure your WDL document is valid.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
-        // Use Broad WDL parser to grab data
-        // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
         WdlBridge wdlBridge = new WdlBridge();
         Map<String, String> secondaryFiles = new HashMap<>();
         sourceFiles.stream().forEach(file -> {
@@ -117,7 +115,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             clearMetadata(entry);
             return entry;
         } catch (IOException ex) {
-            LOG.error("Error writting file");
+            LOG.error("Error writing file");
             return entry;
         }
         return entry;

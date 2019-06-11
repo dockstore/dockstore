@@ -145,6 +145,7 @@ class WdlBridge {
 
   /**
     * Create a mapping of import namespace to uri
+    * Does not work with new parsing code, may be phased out
     * @param filePath
     * @return Map
     */
@@ -154,7 +155,7 @@ class WdlBridge {
     bundle.right.get.toExecutableCallable.right.get.taskCallNodes
       .foreach(call => {
         val callName = call.identifier.localName.value
-        val path = "no path"
+        val path = null
         importMap.put(callName, path)
       })
     importMap
