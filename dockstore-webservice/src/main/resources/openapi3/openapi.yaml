@@ -135,6 +135,14 @@ components:
           type: string
         terraImportUrl:
           type: string
+        zenodoAuthUrl:
+          type: string
+        zenodoClientId:
+          type: string
+        zenodoRedirectPath:
+          type: string
+        zenodoScope:
+          type: string
       type: object
     DescriptorLanguageBean:
       properties:
@@ -571,6 +579,7 @@ components:
           - dockstore
           - bitbucket.org
           - gitlab.com
+          - zenodo.org
           - google.com
           type: string
         userId:
@@ -1750,6 +1759,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Token'
           description: default response
+  /auth/tokens/zenodo.org:
+    get:
+      operationId: addZenodoToken
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: default response
   /auth/tokens/{tokenId}:
     delete:
       operationId: deleteToken
@@ -2851,7 +2880,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /entries/{id}/collections:
     get:
@@ -4137,6 +4166,7 @@ paths:
           - dockstore
           - bitbucket.org
           - gitlab.com
+          - zenodo.org
           - google.com
           type: string
       requestBody:

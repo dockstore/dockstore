@@ -1165,6 +1165,29 @@ paths:
             $ref: "#/definitions/Token"
       security:
       - BEARER: []
+  /auth/tokens/zenodo.org:
+    get:
+      tags:
+      - "tokens"
+      summary: "Add a new zenodo.org token, used by accounts page."
+      description: "This is used as part of the OAuth 2 web flow. Once a user has\
+        \ approved permissions for CollaboratoryTheir browser will load the redirect\
+        \ URI which should resolve here"
+      operationId: "addZenodoToken"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "code"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Token"
+      security:
+      - BEARER: []
   /auth/tokens/{tokenId}:
     get:
       tags:
@@ -5812,6 +5835,12 @@ definitions:
         type: "string"
       gitlabScope:
         type: "string"
+      zenodoAuthUrl:
+        type: "string"
+      zenodoRedirectPath:
+        type: "string"
+      zenodoScope:
+        type: "string"
       googleScope:
         type: "string"
       cwlVisualizerUri:
@@ -5825,6 +5854,8 @@ definitions:
       bitBucketClientId:
         type: "string"
       gitlabClientId:
+        type: "string"
+      zenodoClientId:
         type: "string"
       googleClientId:
         type: "string"
