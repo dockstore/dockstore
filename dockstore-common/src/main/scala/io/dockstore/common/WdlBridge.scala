@@ -86,9 +86,9 @@ class WdlBridge {
 
   /**
     * Retrieves the metadata object for a given workflow
-    * @param filePath
+    * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
-    * @return Metadata in mapping of String to String
+    * @return list of metadata mappings
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getMetadata(filePath: String) = {
@@ -115,9 +115,9 @@ class WdlBridge {
 
   /**
     * Create a map of file inputs names to paths
-    * @param filePath
+    * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
-    * @return
+    * @return mapping of file input name to type
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getInputFiles(filePath: String):  util.HashMap[String, String] = {
@@ -132,9 +132,9 @@ class WdlBridge {
 
   /**
     * Create a list of all output files for the workflow
-    * @param filePath
+    * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
-    * @return
+    * @return list of output file names
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getOutputFiles(filePath: String): util.List[String] = {
@@ -150,8 +150,8 @@ class WdlBridge {
   /**
     * Create a mapping of import namespace to uri
     * Does not work with new parsing code, may be phased out
-    * @param filePath
-    * @return Map
+    * @param filePath absolute path to file
+    * @return map of call names to import path
     */
   def getImportMap(filePath: String): util.LinkedHashMap[String, String] = {
     val importMap = new util.LinkedHashMap[String, String]()
@@ -167,8 +167,8 @@ class WdlBridge {
 
   /**
     * Create a mapping of calls to dependencies
-    * @param filePath
-    * @return Map
+    * @param filePath absolute path to file
+    * @return mapping of call to a list of dependencies
     */
   def getCallsToDependencies(filePath: String): util.LinkedHashMap[String, util.List[String]] = {
     val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
@@ -205,8 +205,8 @@ class WdlBridge {
 
   /**
     * Create a mapping of calls to docker images
-    * @param filePath
-    * @return Map
+    * @param filePath absolute path to file
+    * @return mapping of call names to docker
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getCallsToDockerMap(filePath: String): util.LinkedHashMap[String, String] = {
@@ -227,9 +227,9 @@ class WdlBridge {
 
   /**
     * Get a parameter file as a string
-    * @param filePath
+    * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
-    * @return
+    * @return stub parameter file for the workflow
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getParameterFile(filePath: String): String = {
@@ -284,8 +284,8 @@ class WdlBridge {
 
   /**
     * Retrieve the language factory for the given primary descriptor file
-    * @param fileContent
-    * @return
+    * @param fileContent Content of the primary workflow file
+    * @return Correct language factory based on the version of WDL
     */
   def getLanguageFactory(fileContent: String) : LanguageFactory = {
     val languageFactory =
@@ -345,7 +345,7 @@ class WdlBridge {
 }
 
 /**
-  * Class for resolving imports defined in memory
+  * Class for resolving imports defined in memory (mapping of path to content)
   */
 case class MapResolver() extends ImportResolver {
   var secondaryWdlFiles = new util.HashMap[String, String]()
