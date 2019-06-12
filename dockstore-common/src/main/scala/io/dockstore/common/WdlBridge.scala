@@ -97,8 +97,8 @@ class WdlBridge {
     * @return list of metadata mappings
     */
   @throws(classOf[WdlParser.SyntaxError])
-  def getMetadata(filePath: String) = {
-    val bundle = getBundle(filePath)
+  def getMetadata(filePath: String, fileContent: String) = {
+    val bundle = getBundleFromContent(fileContent, filePath)
     val metadataList = new util.ArrayList[util.Map[String, String]]()
     bundle.allCallables.foreach(callable => {
       callable._2 match {
@@ -295,7 +295,18 @@ class WdlBridge {
     */
   def getBundle(filePath: String): WomBundle = {
     val fileContent = readFile(filePath)
-    val factory = getLanguageFactory(fileContent)
+    getBundleFromContent(fileContent, filePath)
+  }
+
+  /**
+    * Get the WomBundle for a workflow given the workflow content
+    * To be used when we don't have a file stored locally
+    * @param content content of file
+    * @param filePath path to file
+    * @return WomBundle
+    */
+  def getBundleFromContent(content: String, filePath: String): WomBundle = {
+    val factory = getLanguageFactory(content)
     val filePathObj = DefaultPathBuilder.build(filePath).get
 
     // Resolve from mapping, local filesystem, or http import
@@ -305,7 +316,7 @@ class WdlBridge {
     lazy val importResolvers: List[ImportResolver] =
       DirectoryResolver.localFilesystemResolvers(Some(filePathObj)) :+ HttpResolver(relativeTo = None) :+ mapResolver
 
-    val bundle = factory.getWomBundle(fileContent, "{}", importResolvers, List(factory))
+    val bundle = factory.getWomBundle(content, "{}", importResolvers, List(factory))
     if (bundle.isRight) {
       bundle.getOrElse(null)
     } else {

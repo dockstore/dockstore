@@ -70,7 +70,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
 
         try {
-            List<Map<String, String>> metadata = wdlBridge.getMetadata(filepath);
+            List<Map<String, String>> metadata = wdlBridge.getMetadata(filepath, content);
             Set<String> authors = new HashSet<>();
             Set<String> emails = new HashSet<>();
             final String[] mainDescription = { null };
