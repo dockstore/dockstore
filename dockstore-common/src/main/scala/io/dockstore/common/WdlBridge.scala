@@ -57,7 +57,7 @@ class WdlBridge {
   def validateWorkflow(filePath: String) = {
     val bundle = getBundle(filePath)
 
-    if (!bundle.right.get.primaryCallable.isDefined) {
+    if (!bundle.primaryCallable.isDefined) {
       throw new WdlParser.SyntaxError("Workflow is missing a workflow declaration.")
     }
   }
@@ -70,11 +70,12 @@ class WdlBridge {
   def validateTool(filePath: String) = {
     validateWorkflow(filePath)
     val bundle = getBundle(filePath)
-    if (bundle.right.get.toExecutableCallable.right.get.taskCallNodes.seq.size > 1) {
+
+    if (bundle.toExecutableCallable.right.get.taskCallNodes.seq.size > 1) {
       throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
     }
 
-    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+    bundle.toExecutableCallable.right.get.taskCallNodes
       .foreach(call => {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
         if (!dockerAttribute.isDefined) {
@@ -93,16 +94,19 @@ class WdlBridge {
   def getMetadata(filePath: String) = {
     val bundle = getBundle(filePath)
     val metadataList = new util.ArrayList[util.Map[String, String]]()
-    bundle.right.get.allCallables.foreach(callable => {
-      if (callable._2.isInstanceOf[WorkflowDefinition]) {
-        val metadata = JavaConverters.mapAsJavaMap(callable._2.asInstanceOf[WorkflowDefinition].meta)
-        if (!metadata.isEmpty) {
-          metadataList.add(metadata)
+    bundle.allCallables.foreach(callable => {
+      callable._2 match {
+        case w: WorkflowDefinition => {
+          val metadata = JavaConverters.mapAsJavaMap(callable._2.asInstanceOf[WorkflowDefinition].meta)
+          if (!metadata.isEmpty) {
+            metadataList.add(metadata)
+          }
         }
-      } else if (callable._2.isInstanceOf[CallableTaskDefinition]) {
-        val metadata = JavaConverters.mapAsJavaMap(callable._2.asInstanceOf[CallableTaskDefinition].meta)
-        if (!metadata.isEmpty) {
-          metadataList.add(metadata)
+        case c: CallableTaskDefinition => {
+          val metadata = JavaConverters.mapAsJavaMap(callable._2.asInstanceOf[CallableTaskDefinition].meta)
+          if (!metadata.isEmpty) {
+            metadataList.add(metadata)
+          }
         }
       }
     })
@@ -119,8 +123,8 @@ class WdlBridge {
   def getInputFiles(filePath: String):  util.HashMap[String, String] = {
     val inputList = new util.HashMap[String, String]()
     val bundle = getBundle(filePath)
-    val workflowName = bundle.right.get.primaryCallable.get.name
-    bundle.right.get.primaryCallable.get.inputs
+    val workflowName = bundle.primaryCallable.get.name
+    bundle.primaryCallable.get.inputs
       .filter(input => input.womType.stableName.toString.equals("File") || input.womType.stableName.toString.equals("Array[File]"))
       .foreach(input => inputList.put(workflowName + "." + input.name, input.womType.stableName.toString))
     inputList
@@ -136,8 +140,8 @@ class WdlBridge {
   def getOutputFiles(filePath: String): util.List[String] = {
     val outputList = new util.ArrayList[String]()
     val bundle = getBundle(filePath)
-    val workflowName = bundle.right.get.primaryCallable.get.name
-    bundle.right.get.primaryCallable.get.outputs
+    val workflowName = bundle.primaryCallable.get.name
+    bundle.primaryCallable.get.outputs
       .filter(output => output.womType.stableName.toString.equals("File") || output.womType.stableName.toString.equals("Array[File]"))
       .foreach(output => outputList.add(workflowName + "." + output.name))
     outputList
@@ -152,7 +156,7 @@ class WdlBridge {
   def getImportMap(filePath: String): util.LinkedHashMap[String, String] = {
     val importMap = new util.LinkedHashMap[String, String]()
     val bundle = getBundle(filePath)
-    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+    bundle.toExecutableCallable.right.get.taskCallNodes
       .foreach(call => {
         val callName = call.identifier.localName.value
         val path = null
@@ -170,13 +174,13 @@ class WdlBridge {
     val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
     val bundle = getBundle(filePath)
 
-    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+    bundle.toExecutableCallable.right.get.taskCallNodes
       .foreach(call => {
         val callName = call.identifier.localName.value
         dependencyMap.put("dockstore_" + callName, new util.ArrayList[String]())
       })
 
-    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+    bundle.toExecutableCallable.right.get.taskCallNodes
         .foreach(call => {
           val dependencies = new util.ArrayList[String]()
           call.inputDefinitionMappings
@@ -208,7 +212,7 @@ class WdlBridge {
   def getCallsToDockerMap(filePath: String): util.LinkedHashMap[String, String] = {
     val callsToDockerMap = new util.LinkedHashMap[String, String]()
     val bundle = getBundle(filePath)
-    bundle.right.get.toExecutableCallable.right.get.taskCallNodes
+    bundle.toExecutableCallable.right.get.taskCallNodes
       .foreach(call => {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
         val callName = "dockstore_" + call.identifier.localName.value
@@ -230,8 +234,7 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   def getParameterFile(filePath: String): String = {
     val bundle = getBundle(filePath)
-    val inputs = bundle.right.get.primaryCallable.get.inputs
-    bundle.right.get.toExecutableCallable.right.get.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
+    bundle.toExecutableCallable.right.get.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
   }
 
   private def inputNodeWriter(showOptionals: Boolean): JsonWriter[Set[ExternalGraphInputNode]] = set => {
@@ -259,7 +262,7 @@ class WdlBridge {
     * @param filePath absolute path to file
     * @return WomBundle
     */
-  def getBundle(filePath: String): common.Checked[WomBundle] = {
+  def getBundle(filePath: String): WomBundle = {
     val fileContent = readFile(filePath)
     val factory = getLanguageFactory(fileContent)
     val filePathObj = DefaultPathBuilder.build(filePath).get
@@ -273,7 +276,7 @@ class WdlBridge {
 
     val bundle = factory.getWomBundle(fileContent, "{}", importResolvers, List(factory))
     if (bundle.isRight) {
-      bundle
+      bundle.getOrElse(null)
     } else {
       throw new WdlParser.SyntaxError(bundle.left.get.head)
     }
@@ -292,7 +295,7 @@ class WdlBridge {
       .find(_.looksParsable(fileContent))
       .getOrElse(new WdlDraft2LanguageFactory(ConfigFactory.empty()))
 
-    return languageFactory
+    languageFactory
   }
 
   /**
