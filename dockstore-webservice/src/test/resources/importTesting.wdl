@@ -34,4 +34,10 @@ workflow wf {
     String result = test.result
   }
 
+
+  meta {
+    author: "Mr foobar"
+    description: "This is the coolest workflow around"
+    email: "foobar@foo.com"
+  }
 }
