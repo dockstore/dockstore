@@ -135,6 +135,14 @@ components:
           type: string
         terraImportUrl:
           type: string
+        zenodoAuthUrl:
+          type: string
+        zenodoClientId:
+          type: string
+        zenodoRedirectPath:
+          type: string
+        zenodoScope:
+          type: string
       type: object
     DescriptorLanguageBean:
       properties:
@@ -576,6 +584,7 @@ components:
           - dockstore
           - bitbucket.org
           - gitlab.com
+          - zenodo.org
           - google.com
           type: string
         userId:
@@ -1816,6 +1825,26 @@ paths:
       parameters:
       - in: query
         name: access_token
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: default response
+  /auth/tokens/zenodo.org:
+    get:
+      operationId: addZenodoToken
+      parameters:
+      - in: query
+        name: code
         schema:
           type: string
       requestBody:
@@ -3224,7 +3253,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3330,7 +3359,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4138,7 +4167,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -4217,6 +4246,7 @@ paths:
           - dockstore
           - bitbucket.org
           - gitlab.com
+          - zenodo.org
           - google.com
           type: string
       requestBody:
@@ -4297,7 +4327,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId
