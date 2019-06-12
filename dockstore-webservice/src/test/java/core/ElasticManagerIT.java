@@ -24,6 +24,7 @@ import java.util.List;
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -89,9 +90,9 @@ public class ElasticManagerIT {
 
     @Test
     public void filterCheckerWorkflows() {
-        Workflow checkerWorkflow = new Workflow();
+        Workflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setIsChecker(true);
-        Workflow workflow = new Workflow();
+        Workflow workflow = new BioWorkflow();
         workflow.setIsChecker(false);
         Tool tool = new Tool();
         List<Entry> entries = manager.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));

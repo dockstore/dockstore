@@ -551,7 +551,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String discourseUrl;
 
         private String dnaStackImportUrl;
-        private String fireCloudImportUrl;
         private String dnaNexusImportUrl;
         private String terraImportUrl;
 
@@ -573,7 +572,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String cwlVisualizerUri;
 
-        private boolean enableLaunchWithFireCloud;
+        private String tagManagerId;
 
 
         public String getDiscourseUrl() {
@@ -590,14 +589,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setDnaStackImportUrl(String dnaStackImportUrl) {
             this.dnaStackImportUrl = dnaStackImportUrl;
-        }
-
-        public String getFireCloudImportUrl() {
-            return fireCloudImportUrl;
-        }
-
-        public void setFireCloudImportUrl(String fireCloudImportUrl) {
-            this.fireCloudImportUrl = fireCloudImportUrl;
         }
 
         public String getDnaNexusImportUrl() {
@@ -712,12 +703,13 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.cwlVisualizerUri = cwlVisualizerUri;
         }
 
-        public boolean isEnableLaunchWithFireCloud() {
-            return enableLaunchWithFireCloud;
+        public String getTagManagerId() {
+            return tagManagerId;
         }
 
-        public void setEnableLaunchWithFireCloud(boolean enableLaunchWithFireCloud) {
-            this.enableLaunchWithFireCloud = enableLaunchWithFireCloud;
+        public void setTagManagerId(String tagManagerId) {
+            this.tagManagerId = tagManagerId;
         }
+
     }
 }

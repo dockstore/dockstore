@@ -27,9 +27,11 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -40,6 +42,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyEnumerated;
 import javax.persistence.NamedNativeQueries;
 import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQueries;
@@ -55,6 +58,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -129,29 +133,37 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "This is the email of the git organization", position = 6)
     private String email;
+
     @Column
     @ApiModelProperty(value = "This is the default version of the entry", position = 7)
     private String defaultVersion;
+
     @Column
     @JsonProperty("is_published")
     @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
     private boolean isPublished;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific timestamp for last modified", position = 9)
+    @ApiModelProperty(value = "Implementation specific timestamp for last modified. "
+            + "Tools-> For automated/manual builds: N/A. For hosted: Last time a file was updated/created (new version created). "
+            + "Workflows-> For remote: When refresh is hit, last time GitHub repo was changed. Hosted: Last time a new version was made.", position = 9)
     private Date lastModified;
+
     @Column
-    @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice", position = 10)
+    @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice. "
+            + "Tools-> For automated builds: last time tool/namespace was refreshed Dockstore, tool info (like changing dockerfile path) updated, or default version selected. For hosted tools: when you created the tool. "
+            + "Workflows-> For remote: When refresh all is hit for first time. Hosted: Seems to be time created.", position = 10)
     private Date lastUpdated;
+
     @Column
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
     @JsonIgnore
     @JoinColumn(name = "checkerid")
-    @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
+    @OneToOne(targetEntity = BioWorkflow.class, fetch = FetchType.EAGER)
     @ApiModelProperty(value = "The id of the associated checker workflow")
-    private Workflow checkerWorkflow;
+    private BioWorkflow checkerWorkflow;
 
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_aliases", columnNames = { "alias" }))
@@ -171,6 +183,17 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
     private Long topicId;
+
+    /**
+     * Example of generalizing concept of default paths across tools, workflows
+     */
+    @JsonIgnore
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyEnumerated(EnumType.STRING)
+    @Column(name = "path", nullable = false)
+    @MapKeyColumn(name = "filetype")
+    @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
+    private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
     public Entry() {
         users = new TreeSet<>();
@@ -201,11 +224,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.aliases = aliases;
     }
 
-    public Workflow getCheckerWorkflow() {
+    public BioWorkflow getCheckerWorkflow() {
         return checkerWorkflow;
     }
 
-    public void setCheckerWorkflow(Workflow checkerWorkflow) {
+    public void setCheckerWorkflow(BioWorkflow checkerWorkflow) {
         this.checkerWorkflow = checkerWorkflow;
     }
 
@@ -469,5 +492,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public int compareTo(@NotNull Entry that) {
         return ComparisonChain.start().compare(this.getId(), that.getId(), Ordering.natural().nullsLast())
             .result();
+    }
+
+    public Map<DescriptorLanguage.FileType, String> getDefaultPaths() {
+        return defaultPaths;
+    }
+
+    public void setDefaultPaths(Map<DescriptorLanguage.FileType, String> defaultPaths) {
+        this.defaultPaths = defaultPaths;
     }
 }

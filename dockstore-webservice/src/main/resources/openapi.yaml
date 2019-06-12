@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.7.0-alpha.6-SNAPSHOT
+  version: 1.7.0-alpha.7-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -5110,6 +5110,13 @@ paths:
               - asc
               - desc
             default: desc
+        - name: services
+          in: query
+          description: services
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: successful operation
@@ -6069,6 +6076,18 @@ components:
       properties:
         content:
           type: string
+    BioWorkflow:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - type: object
+          properties:
+            parent_id:
+              type: integer
+              format: int64
+              readOnly: true
+            is_checker:
+              type: boolean
+          description: This describes one workflow in the dockstore
     Collection:
       type: object
       required:
@@ -6145,8 +6164,6 @@ components:
           type: string
         dnaStackImportUrl:
           type: string
-        fireCloudImportUrl:
-          type: string
         dnaNexusImportUrl:
           type: string
         terraImportUrl:
@@ -6175,8 +6192,8 @@ components:
           type: string
         cwlVisualizerUri:
           type: string
-        enableLaunchWithFireCloud:
-          type: boolean
+        tagManagerId:
+          type: string
         githubClientId:
           type: string
         quayIoClientId:
@@ -6291,11 +6308,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified. Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created). Workflows-> For remote: When
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -6365,7 +6391,10 @@ components:
         lastBuild:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last built
+          description: "Implementation specific timestamp for last built. For automated
+            builds: When refresh is hit, the last time the tool was built gets
+            stored here. If tool was never built on quay.io, then last build
+            will be null. N/A for hosted/manual path tools"
         tags:
           type: array
           description: Implementation specific tracking of valid build tags for the docker
@@ -6479,11 +6508,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified. Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created). Workflows-> For remote: When
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -6801,6 +6839,13 @@ components:
           type: string
         enum:
           type: string
+    Service:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - type: object
+          properties: {}
+          description: This describes one service in the dockstore as a special degenerate
+            case of a workflow
     SharedWorkflows:
       type: object
       properties:
@@ -6851,6 +6896,8 @@ components:
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
             - DOCKSTORE_YML
+            - DOCKSTORE_SERVICE_YML
+            - DOCKSTORE_SERVICE_TEST_JSON
         content:
           type: string
           description: Cache for the contents of the target file
@@ -6894,7 +6941,9 @@ components:
         last_modified:
           type: string
           format: date-time
-          description: The last time this image was modified in the image registry
+          description: "Tool-> For automated builds: Last time specific tag was built. For
+            hosted: When version was created Workflow-> Remote: Last time
+            version on GitHub repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch
@@ -7106,6 +7155,8 @@ components:
             - CWL
             - WDL
             - NFL
+            - SWL
+            - DOCKSTORE_SERVICE
         descriptor:
           type: string
           description: The descriptor that represents this version of the tool.
@@ -7236,6 +7287,8 @@ components:
               - CWL
               - WDL
               - NFL
+              - SWL
+              - DOCKSTORE_SERVICE
         containerfile:
           type: boolean
           description: Reports if this tool has a containerfile available.
@@ -7342,6 +7395,8 @@ components:
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
             - DOCKSTORE_YML
+            - DOCKSTORE_SERVICE_YML
+            - DOCKSTORE_SERVICE_TEST_JSON
         valid:
           type: boolean
           description: Is the file type valid
@@ -7377,6 +7432,8 @@ components:
         - repository
         - sourceControl
         - workflow_path
+      discriminator:
+        propertyName: type
       properties:
         id:
           type: integer
@@ -7397,10 +7454,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parent_id:
-          type: integer
-          format: int64
-          readOnly: true
+        isChecker:
+          type: boolean
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         last_modified_date:
           type: string
           format: date-time
@@ -7460,11 +7517,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified. Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created). Workflows-> For remote: When
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -7482,6 +7548,7 @@ components:
             - FULL
             - STUB
             - HOSTED
+            - SERVICE
         workflowName:
           type: string
           description: This is the name of the workflow, not needed when only one workflow
@@ -7498,12 +7565,12 @@ components:
             or n/a?, required: GA4GH"
         descriptorType:
           type: string
-          description: This is a descriptor type for the workflow, either CWL or WDL
-            (Defaults to CWL)
+          description: This is a descriptor type for the workflow, either CWL, WDL, or
+            Nextflow (Defaults to CWL)
         workflow_path:
           type: string
           description: This indicates for the associated git repository, the default path
-            to the CWL document
+            to the primary descriptor document
         defaultTestParameterFilePath:
           type: string
           description: This indicates for the associated git repository, the default path
@@ -7515,8 +7582,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/WorkflowVersion"
-        is_checker:
-          type: boolean
         full_workflow_path:
           type: string
           readOnly: true
@@ -7552,12 +7617,22 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
+        subClass:
+          type: string
+          description: The subclass of this for services.
+          enum:
+            - DOCKER_COMPOSE
+            - SWARM
+            - KUBERNETES
+            - HELM
         workingDirectory:
           type: string
         last_modified:
           type: string
           format: date-time
-          description: The last time this image was modified in the image registry
+          description: "Tool-> For automated builds: Last time specific tag was built. For
+            hosted: When version was created Workflow-> Remote: Last time
+            version on GitHub repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch

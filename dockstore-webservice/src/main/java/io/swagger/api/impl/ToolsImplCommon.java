@@ -37,7 +37,9 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
@@ -46,7 +48,6 @@ import io.swagger.model.DescriptorType;
 import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
-import io.swagger.model.ToolClass;
 import io.swagger.model.ToolVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,6 +177,11 @@ public final class ToolsImplCommon {
                 //                case DOCKSTORE_SWL:
                 //                    toolVersion.addDescriptorTypeItem(DescriptorType.SWL);
                 //                    break;
+                // TODO not sure how to treat service languages
+                case DOCKSTORE_SERVICE_TEST_JSON:
+                case DOCKSTORE_SERVICE_YML:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
+                    break;
                 case NEXTFLOW:
                 case NEXTFLOW_CONFIG:
                     toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
@@ -336,9 +342,15 @@ public final class ToolsImplCommon {
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
 
         // Set type
-        ToolClass type = container instanceof io.dockstore.webservice.core.Tool ? ToolClassesApiServiceImpl.getCommandLineToolClass()
-            : ToolClassesApiServiceImpl.getWorkflowClass();
-        tool.setToolclass(type);
+        if (container instanceof io.dockstore.webservice.core.Tool) {
+            tool.setToolclass(ToolClassesApiServiceImpl.getCommandLineToolClass());
+        } else if (container instanceof BioWorkflow) {
+            tool.setToolclass(ToolClassesApiServiceImpl.getWorkflowClass());
+        } else if (container instanceof Service){
+            tool.setToolclass(ToolClassesApiServiceImpl.getServiceClass());
+        } else {
+            throw new UnsupportedOperationException("encountered unknown entry type in TRS");
+        }
 
         // Set signed.  Signed is currently not supported
         tool.setSigned(false);

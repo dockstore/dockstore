@@ -32,13 +32,15 @@ public enum DescriptorLanguage {
     WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON),
     // DOCKSTORE-2428 - demo how to add new workflow language
     //SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON)
-    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS);
+    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS),
+    SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON);
 
     public static final String CWL_STRING = "cwl";
     public static final String WDL_STRING = "wdl";
     public static final String NFL_STRING = "nfl";
     // DOCKSTORE-2428 - demo how to add new workflow language
     // public static final String SWL_STRING = "swl";
+    public static final String DOCKSTORE_SERVICE = "DOCKSTORE_SERVICE";
     /**
      * this name is used in the workflow path
      */
@@ -59,11 +61,21 @@ public enum DescriptorLanguage {
      */
     private final FileType testParamType;
 
+    /**
+     * This indicates that this language is for services
+     */
+    private final boolean serviceLanguage;
+
     DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType) {
+        this(shortName, friendlyName, fileType, testParamType, false);
+    }
+
+    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final boolean serviceLanguage) {
         this.shortName = shortName;
         this.friendlyName = friendlyName;
         this.fileType = fileType;
         this.testParamType = testParamType;
+        this.serviceLanguage = serviceLanguage;
     }
 
     @Override
@@ -84,9 +96,10 @@ public enum DescriptorLanguage {
             return WDL;
         case NFL_STRING:
             return NEXTFLOW;
+        case "service":
+            return SERVICE;
         // DOCKSTORE-2428 - demo how to add new workflow language
-        //
-        //case SWL_STRING:
+        // case SWL_STRING:
         //    return SWL;
         default:
             // fall-through and throw exception
@@ -110,7 +123,14 @@ public enum DescriptorLanguage {
     }
 
     public static Optional<FileType> getTestParameterType(String descriptorType) {
+        if (descriptorType == null) {
+            return Optional.empty();
+        }
         return Arrays.stream(DescriptorLanguage.values()).filter(lang -> descriptorType.equalsIgnoreCase(lang.toString())).findFirst().map(DescriptorLanguage::getTestParamType);
+    }
+
+    public boolean isServiceLanguage() {
+        return serviceLanguage;
     }
 
     /**
@@ -119,9 +139,9 @@ public enum DescriptorLanguage {
      */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML
+        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML, DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON
+        // DOCKSTORE_SWL, SWL_TEST_JSON
         // DOCKSTORE-2428 - demo how to add new workflow language
-        //,     DOCKSTORE_SWL, SWL_TEST_JSON
     }
 
     /**

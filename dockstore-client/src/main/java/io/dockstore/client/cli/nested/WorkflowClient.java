@@ -749,7 +749,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     protected void handleListUnstarredEntries() {
         try {
-            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, null, null, null);
+            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, null, null, null, false);
             out("ALL PUBLISHED WORKFLOWS");
             printLineBreak();
             printWorkflowList(workflows);
@@ -808,7 +808,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     protected void handleSearch(String pattern) {
         try {
-            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, pattern, null, null);
+            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, pattern, null, null, false);
 
             out("MATCHING WORKFLOWS");
             printLineBreak();

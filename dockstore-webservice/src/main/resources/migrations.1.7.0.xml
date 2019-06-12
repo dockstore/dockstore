@@ -44,4 +44,119 @@
     <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstratint">
         <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" referencedColumnNames="id" referencedTableName="organization"/>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="services">
+        <createTable tableName="service">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="service_pkey"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="defaultversion" type="VARCHAR(255)"/>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="topicid" type="BIGINT"/>
+            <column name="checkerid" type="BIGINT"/>
+            <column name="defaulttestparameterfilepath" type="TEXT"/>
+            <column name="defaultworkflowpath" type="TEXT"/>
+            <column name="descriptortype" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="STUB" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcecontrol" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="TEXT"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="service" constraintName="checker_workflows_for_services" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+
+        <addColumn tableName="workflowversion">
+            <column name="subclass" type="int4"/>
+        </addColumn>
+
+        <!-- workflows can be in two tables, workflow or service and unfortunately we cannot constrain across tables-->
+        <dropForeignKeyConstraint baseTableName="workflow_workflowversion" constraintName="fkl8yg13ahjhtn0notrlf3amwwi"/>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="example_default_path_general_for_tools">
+        <createTable tableName="entry_defaultpaths">
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="filetype" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="entry_id, filetype, path" constraintName="unique_paths" tableName="entry_defaultpaths"/>
+        <addPrimaryKey columnNames="entry_id, filetype" constraintName="entry_defaultpaths_pkey" tableName="entry_defaultpaths"/>
+        <sql dbms="postgresql">
+            insert into entry_defaultpaths select id as entry_id, defaultdockerfilepath as path, 'DOCKERFILE' as filetype from tool where defaultdockerfilepath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaultcwlpath as path, 'DOCKSTORE_CWL' as filetype from tool where defaultcwlpath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaultwdlpath as path, 'DOCKSTORE_WDL' as filetype from tool where defaultwdlpath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaulttestcwlparameterfile as path, 'CWL_TEST_JSON' as filetype from tool where defaulttestcwlparameterfile is not null;
+            insert into entry_defaultpaths select id as entry_id, defaulttestwdlparameterfile as path, 'WDL_TEST_JSON' as filetype from tool where defaulttestwdlparameterfile is not null;
+        </sql>
+        <dropColumn tableName="tool" columnName="defaultdockerfilepath"/>
+        <dropColumn tableName="tool" columnName="defaultcwlpath"/>
+        <dropColumn tableName="tool" columnName="defaultwdlpath"/>
+        <dropColumn tableName="tool" columnName="defaulttestcwlparameterfile"/>
+        <dropColumn tableName="tool" columnName="defaulttestwdlparameterfile"/>
+
+        <sql dbms="postgresql">
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'DOCKSTORE_CWL' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'cwl';
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'DOCKSTORE_WDL' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'wdl';
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'NEXTFLOW_CONFIG' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'nfl';
+
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'CWL_TEST_JSON' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'cwl';
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'WDL_TEST_JSON' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'wdl';
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'NEXTFLOW_TEST_PARAMS' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'nfl';
+        </sql>
+        <dropColumn tableName="workflow" columnName="defaultworkflowpath"/>
+        <dropColumn tableName="workflow" columnName="defaulttestparameterfilepath"/>
+        <dropColumn columnName="defaulttestparameterfilepath" tableName="service"/>
+        <dropColumn columnName="defaultworkflowpath" tableName="service"/>
+
+        <!-- set constraints -->
+        <sql dbms="postgresql">
+            DELETE FROM entry_defaultpaths WHERE path IS NULL;
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE tool ADD CHECK (toolname !~~ '\_%'::text);
+        </sql>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="addCommentsForEntryTimestamps">
+        <setColumnRemarks columnName="dbcreatedate" tableName="tag" remarks="For automated builds and hosted/manual path: Time registered on Dockstore, either by refresh or manual register. Can be blank as this column was added in 2018."/>
+        <setColumnRemarks columnName="dbcreatedate" tableName="tool" remarks="For automated builds and hosted: Time registered on Dockstore, either by refresh or manual register. Can be blank as this column was added in 2018."/>
+        <setColumnRemarks columnName="dbcreatedate" tableName="workflow" remarks="Remote: When workflow is refreshed for first time. Hosted: Time created"/>
+        <setColumnRemarks columnName="dbcreatedate" tableName="workflowversion" remarks="Remote: When workflow was refreshed for first time. Hosted: time version created"/>
+        <setColumnRemarks columnName="dbupdatedate" tableName="tag" remarks="For automated builds and hosted/manual path: Time created or last time version tab was edited (under actions in version tab). Basically anytime db entry modified"/>
+        <setColumnRemarks columnName="dbupdatedate" tableName="tool" remarks="For automated builds: Last time tool/namespace was refreshed, different version is selected, checker workflow was added, or tool info updated (like path information). For hosted: Last time a file was updated (new version created), default version selected. Can be blank as this column was added in 2018. Basically anytime db entry modified"/>
+        <setColumnRemarks columnName="dbupdatedate" tableName="workflow" remarks="For remote: When refresh all is hit for first time, update workflow info (like path information), or add checker workflow. Hosted: Time created. Basically anytime db entry modified."/>
+        <setColumnRemarks columnName="dbupdatedate" tableName="workflowversion" remarks="Remote: When workflow was refreshed for the first time or last time version was edited under action column in versions tab. Hosted: time version created or last time version was edited under actions column in versions tab. Basically anytime db entry modified"/>
+        <setColumnRemarks columnName="lastbuild" tableName="tool" remarks="For automated builds: When refresh is hit, the last time the tool was built gets stored here. If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools"/>
+        <setColumnRemarks columnName="lastmodified" tableName="tag" remarks="For automated builds: Last time specific tag was built. For hosted: When version was created"/>
+        <setColumnRemarks columnName="lastmodified" tableName="tool" remarks="For automated builds: N/A. For hosted: Last time a file was updated (new version created)"/>
+        <setColumnRemarks columnName="lastmodified" tableName="workflow" remarks="For remote: When refresh is hit, the last time GitHub repo was changed is recorded. Hosted: Last time a new version was made."/>
+        <setColumnRemarks columnName="lastmodified" tableName="workflowversion" remarks="Remote: Last time version on GitHub repo was changed. Hosted: time version created"/>
+        <setColumnRemarks columnName="lastupdated" tableName="tool" remarks="For automated builds: last time tool/namespace was refreshed Dockstore, tool info updated, default version selected. For hosted tools: when you created the tool"/>
+        <setColumnRemarks columnName="lastupdated" tableName="workflow" remarks="For remote: When refresh all is hit for first time. Hosted: Time created."/>
+    </changeSet>
 </databaseChangeLog>
