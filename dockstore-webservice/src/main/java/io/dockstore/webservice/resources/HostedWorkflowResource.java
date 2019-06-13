@@ -153,7 +153,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setOrganization(user.getUsername());
         workflow.setRepository(name);
         workflow.setSourceControl(SourceControl.DOCKSTORE);
-        workflow.setDescriptorType(descriptorType.toString().toLowerCase());
+        workflow.setDescriptorType(descriptorType);
         workflow.setLastUpdated(new Date());
         workflow.setLastModified(new Date());
         // Uncomment if we add entry name to hosted workflows
@@ -189,7 +189,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         final WorkflowVersion version = getVersion(workflow);
         this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
         version.setWorkflowPath(sourceFiles.getPrimaryDescriptor().getPath());
-        version.setName(calculateNextVersionName(workflow.getVersions()));
+        version.setName(calculateNextVersionName(workflow.getWorkflowVersions()));
         return this.saveVersion(user, entryId, workflow, version, new HashSet<>(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
     }
 
@@ -205,7 +205,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion getVersion(Workflow workflow) {
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
-        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorType().toLowerCase()));
+        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorType().getLowerShortName()));
         version.setLastModified(new Date());
         return version;
     }
@@ -221,7 +221,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         DescriptorLanguage.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
+        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().getLowerShortName()));
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set

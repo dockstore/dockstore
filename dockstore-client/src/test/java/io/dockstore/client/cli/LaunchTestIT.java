@@ -54,8 +54,8 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.WDL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -728,7 +728,7 @@ public class LaunchTestIT {
             add("--json");
             add(json.getAbsolutePath());
             add("--descriptor");
-            add(CWL_STRING);
+            add(CWL.getLowerShortName());
         }};
 
         WorkflowsApi api = mock(WorkflowsApi.class);
@@ -738,7 +738,7 @@ public class LaunchTestIT {
         client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
-        workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL_STRING);
+        workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL.getLowerShortName());
 
         assertTrue("output should include a successful cromwell run",
                 systemOutRule.getLog().contains("This is a CWL file.. Please put the correct extension to the entry file name."));
@@ -834,7 +834,7 @@ public class LaunchTestIT {
             add("--json");
             add(json.getAbsolutePath());
             add("--descriptor");
-            add(WDL_STRING);
+            add(WDL.getLowerShortName());
         }};
 
         WorkflowsApi api = mock(WorkflowsApi.class);
@@ -844,7 +844,7 @@ public class LaunchTestIT {
         client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
-        workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL_STRING);
+        workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL.getLowerShortName());
 
         assertTrue("output should include a successful cromwell run",
                 systemOutRule.getLog().contains("This is a WDL file.. Please put the correct extension to the entry file name."));
@@ -864,7 +864,7 @@ public class LaunchTestIT {
             add("--json");
             add(json.getAbsolutePath());
             add("--descriptor");
-            add(WDL_STRING);
+            add(WDL.getLowerShortName());
         }};
 
         WorkflowsApi api = mock(WorkflowsApi.class);
@@ -876,7 +876,7 @@ public class LaunchTestIT {
         exit.expectSystemExit();
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
-        workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL_STRING);
+        workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL.getLowerShortName());
     }
 
     @Test
@@ -893,7 +893,7 @@ public class LaunchTestIT {
             add("--json");
             add(json.getAbsolutePath());
             add("--descriptor");
-            add(CWL_STRING);
+            add(CWL.getLowerShortName());
         }};
 
         WorkflowsApi api = mock(WorkflowsApi.class);
@@ -905,7 +905,7 @@ public class LaunchTestIT {
         exit.expectSystemExit();
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
-        workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL_STRING);
+        workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL.getLowerShortName());
     }
 
     @Test

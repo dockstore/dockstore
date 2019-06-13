@@ -16,7 +16,7 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -36,8 +36,10 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
@@ -76,9 +78,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true") })
-// @formatter:off
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
-// @formatter:on
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tool extends Entry<Tool, Tag> {
 
@@ -127,24 +127,43 @@ public class Tool extends Entry<Tool, Tag> {
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
+    @JsonAlias({ "tags", "workflowVersions"})
     @OrderBy("id")
     @Cascade(CascadeType.DETACH)
-    private final SortedSet<Tag> tags;
+    private final SortedSet<Tag> workflowVersions;
+
+    @Transient
+    @JsonProperty
+    private Set<Tag> tags = null;
 
     public Tool() {
-        tags = new TreeSet<>();
+        workflowVersions = new TreeSet<>();
     }
 
     public Tool(long id, String name) {
         super(id);
         // this.userId = userId;
         this.name = name;
-        tags = new TreeSet<>();
+        workflowVersions = new TreeSet<>();
     }
 
+    // compromise: this sucks, but setting the json property to tags allows for backwards compatibility of existing clients
+    // the method name being standardized allows for simpler coding going forward
     @Override
-    public Set<Tag> getVersions() {
+    public Set<Tag> getWorkflowVersions() {
+        return workflowVersions;
+    }
+
+    // TODO: remove when all clients are on 1.7.0
+    @Deprecated
+    public Set<Tag> getTags() {
         return tags;
+    }
+
+    // TODO: remove when all clients are on 1.7.0
+    @Deprecated
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
     }
 
     /**
@@ -206,17 +225,9 @@ public class Tool extends Entry<Tool, Tag> {
     @JsonProperty
     @ApiModelProperty(position = 28)
     public List<String> getDescriptorType() {
-        Set<DescriptorLanguage.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
-        boolean supportsCWL = set.contains(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        boolean supportsWDL = set.contains(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        List<String> languages = new ArrayList<>();
-        if (supportsCWL) {
-            languages.add(DescriptorLanguage.CWL.toString().toUpperCase());
-        }
-        if (supportsWDL) {
-            languages.add(DescriptorLanguage.WDL.toString().toUpperCase());
-        }
-        return languages;
+        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
+        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
+            .map(lang -> lang.toString().toUpperCase()).collect(Collectors.toList());
     }
 
     @JsonProperty
@@ -226,18 +237,6 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setLastBuild(Date lastBuild) {
         this.lastBuild = lastBuild;
-    }
-
-    public Set<Tag> getTags() {
-        return tags;
-    }
-
-    public boolean addTag(Tag tag) {
-        return tags.add(tag);
-    }
-
-    public boolean removeTag(Tag tag) {
-        return tags.remove(tag);
     }
 
     @JsonProperty
@@ -395,5 +394,4 @@ public class Tool extends Entry<Tool, Tag> {
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
         getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
     }
-
 }

@@ -76,7 +76,7 @@ public class ElasticManagerIT {
         file.setType(DOCKSTORE_CWL);
         tag.addSourceFile(file);
         tag.setReference("master");
-        tool.addTag(tag);
+        tool.addWorkflowVersion(tag);
         tool.setDefaultVersion("master");
         tool.setIsPublished(true);
 
@@ -85,7 +85,7 @@ public class ElasticManagerIT {
         manager.bulkUpsert(Collections.singletonList(tool));
 
         //TODO: should extend this by checking that elastic search holds the content we expect
-        Assert.assertTrue("could not talk to elastic search", !systemOutRule.getLog().contains("Connection refused"));
+        Assert.assertFalse(systemOutRule.getLog().contains("Connection refused"));
     }
 
     @Test

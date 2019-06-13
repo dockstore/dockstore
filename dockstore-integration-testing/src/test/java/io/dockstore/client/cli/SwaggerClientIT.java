@@ -37,7 +37,6 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -85,6 +84,7 @@ import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -255,7 +255,7 @@ public class SwaggerClientIT extends BaseIT {
         tag.getSourceFiles().add(testParameterFile2);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        c.setTags(tags);
+        c.setWorkflowVersions(tags);
 
         return c;
     }
@@ -391,7 +391,7 @@ public class SwaggerClientIT extends BaseIT {
         Tag tag = tags.get(0);
 
         // verify master branch
-        assertTrue(!tag.isVerified());
+        assertFalse(tag.isVerified());
         assertNull(tag.getVerifiedSource());
         VerifyRequest request = SwaggerUtility.createVerifyRequest(true, "test-source");
         containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(), request);
@@ -453,7 +453,7 @@ public class SwaggerClientIT extends BaseIT {
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         c.setIsPublished(true);
-        final Tag tag = c.getTags().get(0);
+        final Tag tag = c.getWorkflowVersions().get(0);
         tag.setVerified(true);
         tag.setVerifiedSource("funky source");
         containersApi.registerManual(c);
@@ -538,16 +538,16 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
-        c.getTags().get(0).setHidden(true);
+        c.getWorkflowVersions().get(0).setHidden(true);
         c = containersApi.registerManual(c);
 
-        assertEquals("should see one tag as an admin, saw " + c.getTags().size(), 1, c.getTags().size());
+        assertEquals("should see one tag as an admin, saw " + c.getWorkflowVersions().size(), 1, c.getWorkflowVersions().size());
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId(), null);
-        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), 0,
-            registeredContainer.getTags().size());
+        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getWorkflowVersions().size(), 0,
+            registeredContainer.getWorkflowVersions().size());
     }
 
     @Test
@@ -559,7 +559,7 @@ public class SwaggerClientIT extends BaseIT {
 
         List<Token> tokens = usersApi.getUserTokens(user.getId());
 
-        assertTrue(!tokens.isEmpty());
+        assertFalse(tokens.isEmpty());
     }
 
 
@@ -805,9 +805,9 @@ public class SwaggerClientIT extends BaseIT {
     public void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
     }
 
     @Test

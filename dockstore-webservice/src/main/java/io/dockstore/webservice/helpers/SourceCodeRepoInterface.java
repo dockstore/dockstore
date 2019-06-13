@@ -35,7 +35,6 @@ import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -48,7 +47,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,7 +173,7 @@ public abstract class SourceCodeRepoInterface {
         // Determine if workflow should be returned as a STUB or FULL
         if (existingWorkflow.isEmpty()) {
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
-            workflow.setDescriptorType(DescriptorLanguage.CWL.toString().toLowerCase());
+            workflow.setDescriptorType(DescriptorLanguage.CWL);
             return workflow;
         }
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
@@ -184,7 +182,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (Objects.equals(existingWorkflow.get().getDescriptorType(), DescriptorLanguage.SERVICE.toString())) {
+        if (Objects.equals(existingWorkflow.get().getDescriptorType(), DescriptorLanguage.SERVICE)) {
             workflow.setMode(WorkflowMode.SERVICE);
         } else {
             workflow.setMode(WorkflowMode.FULL);
@@ -192,14 +190,12 @@ public abstract class SourceCodeRepoInterface {
 
         // if it exists, extract paths from the previous workflow entry
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-        if (existingWorkflow.isPresent()) {
-            // Copy over existing workflow versions
-            existingWorkflow.get().getWorkflowVersions()
-                    .forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
+        // Copy over existing workflow versions
+        existingWorkflow.get().getWorkflowVersions()
+                .forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
 
-            // Copy workflow information from source (existingWorkflow) to target (workflow)
-            existingWorkflow.get().copyWorkflow(workflow);
-        }
+        // Copy workflow information from source (existingWorkflow) to target (workflow)
+        existingWorkflow.get().copyWorkflow(workflow);
 
         // Create branches and associated source files
         workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
@@ -212,11 +208,11 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // update each workflow with reference types
-        Set<WorkflowVersion> versions = workflow.getVersions();
+        Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
         versions.forEach(version -> updateReferenceType(repositoryId, version));
 
         // Get metadata for workflow and update workflow with it
-        updateEntryMetadata(workflow, workflow.determineWorkflowType());
+        updateEntryMetadata(workflow, workflow.getDescriptorType());
         return workflow;
     }
 
@@ -250,12 +246,12 @@ public abstract class SourceCodeRepoInterface {
         // If entry is a tool
         if (entry instanceof Tool) {
             // If no tags exist on quay
-            if (((Tool)entry).getVersions().size() == 0) {
+            if (entry.getWorkflowVersions().isEmpty()) {
                 return entry;
             }
 
             // Find filepath to parse
-            for (Tag tag : ((Tool)entry).getVersions()) {
+            for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
                 if (tag.getReference() != null && tag.getReference().equals(branch)) {
                     sourceFiles = tag.getSourceFiles();
                     if (type == DescriptorLanguage.CWL) {
@@ -273,7 +269,7 @@ public abstract class SourceCodeRepoInterface {
 
         if (entry instanceof Workflow) {
             // Find filepath to parse
-            for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
+            for (WorkflowVersion workflowVersion : ((Workflow)entry).getWorkflowVersions()) {
                 if (workflowVersion.getReference().equals(branch)) {
                     filePath = workflowVersion.getWorkflowPath();
                     sourceFiles = workflowVersion.getSourceFiles();
@@ -332,13 +328,13 @@ public abstract class SourceCodeRepoInterface {
     String getBranchNameFromDefaultVersion(Entry entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
-            for (Tag tag : ((Tool)entry).getVersions()) {
+            for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
                 if (Objects.equals(tag.getName(), defaultVersion)) {
                     return tag.getReference();
                 }
             }
         } else if (entry instanceof Workflow) {
-            for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
+            for (WorkflowVersion workflowVersion : ((Workflow)entry).getWorkflowVersions()) {
                 if (Objects.equals(workflowVersion.getName(), defaultVersion)) {
                     return workflowVersion.getReference();
                 }
@@ -565,31 +561,10 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Validate test parameter set
-        DescriptorLanguage.FileType testParameterType = null;
-        switch (identifiedType) {
-        case DOCKSTORE_CWL:
-            testParameterType = DescriptorLanguage.FileType.CWL_TEST_JSON;
-            break;
-        case DOCKSTORE_WDL:
-            testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
-            break;
-        case NEXTFLOW_CONFIG:
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // case DOCKSTORE_SWL:
-            // these languages do not have test parameter files, so do not fail
-            break;
-        case DOCKSTORE_SERVICE_YML:
-            testParameterType = DescriptorLanguage.FileType.DOCKSTORE_SERVICE_TEST_JSON;
-            break;
-        default:
-            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        if (testParameterType != null) {
-            VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
-            version.addOrUpdateValidation(testParameterValidation);
-        }
+        VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType)
+            .validateTestParameterSet(sourceFiles);
+        Validation testParameterValidation = new Validation(entry.getTestParameterType(), validTestParameterSet);
+        version.addOrUpdateValidation(testParameterValidation);
 
         version.setValid(isValidVersion(version));
 

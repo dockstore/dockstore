@@ -79,8 +79,6 @@ import static io.dockstore.client.cli.Client.COMMAND_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.common.DescriptorLanguage.WDL;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -292,7 +290,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         String[] parts = entry.split(":");
         String path = parts[0];
         Workflow workflow = getDockstoreWorkflowByPath(path);
-        String descriptor = workflow.getDescriptorType();
+        String descriptor = workflow.getDescriptorType().getValue();
         LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
         return languageCLient.generateInputJson(entry, json);
     }
@@ -420,7 +418,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     String path = parts[0];
                     try {
                         Workflow workflow = getDockstoreWorkflowByPath(path);
-                        String descriptor = workflow.getDescriptorType();
+                        final Workflow.DescriptorTypeEnum descriptorType = workflow.getDescriptorType();
+                        final String descriptor = descriptorType.getValue().toLowerCase();
                         LanguageClientInterface languageClientInterface = convertCLIStringToEnum(descriptor);
                         DescriptorLanguage language = DescriptorLanguage.convertShortStringToEnum(descriptor);
 
@@ -943,7 +942,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 Workflow workflow = workflowsApi.getWorkflowByPath(entry, null);
                 long workflowId = workflow.getId();
 
-                String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
+                String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType().getValue());
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
                 String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
                 String defaultTestJsonPath = optVal(args, "--default-test-parameter-path", workflow.getDefaultTestParameterFilePath());
@@ -955,8 +954,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
                     }
 
-                    workflow.setDescriptorType(descriptorType);
-                } else if (!descriptorType.equals(workflow.getDescriptorType())) {
+                    workflow.setDescriptorType(Workflow.DescriptorTypeEnum.fromValue(descriptorType.toUpperCase()));
+                } else if (!descriptorType.equalsIgnoreCase(workflow.getDescriptorType().getValue())) {
                     errorMessage(
                             "You cannot change the descriptor type of a FULL workflow. Revert it to a STUB if you wish to change descriptor type.",
                             Client.CLIENT_ERROR);
@@ -1045,7 +1044,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         final String workflowPath = optVal(args, "--workflow-path", workflowVersion.getWorkflowPath());
 
                         // Check that workflow path matches with the workflow descriptor type
-                        if (!workflowPath.toLowerCase().endsWith(workflow.getDescriptorType())) {
+                        if (!workflowPath.toLowerCase().endsWith(workflow.getDescriptorType().getValue().toLowerCase())) {
                             errorMessage("Please ensure that the workflow path uses the file extension " + workflow.getDescriptorType(),
                                     Client.CLIENT_ERROR);
                         }
@@ -1128,13 +1127,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
         if (valid) {
             try {
-                if (descriptorType.equals(CWL)) {
-                    file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.CWL.toString());
-                } else if (descriptorType.equals(WDL)) {
-                    file = workflowsApi.primaryDescriptor(workflow.getId(), version, DescriptorLanguage.WDL.toString());
-                } else {
-                    throw new UnsupportedOperationException("other languages not supported yet");
-                }
+                file = workflowsApi.primaryDescriptor(workflow.getId(), version, descriptorType.toString());
             } catch (ApiException ex) {
                 if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
                     exceptionMessage(ex, "Invalid version", Client.API_ERROR);

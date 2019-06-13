@@ -201,10 +201,10 @@ public class WorkflowResource
         workflow.setMode(WorkflowMode.STUB);
 
         // go through and delete versions for a stub
-        for (WorkflowVersion version : workflow.getVersions()) {
+        for (WorkflowVersion version : workflow.getWorkflowVersions()) {
             workflowVersionDAO.delete(version);
         }
-        workflow.getVersions().clear();
+        workflow.getWorkflowVersions().clear();
 
         // Do we maintain the checker workflow association? For now we won't
         workflow.setCheckerWorkflow(null);
@@ -366,17 +366,17 @@ public class WorkflowResource
 
         // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.SERVICE.toString())) {
+        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
             workflow.setMode(WorkflowMode.SERVICE);
         } else {
             workflow.setMode(WorkflowMode.FULL);
         }
 
         // look for checker workflows to associate with if applicable
-        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType().equals(CWL.toString()) || workflow.getDescriptorType().equals(
-            WDL.toString())) {
+        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL
+            || workflow.getDescriptorType() == WDL) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
-            String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType().equals(CWL.toString()) ? CWL_CHECKER : WDL_CHECKER);
+            String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
             BioWorkflow byPath = (BioWorkflow)workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false);
             if (byPath != null && workflow.getCheckerWorkflow() == null) {
                 workflow.setCheckerWorkflow(byPath);
@@ -388,7 +388,7 @@ public class WorkflowResource
             .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
-        FileFormatHelper.updateFileFormats(newWorkflow.getVersions(), fileFormatDAO);
+        FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
 
         // Refresh checker workflow
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
@@ -430,7 +430,7 @@ public class WorkflowResource
 
             // Update each workflow with reference types
             for (Workflow workflow : workflows) {
-                Set<WorkflowVersion> versions = workflow.getVersions();
+                Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
                 versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
             }
         }
@@ -473,7 +473,7 @@ public class WorkflowResource
         }
 
         // Then copy over content that changed
-        for (WorkflowVersion version : newWorkflow.getVersions()) {
+        for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
             if (existingVersionMap.containsKey(version.getName())) {
                 workflowVersionFromDB.update(version);
@@ -481,7 +481,7 @@ public class WorkflowResource
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
-                workflow.getVersions().add(workflowVersionFromDB);
+                workflow.getWorkflowVersions().add(workflowVersionFromDB);
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
             }
 
@@ -706,7 +706,7 @@ public class WorkflowResource
         checkNotHosted(wf);
 
         //update the workflow path in all workflowVersions
-        Set<WorkflowVersion> versions = wf.getVersions();
+        Set<WorkflowVersion> versions = wf.getWorkflowVersions();
         for (WorkflowVersion version : versions) {
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
@@ -774,7 +774,7 @@ public class WorkflowResource
 
         if (request.getPublish()) {
             boolean validTag = false;
-            Set<WorkflowVersion> versions = c.getVersions();
+            Set<WorkflowVersion> versions = c.getWorkflowVersions();
             for (WorkflowVersion workflowVersion : versions) {
                 if (workflowVersion.isValid()) {
                     validTag = true;
@@ -1072,7 +1072,7 @@ public class WorkflowResource
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findPublishedById(workflowId);
         checkEntry(repository);
-        return new ArrayList<>(repository.getVersions());
+        return new ArrayList<>(repository.getWorkflowVersions());
     }
 
     @GET
@@ -1118,7 +1118,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/descriptor/{relative-path}")
-    @ApiOperation(value = "Get the corresponding CWL descriptor file on Github.", tags = {
+    @ApiOperation(value = "Get the corresponding descriptor file from source control.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1132,7 +1132,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/secondaryDescriptors")
-    @ApiOperation(value = "Get the corresponding cwl documents on Github.", tags = {
+    @ApiOperation(value = "Get the corresponding descriptor documents from source control.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1305,7 +1305,7 @@ public class WorkflowResource
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
         }
         // hmmm, will need to set the descriptor type now before the default path, lest the wrong language be recorded till we get multiple language workflows
-        newWorkflow.setDescriptorType(descriptorType);
+        newWorkflow.setDescriptorType(DescriptorLanguage.convertShortStringToEnum(descriptorType));
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
@@ -1353,7 +1353,7 @@ public class WorkflowResource
 
         // create a map for quick lookup
         Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();
-        for (WorkflowVersion version : w.getVersions()) {
+        for (WorkflowVersion version : w.getWorkflowVersions()) {
             mapOfExistingWorkflowVersions.put(version.getId(), version);
         }
 
@@ -1373,7 +1373,7 @@ public class WorkflowResource
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getVersions();
+        return result.getWorkflowVersions();
     }
 
     @GET
@@ -1463,7 +1463,7 @@ public class WorkflowResource
      * @return WorkflowVersion
      */
     private WorkflowVersion getWorkflowVersion(Workflow workflow, Long workflowVersionId) {
-        Set<WorkflowVersion> workflowVersions = workflow.getVersions();
+        Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
         WorkflowVersion workflowVersion = null;
 
         for (WorkflowVersion wv : workflowVersions) {
@@ -1639,12 +1639,12 @@ public class WorkflowResource
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(workflow.getWorkflowName(), "");
 
-            if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
+            if (workflow.getDescriptorType() == CWL) {
                 workflowName += CWL_CHECKER;
-            } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
+            } else if (workflow.getDescriptorType() == WDL) {
                 workflowName += WDL_CHECKER;
             } else {
-                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().toLowerCase()
+                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getLowerShortName()
                     + " is not valid.\nSupported types include cwl and wdl.");
             }
         } else {
@@ -1654,7 +1654,7 @@ public class WorkflowResource
         // Create checker workflow
         BioWorkflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setMode(WorkflowMode.STUB);
-        checkerWorkflow.setDescriptorType(descriptorType);
+        checkerWorkflow.setDescriptorType(DescriptorLanguage.convertShortStringToEnum(descriptorType));
         checkerWorkflow.setDefaultWorkflowPath(checkerWorkflowPath);
         checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
         checkerWorkflow.setOrganization(organization);
@@ -1693,7 +1693,7 @@ public class WorkflowResource
      */
     private void initializeValidations(String include, Workflow workflow) {
         if (checkIncludes(include, "validations")) {
-            workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
+            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
     }
 

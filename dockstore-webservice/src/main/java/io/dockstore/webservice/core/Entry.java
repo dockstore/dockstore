@@ -405,13 +405,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty("input_file_formats")
     public Set<FileFormat> getInputFileFormats() {
-        Stream<FileFormat> fileFormatStream = this.getVersions().stream().flatMap(version -> version.getInputFileFormats().stream());
+        Stream<FileFormat> fileFormatStream = this.getWorkflowVersions().stream().flatMap(version -> version.getInputFileFormats().stream());
         return fileFormatStream.collect(Collectors.toSet());
     }
 
     @JsonProperty("output_file_formats")
     public Set<FileFormat> getOutputFileFormats() {
-        Stream<FileFormat> fileFormatStream = this.getVersions().stream().flatMap(version -> version.getOutputFileFormats().stream());
+        Stream<FileFormat> fileFormatStream = this.getWorkflowVersions().stream().flatMap(version -> version.getOutputFileFormats().stream());
         return fileFormatStream.collect(Collectors.toSet());
     }
 
@@ -420,15 +420,29 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      *
      * @return versions
      */
-    @JsonIgnore
-    public abstract Set<T> getVersions();
+    @JsonProperty
+    public abstract Set<T> getWorkflowVersions();
+
+    @JsonProperty
+    public void setWorkflowVersions(Set<T> set) {
+        this.getWorkflowVersions().clear();
+        this.getWorkflowVersions().addAll(set);
+    }
+
+    public boolean addWorkflowVersion(T workflowVersion) {
+        return getWorkflowVersions().add(workflowVersion);
+    }
+
+    public boolean removeWorkflowVersion(T workflowVersion) {
+        return getWorkflowVersions().remove(workflowVersion);
+    }
 
     /**
      * @param newDefaultVersion
      * @return true if defaultVersion is a valid Docker tag
      */
     public boolean checkAndSetDefaultVersion(String newDefaultVersion) {
-        for (Version version : this.getVersions()) {
+        for (Version version : this.getWorkflowVersions()) {
             if (Objects.equals(newDefaultVersion, version.getName())) {
                 this.setDefaultVersion(newDefaultVersion);
                 return true;

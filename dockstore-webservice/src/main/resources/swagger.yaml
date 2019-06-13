@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.7-SNAPSHOT"
+  version: "1.7.0-alpha.8-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -1155,6 +1155,29 @@ paths:
       - "application/json"
       parameters:
       - name: "access_token"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Token"
+      security:
+      - BEARER: []
+  /auth/tokens/zenodo.org:
+    get:
+      tags:
+      - "tokens"
+      summary: "Add a new zenodo.org token, used by accounts page."
+      description: "This is used as part of the OAuth 2 web flow. Once a user has\
+        \ approved permissions for CollaboratoryTheir browser will load the redirect\
+        \ URI which should resolve here"
+      operationId: "addZenodoToken"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "code"
         in: "query"
         required: false
         type: "string"
@@ -5059,7 +5082,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding CWL descriptor file on Github."
+      summary: "Get the corresponding descriptor file from source control."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "secondaryDescriptorPath"
@@ -5299,7 +5322,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding cwl documents on Github."
+      summary: "Get the corresponding descriptor documents from source control."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "secondaryDescriptors"
@@ -5695,6 +5718,118 @@ definitions:
     properties:
       content:
         type: "string"
+  Base class for versions of entries in the Dockstore:
+    type: "object"
+    required:
+    - "name"
+    - "reference"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the tag in this web service"
+        readOnly: true
+      referenceType:
+        type: "string"
+        description: "This indicates the type of git (or other source control) reference"
+        enum:
+        - "COMMIT"
+        - "TAG"
+        - "BRANCH"
+        - "NOT_APPLICABLE"
+        - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
+      workingDirectory:
+        type: "string"
+      last_modified:
+        type: "string"
+        format: "date-time"
+        position: 1
+        description: "Tool-> For automated builds: Last time specific tag was built.\
+          \ For hosted: When version was created Workflow-> Remote: Last time version\
+          \ on GitHub repo was changed. Hosted: time version created"
+      reference:
+        type: "string"
+        position: 2
+        description: "git commit/tag/branch"
+      sourceFiles:
+        type: "array"
+        position: 3
+        description: "Cached files for each version. Includes Dockerfile and Descriptor\
+          \ files"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/SourceFile"
+      hidden:
+        type: "boolean"
+        position: 4
+        description: "Implementation specific, whether this row is visible to other\
+          \ users aside from the owner"
+      valid:
+        type: "boolean"
+        position: 5
+        description: "Implementation specific, whether this tag has valid files from\
+          \ source code repo"
+      name:
+        type: "string"
+        position: 6
+        description: "Implementation specific, can be a quay.io or docker hub tag\
+          \ name"
+      dirtyBit:
+        type: "boolean"
+        position: 7
+        description: "True if user has altered the tag"
+      verified:
+        type: "boolean"
+        position: 8
+        description: "Whether this version has been verified or not"
+      verifiedSource:
+        type: "string"
+        position: 9
+        description: "Verified source for the version"
+      doiURL:
+        type: "string"
+        position: 10
+        description: "This is a URL for the DOI for the version of the entry"
+      doiStatus:
+        type: "string"
+        position: 11
+        description: "This indicates the DOI status"
+        enum:
+        - "NOT_REQUESTED"
+        - "REQUESTED"
+        - "CREATED"
+      versionEditor:
+        position: 12
+        description: "Particularly for hosted workflows, this records who edited to\
+          \ create a revision"
+        $ref: "#/definitions/User"
+      input_file_formats:
+        type: "array"
+        position: 20
+        description: "File formats for describing the input file formats of versions\
+          \ (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      output_file_formats:
+        type: "array"
+        position: 21
+        description: "File formats for describing the output file formats of versions\
+          \ (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      commitID:
+        type: "string"
+        position: 22
+        description: "This is the commit id for the source control that the files\
+          \ belong to"
   BioWorkflow:
     allOf:
     - $ref: "#/definitions/Workflow"
@@ -5812,6 +5947,12 @@ definitions:
         type: "string"
       gitlabScope:
         type: "string"
+      zenodoAuthUrl:
+        type: "string"
+      zenodoRedirectPath:
+        type: "string"
+      zenodoScope:
+        type: "string"
       googleScope:
         type: "string"
       cwlVisualizerUri:
@@ -5825,6 +5966,8 @@ definitions:
       bitBucketClientId:
         type: "string"
       gitlabClientId:
+        type: "string"
+      zenodoClientId:
         type: "string"
       googleClientId:
         type: "string"
@@ -5870,12 +6013,13 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      tags:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Tag"
       custom_docker_registry_path:
         type: "string"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
         readOnly: true
       has_checker:
         type: "boolean"
@@ -5892,6 +6036,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6042,7 +6190,7 @@ definitions:
           \ builds: When refresh is hit, the last time the tool was built gets stored\
           \ here. If tool was never built on quay.io, then last build will be null.\
           \ N/A for hosted/manual path tools"
-      tags:
+      workflowVersions:
         type: "array"
         position: 26
         description: "Implementation specific tracking of valid build tags for the\
@@ -6099,10 +6247,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      workflowVersions:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Base class for versions of entries in the Dockstore"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6118,6 +6267,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6881,8 +7034,7 @@ definitions:
         - "CWL"
         - "WDL"
         - "NFL"
-        - "SWL"
-        - "DOCKSTORE_SERVICE"
+        - "SERVICE"
       descriptor:
         type: "string"
         description: "The descriptor that represents this version of the tool."
@@ -7013,8 +7165,7 @@ definitions:
           - "CWL"
           - "WDL"
           - "NFL"
-          - "SWL"
-          - "DOCKSTORE_SERVICE"
+          - "SERVICE"
       containerfile:
         type: "boolean"
         description: "Reports if this tool has a containerfile available."
@@ -7193,10 +7344,6 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7212,6 +7359,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7319,6 +7470,11 @@ definitions:
         position: 18
         description: "This is a descriptor type for the workflow, either CWL, WDL,\
           \ or Nextflow (Defaults to CWL)"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "NFL"
+        - "service"
       workflow_path:
         type: "string"
         position: 19

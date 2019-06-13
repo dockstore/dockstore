@@ -33,7 +33,7 @@ public final class FileFormatHelper {
             SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
             SortedSet<SourceFile> sourceFiles = tag.getSourceFiles();
             List<SourceFile> cwlFiles = sourceFiles.stream()
-                    .filter(sourceFile -> sourceFile.getType().equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)).collect(Collectors.toList());
+                    .filter(sourceFile -> sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL).collect(Collectors.toList());
             cwlFiles.stream().filter(cwlFile -> cwlFile.getContent() != null).forEach(cwlFile -> {
                 inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
                 outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));

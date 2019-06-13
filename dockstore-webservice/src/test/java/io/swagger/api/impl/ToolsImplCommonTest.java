@@ -135,7 +135,7 @@ public class ToolsImplCommonTest {
         sourceFile2.setAbsolutePath("/Dockstore.cwl");
         tag.addSourceFile(sourceFile);
         tag.addSourceFile(sourceFile2);
-        tool.addTag(tag);
+        tool.addWorkflowVersion(tag);
         tool.setCheckerWorkflow(null);
         Tool expectedTool = new Tool();
         if (toolname != null) {
@@ -250,7 +250,7 @@ public class ToolsImplCommonTest {
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
         workflow.setSourceControl(SourceControl.GITHUB);
-        workflow.setDescriptorType("wdl");
+        workflow.setDescriptorType(DescriptorLanguage.WDL);
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);
         workflow.setId(950);

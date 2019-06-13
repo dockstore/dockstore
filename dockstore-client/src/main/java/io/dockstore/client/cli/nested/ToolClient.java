@@ -70,8 +70,6 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.swagger.client.model.DockstoreTool.ModeEnum.HOSTED;
 
 /**
@@ -522,7 +520,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 tag.setName(versionName);
                 List<Tag> tagList = new ArrayList<>();
                 tagList.add(tag);
-                tool.setTags(tagList);
+                tool.setWorkflowVersions(tagList);
             }
 
             // Register new tool
@@ -656,7 +654,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         }
 
         final String fixTag = tag;
-        Optional<Tag> first = container.getTags().stream().filter(foo -> foo.getName().equalsIgnoreCase(fixTag)).findFirst();
+        Optional<Tag> first = container.getWorkflowVersions().stream().filter(foo -> foo.getName().equalsIgnoreCase(fixTag)).findFirst();
         if (first.isPresent()) {
             Long versionId = first.get().getId();
             // https://github.com/ga4gh/dockstore/issues/1712 client seems to use jersey logging which is not controlled from logback
@@ -717,7 +715,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
 
         try {
             DockstoreTool tool = containersApi.getContainerByToolPath(entry, null);
-            List<Tag> tags = Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>());
+            List<Tag> tags = Optional.ofNullable(tool.getWorkflowVersions()).orElse(new ArrayList<>());
             final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
 
             if (first.isEmpty()) {
@@ -797,7 +795,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 }
                 out("TAGS");
 
-                List<Tag> tags = container.getTags();
+                List<Tag> tags = container.getWorkflowVersions();
                 int tagSize = tags.size();
                 StringBuilder builder = new StringBuilder();
                 if (tagSize > 0) {
@@ -892,8 +890,8 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                         versionTagUpdateHelp();
                     } else {
                         final String tagName = reqVal(args, "--name");
-                        List<Tag> tags = Optional.ofNullable(container.getTags()).orElse(new ArrayList<>());
-                        Boolean updated = false;
+                        List<Tag> tags = Optional.ofNullable(container.getWorkflowVersions()).orElse(new ArrayList<>());
+                        boolean updated = false;
 
                         for (Tag tag : tags) {
                             if (tag.getName().equals(tagName)) {
@@ -934,7 +932,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                         final String tagName = reqVal(args, "--name");
                         List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
                         long tagId;
-                        Boolean removed = false;
+                        boolean removed = false;
 
                         for (Tag tag : tags) {
                             if (tag.getName().equals(tagName)) {
@@ -1060,7 +1058,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 // if valid version
                 boolean updateVersionSuccess = false;
 
-                for (Tag tag : Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>())) {
+                for (Tag tag : Optional.ofNullable(tool.getWorkflowVersions()).orElse(new ArrayList<>())) {
                     if (tag.getName().equals(defaultTag)) {
                         tool.setDefaultVersion(defaultTag);
                         updateVersionSuccess = true;
@@ -1071,7 +1069,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 if (!updateVersionSuccess && defaultTag != null) {
                     out("Not a valid version.");
                     out("Valid versions include:");
-                    for (Tag tag : Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>())) {
+                    for (Tag tag : Optional.ofNullable(tool.getWorkflowVersions()).orElse(new ArrayList<>())) {
                         out(tag.getReference());
                     }
                     errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
@@ -1100,13 +1098,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         }
 
         if (container != null) {
-            if (descriptorType.equals(CWL)) {
-                file = containersApi.primaryDescriptor(container.getId(), tag, DescriptorLanguage.CWL.toString());
-            } else if (descriptorType.equals(WDL)) {
-                file = containersApi.primaryDescriptor(container.getId(), tag, DescriptorLanguage.WDL.toString());
-            } else {
-                throw new UnsupportedOperationException("other languages not supported yet");
-            }
+            file = containersApi.primaryDescriptor(container.getId(), tag, descriptorType.toString());
         } else {
             errorMessage("No tool found with path " + entry, Client.API_ERROR);
         }

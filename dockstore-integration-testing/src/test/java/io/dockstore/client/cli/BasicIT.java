@@ -29,7 +29,6 @@ import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.model.DescriptorType;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;

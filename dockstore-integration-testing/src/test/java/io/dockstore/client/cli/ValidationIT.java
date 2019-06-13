@@ -91,7 +91,7 @@ public class ValidationIT extends BaseIT {
         tag.setWdlPath(c.getDefaultWdlPath());
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        c.setTags(tags);
+        c.setWorkflowVersions(tags);
 
         return c;
     }
@@ -121,7 +121,7 @@ public class ValidationIT extends BaseIT {
      * @return is tag valid
      */
     protected boolean isTagValid(DockstoreTool tool, String name) {
-        Optional<Tag> tag = tool.getTags()
+        Optional<Tag> tag = tool.getWorkflowVersions()
                 .stream()
                 .filter(version -> Objects.equals(name, version.getName()))
                 .findFirst();

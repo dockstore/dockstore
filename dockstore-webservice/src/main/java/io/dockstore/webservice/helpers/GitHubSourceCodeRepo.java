@@ -612,7 +612,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
 
             // Find existing version if it exists
-            Optional<WorkflowVersion> existingVersion = workflow.getVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
+            Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
             Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
             if (existingVersion.isPresent()) {
                 existingDefaults.put(gitReference, existingVersion.get());

@@ -65,6 +65,7 @@ import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -526,7 +527,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
+        workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
@@ -580,7 +581,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
+        workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null);
@@ -610,7 +611,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
+        workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null);
@@ -665,7 +666,7 @@ public class WorkflowIT extends BaseIT {
         Workflow mtaNf = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         mtaNf.setWorkflowPath("/nextflow.config");
-        mtaNf.setDescriptorType(DescriptorLanguage.NEXTFLOW.toString().toLowerCase());
+        mtaNf.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
         workflowApi.refresh(mtaNf.getId());
         // publish this way? (why is the auto-generated variable private?)
@@ -1016,19 +1017,19 @@ public class WorkflowIT extends BaseIT {
         toolApi.publish(registeredTool.getId(), publishRequest);
 
         // look that branches and tags are typed correctly for tools
-        assertTrue("should see at least 6 branches",registeredTool.getTags().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.BRANCH).count() >= 1);
-        assertTrue("should see at least 6 tags",registeredTool.getTags().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.TAG).count() >= 2);
+        assertTrue("should see at least 6 branches",registeredTool.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.BRANCH).count() >= 1);
+        assertTrue("should see at least 6 tags",registeredTool.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.TAG).count() >= 2);
 
         assertTrue("did not pick up description from $include", registeredTool.getDescription().contains("A Docker container for PCAP-core."));
         assertEquals("did not import mixin and includes properly", 5,
-            registeredTool.getTags().stream().filter(tag -> Objects.equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles()
+            registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles()
                 .size());
         assertEquals("did not import symbolic links to folders properly", 5,
-            registeredTool.getTags().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles()
+            registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles()
                 .size());
         // check that commit ids look properly recorded
         // check on commit ids for github
-        boolean allHaveCommitIds = registeredTool.getTags().stream().noneMatch(version -> version.getCommitID().isEmpty());
+        boolean allHaveCommitIds = registeredTool.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
         assertTrue("not all tools seem to have commit ids", allHaveCommitIds);
 
         // check on URLs for workflows via ga4gh calls

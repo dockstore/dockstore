@@ -135,6 +135,14 @@ components:
           type: string
         terraImportUrl:
           type: string
+        zenodoAuthUrl:
+          type: string
+        zenodoClientId:
+          type: string
+        zenodoRedirectPath:
+          type: string
+        zenodoScope:
+          type: string
       type: object
     DescriptorLanguageBean:
       properties:
@@ -210,6 +218,11 @@ components:
         users:
           items:
             $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        workflowVersions:
+          items:
+            $ref: '#/components/schemas/Version'
           type: array
           uniqueItems: true
       type: object
@@ -571,6 +584,7 @@ components:
           - dockstore
           - bitbucket.org
           - gitlab.com
+          - zenodo.org
           - google.com
           type: string
         userId:
@@ -701,6 +715,11 @@ components:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+        workflowVersions:
+          items:
+            $ref: '#/components/schemas/Tag'
+          type: array
+          uniqueItems: true
       type: object
     ToolTesterLog:
       properties:
@@ -782,6 +801,71 @@ components:
         verify:
           type: boolean
       type: object
+    Version:
+      properties:
+        commitID:
+          type: string
+        dirtyBit:
+          type: boolean
+        doiStatus:
+          enum:
+          - NOT_REQUESTED
+          - REQUESTED
+          - CREATED
+          type: string
+        doiURL:
+          type: string
+        hidden:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        input_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        last_modified:
+          format: date-time
+          type: string
+        name:
+          type: string
+        output_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        reference:
+          type: string
+        referenceType:
+          enum:
+          - COMMIT
+          - TAG
+          - BRANCH
+          - NOT_APPLICABLE
+          - UNSET
+          type: string
+        sourceFiles:
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          type: array
+          uniqueItems: true
+        valid:
+          type: boolean
+        validations:
+          items:
+            $ref: '#/components/schemas/Validation'
+          type: array
+          uniqueItems: true
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
+        versionEditor:
+          $ref: '#/components/schemas/User'
+        workingDirectory:
+          type: string
+      type: object
     Workflow:
       discriminator:
         propertyName: type
@@ -808,6 +892,11 @@ components:
         description:
           type: string
         descriptorType:
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - service
           type: string
         email:
           type: string
@@ -1736,6 +1825,26 @@ paths:
       parameters:
       - in: query
         name: access_token
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: default response
+  /auth/tokens/zenodo.org:
+    get:
+      operationId: addZenodoToken
+      parameters:
+      - in: query
+        name: code
         schema:
           type: string
       requestBody:
@@ -3250,7 +3359,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4137,6 +4246,7 @@ paths:
           - dockstore
           - bitbucket.org
           - gitlab.com
+          - zenodo.org
           - google.com
           type: string
       requestBody:
@@ -4619,7 +4729,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1

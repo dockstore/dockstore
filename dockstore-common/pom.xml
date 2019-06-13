@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.7.0-alpha.7-SNAPSHOT</version>
+        <version>1.7.0-alpha.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-common</artifactId>
@@ -28,14 +28,13 @@
 
 
     <dependencies>
-	<dependency>
+        <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
             <artifactId>java-semver</artifactId>
-            <version>0.9.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

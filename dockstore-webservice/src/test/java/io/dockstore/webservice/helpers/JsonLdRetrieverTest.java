@@ -49,7 +49,7 @@ public class JsonLdRetrieverTest {
         file.setAbsolutePath("/dummy path");
         tag.addSourceFile(file);
         tag.setReference("master");
-        tool.addTag(tag);
+        tool.addWorkflowVersion(tag);
         tool.setDefaultVersion("master");
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
