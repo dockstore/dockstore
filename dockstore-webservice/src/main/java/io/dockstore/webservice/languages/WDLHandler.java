@@ -73,7 +73,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             List<Map<String, String>> metadata = wdlBridge.getMetadata(filepath, content);
             Set<String> authors = new HashSet<>();
             Set<String> emails = new HashSet<>();
-            final String[] mainDescription = new String[0];
+            final String[] mainDescription = { null };
 
             metadata.stream().forEach(metaBlock -> {
                 String author = metaBlock.get("author");
