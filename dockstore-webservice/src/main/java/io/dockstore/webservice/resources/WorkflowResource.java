@@ -344,6 +344,49 @@ public class WorkflowResource
         return tokenDAO.findByUserId(user.getId());
     }
 
+    @PUT
+    @Path("/path/service/{repository}")
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
+    public Service addService(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
+            @ApiParam(value = "Name of user on GitHub", required = true) @QueryParam("sender") String sender,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        // Find user by github name
+        Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(sender);
+        if (userGitHubToken == null) {
+            String msg = "No user with GitHub username " + sender + " exists on Dockstore.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Get user object for github token
+        User sendingUser = userDAO.findById(userGitHubToken.getUserId());
+        if (sendingUser == null) {
+            String msg = "No user with GitHub username " + sender + " exists on Dockstore.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Create a service object
+        Service service = new Service();
+        service.setMode(WorkflowMode.SERVICE);
+        service.setOrganization(repository.split("/")[0]);
+        service.setRepository(repository.split("/")[1]);
+        service.setSourceControl(SourceControl.GITHUB);
+        service.setGitUrl("git@github.com:" + repository + ".git");
+        service.setLastUpdated(new Date());
+        service.setDefaultWorkflowPath("/Dockstore.yml");
+        service.setDescriptorType(DescriptorLanguage.SERVICE);
+        service.getUsers().add(sendingUser);
+
+        long serviceId = workflowDAO.create(service);
+        return (Service)workflowDAO.findById(serviceId);
+    }
+
     @GET
     @Path("/{workflowId}/refresh")
     @Timed

@@ -430,8 +430,120 @@ components:
           type: string
       type: object
     Service:
-      allOf:
-      - $ref: '#/components/schemas/Workflow'
+      properties:
+        aliases:
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+          type: object
+        author:
+          type: string
+        checker_id:
+          format: int64
+          type: integer
+        dbCreateDate:
+          format: date-time
+          type: string
+        dbUpdateDate:
+          format: date-time
+          type: string
+        defaultTestParameterFilePath:
+          type: string
+        defaultVersion:
+          type: string
+        description:
+          type: string
+        descriptorType:
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - service
+          type: string
+        email:
+          type: string
+        full_workflow_path:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        input_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        isChecker:
+          type: boolean
+        is_published:
+          type: boolean
+        labels:
+          items:
+            $ref: '#/components/schemas/Label'
+          type: array
+          uniqueItems: true
+        lastUpdated:
+          format: date-time
+          type: string
+        last_modified:
+          format: int32
+          type: integer
+        last_modified_date:
+          format: date-time
+          type: string
+        mode:
+          enum:
+          - FULL
+          - STUB
+          - HOSTED
+          - SERVICE
+          type: string
+        organization:
+          type: string
+        output_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        parentEntry:
+          $ref: '#/components/schemas/Entry'
+        path:
+          type: string
+        repository:
+          type: string
+        sourceControl:
+          enum:
+          - dockstore.org
+          - github.com
+          - bitbucket.org
+          - gitlab.com
+          type: string
+        source_control_provider:
+          type: string
+        starredUsers:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
+        users:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        workflowName:
+          type: string
+        workflowVersions:
+          items:
+            $ref: '#/components/schemas/WorkflowVersion'
+          type: array
+          uniqueItems: true
+        workflow_path:
+          type: string
       type: object
     SharedWorkflows:
       properties:
@@ -3359,7 +3471,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4167,7 +4279,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -4327,7 +4439,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
@@ -4867,6 +4979,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
+          description: default response
+  /workflows/path/service/{repository}:
+    put:
+      operationId: addService
+      parameters:
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: sender
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
           description: default response
   /workflows/path/workflow/{repository}:
     get:
