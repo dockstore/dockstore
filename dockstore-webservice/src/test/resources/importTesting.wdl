@@ -1,7 +1,7 @@
 version 1.0
 
 import "./md5sum.wdl" as importedMapTask
-import "https://raw.githubusercontent.com/DockstoreTestUser2/wdl-1.0-workflow/master/hello.wdl" as importedHttpTask
+import "https://raw.githubusercontent.com/DockstoreTestUser2/wdl-1.0-workflow/75f47a23043b9df089aae18bcc0aff4d8e3465ee/hello.wdl" as importedHttpTask
 
 task test {
   runtime {

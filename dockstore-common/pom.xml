@@ -109,7 +109,7 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl-draft3_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
@@ -120,10 +120,6 @@
                     <artifactId>cats-core_2.12</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.typelevel</groupId>
                     <artifactId>alleycats-core_2.12</artifactId>
                 </exclusion>
@@ -131,17 +127,13 @@
                     <groupId>eu.timepit</groupId>
                     <artifactId>refined_2.12</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-text</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl-draft2_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
@@ -173,7 +165,7 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl-biscayne_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
@@ -206,7 +198,7 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>language-factory-core_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.typelevel</groupId>
@@ -242,7 +234,7 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell-core_2.12</artifactId>
-            <version>41</version>
+            <version>${cromwell.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.guava</groupId>

@@ -105,7 +105,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         WdlBridge wdlBridge = new WdlBridge();
         try {
             wdlInputs = wdlBridge.getInputFiles(localPrimaryDescriptorFile.getAbsolutePath());
-        } catch (Exception ex) {
+        } catch (WdlParser.SyntaxError ex) {
             exceptionMessage(ex, "Problem parsing WDL file: " + ex.getMessage(), API_ERROR);
         }
 

@@ -341,44 +341,6 @@ class WdlBridge {
   }
 
   /**
-    * Returns true if the file is likely v1.0, false otherwise.
-    * Will only look at the primary descriptor.
-    * @param filePath absolute path to file
-    * @return whether file looks parsable or not
-    */
-  def isDraft3(filePath: String) : Boolean = {
-    val factory = new WdlDraft3LanguageFactory(ConfigFactory.empty())
-    val fileContent = readFile(filePath)
-    factory.looksParsable(fileContent)
-  }
-
-  /**
-    * Returns true if the file is likely draft-2, false otherwise.
-    * Will only look at the primary descriptor.
-    *
-    * @param filePath absolute path to file
-    * @return whether file looks parsable or not
-    */
-  def isDraft2(filePath: String) : Boolean = {
-    val factory = new WdlDraft2LanguageFactory(ConfigFactory.empty())
-    val fileContent = readFile(filePath)
-    factory.looksParsable(fileContent)
-  }
-
-  /**
-    * Returns true if the file is likely Biscayne, false otherwise.
-    * Will only look at the primary descriptor.
-    *
-    * @param filePath absolute path to file
-    * @return whether file looks parsable or not
-    */
-  def isBiscayne(filePath: String) : Boolean = {
-    val factory = new WdlBiscayneLanguageFactory(ConfigFactory.empty())
-    val fileContent = readFile(filePath)
-    factory.looksParsable(fileContent)
-  }
-
-  /**
     * Read the given file into a string
     * @param filePath absolute path to file
     * @return Content of file as a string
