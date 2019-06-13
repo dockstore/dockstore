@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +41,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
 import avro.shaded.com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
@@ -72,15 +72,10 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.common.DescriptorLanguage.DOCKSTORE_SERVICE;
 import static io.dockstore.common.DescriptorLanguage.FileType.CWL_TEST_JSON;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_SERVICE_TEST_JSON;
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
-import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW;
-import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_CONFIG;
 import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS;
 import static io.dockstore.common.DescriptorLanguage.FileType.WDL_TEST_JSON;
 
@@ -155,19 +150,21 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value,
+        Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        String newVersionId;
         try {
-            versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
+            newVersionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
         Entry entry = getEntry(parsedID, user);
-        return buildToolResponse(entry, versionId, false);
+        return buildToolResponse(entry, newVersionId, false);
     }
 
-    public Entry<?,?> getEntry(ParsedRegistryID parsedID, Optional<User> user) {
-        Entry<?,?> entry;
+    public Entry<?, ?> getEntry(ParsedRegistryID parsedID, Optional<User> user) {
+        Entry<?, ?> entry;
         String entryPath = parsedID.getPath();
         String entryName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
         if (entryName != null) {
@@ -187,8 +184,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         return null;
     }
-
-
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
@@ -231,8 +226,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
-        boolean plainTextResponse =
-            contextContainsPlainText(value) || type.toLowerCase().contains("plain");
+        boolean plainTextResponse = contextContainsPlainText(value) || type.toLowerCase().contains("plain");
         switch (fileType.get()) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
@@ -258,8 +252,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @SuppressWarnings("CheckStyle")
     @Override
-    public Response toolsGet(String id, String alias, String registry, String organization, String name, String toolname, String description,
-        String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
+    public Response toolsGet(String id, String alias, String registry, String organization, String name, String toolname,
+        String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
+        ContainerRequestContext value, Optional<User> user) {
         final List<Entry> all = new ArrayList<>();
 
         // short circuit id and alias filters, these are a bit weird because they have a max of one result
@@ -354,10 +349,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
         }
 
-        if (limit == null) {
-            limit = DEFAULT_PAGE_SIZE;
-        }
-        List<List<io.swagger.model.Tool>> pagedResults = Lists.partition(results, limit);
+        final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
+
+        List<List<io.swagger.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
         int offsetInteger = 0;
         if (offset != null) {
             offsetInteger = Integer.parseInt(offset);
@@ -369,14 +363,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
-        responseBuilder.header("current_limit", limit);
+        responseBuilder.header("current_limit", actualLimit);
         try {
             int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
             responseBuilder.header("self_link",
                 new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
                     ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
                     value.getUriInfo().getRequestUri().getQuery(), null).normalize().toURL().toString());
-        // construct links to other pages
+            // construct links to other pages
             List<String> filters = new ArrayList<>();
             handleParameter(id, "id", filters);
             handleParameter(organization, "organization", filters);
@@ -385,17 +379,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             handleParameter(description, "description", filters);
             handleParameter(author, "author", filters);
             handleParameter(registry, "registry", filters);
-            handleParameter(limit.toString(), "limit", filters);
+            handleParameter(String.valueOf(actualLimit), "limit", filters);
 
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
-                    Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH
+                        + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
-                Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
+                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH
+                    + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
@@ -442,7 +436,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Entry<?,?> entry = getEntry(parsedID, user);
+        Entry<?, ?> entry = getEntry(parsedID, user);
         // check whether this is registered
         if (entry == null) {
             Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "incorrect id");
@@ -460,11 +454,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         Optional<? extends Version> entryVersion;
         if (entry instanceof Tool) {
             Tool toolEntry = (Tool)entry;
-            entryVersion = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
+            entryVersion = toolEntry.getWorkflowVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
                 .findFirst();
         } else {
             Workflow workflowEntry = (Workflow)entry;
-            entryVersion = workflowEntry.getVersions().stream()
+            entryVersion = workflowEntry.getWorkflowVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
         }
 
@@ -573,7 +567,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 }
             }
         }
-        Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "version found, but file not found (bad filename, invalid file, etc.)");
+        Response.StatusType status = getExtendedStatus(Status.NOT_FOUND,
+            "version found, but file not found (bad filename, invalid file, etc.)");
         return Response.status(status).build();
     }
 
@@ -625,7 +620,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext containerRequestContext, Optional<User> user) {
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext,
+        ContainerRequestContext containerRequestContext, Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID, user);
         List<String> primaryDescriptorPaths = new ArrayList<>();
@@ -646,7 +642,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
         } else if (entry instanceof Tool) {
             Tool tool = (Tool)entry;
-            Set<Tag> versions = tool.getVersions();
+            Set<Tag> versions = tool.getWorkflowVersions();
             Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
             if (first.isPresent()) {
                 Tag tag = first.get();
@@ -674,8 +670,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         switch (fileType) {
         case NEXTFLOW_TEST_PARAMS:
         case CWL_TEST_JSON:
-        // DOCKSTORE-2428 - demo how to add new workflow language
-        // case SWL_TEST_JSON:
+            // DOCKSTORE-2428 - demo how to add new workflow language
+            // case SWL_TEST_JSON:
         case DOCKSTORE_SERVICE_TEST_JSON:
         case WDL_TEST_JSON:
             return ToolFile.FileTypeEnum.TEST_FILE;
@@ -683,8 +679,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return ToolFile.FileTypeEnum.CONTAINERFILE;
         case DOCKSTORE_WDL:
         case DOCKSTORE_CWL:
-        // DOCKSTORE-2428 - demo how to add new workflow language
-        // case DOCKSTORE_SWL:
+            // DOCKSTORE-2428 - demo how to add new workflow language
+            // case DOCKSTORE_SWL:
         case DOCKSTORE_SERVICE_YML:
         case NEXTFLOW:
             return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
@@ -703,7 +699,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @return A list of ToolFile for the Tool
      */
     private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type, String workingDirectory) {
-        List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
+        // Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL or NFL)
+        final DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
+        List<SourceFile> filteredSourceFiles = sourceFiles.stream()
+            .filter(sourceFile -> descriptorLanguage.isRelevantFileType(sourceFile.getType())).collect(Collectors.toList());
+
         final Path path = Paths.get("/" + workingDirectory);
         return filteredSourceFiles.stream().map(file -> {
             ToolFile toolFile = new ToolFile();
@@ -715,90 +715,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             toolFile.setFileType(fileTypeEnum);
             return toolFile;
         }).sorted(Comparator.comparing(ToolFile::getPath)).collect(Collectors.toList());
-    }
-
-    /**
-     * Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL or NFL)
-     *
-     * @param sourceFiles The original source files for the Tool
-     * @param type        The type (CWL or WDL or NFL)
-     * @return A list of source files that are possibly relevant to the type (CWL or WDL)
-     */
-    private List<SourceFile> filterSourcefiles(Set<SourceFile> sourceFiles, String type) {
-        switch (type) {
-        case "CWL":
-            return sourceFiles.stream().filter(this::isCWL).collect(Collectors.toList());
-        case "WDL":
-            return sourceFiles.stream().filter(this::isWDL).collect(Collectors.toList());
-        case "NFL":
-            return sourceFiles.stream().filter(this::isNFL).collect(Collectors.toList());
-        // DOCKSTORE-2428 - demo how to add new workflow language
-        // case "SWL":
-        //    return sourceFiles.stream().filter(this::isSWL).collect(Collectors.toList());
-        case DOCKSTORE_SERVICE:
-            return sourceFiles.stream().filter(this::isService).collect(Collectors.toList());
-        default:
-            throw new CustomWebApplicationException("Unknown descriptor type.", HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
-     * This checks whether the sourcefile is CWL
-     *
-     * @param sourceFile the sourcefile to check
-     * @return true if the sourcefile is CWL-related, false otherwise
-     */
-    private boolean isCWL(SourceFile sourceFile) {
-        DescriptorLanguage.FileType type = sourceFile.getType();
-        return Arrays.asList(CWL_TEST_JSON, DOCKERFILE, DOCKSTORE_CWL).contains(type);
-    }
-
-    /**
-     * This checks whether the sourcefile is WDL
-     *
-     * @param sourceFile the sourcefile to check
-     * @return true if the sourcefile is WDL-related, false otherwise
-     */
-    private boolean isWDL(SourceFile sourceFile) {
-        DescriptorLanguage.FileType type = sourceFile.getType();
-        return Arrays.asList(WDL_TEST_JSON, DOCKERFILE, DOCKSTORE_WDL)
-            .contains(type);
-    }
-
-    // DOCKSTORE-2428 - demo how to add new workflow language
-    //    /**
-    //     * This checks whether the sourcefile is SWL
-    //     *
-    //     * @param sourceFile the sourcefile to check
-    //     * @return true if the sourcefile is SWL-related, false otherwise
-    //     */
-    //    private boolean isSWL(SourceFile sourceFile) {
-    //        DescriptorLanguage.FileType type = sourceFile.getType();
-    //        return Arrays.asList(DescriptorLanguage.FileType.SWL_TEST_JSON, DOCKSTORE_SWL)
-    //            .contains(type);
-    //    }
-
-    /**
-     * This checks whether the sourcefile is a service
-     *
-     * @param sourceFile the sourcefile to check
-     * @return true if the sourcefile is service-related, false otherwise
-     */
-    private boolean isService(SourceFile sourceFile) {
-        DescriptorLanguage.FileType type = sourceFile.getType();
-        return Arrays.asList(DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON)
-            .contains(type);
-    }
-
-    /**
-     * This checks whether the sourcefile is Nextflow
-     * @param sourceFile the sourcefile to check
-     * @return true if the sourcefile is WDL-related, false otherwise
-     */
-    private boolean isNFL(SourceFile sourceFile) {
-        DescriptorLanguage.FileType type = sourceFile.getType();
-        return Arrays.asList(NEXTFLOW_CONFIG, DOCKERFILE, NEXTFLOW,
-            NEXTFLOW_TEST_PARAMS).contains(type);
     }
 
     private String cleanRelativePath(String relativePath) {
@@ -842,7 +758,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
          * This checks if the GA4GH toolId string segments provided by the user is of proper length
          * If it is not the proper length, returns an Error response object similar to what's defined for the
          * 404 response in the GA4GH swagger.yaml
-         * @param toolIdStringSegments    The toolId provided by the user which was split into string segments
+         *
+         * @param toolIdStringSegments The toolId provided by the user which was split into string segments
          */
         private void checkToolId(List<String> toolIdStringSegments) {
             if (toolIdStringSegments.size() < SEGMENTS_IN_ID) {

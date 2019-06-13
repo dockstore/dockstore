@@ -223,7 +223,7 @@ public final class JsonLdRetriever {
     private static String getDescriptorJson(final Tool tool, final String defaultVersion) {
         Tag defaultTag = null;
 
-        for (Tag tag : tool.getTags()) {
+        for (Tag tag : tool.getWorkflowVersions()) {
             if (tag.getReference().equals(defaultVersion)) {
                 defaultTag = tag;
                 break;

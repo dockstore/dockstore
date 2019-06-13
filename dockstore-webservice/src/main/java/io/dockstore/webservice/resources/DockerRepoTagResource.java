@@ -86,7 +86,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
-        return tool.getTags();
+        return tool.getWorkflowVersions();
     }
 
     @PUT
@@ -101,7 +101,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
 
         // create a map for quick lookup
         Map<Long, Tag> mapOfExistingTags = new HashMap<>();
-        for (Tag tag : tool.getTags()) {
+        for (Tag tag : tool.getWorkflowVersions()) {
             mapOfExistingTags.put(tag.getId(), tag);
         }
 
@@ -125,7 +125,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getTags();
+        return result.getWorkflowVersions();
     }
 
     @POST
@@ -146,7 +146,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             // Set dirty bit since this is a manual add
             byId.setDirtyBit(true);
 
-            boolean ableToAdd = tool.addTag(byId);
+            boolean ableToAdd = tool.addWorkflowVersion(byId);
             if (!ableToAdd) {
                 tagDAO.delete(byId);
                 throw new CustomWebApplicationException("Rollback of tag creation due to duplicate name", HttpStatus.SC_BAD_REQUEST);
@@ -156,7 +156,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getTags();
+        return result.getWorkflowVersions();
     }
 
     @DELETE
@@ -175,12 +175,12 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        Set<Tag> listOfTags = tool.getTags();
+        Set<Tag> listOfTags = tool.getWorkflowVersions();
 
         if (listOfTags.contains(tag)) {
             tag.getSourceFiles().clear();
 
-            if (tool.getTags().remove(tag)) {
+            if (tool.getWorkflowVersions().remove(tag)) {
                 elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
                 return Response.noContent().build();
             } else {
@@ -222,7 +222,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getTags();
+        return result.getWorkflowVersions();
     }
 
     @POST
@@ -251,7 +251,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getTags();
+        return result.getWorkflowVersions();
     }
 
 

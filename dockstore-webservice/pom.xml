@@ -88,6 +88,10 @@
         </dependency>
         -->
         <dependency>
+            <groupId>com.github.zafarkhaja</groupId>
+            <artifactId>java-semver</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-validator</groupId>
             <artifactId>commons-validator</artifactId>
             <version>1.6</version>
@@ -1006,9 +1010,8 @@
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <configuration>
-		    <!-- <inputSpec>https://raw.githubusercontent.com/ga4gh/tool-registry-service-schemas/2.0.0-beta.2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-		    <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
-                    <inputSpec>https://raw.githubusercontent.com/denis-yuen/tool-registry-service-schemas/2.0.0-beta.2a/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
+		            <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>
                         <dateLibrary>legacy</dateLibrary>

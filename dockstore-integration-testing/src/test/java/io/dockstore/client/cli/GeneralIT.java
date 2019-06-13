@@ -42,7 +42,6 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -55,8 +54,10 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Extra confidential integration tests, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
@@ -123,7 +124,7 @@ public class GeneralIT extends BaseIT {
         tag.getSourceFiles().add(fileDockerFile);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        c.setTags(tags);
+        c.setWorkflowVersions(tags);
         return c;
     }
 
@@ -412,7 +413,7 @@ public class GeneralIT extends BaseIT {
         published = testingPostgres.runSelectStatement(
                 "select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;",
                 new ScalarHandler<>());
-        assertTrue("tool not unpublished", !published);
+        assertFalse(published);
     }
 
     /**
@@ -580,37 +581,37 @@ public class GeneralIT extends BaseIT {
         c.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         c = containersApi.registerManual(c);
 
-        assertTrue("should see one (or more) tags: " + c.getTags().size(), c.getTags().size() >= 1);
+        assertTrue("should see one (or more) tags: " + c.getWorkflowVersions().size(), c.getWorkflowVersions().size() >= 1);
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
         usersApi.refresh(userid);
 
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
-        int size = containersApi.getContainer(c.getId(), null).getTags().size();
-        long size2 = containersApi.getContainer(c.getId(), null).getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        int size = containersApi.getContainer(c.getId(), null).getWorkflowVersions().size();
+        long size2 = containersApi.getContainer(c.getId(), null).getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size == size2 && size >= 1);
         // individual refresh should update image ids
         containersApi.refresh(c.getId());
         DockstoreTool container = containersApi.getContainer(c.getId(), null);
-        size = container.getTags().size();
-        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size = container.getWorkflowVersions().size();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
 
         // so should overall refresh
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refresh(userid);
         container = containersApi.getContainer(c.getId(), null);
-        size = container.getTags().size();
-        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size = container.getWorkflowVersions().size();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
 
         // so should organizational refresh
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refreshToolsByOrganization(userid, container.getNamespace());
         container = containersApi.getContainer(c.getId(), null);
-        size = container.getTags().size();
-        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size = container.getWorkflowVersions().size();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
     }
 
@@ -791,7 +792,7 @@ public class GeneralIT extends BaseIT {
         boolean userTwoExists = userApi.checkUserExists(BaseIT.OTHER_USERNAME);
         assertTrue("User OtherUser should exist", userTwoExists);
         boolean fakeUserExists = userApi.checkUserExists("NotARealUser");
-        assertTrue("User NotARealUser should not exist", !fakeUserExists);
+        assertFalse(fakeUserExists);
 
         // Unauthorized user should fail
         ApiClient unauthClient = getWebClient(false, "");
@@ -835,14 +836,14 @@ public class GeneralIT extends BaseIT {
         // Cannot get tool by alias as other user
         try {
             otherUserContainersApi.getToolByAlias("foobar");
-            assertTrue("Should not be able to retrieve tool.", false);
+            fail("Should not be able to retrieve tool.");
         } catch (ApiException ex) {
         }
 
         // Cannot get tool by alias as anon user
         try {
             anonContainersApi.getToolByAlias("foobar");
-            assertTrue("Should not be able to retrieve tool.", false);
+            fail("Should not be able to retrieve tool.");
         } catch (ApiException ex) {
         }
 
@@ -882,7 +883,7 @@ public class GeneralIT extends BaseIT {
         DockstoreTool tool = ownerContainersApi.registerManual(getContainer());
         DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
         Long toolId = refresh.getId();
-        Tag tag = refresh.getTags().get(0);
+        Tag tag = refresh.getWorkflowVersions().get(0);
         Long versionId = tag.getId();
 
         // Try downloading unpublished
@@ -895,7 +896,7 @@ public class GeneralIT extends BaseIT {
         } catch (ApiException ex) {
             success = false;
         } finally {
-            assertTrue("User does not have access to tool.", !success);
+            assertFalse("User does not have access to tool.", success);
         }
         // Other user: Should fail
         success = true;
@@ -904,7 +905,7 @@ public class GeneralIT extends BaseIT {
         } catch (ApiException ex) {
             success = false;
         } finally {
-            assertTrue("User does not have access to tool.", !success);
+            assertFalse("User does not have access to tool.", success);
         }
 
         // Publish

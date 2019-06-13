@@ -38,9 +38,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
@@ -288,7 +290,7 @@ public class DockerRepoResource
         Hibernate.initialize(tool.getUsers());
 
         if (checkIncludes(include, "validations")) {
-            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+            tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
 
         return tool;
@@ -399,7 +401,7 @@ public class DockerRepoResource
         checkUser(user, foundTool);
 
         //update the workflow path in all workflowVersions
-        Set<Tag> tags = foundTool.getTags();
+        Set<Tag> tags = foundTool.getWorkflowVersions();
         for (Tag tag : tags) {
             if (!tag.isDirtyBit()) {
                 tag.setCwlPath(tool.getDefaultCwlPath());
@@ -436,7 +438,7 @@ public class DockerRepoResource
         checkEntry(tool);
 
         if (checkIncludes(include, "validations")) {
-            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+            tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
         return filterContainersForHiddenTags(tool);
     }
@@ -474,12 +476,12 @@ public class DockerRepoResource
         tool.addUser(user);
         // create dependent Tags before creating tool
         Set<Tag> createdTags = new HashSet<>();
-        for (Tag tag : tool.getTags()) {
+        for (Tag tag : tool.getWorkflowVersions()) {
             final long l = tagDAO.create(tag);
             createdTags.add(tagDAO.findById(l));
         }
-        tool.getTags().clear();
-        tool.getTags().addAll(createdTags);
+        tool.getWorkflowVersions().clear();
+        tool.getWorkflowVersions().addAll(createdTags);
         // create dependent Labels before creating tool
         Set<Label> createdLabels = new HashSet<>();
         for (Label label : tool.getLabels()) {
@@ -554,7 +556,7 @@ public class DockerRepoResource
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
 
-        tool.getTags().clear();
+        tool.getWorkflowVersions().clear();
         toolDAO.delete(tool);
 
         tool = toolDAO.findById(containerId);
@@ -585,7 +587,7 @@ public class DockerRepoResource
         if (request.getPublish()) {
             boolean validTag = false;
 
-            Set<Tag> tags = tool.getTags();
+            Set<Tag> tags = tool.getWorkflowVersions();
             for (Tag tag : tags) {
                 if (tag.isValid()) {
                     validTag = true;
@@ -697,7 +699,7 @@ public class DockerRepoResource
         checkUser(user, tool);
 
         if (checkIncludes(include, "validations")) {
-            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+            tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
         return tool;
     }
@@ -708,15 +710,33 @@ public class DockerRepoResource
     @Path("/path/tool/{repository}/published")
     @ApiOperation(value = "Get a published tool by the specific tool path.", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include, @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
 
             if (checkIncludes(include, "validations")) {
-                tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+                tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
             }
             filterContainersForHiddenTags(tool);
+
+            // for backwards compatibility for 1.6.0 clients, return versions as tags
+            // this seems sufficient to maintain backwards compatibility for launching
+            try {
+                final List<String> strings = containerContext.getHeaders().get("User-Agent");
+                strings.forEach(s -> {
+                    final String[] split = s.split("/");
+                    if (split[0].equals("Dockstore-CLI")) {
+                        com.github.zafarkhaja.semver.Version clientVersion = com.github.zafarkhaja.semver.Version.valueOf(split[1]);
+                        com.github.zafarkhaja.semver.Version v17 = com.github.zafarkhaja.semver.Version.valueOf("1.7.0");
+                        if (clientVersion.lessThan(v17)) {
+                            tool.setTags(tool.getWorkflowVersions());
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                LOG.debug("encountered a user agent that we could not parse, meh", e);
+            }
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new CustomWebApplicationException(path + " not found", HttpStatus.SC_NOT_FOUND);
@@ -735,7 +755,7 @@ public class DockerRepoResource
 
         checkUser(user, repository);
 
-        return new ArrayList<>(repository.getTags());
+        return new ArrayList<>(repository.getWorkflowVersions());
     }
 
     @GET
@@ -761,9 +781,9 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        Set<String> verifiedSourcesArray = tool.getTags().stream()
+        Set<String> verifiedSourcesArray = tool.getWorkflowVersions().stream()
                 .filter(Version::isVerified)
-                .map(v -> v.getVerifiedSource()).collect(Collectors.toSet());
+                .map(Version::getVerifiedSource).collect(Collectors.toSet());
 
         JSONArray jsonArray;
         try {
@@ -880,7 +900,7 @@ public class DockerRepoResource
         checkEntry(tool);
         checkNotHosted(tool);
         checkUserCanUpdate(user, tool);
-        Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
+        Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
@@ -914,7 +934,7 @@ public class DockerRepoResource
         checkEntry(tool);
         checkNotHosted(tool);
         checkUserCanUpdate(user, tool);
-        Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
+        Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
@@ -1079,7 +1099,7 @@ public class DockerRepoResource
             }
         }
 
-        Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
+        Tag tag = tool.getWorkflowVersions().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
             .orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
         if (sourceFiles == null || sourceFiles.size() == 0) {

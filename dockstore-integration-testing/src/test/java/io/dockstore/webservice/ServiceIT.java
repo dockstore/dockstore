@@ -126,8 +126,8 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
         final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true);
         final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false);
-        assertTrue(workflows.size() >= 2 && workflows.stream().noneMatch(workflow -> workflow.getDescriptorType().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
-        assertTrue(services.size() >= 1 && services.stream().allMatch(workflow -> workflow.getDescriptorType().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
+        assertTrue(workflows.size() >= 2 && workflows.stream().noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
+        assertTrue(services.size() >= 1 && services.stream().allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
         // try some standard things we would like services to be able to do
         client.starEntry(invoke.getServiceID(), new StarRequest().star(true));
@@ -172,7 +172,7 @@ public class ServiceIT extends BaseIT {
             testWorkflow.setDescription("foo workflow");
             testWorkflow.setIsPublished(true);
             testWorkflow.setSourceControl(SourceControl.GITHUB);
-            testWorkflow.setDescriptorType(DescriptorLanguage.CWL.toString());
+            testWorkflow.setDescriptorType(DescriptorLanguage.CWL);
             testWorkflow.setOrganization("shield");
             testWorkflow.setRepository("shield_repo");
 
@@ -181,7 +181,7 @@ public class ServiceIT extends BaseIT {
             testService.setDescription("test service");
             testService.setIsPublished(true);
             testService.setSourceControl(SourceControl.GITLAB);
-            testService.setDescriptorType(DescriptorLanguage.SERVICE.toString());
+            testService.setDescriptorType(DescriptorLanguage.SERVICE);
             testService.setOrganization("hydra");
             testService.setRepository("hydra_repo");
 
@@ -189,7 +189,7 @@ public class ServiceIT extends BaseIT {
             test2Service.setDescription("test service");
             test2Service.setIsPublished(true);
             test2Service.setSourceControl(SourceControl.GITLAB);
-            test2Service.setDescriptorType(DescriptorLanguage.SERVICE.toString());
+            test2Service.setDescriptorType(DescriptorLanguage.SERVICE);
             test2Service.setOrganization("hydra");
             test2Service.setRepository("hydra_repo");
 

@@ -115,7 +115,7 @@ public final class ToolsImplCommon {
             String returnName = constructName(Arrays.asList(name, toolName));
             tool.setToolname(returnName);
             tool.setOrganization(castedContainer.getNamespace());
-            inputVersions = castedContainer.getTags();
+            inputVersions = castedContainer.getWorkflowVersions();
         } else if (container instanceof Workflow) {
             // workflow specific
             Workflow workflow = (Workflow)container;
@@ -180,7 +180,7 @@ public final class ToolsImplCommon {
                 // TODO not sure how to treat service languages
                 case DOCKSTORE_SERVICE_TEST_JSON:
                 case DOCKSTORE_SERVICE_YML:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
+                    toolVersion.addDescriptorTypeItem(DescriptorType.SERVICE);
                     break;
                 case NEXTFLOW:
                 case NEXTFLOW_CONFIG:

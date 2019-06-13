@@ -212,7 +212,7 @@ public class MetadataResource {
                 entry.setLink(workflowURL);
             } else if (dbEntry instanceof Tool) {
                 Tool tool = (Tool)dbEntry;
-                Optional<Tag> max = tool.getTags().stream().filter(v -> v.getDbUpdateDate() != null)
+                Optional<Tag> max = tool.getWorkflowVersions().stream().filter(v -> v.getDbUpdateDate() != null)
                     .max(Comparator.comparing(Version::getDbUpdateDate));
                 entry.setTitle(tool.getPath());
                 String toolURL = createToolURL(tool);
