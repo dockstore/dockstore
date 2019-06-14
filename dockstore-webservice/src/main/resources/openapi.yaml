@@ -4855,9 +4855,41 @@ paths:
           required: true
           schema:
             type: string
-        - name: sender
+        - name: username
           in: query
           description: Name of user on GitHub
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+      security:
+        - BEARER: []
+  "/workflows/path/service/{repository}/upsertVersion":
+    put:
+      tags:
+        - workflows
+      summary: Add or update a service version for a given GitHub tag for a service
+        with the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function.
+      operationId: upsertServiceVersion
+      parameters:
+        - name: repository
+          in: path
+          description: Repository path
+          required: true
+          schema:
+            type: string
+        - name: gitReference
+          in: query
+          description: Git reference for new GitHub tag
           required: true
           schema:
             type: string
@@ -7139,6 +7171,7 @@ components:
             - DOCKSTORE_YML
             - DOCKSTORE_SERVICE_YML
             - DOCKSTORE_SERVICE_TEST_JSON
+            - OTHER
         content:
           type: string
           description: Cache for the contents of the target file
@@ -7636,6 +7669,7 @@ components:
             - DOCKSTORE_YML
             - DOCKSTORE_SERVICE_YML
             - DOCKSTORE_SERVICE_TEST_JSON
+            - OTHER
         valid:
           type: boolean
           description: Is the file type valid

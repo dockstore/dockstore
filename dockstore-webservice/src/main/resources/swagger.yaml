@@ -4572,9 +4572,44 @@ paths:
         description: "Repository path"
         required: true
         type: "string"
-      - name: "sender"
+      - name: "username"
         in: "query"
         description: "Name of user on GitHub"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Service"
+      security:
+      - BEARER: []
+  /workflows/path/service/{repository}/upsertVersion:
+    put:
+      tags:
+      - "workflows"
+      summary: "Add or update a service version for a given GitHub tag for a service\
+        \ with the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function."
+      operationId: "upsertServiceVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "Repository path"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "query"
+        description: "Git reference for new GitHub tag"
         required: true
         type: "string"
       - in: "body"
@@ -6965,6 +7000,7 @@ definitions:
         - "DOCKSTORE_YML"
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
+        - "OTHER"
       content:
         type: "string"
         position: 2
@@ -7506,6 +7542,7 @@ definitions:
         - "DOCKSTORE_YML"
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
+        - "OTHER"
       valid:
         type: "boolean"
         position: 2
