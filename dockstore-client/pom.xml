@@ -266,7 +266,6 @@
             <groupId>javax.activation</groupId>
             <artifactId>activation</artifactId>
             <version>1.1.1</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -351,6 +350,7 @@
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
                                 <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</usedDependency>
                                 <usedDependency>io.spray:spray-json_2.12</usedDependency>
+                                <usedDependency>javax.activation:activation</usedDependency>
                             </usedDependencies>
 
                         </configuration>
