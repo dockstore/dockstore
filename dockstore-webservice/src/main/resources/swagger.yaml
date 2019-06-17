@@ -5919,8 +5919,6 @@ definitions:
   Config:
     type: "object"
     properties:
-      discourseUrl:
-        type: "string"
       dnaStackImportUrl:
         type: "string"
       dnaNexusImportUrl:
@@ -5970,6 +5968,8 @@ definitions:
       zenodoClientId:
         type: "string"
       googleClientId:
+        type: "string"
+      discourseUrl:
         type: "string"
     description: "Configuration information for UI clients of the Dockstore webservice."
   DescriptorLanguageBean:
