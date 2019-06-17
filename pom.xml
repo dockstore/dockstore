@@ -54,6 +54,7 @@
         <jetty-servlet.version>9.4.14.v20181114</jetty-servlet.version>
         <netty.version>4.1.33.Final</netty.version>
         <scala.version>2.12.8</scala.version>
+        <cromwell.version>41</cromwell.version>
 
         <skipTests>false</skipTests>
         <skipClientITs>true</skipClientITs>
@@ -297,6 +298,11 @@
                 <version>1.2</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.6</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>3.3.0.Final</version>
@@ -387,7 +393,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.7</version>
+                <version>3.8.1</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -402,7 +408,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>24.1.1-jre</version>
+                <version>27.0.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
@@ -412,7 +418,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.5</version>
+                <version>2.6</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -565,7 +571,7 @@
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client</artifactId>
-                <version>1.22.0</version>
+                <version>1.28.0</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -580,7 +586,7 @@
             <dependency>
                 <groupId>org.scala-lang.modules</groupId>
                 <artifactId>scala-xml_2.12</artifactId>
-                <version>1.0.6</version>
+                <version>1.1.1</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
@@ -617,7 +623,7 @@
             <dependency>
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
-                <version>1.22.0</version>
+                <version>1.28.0</version>
             </dependency>
 
             <dependency>
@@ -684,13 +690,13 @@
             <dependency>
                 <groupId>com.google.oauth-client</groupId>
                 <artifactId>google-oauth-client</artifactId>
-                <version>1.22.0</version>
+                <version>1.28.0</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/com.google.http-client/google-http-client-jackson -->
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-jackson</artifactId>
-                <version>1.22.0</version>
+                <version>1.28.0</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
             <dependency>
@@ -713,12 +719,6 @@
                 <artifactId>json</artifactId>
                 <version>20180130</version>
             </dependency>
-            <dependency>
-                <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl4s-wom_2.12</artifactId>
-                <version>0.15</version>
-            </dependency>
-
             <dependency>
                 <groupId>ro.fortsoft.pf4j</groupId>
                 <artifactId>pf4j</artifactId>
@@ -1347,7 +1347,7 @@
                             <append>true</append>
                             <excludes>
                                 <exclude>io/dockstore/webservice/resources/Description.*</exclude>
-                                <exclude>io/dockstore/common/Bridge.*</exclude>
+                                <exclude>io/dockstore/common/WdlBridge.*</exclude>
                                 <!-- exclude client classes, but not the server classes to help guide tests -->
                                 <exclude>io/swagger/client/**/*</exclude>
                                 <exclude>io/swagger/client/*</exclude>

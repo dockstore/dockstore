@@ -19,10 +19,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -56,7 +58,7 @@ public class WDLParseTest {
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertTrue("incorrect email", entry.getEmail().isEmpty());
+        assertTrue("incorrect email", entry.getEmail() == null);
     }
 
     @Test
@@ -92,6 +94,49 @@ public class WDLParseTest {
             Assert.fail();
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals("Error parsing workflow. You may have a recursive import.", e.getErrorMessage());
+        }
+    }
+
+    /**
+     * Tests that Dockstore can handle a WDL 1.0 workflow using HTTP and map import
+     * Error parsing will throw an exception, but with no error should just pass
+     *
+     * Also tests metadata in WDL 1.0 files
+     */
+    @Test
+    public void testDraft3Code() {
+        String type = "workflow";
+        File primaryWDL = new File(ResourceHelpers.resourceFilePath("importTesting.wdl"));
+        File importedWDL = new File(ResourceHelpers.resourceFilePath("md5sum.wdl"));
+        String primaryDescriptorFilePath = primaryWDL.getAbsolutePath();
+        SourceFile sourceFile = new SourceFile();
+        SourceFile importedFile = new SourceFile();
+        try {
+            sourceFile.setContent(FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8));
+            sourceFile.setAbsolutePath(primaryWDL.getAbsolutePath());
+            sourceFile.setPath(primaryWDL.getAbsolutePath());
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+
+            importedFile.setContent(FileUtils.readFileToString(importedWDL, StandardCharsets.UTF_8));
+            importedFile.setAbsolutePath(importedWDL.getAbsolutePath());
+            importedFile.setPath("./md5sum.wdl");
+            importedFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+
+            Set<SourceFile> sourceFileSet = new HashSet<>();
+            sourceFileSet.add(sourceFile);
+            sourceFileSet.add(importedFile);
+
+            WDLHandler wdlHandler = new WDLHandler();
+            wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
+
+            LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+            Entry entry = sInterface
+                    .parseWorkflowContent(new BioWorkflow(), primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet);
+            assertTrue("incorrect author", entry.getAuthor().split(",").length == 1);
+            assertEquals("incorrect email", "foobar@foo.com", entry.getEmail());
+            assertTrue("incorrect description", entry.getDescription().length() > 0);
+        } catch (Exception e) {
+            Assert.fail("Should properly parse file and imports.");
         }
     }
 }

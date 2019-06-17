@@ -16,6 +16,6 @@
 
 <FindBugsFilter>
     <Match>
-        <Class name="~wdl4s.parser.WdlParser.*"/>
+        <Class name="~wdl.draft3.parser.WdlParser.*"/>
     </Match>
 </FindBugsFilter>
