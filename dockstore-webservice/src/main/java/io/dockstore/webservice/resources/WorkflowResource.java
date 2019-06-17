@@ -344,104 +344,6 @@ public class WorkflowResource
         return tokenDAO.findByUserId(user.getId());
     }
 
-    @PUT
-    @Path("/path/service/{repository}")
-    @Timed
-    @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
-    public Service addService(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
-            @ApiParam(value = "Name of user on GitHub", required = true) @QueryParam("username") String username,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        // Retrieve the user who triggered the call
-        User sendingUser = findUserByGitHubUsername(username);
-
-        // Create a service object
-        String gitUrl = "git@github.com:" + repository + ".git";
-        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitUrl, user);
-
-        Service service = sourceCodeRepo.initializeService(repository);
-        service.getUsers().add(sendingUser);
-
-        long serviceId = workflowDAO.create(service);
-        return (Service)workflowDAO.findById(serviceId);
-    }
-
-    @PUT
-    @Path("/path/service/{repository}/upsertVersion/")
-    @Timed
-    @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
-    public Service upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
-            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-
-        // Create path on Dockstore (note services have max 3 parts, not 4)
-        String dockstoreServicePath = String.join("/", TokenType.GITHUB_COM.toString(), repository);
-
-        // Find service with given path
-        Workflow service = workflowDAO.findByPath(dockstoreServicePath, false);
-
-        if (service == null) {
-            String msg = "No service with path " + dockstoreServicePath + " exists on Dockstore.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        // Find all workflows with the given path that are full
-        List<Workflow> workflows = findAllWorkflowsByPath(dockstoreServicePath, WorkflowMode.SERVICE);
-
-        if (workflows.size() > 0) {
-            // All workflows with the same path have the same Git Url
-            String sharedGitUrl = workflows.get(0).getGitUrl();
-
-            // Set up source code interface and ensure token is set up
-            User updatedUser = userDAO.findById(user.getId());
-            final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, updatedUser);
-
-            // Pull new version information from GitHub and update the versions
-            workflows = sourceCodeRepo.upsertVersionForWorkflows(repository, gitReference, workflows);
-
-            // Update each workflow with reference types
-            for (Workflow workflow : workflows) {
-                Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
-                versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
-            }
-        }
-
-        return (Service)(findAllWorkflowsByPath(dockstoreServicePath, WorkflowMode.SERVICE).get(0));
-    }
-
-    /**
-     * Based on GitHub username, find the corresponding user
-     * @param username
-     * @return
-     */
-    private User findUserByGitHubUsername(String username) {
-        // Find user by github name
-        Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(username);
-        if (userGitHubToken == null) {
-            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        // Get user object for github token
-        User sendingUser = userDAO.findById(userGitHubToken.getUserId());
-        if (sendingUser == null) {
-            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        return sendingUser;
-    }
-
     @GET
     @Path("/{workflowId}/refresh")
     @Timed
@@ -508,12 +410,80 @@ public class WorkflowResource
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String repository,
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        // Call common upsert code
+        String dockstoreWorkflowPath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.FULL);
 
+        return findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
+    }
+
+    /**
+     * Finds all workflows from a general Dockstore path that are of type FULL
+     * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
+     * @return List of FULL workflows with the given Dockstore path
+     */
+    private List<Workflow> findAllWorkflowsByPath(String dockstoreWorkflowPath, WorkflowMode workflowMode) {
+        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
+                .stream()
+                .filter(workflow ->
+                        workflow.getMode() == workflowMode)
+                .collect(Collectors.toList());
+    }
+
+    @PUT
+    @Path("/path/service/{repository}")
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
+    public Service addService(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
+            @ApiParam(value = "Name of user on GitHub", required = true) @QueryParam("username") String username,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        // Retrieve the user who triggered the call
+        User sendingUser = findUserByGitHubUsername(username);
+
+        // Create a service object
+        String gitUrl = "git@github.com:" + repository + ".git";
+        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitUrl, sendingUser);
+        Service service = sourceCodeRepo.initializeService(repository);
+        service.getUsers().add(sendingUser);
+        long serviceId = workflowDAO.create(service);
+
+        return (Service)workflowDAO.findById(serviceId);
+    }
+
+    @PUT
+    @Path("/path/service/{repository}/upsertVersion/")
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
+    public List<Workflow> upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
+            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        // Call common upsert code
+        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.SERVICE);
+
+        return findAllWorkflowsByPath(dockstoreServicePath, WorkflowMode.SERVICE);
+    }
+
+    /**
+     * Common code for upserting a version to a workflow/service
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param gitReference Git reference (ex. master)
+     * @param user User calling endpoint
+     * @param workflowMode Mode of workflows to filter by
+     * @return Shared dockstore path to workflow/service
+     */
+    private String upsertVersionHelper(String repository, String gitReference, User user, WorkflowMode workflowMode) {
         // Create path on Dockstore (not unique across workflows)
         String dockstoreWorkflowPath = String.join("/", TokenType.GITHUB_COM.toString(), repository);
 
         // Find all workflows with the given path that are full
-        List<Workflow> workflows = findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
+        List<Workflow> workflows = findAllWorkflowsByPath(dockstoreWorkflowPath, workflowMode);
 
         if (workflows.size() > 0) {
             // All workflows with the same path have the same Git Url
@@ -533,20 +503,32 @@ public class WorkflowResource
             }
         }
 
-        return findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
+        return dockstoreWorkflowPath;
     }
 
     /**
-     * Finds all workflows from a general Dockstore path that are of type FULL
-     * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
-     * @return List of FULL workflows with the given Dockstore path
+     * Based on GitHub username, find the corresponding user
+     * @param username
+     * @return
      */
-    private List<Workflow> findAllWorkflowsByPath(String dockstoreWorkflowPath, WorkflowMode workflowMode) {
-        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
-                .stream()
-                .filter(workflow ->
-                        workflow.getMode() == workflowMode)
-                .collect(Collectors.toList());
+    private User findUserByGitHubUsername(String username) {
+        // Find user by github name
+        Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(username);
+        if (userGitHubToken == null) {
+            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Get user object for github token
+        User sendingUser = userDAO.findById(userGitHubToken.getUserId());
+        if (sendingUser == null) {
+            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        return sendingUser;
     }
 
     /**

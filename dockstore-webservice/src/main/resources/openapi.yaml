@@ -4901,7 +4901,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Service"
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
       security:
         - BEARER: []
   "/workflows/path/workflow/{repository}":

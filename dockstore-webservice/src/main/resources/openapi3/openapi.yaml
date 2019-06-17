@@ -3473,7 +3473,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -5030,7 +5030,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Service'
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
           description: default response
   /workflows/path/workflow/{repository}:
     get:
