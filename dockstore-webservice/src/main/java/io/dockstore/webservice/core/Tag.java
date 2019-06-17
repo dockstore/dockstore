@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Date;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -43,6 +44,11 @@ import org.apache.commons.io.FilenameUtils;
 @DiscriminatorValue("tool")
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tag extends Version<Tag> implements Comparable<Tag> {
+
+    @Column
+    @JsonProperty("last_build")
+    @ApiModelProperty(value = "The last time this tag was built gets stored here.", position = 19)
+    Date lastBuild;
 
     @Column
     @JsonProperty("image_id")
@@ -98,6 +104,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
         dockerfilePath = tag.dockerfilePath;
+        lastBuild = tag.lastBuild;
     }
 
     public void update(Tag tag) {
@@ -110,6 +117,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         automated = tag.automated;
         imageId = tag.imageId;
         size = tag.size;
+        lastBuild = tag.lastBuild;
     }
 
     public void clone(Tag tag) {
@@ -184,6 +192,15 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     public void setAutomated(boolean automated) {
         this.automated = automated;
+    }
+
+    @JsonProperty
+    public Date getLastBuild() {
+        return lastBuild;
+    }
+
+    public void setLastBuild(Date lastBuild) {
+        this.lastBuild = lastBuild;
     }
 
     @Override

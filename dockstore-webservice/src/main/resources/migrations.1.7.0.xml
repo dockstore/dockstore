@@ -159,4 +159,9 @@
         <setColumnRemarks columnName="lastupdated" tableName="tool" remarks="For automated builds: last time tool/namespace was refreshed Dockstore, tool info updated, default version selected. For hosted tools: when you created the tool"/>
         <setColumnRemarks columnName="lastupdated" tableName="workflow" remarks="For remote: When refresh all is hit for first time. Hosted: Time created."/>
     </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="changeLastBuildColumnName">
+        <renameColumn tableName="tag" oldColumnName="lastmodified" newColumnName="lastbuild"></renameColumn>
+        <setColumnRemarks tableName="tag" columnName="lastbuild" remarks="For automated builds: Last time specific tag was built. For hosted: When version was created"></setColumnRemarks>
+    </changeSet>
 </databaseChangeLog>

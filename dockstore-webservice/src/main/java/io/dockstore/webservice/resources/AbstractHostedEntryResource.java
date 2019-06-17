@@ -235,7 +235,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         populateMetadata(versionSourceFiles, entry, validatedVersion);
         long l = getVersionDAO().create(validatedVersion);
         entry.getWorkflowVersions().add(getVersionDAO().findById(l));
-        entry.setLastModified(validatedVersion.getLastModified());
+        // entry.setLastModified(validatedVersion.getLastModified());
         FileFormatHelper.updateFileFormats(entry.getWorkflowVersions(), fileFormatDAO);
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
