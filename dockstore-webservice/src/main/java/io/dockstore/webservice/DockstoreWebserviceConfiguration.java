@@ -589,11 +589,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      */
     public static class UIConfig {
 
-        /**
-         * Must end with a slash
-         */
-        private String discourseUrl;
-
         private String dnaStackImportUrl;
         private String dnaNexusImportUrl;
         private String terraImportUrl;
@@ -622,14 +617,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String tagManagerId;
 
-
-        public String getDiscourseUrl() {
-            return discourseUrl;
-        }
-
-        public void setDiscourseUrl(String discourseUrl) {
-            this.discourseUrl = discourseUrl;
-        }
 
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;

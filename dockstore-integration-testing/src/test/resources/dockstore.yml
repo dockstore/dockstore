@@ -90,8 +90,6 @@ logging:
       logFormat: # TODO
 
 uiConfig:
-  # Must end with a slash
-  discourseUrl: https://discuss.dockstore.org/
   dnaStackImportUrl: https://app.dnastack.com/#/app/workflow/import/dockstore
   dnaNexusImportUrl: https://platform.dnanexus.com/panx/tools/import-workflow
   terraImportUrl: https://app.terra.bio/#import-tool/dockstore

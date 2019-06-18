@@ -6184,8 +6184,6 @@ components:
     Config:
       type: object
       properties:
-        discourseUrl:
-          type: string
         dnaStackImportUrl:
           type: string
         dnaNexusImportUrl:
@@ -6235,6 +6233,8 @@ components:
         zenodoClientId:
           type: string
         googleClientId:
+          type: string
+        discourseUrl:
           type: string
       description: Configuration information for UI clients of the Dockstore webservice.
     DescriptorLanguageBean:
