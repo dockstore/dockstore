@@ -286,7 +286,16 @@ public final class ToolsImplCommon {
         if (container instanceof io.dockstore.webservice.core.Tool) {
             return ((io.dockstore.webservice.core.Tool)container).getToolPath();
         } else if (container instanceof Workflow) {
-            return "#workflow/" + ((Workflow)container).getWorkflowPath();
+            String workflowPrefix = "#workflow/";
+            String servicePrefix = "#service/";
+            Workflow workflow = (Workflow)container;
+            DescriptorLanguage descriptorType = workflow.getDescriptorType();
+            String workflowPath = workflow.getWorkflowPath();
+            if (descriptorType.equals(DescriptorLanguage.SERVICE)) {
+                return servicePrefix + workflowPath;
+            } else {
+                return workflowPrefix + workflowPath;
+            }
         } else {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
             return null;
