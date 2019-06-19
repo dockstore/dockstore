@@ -508,6 +508,8 @@ components:
           type: string
         doiURL:
           type: string
+        frozen:
+          type: boolean
         hidden:
           type: boolean
         id:
@@ -815,6 +817,8 @@ components:
           type: string
         doiURL:
           type: string
+        frozen:
+          type: boolean
         hidden:
           type: boolean
         id:
@@ -998,6 +1002,8 @@ components:
           type: string
         doiURL:
           type: string
+        frozen:
+          type: boolean
         hidden:
           type: boolean
         id:

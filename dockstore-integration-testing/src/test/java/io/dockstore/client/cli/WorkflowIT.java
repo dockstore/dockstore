@@ -593,7 +593,7 @@ public class WorkflowIT extends BaseIT {
     }
 
 
-        @Test
+    @Test
     public void testNextFlowWorkflowWithImages() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -1328,23 +1328,23 @@ public class WorkflowIT extends BaseIT {
 
         Assert.assertEquals("should have 2 version", 2, workflow.getWorkflowVersions().size());
         Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream().filter(version -> Objects.equals(version.getName(), "test")).findFirst();
-        if (!workflowVersion.isPresent()) {
+        if (workflowVersion.isEmpty()) {
             Assert.fail("Missing the test release");
         }
 
         List<SourceFile> sourceFiles = workflowVersion.get().getSourceFiles();
         Optional<SourceFile> primarySourceFile = sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), "/workflows/dnaseq/transform.cwl") && Objects.equals(sourceFile.getAbsolutePath(), "/workflows/dnaseq/transform.cwl")).findFirst();
-        if (!primarySourceFile.isPresent()) {
+        if (primarySourceFile.isEmpty()) {
             Assert.fail("Does not properly set the absolute path of the primary descriptor.");
         }
 
         Optional<SourceFile> importedSourceFileOne = sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), "../../tools/bam_readgroup_to_json.cwl") && Objects.equals(sourceFile.getAbsolutePath(), "/tools/bam_readgroup_to_json.cwl")).findFirst();
-        if (!importedSourceFileOne.isPresent()) {
+        if (importedSourceFileOne.isEmpty()) {
             Assert.fail("Does not properly set the absolute path of the imported file.");
         }
 
         Optional<SourceFile> importedSourceFileTwo = sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), "integrity.cwl") && Objects.equals(sourceFile.getAbsolutePath(), "/workflows/dnaseq/integrity.cwl")).findFirst();
-        if (!importedSourceFileTwo.isPresent()) {
+        if (importedSourceFileTwo.isEmpty()) {
             Assert.fail("Does not properly set the absolute path of the imported file.");
         }
     }

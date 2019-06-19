@@ -99,7 +99,8 @@ install:
 
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-- psql -c "ALTER USER dockstore WITH superuser;" -U postgres
+# should probably be running without superuser anyway
+# - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
 # debug by double checking versions of stuff

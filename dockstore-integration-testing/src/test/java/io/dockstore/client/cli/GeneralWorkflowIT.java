@@ -16,6 +16,8 @@
 
 package io.dockstore.client.cli;
 
+import java.util.Date;
+
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
@@ -29,6 +31,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,6 +45,9 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This test suite will have tests for the workflow mode of the Dockstore Client.
@@ -119,8 +125,8 @@ public class GeneralWorkflowIT extends BaseIT {
     private void testPublishList() {
         systemOutRule.clearLog();
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--script" });
-        Assert.assertTrue("Should contain a FULL workflow belonging to the user", systemOutRule.getLog().contains("github.com/DockstoreTestUser2/hello-dockstore-workflow"));
-        Assert.assertFalse("Should not contain a STUB workflow belonging to the user", systemOutRule.getLog().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified "));
+        assertTrue("Should contain a FULL workflow belonging to the user", systemOutRule.getLog().contains("github.com/DockstoreTestUser2/hello-dockstore-workflow"));
+        assertFalse("Should not contain a STUB workflow belonging to the user", systemOutRule.getLog().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified "));
     }
 
     /**
@@ -401,7 +407,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
                 "--entry", SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow:wdl_import","--script" });
-        Assert.assertTrue(systemOutRule.getLog().contains("\"three_step.cgrep.pattern\": \"String\""));
+        assertTrue(systemOutRule.getLog().contains("\"three_step.cgrep.pattern\": \"String\""));
 
     }
 
@@ -538,6 +544,51 @@ public class GeneralWorkflowIT extends BaseIT {
             masterpath);
         Assert
             .assertEquals("test workflow path should be the same as default workflow path, it is " + testpath, "/Dockstore.cwl", testpath);
+    }
+
+    @Test
+    public void testFreezingWorkflow() throws ApiException {
+        // Set up webservice
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Get workflows
+        usersApi.refreshWorkflows(userId);
+
+        Workflow githubWorkflow = workflowApi
+            .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl", "/test.json");
+
+        // Publish github workflow
+        Workflow workflow = workflowApi.refresh(githubWorkflow.getId());
+
+        //update the default workflow path to be hello.cwl , the workflow path in workflow versions should also be changes
+        workflow.setWorkflowPath("/hello.cwl");
+        workflowApi.updateWorkflowPath(githubWorkflow.getId(), workflow);
+
+        final Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
+        final WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        master.setFrozen(true);
+        workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), workflowBeforeFreezing.getWorkflowVersions());
+
+        // try various operations that should be disallowed
+        master.setLastModified(new Date(0));
+
+        // should be ignored
+        workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), workflowBeforeFreezing.getWorkflowVersions());
+
+        // should be fine, but the workflow version in question should not change
+        workflowApi.refresh(workflowBeforeFreezing.getId());
+        workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), workflowBeforeFreezing.getWorkflowVersions());
+        workflow.setWorkflowPath("foo");
+        final Workflow finalWorkflow = workflowApi.updateWorkflowPath(githubWorkflow.getId(), workflow);
+        assertNotEquals("foo", finalWorkflow.getWorkflowPath());
+        assertNotEquals(
+            finalWorkflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get().getLastModified(),
+            new Date());
+
     }
 
     /**
@@ -910,13 +961,13 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
-        Assert.assertTrue("there should be at least 5 versions, there are " + count, count >= 5);
+        assertTrue("there should be at least 5 versions, there are " + count, count >= 5);
         final long branchCount = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where referencetype = 'BRANCH'", new ScalarHandler<>());
-        Assert.assertTrue("there should be at least 2 branches, there are " + count, branchCount >= 2);
+        assertTrue("there should be at least 2 branches, there are " + count, branchCount >= 2);
         final long tagCount = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where referencetype = 'TAG'", new ScalarHandler<>());
-        Assert.assertTrue("there should be at least 3 tags, there are " + count, tagCount >= 3);
+        assertTrue("there should be at least 3 tags, there are " + count, tagCount >= 3);
     }
 
     /**
