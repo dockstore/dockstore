@@ -89,7 +89,7 @@ public final class ToolsImplCommon {
     public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config) {
         String url;
         String newID = getNewId(container);
-        Boolean isDockstoreTool;
+        boolean isDockstoreTool;
         url = getUrlFromId(config, newID);
         if (url == null) {
             return null;
@@ -205,9 +205,9 @@ public final class ToolsImplCommon {
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
-                if(isDockstoreTool) {
+                if (isDockstoreTool) {
                     io.dockstore.webservice.core.Tag castedTag = (io.dockstore.webservice.core.Tag)version;
-                    toolVersion.setMetaVersion(String.valueOf(castedTag.getLastBuild() != null ? castedTag.getLastBuild() : new Date(0)));
+                    toolVersion.setMetaVersion(String.valueOf(castedTag.getLastBuilt() != null ? castedTag.getLastBuilt() : new Date(0)));
                 }
                 else {
                     io.dockstore.webservice.core.WorkflowVersion castedWorkflowVersion = (io.dockstore.webservice.core.WorkflowVersion)version;

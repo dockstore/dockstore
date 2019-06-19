@@ -46,9 +46,9 @@ import org.apache.commons.io.FilenameUtils;
 public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Column
-    @JsonProperty("last_build")
-    @ApiModelProperty(value = "The last time this tag was built gets stored here.", position = 19)
-    Date lastBuild;
+    @JsonProperty("last_built")
+    @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 19)
+    Date lastBuilt;
 
     @Column
     @JsonProperty("image_id")
@@ -104,7 +104,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
         dockerfilePath = tag.dockerfilePath;
-        lastBuild = tag.lastBuild;
+        lastBuilt = tag.lastBuilt;
     }
 
     public void update(Tag tag) {
@@ -117,7 +117,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         automated = tag.automated;
         imageId = tag.imageId;
         size = tag.size;
-        lastBuild = tag.lastBuild;
+        lastBuilt = tag.lastBuilt;
     }
 
     public void clone(Tag tag) {
@@ -195,12 +195,12 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     @JsonProperty
-    public Date getLastBuild() {
-        return lastBuild;
+    public Date getLastBuilt() {
+        return lastBuilt;
     }
 
-    public void setLastBuild(Date lastBuild) {
-        this.lastBuild = lastBuild;
+    public void setLastBuilt(Date lastBuilt) {
+        this.lastBuilt = lastBuilt;
     }
 
     @Override
@@ -215,18 +215,19 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
             return false;
         }
         final Tag other = (Tag)obj;
-        return Objects.equals(this.getId(), other.getId());
+        return Objects.equals(this.getId(), other.getId()) && Objects.equals(this.lastBuilt, other.lastBuilt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, reference);
+        return Objects.hash(id, name, reference, lastBuilt);
     }
 
     @Override
     public int compareTo(@NotNull Tag that) {
         return ComparisonChain.start().compare(this.name, that.name, Ordering.natural().nullsFirst())
-            .compare(this.reference, reference, Ordering.natural().nullsFirst()).result();
+            .compare(this.reference, reference, Ordering.natural().nullsFirst())
+            .compare(this.lastBuilt, that.lastBuilt, Ordering.natural().nullsFirst()).result();
     }
 
     @Override

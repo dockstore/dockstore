@@ -520,7 +520,7 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
-        last_build:
+        last_built:
           format: date-time
           type: string
         name:

@@ -9,7 +9,7 @@ COMMENT ON COLUMN tool.lastupdated IS 'For automated builds: last time tool/name
 COMMENT ON COLUMN tool.lastmodified IS 'For automated builds: N/A. For hosted: Last time a file was updated (new version created)';
 COMMENT ON COLUMN tool.dbcreatedate IS 'For automated builds and hosted: Time registered on Dockstore, either by refresh or manual register. Can be blank as this column was added in 2018.';
 COMMENT ON COLUMN tool.dbupdatedate IS 'For automated builds: Last time tool/namespace was refreshed, different version is selected, checker workflow was added, or tool info updated (like path information). For hosted: Last time a file was updated (new version created), default version selected. Can be blank as this column was added in 2018. Basically anytime db entry modified';
-COMMENT ON COLUMN tag.lastbuild IS 'For automated builds: Last time specific tag was built. For hosted: When version was created';
+COMMENT ON COLUMN tag.lastbuilt IS 'For automated builds: The last time the container backing this tool version was built. For hosted: N/A';
 COMMENT ON COLUMN tag.dbcreatedate IS 'For automated builds and hosted/manual path: Time registered on Dockstore, either by refresh or manual register. Can be blank as this column was added in 2018.';
 COMMENT ON COLUMN tag.dbupdatedate IS 'For automated builds and hosted/manual path: Time created or last time version tab was edited (under actions in version tab). Basically anytime db entry modified';
 COMMENT ON COLUMN workflow.lastmodified IS 'For remote: When refresh is hit, the last time GitHub repo was changed is recorded. Hosted: Last time a new version was made.';

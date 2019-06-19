@@ -47,6 +47,7 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -235,8 +236,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         populateMetadata(versionSourceFiles, entry, validatedVersion);
         long l = getVersionDAO().create(validatedVersion);
         entry.getWorkflowVersions().add(getVersionDAO().findById(l));
-        // entry.setLastModified(validatedVersion.getLastModified());
         FileFormatHelper.updateFileFormats(entry.getWorkflowVersions(), fileFormatDAO);
+        // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
+        if (validatedVersion instanceof io.dockstore.webservice.core.WorkflowVersion) {
+            entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());
+        }
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);

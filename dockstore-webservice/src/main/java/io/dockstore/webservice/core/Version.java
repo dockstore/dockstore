@@ -83,12 +83,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 22)
     String commitID;
 
-    // @Column
-    // @JsonProperty("last_modified")
-    // @ApiModelProperty(value = "Tool-> For automated builds: Last time specific tag was built. For hosted: When version was created "
-    //        + "Workflow-> Remote: Last time version on GitHub repo was changed. Hosted: time version created", position = 1)
-    // Date lastModified;
-
     @Column(columnDefinition = "text default 'UNSET'", nullable = false)
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates the type of git (or other source control) reference")
@@ -201,14 +195,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void update(T version) {
         valid = version.isValid();
-        //lastModified = version.getLastModified();
         name = version.getName();
         referenceType = version.getReferenceType();
     }
 
     public void clone(T version) {
         name = version.getName();
-        //lastModified = version.getLastModified();
         referenceType = version.getReferenceType();
     }
 
@@ -216,15 +208,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public long getId() {
         return id;
     }
-
-    // @JsonProperty
-    // public Date getLastModified() {
-    //    return lastModified;
-    // }
-
-    // public void setLastModified(Date lastModified) {
-    //    this.lastModified = lastModified;
-    // }
 
     @JsonProperty
     public String getReference() {
@@ -384,7 +367,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
             return false;
         }
         final Version other = (Version)obj;
-        return Objects.equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid)
+        return Objects.equals(this.id, other.id) && Objects.equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid)
             && Objects.equals(this.name, other.name) && Objects.equals(this.commitID, other.commitID);
     }
 

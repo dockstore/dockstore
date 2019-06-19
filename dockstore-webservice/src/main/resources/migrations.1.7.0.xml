@@ -161,7 +161,11 @@
     </changeSet>
 
     <changeSet author="natalieperez (generated)" id="changeLastBuildColumnName">
-        <renameColumn tableName="tag" oldColumnName="lastmodified" newColumnName="lastbuild"></renameColumn>
-        <setColumnRemarks tableName="tag" columnName="lastbuild" remarks="For automated builds: Last time specific tag was built. For hosted: When version was created"></setColumnRemarks>
+        <renameColumn tableName="tag" oldColumnName="lastmodified" newColumnName="lastbuilt"></renameColumn>
+        <setColumnRemarks tableName="tag" columnName="lastbuilt" remarks="For automated builds: The last time the container backing this tool version was built. For hosted: N/A"></setColumnRemarks>
+        <!-- Set lastbuilt to null for versions/tags of hosted tools -->
+        <sql dbms="postgresql">
+            UPDATE tag SET lastbuilt = null FROM tool_tag, tool WHERE tag.id = tool_tag.tagid AND tool.id = tool_tag.toolid AND tool.mode = 'HOSTED';
+        </sql>
     </changeSet>
 </databaseChangeLog>

@@ -47,7 +47,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Column
     @JsonProperty("last_modified")
-    @ApiModelProperty(value = "")
+    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.")
     private Date lastModified;
 
     /**
@@ -105,17 +105,20 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return false;
         }
         final WorkflowVersion other = (WorkflowVersion)obj;
-        return Objects.equals(super.getName(), other.getName()) && Objects.equals(super.getReference(), other.getReference());
+        return Objects.equals(super.getName(), other.getName()) && Objects.equals(super.getReference(), other.getReference())
+                && Objects.equals(this.lastModified, other.lastModified);
     }
 
     @Override
     public int compareTo(WorkflowVersion that) {
-        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast()).compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast()).result();
+        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
+                .compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast())
+                .compare(this.lastModified, that.lastModified, Ordering.natural().nullsLast()).result();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, reference);
+        return Objects.hash(name, reference, lastModified);
     }
 
 
