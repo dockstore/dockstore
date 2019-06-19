@@ -57,6 +57,8 @@ import org.slf4j.LoggerFactory;
  * Created by kcao on 01/03/17.
  */
 public final class ToolsImplCommon {
+    public static final String WORKFLOW_PREFIX = "#workflow";
+    public static final String SERVICE_PREFIX = "#service";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
 
     private ToolsImplCommon() { }
@@ -253,7 +255,7 @@ public final class ToolsImplCommon {
         if (entry.getCheckerWorkflow() == null) {
             return null;
         } else {
-            String newID = "#workflow/" + entry.getCheckerWorkflow().getWorkflowPath();
+            String newID = WORKFLOW_PREFIX + "/" + entry.getCheckerWorkflow().getWorkflowPath();
             return getUrlFromId(config, newID);
         }
     }
@@ -286,15 +288,13 @@ public final class ToolsImplCommon {
         if (container instanceof io.dockstore.webservice.core.Tool) {
             return ((io.dockstore.webservice.core.Tool)container).getToolPath();
         } else if (container instanceof Workflow) {
-            String workflowPrefix = "#workflow/";
-            String servicePrefix = "#service/";
             Workflow workflow = (Workflow)container;
             DescriptorLanguage descriptorType = workflow.getDescriptorType();
             String workflowPath = workflow.getWorkflowPath();
             if (descriptorType.equals(DescriptorLanguage.SERVICE)) {
-                return servicePrefix + workflowPath;
+                return SERVICE_PREFIX + "/" + workflowPath;
             } else {
-                return workflowPrefix + workflowPath;
+                return WORKFLOW_PREFIX + "/" + workflowPath;
             }
         } else {
             LOG.error("Could not construct URL for our container with id: " + container.getId());

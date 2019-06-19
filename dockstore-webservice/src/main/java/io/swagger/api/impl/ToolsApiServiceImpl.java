@@ -78,6 +78,8 @@ import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
 import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS;
 import static io.dockstore.common.DescriptorLanguage.FileType.WDL_TEST_JSON;
+import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
+import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
     private static final String GITHUB_PREFIX = "git@github.com:";
@@ -743,7 +745,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
             List<String> list = new ArrayList<>(textSegments);
-            if (list.get(0).equalsIgnoreCase("#workflow")) {
+            String firstTextSegment = list.get(0);
+            if (WORKFLOW_PREFIX.equalsIgnoreCase(firstTextSegment) || SERVICE_PREFIX.equals(firstTextSegment)) {
                 list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
                 tool = false;
             }
