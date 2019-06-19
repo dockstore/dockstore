@@ -90,6 +90,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
             + "Workflow-> Remote: Last time version on GitHub repo was changed. Hosted: time version created", position = 1)
     Date lastModified;
 
+    @Column(columnDefinition = "boolean default false")
+    @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
+    private boolean frozen = false;
+
     @Column(columnDefinition = "text default 'UNSET'", nullable = false)
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates the type of git (or other source control) reference")
@@ -365,6 +369,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setDbUpdateDate(Timestamp dbUpdateDate) {
         this.dbUpdateDate = dbUpdateDate;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
