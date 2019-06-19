@@ -49,7 +49,8 @@ public class ClientTestIT {
      */
     @Test
     public void noErrorLogs() {
-        String[] command = { "--version" };
+        String clientConfig = ResourceHelpers.resourceFilePath("clientConfig");
+        String[] command = { "--help", "--config", clientConfig };
         Client.main(command);
         Assert.assertTrue("There are unexpected error logs", systemErrRule.getLog().isBlank());
     }
