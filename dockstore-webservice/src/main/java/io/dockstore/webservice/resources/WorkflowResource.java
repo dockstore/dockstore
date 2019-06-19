@@ -58,8 +58,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
@@ -461,6 +463,16 @@ public class WorkflowResource
             @ApiParam(value = "Name of user on GitHub", required = true) @QueryParam("username") String username,
             @ApiParam(value = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        // Check for duplicates (currently workflows and services share paths)
+        String servicePath = "github.com/" + repository;
+        Workflow duplicate = workflowDAO.findByPath(servicePath, false);
+
+        if (duplicate != null) {
+            String msg = "Service with the path " + servicePath + " already exists.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Retrieve the user who triggered the call
         User sendingUser = findUserByGitHubUsername(username);
 
@@ -535,7 +547,7 @@ public class WorkflowResource
                         .withIssuedAt(new Date())
                         .withExpiresAt(new Date(Calendar.getInstance().getTimeInMillis() + tenMinutes))
                         .sign(algorithm);
-                CacheConfigManager.getInstance().setJsonWebToken(jsonWebToken);
+                CacheConfigManager.setJsonWebToken(jsonWebToken);
             } catch (JWTCreationException ex) {
                 LOG.error(ex.getMessage());
             }
@@ -585,8 +597,8 @@ public class WorkflowResource
 
     /**
      * Based on GitHub username, find the corresponding user
-     * @param username
-     * @return
+     * @param username GitHub username
+     * @return user with given GitHub username
      */
     private User findUserByGitHubUsername(String username) {
         // Find user by github name
