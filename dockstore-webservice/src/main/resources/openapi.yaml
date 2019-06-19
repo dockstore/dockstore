@@ -4861,6 +4861,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: installationId
+          in: query
+          description: GitHub installation ID
+          required: true
+          schema:
+            type: string
       requestBody:
         $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
@@ -4890,6 +4896,12 @@ paths:
         - name: gitReference
           in: query
           description: Git reference for new GitHub tag
+          required: true
+          schema:
+            type: string
+        - name: installationId
+          in: query
+          description: GitHub installation ID
           required: true
           schema:
             type: string

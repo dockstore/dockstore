@@ -4995,6 +4995,10 @@ paths:
         name: username
         schema:
           type: string
+      - in: query
+        name: installationId
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':
@@ -5018,6 +5022,10 @@ paths:
           type: string
       - in: query
         name: gitReference
+        schema:
+          type: string
+      - in: query
+        name: installationId
         schema:
           type: string
       requestBody:

@@ -4577,6 +4577,11 @@ paths:
         description: "Name of user on GitHub"
         required: true
         type: "string"
+      - name: "installationId"
+        in: "query"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
       - in: "body"
         name: "body"
         description: "This is here to appease Swagger. It requires PUT methods to\
@@ -4610,6 +4615,11 @@ paths:
       - name: "gitReference"
         in: "query"
         description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "query"
+        description: "GitHub installation ID"
         required: true
         type: "string"
       - in: "body"

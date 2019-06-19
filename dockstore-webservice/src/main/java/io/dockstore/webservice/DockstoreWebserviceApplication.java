@@ -48,6 +48,7 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
+import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
@@ -260,7 +261,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final EntryResource entryResource = new EntryResource(toolDAO, configuration);
         environment.jersey().register(entryResource);
 
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), authorizer, entryResource);
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), authorizer, entryResource, configuration);
         environment.jersey().register(workflowResource);
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
@@ -333,6 +334,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
         // cors.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, environment.getApplicationContext().getContextPath() +
         // "*");
+
+        CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
+        cacheConfigManager.initCache();
 
     }
 
