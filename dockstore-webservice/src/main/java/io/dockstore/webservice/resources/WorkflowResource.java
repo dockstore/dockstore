@@ -58,10 +58,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
@@ -494,8 +492,8 @@ public class WorkflowResource
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
-    public List<Workflow> upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
+    public Service upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
             @ApiParam(value = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId,
@@ -504,9 +502,9 @@ public class WorkflowResource
         String installationAccessToken = gitHubAppSetup(installationId);
 
         // Call common upsert code
-        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.SERVICE, installationAccessToken);
+        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, WorkflowMode.SERVICE, installationAccessToken);
 
-        return findAllWorkflowsByPath(dockstoreServicePath, WorkflowMode.SERVICE);
+        return (Service)workflowDAO.findByPath(dockstoreServicePath, false);
     }
 
     /**
@@ -516,7 +514,13 @@ public class WorkflowResource
      */
     private String gitHubAppSetup(String installationId) {
         checkJWT();
-        return CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
+        String installationAccessToken = CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
+        if (installationAccessToken == null) {
+            String msg = "Could not get an installation access token for install with id " + installationId;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return installationAccessToken;
     }
 
     /**

@@ -7,6 +7,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheStats;
 import com.google.common.cache.LoadingCache;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import okhttp3.OkHttpClient;
@@ -48,21 +49,33 @@ public class CacheConfigManager {
     /**
      * Given a JWT for the GitHub app, retrieve the GitHub app installation ID (per repository)
      * @param installationId App installation ID (per repository)
-     * @return Installation Access token
+     * @return Installation Access Token
      */
-    public String getInstallationAccessTokenFromInstallationId(String installationId) throws IOException {
+    public String getInstallationAccessTokenFromInstallationId(String installationId) throws Exception {
         OkHttpClient client = new OkHttpClient();
 
         Request request = new Request.Builder()
                 .url("https://api.github.com/app/installations/" + installationId + "/access_tokens")
-                .post(RequestBody.create(okhttp3.MediaType.parse(""), ""))
+                .post(RequestBody.create(okhttp3.MediaType.parse(""), "")) // Empty body to appease library
                 .addHeader("Accept", "application/vnd.github.machine-man-preview+json")
                 .addHeader("Authorization", "Bearer " + jsonWebToken)
                 .build();
 
-        okhttp3.Response response = client.newCall(request).execute();
-        JsonObject responseBody = new JsonParser().parse(response.body().string()).getAsJsonObject();
-        return responseBody.get("token").getAsString();
+        try {
+            okhttp3.Response response = client.newCall(request).execute();
+            JsonElement body = new JsonParser().parse(response.body().string());
+            if (body.isJsonObject()) {
+                JsonObject responseBody = body.getAsJsonObject();
+                JsonElement token = responseBody.get("token");
+                if (token.isJsonPrimitive()) {
+                    return token.getAsString();
+                }
+            }
+        } catch (IOException ex) {
+            throw new Exception("Unable to retrieve installation access token.");
+        }
+
+        throw new Exception("Unable to retrieve installation access token.");
     }
 
     /**
@@ -77,7 +90,7 @@ public class CacheConfigManager {
                     .recordStats()
                     .build(new CacheLoader<>() {
                         @Override
-                        public String load(String installationId) throws IOException {
+                        public String load(String installationId) throws Exception {
                             LOG.info("Fetching " + installationId);
                             return getInstallationAccessTokenFromInstallationId(installationId);
                         }
@@ -93,7 +106,7 @@ public class CacheConfigManager {
     public String getInstallationAccessTokenFromCache(String installationId) {
         try {
             CacheStats cacheStats = installationAccessTokenCache.stats();
-            LOG.info("CacheStats = {}", cacheStats);
+            LOG.info(cacheStats.toString());
             return installationAccessTokenCache.get(installationId);
         } catch (Exception ex) {
             LOG.error("Error retrieving token " + ex.getMessage());
