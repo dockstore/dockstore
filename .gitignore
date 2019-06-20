@@ -49,6 +49,7 @@ reports/target/
 
 # confidential testing files
 # The dockstore CLI config file for testing confidential data
+dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem
 dockstore-integration-testing/src/test/resources/config_file.txt
 dockstore-integration-testing/src/test/resources/config_file2.txt
 dockstore-webservice/src/main/resources/migrations.test.confidential1.xml
