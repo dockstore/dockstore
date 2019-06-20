@@ -728,7 +728,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * Used to parse localised IDs (no URL)
      * If tool, the id will look something like "registry.hub.docker.com/sequenza/sequenza"
      * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
-     * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it.
+     * If service, the id will look something like "#service/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
+     * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it
+     * and services have a "#service" prepended to it.
      */
     public static class ParsedRegistryID {
         private boolean tool = true;
@@ -746,8 +748,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
             List<String> list = new ArrayList<>(textSegments);
             String firstTextSegment = list.get(0);
-            if (WORKFLOW_PREFIX.equalsIgnoreCase(firstTextSegment) || SERVICE_PREFIX.equals(firstTextSegment)) {
-                list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
+            if (WORKFLOW_PREFIX.equalsIgnoreCase(firstTextSegment) || SERVICE_PREFIX.equalsIgnoreCase(firstTextSegment)) {
+                list.remove(0); // Remove #workflow or #service from ArrayList to make parsing similar to tool
                 tool = false;
             }
             checkToolId(list);
