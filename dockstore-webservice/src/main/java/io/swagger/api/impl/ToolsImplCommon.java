@@ -291,7 +291,7 @@ public final class ToolsImplCommon {
             Workflow workflow = (Workflow)container;
             DescriptorLanguage descriptorType = workflow.getDescriptorType();
             String workflowPath = workflow.getWorkflowPath();
-            if (descriptorType.equals(DescriptorLanguage.SERVICE)) {
+            if (descriptorType == DescriptorLanguage.SERVICE) {
                 return SERVICE_PREFIX + "/" + workflowPath;
             } else {
                 return WORKFLOW_PREFIX + "/" + workflowPath;
