@@ -48,7 +48,9 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -74,7 +76,7 @@ public class ServiceIT extends BaseIT {
     private UserDAO userDAO;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
 
@@ -85,6 +87,8 @@ public class ServiceIT extends BaseIT {
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
+
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
 
         // used to allow us to use tokenDAO outside of the web service
         this.session = application.getHibernate().getSessionFactory().openSession();
@@ -146,6 +150,26 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
         // did it happen?
         final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
+    }
+
+    /**
+     * This tests endpoints that will be triggered by GitHub App webhooks.
+     * A service is created and a version is added for a release 1.0
+     */
+    @Test
+    public void testServiceCreation() {
+        final ApiClient webClient = getWebClient("admin@admin.com");
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        io.swagger.client.model.Service service = client.addService("DockstoreTestUser2/test-service", "admin@admin.com", "1179416", "");
+        assertNotNull(service);
+
+        client.upsertServiceVersion("DockstoreTestUser2/test-service", "1.0", "1179416", "");
+
+        io.swagger.client.model.Workflow updatedService = client.getWorkflow(service.getId(), null);
+        assertNotNull(updatedService);
+        assertEquals("Should have a new version", 1, updatedService.getWorkflowVersions().size());
+        assertEquals("Should have 3 source files", 3, updatedService.getWorkflowVersions().get(0).getSourceFiles().size());
     }
 
     private class CreateContent {
