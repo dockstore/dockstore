@@ -166,24 +166,5 @@
         <addColumn tableName="workflowversion">
             <column defaultValueBoolean="false" name="frozen" type="bool"/>
         </addColumn>
-        <sql dbms="postgresql">
-            /* lock down workflowversion table, even for dockstore user as table owner  */
-            alter table workflowversion enable row level security;
-            alter table workflowversion force row level security;
-            /* all users can read the table, but cannot update or delete frozen versions */
-            create policy select_frozenversions on workflowversion for select using (true);
-            create policy insert_frozenversions on workflowversion for insert with check (true);
-            create policy update_frozenversions on workflowversion for update using (not frozen) with check (true);
-            create policy delete_frozenversions on workflowversion for delete using (not frozen);
-
-            /* lock down workflowversion table, even for dockstore user as table owner  */
-            alter table tag enable row level security;
-            alter table tag force row level security;
-            /* all users can read the table, but cannot update or delete frozen versions */
-            create policy select_frozenversions on tag for select using (true);
-            create policy insert_frozenversions on tag for insert with check (true);
-            create policy update_frozenversions on tag for update using (not frozen) with check (true);
-            create policy delete_frozenversions on tag for delete using (not frozen);
-        </sql>
     </changeSet>
 </databaseChangeLog>

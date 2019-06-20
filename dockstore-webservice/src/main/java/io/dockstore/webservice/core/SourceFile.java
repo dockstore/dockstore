@@ -35,7 +35,9 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
@@ -43,9 +45,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.slf4j.Logger;
@@ -87,6 +91,9 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
     private String absolutePath;
 
+    @Transient
+    private boolean wasFrozen;
+
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -106,6 +113,7 @@ public class SourceFile implements Comparable<SourceFile> {
     public Map<String, VerificationInformation> getVerifiedBySource() {
         return verifiedBySource;
     }
+
 
     public void setVerifiedBySource(Map<String, VerificationInformation> verifiedBySource) {
         this.verifiedBySource = verifiedBySource;
@@ -141,6 +149,17 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public void saveFrozenState() {
+        wasFrozen = true;
+    }
+
+    @PreUpdate
+    public void abortIfFrozen() {
+        if (wasFrozen) {
+            throw new CustomWebApplicationException("cannot update a frozen version", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     public String getAbsolutePath() {

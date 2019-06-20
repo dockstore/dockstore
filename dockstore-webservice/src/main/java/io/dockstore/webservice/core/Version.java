@@ -41,14 +41,19 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.PostLoad;
+import javax.persistence.PreUpdate;
 import javax.persistence.SequenceGenerator;
+import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -59,6 +64,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author dyuen
  */
 @Entity
+//@EntityListeners({ TestListener.class })
 @ApiModel(value = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
@@ -93,6 +99,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column(columnDefinition = "boolean default false")
     @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
     private boolean frozen = false;
+
+    @Transient
+    private boolean wasFrozen;
 
     @Column(columnDefinition = "text default 'UNSET'", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -171,6 +180,21 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
         doiStatus = DOIStatus.NOT_REQUESTED;
+    }
+
+    @PostLoad
+    public void saveOldState() {
+        setWasFrozen(frozen);
+        for (SourceFile file : sourceFiles) {
+            file.saveFrozenState();
+        }
+    }
+
+    @PreUpdate
+    public void abortIfFrozen() {
+        if (isWasFrozen()) {
+            throw new CustomWebApplicationException("cannot update a frozen version", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     public boolean isVerified() {
@@ -377,6 +401,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    public boolean isWasFrozen() {
+        return wasFrozen;
+    }
+
+    public void setWasFrozen(boolean wasFrozen) {
+        this.wasFrozen = wasFrozen;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
