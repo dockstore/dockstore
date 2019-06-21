@@ -708,6 +708,9 @@ public class WorkflowResource
         //update the workflow path in all workflowVersions
         Set<WorkflowVersion> versions = wf.getWorkflowVersions();
         for (WorkflowVersion version : versions) {
+            if (version.isFrozen()) {
+                continue;
+            }
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
             }

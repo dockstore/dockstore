@@ -5733,8 +5733,6 @@ definitions:
         type: "boolean"
         description: "When true, this version cannot be affected by refreshes to the\
           \ content or updates to its metadata"
-      wasFrozen:
-        type: "boolean"
       referenceType:
         type: "string"
         description: "This indicates the type of git (or other source control) reference"
@@ -6779,8 +6777,6 @@ definitions:
         type: "boolean"
         description: "When true, this version cannot be affected by refreshes to the\
           \ content or updates to its metadata"
-      wasFrozen:
-        type: "boolean"
       referenceType:
         type: "string"
         description: "This indicates the type of git (or other source control) reference"
@@ -7532,8 +7528,6 @@ definitions:
         type: "boolean"
         description: "When true, this version cannot be affected by refreshes to the\
           \ content or updates to its metadata"
-      wasFrozen:
-        type: "boolean"
       referenceType:
         type: "string"
         description: "This indicates the type of git (or other source control) reference"

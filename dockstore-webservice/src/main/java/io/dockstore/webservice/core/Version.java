@@ -42,6 +42,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.PostLoad;
+import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Transient;
@@ -184,16 +185,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @PostLoad
     public void saveOldState() {
-        setWasFrozen(frozen);
-        for (SourceFile file : sourceFiles) {
-            file.saveFrozenState();
+        this.wasFrozen = frozen;
+        if (frozen) {
+            for (SourceFile file : sourceFiles) {
+                file.saveFrozenState();
+            }
         }
     }
 
     @PreUpdate
-    public void abortIfFrozen() {
-        if (isWasFrozen()) {
-            throw new CustomWebApplicationException("cannot update a frozen version", HttpStatus.SC_BAD_REQUEST);
+    @PrePersist
+    public void abortIfpreviouslyFrozen() {
+        if (wasFrozen) {
+            throw new FrozenVersionException();
         }
     }
 
@@ -224,6 +228,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
+        frozen = version.frozen;
     }
 
     public abstract String getWorkingDirectory();
@@ -403,14 +408,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.frozen = frozen;
     }
 
-    public boolean isWasFrozen() {
-        return wasFrozen;
-    }
-
-    public void setWasFrozen(boolean wasFrozen) {
-        this.wasFrozen = wasFrozen;
-    }
-
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
 
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
@@ -441,5 +438,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
             .compare(this.reference, that.reference, Ordering.natural().nullsLast())
             .compare(this.name, that.name, Ordering.natural().nullsLast())
             .compare(this.commitID, that.commitID, Ordering.natural().nullsLast()).result();
+    }
+
+    public static class FrozenVersionException extends CustomWebApplicationException {
+        public FrozenVersionException() {
+            super("cannot change frozen workflow version", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 }

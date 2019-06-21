@@ -16,8 +16,9 @@
 
 package io.dockstore.client.cli;
 
-import java.util.Date;
+import java.util.List;
 
+import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
@@ -569,26 +570,36 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowApi.updateWorkflowPath(githubWorkflow.getId(), workflow);
 
         final Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
+        // freezing the master branch
         final WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
         master.setFrozen(true);
-        workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), workflowBeforeFreezing.getWorkflowVersions());
+        final List<WorkflowVersion> workflowVersionsAfterFreezing = workflowApi
+            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+
+        assertTrue(workflowVersionsAfterFreezing.stream().filter(v -> v.getName().equals("master")).findFirst().get().isFrozen());
 
         // try various operations that should be disallowed
-        master.setLastModified(new Date(0));
 
-        // should be ignored
-        workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), workflowBeforeFreezing.getWorkflowVersions());
-
-        // should be fine, but the workflow version in question should not change
-        workflowApi.refresh(workflowBeforeFreezing.getId());
-        workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), workflowBeforeFreezing.getWorkflowVersions());
+        // actually, this one should be fine but should skip master
         workflow.setWorkflowPath("foo");
-        final Workflow finalWorkflow = workflowApi.updateWorkflowPath(githubWorkflow.getId(), workflow);
-        assertNotEquals("foo", finalWorkflow.getWorkflowPath());
-        assertNotEquals(
-            finalWorkflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get().getLastModified(),
-            new Date());
+        final Workflow workflow1 = workflowApi.updateWorkflowPath(githubWorkflow.getId(), workflow);
+        assertNotEquals("foo",
+            workflow1.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get().getWorkflowPath());
 
+        boolean failedProperly = false;
+
+
+        // cannot modify version properties, like unfreezing for now
+        master.setFrozen(false);
+        try {
+            workflowApi.updateWorkflowVersion(githubWorkflow.getId(), Lists.newArrayList(master));
+        } catch (ApiException e) {
+            failedProperly = e.getMessage().contains("cannot change frozen workflow version");
+        }
+        assertTrue(failedProperly);
+
+        // refresh should skip over the frozen version
+        workflowApi.refresh(githubWorkflow.getId());
     }
 
     /**
