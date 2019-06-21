@@ -838,7 +838,7 @@
     <build>
         <pluginManagement>
             <plugins>
-		<!-- https://github.com/jacoco/jacoco/pull/760 -->
+                <!-- https://github.com/jacoco/jacoco/pull/760 -->
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
@@ -1150,7 +1150,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <release>11</release>
-	        </configuration>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
