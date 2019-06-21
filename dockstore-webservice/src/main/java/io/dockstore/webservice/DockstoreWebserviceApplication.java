@@ -86,6 +86,7 @@ import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
+import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
@@ -155,8 +156,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     @Override
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
-
-        configureMapper(bootstrap.getObjectMapper());
+        ObjectMapper objectMapper = Jackson.newMinimalObjectMapper();
+        configureMapper(objectMapper);
+        bootstrap.setObjectMapper(objectMapper);
 
 
         // setup hibernate+postgres
