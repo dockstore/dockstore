@@ -157,7 +157,7 @@ public class ServiceIT extends BaseIT {
      * A service is created and a version is added for a release 1.0
      */
     @Test
-    public void testServiceCreation() {
+    public void testGitHubAppEndpoints() {
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
 
