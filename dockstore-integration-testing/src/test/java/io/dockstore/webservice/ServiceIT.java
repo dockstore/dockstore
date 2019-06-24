@@ -161,15 +161,17 @@ public class ServiceIT extends BaseIT {
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
 
-        io.swagger.client.model.Service service = client.addService("DockstoreTestUser2/test-service", "admin@admin.com", "1179416", "");
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId, "");
         assertNotNull(service);
 
-        client.upsertServiceVersion("DockstoreTestUser2/test-service", "1.0", "1179416", "");
+        service = client.upsertServiceVersion(serviceRepo, "1.0", installationId, "");
 
-        io.swagger.client.model.Workflow updatedService = client.getWorkflow(service.getId(), null);
-        assertNotNull(updatedService);
-        assertEquals("Should have a new version", 1, updatedService.getWorkflowVersions().size());
-        assertEquals("Should have 3 source files", 3, updatedService.getWorkflowVersions().get(0).getSourceFiles().size());
+        assertNotNull(service);
+        assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
+        assertEquals("Should have 3 source files", 3, service.getWorkflowVersions().get(0).getSourceFiles().size());
     }
 
     private class CreateContent {

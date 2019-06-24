@@ -17,6 +17,8 @@ zenodoClientID: <fill me in>
 zenodoClientSecret: <fill me in>
 zenodoRedirectURI: http://<fill me in>:8080/auth/zenodo.org
 zenodoUrl: https://zenodo.org
+gitHubAppId: <fill me in>
+gitHubAppPrivateKeyFile: <fill me in>
 
 googleClientID: <fill me in>
 googleClientSecret: <fill me in>

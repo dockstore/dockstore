@@ -11,4 +11,5 @@ set -o xtrace
 if [[ "${TESTING_PROFILE}" == *"integration-tests"* ]] || [[ "${TESTING_PROFILE}" == "automated-review" ]]; then
     openssl aes-256-cbc -K $encrypted_ae71332e440f_key -iv $encrypted_ae71332e440f_iv -in secrets.tar.enc -out secrets.tar -d
     tar xvf secrets.tar
+    mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
 fi
