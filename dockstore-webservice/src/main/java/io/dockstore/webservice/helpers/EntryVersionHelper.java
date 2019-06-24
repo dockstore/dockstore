@@ -136,6 +136,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                         ((SourceFile)sourceFile).setContent(null))
             );
         }
+        // not sure why needed with org.hibernate.jpa.event.spi.JpaIntegrator
+        dao.clear();
     }
 
     default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO, ElasticManager manager) {

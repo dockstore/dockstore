@@ -65,7 +65,6 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author dyuen
  */
 @Entity
-//@EntityListeners({ TestListener.class })
 @ApiModel(value = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")

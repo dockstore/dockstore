@@ -32,4 +32,9 @@ public abstract class AbstractDockstoreDAO<T> extends AbstractDAO<T> {
         Session session = currentSession();
         session.evict(entry);
     }
+
+    public void clear() {
+        Session session = currentSession();
+        session.clear();
+    }
 }
