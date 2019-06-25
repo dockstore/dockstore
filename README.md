@@ -46,7 +46,7 @@ server-url = https://www.dockstore.org/api
 
 ### Migration to Dockstore 1.7
 
-1. Ensure that you are using Java 11
+1. Ensure that you are using Java 11. Java 8 (both Open and Oracle) will not work.
 
 ### Migration to Dockstore 1.3
 

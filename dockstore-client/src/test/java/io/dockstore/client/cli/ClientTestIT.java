@@ -41,4 +41,17 @@ public class ClientTestIT {
         Assert.assertTrue(!systemErrRule.getLog().contains("Override and run with"));
         Assert.assertTrue(!systemOutRule.getLog().contains("Override and run with"));
     }
+
+    /**
+     * When javax.activation is missing (because using Java 11), there will be error logs
+     * Check that there are no error logs
+     * Careful, test scope may interfere with validity of this test
+     */
+    @Test
+    public void noErrorLogs() {
+        String clientConfig = ResourceHelpers.resourceFilePath("clientConfig");
+        String[] command = { "--help", "--config", clientConfig };
+        Client.main(command);
+        Assert.assertTrue("There are unexpected error logs", systemErrRule.getLog().isBlank());
+    }
 }
