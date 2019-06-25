@@ -1,1 +1,1 @@
-org.hibernate.jpa.event.spi.JpaIntegrator
+io.dockstore.webservice.CustomJPAIntegrator
