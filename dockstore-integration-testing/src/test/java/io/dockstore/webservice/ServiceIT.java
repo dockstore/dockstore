@@ -78,7 +78,7 @@ public class ServiceIT extends BaseIT {
     private UserDAO userDAO;
 
     @Before
-    public void setup() throws Exception {
+    public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
 
@@ -89,8 +89,6 @@ public class ServiceIT extends BaseIT {
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
-
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
 
         // used to allow us to use tokenDAO outside of the web service
         this.session = application.getHibernate().getSessionFactory().openSession();
@@ -159,7 +157,8 @@ public class ServiceIT extends BaseIT {
      * A service is created and a version is added for a release 1.0
      */
     @Test
-    public void testGitHubAppEndpoints() {
+    public void testGitHubAppEndpoints() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -182,7 +181,8 @@ public class ServiceIT extends BaseIT {
      * Tests that you can't register two services with the same path
      */
     @Test
-    public void duplicateService() {
+    public void duplicateService() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -207,7 +207,8 @@ public class ServiceIT extends BaseIT {
      * Ensures that you cannot create a service if the given user is not on Dockstore
      */
     @Test
-    public void createServiceNoUser() {
+    public void createServiceNoUser() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
 
@@ -228,7 +229,8 @@ public class ServiceIT extends BaseIT {
      * This tests that you can't add a version that doesn't exist
      */
     @Test
-    public void updateServiceIncorrectTag() {
+    public void updateServiceIncorrectTag() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
 
