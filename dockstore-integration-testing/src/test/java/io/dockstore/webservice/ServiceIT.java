@@ -31,6 +31,7 @@ import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
 import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
@@ -51,6 +52,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -164,14 +166,87 @@ public class ServiceIT extends BaseIT {
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
 
+        // Add service
         io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId, "");
         assertNotNull(service);
 
+        // Add version
         service = client.upsertServiceVersion(serviceRepo, "1.0", installationId, "");
 
         assertNotNull(service);
         assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
         assertEquals("Should have 3 source files", 3, service.getWorkflowVersions().get(0).getSourceFiles().size());
+    }
+
+    /**
+     * Tests that you can't register two services with the same path
+     */
+    @Test
+    public void duplicateService() {
+        final ApiClient webClient = getWebClient("admin@admin.com");
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add service
+        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId, "");
+        assertNotNull(service);
+
+        // Try adding service again
+        io.swagger.client.model.Service serviceDuplicate = null;
+        try {
+            serviceDuplicate = client.addService(serviceRepo, "admin@admin.com", installationId, "");
+        } catch (ApiException ex) {
+
+        }
+        assertNull("Duplicate should be null since you cannot add another service with the same path.", serviceDuplicate);
+    }
+
+    /**
+     * Ensures that you cannot create a service if the given user is not on Dockstore
+     */
+    @Test
+    public void createServiceNoUser() {
+        final ApiClient webClient = getWebClient("admin@admin.com");
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add service
+        io.swagger.client.model.Service service = null;
+        try {
+            service = client.addService(serviceRepo, "iamnotarealuser", installationId, "");
+        } catch (ApiException ex) {
+
+        }
+        assertNull("Should not be able to add service since the username does not exist on Dockstore.", service);
+    }
+
+    /**
+     * This tests that you can't add a version that doesn't exist
+     */
+    @Test
+    public void updateServiceIncorrectTag() {
+        final ApiClient webClient = getWebClient("admin@admin.com");
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add service
+        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId, "");
+        assertNotNull(service);
+
+        // Add version that doesn't exist
+        io.swagger.client.model.Service updatedService = null;
+        try {
+            updatedService = client.upsertServiceVersion(serviceRepo, "1.0-fake", installationId, "");
+        } catch (ApiException ex) {
+
+        }
+        assertNull("Should fail because there is not tag with the given reference.", updatedService);
     }
 
     private class CreateContent {
