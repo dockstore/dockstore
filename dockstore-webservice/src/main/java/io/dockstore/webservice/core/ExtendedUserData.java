@@ -16,22 +16,32 @@
 package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.Hibernate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class will eventually hold all sorts of information about a user that is costly to calculate.
  */
 @ApiModel(value = "ExtendedUserData", description = "Contains expensive data for end users for the dockstore")
 public class ExtendedUserData {
+    private static final Logger LOG = LoggerFactory.getLogger(ExtendedUserData.class);
     @ApiModelProperty(value = "Whether a user can change their username")
     private boolean canChangeUsername;
 
     public ExtendedUserData(User user, PermissionsInterface authorizer) {
         Hibernate.initialize(user.getEntries());
-        this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished) && !authorizer.isSharing(user) && user.getOrganizations().size() == 0;
+        try {
+            this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished) && !authorizer.isSharing(user)
+                    && user.getOrganizations().size() == 0;
+        } catch (Exception e) {
+            LOG.error("SAM is improperly configured.");
+            this.canChangeUsername = false;
+        }
     }
 
     /**
