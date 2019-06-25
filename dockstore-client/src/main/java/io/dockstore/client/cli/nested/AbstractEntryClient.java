@@ -46,9 +46,9 @@ import com.google.gson.JsonParseException;
 import io.cwl.avro.CWL;
 import io.dockstore.client.cli.CheckerClient;
 import io.dockstore.client.cli.Client;
-import io.dockstore.common.Bridge;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Utilities;
+import io.dockstore.common.WdlBridge;
 import io.github.collaboratory.cwl.CWLClient;
 import io.github.collaboratory.nextflow.NextFlowClient;
 import io.github.collaboratory.wdl.WDLClient;
@@ -73,6 +73,7 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.parser.ParserException;
+import wdl.draft3.parser.WdlParser;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.DOWNLOAD;
@@ -650,9 +651,13 @@ public abstract class AbstractEntryClient<T> {
             File wdlFile = new File(wdlPath);
             final List<String> wdlDocuments = Lists.newArrayList(wdlFile.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge bridge = new Bridge(wdlFile.getParent());
-            String inputs = bridge.inputs(wdlList);
-            out(inputs);
+            WdlBridge wdlBridge = new WdlBridge();
+            try {
+                String inputs = wdlBridge.getParameterFile(wdlFile.getAbsolutePath());
+                out(inputs);
+            } catch (WdlParser.SyntaxError ex) {
+                throw new ApiException(ex);
+            }
         }
     }
 
