@@ -16,7 +16,6 @@
 package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -49,6 +48,7 @@ public class ExtendedUserData {
      * TODO: this may need to eventually become more sophisticated and take into account
      * shared content
      * // ignoring for now, this synthetic field may need to be calculated more sparingly and causes issues
+     *
      * @return true iff the user really can change their username
      */
     @JsonProperty

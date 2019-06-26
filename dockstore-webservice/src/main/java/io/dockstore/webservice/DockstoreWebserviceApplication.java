@@ -50,6 +50,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.GoogleHelper;
+import io.dockstore.webservice.helpers.ObsoleteUrlFactory;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -195,7 +196,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 .readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
         try {
             // this can only be called once per JVM, a factory exception is thrown in our tests
-//            URL.setURLStreamHandlerFactory(new OkUrlFactory(okHttpClient));
+            URL.setURLStreamHandlerFactory(new ObsoleteUrlFactory(okHttpClient));
         } catch (Error factoryException) {
             if (factoryException.getMessage().contains("factory already defined")) {
                 LOG.debug("OkHttpClient already registered, skipping");
