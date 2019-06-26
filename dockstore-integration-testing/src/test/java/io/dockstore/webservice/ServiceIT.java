@@ -18,6 +18,7 @@ package io.dockstore.webservice;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.Gson;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -130,6 +131,9 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
         final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true);
         final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false);
+        Gson gson = new Gson();
+        String serviceString = gson.toJson(services);
+        System.out.println(serviceString);
         assertTrue(workflows.size() >= 2 && workflows.stream().noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         assertTrue(services.size() >= 1 && services.stream().allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
