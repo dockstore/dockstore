@@ -897,6 +897,7 @@
                                 <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</usedDependency>
                                 <usedDepdenency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</usedDepdenency>
                                 <usedDependency>javax.activation:activation</usedDependency>
+                                <usedDependency>org.hibernate.common:hibernate-commons-annotations</usedDependency>				    
                             </usedDependencies>
                         </configuration>
                     </execution>
