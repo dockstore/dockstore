@@ -459,8 +459,8 @@ public class WorkflowResource
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
-    public Service addService(@ApiParam(hidden = true) @Auth User user,
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow addService(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
             @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
             @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
@@ -476,7 +476,7 @@ public class WorkflowResource
         if (existingService != null) {
             // Service exists, add user to service
             existingService.getUsers().add(sendingUser);
-            return (Service)workflowDAO.findById(existingService.getId());
+            return workflowDAO.findById(existingService.getId());
         }
 
         // Get Installation Access Token
@@ -488,7 +488,7 @@ public class WorkflowResource
         service.getUsers().add(sendingUser);
         long serviceId = workflowDAO.create(service);
 
-        return (Service)workflowDAO.findById(serviceId);
+        return workflowDAO.findById(serviceId);
     }
 
     @POST
@@ -498,8 +498,8 @@ public class WorkflowResource
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
-    public Service upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
             @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
@@ -509,7 +509,7 @@ public class WorkflowResource
         // Call common upsert code
         String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, WorkflowMode.SERVICE, installationAccessToken);
 
-        return (Service)workflowDAO.findByPath(dockstoreServicePath, false);
+        return workflowDAO.findByPath(dockstoreServicePath, false);
     }
 
     /**

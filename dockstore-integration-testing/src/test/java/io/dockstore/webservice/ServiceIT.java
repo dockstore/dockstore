@@ -18,7 +18,6 @@ package io.dockstore.webservice;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.Gson;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -28,6 +27,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -131,11 +131,6 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
         final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true);
         final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false);
-        Gson gson = new Gson();
-        String workflowString = gson.toJson(workflows);
-        System.out.println(workflowString);
-        String serviceString = gson.toJson(services);
-        System.out.println(serviceString);
         assertTrue(workflows.size() >= 2 && workflows.stream().noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         assertTrue(services.size() >= 1 && services.stream().allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
@@ -172,7 +167,7 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId);
+        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
         assertNotNull(service);
 
         // Add version
@@ -201,7 +196,7 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Service service = null;
+        io.swagger.client.model.Workflow service = null;
         try {
             service = client.addService(serviceRepo, "iamnotarealuser", installationId);
         } catch (ApiException ex) {
@@ -223,11 +218,11 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId);
+        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
         assertNotNull(service);
 
         // Add version that doesn't exist
-        io.swagger.client.model.Service updatedService = null;
+        io.swagger.client.model.Workflow updatedService = null;
         try {
             updatedService = client.upsertServiceVersion(serviceRepo, "1.0-fake", installationId);
         } catch (ApiException ex) {
@@ -268,18 +263,22 @@ public class ServiceIT extends BaseIT {
             Service testService = new Service();
             testService.setDescription("test service");
             testService.setIsPublished(true);
-            testService.setSourceControl(SourceControl.GITLAB);
+            testService.setSourceControl(SourceControl.GITHUB);
             testService.setDescriptorType(DescriptorLanguage.SERVICE);
+            testService.setMode(WorkflowMode.SERVICE);
             testService.setOrganization("hydra");
             testService.setRepository("hydra_repo");
+            testService.setDefaultWorkflowPath(".dockstore.yml");
 
             Service test2Service = new Service();
             test2Service.setDescription("test service");
             test2Service.setIsPublished(true);
-            test2Service.setSourceControl(SourceControl.GITLAB);
+            test2Service.setSourceControl(SourceControl.GITHUB);
+            test2Service.setMode(WorkflowMode.SERVICE);
             test2Service.setDescriptorType(DescriptorLanguage.SERVICE);
             test2Service.setOrganization("hydra");
             test2Service.setRepository("hydra_repo");
+            test2Service.setDefaultWorkflowPath(".dockstore.yml");
 
             final Map<DescriptorLanguage.FileType, String> defaultPaths = test2Service.getDefaultPaths();
             for(DescriptorLanguage.FileType val : DescriptorLanguage.FileType.values()){
