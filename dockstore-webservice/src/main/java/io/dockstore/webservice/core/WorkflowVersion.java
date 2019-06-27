@@ -85,6 +85,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     public void clone(WorkflowVersion tag) {
         super.clone(tag);
         super.setReference(tag.getReference());
+        lastModified = tag.getLastModified();
     }
 
     @JsonProperty
@@ -105,20 +106,18 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return false;
         }
         final WorkflowVersion other = (WorkflowVersion)obj;
-        return Objects.equals(super.getName(), other.getName()) && Objects.equals(super.getReference(), other.getReference())
-                && Objects.equals(this.lastModified, other.lastModified);
+        return Objects.equals(super.getName(), other.getName()) && Objects.equals(super.getReference(), other.getReference());
     }
 
     @Override
     public int compareTo(WorkflowVersion that) {
         return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
-                .compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast())
-                .compare(this.lastModified, that.lastModified, Ordering.natural().nullsLast()).result();
+                .compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast()).result();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, reference, lastModified);
+        return Objects.hash(name, reference);
     }
 
 

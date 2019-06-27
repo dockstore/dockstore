@@ -523,6 +523,9 @@ components:
         last_built:
           format: date-time
           type: string
+        last_modified:
+          format: date-time
+          type: string
         name:
           type: string
         output_file_formats:
@@ -3253,7 +3256,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:
@@ -4167,7 +4170,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -4327,7 +4330,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId
