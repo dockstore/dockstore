@@ -387,23 +387,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     }
 
     /**
-     * Prints a warning if Docker isn't running. Docker is not needed for all workflows. If a workflow uses Docker and
-     * it is not running, it fails with a cryptic error. This should make the problem more obvious.
-     */
-    private static void checkIfDockerRunning() {
-        ProcessBuilder pb = new ProcessBuilder("docker", "ps");
-        try {
-            Process process = pb.start();
-            process.waitFor();
-            if (process.exitValue() != 0) {
-                out("WARNING: Docker is not running. If your workflow uses Docker, it will fail.");
-            }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
      * @param args Arguments entered into the CLI
      */
     @Override
@@ -428,7 +411,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         if (this.commandLaunch.help) {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
         } else {
-            checkIfDockerRunning();  // print a warning if Docker is not running
+            this.checkIfDockerRunning(); // print a warning message if Docker is not running
             if ((entry == null) != (localEntry == null)) {
                 if (entry != null) {
                     this.isLocalEntry = false;

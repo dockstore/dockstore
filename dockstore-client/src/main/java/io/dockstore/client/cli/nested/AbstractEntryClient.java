@@ -1108,7 +1108,25 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
-     * Launches tools and workflows.
+     * Prints a warning if Docker isn't running. Docker is not always needed. If a workflow or tool uses Docker and
+     * it is not running, it fails with a cryptic error. This should make the problem more obvious.
+     */
+    void checkIfDockerRunning() {
+        ProcessBuilder pb = new ProcessBuilder("docker", "ps");
+        try {
+            Process process = pb.start(); // run a bash command
+            process.waitFor();
+            if (process.exitValue() != 0) {
+                String type = this.getEntryType().toLowerCase(); // "tool" or "workflow"
+                out("WARNING: Docker is not running. If this " + type + " uses Docker, it will fail.");
+            }
+        } catch (IOException | InterruptedException e) {
+            exceptionMessage(e, "Error checking for Docker.", 1);
+        }
+    }
+
+    /**
+     * Launches tools. Overridden for workflows.
      *
      * @param args Arguments entered into the CLI
      */
@@ -1124,6 +1142,7 @@ public abstract class AbstractEntryClient<T> {
                 final String localFilePath = reqVal(args, "--local-entry");
                 this.isLocalEntry = true;
                 preValidateLaunchArguments(args);
+                checkIfDockerRunning();
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
                 if (!args.contains("--entry")) {
@@ -1131,6 +1150,8 @@ public abstract class AbstractEntryClient<T> {
                 }
                 this.isLocalEntry = false;
                 preValidateLaunchArguments(args);
+                checkIfDockerRunning();
+
                 final String descriptor = optVal(args, "--descriptor", CWL.getLowerShortName());
                 if (descriptor.equals(CWL.getLowerShortName())) {
                     try {
