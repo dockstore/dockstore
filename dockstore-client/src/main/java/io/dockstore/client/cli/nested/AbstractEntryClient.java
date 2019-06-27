@@ -37,6 +37,8 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.HttpHeaders;
 
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -44,6 +46,8 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import com.spotify.docker.client.exceptions.DockerException;
 import io.cwl.avro.CWL;
 import io.dockstore.client.cli.CheckerClient;
 import io.dockstore.client.cli.Client;
@@ -1113,15 +1117,12 @@ public abstract class AbstractEntryClient<T> {
      * it is not running, it fails with a cryptic error. This should make the problem more obvious.
      */
     void checkIfDockerRunning() {
-        ProcessBuilder pb = new ProcessBuilder("docker", "ps");
-        try {
-            Process process = pb.start(); // run a bash command
-            process.waitFor(2, TimeUnit.SECONDS);
-            if (process.exitValue() != 0) {
-                String type = this.getEntryType().toLowerCase(); // "tool" or "workflow"
-                out("WARNING: Docker is not running. If this " + type + " uses Docker, it will fail.");
-            }
-        } catch (IOException | InterruptedException e) {
+        try (DockerClient docker = DefaultDockerClient.fromEnv().build()){
+            docker.info();  // attempt to get information about docker
+        } catch (DockerException | DockerCertificateException e) {  // couldn't access docker
+            String type = this.getEntryType().toLowerCase(); // "tool" or "workflow"
+            out("WARNING: Docker is not running. If this " + type + " uses Docker, it will fail.");
+        } catch (InterruptedException e) {  // something else went wrong
             LOG.error("Check for Docker failed", e);
         }
     }
