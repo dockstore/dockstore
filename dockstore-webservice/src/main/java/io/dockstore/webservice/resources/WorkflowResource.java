@@ -1515,10 +1515,6 @@ public class WorkflowResource
         return sourceCodeRepo;
     }
 
-    private SourceCodeRepoInterface getGitHubAppInterface(String token) {
-        return SourceCodeRepoFactory.createGitHubAppRepo(token);
-    }
-
     @PUT
     @Timed
     @UnitOfWork

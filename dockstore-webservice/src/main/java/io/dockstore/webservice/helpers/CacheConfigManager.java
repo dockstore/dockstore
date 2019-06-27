@@ -24,7 +24,7 @@ public class CacheConfigManager {
 
     private static LoadingCache<String, String> installationAccessTokenCache;
 
-    private static volatile String jsonWebToken;
+    private static String jsonWebToken;
 
     public static CacheConfigManager getInstance() {
         return cacheConfigManager;
@@ -101,7 +101,7 @@ public class CacheConfigManager {
                     .build(new CacheLoader<>() {
                         @Override
                         public String load(String installationId) throws Exception {
-                            LOG.info("Fetching " + installationId);
+                            LOG.info("Fetching installation " + installationId + " from cache.");
                             return getInstallationAccessTokenFromInstallationId(installationId);
                         }
                     });
