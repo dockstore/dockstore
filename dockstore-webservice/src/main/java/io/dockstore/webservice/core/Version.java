@@ -200,6 +200,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
+        frozen = version.frozen;
     }
 
     public abstract String getWorkingDirectory();
@@ -209,12 +210,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         lastModified = version.getLastModified();
         name = version.getName();
         referenceType = version.getReferenceType();
+        frozen = version.isFrozen();
     }
 
     public void clone(T version) {
         name = version.getName();
         lastModified = version.getLastModified();
         referenceType = version.getReferenceType();
+        frozen = version.isFrozen();
     }
 
     @JsonProperty
@@ -377,6 +380,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+        // freeze sourcefiles as well, this ideally would be de-normalized but postgres doesn't do multi-table constraints and
+        // multitable row-level security is an even bigger pain
+        this.sourceFiles.forEach(s -> s.setFrozen(frozen));
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
