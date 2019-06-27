@@ -403,83 +403,123 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         DescriptorLanguage.FileType identifiedType = workflow.getFileType();
 
         if (workflow.getMode() == WorkflowMode.SERVICE) {
-            // Get dockstore.yml file
-            String dockstoreYmlContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
-            if (dockstoreYmlContent != null) {
-                SourceFile dockstoreYml = new SourceFile();
-                dockstoreYml.setContent(dockstoreYmlContent);
-                dockstoreYml.setPath(calculatedPath);
-                dockstoreYml.setAbsolutePath(calculatedPath);
-                dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
-
-                version.getSourceFiles().add(dockstoreYml);
-
-                // Grab all files from files array
-                Yaml yaml = new Yaml();
-                Map<String, Object> map = yaml.load(dockstoreYmlContent);
-                Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
-                List<String> files = (List<String>)serviceObject.get("files");
-                for (String filePath: files) {
-                    String fileContent = this.readFileFromRepo(filePath, ref.getLeft(), repository);
-                    SourceFile file = new SourceFile();
-                    file.setAbsolutePath(filePath);
-                    file.setPath(filePath);
-                    file.setContent(fileContent);
-                    file.setType(DescriptorLanguage.FileType.OTHER);
-                    version.getSourceFiles().add(file);
-                }
-            } else {
-                return null;
+            version = setupServiceFilesForVersion(calculatedPath, ref, repository, version);
+            if (version == null) {
+                return version;
             }
         } else {
-            // Grab workflow file from github
-            try {
-                // Get contents of descriptor file and store
-                String decodedContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
-                if (decodedContent != null) {
-                    SourceFile file = new SourceFile();
-                    file.setContent(decodedContent);
-                    file.setPath(calculatedPath);
-                    file.setAbsolutePath(calculatedPath);
-                    file.setType(identifiedType);
-                    version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
+            version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, repositoryId, existingDefaults);
+        }
 
-                    // Use default test parameter file if either new version or existing version that hasn't been edited
-                    // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
-                    if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.getLeft(), repository);
-                        if (testJsonContent != null) {
-                            SourceFile testJson = new SourceFile();
+        return versionValidation(version, workflow, calculatedPath);
+    }
 
-                            // Set Filetype
-                            if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
-                                testJson.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
-                            } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
-                                testJson.setType(DescriptorLanguage.FileType.WDL_TEST_JSON);
-                            } else if (identifiedType.equals(DescriptorLanguage.FileType.NEXTFLOW_CONFIG)) {
-                                testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
-                            }
+    /**
+     *
+     * @param calculatedPath Path to dockstore.yml
+     * @param ref Triple containing reference name, branch date, and SHA
+     * @param repository GitHub repository object
+     * @param version Version to update
+     * @param identifiedType Descriptor type of file
+     * @param workflow Workflow for given version
+     * @param repositoryId Unique repository ID (ex. dockstore/dockstore-ui2)
+     * @param existingDefaults Optional mapping of existing versions
+     * @return Version with updated sourcefiles
+     */
+    @SuppressWarnings("checkstyle:parameternumber")
+    private WorkflowVersion setupWorkflowFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, DescriptorLanguage.FileType identifiedType, Workflow workflow, String repositoryId, Map<String, WorkflowVersion> existingDefaults) {
+        // Grab workflow file from github
+        try {
+            // Get contents of descriptor file and store
+            String decodedContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
+            if (decodedContent != null) {
+                SourceFile file = new SourceFile();
+                file.setContent(decodedContent);
+                file.setPath(calculatedPath);
+                file.setAbsolutePath(calculatedPath);
+                file.setType(identifiedType);
+                version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
+
+                // Use default test parameter file if either new version or existing version that hasn't been edited
+                // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
+                if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
+                    String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.getLeft(), repository);
+                    if (testJsonContent != null) {
+                        SourceFile testJson = new SourceFile();
+
+                        // Set Filetype
+                        if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
+                            testJson.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
+                        } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
+                            testJson.setType(DescriptorLanguage.FileType.WDL_TEST_JSON);
+                        } else if (identifiedType.equals(DescriptorLanguage.FileType.NEXTFLOW_CONFIG)) {
+                            testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
+                        }
+
+                        Optional<DescriptorLanguage.FileType> testFileType = DescriptorLanguage.getTestParameterType(identifiedType.toString());
+                        if (testFileType.isPresent()) {
+                            testJson.setType(testFileType.get());
 
                             testJson.setPath(workflow.getDefaultTestParameterFilePath());
                             testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
                             testJson.setContent(testJsonContent);
 
                             // Only add test parameter file if it hasn't already been added
-                            boolean hasDuplicate = version.getSourceFiles().stream().anyMatch(
-                                (SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
+                            boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
+                                    && sf.getType() == testJson.getType());
                             if (!hasDuplicate) {
                                 version.getSourceFiles().add(testJson);
                             }
+                        } else {
+                            LOG.error("Could not find test parameter file type for " + identifiedType);
                         }
                     }
                 }
-
-            } catch (Exception ex) {
-                LOG.error(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
             }
-        }
 
-        return versionValidation(version, workflow, calculatedPath);
+        } catch (Exception ex) {
+            LOG.error(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
+        }
+        return version;
+    }
+
+    /**
+     * Retrieves the dockstore.yml file from GitHub and pulls all files in the files array
+     * @param calculatedPath Path to dockstore.yml
+     * @param ref Triple containing reference name, branch date, and SHA
+     * @param repository GitHub repository object
+     * @param version Version to update
+     * @return Version with updated sourcefiles
+     */
+    private WorkflowVersion setupServiceFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version) {
+        String dockstoreYmlContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
+        if (dockstoreYmlContent != null) {
+            SourceFile dockstoreYml = new SourceFile();
+            dockstoreYml.setContent(dockstoreYmlContent);
+            dockstoreYml.setPath(calculatedPath);
+            dockstoreYml.setAbsolutePath(calculatedPath);
+            dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+
+            version.getSourceFiles().add(dockstoreYml);
+
+            // Grab all files from files array
+            Yaml yaml = new Yaml();
+            Map<String, Object> map = yaml.load(dockstoreYmlContent);
+            Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
+            List<String> files = (List<String>)serviceObject.get("files");
+            for (String filePath: files) {
+                String fileContent = this.readFileFromRepo(filePath, ref.getLeft(), repository);
+                SourceFile file = new SourceFile();
+                file.setAbsolutePath(filePath);
+                file.setPath(filePath);
+                file.setContent(fileContent);
+                file.setType(DescriptorLanguage.FileType.OTHER);
+                version.getSourceFiles().add(file);
+            }
+            return version;
+        } else {
+            return null;
+        }
     }
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {

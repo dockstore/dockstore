@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -42,8 +43,10 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -166,7 +169,7 @@ public class WorkflowResource
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final PermissionsInterface permissionsInterface;
-    private final String gitHubPrimaryKeyFile;
+    private final String gitHubPrivateKeyFile;
     private final String gitHubAppId;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
@@ -191,7 +194,7 @@ public class WorkflowResource
         elasticManager = new ElasticManager();
 
         gitHubAppId = configuration.getGitHubAppId();
-        gitHubPrimaryKeyFile = configuration.getGitHubAppPrivateKeyFile();
+        gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
     }
 
     /**
@@ -449,30 +452,32 @@ public class WorkflowResource
                 .collect(Collectors.toList());
     }
 
-    @PUT
+    @POST
     @Path("/path/service/{repository}")
     @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
     public Service addService(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
-            @ApiParam(value = "Name of user on GitHub", required = true) @QueryParam("username") String username,
-            @ApiParam(value = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+            @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
+            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         // Check for duplicates (currently workflows and services share paths)
         String servicePath = "github.com/" + repository;
-        Workflow duplicate = workflowDAO.findByPath(servicePath, false);
-
-        if (duplicate != null) {
-            String msg = "Service with the path " + servicePath + " already exists.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
 
         // Retrieve the user who triggered the call
         User sendingUser = findUserByGitHubUsername(username);
+
+        // Determine if service is already in Dockstore
+        Workflow existingService = workflowDAO.findByPath(servicePath, false);
+
+        if (existingService != null) {
+            // Service exists, add user to service
+            existingService.getUsers().add(sendingUser);
+            return (Service)workflowDAO.findById(existingService.getId());
+        }
 
         // Get Installation Access Token
         String installationAccessToken = gitHubAppSetup(installationId);
@@ -486,18 +491,18 @@ public class WorkflowResource
         return (Service)workflowDAO.findById(serviceId);
     }
 
-    @PUT
+    @POST
     @Path("/path/service/{repository}/upsertVersion/")
     @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
     public Service upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
-            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
-            @ApiParam(value = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+            @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
+            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         // Get Installation Access Token
         String installationAccessToken = gitHubAppSetup(installationId);
 
@@ -530,7 +535,7 @@ public class WorkflowResource
         RSAPrivateKey rsaPrivateKey = null;
         try {
             String pemFileContent = FileUtils
-                    .readFileToString(new File(gitHubPrimaryKeyFile), "UTF-8");
+                    .readFileToString(new File(gitHubPrivateKeyFile), Charset.forName("UTF-8"));
             pemFileContent = pemFileContent
                     .replaceAll("\\n", "")
                     .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -539,7 +544,7 @@ public class WorkflowResource
             PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(pemFileContent));
             rsaPrivateKey = (RSAPrivateKey)keyFactory.generatePrivate(pkcs8EncodedKeySpec);
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(ex.getMessage(), ex);
         }
 
         if (rsaPrivateKey != null) {
@@ -553,7 +558,7 @@ public class WorkflowResource
                         .sign(algorithm);
                 CacheConfigManager.setJsonWebToken(jsonWebToken);
             } catch (JWTCreationException ex) {
-                LOG.error(ex.getMessage());
+                LOG.error(ex.getMessage(), ex);
             }
         }
     }

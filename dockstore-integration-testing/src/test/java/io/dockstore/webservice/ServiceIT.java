@@ -132,6 +132,8 @@ public class ServiceIT extends BaseIT {
         final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true);
         final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false);
         Gson gson = new Gson();
+        String workflowString = gson.toJson(workflows);
+        System.out.println(workflowString);
         String serviceString = gson.toJson(services);
         System.out.println(serviceString);
         assertTrue(workflows.size() >= 2 && workflows.stream().noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
@@ -170,41 +172,20 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId, "");
+        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId);
         assertNotNull(service);
 
         // Add version
-        service = client.upsertServiceVersion(serviceRepo, "1.0", installationId, "");
+        service = client.upsertServiceVersion(serviceRepo, "1.0", installationId);
 
         assertNotNull(service);
         assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
         assertEquals("Should have 3 source files", 3, service.getWorkflowVersions().get(0).getSourceFiles().size());
-    }
 
-    /**
-     * Tests that you can't register two services with the same path
-     */
-    @Test
-    public void duplicateService() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
-        WorkflowsApi client = new WorkflowsApi(webClient);
-
-        String serviceRepo = "DockstoreTestUser2/test-service";
-        String installationId = "1179416";
-
-        // Add service
-        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId, "");
+        // Add service as another user
+        service = client.addService(serviceRepo, "DockstoreTestUser2", installationId);
         assertNotNull(service);
-
-        // Try adding service again
-        io.swagger.client.model.Service serviceDuplicate = null;
-        try {
-            serviceDuplicate = client.addService(serviceRepo, "admin@admin.com", installationId, "");
-        } catch (ApiException ex) {
-
-        }
-        assertNull("Duplicate should be null since you cannot add another service with the same path.", serviceDuplicate);
+        assertEquals("Should have 2 users, has " + service.getUsers().size(), service.getUsers().size(), 2);
     }
 
     /**
@@ -222,7 +203,7 @@ public class ServiceIT extends BaseIT {
         // Add service
         io.swagger.client.model.Service service = null;
         try {
-            service = client.addService(serviceRepo, "iamnotarealuser", installationId, "");
+            service = client.addService(serviceRepo, "iamnotarealuser", installationId);
         } catch (ApiException ex) {
 
         }
@@ -242,13 +223,13 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId, "");
+        io.swagger.client.model.Service service = client.addService(serviceRepo, "admin@admin.com", installationId);
         assertNotNull(service);
 
         // Add version that doesn't exist
         io.swagger.client.model.Service updatedService = null;
         try {
-            updatedService = client.upsertServiceVersion(serviceRepo, "1.0-fake", installationId, "");
+            updatedService = client.upsertServiceVersion(serviceRepo, "1.0-fake", installationId);
         } catch (ApiException ex) {
 
         }

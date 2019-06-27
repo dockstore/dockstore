@@ -24,7 +24,7 @@ public class CacheConfigManager {
 
     private static LoadingCache<String, String> installationAccessTokenCache;
 
-    private static String jsonWebToken;
+    private static volatile String jsonWebToken;
 
     public static CacheConfigManager getInstance() {
         return cacheConfigManager;
@@ -51,7 +51,7 @@ public class CacheConfigManager {
      * @param installationId App installation ID (per repository)
      * @return Installation Access Token
      */
-    public String getInstallationAccessTokenFromInstallationId(String installationId) throws Exception {
+    private String getInstallationAccessTokenFromInstallationId(String installationId) throws Exception {
         OkHttpClient client = new OkHttpClient();
 
         Request request = new Request.Builder()
@@ -61,21 +61,31 @@ public class CacheConfigManager {
                 .addHeader("Authorization", "Bearer " + jsonWebToken)
                 .build();
 
+        String errorMsg = "Unable to retrieve installation access token.";
         try {
             okhttp3.Response response = client.newCall(request).execute();
             JsonElement body = new JsonParser().parse(response.body().string());
             if (body.isJsonObject()) {
                 JsonObject responseBody = body.getAsJsonObject();
-                JsonElement token = responseBody.get("token");
-                if (token.isJsonPrimitive()) {
-                    return token.getAsString();
+                if (response.isSuccessful()) {
+                    JsonElement token = responseBody.get("token");
+                    if (token.isJsonPrimitive()) {
+                        return token.getAsString();
+                    }
+                } else {
+                    JsonElement errorMessage = responseBody.get("message");
+                    if (errorMessage.isJsonPrimitive()) {
+                        errorMsg = errorMessage.getAsString();
+                    }
                 }
             }
         } catch (IOException ex) {
-            throw new Exception("Unable to retrieve installation access token.");
+            LOG.error(errorMsg, ex);
+            throw new Exception(errorMsg, ex);
         }
 
-        throw new Exception("Unable to retrieve installation access token.");
+        LOG.error(errorMsg);
+        throw new Exception(errorMsg);
     }
 
     /**
@@ -109,7 +119,7 @@ public class CacheConfigManager {
             LOG.info(cacheStats.toString());
             return installationAccessTokenCache.get(installationId);
         } catch (Exception ex) {
-            LOG.error("Error retrieving token " + ex.getMessage());
+            LOG.error("Error retrieving token", ex);
         }
         return null;
     }
