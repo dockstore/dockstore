@@ -592,9 +592,9 @@ public class GeneralWorkflowIT extends BaseIT {
         master.getSourceFiles().forEach(s -> {
             assertTrue(s.isFrozen());
             testingPostgres.runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
-            final Object o = testingPostgres
+            final String content = testingPostgres
                 .runSelectStatement("select content from sourcefile where id = " + s.getId(), new ScalarHandler<>());
-            assertNotEquals("foo", o.toString());
+            assertNotEquals("foo", content);
         });
     }
 

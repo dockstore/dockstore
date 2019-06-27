@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -34,6 +35,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
@@ -55,6 +57,7 @@ import org.junit.experimental.categories.Category;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -657,6 +660,47 @@ public class GeneralIT extends BaseIT {
         //check if the tag's wdl path have the same wdl path or not in the database
         final String path = getPathfromDB("wdlpath");
         assertEquals("the cwl path should be changed to /test1.wdl", "/test1.wdl", path);
+    }
+
+    @Test
+    public void testToolFreezing() throws ApiException {
+        //setup webservice and get tool api
+        ContainersApi toolsApi = setupWebService();
+        ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
+
+        //register tool
+        DockstoreTool c = getContainer();
+        DockstoreTool toolTest = toolsApi.registerManual(c);
+        toolsApi.refresh(toolTest.getId());
+
+        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        assertFalse(refresh.getWorkflowVersions().isEmpty());
+        Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        master.setFrozen(true);
+        master.setImageId("awesomeid");
+        List<Tag> tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertTrue(master.isFrozen() && master.getImageId().equals("awesomeid"));
+        master.setImageId("weakid");
+        tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertTrue(master.isFrozen() && master.getImageId().equals("awesomeid"));
+        master.setFrozen(false);
+        tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertTrue(master.isFrozen() && master.getImageId().equals("awesomeid"));
+
+        // try modifying sourcefiles
+        // cannot modify sourcefiles for a frozen version
+        assertFalse(master.getSourceFiles().isEmpty());
+        master.getSourceFiles().forEach(s -> {
+            assertTrue(s.isFrozen());
+            getTestingPostgres().runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
+            final String content = getTestingPostgres()
+                .runSelectStatement("select content from sourcefile where id = " + s.getId(), new ScalarHandler<>());
+            assertNotEquals("foo", content);
+        });
+
     }
 
     /**

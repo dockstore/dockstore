@@ -200,7 +200,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
-        frozen = version.frozen;
+        this.setFrozen(version.frozen);
     }
 
     public abstract String getWorkingDirectory();
