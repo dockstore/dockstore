@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -1115,13 +1116,13 @@ public abstract class AbstractEntryClient<T> {
         ProcessBuilder pb = new ProcessBuilder("docker", "ps");
         try {
             Process process = pb.start(); // run a bash command
-            process.waitFor();
+            process.waitFor(2, TimeUnit.SECONDS);
             if (process.exitValue() != 0) {
                 String type = this.getEntryType().toLowerCase(); // "tool" or "workflow"
                 out("WARNING: Docker is not running. If this " + type + " uses Docker, it will fail.");
             }
         } catch (IOException | InterruptedException e) {
-            exceptionMessage(e, "Error checking for Docker.", 1);
+            LOG.error("Check for Docker failed", e);
         }
     }
 
