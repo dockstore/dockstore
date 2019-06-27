@@ -24,7 +24,7 @@ public class CacheConfigManager {
 
     private static LoadingCache<String, String> installationAccessTokenCache;
 
-    private static String jsonWebToken;
+    private static volatile String jsonWebToken;
 
     public static CacheConfigManager getInstance() {
         return cacheConfigManager;
