@@ -19,6 +19,7 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
     private String gitlabClientId;
     private String zenodoClientId;
     private String googleClientId;
+    private String discourseUrl;
 
 
     private Config() {
@@ -33,6 +34,7 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
         config.gitlabClientId = webConfig.getGitlabClientID();
         config.zenodoClientId = webConfig.getZenodoClientID();
         config.googleClientId = webConfig.getGoogleClientID();
+        config.discourseUrl = webConfig.getDiscourseUrl();
         BeanUtils.copyProperties(config, webConfig.getUiConfig());
         return config;
     }
@@ -61,4 +63,7 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
         return googleClientId;
     }
 
+    public String getDiscourseUrl() {
+        return discourseUrl;
+    }
 }

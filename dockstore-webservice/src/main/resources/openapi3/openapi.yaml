@@ -4709,7 +4709,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
