@@ -54,13 +54,17 @@ import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Created by kcao on 01/03/17.
+ * @author kcao on 01/03/17.
  *
  * Implementations of methods to return responses containing organization related information
  */
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -160,7 +164,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 try {
                     restClient.performRequest("DELETE", "/entry");
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.info("Could not delete previous elastic search index, not an issue if this is cold start", e);
                 }
 
                 // Get index mapping
@@ -176,6 +180,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 ElasticManager elasticManager = new ElasticManager();
                 elasticManager.bulkUpsert(published);
             } catch (IOException e) {
+                LOG.error("Could not create elastic search index", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             return Response.ok().entity(published.size()).build();
@@ -203,6 +208,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
                 return Response.ok().entity(get.getEntity().getContent()).build();
             } catch (IOException e) {
+                LOG.error("Could not use elastic search index", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
