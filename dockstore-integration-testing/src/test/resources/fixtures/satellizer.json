@@ -9,9 +9,10 @@
   },
   "oauthData": {
     "state": "fakeState",
-    "code": "fakeCodeGitHub2",
+    "code": "superFakeCodeThatNeedsToBeChanged",
     "scope": "fakeScope"
   },
   "userData": {
+    "register": false
   }
 }

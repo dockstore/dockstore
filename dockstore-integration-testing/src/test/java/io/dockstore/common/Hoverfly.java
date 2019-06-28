@@ -18,12 +18,16 @@
 
 package io.dockstore.common;
 
+import java.io.FileReader;
+
 import javax.ws.rs.core.MediaType;
 
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+import io.dockstore.models.Satellizer;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -49,6 +53,7 @@ public final class Hoverfly {
     private static final String GITHUB_USER2 = fixture("fixtures/GitHubUser2.json");
     private static final String GITHUB_RATE_LIMIT = fixture("fixtures/GitHubRateLimit.json");
     private static final String GITHUB_ORGANIZATIONS = fixture("fixtures/GitHubOrganizations.json");
+    private static final String BASE_SATELLIZER = fixture("fixtures/satellizer.json");
 
     public final static String CUSTOM_USERNAME1 = "tuber";
     public final static String CUSTOM_USERNAME2 = "fubar";
@@ -56,9 +61,9 @@ public final class Hoverfly {
     public final static String GOOGLE_ACCOUNT_USERNAME2 = "beef@gmail.com";
 
     public final static String SUFFIX1 = "GitHub1";
-    private final static String SUFFIX2 = "GitHub2";
-    private final static String SUFFIX3 = "Google3";
-    private final static String SUFFIX4 = "Google4";
+    public final static String SUFFIX2 = "GitHub2";
+    public final static String SUFFIX3 = "Google3";
+    public final static String SUFFIX4 = "Google4";
 
     public static final SimulationSource SIMULATION_SOURCE = dsl(
             service("https://www.googleapis.com")
@@ -135,6 +140,13 @@ public final class Hoverfly {
         fakeTokenResponse.setExpiresInSeconds(9001L);
         fakeTokenResponse.setRefreshToken("fakeRefreshToken" + suffix);
         return fakeTokenResponse;
+    }
+
+    public static String getSatellizer(String suffix, boolean register) {
+        Satellizer satellizer = gson.fromJson(BASE_SATELLIZER, Satellizer.class);
+        satellizer.getUserData().setRegister(register);
+        satellizer.getOauthData().setCode(getFakeCode(suffix));
+        return gson.toJson(satellizer);
     }
 
     public static String getFakeCode(String suffix) {

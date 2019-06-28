@@ -57,10 +57,13 @@ import static io.dockstore.common.Hoverfly.GOOGLE_ACCOUNT_USERNAME1;
 import static io.dockstore.common.Hoverfly.GOOGLE_ACCOUNT_USERNAME2;
 import static io.dockstore.common.Hoverfly.SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.SUFFIX1;
+import static io.dockstore.common.Hoverfly.SUFFIX2;
+import static io.dockstore.common.Hoverfly.SUFFIX3;
+import static io.dockstore.common.Hoverfly.SUFFIX4;
 import static io.dockstore.common.Hoverfly.getFakeCode;
 import static io.dockstore.common.Hoverfly.getFakeExistingDockstoreToken;
 import static io.dockstore.common.Hoverfly.getFakeUser;
-import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.dockstore.common.Hoverfly.getSatellizer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -86,10 +89,6 @@ public class TokenResourceIT extends BaseIT {
     private TokenDAO tokenDAO;
     private UserDAO userDAO;
     private long initialTokenCount;
-    private final String satellizerJSONForLogin1 = fixture("fixtures/satellizerLogin.json");
-    private final String satellizerJSONForLogin2 = fixture("fixtures/satellizerLogin2.json");
-    private final String satellizerJSONForLogin3 = fixture("fixtures/satellizerLogin3.json");
-    private final String satellizerJSONForLogin4 = fixture("fixtures/satellizerLogin4.json");
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
@@ -103,10 +102,6 @@ public class TokenResourceIT extends BaseIT {
 
     @ClassRule
     public static final HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(SIMULATION_SOURCE);
-    private static final String satellizerJSONForRegistration1 = fixture("fixtures/satellizerRegister.json");
-    private static final String satellizerJSONForRegistration2 = fixture("fixtures/satellizerRegister2.json");
-    private static final String satellizerJSONForRegistration3 = fixture("fixtures/satellizerRegister3.json");
-    private static final String satellizerJSONForRegistration4 = fixture("fixtures/satellizerRegister4.json");
 
     @Before
     public void setup() {
@@ -131,7 +126,7 @@ public class TokenResourceIT extends BaseIT {
     @Test
     public void getGoogleTokenNewUser() {
         TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a"));
-        io.swagger.client.model.Token token = tokensApi.addGoogleToken(satellizerJSONForRegistration1);
+        io.swagger.client.model.Token token = tokensApi.addGoogleToken(getSatellizer(SUFFIX1, true));
 
         // check that the user has the correct two tokens
         List<Token> tokens = tokenDAO.findByUserId(token.getUserId());
@@ -185,13 +180,13 @@ public class TokenResourceIT extends BaseIT {
     @Test
     public void testNinjaedGitHubUser() {
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a"));
-        tokensApi1.addToken(satellizerJSONForRegistration1);
+        tokensApi1.addToken(getSatellizer(SUFFIX1, true));
         UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1));
 
         // registering user 1 again should fail
         boolean shouldFail = false;
         try {
-            tokensApi1.addToken(satellizerJSONForRegistration1);
+            tokensApi1.addToken(getSatellizer(SUFFIX1, true));
         } catch (ApiException e) {
             shouldFail = true;
         }
@@ -204,7 +199,7 @@ public class TokenResourceIT extends BaseIT {
         // registering user1 again should still fail
         shouldFail = false;
         try {
-            tokensApi1.addToken(satellizerJSONForRegistration1);
+            tokensApi1.addToken(getSatellizer(SUFFIX1, true));
         } catch (ApiException e) {
             shouldFail = true;
         }
@@ -213,7 +208,7 @@ public class TokenResourceIT extends BaseIT {
 
         // now register user2, should autogenerate a name
         TokensApi tokensApi2 = new TokensApi(getWebClient(false, "n/a"));
-        io.swagger.client.model.Token token = tokensApi2.addToken(satellizerJSONForRegistration2);
+        io.swagger.client.model.Token token = tokensApi2.addToken(getSatellizer(SUFFIX2, true));
         UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername()));
         assertNotEquals(usersApi2.getUser().getUsername(), CUSTOM_USERNAME2);
         assertEquals(usersApi2.changeUsername("better.name").getUsername(), "better.name");
@@ -243,12 +238,12 @@ public class TokenResourceIT extends BaseIT {
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
 
         // Login with Google still works
-        io.swagger.client.model.Token token = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForLogin1);
+        io.swagger.client.model.Token token = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX1, false));
         Assert.assertEquals(CUSTOM_USERNAME2, token.getUsername());
         Assert.assertEquals(TokenType.DOCKSTORE.toString(), token.getTokenSource());
 
         // Login with GitHub still works
-        io.swagger.client.model.Token fakeGitHubCode = unAuthenticatedTokensApi.addToken(satellizerJSONForLogin1);
+        io.swagger.client.model.Token fakeGitHubCode = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, false));
         Assert.assertEquals(CUSTOM_USERNAME2, fakeGitHubCode.getUsername());
         Assert.assertEquals(TokenType.DOCKSTORE.toString(), fakeGitHubCode.getTokenSource());
     }
@@ -274,14 +269,14 @@ public class TokenResourceIT extends BaseIT {
      * @param unAuthenticatedTokensApi  TokensApi without any authentication
      */
     private void createAccount1(TokensApi unAuthenticatedTokensApi) {
-        io.swagger.client.model.Token account1DockstoreToken = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration3);
+        io.swagger.client.model.Token account1DockstoreToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, account1DockstoreToken.getUsername());
         TokensApi mainUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
         mainUserTokensApi.addGithubToken(getFakeCode(SUFFIX1));
     }
 
     private void createAccount2(TokensApi unAuthenticatedTokensApi) {
-        io.swagger.client.model.Token otherGoogleUserToken = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration4);
+        io.swagger.client.model.Token otherGoogleUserToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX4, true));
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME2, otherGoogleUserToken.getUsername());
     }
 
@@ -291,7 +286,7 @@ public class TokenResourceIT extends BaseIT {
     private void registerNewUsersWithExisting(TokensApi unAuthenticatedTokensApi) {
         // Cannot create new user with the same Google account
         try {
-            unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration3);
+            unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
             Assert.fail();
         } catch (ApiException e){
             Assert.assertEquals("User already exists, cannot register new user", e.getMessage());
@@ -300,7 +295,7 @@ public class TokenResourceIT extends BaseIT {
 
         // Cannot create new user with the same GitHub account
         try {
-            unAuthenticatedTokensApi.addToken(satellizerJSONForRegistration1);
+            unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
             Assert.fail();
         } catch (ApiException e){
             Assert.assertTrue(e.getMessage().contains("already exists"));
@@ -316,8 +311,8 @@ public class TokenResourceIT extends BaseIT {
         UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
         Boolean aBoolean = mainUsersApi.selfDestruct();
         assertTrue(aBoolean);
-        io.swagger.client.model.Token recreatedGoogleToken = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration1);
-        io.swagger.client.model.Token recreatedGitHubToken = unAuthenticatedTokensApi.addToken(satellizerJSONForRegistration1);
+        io.swagger.client.model.Token recreatedGoogleToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX1, true));
+        io.swagger.client.model.Token recreatedGitHubToken = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
         assertNotSame(recreatedGitHubToken.getUserId(), recreatedGoogleToken.getUserId());
     }
 
@@ -330,7 +325,7 @@ public class TokenResourceIT extends BaseIT {
         TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
         // Cannot add token to other user with the same Google account
         try {
-            otherUserTokensApi.addGoogleToken(satellizerJSONForLogin1);
+            otherUserTokensApi.addGoogleToken(getSatellizer(SUFFIX1, false));
             Assert.fail();
         } catch (ApiException e){
             Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
@@ -379,19 +374,19 @@ public class TokenResourceIT extends BaseIT {
     public void getGoogleTokenCase135() {
         TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a"));
         io.swagger.client.model.Token case5Token = tokensApi
-                .addGoogleToken(satellizerJSONForLogin1);
+                .addGoogleToken(getSatellizer(SUFFIX1, false));
         // Case 5 check (No Google account, no GitHub account)
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case5Token.getUsername());
         // Google account dockstore token + Google account Google token
         checkTokenCount(initialTokenCount + 2);
-        io.swagger.client.model.Token case3Token = tokensApi.addGoogleToken(satellizerJSONForLogin1);
+        io.swagger.client.model.Token case3Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX1, false));
         // Case 3 check (Google account with Google token, no GitHub account)
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case3Token.getUsername());
         TokensApi googleTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
         googleTokensApi.deleteToken(case3Token.getId());
         // Google account dockstore token
         checkTokenCount(initialTokenCount + 1);
-        io.swagger.client.model.Token case1Token = tokensApi.addGoogleToken(satellizerJSONForLogin1);
+        io.swagger.client.model.Token case1Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX1, false));
         // Case 1 check (Google account without Google token, no GitHub account)
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case1Token.getUsername());
         verify(GoogleHelper.class);
@@ -420,7 +415,7 @@ public class TokenResourceIT extends BaseIT {
     public void getGoogleTokenCase24() {
         TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
         io.swagger.client.model.Token token = unauthenticatedTokensApi
-                .addGoogleToken(satellizerJSONForLogin1);
+                .addGoogleToken(getSatellizer(SUFFIX1, false));
         // Check token properly added (redundant assertion)
         long googleUserID = token.getUserId();
         Assert.assertEquals(token.getUsername(), GOOGLE_ACCOUNT_USERNAME1);
@@ -428,11 +423,11 @@ public class TokenResourceIT extends BaseIT {
         TokensApi gitHubTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
         // Google account dockstore token + Google account Google token
         checkTokenCount(initialTokenCount + 2);
-        gitHubTokensApi.addGoogleToken(satellizerJSONForLogin1);
+        gitHubTokensApi.addGoogleToken(getSatellizer(SUFFIX1, false));
         // GitHub account Google token, Google account dockstore token, Google account Google token
         checkTokenCount(initialTokenCount + 3);
         io.swagger.client.model.Token case4Token = unauthenticatedTokensApi
-                .addGoogleToken(satellizerJSONForLogin1);
+                .addGoogleToken(getSatellizer(SUFFIX1, false));
         // Case 4 (Google account with Google token, GitHub account with Google token)
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case4Token.getUsername());
         TokensApi googleUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
@@ -442,7 +437,7 @@ public class TokenResourceIT extends BaseIT {
 
         googleUserTokensApi.deleteToken(googleByUserId.get(0).getId());
         io.swagger.client.model.Token case2Token = unauthenticatedTokensApi
-                .addGoogleToken(satellizerJSONForLogin1);
+                .addGoogleToken(getSatellizer(SUFFIX1, false));
         // Case 2 Google account without Google token, GitHub account with Google token
         Assert.assertEquals(GITHUB_ACCOUNT_USERNAME, case2Token.getUsername());
         verify(GoogleHelper.class);
@@ -470,11 +465,11 @@ public class TokenResourceIT extends BaseIT {
     @Ignore("this is probably different now, todo")
     public void getGoogleTokenCase6() {
         TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
-        tokensApi.addGoogleToken(satellizerJSONForLogin1);
+        tokensApi.addGoogleToken(getSatellizer(SUFFIX1, false));
         TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
         // GitHub account Google token
         checkTokenCount(initialTokenCount + 1);
-        io.swagger.client.model.Token case6Token = unauthenticatedTokensApi.addGoogleToken(satellizerJSONForLogin1);
+        io.swagger.client.model.Token case6Token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX1, false));
 
         // Case 6 check (No Google account, have GitHub account with Google token)
         Assert.assertEquals(GITHUB_ACCOUNT_USERNAME, case6Token.getUsername());
@@ -501,7 +496,7 @@ public class TokenResourceIT extends BaseIT {
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
         TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
-        io.swagger.client.model.Token token = tokensApi.addGoogleToken(satellizerJSONForLogin3);
+        io.swagger.client.model.Token token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
 
         // check that the user ends up with the correct two tokens
         byUserId = tokenDAO.findByUserId(token.getUserId());
@@ -531,7 +526,7 @@ public class TokenResourceIT extends BaseIT {
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
         TokensApi tokensApi = new TokensApi(getWebClient(true, getFakeUser().getUsername()));
-        tokensApi.addGoogleToken(satellizerJSONForLogin1);
+        tokensApi.addGoogleToken(getSatellizer(SUFFIX1, false));
 
         // fake user should start with the previously created google token
         byUserId = tokenDAO.findByUserId(id);
