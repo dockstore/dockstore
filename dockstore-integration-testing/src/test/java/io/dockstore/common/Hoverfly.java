@@ -18,23 +18,18 @@
 
 package io.dockstore.common;
 
-import java.io.FileReader;
-
 import javax.ws.rs.core.MediaType;
 
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 import io.dockstore.models.Satellizer;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.User;
 import io.specto.hoverfly.junit.core.SimulationSource;
 import io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers;
 
-import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
 import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
@@ -44,6 +39,9 @@ import static io.specto.hoverfly.junit.dsl.ResponseCreators.unauthorised;
 /**
  * This class contains the Hoverfly simulation for GitHub and Google.
  * Use this to avoid making calls to the real GitHub and Google
+ * There are 4 different accounts used for testing
+ * first two accounts are GitHub and the last two accounts are Google
+ * This applies to username and suffix which is appended to fakeCode and fakeAccessToken
  * @author gluu
  * @since 1.7.0
  */
@@ -81,7 +79,7 @@ public final class Hoverfly {
                     .post("/oauth2/v4/token")
                     .anyBody()
                     .anyQueryParams()
-                    .willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX3)), MediaType.APPLICATION_JSON))
+                    .willReturn(unauthorised())
 
                     .post("/oauth2/v2/tokeninfo")
                     .anyBody()
@@ -122,10 +120,10 @@ public final class Hoverfly {
             service("https://api.github.com")
 
                     .get("/user")
-                    .header("Authorization", (Object[])new String[] { "token fakeAccessToken" + SUFFIX1 })
+                    .header("Authorization", (Object[])new String[] { "token " + getFakeAccessToken(SUFFIX1) })
                     .willReturn(success(GITHUB_USER1, MediaType.APPLICATION_JSON)).get("/user")
 
-                    .header("Authorization", (Object[])new String[] { "token fakeAccessToken" + SUFFIX2 })
+                    .header("Authorization", (Object[])new String[] { "token " + getFakeAccessToken(SUFFIX2) })
                     .willReturn(success(GITHUB_USER2, MediaType.APPLICATION_JSON))
 
                     .get("/rate_limit")
@@ -142,6 +140,13 @@ public final class Hoverfly {
         return fakeTokenResponse;
     }
 
+    /**
+     * Gets a test satellizer token
+     * Does this by first getting a base satellizer token and then modifying it based on parameters
+     * @param suffix    The suffix to append to the "code"
+     * @param register  Whether this token is for registering or not
+     * @return  A custom satellizer token for testing
+     */
     public static String getSatellizer(String suffix, boolean register) {
         Satellizer satellizer = gson.fromJson(BASE_SATELLIZER, Satellizer.class);
         satellizer.getUserData().setRegister(register);
@@ -190,13 +195,4 @@ public final class Hoverfly {
         fakeToken.setUsername("admin@admin.com");
         return fakeToken;
     }
-
-    public static User getFakeUser() {
-        // user is user from test data database
-        User fakeUser = new User();
-        fakeUser.setUsername(GITHUB_ACCOUNT_USERNAME);
-        fakeUser.setId(2);
-        return fakeUser;
-    }
-
 }
