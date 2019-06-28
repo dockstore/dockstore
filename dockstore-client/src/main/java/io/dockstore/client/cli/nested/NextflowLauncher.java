@@ -13,13 +13,13 @@ public class NextflowLauncher extends BaseLauncher {
 
     public NextflowLauncher(AbstractEntryClient abstractEntryClient, DescriptorLanguage language, boolean script) {
         super(abstractEntryClient, language, script);
-        setLauncherName("NextFlow");
+        setLauncherName("Nextflow");
     }
 
     @Override
     public void initialize() {
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
-        executionFile = NextflowUtilities.getNextFlowTargetFile(config);
+        executionFile = NextflowUtilities.getNextflowTargetFile(config);
     }
 
     @Override

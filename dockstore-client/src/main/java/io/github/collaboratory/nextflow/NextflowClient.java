@@ -35,12 +35,12 @@ import org.slf4j.LoggerFactory;
 import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
- * Grouping code for launching NextFlow tools and workflows
+ * Grouping code for launching Nextflow tools and workflows
  */
-public class NextFlowClient extends BaseLanguageClient implements LanguageClientInterface {
-    private static final Logger LOG = LoggerFactory.getLogger(NextFlowClient.class);
+public class NextflowClient extends BaseLanguageClient implements LanguageClientInterface {
+    private static final Logger LOG = LoggerFactory.getLogger(NextflowClient.class);
 
-    public NextFlowClient(AbstractEntryClient abstractEntryClient) {
+    public NextflowClient(AbstractEntryClient abstractEntryClient) {
         super(abstractEntryClient, new NextflowLauncher(abstractEntryClient, DescriptorLanguage.NEXTFLOW, SCRIPT.get()));
     }
 
@@ -106,7 +106,7 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
      */
     @Override
     public Boolean check(File content) {
-        // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
+        // this is where we can look for things like Nextflow config files or maybe a future Dockstore.yml
         try {
             final Configuration configuration = NextflowUtilities.grabConfig(content);
             return configuration.getProperty("manifest") != null;

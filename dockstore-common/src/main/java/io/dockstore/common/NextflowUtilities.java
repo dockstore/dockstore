@@ -47,16 +47,16 @@ public final class NextflowUtilities {
         // hide the default constructor for a utility class
     }
 
-    public static File getNextFlowTargetFile(INIConfiguration config) {
+    public static File getNextflowTargetFile(INIConfiguration config) {
         String nextflowVersion = config.getString("nextflow-version", DEFAULT_NEXTFLOW_VERSION);
-        return getNextFlowTargetFile(nextflowVersion);
+        return getNextflowTargetFile(nextflowVersion);
     }
 
-    private static File getNextFlowTargetFile() {
-        return getNextFlowTargetFile(DEFAULT_NEXTFLOW_VERSION);
+    private static File getNextflowTargetFile() {
+        return getNextflowTargetFile(DEFAULT_NEXTFLOW_VERSION);
     }
 
-    private static File getNextFlowTargetFile(String nextflowVersion) {
+    private static File getNextflowTargetFile(String nextflowVersion) {
         String nextflowExec =
             "https://github.com/nextflow-io/nextflow/releases/download/v" + nextflowVersion + "/nextflow-" + nextflowVersion + "-all";
         if (!Objects.equals(DEFAULT_NEXTFLOW_VERSION, nextflowVersion)) {
@@ -96,7 +96,7 @@ public final class NextflowUtilities {
     public static Configuration grabConfig(File content) {
         try {
             final List<String> strings =
-                Arrays.asList("java", "-jar", getNextFlowTargetFile().getAbsolutePath(), "config", "-properties");
+                Arrays.asList("java", "-jar", getNextflowTargetFile().getAbsolutePath(), "config", "-properties");
             final String join = Joiner.on(" ").join(strings);
             LOG.info("running: " + join);
             final ImmutablePair<String, String> execute = Utilities.executeCommand(join, content.getParentFile());
@@ -105,8 +105,8 @@ public final class NextflowUtilities {
             properties.load(new StringReader(stdout));
             return ConfigurationConverter.getConfiguration(properties);
         } catch (RuntimeException | IOException e) {
-            LOG.error("Problem running NextFlow: ", e);
-            throw new NextflowParsingException("Could not run NextFlow", e);
+            LOG.error("Problem running Nextflow: ", e);
+            throw new NextflowParsingException("Could not run Nextflow", e);
         }
     }
 

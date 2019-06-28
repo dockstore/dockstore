@@ -50,7 +50,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WdlBridge;
 import io.github.collaboratory.cwl.CWLClient;
-import io.github.collaboratory.nextflow.NextFlowClient;
+import io.github.collaboratory.nextflow.NextflowClient;
 import io.github.collaboratory.wdl.WDLClient;
 import io.openapi.wes.client.api.WorkflowExecutionServiceApi;
 import io.openapi.wes.client.model.RunId;
@@ -880,7 +880,7 @@ public abstract class AbstractEntryClient<T> {
                 // TODO: better error handling as with CWL and WDL
                 if (nextflowContentPresent) {
                     try {
-                        launchNextFlow(localFilePath, argsList, true);
+                        launchNextflow(localFilePath, argsList, true);
                     } catch (ApiException e) {
                         exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                     }
@@ -1222,10 +1222,10 @@ public abstract class AbstractEntryClient<T> {
         client.launch(entry, isALocalEntry, yamlRun, jsonRun, wdlOutputTarget, uuid);
     }
 
-    private void launchNextFlow(String entry, final List<String> args, boolean isALocalEntry) throws ApiException {
+    private void launchNextflow(String entry, final List<String> args, boolean isALocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
         final String uuid = optVal(args, "--uuid", null);
-        NextFlowClient client = new NextFlowClient(this);
+        NextflowClient client = new NextflowClient(this);
         client.launch(entry, isALocalEntry, null, json, null, uuid);
     }
 
