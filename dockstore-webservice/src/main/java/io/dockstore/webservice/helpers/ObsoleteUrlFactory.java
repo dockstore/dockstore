@@ -1,21 +1,4 @@
 package io.dockstore.webservice.helpers;
-
-/*
- * Copyright (C) 2014 Square, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 /*
  * Copyright (C) 2014 Square, Inc.
  *
@@ -97,6 +80,11 @@ import static java.net.HttpURLConnection.HTTP_NOT_MODIFIED;
 import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
 
 /**
+ * This entire file has been copied from https://github.com/square/okhttp/blob/master/CHANGELOG.md#version-3140 suggestion
+ * It is currently required because of https://github.com/kohsuke/github-api/issues/506 and using no cache will fail CI
+ * Once the GitHub issue is resolved, this file should no longer be needed
+ * The only modification is this comment and the findbug fix by removing the @Nullable annotation, the rest of the code is kept the same
+ *
  * OkHttp 3.14 dropped support for the long-deprecated OkUrlFactory class, which allows you to use
  * the HttpURLConnection API with OkHttp's implementation. This class does the same thing using only
  * public APIs in OkHttp. It requires OkHttp 3.14 or newer.

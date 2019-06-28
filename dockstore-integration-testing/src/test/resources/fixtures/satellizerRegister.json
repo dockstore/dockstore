@@ -9,7 +9,7 @@
   },
   "oauthData": {
     "state": "fakeState",
-    "code": "fakeCode",
+    "code": "fakeCodeGitHub1",
     "scope": "fakeScope"
   },
   "userData": {

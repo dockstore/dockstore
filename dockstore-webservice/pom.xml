@@ -38,7 +38,7 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-oauth2</artifactId>
-            <version>v1-rev141-1.22.0</version>
+            <version>v2-rev151-1.25.0</version>
         </dependency>
         <dependency>
             <groupId>net.logstash.logback</groupId>
@@ -576,7 +576,6 @@
             <artifactId>okio</artifactId>
             <version>1.17.2</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>

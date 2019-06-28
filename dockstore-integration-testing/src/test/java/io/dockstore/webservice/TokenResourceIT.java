@@ -19,21 +19,25 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+
+import javax.ws.rs.core.MediaType;
 
 import com.google.api.client.auth.oauth2.TokenResponse;
+import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
-import com.google.common.collect.Maps;
+import com.google.gson.Gson;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.specto.hoverfly.junit.core.SimulationSource;
+import io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers;
+import io.specto.hoverfly.junit.rule.HoverflyRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
@@ -45,6 +49,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,71 +58,116 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.kohsuke.github.GHMyself;
-import org.kohsuke.github.GHRateLimit;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.anyString;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.niceMock;
+import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
+import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.success;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.unauthorised;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
-import static org.powermock.api.easymock.PowerMock.mockStaticStrict;
-import static org.powermock.api.easymock.PowerMock.replay;
 import static org.powermock.api.easymock.PowerMock.verify;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 /**
  * @author gluu
  * @since 24/07/18
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ GoogleHelper.class, GitHubBuilder.class, GitHubHelper.class })
 @Category(ConfidentialTest.class)
-@PowerMockIgnore( { "javax.security.*", "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*",
-        "javax.net.*", "org.apache.http.impl.client.*", "org.apache.http.protocol.*", "org.apache.http.*", "com.sun.org.apache.xerces.*",
-        "javax.xml.*", "org.xml.*", "org.w3c.*" })
 public class TokenResourceIT extends BaseIT {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    public static Gson gson = new Gson();
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-
     public final static String GITHUB_ACCOUNT_USERNAME = "potato";
     private TokenDAO tokenDAO;
     private UserDAO userDAO;
     private long initialTokenCount;
     private final String satellizerJSON = fixture("fixtures/satellizerLogin.json");
-    private final String satellizerJSONForRegistration = fixture("fixtures/satellizerRegister.json");;
-    private final static String GOOGLE_ACCOUNT_USERNAME1 = "potato@gmail.com";
-    private final static String GOOGLE_ACCOUNT_USERNAME2 = "beef@gmail.com";
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+    private static final String GITHUB_USER1 = fixture("fixtures/GitHubUser.json");
+    private static final String GITHUB_USER2 = fixture("fixtures/GitHubUser2.json");
+    private static final String GITHUB_RATE_LIMIT = fixture("fixtures/GitHubRateLimit.json");
+    private static final String GITHUB_ORGANIZATIONS = fixture("fixtures/GitHubOrganizations.json");
+
+    // There are 4 different accounts used for testing
+    // The first two accounts are GitHub and the last two accounts are Google
+    // This applies to username and suffix which is appended to fakeCode and fakeAccessToken
     private final static String CUSTOM_USERNAME1 = "tuber";
     private final static String CUSTOM_USERNAME2 = "fubar";
+    private final static String GOOGLE_ACCOUNT_USERNAME1 = "potato@gmail.com";
+    private final static String GOOGLE_ACCOUNT_USERNAME2 = "beef@gmail.com";
 
-    private static TokenResponse getFakeTokenResponse() {
+    private final static String SUFFIX1 = "GitHub1";
+    private final static String SUFFIX2 = "GitHub2";
+    private final static String SUFFIX3 = "Google3";
+    private final static String SUFFIX4 = "Google4";
+
+    public static final SimulationSource simulationSource = dsl(
+            service("https://www.googleapis.com").post("/oauth2/v4/token").body(HoverflyMatchers.contains("fakeCode" + SUFFIX3))
+                    .anyQueryParams().willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX3)), MediaType.APPLICATION_JSON))
+                    .post("/oauth2/v4/token").body(HoverflyMatchers.contains("fakeCode" + SUFFIX4)).anyQueryParams()
+                    .willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX4)), MediaType.APPLICATION_JSON)).post("/oauth2/v4/token")
+                    .anyBody().anyQueryParams().willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX3)), MediaType.APPLICATION_JSON))
+                    .post("/oauth2/v2/tokeninfo").anyBody().queryParam("access_token", "fakeAccessToken" + SUFFIX3)
+                    .willReturn(success(gson.toJson(getFakeTokeninfo(GOOGLE_ACCOUNT_USERNAME1)), MediaType.APPLICATION_JSON))
+                    .post("/oauth2/v2/tokeninfo").anyBody().queryParam("access_token", "fakeAccessToken" + SUFFIX4)
+                    .willReturn(success(gson.toJson(getFakeTokeninfo(GOOGLE_ACCOUNT_USERNAME2)), MediaType.APPLICATION_JSON))
+                    .post("/oauth2/v2/tokeninfo").anyBody().anyQueryParams().willReturn(unauthorised()).get("/oauth2/v2/userinfo")
+                    .anyQueryParams().header("Authorization", (Object[])new String[] { "Bearer fakeAccessToken" + SUFFIX3 })
+                    .willReturn(success(gson.toJson(getFakeUserinfoplus(GOOGLE_ACCOUNT_USERNAME1)), MediaType.APPLICATION_JSON))
+                    .get("/oauth2/v2/userinfo").anyQueryParams()
+                    .header("Authorization", (Object[])new String[] { "Bearer fakeAccessToken" + SUFFIX4 })
+                    .willReturn(success(gson.toJson(getFakeUserinfoplus(GOOGLE_ACCOUNT_USERNAME2)), MediaType.APPLICATION_JSON)),
+            service("https://github.com").post("/login/oauth/access_token").body(HoverflyMatchers.contains("fakeCode" + SUFFIX1))
+                    .anyQueryParams().willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX1)), MediaType.APPLICATION_JSON))
+                    .post("/login/oauth/access_token").body(HoverflyMatchers.contains("fakeCode" + SUFFIX2)).anyQueryParams()
+                    .willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX2)), MediaType.APPLICATION_JSON)),
+            service("https://api.github.com").get("/user")
+                    .header("Authorization", (Object[])new String[] { "token fakeAccessToken" + SUFFIX1 })
+                    .willReturn(success(GITHUB_USER1, MediaType.APPLICATION_JSON)).get("/user")
+                    .header("Authorization", (Object[])new String[] { "token fakeAccessToken" + SUFFIX2 })
+                    .willReturn(success(GITHUB_USER2, MediaType.APPLICATION_JSON)).get("/rate_limit")
+                    .willReturn(success(GITHUB_RATE_LIMIT, MediaType.APPLICATION_JSON)).get("/user/orgs")
+                    .willReturn(success(GITHUB_ORGANIZATIONS, MediaType.APPLICATION_JSON)));
+    private final String satellizerJSONForRegistration1 = fixture("fixtures/satellizerRegister.json");
+    private final String satellizerJSONForRegistration2 = fixture("fixtures/satellizerRegister2.json");
+    private final String satellizerJSONForRegistration3 = fixture("fixtures/satellizerRegister3.json");
+    private final String satellizerJSONForRegistration4 = fixture("fixtures/satellizerRegister4.json");
+
+    @ClassRule
+    public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(simulationSource);
+
+    private static TokenResponse getFakeTokenResponse(String suffix) {
         TokenResponse fakeTokenResponse = new TokenResponse();
-        fakeTokenResponse.setAccessToken("fakeAccessToken");
+        fakeTokenResponse.setAccessToken("fakeAccessToken" + suffix);
         fakeTokenResponse.setExpiresInSeconds(9001L);
-        fakeTokenResponse.setRefreshToken("fakeRefreshToken");
+        fakeTokenResponse.setRefreshToken("fakeRefreshToken" + suffix);
         return fakeTokenResponse;
+    }
+
+    private static Tokeninfo getFakeTokeninfo(String email) {
+        Tokeninfo tokeninfo = new Tokeninfo();
+        tokeninfo.setAccessType("offline");
+        tokeninfo.setAudience("<fill me in>");
+        tokeninfo.setEmail(email);
+        tokeninfo.setExpiresIn(9001);
+        tokeninfo.setIssuedTo(tokeninfo.getAudience());
+        tokeninfo.setScope("https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email");
+        tokeninfo.setUserId("tuber");
+        tokeninfo.setVerifiedEmail(true);
+        return tokeninfo;
     }
 
     private static Userinfoplus getFakeUserinfoplus(String username) {
@@ -171,15 +221,14 @@ public class TokenResourceIT extends BaseIT {
      */
     @Test
     public void getGoogleTokenNewUser() {
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a"));
-        io.swagger.client.model.Token token = tokensApi.addGoogleToken(satellizerJSONForRegistration);
+        io.swagger.client.model.Token token = tokensApi.addGoogleToken(satellizerJSONForRegistration1);
 
         // check that the user has the correct two tokens
-        List<Token> byUserId = tokenDAO.findByUserId(token.getUserId());
-        Assert.assertEquals(2, byUserId.size());
-        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.GOOGLE_COM));
-        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
+        List<Token> tokens = tokenDAO.findByUserId(token.getUserId());
+        Assert.assertEquals(2, tokens.size());
+        assertTrue(tokens.stream().anyMatch(t -> t.getTokenSource() == TokenType.GOOGLE_COM));
+        assertTrue(tokens.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
         // Check that the token has the right info but ignore randomly generated content
         Token fakeExistingDockstoreToken = getFakeExistingDockstoreToken();
@@ -188,7 +237,6 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
         Assert.assertEquals(100, token.getId().longValue());
         checkUserProfiles(token.getUserId(), Collections.singletonList(TokenType.GOOGLE_COM.toString()));
-        verify(GoogleHelper.class);
 
         // check that the tokens work
         ApiClient webClient = getWebClient(false, "n/a");
@@ -196,12 +244,12 @@ public class TokenResourceIT extends BaseIT {
         tokensApi = new TokensApi(webClient);
 
         int expectedFailCount = 0;
-        for(Token currToken : byUserId) {
+        for (Token currToken : tokens) {
             webClient.addDefaultHeader("Authorization", "Bearer " + currToken.getContent());
             assertNotNull(userApi.getUser());
             tokensApi.deleteToken(currToken.getId());
-
-            // check that deleting a token invalidates it
+            // check that deleting a token invalidates it (except the Google token because it will still be able to find the enduser because their
+            // username matches the Google email
             try {
                 userApi.getUser();
             } catch (ApiException e) {
@@ -210,11 +258,11 @@ public class TokenResourceIT extends BaseIT {
             // shouldn't be able to even get the token
             try {
                 tokensApi.listToken(currToken.getId());
+                Assert.fail("Should not be able to list a deleted token");
             } catch (ApiException e) {
-                expectedFailCount++;
             }
         }
-        assertEquals(4, expectedFailCount);
+        assertEquals(1, expectedFailCount);
     }
 
 
@@ -224,15 +272,14 @@ public class TokenResourceIT extends BaseIT {
      */
     @Test
     public void testNinjaedGitHubUser() throws Exception {
-        mockGitHub(CUSTOM_USERNAME1);
         TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a"));
-        tokensApi1.addToken(satellizerJSONForRegistration);
+        tokensApi1.addToken(satellizerJSONForRegistration1);
         UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1));
 
         // registering user 1 again should fail
         boolean shouldFail = false;
         try {
-            tokensApi1.addToken(satellizerJSONForRegistration);
+            tokensApi1.addToken(satellizerJSONForRegistration1);
         } catch (ApiException e) {
             shouldFail = true;
         }
@@ -245,7 +292,7 @@ public class TokenResourceIT extends BaseIT {
         // registering user1 again should still fail
         shouldFail = false;
         try {
-            tokensApi1.addToken(satellizerJSONForRegistration);
+            tokensApi1.addToken(satellizerJSONForRegistration1);
         } catch (ApiException e) {
             shouldFail = true;
         }
@@ -253,9 +300,8 @@ public class TokenResourceIT extends BaseIT {
 
 
         // now register user2, should autogenerate a name
-        mockGitHub(CUSTOM_USERNAME2);
         TokensApi tokensApi2 = new TokensApi(getWebClient(false, "n/a"));
-        io.swagger.client.model.Token token = tokensApi2.addToken(satellizerJSONForRegistration);
+        io.swagger.client.model.Token token = tokensApi2.addToken(satellizerJSONForRegistration2);
         UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername()));
         assertNotEquals(usersApi2.getUser().getUsername(), CUSTOM_USERNAME2);
         assertEquals(usersApi2.changeUsername("better.name").getUsername(), "better.name");
@@ -284,9 +330,6 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals(CUSTOM_USERNAME2, user.getUsername());
 
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
-
-        mockGitHub(CUSTOM_USERNAME1);
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
 
         // Login with Google still works
         io.swagger.client.model.Token token = unAuthenticatedTokensApi.addGoogleToken(satellizerJSON);
@@ -321,18 +364,14 @@ public class TokenResourceIT extends BaseIT {
      * @throws Exception
      */
     private void createAccount1(TokensApi unAuthenticatedTokensApi) throws Exception {
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
-        io.swagger.client.model.Token account1DockstoreToken = unAuthenticatedTokensApi
-                .addGoogleToken(satellizerJSONForRegistration);
+        io.swagger.client.model.Token account1DockstoreToken = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration3);
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, account1DockstoreToken.getUsername());
-        mockGitHub(CUSTOM_USERNAME1);
         TokensApi mainUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
-        mainUserTokensApi.addGithubToken("fakeGitHubCode");
+        mainUserTokensApi.addGithubToken("fakeCode" + SUFFIX1);
     }
 
     private void createAccount2(TokensApi unAuthenticatedTokensApi) throws Exception {
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME2);
-        io.swagger.client.model.Token otherGoogleUserToken = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration);
+        io.swagger.client.model.Token otherGoogleUserToken = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration4);
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME2, otherGoogleUserToken.getUsername());
     }
 
@@ -341,11 +380,9 @@ public class TokenResourceIT extends BaseIT {
      * @throws Exception
      */
     private void registerNewUsersWithExisting(TokensApi unAuthenticatedTokensApi) throws Exception {
-        mockGitHub(CUSTOM_USERNAME1);
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         // Cannot create new user with the same Google account
         try {
-            unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration);
+            unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration3);
             Assert.fail();
         } catch (ApiException e){
             Assert.assertEquals("User already exists, cannot register new user", e.getMessage());;
@@ -354,7 +391,7 @@ public class TokenResourceIT extends BaseIT {
 
         // Cannot create new user with the same GitHub account
         try {
-            unAuthenticatedTokensApi.addToken(satellizerJSONForRegistration);
+            unAuthenticatedTokensApi.addToken(satellizerJSONForRegistration1);
             Assert.fail();
         } catch (ApiException e){
             Assert.assertTrue(e.getMessage().contains("already exists"));
@@ -371,12 +408,8 @@ public class TokenResourceIT extends BaseIT {
         UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
         Boolean aBoolean = mainUsersApi.selfDestruct();
         assertTrue(aBoolean);
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
-        io.swagger.client.model.Token recreatedGoogleToken = unAuthenticatedTokensApi
-                .addGoogleToken(satellizerJSONForRegistration);
-        mockGitHub(CUSTOM_USERNAME1);
-        io.swagger.client.model.Token recreatedGitHubToken = unAuthenticatedTokensApi
-                .addToken(satellizerJSONForRegistration);
+        io.swagger.client.model.Token recreatedGoogleToken = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration1);
+        io.swagger.client.model.Token recreatedGitHubToken = unAuthenticatedTokensApi.addToken(satellizerJSONForRegistration1);
         assertNotSame(recreatedGitHubToken.getUserId(), recreatedGoogleToken.getUserId());
     }
 
@@ -387,7 +420,6 @@ public class TokenResourceIT extends BaseIT {
      * @throws Exception
      */
     private void addUnavailableGoogleTokenToGitHubUser() {
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
         // Cannot add token to other user with the same Google account
         try {
@@ -407,10 +439,9 @@ public class TokenResourceIT extends BaseIT {
      * @throws Exception
      */
     private void addUnavailableGitHubTokenToGoogleUser() throws Exception {
-        mockGitHub(CUSTOM_USERNAME1);
         TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME2));
         try {
-            otherUserTokensApi.addGithubToken("potato");
+            otherUserTokensApi.addGithubToken("fakeCode" + SUFFIX1);
             Assert.fail();
         } catch (ApiException e){
             Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
@@ -445,7 +476,6 @@ public class TokenResourceIT extends BaseIT {
                 .addGoogleToken(satellizerJSON);
         // Case 5 check (No Google account, no GitHub account)
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case5Token.getUsername());
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         // Google account dockstore token + Google account Google token
         checkTokenCount(initialTokenCount + 2);
         io.swagger.client.model.Token case3Token = tokensApi.addGoogleToken(satellizerJSON);
@@ -453,7 +483,6 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case3Token.getUsername());
         TokensApi googleTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
         googleTokensApi.deleteToken(case3Token.getId());
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         // Google account dockstore token
         checkTokenCount(initialTokenCount + 1);
         io.swagger.client.model.Token case1Token = tokensApi.addGoogleToken(satellizerJSON);
@@ -491,11 +520,9 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals(token.getUsername(), GOOGLE_ACCOUNT_USERNAME1);
 
         TokensApi gitHubTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         // Google account dockstore token + Google account Google token
         checkTokenCount(initialTokenCount + 2);
         gitHubTokensApi.addGoogleToken(satellizerJSON);
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         // GitHub account Google token, Google account dockstore token, Google account Google token
         checkTokenCount(initialTokenCount + 3);
         io.swagger.client.model.Token case4Token = unauthenticatedTokensApi
@@ -507,9 +534,7 @@ public class TokenResourceIT extends BaseIT {
         List<Token> googleByUserId = tokenDAO.findGoogleByUserId(googleUserID);
 
 
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         googleUserTokensApi.deleteToken(googleByUserId.get(0).getId());
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         io.swagger.client.model.Token case2Token = unauthenticatedTokensApi
                 .addGoogleToken(satellizerJSON);
         // Case 2 Google account without Google token, GitHub account with Google token
@@ -538,11 +563,9 @@ public class TokenResourceIT extends BaseIT {
     @Test
     @Ignore("this is probably different now, todo")
     public void getGoogleTokenCase6() {
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
         tokensApi.addGoogleToken(satellizerJSON);
         TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         // GitHub account Google token
         checkTokenCount(initialTokenCount + 1);
         io.swagger.client.model.Token case6Token = unauthenticatedTokensApi.addGoogleToken(satellizerJSON);
@@ -550,45 +573,6 @@ public class TokenResourceIT extends BaseIT {
         // Case 6 check (No Google account, have GitHub account with Google token)
         Assert.assertEquals(GITHUB_ACCOUNT_USERNAME, case6Token.getUsername());
         verify(GoogleHelper.class);
-    }
-
-
-    private void mockGitHub(String username) throws Exception {
-        GitHub githubMock = niceMock(GitHub.class);
-        whenNew(GitHub.class).withAnyArguments().thenReturn(githubMock);
-        try {
-            mockStaticStrict(GitHubHelper.class,
-                    GitHubHelper.class.getMethod("getGitHubAccessToken", String.class, String.class, String.class));
-        } catch (NoSuchMethodException e) {
-            Assert.fail();
-        }
-        expect(GitHubHelper.getGitHubAccessToken(anyString(), anyObject(), anyObject())).andReturn("fakeCode").atLeastOnce();
-
-        GHMyself myself = niceMock(GHMyself.class);
-        expect(myself.getLogin()).andReturn(username).anyTimes();
-        expect(myself.getAvatarUrl()).andReturn("https://dockstore.org/assets/images/dockstore/logo2.png").anyTimes();
-        expect(githubMock.getMyself()).andReturn(myself).anyTimes();
-        GHRateLimit value = new GHRateLimit();
-        value.remaining = 100;
-        expect(githubMock.rateLimit()).andReturn(value);
-        expect(githubMock.getMyOrganizations()).andReturn(Maps.newHashMap());
-        replay(GitHubHelper.class, githubMock, myself);
-    }
-
-    private void mockGoogleHelper(String username) {
-        try {
-            // mark which static class methods you need to mock here while leaving the others to work normally
-            mockStaticStrict(GoogleHelper.class,
-                    GoogleHelper.class.getMethod("getTokenResponse", String.class, String.class, String.class, String.class),
-                    GoogleHelper.class.getMethod("userinfoplusFromToken", String.class));
-        } catch (NoSuchMethodException e) {
-            Assert.fail();
-        }
-        expect(GoogleHelper.getTokenResponse("<fill me in>", "<fill me in>", "fakeCode", "fakeRedirectUri"))
-                .andReturn(getFakeTokenResponse());
-        expect(GoogleHelper.userinfoplusFromToken("fakeAccessToken")).andReturn(Optional.of(getFakeUserinfoplus(username)));
-        // kick off the mock and have it start to expect things
-        replay(GoogleHelper.class);
     }
 
     /**
@@ -605,7 +589,6 @@ public class TokenResourceIT extends BaseIT {
      */
     @Test
     public void getGoogleTokenExistingUserNoGoogleToken() {
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         // check that the user has the correct one token
         List<Token> byUserId = tokenDAO.findByUserId(getFakeUser().getId());
         Assert.assertEquals(1, byUserId.size());
@@ -641,7 +624,6 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals(1, byUserId.size());
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
-        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         TokensApi tokensApi = new TokensApi(getWebClient(true, getFakeUser().getUsername()));
         tokensApi.addGoogleToken(satellizerJSON);
 
@@ -651,9 +633,8 @@ public class TokenResourceIT extends BaseIT {
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.GOOGLE_COM));
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
-        mockGitHub(GITHUB_ACCOUNT_USERNAME);
         // going back to the first user, we want to add a github token to their profile
-        io.swagger.client.model.Token token = tokensApi.addGithubToken("fakeCode");
+        io.swagger.client.model.Token token = tokensApi.addGithubToken("fakeCode" + SUFFIX1);
 
         // check that the user ends up with the correct two tokens
         byUserId = tokenDAO.findByUserId(id);
