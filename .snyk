@@ -2,12 +2,16 @@
 version: v1.13.5
 # ignores vulnerabilities until expiry date; change duration by modifying expiry date
 ignore:
-  '174815':
+  SNYK-JAVA-COMBEUST-174815:
     - '*':
         reason: does not seem applicable
-        expires: 2019-07-28T20:02:42.591Z
-  '174823':
+        expires: 2019-07-28T20:07:33.140Z
+  SNYK-JAVA-ORGAPACHEANT-30510:
     - '*':
         reason: does not seem applicable
-        expires: 2019-07-28T20:03:41.925Z
+        expires: 2019-07-28T20:10:35.914Z
+  SNYK-JAVA-ORGTESTNG-174823:
+    - '*':
+        reason: does not seem applicable
+        expires: 2019-07-28T20:11:12.959Z
 patch: {}
