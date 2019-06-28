@@ -411,6 +411,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         if (this.commandLaunch.help) {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
         } else {
+            checkIfDockerRunning(); // print a warning message if Docker is not running
             if ((entry == null) != (localEntry == null)) {
                 if (entry != null) {
                     this.isLocalEntry = false;

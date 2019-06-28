@@ -36,6 +36,8 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.HttpHeaders;
 
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -43,6 +45,8 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import com.spotify.docker.client.exceptions.DockerException;
 import io.cwl.avro.CWL;
 import io.dockstore.client.cli.CheckerClient;
 import io.dockstore.client.cli.Client;
@@ -1108,7 +1112,22 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
-     * Launches tools and workflows.
+     * Prints a warning if Docker isn't running. Docker is not always needed. If a workflow or tool uses Docker and
+     * it is not running, it fails with a cryptic error. This should make the problem more obvious.
+     */
+    void checkIfDockerRunning() {
+        try (DockerClient docker = DefaultDockerClient.fromEnv().build()) {
+            docker.info();  // attempt to get information about docker
+        } catch (DockerException | DockerCertificateException e) {  // couldn't access docker
+            String type = this.getEntryType().toLowerCase(); // "tool" or "workflow"
+            out("WARNING: Docker is not running. If this " + type + " uses Docker, it will fail.");
+        } catch (InterruptedException e) {  // something else went wrong
+            LOG.error("Check for Docker failed", e);
+        }
+    }
+
+    /**
+     * Launches tools. Overridden for workflows.
      *
      * @param args Arguments entered into the CLI
      */
@@ -1124,6 +1143,7 @@ public abstract class AbstractEntryClient<T> {
                 final String localFilePath = reqVal(args, "--local-entry");
                 this.isLocalEntry = true;
                 preValidateLaunchArguments(args);
+                checkIfDockerRunning();
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
                 if (!args.contains("--entry")) {
@@ -1131,6 +1151,8 @@ public abstract class AbstractEntryClient<T> {
                 }
                 this.isLocalEntry = false;
                 preValidateLaunchArguments(args);
+                checkIfDockerRunning();
+
                 final String descriptor = optVal(args, "--descriptor", CWL.getLowerShortName());
                 if (descriptor.equals(CWL.getLowerShortName())) {
                     try {
