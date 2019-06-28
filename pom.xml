@@ -169,9 +169,9 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.codehaus.woodstox</groupId>
-                <artifactId>stax2-api</artifactId>
-                <version>4.1</version>
+                <groupId>io.specto</groupId>
+                <artifactId>hoverfly-java</artifactId>
+                <version>0.12.0</version>
             </dependency>
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
