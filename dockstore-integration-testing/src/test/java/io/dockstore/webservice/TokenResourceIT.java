@@ -20,15 +20,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.specto.hoverfly.junit.rule.HoverflyRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -39,8 +40,10 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -50,7 +53,11 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
+import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME1;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME2;
 import static io.dockstore.common.Hoverfly.GOOGLE_ACCOUNT_USERNAME1;
@@ -71,11 +78,16 @@ import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.verify;
 
 /**
+ * This test does not require confidential data
  * @author gluu
  * @since 24/07/18
  */
-@Category(ConfidentialTest.class)
-public class TokenResourceIT extends BaseIT {
+@Category(NonConfidentialTest.class)
+public class TokenResourceIT {
+    public static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+            DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH);
+
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -96,6 +108,23 @@ public class TokenResourceIT extends BaseIT {
     @ClassRule
     public static final HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(SIMULATION_SOURCE);
 
+    @BeforeClass
+    public static void dropAndRecreateDB() throws Exception {
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, DROPWIZARD_CONFIGURATION_FILE_PATH);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
+    }
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
 
     private static User getFakeUser() {
         // user is user from test data database (not from Hoverfly)
@@ -106,7 +135,8 @@ public class TokenResourceIT extends BaseIT {
     }
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         this.tokenDAO = new TokenDAO(sessionFactory);

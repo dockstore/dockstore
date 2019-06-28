@@ -1270,7 +1270,7 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest
+                    io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest
                 </excludeGroups>
             </properties>
         </profile>
@@ -1300,7 +1300,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.WorkflowTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1310,7 +1310,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.ToolTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1319,7 +1319,15 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>non-confidential-tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.NonConfidentialTest</groups>
             </properties>
         </profile>
         <profile>

@@ -44,7 +44,7 @@ jobs:
             sudo apt install -y wget
             wget https://raw.githubusercontent.com/SpectoLabs/hoverfly/master/core/cert.pem
             sudo $JAVA_HOME/bin/keytool -cacerts -importcert -trustcacerts -alias hoverfly -file cert.pem -storepass changeit -noprompt
-            mvn -Dit.test=TokenResourceIT -Pintegration-tests verify -DfailIfNoTests=false
+            mvn --batch-mode clean install -Pnon-confidential-tests
       - run:
           name: check that JPA classes are consistent with migrations
           command: |

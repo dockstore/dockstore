@@ -22,10 +22,6 @@ env:
 
 jobs:
   include:
-    - stage: unit-tests
-      env:
-        - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE
 # moved to CircleCI (may move back if build speed improves)
 #    - stage: unit-tests
 #      jdk: openjdk11
@@ -41,25 +37,8 @@ jobs:
 #      script:
 #      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
 #      - scripts/check_migrations.sh
-
     - stage: coverage
-      env:
-        - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=true
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=tool-integration-tests
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=workflow-integration-tests
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=other-integration-tests
+      script: mvn --batch-mode clean install -Pnon-confidential-tests -Djavax.net.ssl.keyStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.keyStorePassword=changeit -DfailIfNoTests=false
         
 # not feeling the bang-for-the-buck for these, running only in release branch         
     - stage: coverage
@@ -93,7 +72,13 @@ before_install:
 - sudo apt-get install jq
 - wget --no-verbose -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
 - wget https://raw.githubusercontent.com/SpectoLabs/hoverfly/master/core/cert.pem
-- sudo $JAVA_HOME/bin/keytool -import -alias hoverfly -keystore $JAVA_HOME/lib/security/cacerts -file cert.pem -storepass changeit -noprompt
+- sudo $JAVA_HOME/bin/keytool -import -trustcacerts -alias hoverfly -keystore /etc/ssl/certs/java/cacerts -file cert.pem -storepass changeit -noprompt | true
+- sudo $JAVA_HOME/bin/keytool -import -trustcacerts -alias hoverfly -keystore /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts -file cert.pem -storepass changeit -noprompt | true
+- sudo $JAVA_HOME/bin/keytool -import -trustcacerts -alias hoverfly -keystore /usr/lib/python3/dist-packages/boto/cacerts -file cert.pem -storepass changeit -noprompt | true
+- sudo $JAVA_HOME/bin/keytool -import -trustcacerts -alias hoverfly -keystore /usr/lib/google-cloud-sdk/platform/gsutil/third_party/boto/boto/cacerts -file cert.pem -storepass changeit -noprompt | true
+- sudo $JAVA_HOME/bin/keytool -import -trustcacerts -alias hoverfly -keystore /usr/lib/python2.7/dist-packages/boto/cacerts -file cert.pem -storepass changeit -noprompt | true
+- sudo $JAVA_HOME/bin/keytool -cacerts -importcert -trustcacerts -alias hoverfly -file cert.pem -storepass changeit -noprompt | true
+- sudo $JAVA_HOME/bin/keytool -import -trustcacerts -alias hoverfly -keystore /usr/local/lib/jvm/openjdk10/lib/security/cacerts -file cert.pem -storepass changeit -noprompt | true
 
 install:
 - docker version
