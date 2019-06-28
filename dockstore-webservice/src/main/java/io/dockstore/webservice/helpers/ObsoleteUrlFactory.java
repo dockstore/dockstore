@@ -1,4 +1,3 @@
-package io.dockstore.webservice.helpers;
 /*
  * Copyright (C) 2014 Square, Inc.
  *
@@ -14,6 +13,9 @@ package io.dockstore.webservice.helpers;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package io.dockstore.webservice.helpers;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
