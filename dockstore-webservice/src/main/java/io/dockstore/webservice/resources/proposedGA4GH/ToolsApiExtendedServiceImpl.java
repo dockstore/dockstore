@@ -164,7 +164,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 try {
                     restClient.performRequest("DELETE", "/entry");
                 } catch (Exception e) {
-                    LOG.info("Could not delete previous elastic search index, not an issue if this is cold start", e);
+                    LOG.warn("Could not delete previous elastic search index, not an issue if this is cold start", e);
                 }
 
                 // Get index mapping
