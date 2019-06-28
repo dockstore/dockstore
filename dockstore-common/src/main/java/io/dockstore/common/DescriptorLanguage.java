@@ -146,7 +146,7 @@ public enum DescriptorLanguage {
     }
 
     /**
-     * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
+     * Nextflow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
      *
      */
     public enum FileType {

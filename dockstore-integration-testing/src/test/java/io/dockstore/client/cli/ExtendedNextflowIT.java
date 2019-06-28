@@ -38,7 +38,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertNotSame;
 
 @Category({ConfidentialTest.class, WorkflowTest.class})
-public class NextFlowIT extends BaseIT {
+public class ExtendedNextflowIT extends BaseIT {
 
     // workflow with a bin directory
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser/ampa-nf";
@@ -55,7 +55,7 @@ public class NextFlowIT extends BaseIT {
 
 
     @Test
-    public void testNextFlowSecondaryFiles() throws Exception {
+    public void testNextflowSecondaryFiles() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
         final ApiClient webClient = getWebClient(USER_1_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);

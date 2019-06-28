@@ -516,7 +516,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     break;
                 case NEXTFLOW:
                     out("This is a Nextflow file.. Please put an extension to the entry file name.");
-                    out("Launching entry file as a NextFlow file..");
+                    out("Launching entry file as a Nextflow file..");
                     languageCLient.launch(entry, true, null, jsonRun, null, uuid);
                     break;
                 default:
