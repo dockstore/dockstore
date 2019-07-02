@@ -474,9 +474,10 @@ public class WorkflowResource
         Workflow existingService = workflowDAO.findByPath(servicePath, false);
 
         if (existingService != null) {
-            // Service exists, add user to service
-            existingService.getUsers().add(sendingUser);
-            return workflowDAO.findById(existingService.getId());
+            // Duplicate service found, don't add
+            String msg = "A service already exists for GitHub repository " + repository;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         // Get Installation Access Token
@@ -501,15 +502,26 @@ public class WorkflowResource
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
+            @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
             @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+
+        // Retrieve the user who triggered the call
+        User sendingUser = findUserByGitHubUsername(username);
+
         // Get Installation Access Token
         String installationAccessToken = gitHubAppSetup(installationId);
 
         // Call common upsert code
         String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, WorkflowMode.SERVICE, installationAccessToken);
 
-        return workflowDAO.findByPath(dockstoreServicePath, false);
+        // Add user to service if necessary
+        Workflow service = workflowDAO.findByPath(dockstoreServicePath, false);
+        if (!service.getUsers().contains(sendingUser)) {
+            service.getUsers().add(sendingUser);
+        }
+
+        return service;
     }
 
     /**

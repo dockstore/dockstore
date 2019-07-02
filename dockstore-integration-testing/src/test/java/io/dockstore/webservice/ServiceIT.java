@@ -170,16 +170,12 @@ public class ServiceIT extends BaseIT {
         io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
         assertNotNull(service);
 
-        // Add version
-        service = client.upsertServiceVersion(serviceRepo, "1.0", installationId);
+        // Add version with another username
+        service = client.upsertServiceVersion(serviceRepo, "DockstoreTestUser2", "1.0", installationId);
 
         assertNotNull(service);
         assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
         assertEquals("Should have 3 source files", 3, service.getWorkflowVersions().get(0).getSourceFiles().size());
-
-        // Add service as another user
-        service = client.addService(serviceRepo, "DockstoreTestUser2", installationId);
-        assertNotNull(service);
         assertEquals("Should have 2 users", 2, service.getUsers().size());
     }
 
@@ -206,6 +202,30 @@ public class ServiceIT extends BaseIT {
     }
 
     /**
+     * Ensures that you cannot create a service if there already exists a service with the same path
+     */
+    @Test
+    public void createServiceDuplicate() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient("admin@admin.com");
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add service
+        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
+        assertNotNull(service);
+        service = null;
+        try {
+            service = client.addService(serviceRepo, "admin@admin.com", installationId);
+        } catch (ApiException ex) {
+
+        }
+        assertNull("Should not be able to add service since the username does not exist on Dockstore.", service);
+    }
+
+    /**
      * This tests that you can't add a version that doesn't exist
      */
     @Test
@@ -224,7 +244,7 @@ public class ServiceIT extends BaseIT {
         // Add version that doesn't exist
         io.swagger.client.model.Workflow updatedService = null;
         try {
-            updatedService = client.upsertServiceVersion(serviceRepo, "1.0-fake", installationId);
+            updatedService = client.upsertServiceVersion(serviceRepo, "admin@admin.com", "1.0-fake", installationId);
         } catch (ApiException ex) {
 
         }
