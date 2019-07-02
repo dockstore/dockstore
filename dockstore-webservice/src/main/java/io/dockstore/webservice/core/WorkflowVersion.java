@@ -106,18 +106,19 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return false;
         }
         final WorkflowVersion other = (WorkflowVersion)obj;
-        return Objects.equals(super.getName(), other.getName()) && Objects.equals(super.getReference(), other.getReference());
+        return Objects.equals(this.getName(), other.getName()) && Objects.equals(this.getReference(), other.getReference());
     }
 
     @Override
     public int compareTo(WorkflowVersion that) {
+        // super.compareTo(that);
         return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
                 .compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast()).result();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, reference);
+        return Objects.hash(super.hashCode());
     }
 
 

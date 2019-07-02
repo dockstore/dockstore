@@ -44,8 +44,8 @@ import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
+// import com.google.common.collect.ComparisonChain;
+// import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.Cascade;
@@ -353,29 +353,5 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, reference, hidden, valid, name, commitID);
-    }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        final Version other = (Version)obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid)
-            && Objects.equals(this.name, other.name) && Objects.equals(this.commitID, other.commitID);
-    }
-
-    @Override
-    public int compareTo(T that) {
-        return ComparisonChain.start().compare(this.id, that.id, Ordering.natural().nullsLast())
-            .compare(this.reference, that.reference, Ordering.natural().nullsLast())
-            .compare(this.name, that.name, Ordering.natural().nullsLast())
-            .compare(this.commitID, that.commitID, Ordering.natural().nullsLast()).result();
-    }
 }
