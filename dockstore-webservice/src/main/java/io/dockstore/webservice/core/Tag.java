@@ -225,7 +225,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode());
+        return Objects.hash(id, name, reference);
     }
 
     @Override
