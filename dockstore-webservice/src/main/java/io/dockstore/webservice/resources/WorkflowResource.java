@@ -453,7 +453,7 @@ public class WorkflowResource
     }
 
     @POST
-    @Path("/path/service/{repository}")
+    @Path("/path/service/")
     @Timed
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
@@ -461,7 +461,7 @@ public class WorkflowResource
     @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow addService(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
+            @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
             @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
             @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         // Check for duplicates (currently workflows and services share paths)
@@ -492,7 +492,7 @@ public class WorkflowResource
     }
 
     @POST
-    @Path("/path/service/{repository}/upsertVersion/")
+    @Path("/path/service/upsertVersion/")
     @Timed
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
@@ -500,7 +500,7 @@ public class WorkflowResource
     @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Repository path", required = true) @PathParam("repository") String repository,
+            @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
             @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         // Get Installation Access Token

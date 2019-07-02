@@ -1299,7 +1299,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       parameters:
       - in: path
         name: organization
@@ -1314,7 +1314,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       responses:
         default:
           content:
@@ -3361,7 +3361,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4731,7 +4731,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4870,15 +4870,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: default response
-  /workflows/path/service/{repository}:
+  /workflows/path/service:
     post:
       operationId: addService
-      parameters:
-      - in: path
-        name: repository
-        required: true
-        schema:
-          type: string
       requestBody:
         content:
           application/x-www-form-urlencoded:
@@ -4891,15 +4885,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
-  /workflows/path/service/{repository}/upsertVersion:
+  /workflows/path/service/upsertVersion:
     post:
       operationId: upsertServiceVersion
-      parameters:
-      - in: path
-        name: repository
-        required: true
-        schema:
-          type: string
       requestBody:
         content:
           application/x-www-form-urlencoded:

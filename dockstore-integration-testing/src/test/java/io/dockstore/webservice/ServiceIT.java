@@ -180,7 +180,7 @@ public class ServiceIT extends BaseIT {
         // Add service as another user
         service = client.addService(serviceRepo, "DockstoreTestUser2", installationId);
         assertNotNull(service);
-        assertEquals("Should have 2 users, has " + service.getUsers().size(), service.getUsers().size(), 2);
+        assertEquals("Should have 2 users", 2, service.getUsers().size());
     }
 
     /**
@@ -228,7 +228,7 @@ public class ServiceIT extends BaseIT {
         } catch (ApiException ex) {
 
         }
-        assertNull("Should fail because there is not tag with the given reference.", updatedService);
+        assertNull("Should fail because there is no tag with the given reference.", updatedService);
     }
 
     private class CreateContent {
