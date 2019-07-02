@@ -686,7 +686,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflow Workflow to upsert version to
      * @return Workflow version corresponding to GitHub tag
      */
-    public WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) throws IOException{
+    public WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) throws IOException {
         String refName = "tags/" + gitReference;
         GHRef ghRef = ghRepository.getRef(refName);
 
