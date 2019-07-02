@@ -19,7 +19,7 @@ import java.util.Optional;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.github.collaboratory.cwl.CWLClient;
-import io.github.collaboratory.nextflow.NextFlowClient;
+import io.github.collaboratory.nextflow.NextflowClient;
 import io.github.collaboratory.wdl.WDLClient;
 
 public final class LanguageClientFactory {
@@ -34,7 +34,7 @@ public final class LanguageClientFactory {
         } else if (type == DescriptorLanguage.WDL) {
             return Optional.of(new WDLClient(client));
         } else if (type == DescriptorLanguage.NEXTFLOW) {
-            return Optional.of(new NextFlowClient(client));
+            return Optional.of(new NextflowClient(client));
         } else {
             return Optional.empty();
         }

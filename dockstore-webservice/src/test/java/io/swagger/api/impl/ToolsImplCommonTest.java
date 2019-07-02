@@ -201,18 +201,26 @@ public class ToolsImplCommonTest {
      */
     @Test
     public void convertDockstoreWorkflowToTool() {
-        convertDockstoreWorkflowToTool("potato");
-        convertDockstoreWorkflowToTool(null);
+        convertDockstoreWorkflowToTool("potato", false);
+        convertDockstoreWorkflowToTool(null, false);
+
+        convertDockstoreWorkflowToTool("potato", true);
+        convertDockstoreWorkflowToTool(null, true);
     }
 
-    private void convertDockstoreWorkflowToTool(String toolname) {
+    private void convertDockstoreWorkflowToTool(String toolname, boolean isService) {
+        final String TOOLNAME = toolname;
         final String REFERENCE1 = "aaa";
         final String REFERENCE2 = "bbb";
         final String REFERENCE3 = "ccc";
         String json;
         SourceFile actualSourceFile1 = new SourceFile();
         actualSourceFile1.setId(461402);
-        actualSourceFile1.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        if (isService) {
+            actualSourceFile1.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+        } else {
+            actualSourceFile1.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        }
         actualSourceFile1.setContent(PLACEHOLDER_CONTENT);
         actualSourceFile1.setPath("/pcawg-cgp-somatic-workflow.wdl");
         actualSourceFile1.setAbsolutePath("/pcawg-cgp-somatic-workflow.wdl");
@@ -248,7 +256,11 @@ public class ToolsImplCommonTest {
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
         workflow.setSourceControl(SourceControl.GITHUB);
-        workflow.setDescriptorType(DescriptorLanguage.WDL);
+        if (isService) {
+            workflow.setDescriptorType(DescriptorLanguage.SERVICE);
+        } else {
+            workflow.setDescriptorType(DescriptorLanguage.WDL);
+        }
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);
         workflow.setId(950);
@@ -267,16 +279,33 @@ public class ToolsImplCommonTest {
         ToolVersion expectedToolVersion1 = new ToolVersion();
         expectedToolVersion1.setName(REFERENCE2);
         if (toolname != null) {
-            expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                    + toolname + "/versions/" + REFERENCE2);
-            expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ toolname + ":" + REFERENCE2);
+
+            if (isService) {
+                expectedToolVersion1.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME + ":" + REFERENCE2);
+                expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                        + TOOLNAME + "/versions/" + REFERENCE2);
+            } else {
+                expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME + ":" + REFERENCE2);
+                expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                        + TOOLNAME + "/versions/" + REFERENCE2);
+            }
         } else {
-            expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE2);
-            expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
+
+            if (isService) {
+                expectedToolVersion1.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
+                expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE2);
+            } else {
+                expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE2);
+                expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
+            }
         }
 
         List<DescriptorType> descriptorTypeList = new ArrayList<>();
-        descriptorTypeList.add(DescriptorType.WDL);
+        if (isService) {
+            descriptorTypeList.add(DescriptorType.SERVICE);
+        } else {
+            descriptorTypeList.add(DescriptorType.WDL);
+        }
         expectedToolVersion1.setImage("");
         expectedToolVersion1.setDescriptorType(descriptorTypeList);
         expectedToolVersion1.setContainerfile(false);
@@ -294,12 +323,24 @@ public class ToolsImplCommonTest {
         expectedToolVersion2.setRegistryUrl("");
 
         if (toolname != null) {
-            expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                    + toolname + "/versions/" + REFERENCE3);
-            expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + toolname + ":" + REFERENCE3);
+            if (isService) {
+                expectedToolVersion2.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME + ":" + REFERENCE3);
+                expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                        + TOOLNAME + "/versions/" + REFERENCE3);
+            } else {
+                expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME + ":" + REFERENCE3);
+                expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                        + TOOLNAME + "/versions/" + REFERENCE3);
+            }
         } else {
-            expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE3);
-            expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE3);
+
+            if (isService) {
+                expectedToolVersion2.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE3);
+                expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE3);
+            } else {
+                expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE3);
+                expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE3);
+            }
         }
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion1);
@@ -308,15 +349,29 @@ public class ToolsImplCommonTest {
 
         expectedTool.setOrganization("ICGC-TCGA-PanCancer");
         if (toolname != null) {
-            expectedTool
-                    .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ toolname);
-            expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ toolname);
-            expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow/" + toolname);
-            expectedTool.setCheckerUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ toolname);
+
+            if (isService) {
+                expectedTool.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME);
+                expectedTool
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
+            } else {
+                expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME);
+                expectedTool
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
+            }
+            expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME);
+            expectedTool.setCheckerUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
         } else {
-            expectedTool
-                    .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
-            expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
+
+            if (isService) {
+                expectedTool
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
+                expectedTool.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
+            } else {
+                expectedTool
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
+                expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
+            }
             expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow");
             expectedTool.setCheckerUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
         }

@@ -510,7 +510,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testNextFlowRefresh() throws ApiException {
+    public void testNextflowRefresh() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -564,7 +564,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testNextFlowWorkflowWithConfigIncludes() {
+    public void testNextflowWorkflowWithConfigIncludes() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -594,7 +594,7 @@ public class WorkflowIT extends BaseIT {
 
 
     @Test
-    public void testNextFlowWorkflowWithImages() {
+    public void testNextflowWorkflowWithImages() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 

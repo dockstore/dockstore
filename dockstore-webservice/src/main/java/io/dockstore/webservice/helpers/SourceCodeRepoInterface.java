@@ -168,7 +168,7 @@ public abstract class SourceCodeRepoInterface {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId);
 
-        // NextFlow and (future) dockstore.yml workflow can be detected and handled without stubs
+        // Nextflow and (future) dockstore.yml workflow can be detected and handled without stubs
 
         // Determine if workflow should be returned as a STUB or FULL
         if (existingWorkflow.isEmpty()) {

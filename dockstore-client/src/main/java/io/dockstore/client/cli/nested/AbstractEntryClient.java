@@ -43,6 +43,10 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import com.spotify.docker.client.exceptions.DockerException;
 import io.cwl.avro.CWL;
 import io.dockstore.client.cli.CheckerClient;
 import io.dockstore.client.cli.Client;
@@ -50,7 +54,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WdlBridge;
 import io.github.collaboratory.cwl.CWLClient;
-import io.github.collaboratory.nextflow.NextFlowClient;
+import io.github.collaboratory.nextflow.NextflowClient;
 import io.github.collaboratory.wdl.WDLClient;
 import io.openapi.wes.client.api.WorkflowExecutionServiceApi;
 import io.openapi.wes.client.model.RunId;
@@ -880,7 +884,7 @@ public abstract class AbstractEntryClient<T> {
                 // TODO: better error handling as with CWL and WDL
                 if (nextflowContentPresent) {
                     try {
-                        launchNextFlow(localFilePath, argsList, true);
+                        launchNextflow(localFilePath, argsList, true);
                     } catch (ApiException e) {
                         exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                     }
@@ -1108,7 +1112,22 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
-     * Launches tools and workflows.
+     * Prints a warning if Docker isn't running. Docker is not always needed. If a workflow or tool uses Docker and
+     * it is not running, it fails with a cryptic error. This should make the problem more obvious.
+     */
+    void checkIfDockerRunning() {
+        try (DockerClient docker = DefaultDockerClient.fromEnv().build()) {
+            docker.info();  // attempt to get information about docker
+        } catch (DockerException | DockerCertificateException e) {  // couldn't access docker
+            String type = this.getEntryType().toLowerCase(); // "tool" or "workflow"
+            out("WARNING: Docker is not running. If this " + type + " uses Docker, it will fail.");
+        } catch (InterruptedException e) {  // something else went wrong
+            LOG.error("Check for Docker failed", e);
+        }
+    }
+
+    /**
+     * Launches tools. Overridden for workflows.
      *
      * @param args Arguments entered into the CLI
      */
@@ -1124,6 +1143,7 @@ public abstract class AbstractEntryClient<T> {
                 final String localFilePath = reqVal(args, "--local-entry");
                 this.isLocalEntry = true;
                 preValidateLaunchArguments(args);
+                checkIfDockerRunning();
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
                 if (!args.contains("--entry")) {
@@ -1131,6 +1151,8 @@ public abstract class AbstractEntryClient<T> {
                 }
                 this.isLocalEntry = false;
                 preValidateLaunchArguments(args);
+                checkIfDockerRunning();
+
                 final String descriptor = optVal(args, "--descriptor", CWL.getLowerShortName());
                 if (descriptor.equals(CWL.getLowerShortName())) {
                     try {
@@ -1222,10 +1244,10 @@ public abstract class AbstractEntryClient<T> {
         client.launch(entry, isALocalEntry, yamlRun, jsonRun, wdlOutputTarget, uuid);
     }
 
-    private void launchNextFlow(String entry, final List<String> args, boolean isALocalEntry) throws ApiException {
+    private void launchNextflow(String entry, final List<String> args, boolean isALocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
         final String uuid = optVal(args, "--uuid", null);
-        NextFlowClient client = new NextFlowClient(this);
+        NextflowClient client = new NextflowClient(this);
         client.launch(entry, isALocalEntry, null, json, null, uuid);
     }
 

@@ -411,6 +411,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         if (this.commandLaunch.help) {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
         } else {
+            checkIfDockerRunning(); // print a warning message if Docker is not running
             if ((entry == null) != (localEntry == null)) {
                 if (entry != null) {
                     this.isLocalEntry = false;
@@ -516,7 +517,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     break;
                 case NEXTFLOW:
                     out("This is a Nextflow file.. Please put an extension to the entry file name.");
-                    out("Launching entry file as a NextFlow file..");
+                    out("Launching entry file as a Nextflow file..");
                     languageCLient.launch(entry, true, null, jsonRun, null, uuid);
                     break;
                 default:

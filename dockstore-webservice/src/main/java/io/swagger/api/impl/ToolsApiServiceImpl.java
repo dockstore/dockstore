@@ -78,6 +78,8 @@ import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
 import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS;
 import static io.dockstore.common.DescriptorLanguage.FileType.WDL_TEST_JSON;
+import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
+import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
     private static final String GITHUB_PREFIX = "git@github.com:";
@@ -726,7 +728,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * Used to parse localised IDs (no URL)
      * If tool, the id will look something like "registry.hub.docker.com/sequenza/sequenza"
      * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
-     * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it.
+     * If service, the id will look something like "#service/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
+     * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it
+     * and services have a "#service" prepended to it.
      */
     public static class ParsedRegistryID {
         private boolean tool = true;
@@ -743,8 +747,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
             List<String> list = new ArrayList<>(textSegments);
-            if (list.get(0).equalsIgnoreCase("#workflow")) {
-                list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
+            String firstTextSegment = list.get(0);
+            if (WORKFLOW_PREFIX.equalsIgnoreCase(firstTextSegment) || SERVICE_PREFIX.equalsIgnoreCase(firstTextSegment)) {
+                list.remove(0); // Remove #workflow or #service from ArrayList to make parsing similar to tool
                 tool = false;
             }
             checkToolId(list);

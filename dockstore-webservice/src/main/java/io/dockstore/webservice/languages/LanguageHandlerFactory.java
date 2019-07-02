@@ -29,7 +29,7 @@ public final class LanguageHandlerFactory {
         case WDL:
             return new WDLHandler();
         case NEXTFLOW:
-            return new NextFlowHandler();
+            return new NextflowHandler();
         // DOCKSTORE-2428 - demo how to add new workflow language
         //        case SWL:
         //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
@@ -47,7 +47,7 @@ public final class LanguageHandlerFactory {
         case DOCKSTORE_WDL:
             return new WDLHandler();
         case NEXTFLOW_CONFIG:
-            return new NextFlowHandler();
+            return new NextflowHandler();
         // DOCKSTORE-2428 - demo how to add new workflow language
         //        case DOCKSTORE_SWL:
         //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
