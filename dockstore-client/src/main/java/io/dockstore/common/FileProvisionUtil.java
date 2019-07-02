@@ -154,7 +154,6 @@ public final class FileProvisionUtil {
                 }
             }
         };
-        System.out.println("Downloading: " + src.toString() + " to " + dest.toString());
 
         long size = getSize(src).map(s -> s.longValue()).orElse(CopyStreamEvent.UNKNOWN_STREAM_SIZE);
 
@@ -267,6 +266,7 @@ public final class FileProvisionUtil {
             System.out.println("Skipping " + destinationLocation + ", already exists");
             return false;
         } else {
+            System.out.println("Downloading " + sourceLocation + " to " + destinationLocation);
             final int pluginDownloadAttempts = 1;
             FileProvisioning.retryWrapper(null, sourceLocation, Paths.get(destinationLocation), pluginDownloadAttempts, true, 1);
             return true;
