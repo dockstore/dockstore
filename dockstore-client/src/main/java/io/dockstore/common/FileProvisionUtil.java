@@ -74,25 +74,26 @@ public final class FileProvisionUtil {
         // disable utility constructor
     }
 
-    static boolean downloadFromVFS2(String path, Path targetFilePath, int threads) {
+    /** An extension of the Http4sFileProvider class to allow for setting the cookie specification to something
+     * other than DEFAULT. This cannot be set through the fileSystemOptions argument.
+     * Github responds with a cookie header containing a date in 4-digit year format.
+     * Cookie spec DEFAULT only allows 2-digit years; STANDARD allows 4-digits.
+     * Addresses #2261 warning messages, see https://github.com/dockstore/dockstore/issues/2261
+     */
+    static private class CustomHttp4sFileProvider extends Http4sFileProvider {
+        public HttpClientContext createHttpClientContext(final Http4FileSystemConfigBuilder builder,
+                                                         final GenericFileName rootName, final FileSystemOptions fileSystemOptions,
+                                                         final UserAuthenticationData authData) throws FileSystemException {
 
-        // An extension of the Http4sFileProvider class to allow for setting the cookie specification to something
-        // other than DEFAULT. This cannot be set through the fileSystemOptions argument.
-        class CustomHttp4sFileProvider extends Http4sFileProvider {
-            public HttpClientContext createHttpClientContext(final Http4FileSystemConfigBuilder builder,
-                                                             final GenericFileName rootName, final FileSystemOptions fileSystemOptions,
-                                                             final UserAuthenticationData authData) throws FileSystemException {
-
-                HttpClientContext def = super.createHttpClientContext(builder, rootName, fileSystemOptions, authData);
-                if (rootName.getHostName().equals("github.com")) {  // Github responds with a cookie header containing a
-                    // date in 4-digit year format. DEFAULT only allows 2-digit years; STANDARD allows 4-digits.
-                    // TODO: DEFAULT cookie spec may be outdated for more sites than Github
-                    def.setRequestConfig(RequestConfig.copy(def.getRequestConfig()).setCookieSpec(CookieSpecs.STANDARD).build());
-                }
-                return def;
+            HttpClientContext def = super.createHttpClientContext(builder, rootName, fileSystemOptions, authData);
+            if (rootName.getHostName().equals("github.com")) {
+                def.setRequestConfig(RequestConfig.copy(def.getRequestConfig()).setCookieSpec(CookieSpecs.STANDARD).build());
             }
+            return def;
         }
+    }
 
+    static boolean downloadFromVFS2(String path, Path targetFilePath, int threads) {
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
@@ -107,8 +108,7 @@ public final class FileProvisionUtil {
                     fsManager.addProvider("http4", new Http4FileProvider());
                 }
                 if (!fsManager.hasProvider("http4s")) {
-                    CustomHttp4sFileProvider http4sFP = new CustomHttp4sFileProvider();
-                    fsManager.addProvider("http4s", http4sFP);
+                    fsManager.addProvider("http4s", new CustomHttp4sFileProvider());
                 }
                 if (path.startsWith("http:")) {
                     newPath = newPath.replaceFirst("http:", "http4:");
