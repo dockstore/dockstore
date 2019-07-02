@@ -4609,6 +4609,11 @@ paths:
         description: "Repository path"
         required: true
         type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Name of user on GitHub"
+        required: true
+        type: "string"
       - name: "gitReference"
         in: "formData"
         description: "Git reference for new GitHub tag"

@@ -667,8 +667,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
         GHRepository ghRepository = getRepository(repository);
         for (Workflow workflow : workflows) {
-            WorkflowVersion version = getTagVersion(ghRepository, gitReference, workflow);
-            workflow.addWorkflowVersion(version);
+
+            WorkflowVersion version;
+            try {
+                version = getTagVersion(ghRepository, gitReference, workflow);
+                workflow.addWorkflowVersion(version);
+            } catch (IOException ex) {
+                LOG.error("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
+            }
         }
         return workflows;
     }
@@ -680,29 +686,24 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflow Workflow to upsert version to
      * @return Workflow version corresponding to GitHub tag
      */
-    public WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) {
-        try {
-            String refName = "tags/" + gitReference;
-            GHRef ghRef = ghRepository.getRef(refName);
+    public WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) throws IOException{
+        String refName = "tags/" + gitReference;
+        GHRef ghRef = ghRepository.getRef(refName);
 
-            Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
-            if (ref == null) {
-                LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
-                throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
-            }
-
-            // Find existing version if it exists
-            Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
-            Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-            if (existingVersion.isPresent()) {
-                existingDefaults.put(gitReference, existingVersion.get());
-            }
-
-            // Create version with sourcefiles and validate
-            return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
-        } catch (IOException e) {
-            LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub", e);
+        Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
+        if (ref == null) {
+            LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
+
+        // Find existing version if it exists
+        Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
+        Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
+        if (existingVersion.isPresent()) {
+            existingDefaults.put(gitReference, existingVersion.get());
+        }
+
+        // Create version with sourcefiles and validate
+        return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
     }
 }

@@ -4841,26 +4841,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Entry"
-  "/workflows/path/service/{repository}":
+  /workflows/path/service:
     post:
       tags:
         - workflows
       summary: Create a service for the given repository (ex. dockstore/dockstore-ui2).
       description: To be called by a lambda function.
       operationId: addService
-      parameters:
-        - name: repository
-          in: path
-          description: Repository path
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/x-www-form-urlencoded:
             schema:
               type: object
               properties:
+                repository:
+                  description: Repository path
+                  type: string
                 username:
                   description: Name of user on GitHub
                   type: string
@@ -4868,6 +4864,7 @@ paths:
                   description: GitHub installation ID
                   type: string
               required:
+                - repository
                 - username
                 - installationId
       responses:
@@ -4879,7 +4876,7 @@ paths:
                 $ref: "#/components/schemas/Workflow"
       security:
         - BEARER: []
-  "/workflows/path/service/{repository}/upsertVersion":
+  /workflows/path/service/upsertVersion:
     post:
       tags:
         - workflows
@@ -4887,19 +4884,18 @@ paths:
         with the given repository (ex. dockstore/dockstore-ui2).
       description: To be called by a lambda function.
       operationId: upsertServiceVersion
-      parameters:
-        - name: repository
-          in: path
-          description: Repository path
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/x-www-form-urlencoded:
             schema:
               type: object
               properties:
+                repository:
+                  description: Repository path
+                  type: string
+                username:
+                  description: Name of user on GitHub
+                  type: string
                 gitReference:
                   description: Git reference for new GitHub tag
                   type: string
@@ -4907,6 +4903,8 @@ paths:
                   description: GitHub installation ID
                   type: string
               required:
+                - repository
+                - username
                 - gitReference
                 - installationId
       responses:
@@ -6363,10 +6361,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6382,6 +6376,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6569,10 +6567,6 @@ components:
           items:
             $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
               ockstore"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6588,6 +6582,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7578,10 +7576,6 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7597,6 +7591,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

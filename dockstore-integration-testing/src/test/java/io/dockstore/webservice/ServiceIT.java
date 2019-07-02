@@ -37,10 +37,12 @@ import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,10 +52,10 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -159,6 +161,8 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void testGitHubAppEndpoints() throws Exception {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -177,6 +181,10 @@ public class ServiceIT extends BaseIT {
         assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
         assertEquals("Should have 3 source files", 3, service.getWorkflowVersions().get(0).getSourceFiles().size());
         assertEquals("Should have 2 users", 2, service.getUsers().size());
+
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+        Assert.assertEquals("there should be one matching service", 1, count);
     }
 
     /**
@@ -184,6 +192,8 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceNoUser() throws Exception {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -192,13 +202,15 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Workflow service = null;
         try {
-            service = client.addService(serviceRepo, "iamnotarealuser", installationId);
+            client.addService(serviceRepo, "iamnotarealuser", installationId);
         } catch (ApiException ex) {
 
         }
-        assertNull("Should not be able to add service since the username does not exist on Dockstore.", service);
+
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+        Assert.assertEquals("there should be no matching service", 0, count);
     }
 
     /**
@@ -206,6 +218,8 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceDuplicate() throws Exception {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -216,13 +230,15 @@ public class ServiceIT extends BaseIT {
         // Add service
         io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
         assertNotNull(service);
-        service = null;
         try {
-            service = client.addService(serviceRepo, "admin@admin.com", installationId);
-        } catch (ApiException ex) {
+            client.addService(serviceRepo, "admin@admin.com", installationId);
+        } catch (Exception ex) {
 
         }
-        assertNull("Should not be able to add service since the username does not exist on Dockstore.", service);
+
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+        Assert.assertEquals("there should be one matching service", 1, count);
     }
 
     /**
@@ -230,6 +246,8 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void updateServiceIncorrectTag() throws Exception {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -242,13 +260,19 @@ public class ServiceIT extends BaseIT {
         assertNotNull(service);
 
         // Add version that doesn't exist
-        io.swagger.client.model.Workflow updatedService = null;
         try {
-            updatedService = client.upsertServiceVersion(serviceRepo, "admin@admin.com", "1.0-fake", installationId);
-        } catch (ApiException ex) {
+            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "1.0-fake", installationId);
+        } catch (Exception ex) {
 
         }
-        assertNull("Should fail because there is no tag with the given reference.", updatedService);
+
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+        Assert.assertEquals("there should be one matching service", 1, count);
+
+        final long count2 = testingPostgres
+                .runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", new ScalarHandler<>());
+        Assert.assertEquals("there should be no matching tag", 0, count2);
     }
 
     private class CreateContent {
