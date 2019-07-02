@@ -456,22 +456,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
                         }
 
-                        Optional<DescriptorLanguage.FileType> testFileType = DescriptorLanguage.getTestParameterType(identifiedType.toString());
-                        if (testFileType.isPresent()) {
-                            testJson.setType(testFileType.get());
+                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
+                        testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
+                        testJson.setContent(testJsonContent);
 
-                            testJson.setPath(workflow.getDefaultTestParameterFilePath());
-                            testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
-                            testJson.setContent(testJsonContent);
-
-                            // Only add test parameter file if it hasn't already been added
-                            boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
-                                    && sf.getType() == testJson.getType());
-                            if (!hasDuplicate) {
-                                version.getSourceFiles().add(testJson);
-                            }
-                        } else {
-                            LOG.error("Could not find test parameter file type for " + identifiedType);
+                        // Only add test parameter file if it hasn't already been added
+                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
+                                && sf.getType() == testJson.getType());
+                        if (!hasDuplicate) {
+                            version.getSourceFiles().add(testJson);
                         }
                     }
                 }

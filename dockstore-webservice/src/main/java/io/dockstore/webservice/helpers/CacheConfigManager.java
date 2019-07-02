@@ -47,8 +47,8 @@ public class CacheConfigManager {
     }
 
     /**
-     * Given a JWT for the GitHub app, retrieve the GitHub app installation ID (per repository)
-     * @param installationId App installation ID (per repository)
+     * Given a JWT for the GitHub app and an installation ID, retrieve the Installation Access Token
+     * @param installationId App installation ID (per user)
      * @return Installation Access Token
      */
     private String getInstallationAccessTokenFromInstallationId(String installationId) throws Exception {
