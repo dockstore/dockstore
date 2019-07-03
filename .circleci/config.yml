@@ -39,6 +39,13 @@ jobs:
           command: |
             mvn --batch-mode clean install -Punit-tests
       - run:
+          name: run TokenResourceIT
+          command: |
+            sudo apt install -y wget
+            wget https://raw.githubusercontent.com/SpectoLabs/hoverfly/master/core/cert.pem
+            sudo $JAVA_HOME/bin/keytool -cacerts -importcert -trustcacerts -alias hoverfly -file cert.pem -storepass changeit -noprompt
+            mvn -Dit.test=TokenResourceIT -Pintegration-tests verify -DfailIfNoTests=false
+      - run:
           name: check that JPA classes are consistent with migrations
           command: |
             scripts/check_migrations.sh
