@@ -64,8 +64,12 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     }
 
     public void updateByUser(final WorkflowVersion workflowVersion) {
+        if (!this.isFrozen()) {
+            workflowPath = workflowVersion.workflowPath;
+        }
+        // this is a bit confusing, but we need to call the super method last since it will set frozen
+        // skipping the above even if we are only freezing it "now"
         super.updateByUser(workflowVersion);
-        workflowPath = workflowVersion.workflowPath;
     }
 
     public void update(WorkflowVersion workflowVersion) {

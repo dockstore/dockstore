@@ -690,6 +690,15 @@ public class GeneralIT extends BaseIT {
         master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
         assertTrue(master.isFrozen() && master.getImageId().equals("awesomeid"));
 
+        // but should be able to change doi stuff
+        master.setFrozen(true);
+        master.setDoiStatus(Tag.DoiStatusEnum.REQUESTED);
+        master.setDoiURL("foo");
+        tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertEquals("foo", master.getDoiURL());
+        assertEquals(Tag.DoiStatusEnum.REQUESTED, master.getDoiStatus());
+
         // try modifying sourcefiles
         // cannot modify sourcefiles for a frozen version
         assertFalse(master.getSourceFiles().isEmpty());

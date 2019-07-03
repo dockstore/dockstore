@@ -1555,9 +1555,6 @@ public class WorkflowResource
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
                 // remove existing copy and add the new one
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
-                if (existingTag.isFrozen()) {
-                    continue;
-                }
 
                 // If path changed then update dirty bit to true
                 if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {

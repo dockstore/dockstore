@@ -578,9 +578,18 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
         master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
         master.setFrozen(false);
-        final List<WorkflowVersion> workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        List<WorkflowVersion> workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
         assertTrue(master.isFrozen());
+
+        // but should be able to change doi stuff
+        master.setFrozen(true);
+        master.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
+        master.setDoiURL("foo");
+        workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        assertEquals("foo", master.getDoiURL());
+        assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // refresh should skip over the frozen version
         final Workflow refresh = workflowApi.refresh(githubWorkflow.getId());

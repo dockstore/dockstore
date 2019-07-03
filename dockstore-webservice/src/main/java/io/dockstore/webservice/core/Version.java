@@ -41,6 +41,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -87,7 +88,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column
     @JsonProperty("last_modified")
     @ApiModelProperty(value = "Tool-> For automated builds: Last time specific tag was built. For hosted: When version was created "
-            + "Workflow-> Remote: Last time version on GitHub repo was changed. Hosted: time version created", position = 1)
+        + "Workflow-> Remote: Last time version on GitHub repo was changed. Hosted: time version created", position = 1)
     Date lastModified;
 
     @Column(columnDefinition = "boolean default false")
@@ -108,10 +109,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private final SortedSet<SourceFile> sourceFiles;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 4)
-    private boolean hidden;
-
-    @Column
     @ApiModelProperty(value = "Implementation specific, whether this tag has valid files from source code repo", position = 5)
     private boolean valid;
 
@@ -119,22 +116,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "True if user has altered the tag", position = 7)
     private boolean dirtyBit = false;
 
-    @Column(columnDefinition =  "boolean default false")
-    @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)
-    private boolean verified;
-
-    @Column
-    @ApiModelProperty(value = "Verified source for the version", position = 9)
-    private String verifiedSource;
-
-    @Column
-    @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 10)
-    private String doiURL;
-
-    @Column(columnDefinition = "text default 'NOT_REQUESTED'", nullable = false)
-    @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates the DOI status", position = 11)
-    private DOIStatus doiStatus;
+    @JsonIgnore
+    @OneToOne(optional = false)
+    @PrimaryKeyJoinColumn
+    private VersionMetadata versionMetadata = new VersionMetadata();
 
     @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 12)
     @OneToOne
@@ -170,23 +155,25 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
-        doiStatus = DOIStatus.NOT_REQUESTED;
+        versionMetadata.doiStatus = DOIStatus.NOT_REQUESTED;
     }
 
+    @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)
     public boolean isVerified() {
-        return verified;
+        return getVersionMetadata().verified;
     }
 
     public void setVerified(boolean verified) {
-        this.verified = verified;
+        this.getVersionMetadata().verified = verified;
     }
 
+    @ApiModelProperty(value = "Verified source for the version", position = 9)
     public String getVerifiedSource() {
-        return verifiedSource;
+        return versionMetadata.verifiedSource;
     }
 
     public void setVerifiedSource(String verifiedSource) {
-        this.verifiedSource = verifiedSource;
+        this.getVersionMetadata().verifiedSource = verifiedSource;
     }
 
     public boolean isDirtyBit() {
@@ -194,13 +181,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setDirtyBit(boolean dirtyBit) {
-        this.dirtyBit = dirtyBit;
+        if (!this.isFrozen()) {
+            this.dirtyBit = dirtyBit;
+        }
     }
 
     void updateByUser(final Version version) {
-        reference = version.reference;
-        hidden = version.hidden;
-        this.setFrozen(version.frozen);
+        this.getVersionMetadata().hidden = version.isHidden();
+        this.setDoiStatus(version.getDoiStatus());
+        this.setDoiURL(version.getDoiURL());
+        if (!this.isFrozen()) {
+            this.setFrozen(version.frozen);
+            reference = version.reference;
+        }
     }
 
     public abstract String getWorkingDirectory();
@@ -256,7 +249,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void addOrUpdateValidation(Validation versionValidation) {
-        Optional<Validation> matchingValidation = getValidations().stream().filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
+        Optional<Validation> matchingValidation = getValidations().stream()
+            .filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
         if (matchingValidation.isPresent()) {
             matchingValidation.get().setMessage(versionValidation.getMessage());
             matchingValidation.get().setValid(versionValidation.isValid());
@@ -266,12 +260,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     @JsonProperty
+    @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 4)
     public boolean isHidden() {
-        return hidden;
+        return versionMetadata.hidden;
     }
 
     public void setHidden(boolean hidden) {
-        this.hidden = hidden;
+        this.getVersionMetadata().hidden = hidden;
     }
 
     @JsonProperty
@@ -293,25 +288,27 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void updateVerified(boolean newVerified, String newVerifiedSource) {
-        this.verified = newVerified;
-        this.verifiedSource = newVerifiedSource;
+        this.getVersionMetadata().verified = newVerified;
+        this.getVersionMetadata().verifiedSource = newVerifiedSource;
     }
 
     @JsonProperty
+    @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 10)
     public String getDoiURL() {
-        return doiURL;
+        return versionMetadata.doiURL;
     }
 
     public void setDoiURL(String doiURL) {
-        this.doiURL = doiURL;
+        this.getVersionMetadata().doiURL = doiURL;
     }
 
+    @ApiModelProperty(value = "This indicates the DOI status", position = 11)
     public DOIStatus getDoiStatus() {
-        return doiStatus;
+        return versionMetadata.doiStatus;
     }
 
     public void setDoiStatus(DOIStatus doiStatus) {
-        this.doiStatus = doiStatus;
+        this.getVersionMetadata().doiStatus = doiStatus;
     }
 
     public ReferenceType getReferenceType() {
@@ -339,7 +336,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void setOutputFileFormats(SortedSet<FileFormat> outputFileFormats) {
         this.outputFileFormats = outputFileFormats;
     }
-  
+
     public User getVersionEditor() {
         return versionEditor;
     }
@@ -385,13 +382,25 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.sourceFiles.forEach(s -> s.setFrozen(frozen));
     }
 
+    public VersionMetadata getVersionMetadata() {
+        if (versionMetadata == null) {
+            versionMetadata = new VersionMetadata();
+            versionMetadata.setId(this.id);
+        }
+        return versionMetadata;
+    }
+
+    public void setVersionMetadata(VersionMetadata versionMetadata) {
+        this.versionMetadata = versionMetadata;
+    }
+
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
 
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, lastModified, reference, hidden, valid, name, commitID);
+        return Objects.hash(id, lastModified, reference, versionMetadata.hidden, valid, name, commitID);
     }
 
     @Override
@@ -404,8 +413,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
         final Version other = (Version)obj;
         return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects
-            .equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid)
-            && Objects.equals(this.name, other.name) && Objects.equals(this.commitID, other.commitID);
+            .equals(this.reference, other.reference) && Objects.equals(this.getVersionMetadata().hidden, other.getVersionMetadata().hidden) && Objects
+            .equals(this.valid, other.valid) && Objects.equals(this.name, other.name) && Objects.equals(this.commitID, other.commitID);
     }
 
     @Override
