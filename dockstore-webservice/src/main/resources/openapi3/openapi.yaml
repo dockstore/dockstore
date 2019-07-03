@@ -477,6 +477,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
+          - OTHER
           type: string
         verifiedBySource:
           additionalProperties:
@@ -781,6 +782,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
+          - OTHER
           type: string
         valid:
           type: boolean
@@ -1297,7 +1299,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       parameters:
       - in: path
         name: organization
@@ -1312,7 +1314,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       responses:
         default:
           content:
@@ -4867,6 +4869,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
+          description: default response
+  /workflows/path/service:
+    post:
+      operationId: addService
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+  /workflows/path/service/upsertVersion:
+    post:
+      operationId: upsertServiceVersion
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/path/workflow/{repository}:
     get:

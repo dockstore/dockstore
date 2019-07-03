@@ -16,9 +16,19 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,8 +43,10 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -48,6 +60,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
@@ -57,6 +72,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
@@ -76,6 +92,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.doi.DOIGeneratorInterface;
+import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -105,6 +122,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -151,9 +169,11 @@ public class WorkflowResource
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final PermissionsInterface permissionsInterface;
+    private final String gitHubPrivateKeyFile;
+    private final String gitHubAppId;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
-        PermissionsInterface permissionsInterface, EntryResource entryResource) {
+        PermissionsInterface permissionsInterface, EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
@@ -172,6 +192,9 @@ public class WorkflowResource
 
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         elasticManager = new ElasticManager();
+
+        gitHubAppId = configuration.getGitHubAppId();
+        gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
     }
 
     /**
@@ -410,20 +433,175 @@ public class WorkflowResource
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String repository,
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        // Call common upsert code
+        String dockstoreWorkflowPath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.FULL, null);
 
+        return findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
+    }
+
+    /**
+     * Finds all workflows from a general Dockstore path that are of type FULL
+     * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
+     * @return List of FULL workflows with the given Dockstore path
+     */
+    private List<Workflow> findAllWorkflowsByPath(String dockstoreWorkflowPath, WorkflowMode workflowMode) {
+        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
+                .stream()
+                .filter(workflow ->
+                        workflow.getMode() == workflowMode)
+                .collect(Collectors.toList());
+    }
+
+    @POST
+    @Path("/path/service/")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow addService(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
+            @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
+            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        // Check for duplicates (currently workflows and services share paths)
+        String servicePath = "github.com/" + repository;
+
+        // Retrieve the user who triggered the call
+        User sendingUser = findUserByGitHubUsername(username);
+
+        // Determine if service is already in Dockstore
+        Workflow existingService = workflowDAO.findByPath(servicePath, false);
+
+        if (existingService != null) {
+            // Duplicate service found, don't add
+            String msg = "A service already exists for GitHub repository " + repository;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Get Installation Access Token
+        String installationAccessToken = gitHubAppSetup(installationId);
+
+        // Create a service object
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
+        Service service = sourceCodeRepo.initializeService(repository);
+        service.getUsers().add(sendingUser);
+        long serviceId = workflowDAO.create(service);
+
+        return workflowDAO.findById(serviceId);
+    }
+
+    @POST
+    @Path("/path/service/upsertVersion/")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
+            @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
+            @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
+            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+
+        // Retrieve the user who triggered the call
+        User sendingUser = findUserByGitHubUsername(username);
+
+        // Get Installation Access Token
+        String installationAccessToken = gitHubAppSetup(installationId);
+
+        // Call common upsert code
+        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, WorkflowMode.SERVICE, installationAccessToken);
+
+        // Add user to service if necessary
+        Workflow service = workflowDAO.findByPath(dockstoreServicePath, false);
+        if (!service.getUsers().contains(sendingUser)) {
+            service.getUsers().add(sendingUser);
+        }
+
+        return service;
+    }
+
+    /**
+     * Setup tokens required for GitHub apps
+     * @param installationId App installation ID (per repository)
+     * @return Installation access token for the given repository
+     */
+    private String gitHubAppSetup(String installationId) {
+        checkJWT();
+        String installationAccessToken = CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
+        if (installationAccessToken == null) {
+            String msg = "Could not get an installation access token for install with id " + installationId;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return installationAccessToken;
+    }
+
+    /**
+     * Refresh the JWT for GitHub apps
+     */
+    private void checkJWT() {
+        RSAPrivateKey rsaPrivateKey = null;
+        try {
+            String pemFileContent = FileUtils
+                    .readFileToString(new File(gitHubPrivateKeyFile), Charset.forName("UTF-8"));
+            pemFileContent = pemFileContent
+                    .replaceAll("\\n", "")
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "");
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(pemFileContent));
+            rsaPrivateKey = (RSAPrivateKey)keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            LOG.error(ex.getMessage(), ex);
+        }
+
+        if (rsaPrivateKey != null) {
+            final int tenMinutes = 600000;
+            try {
+                Algorithm algorithm = Algorithm.RSA256(null, rsaPrivateKey);
+                String jsonWebToken = JWT.create()
+                        .withIssuer(gitHubAppId)
+                        .withIssuedAt(new Date())
+                        .withExpiresAt(new Date(Calendar.getInstance().getTimeInMillis() + tenMinutes))
+                        .sign(algorithm);
+                CacheConfigManager.setJsonWebToken(jsonWebToken);
+            } catch (JWTCreationException ex) {
+                LOG.error(ex.getMessage(), ex);
+            }
+        }
+    }
+
+    /**
+     * Common code for upserting a version to a workflow/service
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param gitReference Git reference (ex. master)
+     * @param user User calling endpoint
+     * @param workflowMode Mode of workflows to filter by
+     * @return Shared dockstore path to workflow/service
+     */
+    private String upsertVersionHelper(String repository, String gitReference, User user, WorkflowMode workflowMode, String installationAccessToken) {
         // Create path on Dockstore (not unique across workflows)
         String dockstoreWorkflowPath = String.join("/", TokenType.GITHUB_COM.toString(), repository);
 
         // Find all workflows with the given path that are full
-        List<Workflow> workflows = findAllFullWorkflowsByPath(dockstoreWorkflowPath);
+        List<Workflow> workflows = findAllWorkflowsByPath(dockstoreWorkflowPath, workflowMode);
 
         if (workflows.size() > 0) {
             // All workflows with the same path have the same Git Url
             String sharedGitUrl = workflows.get(0).getGitUrl();
 
             // Set up source code interface and ensure token is set up
-            User updatedUser = userDAO.findById(user.getId());
-            final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, updatedUser);
+            GitHubSourceCodeRepo sourceCodeRepo;
+            if (user != null) {
+                User updatedUser = userDAO.findById(user.getId());
+                sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, updatedUser);
+            } else {
+                sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
+            }
 
             // Pull new version information from GitHub and update the versions
             workflows = sourceCodeRepo.upsertVersionForWorkflows(repository, gitReference, workflows);
@@ -435,20 +613,32 @@ public class WorkflowResource
             }
         }
 
-        return findAllFullWorkflowsByPath(dockstoreWorkflowPath);
+        return dockstoreWorkflowPath;
     }
 
     /**
-     * Finds all workflows from a general Dockstore path that are of type FULL
-     * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
-     * @return List of FULL workflows with the given Dockstore path
+     * Based on GitHub username, find the corresponding user
+     * @param username GitHub username
+     * @return user with given GitHub username
      */
-    private List<Workflow> findAllFullWorkflowsByPath(String dockstoreWorkflowPath) {
-        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
-                .stream()
-                .filter(workflow ->
-                        workflow.getMode() == WorkflowMode.FULL || workflow.getMode() == WorkflowMode.SERVICE)
-                .collect(Collectors.toList());
+    private User findUserByGitHubUsername(String username) {
+        // Find user by github name
+        Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(username);
+        if (userGitHubToken == null) {
+            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Get user object for github token
+        User sendingUser = userDAO.findById(userGitHubToken.getUserId());
+        if (sendingUser == null) {
+            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        return sendingUser;
     }
 
     /**

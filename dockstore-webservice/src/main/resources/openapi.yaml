@@ -4841,6 +4841,81 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Entry"
+  /workflows/path/service:
+    post:
+      tags:
+        - workflows
+      summary: Create a service for the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function.
+      operationId: addService
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                repository:
+                  description: Repository path
+                  type: string
+                username:
+                  description: Name of user on GitHub
+                  type: string
+                installationId:
+                  description: GitHub installation ID
+                  type: string
+              required:
+                - repository
+                - username
+                - installationId
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
+  /workflows/path/service/upsertVersion:
+    post:
+      tags:
+        - workflows
+      summary: Add or update a service version for a given GitHub tag for a service
+        with the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function.
+      operationId: upsertServiceVersion
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                repository:
+                  description: Repository path
+                  type: string
+                username:
+                  description: Name of user on GitHub
+                  type: string
+                gitReference:
+                  description: Git reference for new GitHub tag
+                  type: string
+                installationId:
+                  description: GitHub installation ID
+                  type: string
+              required:
+                - repository
+                - username
+                - gitReference
+                - installationId
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/workflows/path/workflow/{repository}":
     get:
       tags:
@@ -6941,6 +7016,7 @@ components:
             - DOCKSTORE_YML
             - DOCKSTORE_SERVICE_YML
             - DOCKSTORE_SERVICE_TEST_JSON
+            - OTHER
         content:
           type: string
           description: Cache for the contents of the target file
@@ -7438,6 +7514,7 @@ components:
             - DOCKSTORE_YML
             - DOCKSTORE_SERVICE_YML
             - DOCKSTORE_SERVICE_TEST_JSON
+            - OTHER
         valid:
           type: boolean
           description: Is the file type valid

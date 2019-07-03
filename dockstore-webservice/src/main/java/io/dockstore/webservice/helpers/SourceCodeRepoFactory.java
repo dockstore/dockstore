@@ -42,6 +42,11 @@ public final class SourceCodeRepoFactory {
         // hide the constructor for utility classes
     }
 
+    public static SourceCodeRepoInterface createGitHubAppRepo(String token) {
+        // The gitUsername doesn't seem to matter
+        return new GitHubSourceCodeRepo("dockstore", token);
+    }
+
     public static SourceCodeRepoInterface createSourceCodeRepo(Token token, HttpClient client) {
         SourceCodeRepoInterface repo;
         if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
