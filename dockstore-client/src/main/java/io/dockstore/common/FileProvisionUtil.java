@@ -74,26 +74,27 @@ public final class FileProvisionUtil {
         // disable utility constructor
     }
 
-    /** An extension of the Http4sFileProvider class to allow for setting the cookie specification to something
-     * other than DEFAULT. This cannot be set through the fileSystemOptions argument.
-     * Github responds with a cookie header containing a date in 4-digit year format.
-     * Cookie spec DEFAULT only allows 2-digit years; STANDARD allows 4-digits.
-     * Addresses #2261 warning messages, see https://github.com/dockstore/dockstore/issues/2261
-     */
-    static private class CustomHttp4sFileProvider extends Http4sFileProvider {
-        public HttpClientContext createHttpClientContext(final Http4FileSystemConfigBuilder builder,
-                                                         final GenericFileName rootName, final FileSystemOptions fileSystemOptions,
-                                                         final UserAuthenticationData authData) throws FileSystemException {
-
-            HttpClientContext def = super.createHttpClientContext(builder, rootName, fileSystemOptions, authData);
-            if (rootName.getHostName().equals("github.com")) {
-                def.setRequestConfig(RequestConfig.copy(def.getRequestConfig()).setCookieSpec(CookieSpecs.STANDARD).build());
-            }
-            return def;
-        }
-    }
-
     static boolean downloadFromVFS2(String path, Path targetFilePath, int threads) {
+
+        /** An extension of the Http4sFileProvider class to allow for setting the cookie specification to something
+         * other than DEFAULT. This cannot be set through the fileSystemOptions argument.
+         * Github responds with a cookie header containing a date in 4-digit year format.
+         * Cookie spec DEFAULT only allows 2-digit years; STANDARD allows 4-digits.
+         * Addresses #2261 warning messages, see https://github.com/dockstore/dockstore/issues/2261
+         */
+        class CustomHttp4sFileProvider extends Http4sFileProvider {
+            public HttpClientContext createHttpClientContext(final Http4FileSystemConfigBuilder builder,
+                                                             final GenericFileName rootName, final FileSystemOptions fileSystemOptions,
+                                                             final UserAuthenticationData authData) throws FileSystemException {
+
+                HttpClientContext def = super.createHttpClientContext(builder, rootName, fileSystemOptions, authData);
+                if (rootName.getHostName().equals("github.com")) {
+                    def.setRequestConfig(RequestConfig.copy(def.getRequestConfig()).setCookieSpec(CookieSpecs.STANDARD).build());
+                }
+                return def;
+            }
+        }
+
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
