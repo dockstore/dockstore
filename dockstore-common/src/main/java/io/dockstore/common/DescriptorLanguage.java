@@ -50,7 +50,12 @@ public enum DescriptorLanguage {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.NEXTFLOW;
         }
     },
-    SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON, true);
+    SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON, true) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type) || type == FileType.OTHER;
+        }
+    };
 
     /**
      * this name is used in the workflow path
