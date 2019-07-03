@@ -6995,6 +6995,10 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the source file in this web service
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
         verifiedBySource:
           type: object
           description: maps from platform to whether an entry successfully ran on it using
@@ -7042,6 +7046,10 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
         referenceType:
           type: string
           description: This indicates the type of git (or other source control) reference
@@ -7725,6 +7733,10 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
         referenceType:
           type: string
           description: This indicates the type of git (or other source control) reference
@@ -7830,6 +7842,10 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
         referenceType:
           type: string
           description: This indicates the type of git (or other source control) reference

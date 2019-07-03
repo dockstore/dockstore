@@ -16,6 +16,9 @@
 
 package io.dockstore.client.cli;
 
+import java.util.List;
+
+import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
@@ -29,8 +32,8 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -42,6 +45,10 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This test suite will have tests for the workflow mode of the Dockstore Client.
@@ -85,14 +92,14 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // check that valid is valid and full
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 0 published entries, there are " + count, 0, count);
+        assertEquals("there should be 0 published entries, there are " + count, 0, count);
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 2 valid versions, there are " + count2, 2, count2);
+        assertEquals("there should be 2 valid versions, there are " + count2, 2, count2);
         final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
+        assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
-        Assert.assertEquals("there should be 4 versions, there are " + count4, 4, count4);
+        assertEquals("there should be 4 versions, there are " + count4, 4, count4);
 
         // attempt to publish it
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
@@ -100,7 +107,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 published entry, there are " + count5, 1, count5);
+        assertEquals("there should be 1 published entry, there are " + count5, 1, count5);
 
         // unpublish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
@@ -108,7 +115,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final long count6 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
+        assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
 
         testPublishList();
     }
@@ -119,8 +126,8 @@ public class GeneralWorkflowIT extends BaseIT {
     private void testPublishList() {
         systemOutRule.clearLog();
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--script" });
-        Assert.assertTrue("Should contain a FULL workflow belonging to the user", systemOutRule.getLog().contains("github.com/DockstoreTestUser2/hello-dockstore-workflow"));
-        Assert.assertFalse("Should not contain a STUB workflow belonging to the user", systemOutRule.getLog().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified "));
+        assertTrue("Should contain a FULL workflow belonging to the user", systemOutRule.getLog().contains("github.com/DockstoreTestUser2/hello-dockstore-workflow"));
+        assertFalse("Should not contain a STUB workflow belonging to the user", systemOutRule.getLog().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified "));
     }
 
     /**
@@ -177,7 +184,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // check that no valid versions
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 0 valid versions, there are " + count, 0, count);
+        assertEquals("there should be 0 valid versions, there are " + count, 0, count);
 
         // try and publish
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
@@ -214,14 +221,14 @@ public class GeneralWorkflowIT extends BaseIT {
                 SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--add", "test1", "--add", "test2", "--script" });
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label", new ScalarHandler<>());
-        Assert.assertEquals("there should be 2 labels, there are " + count, 2, count);
+        assertEquals("there should be 2 labels, there are " + count, 2, count);
 
         // remove labels
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "label", "--entry",
                 SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--remove", "test1", "--add", "test3", "--script" });
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from entry_label", new ScalarHandler<>());
-        Assert.assertEquals("there should be 2 labels, there are " + count2, 2, count2);
+        assertEquals("there should be 2 labels, there are " + count2, 2, count2);
     }
 
     /**
@@ -273,7 +280,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
                 "select count(*) from workflowversion where name = 'master' and hidden = 't' and workflowpath = '/Dockstore2.wdl'",
                 new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 matching workflow version, there is " + count, 1, count);
+        assertEquals("there should be 1 matching workflow version, there is " + count, 1, count);
     }
 
     /**
@@ -292,7 +299,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
-        Assert.assertEquals("there should be 0 workflow versions, there are " + count, 0, count);
+        assertEquals("there should be 0 workflow versions, there are " + count, 0, count);
     }
 
     /**
@@ -327,7 +334,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflow where descriptortype = 'wdl'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 wdl workflow, there are " + count, 1, count);
+        assertEquals("there should be 1 wdl workflow, there are " + count, 1, count);
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
                 SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
@@ -354,7 +361,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where name = 'master' and workflowpath = '/newdescriptor.cwl'",
                         new ScalarHandler<>());
-        Assert.assertEquals("the workflow version should now have a new descriptor path", 1, count);
+        assertEquals("the workflow version should now have a new descriptor path", 1, count);
 
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
@@ -401,7 +408,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
                 "--entry", SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow:wdl_import","--script" });
-        Assert.assertTrue(systemOutRule.getLog().contains("\"three_step.cgrep.pattern\": \"String\""));
+        assertTrue(systemOutRule.getLog().contains("\"three_step.cgrep.pattern\": \"String\""));
 
     }
 
@@ -534,10 +541,61 @@ public class GeneralWorkflowIT extends BaseIT {
                 .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", new ScalarHandler<>());
         final String testpath = testingPostgres
                 .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", new ScalarHandler<>());
-        Assert.assertEquals("master workflow path should be the same as default workflow path, it is " + masterpath, "/Dockstore.cwl",
+        assertEquals("master workflow path should be the same as default workflow path, it is " + masterpath, "/Dockstore.cwl",
             masterpath);
-        Assert
-            .assertEquals("test workflow path should be the same as default workflow path, it is " + testpath, "/Dockstore.cwl", testpath);
+        assertEquals("test workflow path should be the same as default workflow path, it is " + testpath, "/Dockstore.cwl", testpath);
+    }
+
+    @Test
+    public void testFreezingWorkflow() throws ApiException {
+        // Set up webservice
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Get workflows
+        usersApi.refreshWorkflows(userId);
+
+        Workflow githubWorkflow = workflowApi
+            .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
+
+        // Publish github workflow
+        workflowApi.refresh(githubWorkflow.getId());
+
+        Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
+        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        master.setFrozen(true);
+        final List<WorkflowVersion> workflowVersions1 = workflowApi
+            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        master = workflowVersions1.stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        assertTrue(master.isFrozen());
+
+        // try various operations that should be disallowed
+
+        // cannot modify version properties, like unfreezing for now
+        workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
+        master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        master.setFrozen(false);
+        final List<WorkflowVersion> workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        assertTrue(master.isFrozen());
+
+        // refresh should skip over the frozen version
+        final Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
+        master = refresh.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        // cannot modify sourcefiles for a frozen version
+        assertFalse(master.getSourceFiles().isEmpty());
+        master.getSourceFiles().forEach(s -> {
+            assertTrue(s.isFrozen());
+            testingPostgres.runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
+            final String content = testingPostgres
+                .runSelectStatement("select content from sourcefile where id = " + s.getId(), new ScalarHandler<>());
+            assertNotEquals("foo", content);
+        });
     }
 
     /**
@@ -564,12 +622,12 @@ public class GeneralWorkflowIT extends BaseIT {
         // Assert default version is updated and no author or email is found
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 matching workflow, there is " + count, 1, count);
+        assertEquals("there should be 1 matching workflow, there is " + count, 1, count);
 
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL' and author is null and email is null",
                         new ScalarHandler<>());
-        Assert.assertEquals("The given workflow shouldn't have any contact info", 1, count2);
+        assertEquals("The given workflow shouldn't have any contact info", 1, count2);
 
         // Update workflow with version with metadata
         Client.main(
@@ -579,12 +637,12 @@ public class GeneralWorkflowIT extends BaseIT {
         // Assert default version is updated and author and email are set
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where defaultversion = 'testBoth'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 matching workflow, there is " + count3, 1, count3);
+        assertEquals("there should be 1 matching workflow, there is " + count3, 1, count3);
 
         final long count4 = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where defaultversion = 'testBoth' and author = 'testAuthor' and email = 'testEmail'",
                 new ScalarHandler<>());
-        Assert.assertEquals("The given workflow should have contact info", 1, count4);
+        assertEquals("The given workflow should have contact info", 1, count4);
 
         // Unpublish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
@@ -617,9 +675,9 @@ public class GeneralWorkflowIT extends BaseIT {
         // check that workflow is valid and full
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 2 valid versions, there are " + count2, 2, count2);
+        assertEquals("there should be 2 valid versions, there are " + count2, 2, count2);
         final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
+        assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
 
         // Change path for each version so that it is invalid
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.cwl', dirtybit=true");
@@ -631,7 +689,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // check that invalid
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='f'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 4 invalid versions, there are " + count4, 4, count4);
+        assertEquals("there should be 4 invalid versions, there are " + count4, 4, count4);
 
         // Restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
@@ -659,7 +717,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Check that versions are invalid
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='f'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 4 invalid versions, there are " + count5, 4, count5);
+        assertEquals("there should be 4 invalid versions, there are " + count5, 4, count5);
 
         // should now not be able to publish
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
@@ -685,7 +743,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Check that no versions have a true dirty bit
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
-        Assert.assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
+        assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
 
         // Edit workflow path for a version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
@@ -694,7 +752,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // There should be on dirty bit
         final long count1 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
+        assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
 
         // Update default cwl
         Client.main(
@@ -705,7 +763,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'",
                         new ScalarHandler<>());
-        Assert.assertEquals("there should be 3 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 3, count2);
+        assertEquals("there should be 3 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 3, count2);
 
     }
 
@@ -724,11 +782,11 @@ public class GeneralWorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
                 SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
         final long nullLastModifiedWorkflowVersions = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
-        Assert.assertEquals("All Bitbucket workflow versions should have last modified populated after refreshing", 0, nullLastModifiedWorkflowVersions);
+        assertEquals("All Bitbucket workflow versions should have last modified populated after refreshing", 0, nullLastModifiedWorkflowVersions);
         // Check that no versions have a true dirty bit
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
-        Assert.assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
+        assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
 
         // Edit workflow path for a version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
@@ -737,7 +795,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // There should be on dirty bit
         final long count1 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
+        assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
 
         // Update default cwl
         Client.main(
@@ -748,7 +806,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'",
                         new ScalarHandler<>());
-        Assert.assertEquals("there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 4, count2);
+        assertEquals("there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 4, count2);
 
     }
 
@@ -765,22 +823,22 @@ public class GeneralWorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
                 SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
         final long nullLastModifiedWorkflowVersions = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
-        Assert.assertEquals("All GitLab workflow versions should have last modified populated after refreshing", 0, nullLastModifiedWorkflowVersions);
+        assertEquals("All GitLab workflow versions should have last modified populated after refreshing", 0, nullLastModifiedWorkflowVersions);
 
         // Check a few things
         final long count = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
                 new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 workflow, there are " + count, 1, count);
+        assertEquals("there should be 1 workflow, there are " + count, 1, count);
 
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 2 valid version, there are " + count2, 2, count2);
+        assertEquals("there should be 2 valid version, there are " + count2, 2, count2);
 
         final long count3 = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
                 new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 workflow, there are " + count3, 1, count3);
+        assertEquals("there should be 1 workflow, there are " + count3, 1, count3);
 
         // publish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
@@ -788,7 +846,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
                 new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 published workflow, there are " + count4, 1, count4);
+        assertEquals("there should be 1 published workflow, there are " + count4, 1, count4);
 
         // Should be able to get info since it is published
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "info", "--entry",
@@ -804,13 +862,13 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count5 = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
                 new ScalarHandler<>());
-        Assert.assertEquals("there should be 0 published workflows, there are " + count5, 0, count5);
+        assertEquals("there should be 0 published workflows, there are " + count5, 0, count5);
 
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and author is null and email is null and description is null",
                 new ScalarHandler<>());
-        Assert.assertEquals("The given workflow shouldn't have any contact info", 1, count6);
+        assertEquals("The given workflow shouldn't have any contact info", 1, count6);
 
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
@@ -819,7 +877,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count7 = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null",
                 new ScalarHandler<>());
-        Assert.assertEquals("The given workflow should now have contact info and description", 0, count7);
+        assertEquals("The given workflow should now have contact info and description", 0, count7);
 
         // restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
@@ -827,7 +885,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count8 = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
                 new ScalarHandler<>());
-        Assert.assertEquals("The workflow should now be a stub", 1, count8);
+        assertEquals("The workflow should now be a stub", 1, count8);
 
         // Convert to WDL workflow
         Client.main(
@@ -837,7 +895,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Should now be a WDL workflow
         final long count9 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where descriptortype='wdl'", new ScalarHandler<>());
-        Assert.assertEquals("there should be no 1 wdl workflow" + count9, 1, count9);
+        assertEquals("there should be no 1 wdl workflow" + count9, 1, count9);
 
     }
 
@@ -857,10 +915,10 @@ public class GeneralWorkflowIT extends BaseIT {
         // Check for two valid versions (wdl_import and surprisingly, cwl_import)
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='t' and (name='wdl_import' OR name='cwl_import')", new ScalarHandler<>());
-        Assert.assertEquals("There should be a valid 'wdl_import' version and a valid 'cwl_import' version", 2, count);
+        assertEquals("There should be a valid 'wdl_import' version and a valid 'cwl_import' version", 2, count);
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
-        Assert.assertEquals("All Bitbucket workflow versions should have last modified populated when manual published", 0, count2);
+        assertEquals("All Bitbucket workflow versions should have last modified populated when manual published", 0, count2);
 
         // grab wdl file
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
@@ -884,10 +942,10 @@ public class GeneralWorkflowIT extends BaseIT {
         // Check for one valid version
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 valid version, there are " + count, 1, count);
+        assertEquals("there should be 1 valid version, there are " + count, 1, count);
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
-        Assert.assertEquals("All GitLab workflow versions should have last modified populated when manual published", 0, count2);
+        assertEquals("All GitLab workflow versions should have last modified populated when manual published", 0, count2);
 
         // grab wdl file
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
@@ -910,13 +968,13 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
-        Assert.assertTrue("there should be at least 5 versions, there are " + count, count >= 5);
+        assertTrue("there should be at least 5 versions, there are " + count, count >= 5);
         final long branchCount = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where referencetype = 'BRANCH'", new ScalarHandler<>());
-        Assert.assertTrue("there should be at least 2 branches, there are " + count, branchCount >= 2);
+        assertTrue("there should be at least 2 branches, there are " + count, branchCount >= 2);
         final long tagCount = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where referencetype = 'TAG'", new ScalarHandler<>());
-        Assert.assertTrue("there should be at least 3 tags, there are " + count, tagCount >= 3);
+        assertTrue("there should be at least 3 tags, there are " + count, tagCount >= 3);
     }
 
     /**
@@ -938,7 +996,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Check for WDL files
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile where path='helper.wdl'", new ScalarHandler<>());
-        Assert.assertEquals("there should be 1 secondary file named helper.wdl, there are " + count, 1, count);
+        assertEquals("there should be 1 secondary file named helper.wdl, there are " + count, 1, count);
 
     }
 
@@ -960,7 +1018,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // There should be no sourcefiles
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertEquals("there should be no source files that are test parameter files, there are " + count, 0, count);
+        assertEquals("there should be no source files that are test parameter files, there are " + count, 0, count);
 
         // Update version master with test parameters
         Client.main(
@@ -969,7 +1027,7 @@ public class GeneralWorkflowIT extends BaseIT {
                         "test2.cwl.json", "--add", "fake.cwl.json", "--remove", "notreal.cwl.json", "--script" });
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertEquals("there should be two sourcefiles that are test parameter files, there are " + count2, 2, count2);
+        assertEquals("there should be two sourcefiles that are test parameter files, there are " + count2, 2, count2);
 
         // Update version with test parameters
         Client.main(
@@ -978,7 +1036,7 @@ public class GeneralWorkflowIT extends BaseIT {
                         "test2.cwl.json", "--script" });
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 1, count3);
+        assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 1, count3);
 
         // Update other version with test parameters
         Client.main(
@@ -986,7 +1044,7 @@ public class GeneralWorkflowIT extends BaseIT {
                         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "wdltest", "--add", "test.wdl.json", "--script" });
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertEquals("there should be two sourcefiles that are cwl test parameter files, there are " + count4, 2, count4);
+        assertEquals("there should be two sourcefiles that are cwl test parameter files, there are " + count4, 2, count4);
 
         // Restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
@@ -1001,7 +1059,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Should be no sourcefiles
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertEquals("there should be no source files that are test parameter files, there are " + count5, 0, count5);
+        assertEquals("there should be no source files that are test parameter files, there are " + count5, 0, count5);
 
         // Update version wdltest with test parameters
         Client.main(
@@ -1009,7 +1067,7 @@ public class GeneralWorkflowIT extends BaseIT {
                         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "wdltest", "--add", "test.wdl.json", "--script" });
         final long count6 = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertEquals("there should be one sourcefile that is a wdl test parameter file, there are " + count6, 1, count6);
+        assertEquals("there should be one sourcefile that is a wdl test parameter file, there are " + count6, 1, count6);
     }
 
     /**
@@ -1023,7 +1081,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Versions should be unverified
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where verified='true'", new ScalarHandler<>());
-        Assert.assertEquals("there should be no verified workflowversions, there are " + count, 0, count);
+        assertEquals("there should be no verified workflowversions, there are " + count, 0, count);
 
         // Refresh workflows
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
@@ -1041,7 +1099,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='Docker testing group'",
                         new ScalarHandler<>());
-        Assert.assertEquals("there should be one verified workflowversion, there are " + count2, 1, count2);
+        assertEquals("there should be one verified workflowversion, there are " + count2, 1, count2);
 
         // Update workflowversion to have new verified source
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
@@ -1052,7 +1110,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='Docker testing group2'",
                         new ScalarHandler<>());
-        Assert.assertEquals("there should be one verified workflowversion, there are " + count3, 1, count3);
+        assertEquals("there should be one verified workflowversion, there are " + count3, 1, count3);
 
         // Verify another version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
@@ -1062,7 +1120,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Version should be verified
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where verified='true'", new ScalarHandler<>());
-        Assert.assertEquals("there should be two verified workflowversions, there are " + count4, 2, count4);
+        assertEquals("there should be two verified workflowversions, there are " + count4, 2, count4);
 
         // Unverify workflowversion
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
@@ -1071,7 +1129,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Workflowversion should be unverified
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where verified='true'", new ScalarHandler<>());
-        Assert.assertEquals("there should be one verified workflowversion, there are " + count5, 1, count5);
+        assertEquals("there should be one verified workflowversion, there are " + count5, 1, count5);
     }
 
     /**
@@ -1091,6 +1149,6 @@ public class GeneralWorkflowIT extends BaseIT {
         // TODO: bizarrely, the new GitHub Java API library doesn't seem to handle bio
         // final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", new ScalarHandler<>());
         final long count = testingPostgres.runSelectStatement("select count(*) from user_profile where location='Toronto'", new ScalarHandler<>());
-        Assert.assertEquals("One user should have this info now, there are  " + count, 1, count);
+        assertEquals("One user should have this info now, there are  " + count, 1, count);
     }
 }

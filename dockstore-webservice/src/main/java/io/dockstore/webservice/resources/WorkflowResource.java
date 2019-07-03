@@ -664,8 +664,12 @@ public class WorkflowResource
 
         // Then copy over content that changed
         for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
+            // skip frozen versions
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
             if (existingVersionMap.containsKey(version.getName())) {
+                if (workflowVersionFromDB.isFrozen()) {
+                    continue;
+                }
                 workflowVersionFromDB.update(version);
             } else {
                 // create a new one and replace the old one
@@ -1551,6 +1555,9 @@ public class WorkflowResource
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
                 // remove existing copy and add the new one
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+                if (existingTag.isFrozen()) {
+                    continue;
+                }
 
                 // If path changed then update dirty bit to true
                 if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {

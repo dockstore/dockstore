@@ -28,7 +28,6 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.model.DescriptorType;
@@ -36,7 +35,6 @@ import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolVersion;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -200,7 +198,6 @@ public class ToolsImplCommonTest {
      * Those two versions are verified by separate groups
      * This tests all properties including the verified and verified sources but not meta-version.
      * Tests a workflow with/without a workflowname
-     * @throws Exception
      */
     @Test
     public void convertDockstoreWorkflowToTool() {
@@ -255,7 +252,7 @@ public class ToolsImplCommonTest {
         workflow.addWorkflowVersion(actualWorkflowVersion2);
         workflow.addWorkflowVersion(actualWorkflowVersion3);
         workflow.setMode(WorkflowMode.FULL);
-        workflow.setWorkflowName(TOOLNAME);
+        workflow.setWorkflowName(toolname);
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
         workflow.setSourceControl(SourceControl.GITHUB);
