@@ -159,13 +159,51 @@
         <setColumnRemarks columnName="lastupdated" tableName="tool" remarks="For automated builds: last time tool/namespace was refreshed Dockstore, tool info updated, default version selected. For hosted tools: when you created the tool"/>
         <setColumnRemarks columnName="lastupdated" tableName="workflow" remarks="For remote: When refresh all is hit for first time. Hosted: Time created."/>
     </changeSet>
-
     <changeSet author="natalieperez (generated)" id="changeLastBuildColumnName">
         <renameColumn tableName="tag" oldColumnName="lastmodified" newColumnName="lastbuilt"></renameColumn>
         <setColumnRemarks tableName="tag" columnName="lastbuilt" remarks="For automated builds: The last time the container backing this tool version was built. For hosted: N/A"></setColumnRemarks>
         <!-- Set lastbuilt to null for versions/tags of hosted tools -->
         <sql dbms="postgresql">
             UPDATE tag SET lastbuilt = null FROM tool_tag, tool WHERE tag.id = tool_tag.tagid AND tool.id = tool_tag.toolid AND tool.mode = 'HOSTED';
+        </sql>
+    </changeSet>
+    <changeSet id="dyuen" author="frozen">
+        <addColumn tableName="tag">
+            <column defaultValueBoolean="false" name="frozen" type="bool"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column defaultValueBoolean="false" name="frozen" type="bool"/>
+        </addColumn>
+        <addColumn tableName="sourcefile">
+            <column defaultValueBoolean="false" name="frozen" type="bool"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            /* lock down workflowversion table, even for dockstore user as table owner  */
+            alter table workflowversion enable row level security;
+            alter table workflowversion force row level security;
+            /* all users can read the table, but cannot update or delete frozen versions */
+            create policy select_frozenversions on workflowversion for select using (true);
+            create policy insert_frozenversions on workflowversion for insert with check (true);
+            create policy update_frozenversions on workflowversion for update using (not frozen) with check (true);
+            create policy delete_frozenversions on workflowversion for delete using (not frozen);
+
+            /* lock down workflowversion table, even for dockstore user as table owner  */
+            alter table tag enable row level security;
+            alter table tag force row level security;
+            /* all users can read the table, but cannot update or delete frozen versions */
+            create policy select_frozenversions on tag for select using (true);
+            create policy insert_frozenversions on tag for insert with check (true);
+            create policy update_frozenversions on tag for update using (not frozen) with check (true);
+            create policy delete_frozenversions on tag for delete using (not frozen);
+
+            /* lock down sourcefile table, even for dockstore user as table owner  */
+            alter table sourcefile enable row level security;
+            alter table sourcefile force row level security;
+            /* all users can read the table, but cannot update or delete frozen files */
+            create policy select_frozenfiles on sourcefile for select using (true);
+            create policy insert_frozenfiles on sourcefile for insert with check (true);
+            create policy update_frozenfiles on sourcefile for update using (not frozen) with check (true);
+            create policy delete_frozenfiles on sourcefile for delete using (not frozen);
         </sql>
     </changeSet>
 </databaseChangeLog>

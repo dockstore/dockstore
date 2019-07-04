@@ -35,7 +35,9 @@ import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -143,7 +145,21 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @return workflow with some attributes set
      */
-    public abstract Workflow initializeWorkflow(String repositoryId);
+    public abstract Workflow initializeWorkflow(String repositoryId, Workflow workflow);
+
+    /**
+     * Set up service with basic attributes from git repository
+     *
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
+     * @return service with some attributes set
+     */
+    public Service initializeService(String repositoryId) {
+        Service service = (Service)initializeWorkflow(repositoryId, new Service());
+        service.setDescriptorType(DescriptorLanguage.SERVICE);
+        service.setMode(WorkflowMode.SERVICE);
+        service.setDefaultWorkflowPath(".dockstore.yml");
+        return service;
+    }
 
     /**
      * Finds all of the workflow versions for a given workflow and store them and their corresponding source files
@@ -166,7 +182,7 @@ public abstract class SourceCodeRepoInterface {
      */
     public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
         // Initialize workflow
-        Workflow workflow = initializeWorkflow(repositoryId);
+        Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
 
         // Nextflow and (future) dockstore.yml workflow can be detected and handled without stubs
 

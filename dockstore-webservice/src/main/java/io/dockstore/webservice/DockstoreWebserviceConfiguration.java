@@ -118,6 +118,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private Integer discourseCategoryId;
 
     @NotNull
+    private String gitHubAppId;
+
+    @NotNull
+    private String gitHubAppPrivateKeyFile;
+
+    @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
 
     private String sqsURL;
@@ -378,6 +384,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setDiscourseCategoryId(Integer discourseCategoryId) {
         this.discourseCategoryId = discourseCategoryId;
+    }
+
+    public String getGitHubAppId() {
+        return gitHubAppId;
+    }
+
+    public void setGitHubAppId(String gitHubAppId) {
+        this.gitHubAppId = gitHubAppId;
+    }
+
+    public String getGitHubAppPrivateKeyFile() {
+        return gitHubAppPrivateKeyFile;
+    }
+
+    public void setGitHubAppPrivateKeyFile(String gitHubAppPrivateKeyFile) {
+        this.gitHubAppPrivateKeyFile = gitHubAppPrivateKeyFile;
     }
 
     @JsonProperty("esconfiguration")
