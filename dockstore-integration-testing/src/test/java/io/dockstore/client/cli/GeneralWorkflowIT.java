@@ -278,7 +278,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 "--hidden", "true", "--script" });
 
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from workflowversion where name = 'master' and hidden = 't' and workflowpath = '/Dockstore2.wdl'",
+                "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'master' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
                 new ScalarHandler<>());
         assertEquals("there should be 1 matching workflow version, there is " + count, 1, count);
     }
@@ -1089,7 +1089,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Versions should be unverified
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", new ScalarHandler<>());
         assertEquals("there should be no verified workflowversions, there are " + count, 0, count);
 
         // Refresh workflows
@@ -1106,7 +1106,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Version should be verified
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='Docker testing group'",
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group' and wv.id = vm.id",
                         new ScalarHandler<>());
         assertEquals("there should be one verified workflowversion, there are " + count2, 1, count2);
 
@@ -1117,7 +1117,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Version should have new verified source
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='Docker testing group2'",
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group2' and wv.id = vm.id",
                         new ScalarHandler<>());
         assertEquals("there should be one verified workflowversion, there are " + count3, 1, count3);
 
@@ -1128,7 +1128,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Version should be verified
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", new ScalarHandler<>());
         assertEquals("there should be two verified workflowversions, there are " + count4, 2, count4);
 
         // Unverify workflowversion
@@ -1137,7 +1137,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Workflowversion should be unverified
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", new ScalarHandler<>());
         assertEquals("there should be one verified workflowversion, there are " + count5, 1, count5);
     }
 

@@ -303,14 +303,14 @@ public class GeneralIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "true", "--script" });
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", new ScalarHandler<>());
         assertEquals("there should be 1 hidden tag", 1, count);
 
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "false", "--script" });
 
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", new ScalarHandler<>());
         assertEquals("there should be 0 hidden tag", 0, count2);
     }
 
