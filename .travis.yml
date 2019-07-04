@@ -61,10 +61,6 @@ jobs:
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=other-integration-tests
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -Djavax.net.ssl.trustStore=LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit
-      env:
-        - TESTING_PROFILE=non-confidential-tests
         
 # not feeling the bang-for-the-buck for these, running only in release branch         
     - stage: coverage
