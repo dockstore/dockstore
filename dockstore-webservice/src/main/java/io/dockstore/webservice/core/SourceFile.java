@@ -87,6 +87,10 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
     private String absolutePath;
 
+    @Column(columnDefinition = "boolean default false")
+    @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
+    private boolean frozen = false;
+
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -183,6 +187,14 @@ public class SourceFile implements Comparable<SourceFile> {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).toString();
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
     }
 
     /**

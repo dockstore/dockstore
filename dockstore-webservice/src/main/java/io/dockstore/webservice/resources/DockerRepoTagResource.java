@@ -109,6 +109,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             if (mapOfExistingTags.containsKey(tag.getId())) {
                 // remove existing copy and add the new one
                 Tag existingTag = mapOfExistingTags.get(tag.getId());
+                if (existingTag.isFrozen()) {
+                    continue;
+                }
 
                 // If any paths have changed then set dirty bit to true
                 boolean dirtyBitCheck = new EqualsBuilder().append(existingTag.getCwlPath(), tag.getCwlPath())

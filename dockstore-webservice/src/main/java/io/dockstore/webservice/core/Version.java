@@ -90,6 +90,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
             + "Workflow-> Remote: Last time version on GitHub repo was changed. Hosted: time version created", position = 1)
     Date lastModified;
 
+    @Column(columnDefinition = "boolean default false")
+    @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
+    private boolean frozen = false;
+
     @Column(columnDefinition = "text default 'UNSET'", nullable = false)
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates the type of git (or other source control) reference")
@@ -196,6 +200,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
+        this.setFrozen(version.frozen);
     }
 
     public abstract String getWorkingDirectory();
@@ -205,12 +210,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         lastModified = version.getLastModified();
         name = version.getName();
         referenceType = version.getReferenceType();
+        frozen = version.isFrozen();
     }
 
     public void clone(T version) {
         name = version.getName();
         lastModified = version.getLastModified();
         referenceType = version.getReferenceType();
+        frozen = version.isFrozen();
     }
 
     @JsonProperty
@@ -365,6 +372,17 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setDbUpdateDate(Timestamp dbUpdateDate) {
         this.dbUpdateDate = dbUpdateDate;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
+        // freeze sourcefiles as well, this ideally would be de-normalized but postgres doesn't do multi-table constraints and
+        // multitable row-level security is an even bigger pain
+        this.sourceFiles.forEach(s -> s.setFrozen(frozen));
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }

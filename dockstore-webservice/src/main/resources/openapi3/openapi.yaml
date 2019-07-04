@@ -459,6 +459,8 @@ components:
           type: string
         content:
           type: string
+        frozen:
+          type: boolean
         id:
           format: int64
           type: integer
@@ -509,6 +511,8 @@ components:
           type: string
         doiURL:
           type: string
+        frozen:
+          type: boolean
         hidden:
           type: boolean
         id:
@@ -817,6 +821,8 @@ components:
           type: string
         doiURL:
           type: string
+        frozen:
+          type: boolean
         hidden:
           type: boolean
         id:
@@ -1000,6 +1006,8 @@ components:
           type: string
         doiURL:
           type: string
+        frozen:
+          type: boolean
         hidden:
           type: boolean
         id:
