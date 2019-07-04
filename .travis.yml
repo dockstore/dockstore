@@ -42,7 +42,6 @@ jobs:
 #      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
 #      - scripts/check_migrations.sh
 
-
     - stage: coverage
       env:
         - TESTING_PROFILE=unit-tests
@@ -93,7 +92,6 @@ before_install:
 # codacy hookup
 - sudo apt-get install jq
 - wget --no-verbose -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
-- keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
 
 install:
 - docker version
