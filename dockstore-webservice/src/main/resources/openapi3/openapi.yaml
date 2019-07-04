@@ -477,7 +477,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
-          - OTHER
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         verifiedBySource:
           additionalProperties:
@@ -782,7 +782,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
-          - OTHER
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         valid:
           type: boolean
@@ -1299,7 +1299,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       parameters:
       - in: path
         name: organization
@@ -1314,7 +1314,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       responses:
         default:
           content:

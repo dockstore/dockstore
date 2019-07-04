@@ -7016,7 +7016,7 @@ components:
             - DOCKSTORE_YML
             - DOCKSTORE_SERVICE_YML
             - DOCKSTORE_SERVICE_TEST_JSON
-            - OTHER
+            - DOCKSTORE_SERVICE_OTHER
         content:
           type: string
           description: Cache for the contents of the target file
@@ -7514,7 +7514,7 @@ components:
             - DOCKSTORE_YML
             - DOCKSTORE_SERVICE_YML
             - DOCKSTORE_SERVICE_TEST_JSON
-            - OTHER
+            - DOCKSTORE_SERVICE_OTHER
         valid:
           type: boolean
           description: Is the file type valid

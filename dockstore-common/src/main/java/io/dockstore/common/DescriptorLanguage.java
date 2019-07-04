@@ -53,7 +53,7 @@ public enum DescriptorLanguage {
     SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON, true) {
         @Override
         public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.OTHER;
+            return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_SERVICE_OTHER;
         }
     };
 
@@ -156,7 +156,7 @@ public enum DescriptorLanguage {
      */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML, DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON, OTHER
+        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML, DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON, DOCKSTORE_SERVICE_OTHER
         // DOCKSTORE_SWL, SWL_TEST_JSON
         // DOCKSTORE-2428 - demo how to add new workflow language
     }

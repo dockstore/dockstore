@@ -6815,7 +6815,7 @@ definitions:
         - "DOCKSTORE_YML"
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
-        - "OTHER"
+        - "DOCKSTORE_SERVICE_OTHER"
       content:
         type: "string"
         position: 2
@@ -7357,7 +7357,7 @@ definitions:
         - "DOCKSTORE_YML"
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
-        - "OTHER"
+        - "DOCKSTORE_SERVICE_OTHER"
       valid:
         type: "boolean"
         position: 2
