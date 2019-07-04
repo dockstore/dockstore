@@ -1346,6 +1346,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <skipClientITs>false</skipClientITs>
+                <argLine>-Xmx2048m</argLine>
                 <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
             </properties>
         </profile>

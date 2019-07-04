@@ -39,12 +39,13 @@ jobs:
           command: |
             mvn --batch-mode clean install -Punit-tests
       - run:
-          name: run TokenResourceIT
+          name: run the non-confidential integration tests
           command: |
-            sudo apt install -y wget
-            wget https://raw.githubusercontent.com/SpectoLabs/hoverfly/master/core/cert.pem
-            sudo $JAVA_HOME/bin/keytool -cacerts -importcert -trustcacerts -alias hoverfly -file cert.pem -storepass changeit -noprompt
-            mvn --batch-mode clean install -Pnon-confidential-tests
+            mvn clean install -DskipTests
+            keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+            cd dockstore-integration-testing
+            mvn --batch-mode verify -Pnon-confidential-tests -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit
+            cd ..
       - run:
           name: check that JPA classes are consistent with migrations
           command: |

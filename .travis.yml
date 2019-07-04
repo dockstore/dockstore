@@ -62,7 +62,7 @@ jobs:
       env:
         - TESTING_PROFILE=other-integration-tests
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -Djavax.net.ssl.keyStore=LocalTrustStore -Djavax.net.ssl.keyStorePassword=changeit
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -Djavax.net.ssl.trustStore=LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit
       env:
         - TESTING_PROFILE=non-confidential-tests
         
@@ -97,6 +97,7 @@ before_install:
 # codacy hookup
 - sudo apt-get install jq
 - wget --no-verbose -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
+- keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
 
 install:
 - docker version
