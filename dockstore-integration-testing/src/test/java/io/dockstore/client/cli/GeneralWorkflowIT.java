@@ -547,7 +547,7 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testFreezingWorkflow() throws ApiException {
+    public void testWorkflowFreezing() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);

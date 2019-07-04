@@ -160,7 +160,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         configureMapper(bootstrap.getObjectMapper());
 
-
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
 

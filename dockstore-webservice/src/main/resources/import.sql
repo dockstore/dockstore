@@ -29,3 +29,7 @@ ALTER TABLE token ADD CONSTRAINT fk_userid_with_enduser FOREIGN KEY (userid) REF
 -- https://liquibase.jira.com/browse/CORE-2895
 CREATE UNIQUE INDEX organization_name_index on organization (LOWER(name));
 CREATE UNIQUE INDEX collection_name_index on collection (LOWER(name), organizationid);
+-- JPA doesn't seem to understand deferrable constraints - this is a terrible fix to alter the auto generated constraints
+-- we also can't seem to customize the naming ... sigh
+ALTER TABLE tag alter CONSTRAINT fk_6yv7s5k85a0emvco4ikb6t5ps DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE workflowversion alter CONSTRAINT fk_25o6afine0dolbhs0hqhnh4ao DEFERRABLE INITIALLY DEFERRED;
