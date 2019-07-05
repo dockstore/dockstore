@@ -345,6 +345,7 @@ public class ServiceIT extends BaseIT {
 
             session.flush();
             transaction.commit();
+            session.close();
             return this;
         }
     }
