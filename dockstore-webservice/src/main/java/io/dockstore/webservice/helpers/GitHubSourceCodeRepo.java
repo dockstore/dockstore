@@ -405,7 +405,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (workflow.getMode() == WorkflowMode.SERVICE) {
             version = setupServiceFilesForVersion(calculatedPath, ref, repository, version);
             if (version == null) {
-                return version;
+                return null;
             }
         } else {
             version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, repositoryId, existingDefaults);
@@ -662,21 +662,23 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param repository Github repostory name (ex. dockstore/dockstore-ui2)
      * @param gitReference GitHub reference object
      * @param workflows Workflows to upsert version
-     * @return list of workflows with new/updated version
+     * @return list of workflow versions that were updated
      */
-    public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
+    public List<WorkflowVersion> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
         GHRepository ghRepository = getRepository(repository);
+        List<WorkflowVersion> list = new ArrayList<>();
         for (Workflow workflow : workflows) {
 
             WorkflowVersion version;
             try {
                 version = getTagVersion(ghRepository, gitReference, workflow);
                 workflow.addWorkflowVersion(version);
+                list.add(version);
             } catch (IOException ex) {
                 LOG.error("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
             }
         }
-        return workflows;
+        return list;
     }
 
     /**
@@ -686,7 +688,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflow Workflow to upsert version to
      * @return Workflow version corresponding to GitHub tag
      */
-    public WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) throws IOException {
+    private WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) throws IOException {
         String refName = "tags/" + gitReference;
         GHRef ghRef = ghRepository.getRef(refName);
 
@@ -699,9 +701,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // Find existing version if it exists
         Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-        if (existingVersion.isPresent()) {
-            existingDefaults.put(gitReference, existingVersion.get());
-        }
+        existingVersion.ifPresent(workflowVersion -> existingDefaults.put(gitReference, workflowVersion));
 
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
