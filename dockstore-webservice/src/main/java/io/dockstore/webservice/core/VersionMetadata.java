@@ -20,6 +20,9 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapsId;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
@@ -44,7 +47,13 @@ public class VersionMetadata {
     @Enumerated(EnumType.STRING)
     protected Version.DOIStatus doiStatus;
 
+    @MapsId
+    @OneToOne
+    @JoinColumn(name = "id")
+    protected Version parent;
+
     @Id
+    @Column(name = "id")
     private long id;
 
     public long getId() {

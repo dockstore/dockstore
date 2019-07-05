@@ -39,14 +39,7 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
     public long create(T tag) {
         // ensure id of metadata object is correct
-        final long id = persist(tag).getId();
-        if (tag.getVersionMetadata() == null) {
-            final VersionMetadata versionMetadata = new VersionMetadata();
-            tag.setVersionMetadata(versionMetadata);
-        }
-        tag.getVersionMetadata().setId(id);
-        metadataDAO.create(tag.getVersionMetadata());
-        return id;
+        return persist(tag).getId();
     }
 
     public void delete(T version) {

@@ -117,7 +117,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private boolean dirtyBit = false;
 
     @JsonIgnore
-    @OneToOne(optional = false)
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent")
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private VersionMetadata versionMetadata = new VersionMetadata();
 
@@ -156,6 +157,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
         versionMetadata.doiStatus = DOIStatus.NOT_REQUESTED;
+        versionMetadata.parent = this;
     }
 
     @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)

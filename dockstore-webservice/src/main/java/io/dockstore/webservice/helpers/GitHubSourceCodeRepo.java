@@ -662,23 +662,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param repository Github repostory name (ex. dockstore/dockstore-ui2)
      * @param gitReference GitHub reference object
      * @param workflows Workflows to upsert version
-     * @return list of workflow versions that were updated
+     * @return workflows with new/updated version
      */
-    public List<WorkflowVersion> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
+    public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
         GHRepository ghRepository = getRepository(repository);
-        List<WorkflowVersion> list = new ArrayList<>();
         for (Workflow workflow : workflows) {
 
             WorkflowVersion version;
             try {
                 version = getTagVersion(ghRepository, gitReference, workflow);
                 workflow.addWorkflowVersion(version);
-                list.add(version);
             } catch (IOException ex) {
                 LOG.error("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
             }
         }
-        return list;
+        return workflows;
     }
 
     /**

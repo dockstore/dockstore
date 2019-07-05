@@ -604,11 +604,7 @@ public class WorkflowResource
             }
 
             // Pull new version information from GitHub and update the versions
-            final List<WorkflowVersion> workflowVersions = sourceCodeRepo.upsertVersionForWorkflows(repository, gitReference, workflows);
-            for (WorkflowVersion version : workflowVersions) {
-                // not sure why, but need to make sure versions are created
-                this.workflowVersionDAO.create(version);
-            }
+            workflows = sourceCodeRepo.upsertVersionForWorkflows(repository, gitReference, workflows);
 
             // Update each workflow with reference types
             for (Workflow workflow : workflows) {
