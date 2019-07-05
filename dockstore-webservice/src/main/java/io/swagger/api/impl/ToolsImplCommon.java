@@ -206,7 +206,7 @@ public final class ToolsImplCommon {
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
                 if (isDockstoreTool) {
-                    io.dockstore.webservice.core.Tag castedTag = (io.dockstore.webservice.core.Tag)version;
+                    Tag castedTag = (Tag)version;
                     toolVersion.setMetaVersion(String.valueOf(castedTag.getLastBuilt() != null ? castedTag.getLastBuilt() : new Date(0)));
                 }
                 else {

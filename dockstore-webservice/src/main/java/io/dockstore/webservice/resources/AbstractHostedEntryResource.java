@@ -238,7 +238,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         entry.getWorkflowVersions().add(getVersionDAO().findById(l));
         FileFormatHelper.updateFileFormats(entry.getWorkflowVersions(), fileFormatDAO);
         // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
-        if (validatedVersion instanceof io.dockstore.webservice.core.WorkflowVersion) {
+        if (validatedVersion instanceof WorkflowVersion) {
             entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());
         }
         userDAO.clearCache();
