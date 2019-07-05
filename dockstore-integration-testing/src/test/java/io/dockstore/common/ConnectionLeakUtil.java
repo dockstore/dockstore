@@ -55,7 +55,7 @@ public class ConnectionLeakUtil {
             System.out.println(currentConnectionLeakCount);
             System.out.println(connectionLeakCount);
             // This should be 0, but it's always one. Either this code is wrong or that there's always a connection leak of 1
-            if ( diff > 1 ) {
+            if ( diff > 0 ) {
                 throw new Exception(
                         String.format(
                                 "%d connection(s) have been leaked! Previous leak count: %d, Current leak count: %d",
