@@ -19,6 +19,7 @@ import java.io.File;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.ConnectionLeakUtil;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -55,15 +56,34 @@ public class BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
-
+    public static ConnectionLeakUtil connectionLeakUtil;
+    public static final boolean enableConnectionLeakDetection = true;
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
+        initConnectionLeakUtility();
     }
 
+    public static void initConnectionLeakUtility() {
+        String url = SUPPORT.getConfiguration().getDataSourceFactory().getUrl();
+        String user = SUPPORT.getConfiguration().getDataSourceFactory().getUser();
+        String password = SUPPORT.getConfiguration().getDataSourceFactory().getPassword();
+        if ( enableConnectionLeakDetection ) {
+            connectionLeakUtil = new ConnectionLeakUtil(url, user, password);
+        }
+    }
+
+    public static void assertNoLeaks() throws Exception {
+        if ( enableConnectionLeakDetection ) {
+            connectionLeakUtil.assertNoLeaks();
+        }
+    }
+
+
     @AfterClass
-    public static void afterClass(){
+    public static void afterClass() throws Exception {
+        assertNoLeaks();
         SUPPORT.after();
     }
 
