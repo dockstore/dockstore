@@ -21,12 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -75,16 +73,15 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
-import static org.powermock.api.easymock.PowerMock.verify;
 
 /**
- * This test does not require confidential data
+ * This test does not require confidential data. It does however require the Hoverfly's self-signed certificate.
  * @author gluu
  * @since 24/07/18
  */
 @Category(NonConfidentialTest.class)
 public class TokenResourceIT {
-    public static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
+    private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH);
 
@@ -421,7 +418,6 @@ public class TokenResourceIT {
         io.swagger.client.model.Token case1Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 1 check (Google account without Google token, no GitHub account)
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case1Token.getUsername());
-        verify(GoogleHelper.class);
     }
 
     /**
@@ -472,7 +468,6 @@ public class TokenResourceIT {
                 .addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 2 Google account without Google token, GitHub account with Google token
         Assert.assertEquals(GITHUB_ACCOUNT_USERNAME, case2Token.getUsername());
-        verify(GoogleHelper.class);
     }
 
     /**
@@ -505,7 +500,6 @@ public class TokenResourceIT {
 
         // Case 6 check (No Google account, have GitHub account with Google token)
         Assert.assertEquals(GITHUB_ACCOUNT_USERNAME, case6Token.getUsername());
-        verify(GoogleHelper.class);
     }
 
     /**
@@ -543,7 +537,6 @@ public class TokenResourceIT {
         Assert.assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
         Assert.assertEquals(2, token.getId().longValue());
         checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString(), TokenType.GITHUB_COM.toString()));
-        verify(GoogleHelper.class);
     }
 
     /**
@@ -583,7 +576,6 @@ public class TokenResourceIT {
         Assert.assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
         Assert.assertEquals(2, token.getId().longValue());
         checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString(), TokenType.GITHUB_COM.toString()));
-        verify(GoogleHelper.class);
     }
 
     /**
