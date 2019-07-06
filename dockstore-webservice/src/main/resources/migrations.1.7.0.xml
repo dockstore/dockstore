@@ -159,6 +159,14 @@
         <setColumnRemarks columnName="lastupdated" tableName="tool" remarks="For automated builds: last time tool/namespace was refreshed Dockstore, tool info updated, default version selected. For hosted tools: when you created the tool"/>
         <setColumnRemarks columnName="lastupdated" tableName="workflow" remarks="For remote: When refresh all is hit for first time. Hosted: Time created."/>
     </changeSet>
+    <changeSet author="natalieperez (generated)" id="changeLastBuildColumnName">
+        <renameColumn tableName="tag" oldColumnName="lastmodified" newColumnName="lastbuilt"></renameColumn>
+        <setColumnRemarks tableName="tag" columnName="lastbuilt" remarks="For automated builds: The last time the container backing this tool version was built. For hosted: N/A"></setColumnRemarks>
+        <!-- Set lastbuilt to null for versions/tags of hosted tools -->
+        <sql dbms="postgresql">
+            UPDATE tag SET lastbuilt = null FROM tool_tag, tool WHERE tag.id = tool_tag.tagid AND tool.id = tool_tag.toolid AND tool.mode = 'HOSTED';
+        </sql>
+    </changeSet>
     <changeSet id="dyuen" author="frozen">
         <addColumn tableName="tag">
             <column defaultValueBoolean="false" name="frozen" type="bool"/>

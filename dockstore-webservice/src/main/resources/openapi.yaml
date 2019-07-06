@@ -6361,6 +6361,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6376,10 +6380,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6567,6 +6567,10 @@ components:
           items:
             $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
               ockstore"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6582,10 +6586,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7065,12 +7065,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
-        last_modified:
-          type: string
-          format: date-time
-          description: "Tool-> For automated builds: Last time specific tag was built. For
-            hosted: When version was created Workflow-> Remote: Last time
-            version on GitHub repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch
@@ -7132,6 +7126,16 @@ components:
             build on quay.io
         workingDirectory:
           type: string
+        last_modified:
+          type: string
+          format: date-time
+          description: "For automated tools: The last time the container backing this tool
+            version was built. For hosted: N/A"
+        last_built:
+          type: string
+          format: date-time
+          description: "For automated tools: The last time the container backing this tool
+            version was built. For hosted: N/A"
         image_id:
           type: string
         input_file_formats:
@@ -7584,6 +7588,10 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7599,10 +7607,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7765,9 +7769,8 @@ components:
         last_modified:
           type: string
           format: date-time
-          description: "Tool-> For automated builds: Last time specific tag was built. For
-            hosted: When version was created Workflow-> Remote: Last time
-            version on GitHub repo was changed. Hosted: time version created"
+          description: "Remote: Last time version on GitHub repo was changed. Hosted: time
+            version created."
         reference:
           type: string
           description: git commit/tag/branch
@@ -7863,12 +7866,6 @@ components:
             $ref: "#/components/schemas/Validation"
         workingDirectory:
           type: string
-        last_modified:
-          type: string
-          format: date-time
-          description: "Tool-> For automated builds: Last time specific tag was built. For
-            hosted: When version was created Workflow-> Remote: Last time
-            version on GitHub repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch

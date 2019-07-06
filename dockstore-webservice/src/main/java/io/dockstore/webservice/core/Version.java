@@ -17,7 +17,6 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
-import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -45,8 +44,6 @@ import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.Cascade;
@@ -83,12 +80,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 22)
     String commitID;
-
-    @Column
-    @JsonProperty("last_modified")
-    @ApiModelProperty(value = "Tool-> For automated builds: Last time specific tag was built. For hosted: When version was created "
-            + "Workflow-> Remote: Last time version on GitHub repo was changed. Hosted: time version created", position = 1)
-    Date lastModified;
 
     @Column(columnDefinition = "boolean default false")
     @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
@@ -207,7 +198,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void update(T version) {
         valid = version.isValid();
-        lastModified = version.getLastModified();
         name = version.getName();
         referenceType = version.getReferenceType();
         frozen = version.isFrozen();
@@ -215,7 +205,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void clone(T version) {
         name = version.getName();
-        lastModified = version.getLastModified();
         referenceType = version.getReferenceType();
         frozen = version.isFrozen();
     }
@@ -223,15 +212,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JsonProperty
     public long getId() {
         return id;
-    }
-
-    @JsonProperty
-    public Date getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(Date lastModified) {
-        this.lastModified = lastModified;
     }
 
     @JsonProperty
@@ -389,31 +369,5 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, lastModified, reference, hidden, valid, name, commitID);
-    }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        final Version other = (Version)obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects
-            .equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid)
-            && Objects.equals(this.name, other.name) && Objects.equals(this.commitID, other.commitID);
-    }
-
-    @Override
-    public int compareTo(T that) {
-        return ComparisonChain.start().compare(this.id, that.id, Ordering.natural().nullsLast())
-            .compare(this.lastModified, that.lastModified, Ordering.natural().nullsLast())
-            .compare(this.reference, that.reference, Ordering.natural().nullsLast())
-            .compare(this.name, that.name, Ordering.natural().nullsLast())
-            .compare(this.commitID, that.commitID, Ordering.natural().nullsLast()).result();
-    }
 }
