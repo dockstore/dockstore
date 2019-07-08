@@ -55,20 +55,22 @@ public final class CommonTestUtilities {
     /**
      * confidential testing config, includes keys
      */
-    public static final String CONFIDENTIAL_CONFIG_PATH = getConfidentialConfigPath();
+    public static final String CONFIDENTIAL_CONFIG_PATH;
     static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
+
+    static {
+        String confidentialConfigPath = null;
+        try {
+            confidentialConfigPath = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
+        } catch (Exception e) {
+            LOG.error("Confidential Dropwizard configuration file not found.", e);
+
+        }
+        CONFIDENTIAL_CONFIG_PATH = confidentialConfigPath;
+    }
 
     private CommonTestUtilities() {
 
-    }
-
-    private static String getConfidentialConfigPath() {
-        try {
-            return ResourceHelpers.resourceFilePath("dockstoreTest.yml");
-        } catch (Exception e) {
-            LOG.error("Confidential Dropwizard configuration file not found.", e);
-            return null;
-        }
     }
 
     /**
