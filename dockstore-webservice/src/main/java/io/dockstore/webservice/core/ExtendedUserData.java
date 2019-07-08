@@ -38,7 +38,7 @@ public class ExtendedUserData {
             this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished) && !authorizer.isSharing(user)
                     && user.getOrganizations().size() == 0;
         } catch (Exception e) {
-            LOG.error("SAM is improperly configured.");
+            LOG.error("SAM is improperly configured.", e);
             this.canChangeUsername = false;
         }
     }

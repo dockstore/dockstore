@@ -66,7 +66,7 @@ public final class CommonTestUtilities {
         try {
             return ResourceHelpers.resourceFilePath("dockstoreTest.yml");
         } catch (Exception e) {
-            LOG.debug("Confidential Dropwizard configuration file not found");
+            LOG.error("Confidential Dropwizard configuration file not found.", e);
             return null;
         }
     }
