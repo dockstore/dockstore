@@ -17,7 +17,6 @@
 package io.dockstore.webservice.jdbi;
 
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.VersionMetadata;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
@@ -26,11 +25,8 @@ import org.hibernate.SessionFactory;
  */
 public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
-    private MetadataDAO metadataDAO;
-
-    public VersionDAO(SessionFactory sessionFactory) {
+    VersionDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
-        this.metadataDAO = new MetadataDAO(sessionFactory);
     }
 
     public T findById(Long id) {
@@ -44,15 +40,5 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
     public void delete(T version) {
         currentSession().delete(version);
-    }
-
-    public class MetadataDAO extends AbstractDAO<VersionMetadata> {
-        public MetadataDAO(SessionFactory sessionFactory) {
-            super(sessionFactory);
-        }
-
-        public long create(VersionMetadata entry) {
-            return persist(entry).getId();
-        }
     }
 }
