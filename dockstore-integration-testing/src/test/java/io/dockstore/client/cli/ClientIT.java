@@ -232,7 +232,7 @@ public class ClientIT extends BaseIT {
     @Test
     public void testDepsCommandWithVersionAndPython3() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.4.0", "--python-version", "3"});
-        Assert.assertTrue(systemOutRule.getLog().contains("avro-cwl=="));
+        Assert.assertFalse(systemOutRule.getLog().contains("avro-cwl=="));
         assertDepsCommandOutput();
     }
 
@@ -257,7 +257,7 @@ public class ClientIT extends BaseIT {
     @Test
     public void testDepsCommand() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps" });
-        Assert.assertTrue(systemOutRule.getLog().contains("avro=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("monotonic=="));
         assertDepsCommandOutput();
     }
 
