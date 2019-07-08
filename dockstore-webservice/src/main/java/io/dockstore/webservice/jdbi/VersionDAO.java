@@ -34,7 +34,6 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     }
 
     public long create(T tag) {
-        // ensure id of metadata object is correct
         return persist(tag).getId();
     }
 
