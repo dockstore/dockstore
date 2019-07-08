@@ -235,10 +235,10 @@
         <dropColumn columnName="verified" tableName="workflowversion"/>
         <dropColumn columnName="verifiedsource" tableName="tag"/>
         <dropColumn columnName="verifiedsource" tableName="workflowversion"/>
-        <addForeignKeyConstraint baseColumnNames="id" baseTableName="workflowversion" constraintName="fk_25o6afine0dolbhs0hqhnh4ao" deferrable="true"
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="workflowversion" constraintName="fk_workflowVersionMetadata" deferrable="true"
                                  initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
                                  referencedTableName="version_metadata"/>
-        <addForeignKeyConstraint baseColumnNames="id" baseTableName="tag" constraintName="fk_6yv7s5k85a0emvco4ikb6t5ps" deferrable="true"
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="tag" constraintName="fk_tagVersionMetadata" deferrable="true"
                                  initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
                                  referencedTableName="version_metadata"/>
     </changeSet>
