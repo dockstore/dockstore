@@ -479,7 +479,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
-          - OTHER
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         verifiedBySource:
           additionalProperties:
@@ -789,7 +789,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
-          - OTHER
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         valid:
           type: boolean
