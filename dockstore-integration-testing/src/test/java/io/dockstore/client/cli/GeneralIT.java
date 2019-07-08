@@ -795,7 +795,7 @@ public class GeneralIT extends BaseIT {
         assertFalse(fakeUserExists);
 
         // Unauthorized user should fail
-        ApiClient unauthClient = getWebClient(false, "");
+        ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "");
         UsersApi unauthUserApi = new UsersApi(unauthClient);
         boolean failed = false;
         try {
@@ -815,10 +815,10 @@ public class GeneralIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         EntriesApi entryApi = new EntriesApi(webClient);
 
-        final ApiClient anonWebClient = getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Add tool
@@ -873,10 +873,10 @@ public class GeneralIT extends BaseIT {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
-        final ApiClient anonWebClient = getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool

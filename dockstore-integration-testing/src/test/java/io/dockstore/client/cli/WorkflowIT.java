@@ -200,7 +200,7 @@ public class WorkflowIT extends BaseIT {
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false, null));
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null));
         Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(webClient);
         boolean exceptionThrown = false;
         try {
@@ -352,7 +352,7 @@ public class WorkflowIT extends BaseIT {
         boolean thrownException = false;
         try {
             SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
-            }, getWebClient(false, null));
+            }, CommonTestUtilities.getWebClient(false, null));
         } catch (Exception e) {
             thrownException = true;
         }
@@ -361,7 +361,7 @@ public class WorkflowIT extends BaseIT {
         // Download published workflow version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--script" });
         arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
-        }, getWebClient(false, null));
+        }, CommonTestUtilities.getWebClient(false, null));
         write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
         zipFile = new ZipFile(write.toFile());
         assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
@@ -391,10 +391,10 @@ public class WorkflowIT extends BaseIT {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
 
-        final ApiClient anonWebClient = getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null);
         WorkflowsApi anonWorkflowApi = new WorkflowsApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME);
         WorkflowsApi otherUserWorkflowApi = new WorkflowsApi(otherUserWebClient);
 
         // Register and refresh workflow
@@ -1214,7 +1214,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.refresh(workflowByPathGithub.getId());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false, null));
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null));
         boolean thrownException = false;
         try {
             anonymousGa4Ghv2Api
