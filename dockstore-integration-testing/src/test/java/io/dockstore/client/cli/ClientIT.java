@@ -273,7 +273,6 @@ public class ClientIT extends BaseIT {
     }
 
     private void assertDepsCommandOutput() {
-        Assert.assertTrue(systemOutRule.getLog().contains("setuptools=="));
         Assert.assertTrue(systemOutRule.getLog().contains("cwl-runner"));
         Assert.assertTrue(systemOutRule.getLog().contains("cwltool=="));
         Assert.assertTrue(systemOutRule.getLog().contains("schema-salad=="));
