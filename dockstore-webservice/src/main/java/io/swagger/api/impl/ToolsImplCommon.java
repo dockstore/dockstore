@@ -89,6 +89,7 @@ public final class ToolsImplCommon {
     public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config) {
         String url;
         String newID = getNewId(container);
+        boolean isDockstoreTool;
         url = getUrlFromId(config, newID);
         if (url == null) {
             return null;
@@ -109,6 +110,7 @@ public final class ToolsImplCommon {
         // tool specific
         io.dockstore.webservice.core.Tool castedContainer = null;
         if (container instanceof io.dockstore.webservice.core.Tool) {
+            isDockstoreTool = true;
             castedContainer = (io.dockstore.webservice.core.Tool)container;
 
             // The name is composed of the repository name and then the optional toolname split with a '/'
@@ -119,6 +121,7 @@ public final class ToolsImplCommon {
             tool.setOrganization(castedContainer.getNamespace());
             inputVersions = castedContainer.getWorkflowVersions();
         } else if (container instanceof Workflow) {
+            isDockstoreTool = false;
             // workflow specific
             Workflow workflow = (Workflow)container;
 
@@ -202,7 +205,14 @@ public final class ToolsImplCommon {
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
-                toolVersion.setMetaVersion(String.valueOf(version.getLastModified() != null ? version.getLastModified() : new Date(0)));
+                if (isDockstoreTool) {
+                    Tag castedTag = (Tag)version;
+                    toolVersion.setMetaVersion(String.valueOf(castedTag.getLastBuilt() != null ? castedTag.getLastBuilt() : new Date(0)));
+                }
+                else {
+                    io.dockstore.webservice.core.WorkflowVersion castedWorkflowVersion = (io.dockstore.webservice.core.WorkflowVersion)version;
+                    toolVersion.setMetaVersion(String.valueOf(castedWorkflowVersion.getLastModified() != null ? castedWorkflowVersion.getLastModified() : new Date(0)));
+                }
                 final List<DescriptorType> descriptorType = toolVersion.getDescriptorType();
                 if (!descriptorType.isEmpty()) {
                     EnumSet<DescriptorType> set = EnumSet.copyOf(descriptorType);

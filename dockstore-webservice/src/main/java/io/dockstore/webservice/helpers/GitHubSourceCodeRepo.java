@@ -506,7 +506,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 file.setAbsolutePath(filePath);
                 file.setPath(filePath);
                 file.setContent(fileContent);
-                file.setType(DescriptorLanguage.FileType.OTHER);
+                file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
                 version.getSourceFiles().add(file);
             }
             return version;

@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Date;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -44,6 +45,11 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Path for the workflow", position = 12)
     private String workflowPath;
 
+    @Column
+    @JsonProperty("last_modified")
+    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.")
+    private Date lastModified;
+
     /**
      * In theory, this should be in a ServiceVersion.
      * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
@@ -66,6 +72,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     public void updateByUser(final WorkflowVersion workflowVersion) {
         if (!this.isFrozen()) {
             workflowPath = workflowVersion.workflowPath;
+            lastModified = workflowVersion.lastModified;
         }
         // this is a bit confusing, but we need to call the super method last since it will set frozen
         // skipping the above even if we are only freezing it "now"
@@ -76,11 +83,13 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         super.update(workflowVersion);
         super.setReference(workflowVersion.getReference());
         workflowPath = workflowVersion.getWorkflowPath();
+        lastModified = workflowVersion.getLastModified();
     }
 
     public void clone(WorkflowVersion tag) {
         super.clone(tag);
         super.setReference(tag.getReference());
+        lastModified = tag.getLastModified();
     }
 
     @JsonProperty
@@ -101,12 +110,13 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return false;
         }
         final WorkflowVersion other = (WorkflowVersion)obj;
-        return Objects.equals(super.getName(), other.getName()) && Objects.equals(super.getReference(), other.getReference());
+        return Objects.equals(this.getName(), other.getName()) && Objects.equals(this.getReference(), other.getReference());
     }
 
     @Override
     public int compareTo(WorkflowVersion that) {
-        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast()).compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast()).result();
+        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
+                .compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast()).result();
     }
 
     @Override
@@ -126,5 +136,13 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setSubClass(Service.SubClass subClass) {
         this.subClass = subClass;
+    }
+
+    public Date getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(Date lastModified) {
+        this.lastModified = lastModified;
     }
 }

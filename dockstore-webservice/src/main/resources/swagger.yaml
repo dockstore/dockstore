@@ -5824,13 +5824,6 @@ definitions:
           $ref: "#/definitions/Validation"
       workingDirectory:
         type: "string"
-      last_modified:
-        type: "string"
-        format: "date-time"
-        position: 1
-        description: "Tool-> For automated builds: Last time specific tag was built.\
-          \ For hosted: When version was created Workflow-> Remote: Last time version\
-          \ on GitHub repo was changed. Hosted: time version created"
       reference:
         type: "string"
         position: 2
@@ -6823,7 +6816,7 @@ definitions:
         - "DOCKSTORE_YML"
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
-        - "OTHER"
+        - "DOCKSTORE_SERVICE_OTHER"
       content:
         type: "string"
         position: 2
@@ -6871,13 +6864,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Validation"
-      last_modified:
-        type: "string"
-        format: "date-time"
-        position: 1
-        description: "Tool-> For automated builds: Last time specific tag was built.\
-          \ For hosted: When version was created Workflow-> Remote: Last time version\
-          \ on GitHub repo was changed. Hosted: time version created"
       reference:
         type: "string"
         position: 2
@@ -6959,6 +6945,18 @@ definitions:
       workingDirectory:
         type: "string"
         position: 18
+      last_modified:
+        type: "string"
+        format: "date-time"
+        position: 19
+        description: "For automated tools: The last time the container backing this\
+          \ tool version was built. For hosted: N/A"
+      last_built:
+        type: "string"
+        format: "date-time"
+        position: 19
+        description: "For automated tools: The last time the container backing this\
+          \ tool version was built. For hosted: N/A"
       image_id:
         type: "string"
         position: 19
@@ -7369,7 +7367,7 @@ definitions:
         - "DOCKSTORE_YML"
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
-        - "OTHER"
+        - "DOCKSTORE_SERVICE_OTHER"
       valid:
         type: "boolean"
         position: 2
@@ -7636,10 +7634,8 @@ definitions:
       last_modified:
         type: "string"
         format: "date-time"
-        position: 1
-        description: "Tool-> For automated builds: Last time specific tag was built.\
-          \ For hosted: When version was created Workflow-> Remote: Last time version\
-          \ on GitHub repo was changed. Hosted: time version created"
+        description: "Remote: Last time version on GitHub repo was changed. Hosted:\
+          \ time version created."
       reference:
         type: "string"
         position: 2

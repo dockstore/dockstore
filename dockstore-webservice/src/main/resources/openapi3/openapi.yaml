@@ -479,7 +479,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
-          - OTHER
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         verifiedBySource:
           additionalProperties:
@@ -525,6 +525,9 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        last_built:
+          format: date-time
+          type: string
         last_modified:
           format: date-time
           type: string
@@ -786,7 +789,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
-          - OTHER
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         valid:
           type: boolean
@@ -833,9 +836,6 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
-        last_modified:
-          format: date-time
-          type: string
         name:
           type: string
         output_file_formats:
@@ -3369,7 +3369,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
