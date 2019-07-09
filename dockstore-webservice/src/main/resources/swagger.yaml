@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.8"
+  version: "1.7.0-alpha.9-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -4085,6 +4085,31 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
+  /users/{userId}/services:
+    get:
+      tags:
+      - "users"
+      summary: "List all services owned by the logged-in user."
+      description: ""
+      operationId: "userServices"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /users/{userId}/tokens:
