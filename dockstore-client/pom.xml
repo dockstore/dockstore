@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.7.0-alpha.9-SNAPSHOT</version>
+        <version>1.7.0-alpha.9</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -42,7 +42,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.9</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.postgresql</groupId>
@@ -61,17 +61,17 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.9</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-wes-client</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.9</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-file-plugin-parent</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.9</version>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
