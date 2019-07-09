@@ -9,7 +9,7 @@ set -o nounset
 set -o xtrace
 
 if [[ "${TESTING_PROFILE}" == *"integration-tests"* ]] || [[ "${TESTING_PROFILE}" == "automated-review" ]]; then
-    openssl aes-256-cbc -K $encrypted_4e4ba0f4c3c2_key -iv $encrypted_4e4ba0f4c3c2_iv -in secrets.tar.enc -out secrets.tar -d
+    openssl aes-256-cbc -K $encrypted_27f57d01a11b_key -iv $encrypted_27f57d01a11b_iv -in secrets.tar.enc -out secrets.tar -d
     tar xvf secrets.tar
     mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
 fi
