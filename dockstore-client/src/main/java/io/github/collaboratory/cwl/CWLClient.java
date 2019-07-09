@@ -523,10 +523,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
                 // trim quotes or starting '#' if necessary
                 cwlInputFileID = CharMatcher.is('#').trimLeadingFrom(cwlInputFileID);
                 // split on # if needed
-                cwlInputFileID = cwlInputFileID.contains("#") ? cwlInputFileID.split("#")[1] : cwlInputFileID;
-                // remove extra namespace if needed
-                cwlInputFileID = cwlInputFileID.contains("/") ? cwlInputFileID.split("/")[1] : cwlInputFileID;
-                LOG.info("ID: {}", cwlInputFileID);
+                cwlInputFileID = cleanFileId(cwlInputFileID);
                 // to be clear, these are secondary files as defined by CWL, not secondary descriptors
                 List<String> secondaryFiles = getSecondaryFileStrings(file);
                 pairs.addAll(pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID, secondaryFiles));
@@ -537,6 +534,15 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
             throw new RuntimeException();
         }
         return fileMap;
+    }
+
+    private String cleanFileId(String fileId) {
+        // split on # if needed
+        fileId = fileId.contains("#") ? fileId.split("#")[1] : fileId;
+        // remove extra namespace if needed
+        fileId = fileId.contains("/") ? fileId.split("/")[1] : fileId;
+        LOG.info("ID: {}", fileId);
+        return fileId;
     }
 
     /**
@@ -717,6 +723,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
 
         LOG.info("PREPPING UPLOADS...");
 
+
         final List<CommandOutputParameter> outputs = cwl.getOutputs();
 
         // for each file input from the CWL
@@ -746,9 +753,8 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
     private void handleParameter(Map<String, Object> inputsOutputs, Map<String, List<FileProvisioning.FileInfo>> fileMap,
             String fileIdString) {
         // pull back the name of the input from the CWL
-        String cwlID = fileIdString.contains("#") ? fileIdString.split("#")[1] : fileIdString;
-        LOG.info("ID: {}", cwlID);
-        prepUploadsHelper(inputsOutputs, fileMap, cwlID);
+        fileIdString = cleanFileId(fileIdString);
+        prepUploadsHelper(inputsOutputs, fileMap, fileIdString);
     }
 
     /**
