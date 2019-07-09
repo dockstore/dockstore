@@ -1,4 +1,4 @@
--- this file is a last chance to modify any database schema in create mode with postgres-specific
+-- this file is a last chance to modify any database schema in hibernate (hbm2ddl) create mode with postgres-specific
 -- changes not possible in JPA
 
 -- column remark support in JPA does not seem to work for postgres, possible starting point https://stackoverflow.com/questions/28773022/jpa-column-annotation-to-create-comment-description 
