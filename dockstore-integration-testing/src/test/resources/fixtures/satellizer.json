@@ -9,10 +9,10 @@
   },
   "oauthData": {
     "state": "fakeState",
-    "code": "fakeCode",
+    "code": "superFakeCodeThatNeedsToBeChanged",
     "scope": "fakeScope"
   },
   "userData": {
-    "register": true
+    "register": false
   }
 }

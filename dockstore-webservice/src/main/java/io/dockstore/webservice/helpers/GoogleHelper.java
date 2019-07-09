@@ -35,7 +35,6 @@ public final class GoogleHelper {
     // Prefix for Dockstore usernames where the account was originally registered with Google
     private static final String GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     private static final String GOOGLE_ENCODED_URL = "https://www.googleapis.com/oauth2/v4/token";
-
     private static final Logger LOG = LoggerFactory.getLogger(GoogleHelper.class);
 
     private static DockstoreWebserviceConfiguration config;
@@ -125,7 +124,7 @@ public final class GoogleHelper {
             GoogleCredential credential = new GoogleCredential().setAccessToken(token);
             Oauth2 oauth2;
             try {
-                oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), new JacksonFactory(), credential).setApplicationName("").build();
+                oauth2 = new Oauth2.Builder(TokenResource.HTTP_TRANSPORT, TokenResource.JSON_FACTORY, credential).setApplicationName("").build();
                 return Optional.ofNullable(oauth2.userinfo().get().execute());
             } catch (Exception ex) {
                 return Optional.empty();
@@ -151,10 +150,10 @@ public final class GoogleHelper {
     private static Optional<Tokeninfo> tokenInfoFromToken(String googleToken) {
         GoogleCredential cred = new GoogleCredential().setAccessToken(googleToken);
         try {
-            Oauth2 oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), new JacksonFactory(), cred).setApplicationName("").build();
+            Oauth2 oauth2 = new Oauth2.Builder(TokenResource.HTTP_TRANSPORT, TokenResource.JSON_FACTORY, cred).setApplicationName("").build();
             Tokeninfo tokenInfo = oauth2.tokeninfo().setAccessToken(googleToken).execute();
             return Optional.ofNullable(tokenInfo);
-        } catch (RuntimeException | GeneralSecurityException | IOException e) {
+        } catch (RuntimeException | IOException e) {
             // If token is invalid, Google client throws exception. See https://github.com/google/google-api-java-client/issues/970
             LOG.info(MessageFormat.format("Error getting token info: {0}", e.getMessage()));
             LOG.debug("Error getting token info", e);
@@ -184,7 +183,7 @@ public final class GoogleHelper {
             return flow.newTokenRequest(code).setRedirectUri(redirectUri)
                 .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
         } catch (IOException e) {
-            LOG.error("Retrieving accessToken was unsuccessful");
+            LOG.error("Retrieving accessToken was unsuccessful", e);
             throw new CustomWebApplicationException("Could not retrieve google token based on code", HttpStatus.SC_BAD_REQUEST);
         }
     }

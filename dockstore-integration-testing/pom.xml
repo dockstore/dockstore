@@ -32,6 +32,17 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.specto</groupId>
+            <artifactId>hoverfly-java</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.woodstox</groupId>
+                    <artifactId>woodstox-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
             <version>1.7.0-alpha.9-SNAPSHOT</version>
