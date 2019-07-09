@@ -6053,6 +6053,8 @@ definitions:
         type: "string"
       tagManagerId:
         type: "string"
+      gitHubAppInstallationUrl:
+        type: "string"
       githubClientId:
         type: "string"
       quayIoClientId:
