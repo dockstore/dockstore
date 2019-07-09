@@ -100,7 +100,7 @@ public class ServiceIT extends BaseIT {
 
     @Test
     public void checkWorkflowAndServiceHierarchy() {
-        CreateContent createContent = new CreateContent().invoke();
+        CreateContent createContent = new CreateContent().invoke(false);
         long workflowID = createContent.getWorkflowID();
         long serviceID = createContent.getServiceID();
         long serviceID2 = createContent.getServiceID2();
@@ -114,6 +114,7 @@ public class ServiceIT extends BaseIT {
         final Service byId1 = serviceDAO.findById(workflowID);
 
         assertTrue(byId != null && byId1 == null);
+        session.close();
     }
 
     @Test
@@ -293,6 +294,10 @@ public class ServiceIT extends BaseIT {
         }
 
         CreateContent invoke() {
+            return invoke(true);
+        }
+
+        CreateContent invoke(boolean cleanup) {
             final Transaction transaction = session.beginTransaction();
 
             Workflow testWorkflow = new BioWorkflow();
@@ -345,6 +350,9 @@ public class ServiceIT extends BaseIT {
 
             session.flush();
             transaction.commit();
+            if (cleanup) {
+                session.close();
+            }
             return this;
         }
     }

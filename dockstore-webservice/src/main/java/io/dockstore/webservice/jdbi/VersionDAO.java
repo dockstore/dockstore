@@ -25,7 +25,7 @@ import org.hibernate.SessionFactory;
  */
 public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
-    public VersionDAO(SessionFactory sessionFactory) {
+    VersionDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
     }
 

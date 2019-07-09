@@ -98,15 +98,19 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     public void updateByUser(final Tag tag) {
-        super.updateByUser(tag);
-        // this.setName(tag.getName());
-        imageId = tag.imageId;
+        if (!this.isFrozen()) {
+            // this.setName(tag.getName());
+            imageId = tag.imageId;
 
-        // Add for new descriptor types
-        cwlPath = tag.cwlPath;
-        wdlPath = tag.wdlPath;
-        dockerfilePath = tag.dockerfilePath;
-        lastBuilt = tag.lastBuilt;
+            // Add for new descriptor types
+            cwlPath = tag.cwlPath;
+            wdlPath = tag.wdlPath;
+            dockerfilePath = tag.dockerfilePath;
+            lastBuilt = tag.lastBuilt;
+        }
+        // this is a bit confusing, but we need to call the super method last since it will set frozen
+        // skipping the above even if we are only freezing it "now"
+        super.updateByUser(tag);
     }
 
     public void update(Tag tag) {

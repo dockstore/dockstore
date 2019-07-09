@@ -1,4 +1,4 @@
--- this file is a last chance to modify any database schema in create mode with postgres-specific
+-- this file is a last chance to modify any database schema in hibernate (hbm2ddl) create mode with postgres-specific
 -- changes not possible in JPA
 
 -- column remark support in JPA does not seem to work for postgres, possible starting point https://stackoverflow.com/questions/28773022/jpa-column-annotation-to-create-comment-description 
@@ -29,3 +29,6 @@ ALTER TABLE token ADD CONSTRAINT fk_userid_with_enduser FOREIGN KEY (userid) REF
 -- https://liquibase.jira.com/browse/CORE-2895
 CREATE UNIQUE INDEX organization_name_index on organization (LOWER(name));
 CREATE UNIQUE INDEX collection_name_index on collection (LOWER(name), organizationid);
+-- JPA doesn't seem to understand deferrable constraints, need to insert them this way
+ALTER TABLE tag ADD CONSTRAINT fk_tagVersionMetadata FOREIGN KEY(id) REFERENCES public.version_metadata (id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE workflowversion ADD CONSTRAINT fk_workflowVersionMetadata FOREIGN KEY(id) REFERENCES public.version_metadata (id) DEFERRABLE INITIALLY DEFERRED;
