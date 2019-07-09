@@ -119,3 +119,5 @@ uiConfig:
   cwlVisualizerUri: https://view.commonwl.org
   tagManagerId: <fill me in>
 
+  gitHubAppInstallationUrl: https://github.com/apps/<fill me in>
+
