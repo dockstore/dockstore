@@ -89,12 +89,15 @@ public class WorkflowInDirectoryTestIT {
      * the file id described in the parameter file is different than described in the tool descriptor even though they are the same
      * example: 1st-workflow-job.json says "reference__fasta__base", prep_samples_to_rec.cwl says "un_reference__fasta__base"
      * Tests if there are some secondary files in the workflow and some in the tool
+     * This test is obsolete because cwltool from Dockstore 1.7.0 will not run without the secondary files present
      */
     @Test
     public void testWorkflowMissingFilesToCopy() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
+        exit.expectSystemExitWithStatus(3);
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
+        systemErrRule.getLog().contains("Missing required secondary file");
     }
 
     /**
@@ -104,7 +107,9 @@ public class WorkflowInDirectoryTestIT {
     public void testNullCase() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-no-secondary-in-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
+        exit.expectSystemExitWithStatus(3);
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
+        systemErrRule.getLog().contains("Missing required secondary file");
     }
 
     @Test

@@ -231,8 +231,8 @@ public class ClientIT extends BaseIT {
      */
     @Test
     public void testDepsCommandWithVersionAndPython3() throws IOException {
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.4.0", "--python-version", "3"});
-        Assert.assertFalse(systemOutRule.getLog().contains("avro-cwl=="));
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.7.0", "--python-version", "3"});
+        Assert.assertFalse(systemOutRule.getLog().contains("monotonic=="));
         assertDepsCommandOutput();
     }
 
@@ -273,7 +273,7 @@ public class ClientIT extends BaseIT {
     }
 
     private void assertDepsCommandOutput() {
-        Assert.assertTrue(systemOutRule.getLog().contains("cwl-runner"));
+        Assert.assertTrue(systemOutRule.getLog().contains("cwlref-runner"));
         Assert.assertTrue(systemOutRule.getLog().contains("cwltool=="));
         Assert.assertTrue(systemOutRule.getLog().contains("schema-salad=="));
         Assert.assertTrue(systemOutRule.getLog().contains("ruamel.yaml=="));

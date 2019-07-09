@@ -1,6 +1,5 @@
 class: Workflow
 cwlVersion: v1.0
-hints: []
 inputs:
 - id: inp
   type: File
@@ -26,6 +25,8 @@ inputs:
       type: array
     type: array
 - id: reference__fasta__base
+  secondaryFiles:
+  - .fai
   type:
     items:
       items: File
