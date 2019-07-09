@@ -26,7 +26,13 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * Data about versions of a workflow/tool in Dockstore rather than about the original workflow. Stays non-immutable
+ * Data about versions of a workflow/tool in Dockstore rather than about the original workflow.
+ *
+ * Stays modifiable even when the parent (version) becomes immutable via postgres security policies, allowing
+ * us to modify things like verification status, DOIs, and whether a workflow version is hidden.
+ *
+ * Note that this entity is not directly serialized, instead individual fields are exposed in the Version
+ * model.
  */
 @Entity
 @Table(name = "version_metadata")
