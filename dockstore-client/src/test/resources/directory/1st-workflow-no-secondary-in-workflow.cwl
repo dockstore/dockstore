@@ -25,8 +25,6 @@ inputs:
       type: array
     type: array
 - id: reference__fasta__base
-  secondaryFiles:
-  - .fai
   type:
     items:
       items: File
