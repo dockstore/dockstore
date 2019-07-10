@@ -493,8 +493,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
-        final User authUser = this.userDAO.findById(userId);
-        List<Workflow> workflows = getWorkflows(authUser);
+        final User fetchedUser = this.userDAO.findById(userId);
+        List<Workflow> workflows = getWorkflows(fetchedUser);
         EntryVersionHelper.stripContent(workflows, this.userDAO);
         return workflows;
     }

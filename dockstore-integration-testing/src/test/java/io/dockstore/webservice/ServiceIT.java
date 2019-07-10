@@ -191,8 +191,8 @@ public class ServiceIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         List<io.swagger.client.model.Workflow> services = usersApi.userServices(service.getUsers().get(0).getId());
         List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(service.getUsers().get(0).getId());
-        assertTrue("There should be one service", services.size() == 1);
-        assertTrue("There should be no workflows", workflows.size() == 0);
+        assertEquals("There should be one service", 1,  services.size());
+        assertEquals("There should be no workflows", 0, workflows.size());
     }
 
     /**
