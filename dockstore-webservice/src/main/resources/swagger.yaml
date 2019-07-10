@@ -437,7 +437,7 @@ paths:
       - "extendedGA4GH"
       summary: "List all organizations"
       description: "This endpoint returns list of all organizations. "
-      operationId: "entriesOrgGet"
+      operationId: "entriesOrgsGet"
       produces:
       - "application/json"
       - "text/plain"

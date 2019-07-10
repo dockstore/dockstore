@@ -109,7 +109,7 @@ public class ToolsExtendedApi {
     @Path("/containers/{organization}")
     @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List entries of an organization", notes = "This endpoint returns entries of an organization. ", response = ToolV1.class, responseContainer = "List")
+    @ApiOperation(value = "List entries of an organization", nickname = "entriesOrgGet", notes = "This endpoint returns entries of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = ToolV1.class, responseContainer = "List") })
     public Response entriesOrgGet(
@@ -122,7 +122,7 @@ public class ToolsExtendedApi {
     @Path("/organizations")
     @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List all organizations", notes = "This endpoint returns list of all organizations. ", response = String.class, responseContainer = "List")
+    @ApiOperation(value = "List all organizations", nickname = "entriesOrgsGet", notes = "This endpoint returns list of all organizations. ", response = String.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.SC_OK, message = "An array of organizations' names.", response = String.class, responseContainer = "List") })
     public Response entriesOrgGet(
