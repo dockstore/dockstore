@@ -16,7 +16,11 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.SortedMap;
 
+import com.codahale.metrics.Gauge;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.ConnectionLeakUtil;
@@ -30,7 +34,9 @@ import io.swagger.client.auth.ApiKeyAuth;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -81,10 +87,23 @@ public class BaseIT {
     }
 
 
+    public static void assertNoMetricsLeaks(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+        SortedMap<String, Gauge> gauges = support.getEnvironment().metrics().getGauges();
+        int active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+        int waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
+        Assert.assertEquals(0, active);
+        Assert.assertEquals(0, waiting);
+    }
+
     @AfterClass
-    public static void afterClass() throws Exception {
-        assertNoLeaks();
+    public static void afterClass() {
         SUPPORT.after();
+    }
+
+    @After
+    public void after() throws Exception {
+        assertNoLeaks();
+        assertNoMetricsLeaks(SUPPORT);
     }
 
     @Before

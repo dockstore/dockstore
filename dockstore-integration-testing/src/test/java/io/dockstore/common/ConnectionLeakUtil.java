@@ -21,14 +21,19 @@ package io.dockstore.common;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.SortedMap;
 
-import org.hibernate.dialect.Dialect;
+import com.codahale.metrics.Gauge;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
+import org.junit.Assert;
 
 /**
  * @author gluu
- * @since 05/07/19
+ * @since 1.7.0
  */
 public class ConnectionLeakUtil {
     private String url;
@@ -43,17 +48,13 @@ public class ConnectionLeakUtil {
         this.url = url;
         this.user = user;
         this.password = password;
-        if ( connectionCounter != null ) {
-            connectionLeakCount = countConnectionLeaks();
-        }
+        connectionLeakCount = countConnectionLeaks();
     }
 
     public void assertNoLeaks() throws Exception {
         if ( connectionCounter != null ) {
             int currentConnectionLeakCount = countConnectionLeaks();
             int diff = currentConnectionLeakCount - connectionLeakCount;
-            System.out.println(currentConnectionLeakCount);
-            System.out.println(connectionLeakCount);
             // This should be 0, but it's always one. Either this code is wrong or that there's always a connection leak of 1
             if ( diff > 0 ) {
                 throw new Exception(
