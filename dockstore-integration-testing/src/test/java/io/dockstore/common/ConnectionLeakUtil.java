@@ -21,14 +21,16 @@ package io.dockstore.common;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.SortedMap;
 
-import org.hibernate.dialect.Dialect;
+import com.codahale.metrics.Gauge;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
+import org.junit.Assert;
 
 /**
  * @author gluu
- * @since 05/07/19
+ * @since 1.7.0
  */
 public class ConnectionLeakUtil {
     private String url;
@@ -38,22 +40,49 @@ public class ConnectionLeakUtil {
 
 
     private int connectionLeakCount;
+    private int IDLE;
+    private int ACTIVE;
+    private int SIZE;
+    private int WAITING;
+    private DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
 
-    public ConnectionLeakUtil(String url, String user, String password) {
+    public ConnectionLeakUtil(String url, String user, String password, DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         this.url = url;
         this.user = user;
         this.password = password;
-        if ( connectionCounter != null ) {
-            connectionLeakCount = countConnectionLeaks();
-        }
+        SUPPORT = support;
+        connectionLeakCount = countConnectionLeaks();
+        getMetrics();
+    }
+
+
+    private void getMetrics() {
+        SortedMap<String, Gauge> gauges = SUPPORT.getEnvironment().metrics().getGauges();
+        IDLE = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue();
+        ACTIVE = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+        SIZE = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue();
+        WAITING = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
+    }
+
+
+    private void assertNoMetricsLeaks() {
+        SortedMap<String, Gauge> gauges = SUPPORT.getEnvironment().metrics().getGauges();
+        int idle = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.idle").getValue();
+        int active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+        int size = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.size").getValue();
+        int waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
+        Assert.assertEquals(this.IDLE, idle);
+        Assert.assertEquals(this.ACTIVE, active);
+        Assert.assertEquals(this.SIZE, size);
+        Assert.assertEquals(this.WAITING, waiting);
+        Assert.assertEquals(0, active);
+        Assert.assertEquals(0, waiting);
     }
 
     public void assertNoLeaks() throws Exception {
         if ( connectionCounter != null ) {
             int currentConnectionLeakCount = countConnectionLeaks();
             int diff = currentConnectionLeakCount - connectionLeakCount;
-            System.out.println(currentConnectionLeakCount);
-            System.out.println(connectionLeakCount);
             // This should be 0, but it's always one. Either this code is wrong or that there's always a connection leak of 1
             if ( diff > 0 ) {
                 throw new Exception(
@@ -66,6 +95,7 @@ public class ConnectionLeakUtil {
                 );
             }
         }
+        assertNoMetricsLeaks();
     }
 
     private int countConnectionLeaks() {

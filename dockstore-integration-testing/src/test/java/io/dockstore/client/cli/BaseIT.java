@@ -16,6 +16,8 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -70,7 +72,7 @@ public class BaseIT {
         String user = SUPPORT.getConfiguration().getDataSourceFactory().getUser();
         String password = SUPPORT.getConfiguration().getDataSourceFactory().getPassword();
         if ( enableConnectionLeakDetection ) {
-            connectionLeakUtil = new ConnectionLeakUtil(url, user, password);
+            connectionLeakUtil = new ConnectionLeakUtil(url, user, password, SUPPORT);
         }
     }
 
