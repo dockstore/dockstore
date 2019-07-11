@@ -1043,7 +1043,6 @@ public class WorkflowResource
         "workflows" }, response = SharedWorkflows.class, responseContainer = "List")
     public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
         final Map<Role, List<String>> workflowsSharedWithUser  = this.permissionsInterface.workflowsSharedWithUser(user);
-
         final List<String> paths =
             workflowsSharedWithUser.values()
                 .stream()
@@ -1052,12 +1051,13 @@ public class WorkflowResource
 
         // Fetch workflows in batch
         List<Workflow> workflowList = workflowDAO.findByPaths(paths, false);
-
         return workflowsSharedWithUser.entrySet().stream().map(e -> {
             // Create a SharedWorkFlow map for each Role and the list of workflows that belong to it
             final List<Workflow> workflows = workflowList.stream()
                 // Filter only the workflows that belong to the current Role and where the user is not the owner
-                .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()) && !workflow.getUsers().contains(user))
+                .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()))
+                // This causes a connection pool leak (the active connections keeps going up
+                // .filter(workflow -> !workflow.getUsers().contains(user))
                 .collect(Collectors.toList());
             return new SharedWorkflows(e.getKey(), workflows);
         }).filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0).collect(Collectors.toList());
