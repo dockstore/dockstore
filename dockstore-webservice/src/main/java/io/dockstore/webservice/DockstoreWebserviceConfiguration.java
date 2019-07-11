@@ -639,6 +639,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String tagManagerId;
 
+        private String gitHubAppInstallationUrl;
+
 
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
@@ -794,5 +796,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.tagManagerId = tagManagerId;
         }
 
+        public String getGitHubAppInstallationUrl() {
+            return gitHubAppInstallationUrl;
+        }
+
+        public void setGitHubAppInstallationUrl(String gitHubAppInstallationUrl) {
+            this.gitHubAppInstallationUrl = gitHubAppInstallationUrl;
+        }
     }
 }

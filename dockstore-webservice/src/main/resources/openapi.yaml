@@ -514,7 +514,7 @@ paths:
         - extendedGA4GH
       summary: List all organizations
       description: "This endpoint returns list of all organizations. "
-      operationId: entriesOrgGet
+      operationId: entriesOrgsGet
       responses:
         "200":
           description: An array of organizations' names.
@@ -4346,6 +4346,32 @@ paths:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
         - BEARER: []
+  "/users/{userId}/services":
+    get:
+      tags:
+        - users
+      summary: List all services owned by the logged-in user.
+      description: ""
+      operationId: userServices
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/users/{userId}/tokens":
     get:
       tags:
@@ -6296,6 +6322,8 @@ components:
         cwlVisualizerUri:
           type: string
         tagManagerId:
+          type: string
+        gitHubAppInstallationUrl:
           type: string
         githubClientId:
           type: string

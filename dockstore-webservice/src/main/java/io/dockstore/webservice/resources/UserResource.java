@@ -42,10 +42,12 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.Limits;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -487,18 +489,42 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "List all workflows owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all workflows owned by the logged-in user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
-        final User authUser = this.userDAO.findById(userId);
-        List<Workflow> workflows = getWorkflows(authUser);
+        final User fetchedUser = this.userDAO.findById(userId);
+        if (fetchedUser == null) {
+            throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
+        }
+        List<Workflow> workflows = getWorkflows(fetchedUser);
         EntryVersionHelper.stripContent(workflows, this.userDAO);
         return workflows;
     }
 
     private List<Workflow> getWorkflows(User user) {
-        return user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
+        return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).collect(Collectors.toList());
+    }
+
+    @GET
+    @Path("/{userId}/services")
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @ApiOperation(value = "List all services owned by the logged-in user.", nickname = "userServices", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> userServices(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        checkUser(user, userId);
+        final User fetchedUser = this.userDAO.findById(userId);
+        if (fetchedUser == null) {
+            throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
+        }
+        List<Workflow> services = getServices(fetchedUser);
+        EntryVersionHelper.stripContent(services, this.userDAO);
+        return services;
+    }
+
+    private List<Workflow> getServices(User user) {
+        return user.getEntries().stream().filter(Service.class::isInstance).map(Service.class::cast).collect(Collectors.toList());
     }
 
     private List<Tool> getTools(User user) {
@@ -509,7 +535,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/containers")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "List all tools owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List all tools owned by the logged-in user.", nickname = "userContainers", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
