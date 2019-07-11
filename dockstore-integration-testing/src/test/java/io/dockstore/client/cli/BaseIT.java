@@ -17,6 +17,7 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.util.SortedMap;
+import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.Gauge;
 import io.dockstore.common.CommonTestUtilities;
@@ -69,8 +70,19 @@ public class BaseIT {
         SortedMap<String, Gauge> gauges = support.getEnvironment().metrics().getGauges();
         int active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
         int waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
-        Assert.assertEquals(0, active);
-        Assert.assertEquals(0, waiting);
+        if (active != 0 || waiting != 0) {
+            try {
+                // Waiting 10 seconds to see if active connection disappears
+                TimeUnit.SECONDS.sleep(10);
+                active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+                waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
+                Assert.assertEquals(0, active);
+                Assert.assertEquals(0, waiting);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     @AfterClass
