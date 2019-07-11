@@ -76,8 +76,8 @@ public class BaseIT {
                 TimeUnit.SECONDS.sleep(10);
                 active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
                 waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
-                Assert.assertEquals(0, active);
-                Assert.assertEquals(0, waiting);
+                Assert.assertEquals("There should be no active connections", 0, active);
+                Assert.assertEquals("There should be no waiting connections", 0, waiting);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
