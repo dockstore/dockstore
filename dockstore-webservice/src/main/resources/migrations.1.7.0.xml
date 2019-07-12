@@ -242,4 +242,14 @@
                                  initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
                                  referencedTableName="version_metadata"/>
     </changeSet>
+
+    <!--  These constraints only appear in the production db, and not when generating the db from scratch. They should not be there due to services being valid workflows in the table.  -->
+    <changeSet author="aduncan" id="remove_weird_fk_constraints">
+        <sql dbms="postgresql">
+            ALTER TABLE workflow_workflowversion DROP CONSTRAINT IF EXISTS fk_esgelvnqxrv53m71tdvwkxut3;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow_workflowversion DROP CONSTRAINT IF EXISTS fkl8yg13ahjhtn0notrlf3amwwi;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
