@@ -1058,6 +1058,11 @@ public class WorkflowResource
             final List<Workflow> workflows = workflowList.stream()
                 // Filter only the workflows that belong to the current Role and where the user is not the owner
                 .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()))
+                .filter(workflow -> {
+                    String workflowPath = workflow.getWorkflowPath();
+                    Workflow byPath = workflowDAO.findByPath(workflowPath, false);
+                    return !byPath.getUsers().contains(user);
+                })
                 // This causes a connection pool leak (the active connections keeps going up)
                 // .filter(workflow -> !workflow.getUsers().contains(user))
                 .collect(Collectors.toList());
