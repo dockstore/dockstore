@@ -1059,7 +1059,7 @@ public class WorkflowResource
                 // Filter only the workflows that belong to the current Role and where the user is not the owner
                 .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()))
                 // This causes a connection pool leak (the active connections keeps going up)
-                // .filter(workflow -> !workflow.getUsers().contains(user))
+                .filter(workflow -> !workflow.getUsers().contains(user))
                 .collect(Collectors.toList());
             return new SharedWorkflows(e.getKey(), workflows);
         }).filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0).collect(Collectors.toList());
