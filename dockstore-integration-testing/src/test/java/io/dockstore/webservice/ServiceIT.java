@@ -37,7 +37,6 @@ import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -52,7 +51,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -90,8 +88,8 @@ public class ServiceIT extends BaseIT {
         this.userDAO = new UserDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
+        testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
+        testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
 
         // used to allow us to use tokenDAO outside of the web service
         this.session = application.getHibernate().getSessionFactory().openSession();
@@ -161,7 +159,7 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void testGitHubAppEndpoints() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
@@ -183,7 +181,7 @@ public class ServiceIT extends BaseIT {
         assertEquals("Should have 2 users", 2, service.getUsers().size());
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
     }
 
@@ -192,7 +190,7 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceNoUser() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
@@ -209,7 +207,7 @@ public class ServiceIT extends BaseIT {
         }
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be no matching service", 0, count);
     }
 
@@ -218,7 +216,7 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceDuplicate() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
@@ -237,7 +235,7 @@ public class ServiceIT extends BaseIT {
         }
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
     }
 
@@ -246,7 +244,7 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void updateServiceIncorrectTag() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
@@ -267,11 +265,11 @@ public class ServiceIT extends BaseIT {
         }
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
 
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", long.class);
         Assert.assertEquals("there should be no matching tag", 0, count2);
     }
 

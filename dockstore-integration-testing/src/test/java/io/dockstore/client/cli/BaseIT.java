@@ -30,7 +30,6 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.auth.ApiKeyAuth;
 import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -42,8 +41,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * Base integration test class
@@ -60,10 +57,13 @@ public class BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
+    protected static CommonTestUtilities.TestingPostgres testingPostgres;
+
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
+        testingPostgres = new CommonTestUtilities.TestingPostgres(SUPPORT);
     }
 
     public static void assertNoMetricsLeaks(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
@@ -112,7 +112,6 @@ public class BaseIT {
      * @return
      */
     protected static ApiClient getWebClient(boolean authenticated, String username) {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         File configFile = FileUtils.getFile("src", "test", "resources", "config2");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
@@ -120,7 +119,7 @@ public class BaseIT {
         if (authenticated) {
             client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
                     .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
-                            new ScalarHandler<>())));
+                            String.class)));
         }
         return client;
     }

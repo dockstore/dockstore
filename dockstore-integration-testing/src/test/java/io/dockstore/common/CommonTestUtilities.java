@@ -21,18 +21,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
+import com.codahale.metrics.jdbi3.strategies.TimedAnnotationNameStrategy;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
+import io.dropwizard.db.DataSourceFactory;
+import io.dropwizard.jdbi3.JdbiFactory;
+import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.Query;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +104,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
         // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
-        // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+        // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
@@ -136,7 +140,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
         cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
-        // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+        // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
@@ -189,16 +193,6 @@ public final class CommonTestUtilities {
         runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 
-    /**
-     * Allows tests to clear the database but add basic testing data
-     * @return
-     */
-    public static TestingPostgres getTestingPostgres() {
-        final File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        final INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        return new TestingPostgres(parseConfig);
-    }
-
     public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws RuntimeException {
         List<String> commandList = new ArrayList<>();
         commandList.add(dockstore.getAbsolutePath());
@@ -230,31 +224,69 @@ public final class CommonTestUtilities {
         }
     }
 
+    public static TestingPostgres getTestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+        return new TestingPostgres(support);
+    }
+
     public static void checkToolList(String log) {
         Assert.assertTrue(log.contains("NAME"));
         Assert.assertTrue(log.contains("DESCRIPTION"));
         Assert.assertTrue(log.contains("Git Repo"));
     }
+    public static class TestingPostgres {
+        Jdbi jdbi;
+        public TestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+            DataSourceFactory dataSourceFactory = support.getConfiguration().getDataSourceFactory();
+            Environment environment = support.getEnvironment();
+            JdbiFactory jdbiFactory = new JdbiFactory();
+            jdbi = jdbiFactory.build(environment, dataSourceFactory, "postgresql");
 
-    public static class TestingPostgres extends BasicPostgreSQL {
-
-        TestingPostgres(INIConfiguration config) {
-            super(config);
+        }
+        public int runUpdateStatement(String query) {
+            int t = jdbi.withHandle(handle -> handle.createUpdate(query).execute());
+            return t;
         }
 
-        @Override
+        public <T> T runSelectStatement(String statement, Class<T> handler) {
+            T t =  jdbi.withHandle(handle -> {
+                Query query = handle.select(statement);
+                Optional<T> first = query.mapTo(handler).findFirst();
+                handle.close();
+                return first.orElse(null);
+            });
+            return t;
+        }
+
+        public <T> List<T> runSelectListStatement(String statement, Class<T> handler) {
+            List<T> t = jdbi.withHandle(handle -> {
+                Query query = handle.select(statement);
+                List<T> list = query.mapTo(handler).list();
+                return list;
+            });
+            return t;
+        }
+
         public void clearDatabase() {
-            super.clearDatabase();
-        }
-
-        @Override
-        public <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
-            return super.runSelectStatement(query, handler, params);
-        }
-
-        @Override
-        public int runUpdateStatement(String query, Object... params) {
-            return super.runUpdateStatement(query, params);
+            runUpdateStatement("delete from user_profile;");
+            runUpdateStatement("delete from user_entry;");
+            runUpdateStatement("delete from starred;");
+            runUpdateStatement("delete from token;");
+            runUpdateStatement("delete from version_sourcefile;");
+            runUpdateStatement("delete from sourcefile;");
+            runUpdateStatement("delete from tool_tag;");
+            runUpdateStatement("delete from tag;");
+            runUpdateStatement("delete from workflow_workflowversion;");
+            runUpdateStatement("delete from workflowversion;");
+            runUpdateStatement("delete from organization_user;");
+            runUpdateStatement("delete from event;");
+            runUpdateStatement("delete from organization;");
+            runUpdateStatement("delete from enduser;");
+            runUpdateStatement("delete from entry_label;");
+            runUpdateStatement("delete from label;");
+            runUpdateStatement("delete from workflow;");
+            runUpdateStatement("delete from tool;");
+            runUpdateStatement("delete from databasechangelog;");
+            runUpdateStatement("delete from databasechangeloglock;");
         }
     }
 }

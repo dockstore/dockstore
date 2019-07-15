@@ -33,7 +33,6 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -47,7 +46,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -151,12 +149,12 @@ public class GeneralRegressionIT extends BaseIT {
      */
     private String getPathfromDB(String type) {
         // Set up DB
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        // Select data from DB
-        final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", new ScalarHandler<>());
-        final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = " + toolID, new ScalarHandler<>());
 
-        return testingPostgres.runSelectStatement("select " + type + " from tag where id = " + tagID, new ScalarHandler<>());
+        // Select data from DB
+        final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", long.class);
+        final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = " + toolID, long.class);
+
+        return testingPostgres.runSelectStatement("select " + type + " from tag where id = " + tagID, String.class);
     }
 
     /**
@@ -181,14 +179,14 @@ public class GeneralRegressionIT extends BaseIT {
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubalternate", "--remove", "github", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from entry_label where entryid = '2'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from entry_label where entryid = '2'", long.class);
         assertEquals("there should be 2 labels for the given container, there are " + count, 2, count);
 
         final long count2 = testingPostgres.runSelectStatement(
                 "select count(*) from label where value = 'quay' or value = 'github' or value = 'dockerhub' or value = 'alternate'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("there should be 4 labels in the database (No Duplicates), there are " + count2, 4, count2);
     }
 
@@ -202,10 +200,10 @@ public class GeneralRegressionIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--cwl-path", "/testDir/Dockstore.cwl",
                         "--wdl-path", "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("there should now be an invalid tag, found " + count, 1, count);
 
         runOldDockstoreClient(dockstore,
@@ -220,7 +218,7 @@ public class GeneralRegressionIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
                         + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("the invalid tag should now be valid, found " + count2, 0, count2);
     }
 
@@ -240,10 +238,10 @@ public class GeneralRegressionIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--image-id",
                         "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres.runSelectStatement(
                 " select count(*) from  tool_tag, tool where tool_tag.toolid = tool.id and giturl ='git@github.com:dockstoretestuser2/quayandgithubalternate.git' and toolname = 'alternate'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals(
             "there should be 3 tags, 2  that are autogenerated (master and latest) and the newly added masterTest tag, found " + count, 3,
             count);
@@ -259,15 +257,15 @@ public class GeneralRegressionIT extends BaseIT {
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "true", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
+
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", long.class);
         assertEquals("there should be 1 hidden tag", 1, count);
 
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "false", "--script" });
 
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", long.class);
         assertEquals("there should be 0 hidden tag", 0, count2);
     }
 
@@ -281,10 +279,10 @@ public class GeneralRegressionIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/randomDir/Dockstore.wdl",
                         "--script" });
         // should now be invalid
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
-                new ScalarHandler<>());
+                long.class);
 
         assertEquals("there should now be 1 invalid tag, found " + count, 1, count);
 
@@ -294,7 +292,7 @@ public class GeneralRegressionIT extends BaseIT {
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("the tag should now be valid", 0, count2);
 
     }
@@ -320,8 +318,8 @@ public class GeneralRegressionIT extends BaseIT {
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "remove", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", new ScalarHandler<>());
+
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         assertEquals("there should be no tags with the name masterTest", 0, count);
     }
 
@@ -345,10 +343,10 @@ public class GeneralRegressionIT extends BaseIT {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl" });
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         boolean published = testingPostgres
                 .runSelectStatement("select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
-                        new ScalarHandler<>());
+                        boolean.class);
         assertTrue("tool not published", published);
 
         runOldDockstoreClient(dockstore,
@@ -357,7 +355,7 @@ public class GeneralRegressionIT extends BaseIT {
 
         long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
-                        new ScalarHandler<>());
+                        long.class);
         assertEquals("should be two after republishing", 2, count);
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--unpub", "--entry",
@@ -365,7 +363,7 @@ public class GeneralRegressionIT extends BaseIT {
 
         published = testingPostgres.runSelectStatement(
                 "select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;",
-                new ScalarHandler<>());
+                boolean.class);
         assertTrue("tool not unpublished", !published);
     }
 

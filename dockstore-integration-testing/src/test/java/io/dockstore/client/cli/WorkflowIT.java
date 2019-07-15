@@ -68,7 +68,6 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -82,7 +81,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -152,7 +150,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testTargettedRefresh() throws ApiException, URISyntaxException, IOException {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
@@ -267,7 +265,7 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testWorkflowLaunchOrNotLaunchBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -443,7 +441,7 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
@@ -481,7 +479,7 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testCheckerWorkflowLaunchBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -641,7 +639,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testRefreshAllForAUser() throws ApiException {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         long userId = 1;
 
@@ -650,14 +648,14 @@ public class WorkflowIT extends BaseIT {
         final List<Workflow> workflows = usersApi.refreshWorkflows(userId);
 
         // Check that there are multiple workflows
-        final long count = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("Workflow entries should exist", count > 0);
 
         // Check that there are only stubs (no workflow version)
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
         assertEquals("No entries in workflowversion", 0, count2);
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("No workflows are in full mode", 0, count3);
 
         // check that a nextflow workflow made it
@@ -798,7 +796,7 @@ public class WorkflowIT extends BaseIT {
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
 
         // Set up postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Get workflows
         usersApi.refreshWorkflows(userId);
@@ -813,10 +811,10 @@ public class WorkflowIT extends BaseIT {
 
         // Assert some things
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("No workflows are in full mode", 0, count);
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where workflowname = 'altname'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where workflowname = 'altname'", long.class);
         assertEquals("There should be two workflows with name altname, there are " + count2, 2, count2);
 
         // Publish github workflow
@@ -827,10 +825,10 @@ public class WorkflowIT extends BaseIT {
         assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(), 1,
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size());
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("One workflow is in full mode", 1, count3);
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflowversion where valid = 't'", long.class);
         assertEquals("There should be 2 valid version tags, there are " + count4, 2, count4);
 
         workflowApi.refresh(bitbucketWorkflow.getId());
@@ -927,7 +925,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // Set up postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
@@ -935,7 +933,7 @@ public class WorkflowIT extends BaseIT {
 
         // Assert some things
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("No workflows are in full mode", 0,count);
 
         // Refresh the workflow

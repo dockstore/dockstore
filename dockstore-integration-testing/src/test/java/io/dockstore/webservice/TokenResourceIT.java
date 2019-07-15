@@ -25,7 +25,6 @@ import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.common.collect.Maps;
 import io.dockstore.client.cli.BaseIT;
-import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -38,7 +37,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -158,13 +156,13 @@ public class TokenResourceIT extends BaseIT {
         this.userDAO = new UserDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
+        testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
+        testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
 
         // used to allow us to use tokenDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
-        initialTokenCount = CommonTestUtilities.getTestingPostgres().runSelectStatement("select count(*) from token", new ScalarHandler<>());
+        initialTokenCount = testingPostgres.runSelectStatement("select count(*) from token", long.class);
     }
 
     /**
@@ -596,7 +594,7 @@ public class TokenResourceIT extends BaseIT {
      * @param size the number of tokens that we expect
      */
     private void checkTokenCount(long size) {
-        long tokenCount = CommonTestUtilities.getTestingPostgres().runSelectStatement("select count(*) from token", new ScalarHandler<>());
+        long tokenCount = testingPostgres.runSelectStatement("select count(*) from token", long.class);
         Assert.assertEquals(size, tokenCount);
     }
 

@@ -70,7 +70,7 @@ public class ExtendedTRSIT extends BaseIT {
     public void testVerificationOnSourceFileLevelForWorkflowsAsOwner() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         // need to turn off admin of USER_2_USERNAME
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("update enduser set isadmin = 'f' where username = '"+USER_2_USERNAME+"'");
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 'f' where username = '"+USER_2_USERNAME+"'");
         testVerificationWithGivenClient(webClient, webClient);
     }
 
