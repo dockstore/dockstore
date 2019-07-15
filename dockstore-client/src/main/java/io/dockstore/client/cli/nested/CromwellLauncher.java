@@ -33,7 +33,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  * This is a base class for clients that launch workflows with Cromwell
  */
 public class CromwellLauncher extends BaseLauncher {
-    protected static final String DEFAULT_CROMWELL_VERSION = "36";
+    protected static final String DEFAULT_CROMWELL_VERSION = "44";
 
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
 
