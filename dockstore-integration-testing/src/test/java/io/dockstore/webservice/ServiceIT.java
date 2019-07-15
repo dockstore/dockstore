@@ -214,7 +214,7 @@ public class ServiceIT extends BaseIT {
         try {
             client.addService(serviceRepo, "iamnotarealuser", installationId);
         } catch (ApiException ex) {
-
+            assertEquals("Should have error code 418", 418, ex.getCode());
         }
 
         final long count = testingPostgres
@@ -241,8 +241,8 @@ public class ServiceIT extends BaseIT {
         assertNotNull(service);
         try {
             client.addService(serviceRepo, "admin@admin.com", installationId);
-        } catch (Exception ex) {
-
+        } catch (ApiException ex) {
+            assertEquals("Should have error code 418", 418, ex.getCode());
         }
 
         final long count = testingPostgres
@@ -271,8 +271,8 @@ public class ServiceIT extends BaseIT {
         // Add version that doesn't exist
         try {
             client.upsertServiceVersion(serviceRepo, "admin@admin.com", "1.0-fake", installationId);
-        } catch (Exception ex) {
-
+        } catch (ApiException ex) {
+            assertEquals("Should have error code 418", 418, ex.getCode());
         }
 
         final long count = testingPostgres
@@ -282,6 +282,59 @@ public class ServiceIT extends BaseIT {
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", new ScalarHandler<>());
         Assert.assertEquals("there should be no matching tag", 0, count2);
+    }
+
+    /**
+     * This tests that you can't add a version with an invalid dockstore.yml or no dockstore.yml
+     */
+    @Test
+    public void updateServiceNoOrInvalidYml() throws Exception {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient("admin@admin.com");
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add service
+        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
+        assertNotNull(service);
+
+        // Add version that has no dockstore.yml
+        try {
+            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "noYml", installationId);
+        } catch (ApiException ex) {
+            assertEquals("Should have error code 418", 418, ex.getCode());
+        }
+
+        // Add version that has invalid dockstore.yml
+        try {
+            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalidYml", installationId);
+        } catch (ApiException ex) {
+            assertEquals("Should have error code 418", 418, ex.getCode());
+        }
+    }
+
+    /**
+     * This tests that you cannot create a service from an in invalid GitHub repository
+     */
+    @Test
+    public void createServiceNoGitHubRepo() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient("admin@admin.com");
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service-foo-bar-not-real";
+        String installationId = "1179416";
+
+        // Add service
+        try {
+            io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
+        } catch (ApiException ex) {
+            assertEquals("Should have error code 418", 418, ex.getCode());
+        }
     }
 
     private class CreateContent {
