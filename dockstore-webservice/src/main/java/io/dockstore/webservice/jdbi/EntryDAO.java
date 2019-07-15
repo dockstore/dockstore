@@ -62,8 +62,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     EntryDAO(SessionFactory factory) {
         super(factory);
-        /**
-         * ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class
+        /*
+          ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class
          */
         this.typeOfT = (Class<T>)((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
@@ -143,10 +143,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
         EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
-        List<CollectionOrganization> collectionOrganizations = entityManager
+        return entityManager
                 .createNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId", CollectionOrganization.class)
                 .setParameter("entryId", entryId).getResultList();
-        return collectionOrganizations;
     }
 
     public T findPublishedById(long id) {
@@ -155,9 +154,13 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
+        return findAllPublished(offset, limit, filter, sortCol, sortOrder, typeOfT);
+    }
+
+    public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder, Class<T> classType) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<T> query = criteriaQuery();
-        Root<T> entry = query.from(typeOfT);
+        Root<T> entry = query.from(classType != null ? classType : typeOfT);
         processQuery(filter, sortCol, sortOrder, cb, query, entry);
         query.select(entry);
 
@@ -177,7 +180,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public long countAllPublished(Optional<String> filter) {
-        if (!filter.isPresent()) {
+        if (filter.isEmpty()) {
             return countAllPublished();
         }
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
@@ -210,6 +213,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                     cb.and(cb.isNotNull(entry.get("author")), cb.like(cb.upper(entry.get("author")), "%" + filter.toUpperCase() + "%")), //
                     cb.and(cb.isNotNull(entry.get(repoName)), cb.like(cb.upper(entry.get(repoName)), "%" + filter.toUpperCase() + "%")), //
                     cb.and(cb.isNotNull(entry.get(orgName)), cb.like(cb.upper(entry.get(orgName)), "%" + filter.toUpperCase() + "%")))));
+
         } else {
             predicates.add(cb.isTrue(entry.get("isPublished")));
         }

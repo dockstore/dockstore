@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Event;
@@ -37,17 +38,21 @@ import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.VersionMetadata;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
+import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.GoogleHelper;
+import io.dockstore.webservice.helpers.ObsoleteUrlFactory;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -101,7 +106,6 @@ import io.swagger.jaxrs.listing.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
-import okhttp3.OkUrlFactory;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -131,7 +135,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
             WorkflowVersion.class, FileFormat.class, Organization.class, OrganizationUser.class, Event.class, Collection.class,
-            Validation.class) {
+            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -155,7 +159,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
 
         configureMapper(bootstrap.getObjectMapper());
-
 
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
@@ -192,7 +195,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 .readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
         try {
             // this can only be called once per JVM, a factory exception is thrown in our tests
-            URL.setURLStreamHandlerFactory(new OkUrlFactory(okHttpClient));
+            URL.setURLStreamHandlerFactory(new ObsoleteUrlFactory(okHttpClient));
         } catch (Error factoryException) {
             if (factoryException.getMessage().contains("factory already defined")) {
                 LOG.debug("OkHttpClient already registered, skipping");
@@ -210,6 +213,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
         objectMapper.enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
+        objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     }
 
     @Override
@@ -257,7 +261,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final EntryResource entryResource = new EntryResource(toolDAO, configuration);
         environment.jersey().register(entryResource);
 
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), authorizer, entryResource);
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), authorizer, entryResource, configuration);
         environment.jersey().register(workflowResource);
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
@@ -330,6 +334,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
         // cors.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, environment.getApplicationContext().getContextPath() +
         // "*");
+
+        // Initialize GitHub App Installation Access Token cache
+        CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
+        cacheConfigManager.initCache();
 
     }
 

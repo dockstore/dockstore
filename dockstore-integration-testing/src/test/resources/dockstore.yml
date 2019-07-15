@@ -12,6 +12,13 @@ bitbucketClientID: <fill me in>
 bitbucketClientSecret: <fill me in>
 discourseKey: <fill me in>
 discourseUrl: <fill me in>
+discourseCategoryId: 9
+zenodoClientID: <fill me in>
+zenodoClientSecret: <fill me in>
+zenodoRedirectURI: http://<fill me in>:8080/auth/zenodo.org
+zenodoUrl: https://zenodo.org
+gitHubAppId: <fill me in>
+gitHubAppPrivateKeyFile: <fill me in>
 
 googleClientID: <fill me in>
 googleClientSecret: <fill me in>
@@ -85,10 +92,7 @@ logging:
       logFormat: # TODO
 
 uiConfig:
-  # Must end with a slash
-  discourseUrl: https://discuss.dockstore.org/
   dnaStackImportUrl: https://app.dnastack.com/#/app/workflow/import/dockstore
-  fireCloudImportUrl: https://portal.firecloud.org/#import/dockstore
   dnaNexusImportUrl: https://platform.dnanexus.com/panx/tools/import-workflow
   terraImportUrl: https://app.terra.bio/#import-tool/dockstore
 
@@ -106,9 +110,14 @@ uiConfig:
   gitlabRedirectPath: /auth/gitlab.com
   gitlabScope: api
 
+  zenodoAuthUrl: https://zenodo.org/oauth/authorize
+  zenodoRedirectPath: /auth/zenodo.org
+  zenodoScope: deposit:write deposit:actions
+
   googleScope: profile email
 
   cwlVisualizerUri: https://view.commonwl.org
+  tagManagerId: <fill me in>
 
-  enableLaunchWithFireCloud: true
+  gitHubAppInstallationUrl: https://github.com/apps/<fill me in>
 

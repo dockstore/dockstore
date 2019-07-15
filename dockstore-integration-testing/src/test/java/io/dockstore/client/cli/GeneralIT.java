@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -34,13 +35,15 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -53,8 +56,11 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Extra confidential integration tests, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
@@ -121,7 +127,7 @@ public class GeneralIT extends BaseIT {
         tag.getSourceFiles().add(fileDockerFile);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        c.setTags(tags);
+        c.setWorkflowVersions(tags);
         return c;
     }
 
@@ -297,14 +303,14 @@ public class GeneralIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "true", "--script" });
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", new ScalarHandler<>());
         assertEquals("there should be 1 hidden tag", 1, count);
 
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "false", "--script" });
 
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", new ScalarHandler<>());
         assertEquals("there should be 0 hidden tag", 0, count2);
     }
 
@@ -410,7 +416,7 @@ public class GeneralIT extends BaseIT {
         published = testingPostgres.runSelectStatement(
                 "select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;",
                 new ScalarHandler<>());
-        assertTrue("tool not unpublished", !published);
+        assertFalse(published);
     }
 
     /**
@@ -578,37 +584,37 @@ public class GeneralIT extends BaseIT {
         c.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         c = containersApi.registerManual(c);
 
-        assertTrue("should see one (or more) tags: " + c.getTags().size(), c.getTags().size() >= 1);
+        assertTrue("should see one (or more) tags: " + c.getWorkflowVersions().size(), c.getWorkflowVersions().size() >= 1);
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
         usersApi.refresh(userid);
 
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
-        int size = containersApi.getContainer(c.getId(), null).getTags().size();
-        long size2 = containersApi.getContainer(c.getId(), null).getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        int size = containersApi.getContainer(c.getId(), null).getWorkflowVersions().size();
+        long size2 = containersApi.getContainer(c.getId(), null).getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size == size2 && size >= 1);
         // individual refresh should update image ids
         containersApi.refresh(c.getId());
         DockstoreTool container = containersApi.getContainer(c.getId(), null);
-        size = container.getTags().size();
-        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size = container.getWorkflowVersions().size();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
 
         // so should overall refresh
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refresh(userid);
         container = containersApi.getContainer(c.getId(), null);
-        size = container.getTags().size();
-        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size = container.getWorkflowVersions().size();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
 
         // so should organizational refresh
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refreshToolsByOrganization(userid, container.getNamespace());
         container = containersApi.getContainer(c.getId(), null);
-        size = container.getTags().size();
-        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size = container.getWorkflowVersions().size();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
     }
 
@@ -654,6 +660,56 @@ public class GeneralIT extends BaseIT {
         //check if the tag's wdl path have the same wdl path or not in the database
         final String path = getPathfromDB("wdlpath");
         assertEquals("the cwl path should be changed to /test1.wdl", "/test1.wdl", path);
+    }
+
+    @Test
+    public void testToolFreezing() throws ApiException {
+        //setup webservice and get tool api
+        ContainersApi toolsApi = setupWebService();
+        ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
+
+        //register tool
+        DockstoreTool c = getContainer();
+        DockstoreTool toolTest = toolsApi.registerManual(c);
+        toolsApi.refresh(toolTest.getId());
+
+        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        assertFalse(refresh.getWorkflowVersions().isEmpty());
+        Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        master.setFrozen(true);
+        master.setImageId("awesomeid");
+        List<Tag> tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertTrue(master.isFrozen() && master.getImageId().equals("awesomeid"));
+        master.setImageId("weakid");
+        tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertTrue(master.isFrozen() && master.getImageId().equals("awesomeid"));
+        master.setFrozen(false);
+        tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertTrue(master.isFrozen() && master.getImageId().equals("awesomeid"));
+
+        // but should be able to change doi stuff
+        master.setFrozen(true);
+        master.setDoiStatus(Tag.DoiStatusEnum.REQUESTED);
+        master.setDoiURL("foo");
+        tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertEquals("foo", master.getDoiURL());
+        assertEquals(Tag.DoiStatusEnum.REQUESTED, master.getDoiStatus());
+
+        // try modifying sourcefiles
+        // cannot modify sourcefiles for a frozen version
+        assertFalse(master.getSourceFiles().isEmpty());
+        master.getSourceFiles().forEach(s -> {
+            assertTrue(s.isFrozen());
+            getTestingPostgres().runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
+            final String content = getTestingPostgres()
+                .runSelectStatement("select content from sourcefile where id = " + s.getId(), new ScalarHandler<>());
+            assertNotEquals("foo", content);
+        });
+
     }
 
     /**
@@ -789,10 +845,10 @@ public class GeneralIT extends BaseIT {
         boolean userTwoExists = userApi.checkUserExists(BaseIT.OTHER_USERNAME);
         assertTrue("User OtherUser should exist", userTwoExists);
         boolean fakeUserExists = userApi.checkUserExists("NotARealUser");
-        assertTrue("User NotARealUser should not exist", !fakeUserExists);
+        assertFalse(fakeUserExists);
 
         // Unauthorized user should fail
-        ApiClient unauthClient = getWebClient(false, "");
+        ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "");
         UsersApi unauthUserApi = new UsersApi(unauthClient);
         boolean failed = false;
         try {
@@ -804,6 +860,65 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
+     * This tests that you can retrieve tools by alias (using optional auth)
+     */
+    @Test
+    public void testToolAlias() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        ContainersApi containersApi = new ContainersApi(webClient);
+        EntriesApi entryApi = new EntriesApi(webClient);
+
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null);
+        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
+
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME);
+        ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
+
+        // Add tool
+        DockstoreTool tool = containersApi.registerManual(getContainer());
+        DockstoreTool refresh = containersApi.refresh(tool.getId());
+
+        // Add alias
+        Entry entry = entryApi.updateAliases(refresh.getId(), "foobar", "");
+        Assert.assertTrue("Should have alias foobar", entry.getAliases().containsKey("foobar"));
+
+        // Get unpublished tool by alias as owner
+        DockstoreTool aliasTool = containersApi.getToolByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the tool by alias", aliasTool);
+
+        // Cannot get tool by alias as other user
+        try {
+            otherUserContainersApi.getToolByAlias("foobar");
+            fail("Should not be able to retrieve tool.");
+        } catch (ApiException ex) {
+        }
+
+        // Cannot get tool by alias as anon user
+        try {
+            anonContainersApi.getToolByAlias("foobar");
+            fail("Should not be able to retrieve tool.");
+        } catch (ApiException ex) {
+        }
+
+        // Publish tool
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        containersApi.publish(refresh.getId(), publishRequest);
+
+        // Get published tool by alias as owner
+        DockstoreTool publishedAliasTool = containersApi.getToolByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+
+        // Cannot get tool by alias as other user
+        publishedAliasTool = otherUserContainersApi.getToolByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+
+        // Cannot get tool by alias as anon user
+        publishedAliasTool = anonContainersApi.getToolByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
+
+    }
+
+    /**
      * This tests that zip file can be downloaded or not based on published state and auth.
      */
     @Test
@@ -811,17 +926,17 @@ public class GeneralIT extends BaseIT {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
-        final ApiClient anonWebClient = getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool
         DockstoreTool tool = ownerContainersApi.registerManual(getContainer());
         DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
         Long toolId = refresh.getId();
-        Tag tag = refresh.getTags().get(0);
+        Tag tag = refresh.getWorkflowVersions().get(0);
         Long versionId = tag.getId();
 
         // Try downloading unpublished
@@ -834,7 +949,7 @@ public class GeneralIT extends BaseIT {
         } catch (ApiException ex) {
             success = false;
         } finally {
-            assertTrue("User does not have access to tool.", !success);
+            assertFalse("User does not have access to tool.", success);
         }
         // Other user: Should fail
         success = true;
@@ -843,7 +958,7 @@ public class GeneralIT extends BaseIT {
         } catch (ApiException ex) {
             success = false;
         } finally {
-            assertTrue("User does not have access to tool.", !success);
+            assertFalse("User does not have access to tool.", success);
         }
 
         // Publish

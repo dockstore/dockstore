@@ -107,9 +107,9 @@ public class CheckerWorkflowIT extends BaseIT {
         DockstoreTool refresh = containersApi.refresh(githubTool.getId());
 
         // Check if the output file format is added to the file_formats property
-        assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671"))));
+        assertTrue(refresh.getWorkflowVersions().stream().anyMatch(tag -> tag.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671"))));
         assertTrue(refresh.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671")));
-        assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
+        assertTrue(refresh.getWorkflowVersions().stream().anyMatch(tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
         assertTrue(refresh.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
 
         // Add checker workflow
@@ -131,7 +131,7 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Checker workflow should have the same test path as entry
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where defaulttestparameterfilepath = '/testcwl.json'", new ScalarHandler<>());
+            .runSelectStatement("select count(*) from workflow w, entry_defaultpaths ed where ed.path = '/testcwl.json' and w.id = ed.entry_id", new ScalarHandler<>());
         assertEquals("The checker workflow should have the correct default test path /testcwl.json, there are " + count2, 1, count2);
 
         // Checker workflow should have the correct workflow path
@@ -302,7 +302,7 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Checker workflow should have the same test path as entry
         final long count4 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where defaulttestparameterfilepath = '/testcwl.json'", new ScalarHandler<>());
+            .runSelectStatement("select count(*) from workflow w, entry_defaultpaths ed where ed.path = '/testcwl.json' and w.id = ed.entry_id", new ScalarHandler<>());
         assertEquals("There should be two workflows with default test parameter file path of /testcwl.json, there are " + count4, 2,
             count4);
 
@@ -380,7 +380,7 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Checker workflow should have the same test path as entry
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where defaulttestparameterfilepath = '/md5sum-wdl.json'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow w, entry_defaultpaths ed where ed.path = '/md5sum-wdl.json' and w.id = ed.entry_id", new ScalarHandler<>());
         assertEquals("There should be two workflows with default test parameter file path of /md5sum-wdl.json, there are " + count4, 2,
             count4);
 

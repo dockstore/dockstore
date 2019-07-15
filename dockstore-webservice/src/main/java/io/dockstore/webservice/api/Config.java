@@ -17,7 +17,9 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
     private String quayIoClientId;
     private String bitBucketClientId;
     private String gitlabClientId;
+    private String zenodoClientId;
     private String googleClientId;
+    private String discourseUrl;
 
 
     private Config() {
@@ -30,7 +32,9 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
         config.quayIoClientId = webConfig.getQuayClientID();
         config.bitBucketClientId = webConfig.getBitbucketClientID();
         config.gitlabClientId = webConfig.getGitlabClientID();
+        config.zenodoClientId = webConfig.getZenodoClientID();
         config.googleClientId = webConfig.getGoogleClientID();
+        config.discourseUrl = webConfig.getDiscourseUrl();
         BeanUtils.copyProperties(config, webConfig.getUiConfig());
         return config;
     }
@@ -51,8 +55,15 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
         return gitlabClientId;
     }
 
+    public String getZenodoClientId() {
+        return zenodoClientId;
+    }
+
     public String getGoogleClientId() {
         return googleClientId;
     }
 
+    public String getDiscourseUrl() {
+        return discourseUrl;
+    }
 }

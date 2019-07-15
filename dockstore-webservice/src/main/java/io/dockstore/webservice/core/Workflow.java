@@ -16,13 +16,14 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.persistence.AttributeConverter;
 import javax.persistence.Column;
 import javax.persistence.Convert;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -32,31 +33,33 @@ import javax.persistence.JoinTable;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.LanguageType;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.apache.http.HttpStatus;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
 
 /**
  * This describes one workflow in the dockstore, extending Entry with the fields necessary to describe workflows.
- * <p>
- * Logically, this currently means one WDL or CWL document that may refer to tools in turn.
  *
  * @author dyuen
  */
-@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore")
+@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class}, discriminator = "type")
 @Entity
+// this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
+@Table(name = "foo")
 @NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getByAlias", query = "SELECT e from Workflow e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.countAllPublished", query = "SELECT COUNT(c.id)" + Workflow.PUBLISHED_QUERY),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c" + Workflow.PUBLISHED_QUERY + "ORDER BY size(c.starredUsers) DESC"),
@@ -68,10 +71,13 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true") })
-@DiscriminatorValue("workflow")
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
+@JsonPropertyOrder("descriptorType")
 @SuppressWarnings("checkstyle:magicnumber")
-public class Workflow extends Entry<Workflow, WorkflowVersion> {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+@JsonSubTypes({ @JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
+    @JsonSubTypes.Type(value = Service.class, name = "Service") })
+public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";
 
@@ -97,20 +103,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
+    // DOCKSTORE-2428 - demo how to add new workflow language
+    // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 18)
-    private String descriptorType;
-
-    // Add for new descriptor types
-    @Column(columnDefinition = "text")
-    @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 19)
-    private String defaultWorkflowPath = "/Dockstore.cwl";
-
-    @Column(columnDefinition = "text")
-    @JsonProperty("defaultTestParameterFilePath")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 20)
-    private String defaultTestParameterFilePath = "/test.json";
+    @Convert(converter = DescriptorLanguageConverter.class)
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18, allowableValues = "CWL, WDL, NFL, service")
+    private DescriptorLanguage descriptorType;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
@@ -119,22 +117,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     private final SortedSet<WorkflowVersion> workflowVersions;
 
-
-    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
-    @JsonIgnore
-    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
-    private Entry parentEntry;
-
-    @Column(columnDefinition = "boolean default false")
-    @JsonProperty("is_checker")
-    @ApiModelProperty(position = 23)
-    private boolean isChecker = false;
-
-    public Workflow() {
+    protected Workflow() {
         workflowVersions = new TreeSet<>();
     }
 
-    public Workflow(long id, String workflowName) {
+    protected Workflow(long id, String workflowName) {
         super(id);
         // this.userId = userId;
         this.workflowName = workflowName;
@@ -151,28 +138,9 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return super.getGitUrl();
     }
 
+    public abstract Entry getParentEntry();
 
-    @JsonProperty("parent_id")
-    public Long getParentId() {
-        if (parentEntry != null) {
-            return parentEntry.getId();
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public Set<WorkflowVersion> getVersions() {
-        return workflowVersions;
-    }
-
-    public Entry getParentEntry() {
-        return parentEntry;
-    }
-
-    public void setParentEntry(Entry parentEntry) {
-        this.parentEntry = parentEntry;
-    }
+    public abstract void setParentEntry(Entry parentEntry);
 
     /**
      * Copies some of the attributes of the source workflow to the target workflow
@@ -213,16 +181,9 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return workflowName;
     }
 
+    @Override
     public Set<WorkflowVersion> getWorkflowVersions() {
         return workflowVersions;
-    }
-
-    public void addWorkflowVersion(WorkflowVersion workflowVersion) {
-        workflowVersions.add(workflowVersion);
-    }
-
-    public boolean removeWorkflowVersion(WorkflowVersion workflowVersion) {
-        return workflowVersions.remove(workflowVersion);
     }
 
     /**
@@ -233,13 +194,15 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     // Add for new descriptor types
-    @JsonProperty
+    @JsonProperty("workflow_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the primary descriptor document", required = true, position = 19)
     public String getDefaultWorkflowPath() {
-        return defaultWorkflowPath;
+        return getDefaultPaths().getOrDefault(this.getDescriptorType().getFileType(), "/Dockstore.cwl");
     }
 
+    //TODO: odd side effect, this means that if the descriptor language is set wrong, we will get or set the wrong the default paths
     public void setDefaultWorkflowPath(String defaultWorkflowPath) {
-        this.defaultWorkflowPath = defaultWorkflowPath;
+        getDefaultPaths().put(this.getDescriptorType().getFileType(), defaultWorkflowPath);
     }
 
     @JsonProperty
@@ -280,70 +243,33 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.sourceControl.name();
     }
 
-    public void setDescriptorType(String descriptorType) {
+    public void setDescriptorType(DescriptorLanguage descriptorType) {
         this.descriptorType = descriptorType;
     }
 
-    public String getDescriptorType() {
-        return this.descriptorType;
-    }
-
-    public LanguageType determineWorkflowType() {
-        LanguageType fileType;
-        if (this.getDescriptorType().equalsIgnoreCase(LanguageType.WDL.toString())) {
-            fileType = LanguageType.WDL;
-        } else if (this.getDescriptorType().equalsIgnoreCase(LanguageType.CWL.toString())) {
-            fileType = LanguageType.CWL;
-        } else {
-            fileType = LanguageType.NEXTFLOW;
-        }
-        return fileType;
+    public DescriptorLanguage getDescriptorType() {
+        // due to DB constraints, this should only come into play with newly created, non-persisted Workflows
+        return Objects.requireNonNullElse(this.descriptorType, DescriptorLanguage.CWL);
     }
 
     @JsonIgnore
-    public SourceFile.FileType getFileType() {
-        return getFileType(this.descriptorType);
-    }
-
-    public static SourceFile.FileType getFileType(String descriptorType) {
-        SourceFile.FileType fileType;
-        if (descriptorType.equalsIgnoreCase(LanguageType.WDL.toString())) {
-            fileType = SourceFile.FileType.DOCKSTORE_WDL;
-        } else if (descriptorType.equalsIgnoreCase(LanguageType.CWL.toString())) {
-            fileType = SourceFile.FileType.DOCKSTORE_CWL;
-        } else if (descriptorType.equalsIgnoreCase(LanguageType.NEXTFLOW.toString())) {
-            fileType = SourceFile.FileType.NEXTFLOW_CONFIG;
-        } else {
-            throw new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST);
-        }
-        return fileType;
+    public DescriptorLanguage.FileType getFileType() {
+        return this.getDescriptorType().getFileType();
     }
 
     @JsonIgnore
-    public SourceFile.FileType getTestParameterType() {
-        return getTestParameterType(this.descriptorType);
+    public DescriptorLanguage.FileType getTestParameterType() {
+        return this.getDescriptorType().getTestParamType();
     }
 
-    public static SourceFile.FileType getTestParameterType(String descriptorType) {
-        SourceFile.FileType fileType;
-        if (descriptorType.equalsIgnoreCase(LanguageType.WDL.toString())) {
-            fileType = SourceFile.FileType.WDL_TEST_JSON;
-        } else if (descriptorType.equalsIgnoreCase(LanguageType.CWL.toString())) {
-            fileType = SourceFile.FileType.CWL_TEST_JSON;
-        } else if (descriptorType.equalsIgnoreCase(LanguageType.NEXTFLOW.toString())) {
-            fileType = SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
-        } else {
-            throw new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST);
-        }
-        return fileType;
-    }
-
+    @JsonProperty("defaultTestParameterFilePath")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 20)
     public String getDefaultTestParameterFilePath() {
-        return defaultTestParameterFilePath;
+        return getDefaultPaths().getOrDefault(this.getDescriptorType().getTestParamType(), "/test.json");
     }
 
     public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
-        this.defaultTestParameterFilePath = defaultTestParameterFilePath;
+        getDefaultPaths().put(this.getDescriptorType().getTestParamType(), defaultTestParameterFilePath);
     }
     public SourceControl getSourceControl() {
         return sourceControl;
@@ -353,11 +279,20 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.sourceControl = sourceControl;
     }
 
-    public boolean isIsChecker() {
-        return this.isChecker;
-    }
+    public abstract boolean isIsChecker();
 
-    public void setIsChecker(boolean isChecker) {
-        this.isChecker = isChecker;
+    public abstract void setIsChecker(boolean isChecker);
+
+    public static class DescriptorLanguageConverter implements AttributeConverter<DescriptorLanguage, String> {
+
+        @Override
+        public String convertToDatabaseColumn(DescriptorLanguage attribute) {
+            return attribute.getLowerShortName();
+        }
+
+        @Override
+        public DescriptorLanguage convertToEntityAttribute(String dbData) {
+            return DescriptorLanguage.convertShortStringToEnum(dbData);
+        }
     }
 }

@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,98 +34,84 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import io.dockstore.common.Bridge;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wdl4s.parser.WdlParser;
 
 /**
  * This class will eventually handle support for understanding WDL
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-    public static final String WDL_SYNTAX_ERROR = "There is a syntax error or your WDL version is greater than draft-2. Please check the WDL file.";
+    public static final String WDL_SYNTAX_ERROR = "There is a syntax error, please ensure your WDL document is valid.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
-        // Use Broad WDL parser to grab data
-        // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
+        WdlBridge wdlBridge = new WdlBridge();
+        Map<String, String> secondaryFiles = new HashMap<>();
+        sourceFiles.stream().forEach(file -> {
+            secondaryFiles.put(file.getAbsolutePath(), file.getContent());
+        });
+        wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
+
         try {
-            WdlParser parser = new WdlParser();
-            WdlParser.TokenStream tokens;
-            if (entry.getClass().equals(Tool.class)) {
-                tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Tool)entry).getDefaultWdlPath())));
-            } else {
-                tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Workflow)entry).getDefaultWorkflowPath())));
-            }
-            WdlParser.Ast ast = (WdlParser.Ast)parser.parse(tokens).toAst();
-
-            if (ast == null) {
-                LOG.error(MessageFormat.format("Unable to parse WDL file {0}", filepath));
-                clearMetadata(entry);
-                return entry;
-            } else {
-                LOG.info("Repository has Dockstore.wdl");
-            }
-
+            List<Map<String, String>> metadata = wdlBridge.getMetadata(filepath, content);
             Set<String> authors = new HashSet<>();
             Set<String> emails = new HashSet<>();
-            final String[] description = { null };
+            final String[] mainDescription = { null };
 
-            // go rummaging through tasks to look for possible emails and authors
-            WdlParser.AstList body = (WdlParser.AstList)ast.getAttribute("body");
-            // rummage through tasks, each task should have at most one meta
-            body.stream().filter(node -> node instanceof WdlParser.Ast && (((WdlParser.Ast)node).getName().equals("Task") || ((WdlParser.Ast)node).getName().equals("Workflow"))).forEach(node -> {
-                List<WdlParser.Ast> meta = extractTargetFromAST(node, "Meta");
-                if (meta != null) {
-                    Map<String, WdlParser.AstNode> attributes = meta.get(0).getAttributes();
-                    attributes.values().forEach(value -> {
-                        String email = extractRuntimeAttributeFromAST(value, "email");
-                        if (email != null) {
-                            emails.add(email);
-                        }
-                        String author = extractRuntimeAttributeFromAST(value, "author");
-                        if (author != null) {
-                            authors.add(author);
-                        }
-                        String localDesc = extractRuntimeAttributeFromAST(value, "description");
-                        if (!Strings.isNullOrEmpty(localDesc)) {
-                            description[0] = localDesc;
-                        }
-                    });
+            metadata.stream().forEach(metaBlock -> {
+                String author = metaBlock.get("author");
+                String[] callAuthors = author != null ? author.split(",") : null;
+                if (callAuthors != null) {
+                    for (String callAuthor : callAuthors) {
+                        authors.add(callAuthor.trim());
+                    }
+                }
+
+                String email = metaBlock.get("email");
+                String[] callEmails = email != null ? email.split(",") : null;
+                if (callEmails != null) {
+                    for (String callEmail : callEmails) {
+                        emails.add(callEmail.trim());
+                    }
+                }
+
+                String description = metaBlock.get("description");
+                if (description != null && !description.isBlank()) {
+                    mainDescription[0] = description;
                 }
             });
-            if (!authors.isEmpty() || entry.getAuthor() == null) {
+
+            if (!authors.isEmpty()) {
                 entry.setAuthor(Joiner.on(", ").join(authors));
             }
-            if (!emails.isEmpty() || entry.getEmail() == null) {
+            if (!emails.isEmpty()) {
                 entry.setEmail(Joiner.on(", ").join(emails));
             }
-            if (!Strings.isNullOrEmpty(description[0])) {
-                entry.setDescription(description[0]);
+            if (!Strings.isNullOrEmpty(mainDescription[0])) {
+                entry.setDescription(mainDescription[0]);
             }
-        } catch (WdlParser.SyntaxError syntaxError) {
-            LOG.error(MessageFormat.format("Unable to parse WDL file {0}", filepath), syntaxError);
+        } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
+            LOG.error("Unable to parse WDL file " + filepath, ex);
             clearMetadata(entry);
+            return entry;
         }
-
         return entry;
     }
 
@@ -134,68 +119,6 @@ public class WDLHandler implements LanguageHandlerInterface {
         entry.setAuthor(null);
         entry.setEmail(null);
         entry.setDescription(WDL_SYNTAX_ERROR);
-    }
-
-    private String extractRuntimeAttributeFromAST(WdlParser.AstNode node, String key) {
-        if (node == null) {
-            return null;
-        }
-        if (node instanceof WdlParser.AstList) {
-            WdlParser.AstList astList = (WdlParser.AstList)node;
-            for (WdlParser.AstNode listMember : astList) {
-                String result = extractRuntimeAttributeFromAST(listMember, key);
-                if (result != null) {
-                    return result;
-                }
-            }
-        }
-        if (node instanceof WdlParser.Ast) {
-            WdlParser.Ast nodeAst = (WdlParser.Ast)node;
-            if (nodeAst.getAttribute("key") instanceof WdlParser.Terminal && (((WdlParser.Terminal)nodeAst.getAttribute("key"))
-                    .getSourceString().equalsIgnoreCase(key))) {
-                return ((WdlParser.Terminal)nodeAst.getAttribute("value")).getSourceString();
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Grabs the path in the AST to the desired child node
-     *
-     * @param node    a potential parent of the target node
-     * @param keyword keyword to look for
-     * @return a list of the nodes in the path to the keyword node, terminal first
-     */
-    private List<WdlParser.Ast> extractTargetFromAST(WdlParser.AstNode node, String keyword) {
-        if (node == null) {
-            return null;
-        }
-        if (node instanceof WdlParser.Ast) {
-            WdlParser.Ast ast = (WdlParser.Ast)node;
-            if (ast.getName().equalsIgnoreCase(keyword)) {
-                return Lists.newArrayList(ast);
-            }
-            Map<String, WdlParser.AstNode> attributes = ast.getAttributes();
-            for (java.util.Map.Entry<String, WdlParser.AstNode> entry : attributes.entrySet()) {
-                if (entry.getValue() instanceof WdlParser.Ast) {
-                    List<WdlParser.Ast> target = extractTargetFromAST(entry.getValue(), keyword);
-                    if (target != null) {
-                        target.add(ast);
-                        return target;
-                    }
-                } else if (entry.getValue() instanceof WdlParser.AstList) {
-                    for (WdlParser.AstNode listNode : ((WdlParser.AstList)entry.getValue())) {
-                        List<WdlParser.Ast> target = extractTargetFromAST(listNode, keyword);
-                        if (target != null) {
-                            target.add(ast);
-                            return target;
-                        }
-                    }
-                }
-            }
-
-        }
-        return null;
     }
 
     /**
@@ -209,7 +132,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         File tempMainDescriptor = null;
         String mainDescriptor = null;
 
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_WDL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
 
         Map<String, String> validationMessageObject = new HashMap<>();
@@ -234,9 +157,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                 for (SourceFile sourceFile : filteredSourceFiles) {
                     if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath) && sourceFile.getContent() != null) {
                         if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
-                            if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
+                            if (Objects.equals(sourceFile.getType(), DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
                                 validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
-                            } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
+                            } else if (Objects.equals(sourceFile.getType(), DescriptorLanguage.FileType.WDL_TEST_JSON)) {
                                 validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
                             } else {
                                 validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
@@ -247,26 +170,21 @@ public class WDLHandler implements LanguageHandlerInterface {
                     }
                 }
                 tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
-                Bridge bridge = new Bridge(tempMainDescriptor.getParent());
-                bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
                 Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 checkForRecursiveHTTPImports(content, new HashSet<>());
+
+                WdlBridge wdlBridge = new WdlBridge();
+                wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+
                 if (Objects.equals(type, "tool")) {
-                    bridge.isValidTool(tempMainDescriptor);
+                    wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath());
                 } else {
-                    bridge.isValidWorkflow(tempMainDescriptor);
+                    wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath());
                 }
-            } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
+            } catch (wdl.draft3.parser.WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 return new VersionTypeValidation(false, validationMessageObject);
-            } catch (NoSuchMethodException e) {
-                //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
-                // https://github.com/ga4gh/dockstore/issues/2139
-                validationMessageObject.put(primaryDescriptorFilePath,
-                        "Unknown methods were found, indicating that this may be a WDL 1.0 file. Currently Dockstore cannot parse WDL 1.0, so validation has been skipped. It is likely that the import processing and DAG generation will be broken.\n"
-                                + e.getMessage());
-                return new VersionTypeValidation(true, validationMessageObject);
             } catch (CustomWebApplicationException e) {
                 throw e;
             } catch (Exception e) {
@@ -321,7 +239,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.WDL_TEST_JSON);
+        return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.WDL_TEST_JSON);
     }
 
     @Override
@@ -332,7 +250,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
             SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String currentFilePath) {
-        SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
+        DescriptorLanguage.FileType fileType = DescriptorLanguage.FileType.DOCKSTORE_WDL;
 
         // Use matcher to get imports
         String[] lines = StringUtils.split(content, '\n');
@@ -361,7 +279,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
                 importFile.setContent(fileResponse);
                 importFile.setPath(importPath);
-                importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
                 importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(importFile.getPath(), importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
@@ -395,18 +313,20 @@ public class WDLHandler implements LanguageHandlerInterface {
         // The use of temporary files is not needed here and might cause new problems
         try {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
-            Bridge bridge = new Bridge(tempMainDescriptor.getParent());
-            bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
 
+            WdlBridge wdlBridge = new WdlBridge();
+            wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+
             // Iterate over each call, grab docker containers
-            Map<String, String> callsToDockerMap = bridge.getCallsToDockerMap(tempMainDescriptor);
+            Map<String, String> callsToDockerMap = wdlBridge.getCallsToDockerMap(tempMainDescriptor.getAbsolutePath());
+
             // Iterate over each call, determine dependencies
-            Map<String, List<String>> callsToDependencies = bridge.getCallsToDependencies(tempMainDescriptor);
+            Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(tempMainDescriptor.getAbsolutePath());
             toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
             // Get import files
-            namespaceToPath = bridge.getImportMap(tempMainDescriptor);
-        } catch (IOException | WdlParser.SyntaxError e) {
+            namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath());
+        } catch (IOException | wdl.draft3.parser.WdlParser.SyntaxError e) {
             throw new CustomWebApplicationException("could not process wdl into DAG: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);

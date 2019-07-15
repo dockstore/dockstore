@@ -8,7 +8,7 @@ import java.util.List;
 
 import com.google.common.io.Files;
 import io.dockstore.client.cli.SwaggerUtility;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.openapi.wes.client.api.WorkflowExecutionServiceApi;
 import io.openapi.wes.client.model.RunId;
 import org.apache.commons.io.FileUtils;
@@ -31,7 +31,7 @@ public class WESLauncher extends BaseLauncher {
     private WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi;
 
 
-    public WESLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+    public WESLauncher(AbstractEntryClient abstractEntryClient, DescriptorLanguage language, boolean script) {
         super(abstractEntryClient, language, script);
         setLauncherName("wes");
     }

@@ -147,7 +147,7 @@ public class OrganizationIT extends BaseIT {
         OrganizationsApi organizationsApiCurator = new OrganizationsApi(webClientCuratorUser);
 
         // Setup unauthorized user
-        final ApiClient unauthClient = getWebClient(false, "");
+        final ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "");
         OrganizationsApi organizationsApiUnauth = new OrganizationsApi(unauthClient);
 
         // Create the organization
@@ -1048,7 +1048,7 @@ public class OrganizationIT extends BaseIT {
         OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
 
         // Setup unauthorized user
-        final ApiClient unauthClient = getWebClient(false, "");
+        final ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "");
         OrganizationsApi organizationsApiUnauth = new OrganizationsApi(unauthClient);
 
         // Create the Organization and collection

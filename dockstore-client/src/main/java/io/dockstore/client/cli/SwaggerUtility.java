@@ -41,7 +41,7 @@ public final class SwaggerUtility {
     public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
         return client
             .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
-                new String[] { "BEARER" }, type);
+                new String[] { "BEARER" }, type).getData();
     }
 
     public static void unzipFile(File zipFile, File unzipDirectory) throws IOException {

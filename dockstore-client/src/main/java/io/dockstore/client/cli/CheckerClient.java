@@ -25,8 +25,8 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.printUsageHelp;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.WDL;
 
 /**
  * This implements all operations on the CLI that are specific to checkers
@@ -117,7 +117,7 @@ public class CheckerClient extends WorkflowClient {
 
             // Check that descriptor type is valid
             descriptorType = descriptorType.toLowerCase();
-            if (!Objects.equals(descriptorType, CWL_STRING) && !Objects.equals(descriptorType, WDL_STRING)) {
+            if (!Objects.equals(descriptorType, CWL.getLowerShortName()) && !Objects.equals(descriptorType, WDL.getLowerShortName())) {
                 errorMessage("The given descriptor type " + descriptorType + " is not valid.",
                     Client.CLIENT_ERROR);
             }

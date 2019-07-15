@@ -12,6 +12,16 @@ components:
             $ref: '#/components/schemas/Alias'
           type: object
       type: object
+    BioWorkflow:
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+      properties:
+        is_checker:
+          type: boolean
+        parent_id:
+          format: int64
+          type: integer
+      type: object
     Collection:
       description: Collection in an organization, collects entries
       properties:
@@ -93,9 +103,7 @@ components:
           type: string
         dnaStackImportUrl:
           type: string
-        enableLaunchWithFireCloud:
-          type: boolean
-        fireCloudImportUrl:
+        gitHubAppInstallationUrl:
           type: string
         gitHubAuthUrl:
           type: string
@@ -125,7 +133,17 @@ components:
           type: string
         quayIoScope:
           type: string
+        tagManagerId:
+          type: string
         terraImportUrl:
+          type: string
+        zenodoAuthUrl:
+          type: string
+        zenodoClientId:
+          type: string
+        zenodoRedirectPath:
+          type: string
+        zenodoScope:
           type: string
       type: object
     DescriptorLanguageBean:
@@ -202,6 +220,11 @@ components:
         users:
           items:
             $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        workflowVersions:
+          items:
+            $ref: '#/components/schemas/Version'
           type: array
           uniqueItems: true
       type: object
@@ -408,6 +431,10 @@ components:
         url:
           type: string
       type: object
+    Service:
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+      type: object
     SharedWorkflows:
       properties:
         role:
@@ -434,6 +461,8 @@ components:
           type: string
         content:
           type: string
+        frozen:
+          type: boolean
         id:
           format: int64
           type: integer
@@ -450,6 +479,9 @@ components:
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
           - DOCKSTORE_YML
+          - DOCKSTORE_SERVICE_YML
+          - DOCKSTORE_SERVICE_TEST_JSON
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         verifiedBySource:
           additionalProperties:
@@ -481,6 +513,8 @@ components:
           type: string
         doiURL:
           type: string
+        frozen:
+          type: boolean
         hidden:
           type: boolean
         id:
@@ -493,6 +527,9 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        last_built:
+          format: date-time
+          type: string
         last_modified:
           format: date-time
           type: string
@@ -557,6 +594,7 @@ components:
           - dockstore
           - bitbucket.org
           - gitlab.com
+          - zenodo.org
           - google.com
           type: string
         userId:
@@ -687,6 +725,11 @@ components:
             $ref: '#/components/schemas/User'
           type: array
           uniqueItems: true
+        workflowVersions:
+          items:
+            $ref: '#/components/schemas/Tag'
+          type: array
+          uniqueItems: true
       type: object
     ToolTesterLog:
       properties:
@@ -746,6 +789,9 @@ components:
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
           - DOCKSTORE_YML
+          - DOCKSTORE_SERVICE_YML
+          - DOCKSTORE_SERVICE_TEST_JSON
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         valid:
           type: boolean
@@ -766,7 +812,73 @@ components:
         verify:
           type: boolean
       type: object
+    Version:
+      properties:
+        commitID:
+          type: string
+        dirtyBit:
+          type: boolean
+        doiStatus:
+          enum:
+          - NOT_REQUESTED
+          - REQUESTED
+          - CREATED
+          type: string
+        doiURL:
+          type: string
+        frozen:
+          type: boolean
+        hidden:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        input_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        name:
+          type: string
+        output_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        reference:
+          type: string
+        referenceType:
+          enum:
+          - COMMIT
+          - TAG
+          - BRANCH
+          - NOT_APPLICABLE
+          - UNSET
+          type: string
+        sourceFiles:
+          items:
+            $ref: '#/components/schemas/SourceFile'
+          type: array
+          uniqueItems: true
+        valid:
+          type: boolean
+        validations:
+          items:
+            $ref: '#/components/schemas/Validation'
+          type: array
+          uniqueItems: true
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
+        versionEditor:
+          $ref: '#/components/schemas/User'
+        workingDirectory:
+          type: string
+      type: object
     Workflow:
+      discriminator:
+        propertyName: type
       properties:
         aliases:
           additionalProperties:
@@ -790,6 +902,11 @@ components:
         description:
           type: string
         descriptorType:
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - service
           type: string
         email:
           type: string
@@ -807,7 +924,7 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
-        is_checker:
+        isChecker:
           type: boolean
         is_published:
           type: boolean
@@ -830,6 +947,7 @@ components:
           - FULL
           - STUB
           - HOSTED
+          - SERVICE
           type: string
         organization:
           type: string
@@ -838,9 +956,8 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
-        parent_id:
-          format: int64
-          type: integer
+        parentEntry:
+          $ref: '#/components/schemas/Entry'
         path:
           type: string
         repository:
@@ -891,6 +1008,8 @@ components:
           type: string
         doiURL:
           type: string
+        frozen:
+          type: boolean
         hidden:
           type: boolean
         id:
@@ -926,6 +1045,13 @@ components:
             $ref: '#/components/schemas/SourceFile'
           type: array
           uniqueItems: true
+        subClass:
+          enum:
+          - DOCKER_COMPOSE
+          - SWARM
+          - KUBERNETES
+          - HELM
+          type: string
         valid:
           type: boolean
         validations:
@@ -1725,6 +1851,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Token'
           description: default response
+  /auth/tokens/zenodo.org:
+    get:
+      operationId: addZenodoToken
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: default response
   /auth/tokens/{tokenId}:
     delete:
       operationId: deleteToken
@@ -2106,6 +2252,27 @@ paths:
                   $ref: '#/components/schemas/Tag'
                 type: array
           description: default response
+  /containers/{alias}/aliases:
+    get:
+      operationId: getToolByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+          description: default response
   /containers/{containerId}:
     delete:
       operationId: deleteContainer
@@ -2172,35 +2339,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Tool'
           description: default response
-  /containers/{containerId}/cwl:
+  /containers/{containerId}/descriptor/{relative-path}:
     get:
-      operationId: cwl
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /containers/{containerId}/cwl/{relative-path}:
-    get:
-      operationId: secondaryCwlPath
+      operationId: secondaryDescriptorPath
       parameters:
       - in: path
         name: containerId
@@ -2215,6 +2356,10 @@ paths:
       - in: path
         name: relative-path
         required: true
+        schema:
+          type: string
+      - in: query
+        name: language
         schema:
           type: string
       requestBody:
@@ -2280,6 +2425,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
+          description: default response
+  /containers/{containerId}/primaryDescriptor:
+    get:
+      operationId: primaryDescriptor
+      parameters:
+      - in: path
+        name: containerId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: tag
+        schema:
+          type: string
+      - in: query
+        name: language
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
           description: default response
   /containers/{containerId}/publish:
     post:
@@ -2356,9 +2531,9 @@ paths:
                 type: array
                 uniqueItems: true
           description: default response
-  /containers/{containerId}/secondaryCwl:
+  /containers/{containerId}/secondaryDescriptors:
     get:
-      operationId: secondaryCwl
+      operationId: secondaryDescriptors
       parameters:
       - in: path
         name: containerId
@@ -2370,32 +2545,8 @@ paths:
         name: tag
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-                type: array
-          description: default response
-  /containers/{containerId}/secondaryWdl:
-    get:
-      operationId: secondaryWdl
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
       - in: query
-        name: tag
+        name: language
         schema:
           type: string
       requestBody:
@@ -2749,63 +2900,6 @@ paths:
                 type: array
                 uniqueItems: true
           description: default response
-  /containers/{containerId}/wdl:
-    get:
-      operationId: wdl
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /containers/{containerId}/wdl/{relative-path}:
-    get:
-      operationId: secondaryWdlPath
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      - in: path
-        name: relative-path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
   /containers/{toolId}/defaultVersion:
     put:
       operationId: updateDefaultVersion
@@ -2910,15 +3004,6 @@ paths:
         required: true
         schema:
           format: int64
-          type: integer
-      - description: The id of the category to add a topic to, defaults to Automatic
-          Tool and Workflow Threads (6).
-        in: query
-        name: categoryId
-        required: true
-        schema:
-          default: 6
-          format: int32
           type: integer
       responses:
         default:
@@ -4094,7 +4179,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -4173,6 +4258,7 @@ paths:
           - dockstore
           - bitbucket.org
           - gitlab.com
+          - zenodo.org
           - google.com
           type: string
       requestBody:
@@ -4253,7 +4339,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId
@@ -4372,6 +4458,30 @@ paths:
               schema:
                 items:
                   $ref: '#/components/schemas/Tool'
+                type: array
+          description: default response
+  /users/{userId}/services:
+    get:
+      operationId: userServices
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
   /users/{userId}/tokens:
@@ -4655,7 +4765,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4793,6 +4903,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
+          description: default response
+  /workflows/path/service:
+    post:
+      operationId: addService
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+  /workflows/path/service/upsertVersion:
+    post:
+      operationId: upsertServiceVersion
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/path/workflow/{repository}:
     get:
@@ -5025,6 +5165,11 @@ paths:
         schema:
           default: desc
           type: string
+      - in: query
+        name: services
+        schema:
+          default: false
+          type: boolean
       responses:
         default:
           content:
@@ -5094,6 +5239,27 @@ paths:
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
                 type: array
+          description: default response
+  /workflows/{alias}/aliases:
+    get:
+      operationId: getWorkflowByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
     post:
@@ -5177,63 +5343,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
-  /workflows/{workflowId}/cwl:
-    get:
-      operationId: cwl_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /workflows/{workflowId}/cwl/{relative-path}:
-    get:
-      operationId: secondaryCwlPath_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      - in: path
-        name: relative-path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
   /workflows/{workflowId}/dag/{workflowVersionId}:
     get:
       operationId: getWorkflowDag
@@ -5284,6 +5393,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
+  /workflows/{workflowId}/descriptor/{relative-path}:
+    get:
+      operationId: secondaryDescriptorPath_1
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: tag
+        schema:
+          type: string
+      - in: path
+        name: relative-path
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: language
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+          description: default response
   /workflows/{workflowId}/labels:
     put:
       operationId: updateLabels_1
@@ -5310,9 +5454,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
-  /workflows/{workflowId}/nextflow:
+  /workflows/{workflowId}/primaryDescriptor:
     get:
-      operationId: nextflow
+      operationId: primaryDescriptor_1
       parameters:
       - in: path
         name: workflowId
@@ -5324,35 +5468,8 @@ paths:
         name: tag
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /workflows/{workflowId}/nextflow/{relative-path}:
-    get:
-      operationId: secondaryNextFlowPath
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
       - in: query
-        name: tag
-        schema:
-          type: string
-      - in: path
-        name: relative-path
-        required: true
+        name: language
         schema:
           type: string
       requestBody:
@@ -5486,9 +5603,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
-  /workflows/{workflowId}/secondaryCwl:
+  /workflows/{workflowId}/secondaryDescriptors:
     get:
-      operationId: secondaryCwl_1
+      operationId: secondaryDescriptors_1
       parameters:
       - in: path
         name: workflowId
@@ -5500,60 +5617,8 @@ paths:
         name: tag
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-                type: array
-          description: default response
-  /workflows/{workflowId}/secondaryNextflow:
-    get:
-      operationId: secondaryNextflow
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
       - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-                type: array
-          description: default response
-  /workflows/{workflowId}/secondaryWdl:
-    get:
-      operationId: secondaryWdl_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
+        name: language
         schema:
           type: string
       requestBody:
@@ -5825,63 +5890,6 @@ paths:
                   $ref: '#/components/schemas/WorkflowVersion'
                 type: array
                 uniqueItems: true
-          description: default response
-  /workflows/{workflowId}/wdl:
-    get:
-      operationId: wdl_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-          description: default response
-  /workflows/{workflowId}/wdl/{relative-path}:
-    get:
-      operationId: secondaryWdlPath_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: tag
-        schema:
-          type: string
-      - in: path
-        name: relative-path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
           description: default response
   /workflows/{workflowId}/workflowVersions:
     put:

@@ -34,7 +34,9 @@ import java.util.stream.Stream;
 import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NextflowUtilities;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -49,15 +51,15 @@ import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 
 /**
- * This class will eventually handle support for NextFlow
+ * This class will eventually handle support for Nextflow
  */
-public class NextFlowHandler implements LanguageHandlerInterface {
+public class NextflowHandler implements LanguageHandlerInterface {
 
     private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
-        // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
+        // this is where we can look for things like Nextflow config files or maybe a future Dockstore.yml
         final Configuration configuration = NextflowUtilities.grabConfig(content);
         String descriptionInProgress = null;
         if (configuration.containsKey("manifest.description")) {
@@ -102,7 +104,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         final Configuration configuration = NextflowUtilities.grabConfig(content);
         Map<String, SourceFile> imports = new HashMap<>();
 
-        // add the NextFlow scripts
+        // add the Nextflow scripts
         String mainScriptPath = "main.nf";
         if (configuration.containsKey("manifest.mainScript")) {
             mainScriptPath = configuration.getString("manifest.mainScript");
@@ -113,7 +115,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         for (String filename : suspectedConfigImports) {
             String filenameAbsolutePath = convertRelativePathToAbsolutePath(filepath, filename);
             Optional<SourceFile> sourceFile = sourceCodeRepoInterface
-                .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, filenameAbsolutePath);
+                .readFile(repositoryId, version, DescriptorLanguage.FileType.NEXTFLOW, filenameAbsolutePath);
             if (sourceFile.isPresent()) {
                 sourceFile.get().setPath(filename);
                 imports.put(filename, sourceFile.get());
@@ -122,18 +124,18 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         // source files in /lib seem to be automatically added to the script classpath
         // binaries are also there and will need to be ignored
         List<String> strings = sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference());
-        handleNextFlowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
-        handleNextFlowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
+        handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
         return imports;
     }
 
-    private void handleNextFlowImports(String repositoryId, Version version, SourceCodeRepoInterface sourceCodeRepoInterface,
+    private void handleNextflowImports(String repositoryId, Version version, SourceCodeRepoInterface sourceCodeRepoInterface,
         Map<String, SourceFile> imports, List<String> strings, String lib) {
         if (strings.contains(lib)) {
             List<String> libraries = sourceCodeRepoInterface.listFiles(repositoryId, lib, version.getReference());
             for (String library : libraries) {
                 Optional<SourceFile> librarySourceFile = sourceCodeRepoInterface
-                    .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, FilenameUtils.concat(lib, library));
+                    .readFile(repositoryId, version, DescriptorLanguage.FileType.NEXTFLOW, FilenameUtils.concat(lib, library));
                 librarySourceFile.ifPresent(sourceFile -> imports.put(lib + "/" + library, sourceFile));
             }
         }
@@ -313,7 +315,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         // Iterate over each call, grab docker containers
 
         // nextflow uses the main script from the manifest as the main descriptor
-        // add the NextFlow scripts
+        // add the Nextflow scripts
         final Configuration configuration = NextflowUtilities.grabConfig(mainDescriptor);
         String mainScriptPath = "main.nf";
         if (configuration.containsKey("manifest.mainScript")) {

@@ -35,6 +35,7 @@ import java.util.zip.ZipOutputStream;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -110,7 +111,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             // clear users which are also lazy loaded
             entry.setUsers(null);
             // need to have this evicted so that hibernate does not actually delete the tags and users
-            Set<U> versions = entry.getVersions();
+            Set<U> versions = entry.getWorkflowVersions();
             versions.removeIf(Version::isHidden);
         }
         return entries;
@@ -129,7 +130,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             // clear users which are also lazy loaded
             entry.setUsers(null);
             // need to have this evicted so that hibernate does not actually delete the tags and users
-            Set<Version> versions = entry.getVersions();
+            Set<Version> versions = entry.getWorkflowVersions();
             versions.forEach(version ->
                 version.getSourceFiles().forEach(sourceFile ->
                         ((SourceFile)sourceFile).setContent(null))
@@ -156,7 +157,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType narrow the file to a specific type
      * @return return the primary descriptor or Dockerfile
      */
-    default SourceFile getSourceFile(long entryId, String tag, SourceFile.FileType fileType, Optional<User> user) {
+    default SourceFile getSourceFile(long entryId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
         return getSourceFileByPath(entryId, tag, fileType, null, user);
     }
 
@@ -170,7 +171,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param path     a specific path to a file
      * @return a single file depending on parameters
      */
-    default SourceFile getSourceFileByPath(long entryId, String tag, SourceFile.FileType fileType, String path, Optional<User> user) {
+    default SourceFile getSourceFileByPath(long entryId, String tag, DescriptorLanguage.FileType fileType, String path, Optional<User> user) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType, user);
         for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
             if (path != null) {
@@ -192,7 +193,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType, Optional<User> user) {
+    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
         return sourceFiles.entrySet().stream()
             .filter(entry -> entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor)
@@ -206,7 +207,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, SourceFile.FileType fileType, Optional<User> user) {
+    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
         return sourceFiles.entrySet().stream().filter(entry -> entry.getValue().getLeft().getType().equals(fileType))
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
@@ -220,7 +221,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      */
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
-            SourceFile.FileType fileType, Optional<User> user) {
+            DescriptorLanguage.FileType fileType, Optional<User> user) {
         T entry = getDAO().findById(workflowId);
         checkEntry(entry);
         checkOptionalAuthRead(user, entry);
@@ -244,14 +245,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             // and would thus make more sense to use master for workflows.
             tag = "latest";
         }
-
-        // todo: why the cast here?
-        for (Object o : entry.getVersions()) {
-            Version t = (Version)o;
-            if (t.getName().equals(tag)) {
-                tagInstance = t;
-            }
-        }
+        final String finalTagName = tag;
+        tagInstance = entry.getWorkflowVersions().stream().filter(v -> v.getName().equals(finalTagName)).findFirst().orElse(null);
 
         if (tagInstance == null) {
             throw new CustomWebApplicationException("Invalid or missing tag " + tag + ".", HttpStatus.SC_BAD_REQUEST);
@@ -262,7 +257,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             List<SourceFile> filteredTypes = workflowVersion.getSourceFiles().stream()
                 .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
-                if (fileType == SourceFile.FileType.CWL_TEST_JSON || fileType == SourceFile.FileType.WDL_TEST_JSON || fileType == SourceFile.FileType.NEXTFLOW_TEST_PARAMS) {
+                if (fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON || fileType == DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
                     resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
                 } else {
                     // looks like this takes into account a potentially different workflow path for a specific version of a workflow
@@ -281,18 +276,18 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 .collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
                 // dockerfile is a special case since there always is only a max of one
-                if (fileType == SourceFile.FileType.DOCKERFILE || fileType == SourceFile.FileType.CWL_TEST_JSON
-                    || fileType == SourceFile.FileType.WDL_TEST_JSON) {
+                if (fileType == DescriptorLanguage.FileType.DOCKERFILE || fileType == DescriptorLanguage.FileType.CWL_TEST_JSON
+                    || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON) {
                     resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
                     continue;
                 }
 
                 final String toolPath;
                 String toolVersionPath;
-                if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
+                if (fileType == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
                     toolPath = tool.getDefaultCwlPath();
                     toolVersionPath = toolTag.getCwlPath();
-                } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
+                } else if (fileType == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
                     toolPath = tool.getDefaultWdlPath();
                     toolVersionPath = toolTag.getWdlPath();
                 } else {
@@ -309,7 +304,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
 
 
-    default void createTestParameters(List<String> testParameterPaths, Version workflowVersion, Set<SourceFile> sourceFiles, SourceFile.FileType fileType, FileDAO fileDAO) {
+    default void createTestParameters(List<String> testParameterPaths, Version workflowVersion, Set<SourceFile> sourceFiles, DescriptorLanguage.FileType fileType, FileDAO fileDAO) {
         for (String path : testParameterPaths) {
             long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
                 .count();

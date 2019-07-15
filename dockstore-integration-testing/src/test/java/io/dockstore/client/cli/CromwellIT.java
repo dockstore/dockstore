@@ -23,17 +23,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.LanguageClientFactory;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.ToolClient;
-import io.dockstore.common.Bridge;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.WDLFileProvisioning;
+import io.dockstore.common.WdlBridge;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
 import org.apache.commons.io.FileUtils;
@@ -44,8 +43,7 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import scala.collection.JavaConversions;
-import scala.collection.immutable.List;
+import wdl.draft3.parser.WdlParser;
 
 /**
  * This tests integration with the CromWell engine and what will eventually be wdltool.
@@ -66,11 +64,13 @@ public class CromwellIT {
     @Test
     public void testWDL2Json() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
-        final java.util.List<String> wdlDocuments = Lists.newArrayList(sourceFile.getAbsolutePath());
-        final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
-        Bridge bridge = new Bridge(sourceFile.getParent());
-        String inputs = bridge.inputs(wdlList);
-        Assert.assertTrue(inputs.contains("three_step.cgrep.pattern"));
+        WdlBridge wdlBridge = new WdlBridge();
+        try {
+            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath());
+            Assert.assertTrue(inputs.contains("three_step.cgrep.pattern"));
+        } catch (WdlParser.SyntaxError ex) {
+            Assert.fail("There should not be any parsing errors");
+        }
     }
 
     @Test
@@ -78,7 +78,7 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, DescriptorLanguage.WDL)
             .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
@@ -93,7 +93,7 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, DescriptorLanguage.WDL)
             .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl_wrong.json"));
@@ -108,12 +108,17 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, DescriptorLanguage.WDL)
             .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));
-        Bridge bridge = new Bridge(workflowFile.getParent());
-        Map<String, String> wdlInputs = bridge.getInputFiles(workflowFile);
+        WdlBridge wdlBridge = new WdlBridge();
+        Map<String, String> wdlInputs = null;
+        try {
+            wdlInputs = wdlBridge.getInputFiles(workflowFile.getAbsolutePath());
+        } catch (WdlParser.SyntaxError ex) {
+            Assert.fail("Should not have any issue parsing file");
+        }
 
         WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(ResourceHelpers.resourceFilePath("config_file.txt"));
         Gson gson = new Gson();
@@ -139,7 +144,7 @@ public class CromwellIT {
     public void testWDLResolver() {
         // If resolver works, this should throw no errors
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl-sanger-workflow.wdl"));
-        Bridge bridge = new Bridge(sourceFile.getParent());
+        WdlBridge wdlBridge = new WdlBridge();
         HashMap<String, String> secondaryFiles = new HashMap<>();
         secondaryFiles.put("wdl.wdl",
                 "task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n" + "  }\n" + "}\n"
@@ -149,7 +154,12 @@ public class CromwellIT {
                         + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n" + "}\n" + "\n"
                         + "workflow three_step {\n" + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n"
                         + "  call wc {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
-        bridge.setSecondaryFiles(secondaryFiles);
+        wdlBridge.setSecondaryFiles(secondaryFiles);
+        try {
+            wdlBridge.validateWorkflow(sourceFile.getAbsolutePath());
+        } catch (WdlParser.SyntaxError ex) {
+            Assert.fail("Should not fail parsing file");
+        }
     }
 
     /**
@@ -160,7 +170,7 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, DescriptorLanguage.WDL)
                 .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("hello_world.json"));
@@ -175,10 +185,12 @@ public class CromwellIT {
     @Test
     public void testWDL2JsonIssue() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
-        final java.util.List<String> wdlDocuments = Lists.newArrayList(sourceFile.getAbsolutePath());
-        final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
-        Bridge bridge = new Bridge(sourceFile.getParent());
-        String inputs = bridge.inputs(wdlList);
-        Assert.assertTrue(inputs.contains("wf.hello_world.hello_input"));
+        WdlBridge wdlBridge = new WdlBridge();
+        try {
+            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath());
+            Assert.assertTrue(inputs.contains("wf.hello_world.hello_input"));
+        } catch (WdlParser.SyntaxError ex) {
+            Assert.fail("Should properly parse document");
+        }
     }
 }

@@ -195,4 +195,19 @@ public interface AuthenticatedResourceInterface {
         }
 
     }
+
+    /**
+     * Only passes if entry is published or if user has correct credentials
+     * @param user Optional user
+     * @param entry Entry to check
+     */
+    default void optionalUserCheckEntry(Optional<User> user, Entry entry) {
+        if (!entry.getIsPublished()) {
+            if (user.isEmpty()) {
+                throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
+            } else {
+                checkUser(user.get(), entry);
+            }
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 OICR
+ *    Copyright 2019 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,23 +13,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.common;
+
+package io.dockstore.webservice.jdbi;
+
+import io.dockstore.webservice.core.Service;
+import io.dropwizard.hibernate.AbstractDAO;
+import org.hibernate.SessionFactory;
 
 /**
- * Looks redundant with DescriptorType with some case-changes.
- * Moved here from dockstore-client.
+ * @author dyuen
  */
-public enum LanguageType {
-    CWL("cwl"), WDL("wdl"), NEXTFLOW("nfl"), NONE("none");
-    public final String desc;
-
-    LanguageType(String name) {
-        desc = name;
+public class ServiceDAO extends AbstractDAO<Service> {
+    public ServiceDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
     }
 
-    @Override
-    public String toString() {
-        return desc;
+    public Service findById(Long id) {
+        return get(id);
     }
 
+    public long create(Service file) {
+        return persist(file).getId();
+    }
 }

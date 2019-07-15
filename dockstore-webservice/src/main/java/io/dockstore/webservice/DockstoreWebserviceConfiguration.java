@@ -97,10 +97,31 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String gitlabClientSecret;
 
     @NotEmpty
+    private String zenodoClientID;
+
+    @NotEmpty
+    private String zenodoRedirectURI;
+
+    @NotEmpty
+    private String zenodoUrl;
+
+    @NotEmpty
+    private String zenodoClientSecret;
+
+    @NotEmpty
     private String discourseUrl;
 
     @NotEmpty
     private String discourseKey;
+
+    @NotNull
+    private Integer discourseCategoryId;
+
+    @NotNull
+    private String gitHubAppId;
+
+    @NotNull
+    private String gitHubAppPrivateKeyFile;
 
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
@@ -309,6 +330,38 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.gitlabClientSecret = gitlabClientSecret;
     }
 
+    public String getZenodoClientID() {
+        return zenodoClientID;
+    }
+
+    public void setZenodoClientID(String zenodoClientID) {
+        this.zenodoClientID = zenodoClientID;
+    }
+
+    public String getZenodoRedirectURI() {
+        return zenodoRedirectURI;
+    }
+
+    public void setZenodoRedirectURI(String zenodoRedirectURI) {
+        this.zenodoRedirectURI = zenodoRedirectURI;
+    }
+
+    public String getZenodoUrl() {
+        return zenodoUrl;
+    }
+
+    public void setZenodoUrl(String zenodoUrl) {
+        this.zenodoUrl = zenodoUrl;
+    }
+
+    public String getZenodoClientSecret() {
+        return zenodoClientSecret;
+    }
+
+    public void setZenodoClientSecret(String zenodoClientSecret) {
+        this.zenodoClientSecret = zenodoClientSecret;
+    }
+
     public String getDiscourseUrl() {
         return discourseUrl;
     }
@@ -323,6 +376,30 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setDiscourseKey(String discourseKey) {
         this.discourseKey = discourseKey;
+    }
+
+    public Integer getDiscourseCategoryId() {
+        return discourseCategoryId;
+    }
+
+    public void setDiscourseCategoryId(Integer discourseCategoryId) {
+        this.discourseCategoryId = discourseCategoryId;
+    }
+
+    public String getGitHubAppId() {
+        return gitHubAppId;
+    }
+
+    public void setGitHubAppId(String gitHubAppId) {
+        this.gitHubAppId = gitHubAppId;
+    }
+
+    public String getGitHubAppPrivateKeyFile() {
+        return gitHubAppPrivateKeyFile;
+    }
+
+    public void setGitHubAppPrivateKeyFile(String gitHubAppPrivateKeyFile) {
+        this.gitHubAppPrivateKeyFile = gitHubAppPrivateKeyFile;
     }
 
     @JsonProperty("esconfiguration")
@@ -534,13 +611,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      */
     public static class UIConfig {
 
-        /**
-         * Must end with a slash
-         */
-        private String discourseUrl;
-
         private String dnaStackImportUrl;
-        private String fireCloudImportUrl;
         private String dnaNexusImportUrl;
         private String terraImportUrl;
 
@@ -558,20 +629,18 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String gitlabRedirectPath;
         private String gitlabScope;
 
+        private String zenodoAuthUrl;
+        private String zenodoRedirectPath;
+        private String zenodoScope;
+
         private String googleScope;
 
         private String cwlVisualizerUri;
 
-        private boolean enableLaunchWithFireCloud;
+        private String tagManagerId;
 
+        private String gitHubAppInstallationUrl;
 
-        public String getDiscourseUrl() {
-            return discourseUrl;
-        }
-
-        public void setDiscourseUrl(String discourseUrl) {
-            this.discourseUrl = discourseUrl;
-        }
 
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
@@ -579,14 +648,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setDnaStackImportUrl(String dnaStackImportUrl) {
             this.dnaStackImportUrl = dnaStackImportUrl;
-        }
-
-        public String getFireCloudImportUrl() {
-            return fireCloudImportUrl;
-        }
-
-        public void setFireCloudImportUrl(String fireCloudImportUrl) {
-            this.fireCloudImportUrl = fireCloudImportUrl;
         }
 
         public String getDnaNexusImportUrl() {
@@ -685,6 +746,32 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.gitlabScope = gitlabScope;
         }
 
+
+        public String getZenodoAuthUrl() {
+            return zenodoAuthUrl;
+        }
+
+        public void setZenodoAuthUrl(String zenodoAuthUrl) {
+            this.zenodoAuthUrl = zenodoAuthUrl;
+        }
+
+        public String getZenodoRedirectPath() {
+            return zenodoRedirectPath;
+        }
+
+        public void setZenodoRedirectPath(String zenodoRedirectPath) {
+            this.zenodoRedirectPath = zenodoRedirectPath;
+        }
+
+        public String getZenodoScope() {
+            return zenodoScope;
+        }
+
+        public void setZenodoScope(String zenodoScope) {
+            this.zenodoScope = zenodoScope;
+        }
+
+
         public String getGoogleScope() {
             return googleScope;
         }
@@ -701,12 +788,20 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.cwlVisualizerUri = cwlVisualizerUri;
         }
 
-        public boolean isEnableLaunchWithFireCloud() {
-            return enableLaunchWithFireCloud;
+        public String getTagManagerId() {
+            return tagManagerId;
         }
 
-        public void setEnableLaunchWithFireCloud(boolean enableLaunchWithFireCloud) {
-            this.enableLaunchWithFireCloud = enableLaunchWithFireCloud;
+        public void setTagManagerId(String tagManagerId) {
+            this.tagManagerId = tagManagerId;
+        }
+
+        public String getGitHubAppInstallationUrl() {
+            return gitHubAppInstallationUrl;
+        }
+
+        public void setGitHubAppInstallationUrl(String gitHubAppInstallationUrl) {
+            this.gitHubAppInstallationUrl = gitHubAppInstallationUrl;
         }
     }
 }

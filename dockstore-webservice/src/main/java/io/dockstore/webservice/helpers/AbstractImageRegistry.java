@@ -33,8 +33,9 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -50,7 +51,6 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
-import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -257,7 +257,7 @@ public abstract class AbstractImageRegistry {
     private void updateTags(List<Tag> newTags, @NotNull Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO) {
         // Get all existing tags
-        List<Tag> existingTags = new ArrayList<>(tool.getTags());
+        List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
 
         if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
@@ -302,11 +302,11 @@ public abstract class AbstractImageRegistry {
                             //TODO: keep an eye on this, this used to always create new test params no matter what
                             if (tool.getDefaultTestCwlParameterFile() != null && oldTag.getSourceFiles().stream()
                                 .noneMatch(file -> file.getPath().equals(tool.getDefaultTestCwlParameterFile()))) {
-                                oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
+                                oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), DescriptorLanguage.FileType.CWL_TEST_JSON));
                             }
                             if (tool.getDefaultTestWdlParameterFile() != null && oldTag.getSourceFiles().stream()
                                 .noneMatch(file -> file.getPath().equals(tool.getDefaultTestWdlParameterFile()))) {
-                                oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
+                                oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), DescriptorLanguage.FileType.WDL_TEST_JSON));
                             }
                         }
 
@@ -320,10 +320,10 @@ public abstract class AbstractImageRegistry {
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
                     if (tool.getDefaultTestCwlParameterFile() != null) {
-                        clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
+                        clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), DescriptorLanguage.FileType.CWL_TEST_JSON));
                     }
                     if (tool.getDefaultTestWdlParameterFile() != null) {
-                        clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
+                        clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), DescriptorLanguage.FileType.WDL_TEST_JSON));
                     }
                     existingTags.add(clonedTag);
                 }
@@ -332,13 +332,13 @@ public abstract class AbstractImageRegistry {
             boolean allAutomated = true;
             for (Tag tag : existingTags) {
                 // create and add a tag if it does not already exist
-                if (!tool.getTags().contains(tag)) {
+                if (!tool.getWorkflowVersions().contains(tag)) {
                     LOG.info(tool.getToolPath() + " : Updating tag {}", tag.getName());
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
 
-                    tool.addTag(tag);
+                    tool.addWorkflowVersion(tag);
 
                     if (!tag.isAutomated()) {
                         allAutomated = false;
@@ -352,7 +352,7 @@ public abstract class AbstractImageRegistry {
                 t.getSourceFiles().clear();
                 t.getValidations().clear();
                 // tagDAO.delete(t);
-                tool.getTags().remove(t);
+                tool.getWorkflowVersions().remove(t);
             }
 
             if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
@@ -367,7 +367,7 @@ public abstract class AbstractImageRegistry {
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
         if (sourceCodeRepoInterface != null) {
             // Grab files for each version/tag and check if valid
-            Set<Tag> tags = tool.getTags();
+            Set<Tag> tags = tool.getWorkflowVersions();
             for (Tag tag : tags) {
                 // check to see whether the commit id has changed
                 updateFiles(tool, tag, fileDAO, sourceCodeRepoInterface, sourceCodeRepoInterface.gitUsername);
@@ -381,18 +381,18 @@ public abstract class AbstractImageRegistry {
 
             if (tool.getDefaultCwlPath() != null) {
                 LOG.info(tool.getToolPath() + " " + sourceCodeRepoInterface.gitUsername + " : Parsing CWL...");
-                sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.CWL);
+                sourceCodeRepoInterface.updateEntryMetadata(tool, DescriptorLanguage.CWL);
             }
 
             if (tool.getDefaultWdlPath() != null) {
                 LOG.info(tool.getToolPath() + " " + sourceCodeRepoInterface.gitUsername + " : Parsing WDL...");
-                sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.WDL);
+                sourceCodeRepoInterface.updateEntryMetadata(tool, DescriptorLanguage.WDL);
             }
 
         }
-        FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
+        FileFormatHelper.updateFileFormats(tool.getWorkflowVersions(), fileFormatDAO);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
-        tool.getTags().forEach(tagDAO::create);
+        tool.getWorkflowVersions().forEach(tagDAO::create);
         toolDAO.create(tool);
     }
 
@@ -431,8 +431,8 @@ public abstract class AbstractImageRegistry {
 
         // Update the tag with validation information
         tag = validateTagDockerfile(tag, tool.isPrivateAccess());
-        tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
-        tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
+        tag = validateTagDescriptorType(tag, DescriptorLanguage.FileType.DOCKSTORE_CWL, tag.getCwlPath());
+        tag = validateTagDescriptorType(tag, DescriptorLanguage.FileType.DOCKSTORE_WDL, tag.getWdlPath());
 
         boolean isValidVersion = isValidVersion(tag);
         tag.setValid(isValidVersion);
@@ -446,14 +446,14 @@ public abstract class AbstractImageRegistry {
      */
     private boolean isValidVersion(Tag tag) {
         SortedSet<Validation> versionValidations = tag.getValidations();
-        boolean validDockerfile = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKERFILE);
-        boolean validCwl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_CWL);
-        boolean validWdl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_WDL);
-        boolean validCwlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.CWL_TEST_JSON);
-        boolean validWdlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.WDL_TEST_JSON);
+        boolean validDockerfile = isVersionTypeValidated(versionValidations, DescriptorLanguage.FileType.DOCKERFILE);
+        boolean validCwl = isVersionTypeValidated(versionValidations, DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        boolean validWdl = isVersionTypeValidated(versionValidations, DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        boolean validCwlTestParameters = isVersionTypeValidated(versionValidations, DescriptorLanguage.FileType.CWL_TEST_JSON);
+        boolean validWdlTestParameters = isVersionTypeValidated(versionValidations, DescriptorLanguage.FileType.WDL_TEST_JSON);
 
-        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
-        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
+        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == DescriptorLanguage.FileType.DOCKSTORE_WDL);
 
         return validDockerfile && ((hasCwl && validCwl && validCwlTestParameters) || (hasWdl && validWdl && validWdlTestParameters));
     }
@@ -464,7 +464,7 @@ public abstract class AbstractImageRegistry {
      * @param fileType File Type to look for
      * @return True if exists and valid, false otherwise
      */
-    private boolean isVersionTypeValidated(SortedSet<Validation> versionValidations, SourceFile.FileType fileType) {
+    private boolean isVersionTypeValidated(SortedSet<Validation> versionValidations, DescriptorLanguage.FileType fileType) {
         Optional<Validation> foundFile = versionValidations
                 .stream()
                 .filter(versionValidation -> Objects.equals(versionValidation.getType(), fileType))
@@ -480,17 +480,17 @@ public abstract class AbstractImageRegistry {
      * @return Tag with updated version validation for Dockerfile
      */
     private Tag validateTagDockerfile(Tag tag, boolean isPrivateAccess) {
-        Optional<SourceFile> dockerfile = tag.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKERFILE)).findFirst();
-        LanguageHandlerInterface.VersionTypeValidation validDockerfile;
+        Optional<SourceFile> dockerfile = tag.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getType(), DescriptorLanguage.FileType.DOCKERFILE)).findFirst();
+        VersionTypeValidation validDockerfile;
         // Private tools don't require a dockerfile
         if (dockerfile.isPresent() || isPrivateAccess) {
-            validDockerfile = new LanguageHandlerInterface.VersionTypeValidation(true, null);
+            validDockerfile = new VersionTypeValidation(true, null);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
             validationMessage.put("/Dockerfile", "Missing a Dockerfile.");
-            validDockerfile = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
+            validDockerfile = new VersionTypeValidation(false, validationMessage);
         }
-        Validation dockerfileValidation = new Validation(SourceFile.FileType.DOCKERFILE, validDockerfile);
+        Validation dockerfileValidation = new Validation(DescriptorLanguage.FileType.DOCKERFILE, validDockerfile);
         tag.addOrUpdateValidation(dockerfileValidation);
         return tag;
     }
@@ -502,19 +502,19 @@ public abstract class AbstractImageRegistry {
      * @param primaryDescriptorPath Path to the primary descriptor
      * @return Validated tag
      */
-    private Tag validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
-        LanguageHandlerInterface.VersionTypeValidation isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
+    private Tag validateTagDescriptorType(Tag tag, DescriptorLanguage.FileType fileType, String primaryDescriptorPath) {
+        VersionTypeValidation isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
                 .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
         Validation descriptorValidation = new Validation(fileType, isValidDescriptor);
         tag.addOrUpdateValidation(descriptorValidation);
 
-        SourceFile.FileType testParamType = null;
+        DescriptorLanguage.FileType testParamType = null;
         switch (fileType) {
         case DOCKSTORE_CWL:
-            testParamType = SourceFile.FileType.CWL_TEST_JSON;
+            testParamType = DescriptorLanguage.FileType.CWL_TEST_JSON;
             break;
         case DOCKSTORE_WDL:
-            testParamType = SourceFile.FileType.WDL_TEST_JSON;
+            testParamType = DescriptorLanguage.FileType.WDL_TEST_JSON;
             break;
         case NEXTFLOW_CONFIG:
             // Nextflow does not have test parameter files, so do not fail
@@ -524,7 +524,7 @@ public abstract class AbstractImageRegistry {
         }
 
         if (testParamType != null) {
-            LanguageHandlerInterface.VersionTypeValidation isValidTestParameter = LanguageHandlerFactory.getInterface(fileType).validateTestParameterSet(tag.getSourceFiles());
+            VersionTypeValidation isValidTestParameter = LanguageHandlerFactory.getInterface(fileType).validateTestParameterSet(tag.getSourceFiles());
             Validation testParameterValidation = new Validation(testParamType, isValidTestParameter);
             tag.addOrUpdateValidation(testParameterValidation);
         }
@@ -549,23 +549,23 @@ public abstract class AbstractImageRegistry {
         tag.setCommitID(commitID);
 
         // Add for new descriptor types
-        for (SourceFile.FileType f : SourceFile.FileType.values()) {
-            if (f != SourceFile.FileType.CWL_TEST_JSON && f != SourceFile.FileType.WDL_TEST_JSON && f != SourceFile.FileType.NEXTFLOW_TEST_PARAMS) {
+        for (DescriptorLanguage.FileType f : DescriptorLanguage.FileType.values()) {
+            if (f != DescriptorLanguage.FileType.CWL_TEST_JSON && f != DescriptorLanguage.FileType.WDL_TEST_JSON && f != DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
                 String fileResponse = sourceCodeRepo.readGitRepositoryFile(repositoryId, f, tag, null);
                 if (fileResponse != null) {
                     SourceFile dockstoreFile = new SourceFile();
                     dockstoreFile.setType(f);
                     dockstoreFile.setContent(fileResponse);
-                    if (f == SourceFile.FileType.DOCKERFILE) {
+                    if (f == DescriptorLanguage.FileType.DOCKERFILE) {
                         dockstoreFile.setPath(tag.getDockerfilePath());
                         dockstoreFile.setAbsolutePath(tag.getDockerfilePath());
-                    } else if (f == SourceFile.FileType.DOCKSTORE_CWL) {
+                    } else if (f == DescriptorLanguage.FileType.DOCKSTORE_CWL) {
                         dockstoreFile.setPath(tag.getCwlPath());
                         dockstoreFile.setAbsolutePath(tag.getCwlPath());
                         // see if there are imported files and resolve them
                         Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getCwlPath());
                         files.addAll(importedFiles.values());
-                    } else if (f == SourceFile.FileType.DOCKSTORE_WDL) {
+                    } else if (f == DescriptorLanguage.FileType.DOCKSTORE_WDL) {
                         dockstoreFile.setPath(tag.getWdlPath());
                         dockstoreFile.setAbsolutePath(tag.getWdlPath());
                         Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getWdlPath());
@@ -587,7 +587,7 @@ public abstract class AbstractImageRegistry {
         return files;
     }
 
-    private SourceFile createSourceFile(String path, SourceFile.FileType type) {
+    private SourceFile createSourceFile(String path, DescriptorLanguage.FileType type) {
         SourceFile sourcefile = new SourceFile();
         sourcefile.setPath(path);
         sourcefile.setAbsolutePath(path);
@@ -696,7 +696,7 @@ public abstract class AbstractImageRegistry {
 
             if (c.getUsers().isEmpty()) {
                 LOG.info(user.getUsername() + ": DELETING: {}", c.getPath());
-                c.getTags().clear();
+                c.getWorkflowVersions().clear();
                 toolDAO.delete(c);
             }
         }

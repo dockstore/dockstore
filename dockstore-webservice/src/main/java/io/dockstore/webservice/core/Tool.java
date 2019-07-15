@@ -16,7 +16,7 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -36,10 +36,12 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -63,6 +65,7 @@ import org.hibernate.annotations.Check;
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(name = "ukbq5vy17y4ocaist3d3r3imcus", columnNames = { "registry", "namespace", "name", "toolname" }))
 @NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getByAlias", query = "SELECT e from Tool e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Tool c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.countAllPublished", query = "SELECT COUNT(c.id)" + Tool.PUBLISHED_QUERY),
@@ -75,10 +78,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true") })
-// @formatter:off
-@Check(constraints = "(defaultwdlpath is not null or defaultcwlpath is not null) "
-    + "and (toolname NOT LIKE '\\_%')")
-// @formatter:on
+@Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tool extends Entry<Tool, Tag> {
 
@@ -92,32 +92,6 @@ public class Tool extends Entry<Tool, Tag> {
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true, position = 14)
     private String name;
-
-    @Column(columnDefinition = "text", nullable = false)
-    @JsonProperty("default_dockerfile_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true, position = 15)
-    private String defaultDockerfilePath = "/Dockerfile";
-
-    // Add for new descriptor types
-    @Column(columnDefinition = "text")
-    @JsonProperty("default_cwl_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true, position = 16)
-    private String defaultCwlPath = "/Dockstore.cwl";
-
-    @Column(columnDefinition = "text default '/Dockstore.wdl'")
-    @JsonProperty("default_wdl_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true, position = 17)
-    private String defaultWdlPath = "/Dockstore.wdl";
-
-    @Column(columnDefinition = "text")
-    @JsonProperty("defaultCWLTestParameterFile")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true, position = 18)
-    private String defaultTestCwlParameterFile = "/test.json";
-
-    @Column(columnDefinition = "text")
-    @JsonProperty("defaultWDLTestParameterFile")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true, position = 19)
-    private String defaultTestWdlParameterFile = "/test.json";
 
     @Column
     @JsonProperty("tool_maintainer_email")
@@ -146,30 +120,50 @@ public class Tool extends Entry<Tool, Tag> {
     private String registry;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific timestamp for last built", position = 25)
+    @ApiModelProperty(value = "Implementation specific timestamp for last built. For automated builds: When refresh is hit, the last time the tool was built gets stored here. "
+            + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25)
     private Date lastBuild;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
+    @JsonAlias({ "tags", "workflowVersions"})
     @OrderBy("id")
     @Cascade(CascadeType.DETACH)
-    private final SortedSet<Tag> tags;
+    private final SortedSet<Tag> workflowVersions;
+
+    @Transient
+    @JsonProperty
+    private Set<Tag> tags = null;
 
     public Tool() {
-        tags = new TreeSet<>();
+        workflowVersions = new TreeSet<>();
     }
 
     public Tool(long id, String name) {
         super(id);
         // this.userId = userId;
         this.name = name;
-        tags = new TreeSet<>();
+        workflowVersions = new TreeSet<>();
     }
 
+    // compromise: this sucks, but setting the json property to tags allows for backwards compatibility of existing clients
+    // the method name being standardized allows for simpler coding going forward
     @Override
-    public Set<Tag> getVersions() {
+    public Set<Tag> getWorkflowVersions() {
+        return workflowVersions;
+    }
+
+    // TODO: remove when all clients are on 1.7.0
+    @Deprecated
+    public Set<Tag> getTags() {
         return tags;
+    }
+
+    // TODO: remove when all clients are on 1.7.0
+    @Deprecated
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
     }
 
     /**
@@ -225,23 +219,15 @@ public class Tool extends Entry<Tool, Tag> {
 
     /**
      * Calculated property for demonstrating search by language, inefficient
+     *
      * @return the languages that this tool supports
      */
     @JsonProperty
     @ApiModelProperty(position = 28)
     public List<String> getDescriptorType() {
-        Set<SourceFile.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType)
-            .distinct().collect(Collectors.toSet());
-        boolean supportsCWL = set.contains(SourceFile.FileType.DOCKSTORE_CWL);
-        boolean supportsWDL = set.contains(SourceFile.FileType.DOCKSTORE_WDL);
-        List<String> languages = new ArrayList<>();
-        if (supportsCWL) {
-            languages.add(LanguageType.CWL.toString());
-        }
-        if (supportsWDL) {
-            languages.add(LanguageType.WDL.toString());
-        }
-        return languages;
+        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
+        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
+            .map(lang -> lang.toString().toUpperCase()).collect(Collectors.toList());
     }
 
     @JsonProperty
@@ -253,18 +239,6 @@ public class Tool extends Entry<Tool, Tag> {
         this.lastBuild = lastBuild;
     }
 
-    public Set<Tag> getTags() {
-        return tags;
-    }
-
-    public boolean addTag(Tag tag) {
-        return tags.add(tag);
-    }
-
-    public boolean removeTag(Tag tag) {
-        return tags.remove(tag);
-    }
-
     @JsonProperty
     public ToolMode getMode() {
         return mode;
@@ -274,32 +248,34 @@ public class Tool extends Entry<Tool, Tag> {
         this.mode = mode;
     }
 
-    @JsonProperty
+    @JsonProperty("default_dockerfile_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true, position = 15)
     public String getDefaultDockerfilePath() {
-        return defaultDockerfilePath;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.DOCKERFILE, "/Dockerfile");
     }
 
     public void setDefaultDockerfilePath(String defaultDockerfilePath) {
-        this.defaultDockerfilePath = defaultDockerfilePath;
+        getDefaultPaths().put(DescriptorLanguage.FileType.DOCKERFILE, defaultDockerfilePath);
     }
 
-    // Add for new descriptor types
-    @JsonProperty
+    @JsonProperty("default_cwl_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true, position = 16)
     public String getDefaultCwlPath() {
-        return defaultCwlPath;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.DOCKSTORE_CWL, "/Dockstore.cwl");
     }
 
     public void setDefaultCwlPath(String defaultCwlPath) {
-        this.defaultCwlPath = defaultCwlPath;
+        getDefaultPaths().put(DescriptorLanguage.FileType.DOCKSTORE_CWL, defaultCwlPath);
     }
 
-    @JsonProperty
+    @JsonProperty("default_wdl_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true, position = 17)
     public String getDefaultWdlPath() {
-        return defaultWdlPath;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.DOCKSTORE_WDL, "/Dockstore.wdl");
     }
 
     public void setDefaultWdlPath(String defaultWdlPath) {
-        this.defaultWdlPath = defaultWdlPath;
+        getDefaultPaths().put(DescriptorLanguage.FileType.DOCKSTORE_WDL, defaultWdlPath);
     }
 
     @JsonProperty
@@ -399,20 +375,23 @@ public class Tool extends Entry<Tool, Tag> {
         this.privateAccess = privateAccess;
     }
 
+    @JsonProperty("defaultWDLTestParameterFile")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true, position = 19)
     public String getDefaultTestWdlParameterFile() {
-        return defaultTestWdlParameterFile;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.WDL_TEST_JSON, "/test.json");
     }
 
     public void setDefaultTestWdlParameterFile(String defaultTestWdlParameterFile) {
-        this.defaultTestWdlParameterFile = defaultTestWdlParameterFile;
+        getDefaultPaths().put(DescriptorLanguage.FileType.WDL_TEST_JSON, defaultTestWdlParameterFile);
     }
 
+    @JsonProperty("defaultCWLTestParameterFile")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true, position = 18)
     public String getDefaultTestCwlParameterFile() {
-        return defaultTestCwlParameterFile;
+        return getDefaultPaths().getOrDefault(DescriptorLanguage.FileType.CWL_TEST_JSON, "/test.json");
     }
 
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
-        this.defaultTestCwlParameterFile = defaultTestCwlParameterFile;
+        getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
     }
-
 }

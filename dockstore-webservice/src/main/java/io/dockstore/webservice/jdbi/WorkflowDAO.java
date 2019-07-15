@@ -203,4 +203,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return list(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
             .setParameter("organization", organization));
     }
+
+    public Workflow findByAlias(String alias) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+    }
 }

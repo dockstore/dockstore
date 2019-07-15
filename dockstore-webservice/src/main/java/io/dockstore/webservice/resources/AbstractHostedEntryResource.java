@@ -47,6 +47,7 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -194,7 +195,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
     protected void checkVersionLimit(@Auth @ApiParam(hidden = true) User user, T entry) {
         // check if the user has hit a limit yet
-        final long currentCount = entry.getVersions().size();
+        final long currentCount = entry.getWorkflowVersions().size();
         final int limit = user.getHostedEntryVersionsLimit() != null ? user.getHostedEntryVersionsLimit() : calculatedEntryVersionLimit;
         if (currentCount >= limit) {
             throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
@@ -234,9 +235,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         validatedVersion.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, validatedVersion);
         long l = getVersionDAO().create(validatedVersion);
-        entry.getVersions().add(getVersionDAO().findById(l));
-        entry.setLastModified(validatedVersion.getLastModified());
-        FileFormatHelper.updateFileFormats(entry.getVersions(), fileFormatDAO);
+        entry.getWorkflowVersions().add(getVersionDAO().findById(l));
+        FileFormatHelper.updateFileFormats(entry.getWorkflowVersions(), fileFormatDAO);
+        // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
+        if (validatedVersion instanceof WorkflowVersion) {
+            entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());
+        }
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
@@ -344,13 +348,13 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkEntry(entry);
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
-        entry.getVersions().removeIf(v -> Objects.equals(v.getName(), version));
+        entry.getWorkflowVersions().removeIf(v -> Objects.equals(v.getName(), version));
         elasticManager.handleIndexUpdate(entry, ElasticMode.UPDATE);
         return entry;
     }
 
     private Set<SourceFile> handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
-        Set<U> versions = entry.getVersions();
+        Set<U> versions = entry.getWorkflowVersions();
         Map<String, SourceFile> map = new HashMap<>();
         tag.setName(calculateNextVersionName(versions));
 

@@ -196,6 +196,9 @@ public class GA4GHV1IT extends GA4GHIT {
         ToolTestsV1 responseObject3 = response3.readEntity(ToolTestsV1.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3.getTest());
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
     @Test
@@ -271,5 +274,8 @@ public class GA4GHV1IT extends GA4GHIT {
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(ToolV1.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 }

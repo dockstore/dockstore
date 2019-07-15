@@ -209,6 +209,9 @@ public class GA4GHV2IT extends GA4GHIT {
         io.swagger.client.model.FileWrapper responseObject3 = response3.readEntity(io.swagger.client.model.FileWrapper.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3.getContent());
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
     @Test
@@ -291,6 +294,9 @@ public class GA4GHV2IT extends GA4GHIT {
         String responseObject2 = response2.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response2.getStatus());
         assertEquals("potato", responseObject2);
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
     private void toolsIdVersionsVersionIdTypeFileCWL() throws Exception {
@@ -355,6 +361,9 @@ public class GA4GHV2IT extends GA4GHIT {
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(Tool.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
     /**
@@ -372,5 +381,8 @@ public class GA4GHV2IT extends GA4GHIT {
             .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath, System.out, System.err);
         assertTrue("failure message" + stringStringImmutablePair.left,
             stringStringImmutablePair.getRight().contains("Final process status is success"));
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 }

@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.7.0-alpha.4-SNAPSHOT</version>
+        <version>1.7.0-alpha.11-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
@@ -32,32 +32,43 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.specto</groupId>
+            <artifactId>hoverfly-java</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.woodstox</groupId>
+                    <artifactId>woodstox-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
-            <version>1.7.0-alpha.4-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.0-alpha.4-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.7.0-alpha.4-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-client</artifactId>
-            <version>1.7.0-alpha.4-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.0-alpha.4-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>

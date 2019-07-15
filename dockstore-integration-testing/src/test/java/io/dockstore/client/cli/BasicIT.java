@@ -29,7 +29,6 @@ import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.model.DescriptorType;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -186,7 +185,7 @@ public class BasicIT extends BaseIT {
                 "--script" });
 
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tag where name = 'masterTest' and hidden='t'", new ScalarHandler<>());
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where name = 'masterTest' and vm.hidden='t' and t.id = vm.id", new ScalarHandler<>());
         Assert.assertEquals("there should be one tag", 1, count2);
 
         // Remove tag
@@ -1242,7 +1241,7 @@ public class BasicIT extends BaseIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
         // Versions should be unverified
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag where verified='true'", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and t.id = vm.id", new ScalarHandler<>());
         Assert.assertEquals("there should be no verified tags, there are " + count, 0, count);
 
         // Verify tag
@@ -1251,7 +1250,7 @@ public class BasicIT extends BaseIT {
 
         // Tag should be verified
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tag where verified='true' and verifiedSource='Docker testing group'",
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group' and t.id = vm.id",
                 new ScalarHandler<>());
         Assert.assertEquals("there should be one verified tag, there are " + count2, 1, count2);
 
@@ -1262,7 +1261,7 @@ public class BasicIT extends BaseIT {
 
         // Tag should have new verified source
         final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from tag where verified='true' and verifiedSource='Docker testing group2'",
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group2' and t.id = vm.id",
                 new ScalarHandler<>());
         Assert.assertEquals("there should be one verified tag, there are " + count3, 1, count3);
 
@@ -1271,7 +1270,7 @@ public class BasicIT extends BaseIT {
             "quay.io/dockstoretestuser/quayandbitbucket", "--unverify", "--version", "master", "--script" });
 
         // Tag should be unverified
-        final long count5 = testingPostgres.runSelectStatement("select count(*) from tag where verified='true'", new ScalarHandler<>());
+        final long count5 = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and t.id = vm.id", new ScalarHandler<>());
         Assert.assertEquals("there should be no verified tags, there are " + count5, 0, count5);
     }
 

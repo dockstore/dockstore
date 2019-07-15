@@ -29,7 +29,7 @@ import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -105,7 +105,7 @@ public class WDLWorkflowIT extends BaseIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new WorkflowClient(workflowApi, new UsersApi(webClient), client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, DescriptorLanguage.WDL)
             .orElseThrow(RuntimeException::new);
         final long run = wdlClient
             .launch(UNIFIED_WORKFLOW + ":" + testVersion, false, null, tempFile.toFile().getAbsolutePath(), null, null);

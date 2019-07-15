@@ -6,6 +6,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -32,7 +33,7 @@ public final class FileFormatHelper {
             SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
             SortedSet<SourceFile> sourceFiles = tag.getSourceFiles();
             List<SourceFile> cwlFiles = sourceFiles.stream()
-                    .filter(sourceFile -> sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)).collect(Collectors.toList());
+                    .filter(sourceFile -> sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL).collect(Collectors.toList());
             cwlFiles.stream().filter(cwlFile -> cwlFile.getContent() != null).forEach(cwlFile -> {
                 inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
                 outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));

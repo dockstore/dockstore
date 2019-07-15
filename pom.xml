@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.7.0-alpha.4-SNAPSHOT</version>
+    <version>1.7.0-alpha.11-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -30,12 +30,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
-        <dropwizard.version>1.3.9</dropwizard.version>
+        <dropwizard.version>1.3.12</dropwizard.version>
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
         <swagger-annotations-version>1.5.19</swagger-annotations-version>
         <openapi-annotations-version>2.0.6</openapi-annotations-version>
         <assertj.version>3.9.1</assertj.version>
-        <jackson.version>2.9.8</jackson.version>
+        <jackson.version>2.9.9</jackson.version>
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
@@ -44,15 +44,17 @@
         <postgresql.version>42.2.5</postgresql.version>
         <mockito.version>2.26.0</mockito.version>
         <cwlavro.version>2.0.4.2</cwlavro.version>
-        <okhttp.version>3.9.0</okhttp.version>
+        <okhttp.version>3.14.2</okhttp.version>
         <slf4j.version>1.7.26</slf4j.version>
         <swagger-ui.version>3.20.5</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
         <httpcomponents.version>4.5.8</httpcomponents.version>
         <httpcore.version>4.4.11</httpcore.version>
-        <jetty-servlet.version>9.4.17.v20190418</jetty-servlet.version>
+        <jetty-servlet.version>9.4.18.v20190429</jetty-servlet.version>
         <netty.version>4.1.33.Final</netty.version>
+        <scala.version>2.12.8</scala.version>
+        <cromwell.version>41</cromwell.version>
 
         <skipTests>false</skipTests>
         <skipClientITs>true</skipClientITs>
@@ -148,6 +150,7 @@
     <modules>
         <module>dockstore-common</module>
         <module>dockstore-file-plugin-parent</module>
+        <module>dockstore-language-plugin-parent</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
         <module>openapi-java-client</module>
@@ -166,6 +169,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.specto</groupId>
+                <artifactId>hoverfly-java</artifactId>
+                <version>0.12.0</version>
+            </dependency>
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
                 <artifactId>system-rules</artifactId>
@@ -296,6 +304,11 @@
                 <version>1.2</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.6</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>3.3.0.Final</version>
@@ -386,7 +399,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.7</version>
+                <version>3.8.1</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -401,7 +414,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>24.1.1-jre</version>
+                <version>27.0.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
@@ -411,7 +424,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.5</version>
+                <version>2.6</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -564,7 +577,7 @@
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client</artifactId>
-                <version>1.22.0</version>
+                <version>1.28.0</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -578,22 +591,22 @@
             </dependency>
             <dependency>
                 <groupId>org.scala-lang.modules</groupId>
-                <artifactId>scala-xml_2.11</artifactId>
-                <version>1.0.6</version>
+                <artifactId>scala-xml_2.12</artifactId>
+                <version>1.1.1</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
-                <version>2.11.11</version>
+                <version>${scala.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.scalacheck</groupId>
-                <artifactId>scalacheck_2.11</artifactId>
+                <artifactId>scalacheck_2.12</artifactId>
                 <version>1.12.5</version>
             </dependency>
             <dependency>
                 <groupId>org.typelevel</groupId>
-                <artifactId>macro-compat_2.11</artifactId>
+                <artifactId>macro-compat_2.12</artifactId>
                 <version>1.1.1</version>
             </dependency>
 
@@ -606,17 +619,17 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
-                <version>2.11.12</version>
+                <version>${scala.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.spray</groupId>
-                <artifactId>spray-json_2.11</artifactId>
+                <artifactId>spray-json_2.12</artifactId>
                 <version>1.3.5</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
-                <version>1.22.0</version>
+                <version>1.28.0</version>
             </dependency>
 
             <dependency>
@@ -683,13 +696,13 @@
             <dependency>
                 <groupId>com.google.oauth-client</groupId>
                 <artifactId>google-oauth-client</artifactId>
-                <version>1.22.0</version>
+                <version>1.28.0</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/com.google.http-client/google-http-client-jackson -->
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-jackson</artifactId>
-                <version>1.22.0</version>
+                <version>1.28.0</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
             <dependency>
@@ -712,12 +725,6 @@
                 <artifactId>json</artifactId>
                 <version>20180130</version>
             </dependency>
-            <dependency>
-                <groupId>org.broadinstitute</groupId>
-                <artifactId>wdl4s-wom_2.11</artifactId>
-                <version>0.15</version>
-            </dependency>
-
             <dependency>
                 <groupId>ro.fortsoft.pf4j</groupId>
                 <artifactId>pf4j</artifactId>
@@ -826,14 +833,18 @@
                 <artifactId>jetty-util</artifactId>
                 <version>${jetty-servlet.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.github.zafarkhaja</groupId>
+                <artifactId>java-semver</artifactId>
+                <version>0.9.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
         <pluginManagement>
             <plugins>
-		<!-- https://github.com/jacoco/jacoco/pull/760 -->
+                <!-- https://github.com/jacoco/jacoco/pull/760 -->
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
@@ -1060,7 +1071,7 @@
                 <plugin>
                     <groupId>io.swagger</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>2.3.1</version>
+                    <version>2.4.5</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1145,7 +1156,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <release>11</release>
-	        </configuration>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1260,7 +1271,7 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest
+                    io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest
                 </excludeGroups>
             </properties>
         </profile>
@@ -1290,7 +1301,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.WorkflowTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1300,7 +1311,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.ToolTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1309,7 +1320,15 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>non-confidential-tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.NonConfidentialTest</groups>
             </properties>
         </profile>
         <profile>
@@ -1328,7 +1347,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <skipClientITs>false</skipClientITs>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest,io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1342,7 +1361,7 @@
                             <append>true</append>
                             <excludes>
                                 <exclude>io/dockstore/webservice/resources/Description.*</exclude>
-                                <exclude>io/dockstore/common/Bridge.*</exclude>
+                                <exclude>io/dockstore/common/WdlBridge.*</exclude>
                                 <!-- exclude client classes, but not the server classes to help guide tests -->
                                 <exclude>io/swagger/client/**/*</exclude>
                                 <exclude>io/swagger/client/*</exclude>

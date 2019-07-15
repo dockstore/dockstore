@@ -38,7 +38,7 @@ import com.google.common.base.Joiner;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
 import io.dockstore.client.cli.SwaggerUtility;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -79,9 +79,6 @@ import static io.dockstore.client.cli.Client.COMMAND_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
-import static io.dockstore.common.DescriptorLanguage.NFL_STRING;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -293,7 +290,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         String[] parts = entry.split(":");
         String path = parts[0];
         Workflow workflow = getDockstoreWorkflowByPath(path);
-        String descriptor = workflow.getDescriptorType();
+        String descriptor = workflow.getDescriptorType().getValue();
         LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
         return languageCLient.generateInputJson(entry, json);
     }
@@ -354,12 +351,10 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         Optional<WorkflowVersion> first = workflow.getWorkflowVersions().stream().filter(foo -> foo.getName().equalsIgnoreCase(tag))
             .findFirst();
         // if no master is present (for example, for hosted workflows), fail over to the latest descriptor
-        if (!first.isPresent()) {
+        if (first.isEmpty()) {
             first = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getLastModified));
-            if (first.isPresent()) {
-                System.out.println("Could not locate workflow with version '" + tag + "'. Using last modified version '"
-                        + first.get().getName() + "' instead.");
-            }
+            first.ifPresent(workflowVersion -> System.out.println("Could not locate workflow with version '" + tag + "'. Using last modified version '"
+                    + workflowVersion.getName() + "' instead."));
         }
 
         if (first.isPresent()) {
@@ -416,6 +411,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         if (this.commandLaunch.help) {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
         } else {
+            checkIfDockerRunning(); // print a warning message if Docker is not running
             if ((entry == null) != (localEntry == null)) {
                 if (entry != null) {
                     this.isLocalEntry = false;
@@ -423,11 +419,13 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     String path = parts[0];
                     try {
                         Workflow workflow = getDockstoreWorkflowByPath(path);
-                        String descriptor = workflow.getDescriptorType();
+                        final Workflow.DescriptorTypeEnum descriptorType = workflow.getDescriptorType();
+                        final String descriptor = descriptorType.getValue().toLowerCase();
                         LanguageClientInterface languageClientInterface = convertCLIStringToEnum(descriptor);
+                        DescriptorLanguage language = DescriptorLanguage.convertShortStringToEnum(descriptor);
 
-                        switch (descriptor) {
-                        case CWL_STRING:
+                        switch (language) {
+                        case CWL:
                             if (!(yamlRun != null ^ jsonRun != null)) {
                                 errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
                             } else {
@@ -438,8 +436,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                                 }
                             }
                             break;
-                        case WDL_STRING:
-                        case NFL_STRING:
+                        case WDL:
+                        case NEXTFLOW:
                             if (jsonRun == null) {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {
@@ -483,16 +481,17 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
      */
     private void checkEntryFile(String entry, String jsonRun, String yamlRun, String wdlOutputTarget, String uuid) {
         File file = new File(entry);
-        LanguageType ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
+        Optional<DescriptorLanguage> optExt = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
         if (!file.exists() || file.isDirectory()) {
             errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow?",
                     ENTRY_NOT_FOUND);
         }
-        Optional<LanguageClientInterface> languageCLientOptional = LanguageClientFactory.createLanguageCLient(this, ext);
+        Optional<LanguageClientInterface> languageCLientOptional = LanguageClientFactory.createLanguageCLient(this, optExt.get());
         LanguageClientInterface languageCLient = languageCLientOptional.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
         // TODO: limitations of merged but non-cleaned up interface are apparent here
         try {
+            DescriptorLanguage ext = optExt.get();
             switch (ext) {
             case CWL:
                 languageCLient.launch(entry, true, yamlRun, jsonRun, null, uuid);
@@ -504,8 +503,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 languageCLient.launch(entry, true, null, jsonRun, null, uuid);
                 break;
             default:
-                LanguageType content = checkFileContent(file);             //check the file content (wdl,cwl or "")
-                switch (content) {
+                Optional<DescriptorLanguage> content = checkFileContent(file);             //check the file content (wdl,cwl or "")
+                switch (content.get()) {
                 case CWL:
                     out("This is a CWL file.. Please put an extension to the entry file name.");
                     out("Launching entry file as a CWL file..");
@@ -518,7 +517,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     break;
                 case NEXTFLOW:
                     out("This is a Nextflow file.. Please put an extension to the entry file name.");
-                    out("Launching entry file as a NextFlow file..");
+                    out("Launching entry file as a Nextflow file..");
                     languageCLient.launch(entry, true, null, jsonRun, null, uuid);
                     break;
                 default:
@@ -689,7 +688,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     .findFirst();
 
             WorkflowVersion versionToUpdate;
-            if (!first.isPresent()) {
+            if (first.isEmpty()) {
                 errorMessage(versionName + " is not a valid version for " + entry, Client.CLIENT_ERROR);
             }
             versionToUpdate = first.get();
@@ -750,7 +749,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     protected void handleListUnstarredEntries() {
         try {
-            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, null, null, null);
+            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, null, null, null, false);
             out("ALL PUBLISHED WORKFLOWS");
             printLineBreak();
             printWorkflowList(workflows);
@@ -809,7 +808,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     protected void handleSearch(String pattern) {
         try {
-            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, pattern, null, null);
+            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, pattern, null, null, false);
 
             out("MATCHING WORKFLOWS");
             printLineBreak();
@@ -944,7 +943,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 Workflow workflow = workflowsApi.getWorkflowByPath(entry, null);
                 long workflowId = workflow.getId();
 
-                String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
+                String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType().getValue());
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
                 String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
                 String defaultTestJsonPath = optVal(args, "--default-test-parameter-path", workflow.getDefaultTestParameterFilePath());
@@ -956,8 +955,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
                     }
 
-                    workflow.setDescriptorType(descriptorType);
-                } else if (!descriptorType.equals(workflow.getDescriptorType())) {
+                    workflow.setDescriptorType(Workflow.DescriptorTypeEnum.fromValue(descriptorType.toUpperCase()));
+                } else if (!descriptorType.equalsIgnoreCase(workflow.getDescriptorType().getValue())) {
                     errorMessage(
                             "You cannot change the descriptor type of a FULL workflow. Revert it to a STUB if you wish to change descriptor type.",
                             Client.CLIENT_ERROR);
@@ -1046,7 +1045,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         final String workflowPath = optVal(args, "--workflow-path", workflowVersion.getWorkflowPath());
 
                         // Check that workflow path matches with the workflow descriptor type
-                        if (!workflowPath.toLowerCase().endsWith(workflow.getDescriptorType())) {
+                        if (!workflowPath.toLowerCase().endsWith(workflow.getDescriptorType().getValue().toLowerCase())) {
                             errorMessage("Please ensure that the workflow path uses the file extension " + workflow.getDescriptorType(),
                                     Client.CLIENT_ERROR);
                         }
@@ -1108,7 +1107,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         printHelpFooter();
     }
 
-    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+    public SourceFile getDescriptorFromServer(String entry, DescriptorLanguage descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];
@@ -1129,13 +1128,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
         if (valid) {
             try {
-                if (descriptorType.equals(CWL_STRING)) {
-                    file = workflowsApi.cwl(workflow.getId(), version);
-                } else if (descriptorType.equals(WDL_STRING)) {
-                    file = workflowsApi.wdl(workflow.getId(), version);
-                } else {
-                    throw new UnsupportedOperationException("other languages not supported yet");
-                }
+                file = workflowsApi.primaryDescriptor(workflow.getId(), version, descriptorType.toString());
             } catch (ApiException ex) {
                 if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
                     exceptionMessage(ex, "Invalid version", Client.API_ERROR);

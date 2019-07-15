@@ -54,8 +54,11 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findGithubByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'github.com'"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findGoogleByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'google.com'"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findZenodoByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'zenodo.org'"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findGitlabByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'gitlab.com'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'")})
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByGitHubUsername", query = "SELECT t FROM Token t WHERE t.username = :username AND t.tokenSource = 'github.com'"),
+})
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class Token implements Comparable<Token> {

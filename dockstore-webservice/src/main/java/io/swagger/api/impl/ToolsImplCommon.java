@@ -34,9 +34,12 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
@@ -45,7 +48,6 @@ import io.swagger.model.DescriptorType;
 import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
-import io.swagger.model.ToolClass;
 import io.swagger.model.ToolVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +57,8 @@ import org.slf4j.LoggerFactory;
  * Created by kcao on 01/03/17.
  */
 public final class ToolsImplCommon {
+    public static final String WORKFLOW_PREFIX = "#workflow";
+    public static final String SERVICE_PREFIX = "#service";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
 
     private ToolsImplCommon() { }
@@ -85,6 +89,7 @@ public final class ToolsImplCommon {
     public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config) {
         String url;
         String newID = getNewId(container);
+        boolean isDockstoreTool;
         url = getUrlFromId(config, newID);
         if (url == null) {
             return null;
@@ -105,6 +110,7 @@ public final class ToolsImplCommon {
         // tool specific
         io.dockstore.webservice.core.Tool castedContainer = null;
         if (container instanceof io.dockstore.webservice.core.Tool) {
+            isDockstoreTool = true;
             castedContainer = (io.dockstore.webservice.core.Tool)container;
 
             // The name is composed of the repository name and then the optional toolname split with a '/'
@@ -113,8 +119,9 @@ public final class ToolsImplCommon {
             String returnName = constructName(Arrays.asList(name, toolName));
             tool.setToolname(returnName);
             tool.setOrganization(castedContainer.getNamespace());
-            inputVersions = castedContainer.getTags();
+            inputVersions = castedContainer.getWorkflowVersions();
         } else if (container instanceof Workflow) {
+            isDockstoreTool = false;
             // workflow specific
             Workflow workflow = (Workflow)container;
 
@@ -171,9 +178,16 @@ public final class ToolsImplCommon {
                 case DOCKSTORE_WDL:
                     toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
                     break;
-                case NEXTFLOW:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
+                // DOCKSTORE-2428 - demo how to add new workflow language
+                //                case DOCKSTORE_SWL:
+                //                    toolVersion.addDescriptorTypeItem(DescriptorType.SWL);
+                //                    break;
+                // TODO not sure how to treat service languages
+                case DOCKSTORE_SERVICE_TEST_JSON:
+                case DOCKSTORE_SERVICE_YML:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.SERVICE);
                     break;
+                case NEXTFLOW:
                 case NEXTFLOW_CONFIG:
                     toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
                     break;
@@ -191,7 +205,14 @@ public final class ToolsImplCommon {
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
-                toolVersion.setMetaVersion(String.valueOf(version.getLastModified() != null ? version.getLastModified() : new Date(0)));
+                if (isDockstoreTool) {
+                    Tag castedTag = (Tag)version;
+                    toolVersion.setMetaVersion(String.valueOf(castedTag.getLastBuilt() != null ? castedTag.getLastBuilt() : new Date(0)));
+                }
+                else {
+                    io.dockstore.webservice.core.WorkflowVersion castedWorkflowVersion = (io.dockstore.webservice.core.WorkflowVersion)version;
+                    toolVersion.setMetaVersion(String.valueOf(castedWorkflowVersion.getLastModified() != null ? castedWorkflowVersion.getLastModified() : new Date(0)));
+                }
                 final List<DescriptorType> descriptorType = toolVersion.getDescriptorType();
                 if (!descriptorType.isEmpty()) {
                     EnumSet<DescriptorType> set = EnumSet.copyOf(descriptorType);
@@ -244,7 +265,7 @@ public final class ToolsImplCommon {
         if (entry.getCheckerWorkflow() == null) {
             return null;
         } else {
-            String newID = "#workflow/" + entry.getCheckerWorkflow().getWorkflowPath();
+            String newID = WORKFLOW_PREFIX + "/" + entry.getCheckerWorkflow().getWorkflowPath();
             return getUrlFromId(config, newID);
         }
     }
@@ -277,7 +298,14 @@ public final class ToolsImplCommon {
         if (container instanceof io.dockstore.webservice.core.Tool) {
             return ((io.dockstore.webservice.core.Tool)container).getToolPath();
         } else if (container instanceof Workflow) {
-            return "#workflow/" + ((Workflow)container).getWorkflowPath();
+            Workflow workflow = (Workflow)container;
+            DescriptorLanguage descriptorType = workflow.getDescriptorType();
+            String workflowPath = workflow.getWorkflowPath();
+            if (descriptorType == DescriptorLanguage.SERVICE) {
+                return SERVICE_PREFIX + "/" + workflowPath;
+            } else {
+                return WORKFLOW_PREFIX + "/" + workflowPath;
+            }
         } else {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
             return null;
@@ -333,9 +361,15 @@ public final class ToolsImplCommon {
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
 
         // Set type
-        ToolClass type = container instanceof io.dockstore.webservice.core.Tool ? ToolClassesApiServiceImpl.getCommandLineToolClass()
-            : ToolClassesApiServiceImpl.getWorkflowClass();
-        tool.setToolclass(type);
+        if (container instanceof io.dockstore.webservice.core.Tool) {
+            tool.setToolclass(ToolClassesApiServiceImpl.getCommandLineToolClass());
+        } else if (container instanceof BioWorkflow) {
+            tool.setToolclass(ToolClassesApiServiceImpl.getWorkflowClass());
+        } else if (container instanceof Service){
+            tool.setToolclass(ToolClassesApiServiceImpl.getServiceClass());
+        } else {
+            throw new UnsupportedOperationException("encountered unknown entry type in TRS");
+        }
 
         // Set signed.  Signed is currently not supported
         tool.setSigned(false);
@@ -370,8 +404,9 @@ public final class ToolsImplCommon {
      * @return The resulting GA4GH ToolTests
      */
     static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
-        SourceFile.FileType type = sourceFile.getType();
-        if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
+        DescriptorLanguage.FileType type = sourceFile.getType();
+        if (!type.equals(DescriptorLanguage.FileType.WDL_TEST_JSON) && !type.equals(DescriptorLanguage.FileType.CWL_TEST_JSON) && !type.equals(
+            DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS)) {
             LOG.error("This source file is not a recognized test file.");
         }
         ExtendedFileWrapper toolTests = new ExtendedFileWrapper();

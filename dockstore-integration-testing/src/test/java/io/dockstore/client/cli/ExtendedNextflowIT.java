@@ -20,7 +20,6 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.LanguageType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiClient;
@@ -39,7 +38,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertNotSame;
 
 @Category({ConfidentialTest.class, WorkflowTest.class})
-public class NextFlowIT extends BaseIT {
+public class ExtendedNextflowIT extends BaseIT {
 
     // workflow with a bin directory
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser/ampa-nf";
@@ -56,7 +55,7 @@ public class NextFlowIT extends BaseIT {
 
 
     @Test
-    public void testNextFlowSecondaryFiles() throws Exception {
+    public void testNextflowSecondaryFiles() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
         final ApiClient webClient = getWebClient(USER_1_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -74,7 +73,7 @@ public class NextFlowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null);
@@ -106,7 +105,7 @@ public class NextFlowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null);
@@ -137,7 +136,7 @@ public class NextFlowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null);

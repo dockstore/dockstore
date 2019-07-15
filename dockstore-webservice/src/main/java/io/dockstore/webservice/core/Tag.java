@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Date;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -23,7 +24,9 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
@@ -43,6 +46,11 @@ import org.apache.commons.io.FilenameUtils;
 @DiscriminatorValue("tool")
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tag extends Version<Tag> implements Comparable<Tag> {
+
+    @Column
+    @JsonProperty("last_built")
+    @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 19)
+    Date lastBuilt;
 
     @Column
     @JsonProperty("image_id")
@@ -90,14 +98,19 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     public void updateByUser(final Tag tag) {
-        super.updateByUser(tag);
-        // this.setName(tag.getName());
-        imageId = tag.imageId;
+        if (!this.isFrozen()) {
+            // this.setName(tag.getName());
+            imageId = tag.imageId;
 
-        // Add for new descriptor types
-        cwlPath = tag.cwlPath;
-        wdlPath = tag.wdlPath;
-        dockerfilePath = tag.dockerfilePath;
+            // Add for new descriptor types
+            cwlPath = tag.cwlPath;
+            wdlPath = tag.wdlPath;
+            dockerfilePath = tag.dockerfilePath;
+            lastBuilt = tag.lastBuilt;
+        }
+        // this is a bit confusing, but we need to call the super method last since it will set frozen
+        // skipping the above even if we are only freezing it "now"
+        super.updateByUser(tag);
     }
 
     public void update(Tag tag) {
@@ -110,6 +123,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         automated = tag.automated;
         imageId = tag.imageId;
         size = tag.size;
+        lastBuilt = tag.lastBuilt;
     }
 
     public void clone(Tag tag) {
@@ -128,6 +142,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         wdlPath = tag.wdlPath;
 
         dockerfilePath = tag.dockerfilePath;
+        lastBuilt = tag.lastBuilt;
     }
 
     @JsonProperty
@@ -186,6 +201,17 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         this.automated = automated;
     }
 
+    @JsonProperty
+    @JsonGetter("last_modified")
+    public Date getLastBuilt() {
+        return lastBuilt;
+    }
+
+    @JsonSetter("last_modified")
+    public void setLastBuilt(Date lastBuilt) {
+        this.lastBuilt = lastBuilt;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -209,7 +235,8 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     @Override
     public int compareTo(@NotNull Tag that) {
         return ComparisonChain.start().compare(this.name, that.name, Ordering.natural().nullsFirst())
-            .compare(this.reference, reference, Ordering.natural().nullsFirst()).result();
+            .compare(this.reference, reference, Ordering.natural().nullsFirst())
+            .compare(this.lastBuilt, that.lastBuilt, Ordering.natural().nullsFirst()).result();
     }
 
     @Override

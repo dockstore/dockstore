@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.3"
+  version: "1.7.0-alpha.10"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -437,7 +437,7 @@ paths:
       - "extendedGA4GH"
       summary: "List all organizations"
       description: "This endpoint returns list of all organizations. "
-      operationId: "entriesOrgGet"
+      operationId: "entriesOrgsGet"
       produces:
       - "application/json"
       - "text/plain"
@@ -1165,6 +1165,29 @@ paths:
             $ref: "#/definitions/Token"
       security:
       - BEARER: []
+  /auth/tokens/zenodo.org:
+    get:
+      tags:
+      - "tokens"
+      summary: "Add a new zenodo.org token, used by accounts page."
+      description: "This is used as part of the OAuth 2 web flow. Once a user has\
+        \ approved permissions for CollaboratoryTheir browser will load the redirect\
+        \ URI which should resolve here"
+      operationId: "addZenodoToken"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "code"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Token"
+      security:
+      - BEARER: []
   /auth/tokens/{tokenId}:
     get:
       tags:
@@ -1602,6 +1625,29 @@ paths:
               type: "array"
               items:
                 type: "object"
+  /containers/{alias}/aliases:
+    get:
+      tags:
+      - "containers"
+      summary: "Retrieves a tool by alias."
+      description: "Does not require authentication for published tools, authentication\
+        \ can be provided for restricted tools"
+      operationId: "getToolByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
   /containers/{containerId}:
     get:
       tags:
@@ -1681,42 +1727,14 @@ paths:
           description: "Invalid "
       security:
       - BEARER: []
-  /containers/{containerId}/cwl:
+  /containers/{containerId}/descriptor/{relative-path}:
     get:
       tags:
       - "containers"
-      summary: "Get the primary CWL descriptor file on Github."
+      summary: "Get the corresponding descriptor file."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
-      operationId: "cwl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/cwl/{relative-path}:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the corresponding CWL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryCwlPath"
+      operationId: "secondaryDescriptorPath"
       produces:
       - "application/json"
       parameters:
@@ -1733,6 +1751,10 @@ paths:
       - name: "relative-path"
         in: "path"
         required: true
+        type: "string"
+      - name: "language"
+        in: "query"
+        required: false
         type: "string"
       responses:
         200:
@@ -1803,6 +1825,38 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
+  /containers/{containerId}/primaryDescriptor:
+    get:
+      tags:
+      - "containers"
+      summary: "Get the primary descriptor file."
+      description: "Does not require authentication for published tools, authentication\
+        \ can be provided for restricted tools"
+      operationId: "primaryDescriptor"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "language"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
       security:
       - BEARER: []
   /containers/{containerId}/publish:
@@ -1888,14 +1942,14 @@ paths:
               $ref: "#/definitions/Tag"
       security:
       - BEARER: []
-  /containers/{containerId}/secondaryCwl:
+  /containers/{containerId}/secondaryDescriptors:
     get:
       tags:
       - "containers"
-      summary: "Get a list of secondary CWL files from Git."
+      summary: "Get a list of secondary descriptor files."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
-      operationId: "secondaryCwl"
+      operationId: "secondaryDescriptors"
       produces:
       - "application/json"
       parameters:
@@ -1909,33 +1963,7 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/secondaryWdl:
-    get:
-      tags:
-      - "containers"
-      summary: "Get a list of secondary WDL files from Git."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryWdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
         type: "string"
@@ -2094,7 +2122,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding WDL test parameter files."
+      summary: "Get the corresponding test parameter files."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "getTestParameterFiles"
@@ -2360,66 +2388,6 @@ paths:
               $ref: "#/definitions/Tag"
       security:
       - BEARER: []
-  /containers/{containerId}/wdl:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the primary WDL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "wdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/wdl/{relative-path}:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the corresponding WDL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryWdlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
   /containers/{toolId}/defaultVersion:
     put:
       tags:
@@ -2551,17 +2519,6 @@ paths:
         required: true
         type: "integer"
         format: "int64"
-      - name: "categoryId"
-        in: "query"
-        description: "The id of the category to add a topic to, defaults to Automatic\
-          \ Tool and Workflow Threads (6)."
-        required: false
-        type: "integer"
-        default: 6
-        format: "int32"
-        enum:
-        - 6
-        - 9
       responses:
         200:
           description: "successful operation"
@@ -4130,6 +4087,31 @@ paths:
               $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
+  /users/{userId}/services:
+    get:
+      tags:
+      - "users"
+      summary: "List all services owned by the logged-in user."
+      description: ""
+      operationId: "userServices"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /users/{userId}/tokens:
     get:
       tags:
@@ -4600,6 +4582,80 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
+  /workflows/path/service:
+    post:
+      tags:
+      - "workflows"
+      summary: "Create a service for the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function."
+      operationId: "addService"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "formData"
+        description: "Repository path"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Name of user on GitHub"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+  /workflows/path/service/upsertVersion:
+    post:
+      tags:
+      - "workflows"
+      summary: "Add or update a service version for a given GitHub tag for a service\
+        \ with the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function."
+      operationId: "upsertServiceVersion"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "formData"
+        description: "Repository path"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Name of user on GitHub"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "formData"
+        description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/path/workflow/{repository}:
     get:
       tags:
@@ -4880,6 +4936,12 @@ paths:
         enum:
         - "asc"
         - "desc"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4930,6 +4992,29 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SharedWorkflows"
+      security:
+      - BEARER: []
+  /workflows/{alias}/aliases:
+    get:
+      tags:
+      - "workflows"
+      summary: "Retrieves a workflow by alias."
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
+      operationId: "getWorkflowByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
@@ -5033,66 +5118,6 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/cwl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the primary CWL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "cwl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/cwl/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding CWL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryCwlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
   /workflows/{workflowId}/dag/{workflowVersionId}:
     get:
       tags:
@@ -5152,6 +5177,42 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+  /workflows/{workflowId}/descriptor/{relative-path}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding descriptor file from source control."
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
+      operationId: "secondaryDescriptorPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "language"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
+      security:
+      - BEARER: []
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -5188,14 +5249,14 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/nextflow:
+  /workflows/{workflowId}/primaryDescriptor:
     get:
       tags:
       - "workflows"
-      summary: "Get the nextflow.config file on Github."
+      summary: "Get the primary descriptor file."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
-      operationId: "nextflow"
+      operationId: "primaryDescriptor"
       produces:
       - "application/json"
       parameters:
@@ -5209,37 +5270,9 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/nextflow/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding nextflow documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryNextFlowPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
         type: "string"
       responses:
         200:
@@ -5384,14 +5417,14 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/secondaryCwl:
+  /workflows/{workflowId}/secondaryDescriptors:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding cwl documents on Github."
+      summary: "Get the corresponding descriptor documents from source control."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
-      operationId: "secondaryCwl"
+      operationId: "secondaryDescriptors"
       produces:
       - "application/json"
       parameters:
@@ -5405,63 +5438,7 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/secondaryNextflow:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding Nextflow documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryNextflow"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/secondaryWdl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding wdl documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryWdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
         type: "string"
@@ -5769,66 +5746,6 @@ paths:
               $ref: "#/definitions/WorkflowVersion"
       security:
       - BEARER: []
-  /workflows/{workflowId}/wdl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the primary WDL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "wdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/wdl/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding WDL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryWdlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
   /workflows/{workflowId}/workflowVersions:
     put:
       tags:
@@ -5900,6 +5817,128 @@ definitions:
     properties:
       content:
         type: "string"
+  Base class for versions of entries in the Dockstore:
+    type: "object"
+    required:
+    - "name"
+    - "reference"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the tag in this web service"
+        readOnly: true
+      frozen:
+        type: "boolean"
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
+      referenceType:
+        type: "string"
+        description: "This indicates the type of git (or other source control) reference"
+        enum:
+        - "COMMIT"
+        - "TAG"
+        - "BRANCH"
+        - "NOT_APPLICABLE"
+        - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
+      workingDirectory:
+        type: "string"
+      reference:
+        type: "string"
+        position: 2
+        description: "git commit/tag/branch"
+      sourceFiles:
+        type: "array"
+        position: 3
+        description: "Cached files for each version. Includes Dockerfile and Descriptor\
+          \ files"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/SourceFile"
+      hidden:
+        type: "boolean"
+        position: 4
+        description: "Implementation specific, whether this row is visible to other\
+          \ users aside from the owner"
+      valid:
+        type: "boolean"
+        position: 5
+        description: "Implementation specific, whether this tag has valid files from\
+          \ source code repo"
+      name:
+        type: "string"
+        position: 6
+        description: "Implementation specific, can be a quay.io or docker hub tag\
+          \ name"
+      dirtyBit:
+        type: "boolean"
+        position: 7
+        description: "True if user has altered the tag"
+      verified:
+        type: "boolean"
+        position: 8
+        description: "Whether this version has been verified or not"
+      verifiedSource:
+        type: "string"
+        position: 9
+        description: "Verified source for the version"
+      doiURL:
+        type: "string"
+        position: 10
+        description: "This is a URL for the DOI for the version of the entry"
+      doiStatus:
+        type: "string"
+        position: 11
+        description: "This indicates the DOI status"
+        enum:
+        - "NOT_REQUESTED"
+        - "REQUESTED"
+        - "CREATED"
+      versionEditor:
+        position: 12
+        description: "Particularly for hosted workflows, this records who edited to\
+          \ create a revision"
+        $ref: "#/definitions/User"
+      input_file_formats:
+        type: "array"
+        position: 20
+        description: "File formats for describing the input file formats of versions\
+          \ (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      output_file_formats:
+        type: "array"
+        position: 21
+        description: "File formats for describing the output file formats of versions\
+          \ (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      commitID:
+        type: "string"
+        position: 22
+        description: "This is the commit id for the source control that the files\
+          \ belong to"
+  BioWorkflow:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties:
+        parent_id:
+          type: "integer"
+          format: "int64"
+          readOnly: true
+        is_checker:
+          type: "boolean"
+          position: 23
+      description: "This describes one workflow in the dockstore"
   Collection:
     type: "object"
     required:
@@ -5976,11 +6015,7 @@ definitions:
   Config:
     type: "object"
     properties:
-      discourseUrl:
-        type: "string"
       dnaStackImportUrl:
-        type: "string"
-      fireCloudImportUrl:
         type: "string"
       dnaNexusImportUrl:
         type: "string"
@@ -6006,12 +6041,20 @@ definitions:
         type: "string"
       gitlabScope:
         type: "string"
+      zenodoAuthUrl:
+        type: "string"
+      zenodoRedirectPath:
+        type: "string"
+      zenodoScope:
+        type: "string"
       googleScope:
         type: "string"
       cwlVisualizerUri:
         type: "string"
-      enableLaunchWithFireCloud:
-        type: "boolean"
+      tagManagerId:
+        type: "string"
+      gitHubAppInstallationUrl:
+        type: "string"
       githubClientId:
         type: "string"
       quayIoClientId:
@@ -6020,7 +6063,11 @@ definitions:
         type: "string"
       gitlabClientId:
         type: "string"
+      zenodoClientId:
+        type: "string"
       googleClientId:
+        type: "string"
+      discourseUrl:
         type: "string"
     description: "Configuration information for UI clients of the Dockstore webservice."
   DescriptorLanguageBean:
@@ -6064,12 +6111,13 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      tags:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Tag"
       custom_docker_registry_path:
         type: "string"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
         readOnly: true
       has_checker:
         type: "boolean"
@@ -6086,6 +6134,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6135,12 +6187,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified"
+        description: "Implementation specific timestamp for last modified. Tools->\
+          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
+          \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice"
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -6224,8 +6284,11 @@ definitions:
         type: "string"
         format: "date-time"
         position: 25
-        description: "Implementation specific timestamp for last built"
-      tags:
+        description: "Implementation specific timestamp for last built. For automated\
+          \ builds: When refresh is hit, the last time the tool was built gets stored\
+          \ here. If tool was never built on quay.io, then last build will be null.\
+          \ N/A for hosted/manual path tools"
+      workflowVersions:
         type: "array"
         position: 26
         description: "Implementation specific tracking of valid build tags for the\
@@ -6282,10 +6345,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      workflowVersions:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Base class for versions of entries in the Dockstore"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6301,6 +6365,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6350,12 +6418,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified"
+        description: "Implementation specific timestamp for last modified. Tools->\
+          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
+          \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice"
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -6703,6 +6779,13 @@ definitions:
         type: "string"
       enum:
         type: "string"
+  Service:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties: {}
+      description: "This describes one service in the dockstore as a special degenerate\
+        \ case of a workflow"
   SharedWorkflows:
     type: "object"
     properties:
@@ -6734,6 +6817,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the source file in this web service"
+      frozen:
+        type: "boolean"
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
       verifiedBySource:
         type: "object"
         description: "maps from platform to whether an entry successfully ran on it\
@@ -6754,6 +6841,9 @@ definitions:
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
         - "DOCKSTORE_YML"
+        - "DOCKSTORE_SERVICE_YML"
+        - "DOCKSTORE_SERVICE_TEST_JSON"
+        - "DOCKSTORE_SERVICE_OTHER"
       content:
         type: "string"
         position: 2
@@ -6782,6 +6872,10 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      frozen:
+        type: "boolean"
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
       referenceType:
         type: "string"
         description: "This indicates the type of git (or other source control) reference"
@@ -6797,11 +6891,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Validation"
-      last_modified:
-        type: "string"
-        format: "date-time"
-        position: 1
-        description: "The last time this image was modified in the image registry"
       reference:
         type: "string"
         position: 2
@@ -6883,6 +6972,18 @@ definitions:
       workingDirectory:
         type: "string"
         position: 18
+      last_modified:
+        type: "string"
+        format: "date-time"
+        position: 19
+        description: "For automated tools: The last time the container backing this\
+          \ tool version was built. For hosted: N/A"
+      last_built:
+        type: "string"
+        format: "date-time"
+        position: 19
+        description: "For automated tools: The last time the container backing this\
+          \ tool version was built. For hosted: N/A"
       image_id:
         type: "string"
         position: 19
@@ -7045,6 +7146,7 @@ definitions:
         - "CWL"
         - "WDL"
         - "NFL"
+        - "SERVICE"
       descriptor:
         type: "string"
         description: "The descriptor that represents this version of the tool."
@@ -7175,6 +7277,7 @@ definitions:
           - "CWL"
           - "WDL"
           - "NFL"
+          - "SERVICE"
       containerfile:
         type: "boolean"
         description: "Reports if this tool has a containerfile available."
@@ -7289,6 +7392,9 @@ definitions:
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
         - "DOCKSTORE_YML"
+        - "DOCKSTORE_SERVICE_YML"
+        - "DOCKSTORE_SERVICE_TEST_JSON"
+        - "DOCKSTORE_SERVICE_OTHER"
       valid:
         type: "boolean"
         position: 2
@@ -7326,6 +7432,7 @@ definitions:
     - "repository"
     - "sourceControl"
     - "workflow_path"
+    discriminator: "type"
     properties:
       id:
         type: "integer"
@@ -7346,14 +7453,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parent_id:
-        type: "integer"
-        format: "int64"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      isChecker:
+        type: "boolean"
+      parentEntry:
+        $ref: "#/definitions/Entry"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7369,6 +7472,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7418,12 +7525,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified"
+        description: "Implementation specific timestamp for last modified. Tools->\
+          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
+          \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice"
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -7444,6 +7559,7 @@ definitions:
         - "FULL"
         - "STUB"
         - "HOSTED"
+        - "SERVICE"
       workflowName:
         type: "string"
         position: 14
@@ -7465,13 +7581,18 @@ definitions:
       descriptorType:
         type: "string"
         position: 18
-        description: "This is a descriptor type for the workflow, either CWL or WDL\
-          \ (Defaults to CWL)"
+        description: "This is a descriptor type for the workflow, either CWL, WDL,\
+          \ or Nextflow (Defaults to CWL)"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "NFL"
+        - "service"
       workflow_path:
         type: "string"
         position: 19
         description: "This indicates for the associated git repository, the default\
-          \ path to the CWL document"
+          \ path to the primary descriptor document"
       defaultTestParameterFilePath:
         type: "string"
         position: 20
@@ -7485,9 +7606,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
-      is_checker:
-        type: "boolean"
-        position: 23
       full_workflow_path:
         type: "string"
         position: 24
@@ -7511,6 +7629,10 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      frozen:
+        type: "boolean"
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
       referenceType:
         type: "string"
         description: "This indicates the type of git (or other source control) reference"
@@ -7526,13 +7648,21 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Validation"
+      subClass:
+        type: "string"
+        description: "The subclass of this for services."
+        enum:
+        - "DOCKER_COMPOSE"
+        - "SWARM"
+        - "KUBERNETES"
+        - "HELM"
       workingDirectory:
         type: "string"
       last_modified:
         type: "string"
         format: "date-time"
-        position: 1
-        description: "The last time this image was modified in the image registry"
+        description: "Remote: Last time version on GitHub repo was changed. Hosted:\
+          \ time version created."
       reference:
         type: "string"
         position: 2

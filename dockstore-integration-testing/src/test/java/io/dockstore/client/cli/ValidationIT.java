@@ -91,7 +91,7 @@ public class ValidationIT extends BaseIT {
         tag.setWdlPath(c.getDefaultWdlPath());
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        c.setTags(tags);
+        c.setWorkflowVersions(tags);
 
         return c;
     }
@@ -121,7 +121,7 @@ public class ValidationIT extends BaseIT {
      * @return is tag valid
      */
     protected boolean isTagValid(DockstoreTool tool, String name) {
-        Optional<Tag> tag = tool.getTags()
+        Optional<Tag> tag = tool.getWorkflowVersions()
                 .stream()
                 .filter(version -> Objects.equals(name, version.getName()))
                 .findFirst();
@@ -208,6 +208,7 @@ public class ValidationIT extends BaseIT {
         WorkflowsApi workflowsApi = setupWorkflowWebService();
 
         // Register a workflow
+        workflowsApi.getApiClient().setDebugging(true);
         Workflow workflow = workflowsApi.manualRegister("GitHub", "DockstoreTestUser2/TestEntryValidation", "/validWorkflow.cwl", "testname", "cwl", "/test.json");
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));

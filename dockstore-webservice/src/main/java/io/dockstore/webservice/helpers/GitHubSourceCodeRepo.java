@@ -34,19 +34,21 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import okhttp3.OkHttpClient;
-import okhttp3.OkUrlFactory;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -63,10 +65,12 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHTagObject;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.HttpConnector;
 import org.kohsuke.github.RateLimitHandler;
-import org.kohsuke.github.extras.OkHttp3Connector;
+import org.kohsuke.github.extras.ImpatientHttpConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -80,9 +84,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
+        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
+                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
+        HttpConnector okHttp3Connector =  new ImpatientHttpConnector(url -> obsoleteUrlFactory.open(url));
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(new OkHttp3Connector(new OkUrlFactory(
-                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build()))).build();
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -246,8 +252,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Workflow initializeWorkflow(String repositoryId) {
-        Workflow workflow = new Workflow();
+    public Workflow initializeWorkflow(String repositoryId, Workflow workflow) {
         // Get repository from API and setup workflow
         try {
             GHRepository repository = github.getRepository(repositoryId);
@@ -263,6 +268,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return workflow;
+    }
+
+    @Override
+    public Service initializeService(String repositoryId) {
+        Service service = new Service();
+        service.setOrganization(repositoryId.split("/")[0]);
+        service.setRepository(repositoryId.split("/")[1]);
+        service.setSourceControl(SourceControl.GITHUB);
+        service.setGitUrl("git@github.com:" + repositoryId + ".git");
+        service.setLastUpdated(new Date());
+        service.setDescriptorType(DescriptorLanguage.SERVICE);
+        service.setMode(WorkflowMode.SERVICE);
+        service.setDefaultWorkflowPath(".dockstore.yml");
+        return service;
     }
 
     @Override
@@ -383,8 +402,34 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         version.setCommitID(ref.getRight());
         String calculatedPath = version.getWorkflowPath();
 
-        SourceFile.FileType identifiedType = workflow.getFileType();
+        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
 
+        if (workflow.getMode() == WorkflowMode.SERVICE) {
+            version = setupServiceFilesForVersion(calculatedPath, ref, repository, version);
+            if (version == null) {
+                return null;
+            }
+        } else {
+            version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, repositoryId, existingDefaults);
+        }
+
+        return versionValidation(version, workflow, calculatedPath);
+    }
+
+    /**
+     *
+     * @param calculatedPath Path to dockstore.yml
+     * @param ref Triple containing reference name, branch date, and SHA
+     * @param repository GitHub repository object
+     * @param version Version to update
+     * @param identifiedType Descriptor type of file
+     * @param workflow Workflow for given version
+     * @param repositoryId Unique repository ID (ex. dockstore/dockstore-ui2)
+     * @param existingDefaults Optional mapping of existing versions
+     * @return Version with updated sourcefiles
+     */
+    @SuppressWarnings("checkstyle:parameternumber")
+    private WorkflowVersion setupWorkflowFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, DescriptorLanguage.FileType identifiedType, Workflow workflow, String repositoryId, Map<String, WorkflowVersion> existingDefaults) {
         // Grab workflow file from github
         try {
             // Get contents of descriptor file and store
@@ -405,12 +450,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         SourceFile testJson = new SourceFile();
 
                         // Set Filetype
-                        if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-                            testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
-                        } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
-                            testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
-                        } else if (identifiedType.equals(SourceFile.FileType.NEXTFLOW_CONFIG)) {
-                            testJson.setType(SourceFile.FileType.NEXTFLOW_TEST_PARAMS);
+                        if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
+                            testJson.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
+                        } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
+                            testJson.setType(DescriptorLanguage.FileType.WDL_TEST_JSON);
+                        } else if (identifiedType.equals(DescriptorLanguage.FileType.NEXTFLOW_CONFIG)) {
+                            testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
                         }
 
                         testJson.setPath(workflow.getDefaultTestParameterFilePath());
@@ -418,7 +463,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         testJson.setContent(testJsonContent);
 
                         // Only add test parameter file if it hasn't already been added
-                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
+                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
+                                && sf.getType() == testJson.getType());
                         if (!hasDuplicate) {
                             version.getSourceFiles().add(testJson);
                         }
@@ -429,8 +475,46 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (Exception ex) {
             LOG.error(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
         }
+        return version;
+    }
 
-        return versionValidation(version, workflow, calculatedPath);
+    /**
+     * Retrieves the dockstore.yml file from GitHub and pulls all files in the files array
+     * @param calculatedPath Path to dockstore.yml
+     * @param ref Triple containing reference name, branch date, and SHA
+     * @param repository GitHub repository object
+     * @param version Version to update
+     * @return Version with updated sourcefiles
+     */
+    private WorkflowVersion setupServiceFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version) {
+        String dockstoreYmlContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
+        if (dockstoreYmlContent != null) {
+            SourceFile dockstoreYml = new SourceFile();
+            dockstoreYml.setContent(dockstoreYmlContent);
+            dockstoreYml.setPath(calculatedPath);
+            dockstoreYml.setAbsolutePath(calculatedPath);
+            dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+
+            version.getSourceFiles().add(dockstoreYml);
+
+            // Grab all files from files array
+            Yaml yaml = new Yaml();
+            Map<String, Object> map = yaml.load(dockstoreYmlContent);
+            Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
+            List<String> files = (List<String>)serviceObject.get("files");
+            for (String filePath: files) {
+                String fileContent = this.readFileFromRepo(filePath, ref.getLeft(), repository);
+                SourceFile file = new SourceFile();
+                file.setAbsolutePath(filePath);
+                file.setPath(filePath);
+                file.setContent(fileContent);
+                file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
+                version.getSourceFiles().add(file);
+            }
+            return version;
+        } else {
+            return null;
+        }
     }
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
@@ -495,7 +579,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
+    public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
         throw new UnsupportedOperationException("not implemented/needed for github");
     }
 
@@ -580,13 +664,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param repository Github repostory name (ex. dockstore/dockstore-ui2)
      * @param gitReference GitHub reference object
      * @param workflows Workflows to upsert version
-     * @return list of workflows with new/updated version
+     * @return workflows with new/updated version
      */
     public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
         GHRepository ghRepository = getRepository(repository);
         for (Workflow workflow : workflows) {
-            WorkflowVersion version = getTagVersion(ghRepository, gitReference, workflow);
-            workflow.addWorkflowVersion(version);
+
+            WorkflowVersion version;
+            try {
+                version = getTagVersion(ghRepository, gitReference, workflow);
+                workflow.addWorkflowVersion(version);
+            } catch (IOException ex) {
+                LOG.error("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
+            }
         }
         return workflows;
     }
@@ -598,29 +688,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflow Workflow to upsert version to
      * @return Workflow version corresponding to GitHub tag
      */
-    public WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) {
-        try {
-            String refName = "tags/" + gitReference;
-            GHRef ghRef = ghRepository.getRef(refName);
+    private WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) throws IOException {
+        String refName = "tags/" + gitReference;
+        GHRef ghRef = ghRepository.getRef(refName);
 
-            Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
-            if (ref == null) {
-                LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
-                throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
-            }
-
-            // Find existing version if it exists
-            Optional<WorkflowVersion> existingVersion = workflow.getVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
-            Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-            if (existingVersion.isPresent()) {
-                existingDefaults.put(gitReference, existingVersion.get());
-            }
-
-            // Create version with sourcefiles and validate
-            return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
-        } catch (IOException e) {
-            LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub", e);
+        Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
+        if (ref == null) {
+            LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
+
+        // Find existing version if it exists
+        Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
+        Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
+        existingVersion.ifPresent(workflowVersion -> existingDefaults.put(gitReference, workflowVersion));
+
+        // Create version with sourcefiles and validate
+        return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
     }
 }

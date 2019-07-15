@@ -15,40 +15,44 @@
  */
 package io.dockstore.webservice.languages;
 
-import io.dockstore.common.LanguageType;
-import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.common.DescriptorLanguage;
 
 public final class LanguageHandlerFactory {
     private LanguageHandlerFactory() {
         // do nothing constructor
     }
 
-    public static boolean isWorkflow(SourceFile.FileType identifiedType) {
-        return identifiedType == SourceFile.FileType.DOCKSTORE_CWL || identifiedType == SourceFile.FileType.DOCKSTORE_WDL
-            || identifiedType == SourceFile.FileType.NEXTFLOW_CONFIG;
-    }
-
-    public static LanguageHandlerInterface getInterface(LanguageType type) {
+    public static LanguageHandlerInterface getInterface(DescriptorLanguage type) {
         switch (type) {
         case CWL:
             return new CWLHandler();
         case WDL:
             return new WDLHandler();
         case NEXTFLOW:
-            return new NextFlowHandler();
+            return new NextflowHandler();
+        // DOCKSTORE-2428 - demo how to add new workflow language
+        //        case SWL:
+        //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
+        case SERVICE:
+            return new LanguagePluginHandler(ServicePrototypePlugin.class);
         default:
             throw new UnsupportedOperationException("language not known");
         }
     }
 
-    public static LanguageHandlerInterface getInterface(SourceFile.FileType type) {
+    public static LanguageHandlerInterface getInterface(DescriptorLanguage.FileType type) {
         switch (type) {
         case DOCKSTORE_CWL:
             return new CWLHandler();
         case DOCKSTORE_WDL:
             return new WDLHandler();
         case NEXTFLOW_CONFIG:
-            return new NextFlowHandler();
+            return new NextflowHandler();
+        // DOCKSTORE-2428 - demo how to add new workflow language
+        //        case DOCKSTORE_SWL:
+        //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
+        case DOCKSTORE_SERVICE_YML:
+            return new LanguagePluginHandler(ServicePrototypePlugin.class);
         default:
             throw new UnsupportedOperationException("language not known");
         }

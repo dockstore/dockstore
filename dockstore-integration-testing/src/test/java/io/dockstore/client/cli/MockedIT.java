@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
@@ -95,7 +96,7 @@ public class MockedIT {
         final String sourceFileContents = FileUtils.readFileToString(sourceFile, StandardCharsets.UTF_8);
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
-        doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
+        doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", DescriptorLanguage.CWL);
         when(file.getPath()).thenReturn(sourceFile.getAbsolutePath());
 
         // change getDescriptorFromServer to downloadTargetEntry
@@ -108,7 +109,7 @@ public class MockedIT {
         SourceFile file2 = mock(SourceFile.class);
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
         when(file2.getPath()).thenReturn(sourceFileArrays.getAbsolutePath());
-        doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
+        doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", DescriptorLanguage.CWL);
 
         // change getDescriptorFromServer to downloadTargetEntry
         doReturn(sourceFileArrays).when(toolClient).downloadTargetEntry(eq("quay.io/collaboratory/arrays"),

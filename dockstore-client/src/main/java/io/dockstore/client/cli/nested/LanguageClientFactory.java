@@ -17,9 +17,9 @@ package io.dockstore.client.cli.nested;
 
 import java.util.Optional;
 
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.github.collaboratory.cwl.CWLClient;
-import io.github.collaboratory.nextflow.NextFlowClient;
+import io.github.collaboratory.nextflow.NextflowClient;
 import io.github.collaboratory.wdl.WDLClient;
 
 public final class LanguageClientFactory {
@@ -28,17 +28,15 @@ public final class LanguageClientFactory {
         // suppress constructor
     }
 
-    public static Optional<LanguageClientInterface> createLanguageCLient(AbstractEntryClient client, LanguageType type) {
-        if (type == LanguageType.CWL) {
+    public static Optional<LanguageClientInterface> createLanguageCLient(AbstractEntryClient client, DescriptorLanguage type) {
+        if (type == DescriptorLanguage.CWL) {
             return Optional.of(new CWLClient(client));
-        } else if (type == LanguageType.WDL) {
+        } else if (type == DescriptorLanguage.WDL) {
             return Optional.of(new WDLClient(client));
-        } else if (type == LanguageType.NEXTFLOW) {
-            return Optional.of(new NextFlowClient(client));
-        } else if (type == LanguageType.NONE) {
-            return Optional.empty();
+        } else if (type == DescriptorLanguage.NEXTFLOW) {
+            return Optional.of(new NextflowClient(client));
         } else {
-            throw new UnsupportedOperationException("language client does not exist for " + type);
+            return Optional.empty();
         }
     }
 }

@@ -7,8 +7,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.FileProvisioning;
-import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -34,14 +34,14 @@ public abstract class BaseLauncher {
     protected String workingDirectory;
 
     // CWL, WDL, NEXTFLOW
-    protected LanguageType languageType;
+    protected DescriptorLanguage languageType;
     protected File executionFile;
 
     protected boolean script;
 
     protected String launcherName;
 
-    public BaseLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+    public BaseLauncher(AbstractEntryClient abstractEntryClient, DescriptorLanguage language, boolean script) {
         this.abstractEntryClient = abstractEntryClient;
         this.fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
         this.languageType = language;

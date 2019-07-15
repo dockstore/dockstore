@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.GenericType;
 
 import com.google.common.base.Strings;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -162,7 +163,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String substring = url.substring(BITBUCKET_V2_API_URL.length() - 1);
         return apiClient
             .invokeAPI(substring, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/json", "application/json",
-                new String[] { "api_key", "basic", "oauth2" }, type);
+                new String[] { "api_key", "basic", "oauth2" }, type).getData();
     }
 
     /**
@@ -175,7 +176,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
      * @return source file
      */
     @Override
-    public SourceFile getSourceFile(String path, String repositoryId, String branch, SourceFile.FileType type) {
+    public SourceFile getSourceFile(String path, String repositoryId, String branch, DescriptorLanguage.FileType type) {
         // TODO: should we even be creating a sourcefile before checking that it is valid?
         // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
         SourceFile file = null;
@@ -260,9 +261,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Workflow initializeWorkflow(String repositoryId) {
-        Workflow workflow = new Workflow();
-
+    public Workflow initializeWorkflow(String repositoryId, Workflow workflow) {
         // Does this split not work if name has a slash?
         String[] id = repositoryId.split("/");
         String owner = id[0];
@@ -296,7 +295,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     version.setLastModified(Date.from(date.toInstant()));
                     String calculatedPath = version.getWorkflowPath();
                     // Now grab source files
-                    SourceFile.FileType identifiedType = workflow.getFileType();
+                    DescriptorLanguage.FileType identifiedType = workflow.getFileType();
                     // TODO: No exceptions are caught here in the event of a failed call
                     SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 

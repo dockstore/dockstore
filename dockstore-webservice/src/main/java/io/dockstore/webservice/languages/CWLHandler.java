@@ -37,6 +37,8 @@ import io.cwl.avro.ExpressionTool;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.FileFormat;
@@ -478,7 +480,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      * @param absoluteImportPath        absolute path of import in git repository
      */
     private void handleImport(String repositoryId, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath) {
-        SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_CWL;
+        DescriptorLanguage.FileType fileType = DescriptorLanguage.FileType.DOCKSTORE_CWL;
         // create a new source file
         final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
         if (fileResponse == null) {
@@ -684,7 +686,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
@@ -716,7 +718,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
@@ -748,6 +750,6 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.CWL_TEST_JSON);
+        return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
     }
 }

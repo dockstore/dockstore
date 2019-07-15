@@ -27,7 +27,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Test;
 
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -49,7 +49,7 @@ public class JsonLdRetrieverTest {
         file.setAbsolutePath("/dummy path");
         tag.addSourceFile(file);
         tag.setReference("master");
-        tool.addTag(tag);
+        tool.addWorkflowVersion(tag);
         tool.setDefaultVersion("master");
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
