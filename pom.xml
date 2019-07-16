@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.7.0-alpha.9-SNAPSHOT</version>
+    <version>1.7.0-alpha.11-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -44,7 +44,7 @@
         <postgresql.version>42.2.5</postgresql.version>
         <mockito.version>2.26.0</mockito.version>
         <cwlavro.version>2.0.4.2</cwlavro.version>
-        <okhttp.version>3.9.0</okhttp.version>
+        <okhttp.version>3.14.2</okhttp.version>
         <slf4j.version>1.7.26</slf4j.version>
         <swagger-ui.version>3.20.5</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
@@ -168,6 +168,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.specto</groupId>
+                <artifactId>hoverfly-java</artifactId>
+                <version>0.12.0</version>
+            </dependency>
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
                 <artifactId>system-rules</artifactId>
@@ -833,7 +838,7 @@
     <build>
         <pluginManagement>
             <plugins>
-		<!-- https://github.com/jacoco/jacoco/pull/760 -->
+                <!-- https://github.com/jacoco/jacoco/pull/760 -->
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
@@ -1145,7 +1150,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <release>11</release>
-	        </configuration>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1260,7 +1265,7 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest
+                    io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest
                 </excludeGroups>
             </properties>
         </profile>
@@ -1290,7 +1295,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.WorkflowTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1300,7 +1305,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.ToolTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1309,7 +1314,15 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>non-confidential-tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.NonConfidentialTest</groups>
             </properties>
         </profile>
         <profile>
@@ -1328,7 +1341,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <skipClientITs>false</skipClientITs>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest,io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>

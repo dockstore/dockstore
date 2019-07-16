@@ -179,7 +179,7 @@ public class BasicIT extends BaseIT {
                 "--script" });
 
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tag where name = 'masterTest' and hidden='t'", long.class);
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where name = 'masterTest' and vm.hidden='t' and t.id = vm.id", long.class);
         Assert.assertEquals("there should be one tag", 1, count2);
 
         // Remove tag
@@ -1174,8 +1174,8 @@ public class BasicIT extends BaseIT {
 
     @Test
     public void testTestParameterOtherUsers(){
-        final ApiClient correctWebClient = getWebClient(BaseIT.USER_1_USERNAME);
-        final ApiClient otherWebClient = getWebClient(BaseIT.OTHER_USERNAME);
+        final ApiClient correctWebClient = getWebClient(BaseIT.USER_1_USERNAME, testingPostgres);
+        final ApiClient otherWebClient = getWebClient(BaseIT.OTHER_USERNAME, testingPostgres);
 
         ContainersApi containersApi = new ContainersApi(correctWebClient);
         final DockstoreTool containerByToolPath = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json", null);
@@ -1230,7 +1230,8 @@ public class BasicIT extends BaseIT {
         
 
         // Versions should be unverified
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag where verified='true'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and t.id = vm.id", long.class);
+
         Assert.assertEquals("there should be no verified tags, there are " + count, 0, count);
 
         // Verify tag
@@ -1239,8 +1240,8 @@ public class BasicIT extends BaseIT {
 
         // Tag should be verified
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tag where verified='true' and verifiedSource='Docker testing group'",
-                long.class);
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group' and t.id = vm.id", long.class);
+
         Assert.assertEquals("there should be one verified tag, there are " + count2, 1, count2);
 
         // Update tag to have new verified source
@@ -1250,7 +1251,7 @@ public class BasicIT extends BaseIT {
 
         // Tag should have new verified source
         final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from tag where verified='true' and verifiedSource='Docker testing group2'",
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group2' and t.id = vm.id",
                 long.class);
         Assert.assertEquals("there should be one verified tag, there are " + count3, 1, count3);
 
@@ -1259,7 +1260,7 @@ public class BasicIT extends BaseIT {
             "quay.io/dockstoretestuser/quayandbitbucket", "--unverify", "--version", "master", "--script" });
 
         // Tag should be unverified
-        final long count5 = testingPostgres.runSelectStatement("select count(*) from tag where verified='true'", long.class);
+        final long count5 = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and t.id = vm.id", long.class);
         Assert.assertEquals("there should be no verified tags, there are " + count5, 0, count5);
     }
 

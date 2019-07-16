@@ -34,6 +34,7 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.Ga4GhApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
@@ -98,7 +99,7 @@ public class ServiceIT extends BaseIT {
 
     @Test
     public void checkWorkflowAndServiceHierarchy() {
-        CreateContent createContent = new CreateContent().invoke();
+        CreateContent createContent = new CreateContent().invoke(false);
         long workflowID = createContent.getWorkflowID();
         long serviceID = createContent.getServiceID();
         long serviceID2 = createContent.getServiceID2();
@@ -112,6 +113,7 @@ public class ServiceIT extends BaseIT {
         final Service byId1 = serviceDAO.findById(workflowID);
 
         assertTrue(byId != null && byId1 == null);
+        session.close();
     }
 
     @Test
@@ -162,7 +164,7 @@ public class ServiceIT extends BaseIT {
 
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -183,6 +185,13 @@ public class ServiceIT extends BaseIT {
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
+
+        // Test user endpoints
+        UsersApi usersApi = new UsersApi(webClient);
+        List<io.swagger.client.model.Workflow> services = usersApi.userServices(service.getUsers().get(0).getId());
+        List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(service.getUsers().get(0).getId());
+        assertEquals("There should be one service", 1,  services.size());
+        assertEquals("There should be no workflows", 0, workflows.size());
     }
 
     /**
@@ -193,7 +202,7 @@ public class ServiceIT extends BaseIT {
 
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -219,7 +228,7 @@ public class ServiceIT extends BaseIT {
 
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -247,7 +256,7 @@ public class ServiceIT extends BaseIT {
 
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -291,6 +300,10 @@ public class ServiceIT extends BaseIT {
         }
 
         CreateContent invoke() {
+            return invoke(true);
+        }
+
+        CreateContent invoke(boolean cleanup) {
             final Transaction transaction = session.beginTransaction();
 
             Workflow testWorkflow = new BioWorkflow();
@@ -343,6 +356,9 @@ public class ServiceIT extends BaseIT {
 
             session.flush();
             transaction.commit();
+            if (cleanup) {
+                session.close();
+            }
             return this;
         }
     }

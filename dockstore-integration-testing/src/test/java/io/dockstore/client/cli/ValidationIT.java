@@ -54,7 +54,7 @@ public class ValidationIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupToolWebService() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         return new ContainersApi(client);
     }
 
@@ -65,7 +65,7 @@ public class ValidationIT extends BaseIT {
      * @throws ApiException
      */
     private WorkflowsApi setupWorkflowWebService() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         return new WorkflowsApi(client);
     }
 

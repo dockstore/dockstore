@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.7.0-alpha.9-SNAPSHOT</version>
+        <version>1.7.0-alpha.11-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -38,7 +38,7 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-oauth2</artifactId>
-            <version>v1-rev141-1.22.0</version>
+            <version>v2-rev151-1.25.0</version>
         </dependency>
         <dependency>
             <groupId>net.logstash.logback</groupId>
@@ -53,32 +53,32 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <!-- DOCKSTORE-2428 - demo how to add new workflow language
         <dependency>
@@ -568,7 +568,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.0-alpha.9-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -583,10 +583,10 @@
             <artifactId>okhttp</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp-urlconnection</artifactId>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+            <version>1.17.2</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -773,7 +773,7 @@
 
     <build>
         <plugins>
-	        <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
@@ -971,7 +971,7 @@
                 -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>3.6.3</version>
                 <configuration>
                     <driver>org.postgresql.Driver</driver>
                     <referenceDriver>org.postgresql.Driver</referenceDriver>
@@ -1060,7 +1060,7 @@
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <configuration>
-		            <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
+                    <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
                     <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>

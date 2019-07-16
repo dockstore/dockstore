@@ -276,7 +276,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 "--hidden", "true", "--script" });
 
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from workflowversion where name = 'master' and hidden = 't' and workflowpath = '/Dockstore2.wdl'",
+                "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'master' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
                 long.class);
         assertEquals("there should be 1 matching workflow version, there is " + count, 1, count);
     }
@@ -508,7 +508,7 @@ public class GeneralWorkflowIT extends BaseIT {
     @Test
     public void testUpdateWorkflowPath() throws ApiException {
         // Set up webservice
-        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME);
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -545,9 +545,9 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testFreezingWorkflow() throws ApiException {
+    public void testWorkflowFreezing() throws ApiException {
         // Set up webservice
-        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME);
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -576,9 +576,18 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
         master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
         master.setFrozen(false);
-        final List<WorkflowVersion> workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        List<WorkflowVersion> workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
         assertTrue(master.isFrozen());
+
+        // but should be able to change doi stuff
+        master.setFrozen(true);
+        master.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
+        master.setDoiURL("foo");
+        workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        assertEquals("foo", master.getDoiURL());
+        assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // refresh should skip over the frozen version
         final Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
@@ -1078,7 +1087,8 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Versions should be unverified
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true'", long.class);
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", long.class);
+
         assertEquals("there should be no verified workflowversions, there are " + count, 0, count);
 
         // Refresh workflows
@@ -1095,7 +1105,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Version should be verified
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='Docker testing group'",
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group' and wv.id = vm.id",
                         long.class);
         assertEquals("there should be one verified workflowversion, there are " + count2, 1, count2);
 
@@ -1106,7 +1116,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Version should have new verified source
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='Docker testing group2'",
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group2' and wv.id = vm.id",
                         long.class);
         assertEquals("there should be one verified workflowversion, there are " + count3, 1, count3);
 
@@ -1117,7 +1127,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Version should be verified
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true'", long.class);
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", long.class);
         assertEquals("there should be two verified workflowversions, there are " + count4, 2, count4);
 
         // Unverify workflowversion
@@ -1126,7 +1136,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Workflowversion should be unverified
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true'", long.class);
+                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", long.class);
         assertEquals("there should be one verified workflowversion, there are " + count5, 1, count5);
     }
 

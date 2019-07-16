@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.7.0-alpha.8-SNAPSHOT
+  version: 1.7.0-alpha.9-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -514,7 +514,7 @@ paths:
         - extendedGA4GH
       summary: List all organizations
       description: "This endpoint returns list of all organizations. "
-      operationId: entriesOrgGet
+      operationId: entriesOrgsGet
       responses:
         "200":
           description: An array of organizations' names.
@@ -4346,6 +4346,32 @@ paths:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
         - BEARER: []
+  "/users/{userId}/services":
+    get:
+      tags:
+        - users
+      summary: List all services owned by the logged-in user.
+      description: ""
+      operationId: userServices
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/users/{userId}/tokens":
     get:
       tags:
@@ -6297,6 +6323,8 @@ components:
           type: string
         tagManagerId:
           type: string
+        gitHubAppInstallationUrl:
+          type: string
         githubClientId:
           type: string
         quayIoClientId:
@@ -7020,7 +7048,7 @@ components:
             - DOCKSTORE_YML
             - DOCKSTORE_SERVICE_YML
             - DOCKSTORE_SERVICE_TEST_JSON
-            - OTHER
+            - DOCKSTORE_SERVICE_OTHER
         content:
           type: string
           description: Cache for the contents of the target file
@@ -7065,12 +7093,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
-        last_modified:
-          type: string
-          format: date-time
-          description: "Tool-> For automated builds: Last time specific tag was built. For
-            hosted: When version was created Workflow-> Remote: Last time
-            version on GitHub repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch
@@ -7132,6 +7154,16 @@ components:
             build on quay.io
         workingDirectory:
           type: string
+        last_modified:
+          type: string
+          format: date-time
+          description: "For automated tools: The last time the container backing this tool
+            version was built. For hosted: N/A"
+        last_built:
+          type: string
+          format: date-time
+          description: "For automated tools: The last time the container backing this tool
+            version was built. For hosted: N/A"
         image_id:
           type: string
         input_file_formats:
@@ -7522,7 +7554,7 @@ components:
             - DOCKSTORE_YML
             - DOCKSTORE_SERVICE_YML
             - DOCKSTORE_SERVICE_TEST_JSON
-            - OTHER
+            - DOCKSTORE_SERVICE_OTHER
         valid:
           type: boolean
           description: Is the file type valid
@@ -7765,9 +7797,8 @@ components:
         last_modified:
           type: string
           format: date-time
-          description: "Tool-> For automated builds: Last time specific tag was built. For
-            hosted: When version was created Workflow-> Remote: Last time
-            version on GitHub repo was changed. Hosted: time version created"
+          description: "Remote: Last time version on GitHub repo was changed. Hosted: time
+            version created."
         reference:
           type: string
           description: git commit/tag/branch
@@ -7863,12 +7894,6 @@ components:
             $ref: "#/components/schemas/Validation"
         workingDirectory:
           type: string
-        last_modified:
-          type: string
-          format: date-time
-          description: "Tool-> For automated builds: Last time specific tag was built. For
-            hosted: When version was created Workflow-> Remote: Last time
-            version on GitHub repo was changed. Hosted: time version created"
         reference:
           type: string
           description: git commit/tag/branch

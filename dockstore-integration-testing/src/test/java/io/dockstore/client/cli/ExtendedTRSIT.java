@@ -68,7 +68,7 @@ public class ExtendedTRSIT extends BaseIT {
 
     @Test(expected = ApiException.class)
     public void testVerificationOnSourceFileLevelForWorkflowsAsOwner() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         // need to turn off admin of USER_2_USERNAME
         testingPostgres.runUpdateStatement("update enduser set isadmin = 'f' where username = '"+USER_2_USERNAME+"'");
         testVerificationWithGivenClient(webClient, webClient);
@@ -76,25 +76,25 @@ public class ExtendedTRSIT extends BaseIT {
 
     @Test(expected = ApiException.class)
     public void testVerificationOnSourceFileLevelForWorkflowsAsAnon() throws ApiException {
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getAnonymousWebClient());
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getAnonymousWebClient());
     }
 
     @Test(expected = ApiException.class)
     public void testVerificationOnSourceFileLevelForWorkflowsAsWrongUser() throws ApiException {
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(USER_1_USERNAME));
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(OTHER_USERNAME));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(USER_1_USERNAME, testingPostgres));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(OTHER_USERNAME, testingPostgres));
     }
 
     @Test
     public void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
         // can verify anyone's workflow as an admin
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(ADMIN_USERNAME));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(ADMIN_USERNAME, testingPostgres));
     }
 
     @Test
     public void testVerificationOnSourceFileLevelForWorkflowsAsCurator() throws ApiException {
         // or as a curator
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(CURATOR_USERNAME));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(CURATOR_USERNAME, testingPostgres));
     }
 
     private void testVerificationWithGivenClient(ApiClient registeringUser, ApiClient verifyingUser) {
@@ -172,7 +172,7 @@ public class ExtendedTRSIT extends BaseIT {
      */
     @Test
     public void testVerificationOnSourceFileLevelForTools() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = new DockstoreTool();

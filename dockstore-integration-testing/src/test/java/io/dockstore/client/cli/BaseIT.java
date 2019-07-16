@@ -108,28 +108,11 @@ public class BaseIT {
     };
 
     /**
-     * Shared convenience method
-     * @return
-     */
-    protected static ApiClient getWebClient(boolean authenticated, String username) {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        ApiClient client = new ApiClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        if (authenticated) {
-            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                    .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
-                            String.class)));
-        }
-        return client;
-    }
-
-    /**
      * the following were migrated from SwaggerClientIT and can be eventually merged. Note different config file used
      */
 
-    protected static ApiClient getWebClient(String username) {
-        return getWebClient(true, username);
+    protected static ApiClient getWebClient(String username, CommonTestUtilities.TestingPostgres testingPostgres) {
+        return CommonTestUtilities.getWebClient(true, username, testingPostgres);
     }
 
     protected static ApiClient getWebClient() {

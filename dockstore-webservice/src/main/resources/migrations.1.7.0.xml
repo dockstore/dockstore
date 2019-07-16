@@ -159,6 +159,14 @@
         <setColumnRemarks columnName="lastupdated" tableName="tool" remarks="For automated builds: last time tool/namespace was refreshed Dockstore, tool info updated, default version selected. For hosted tools: when you created the tool"/>
         <setColumnRemarks columnName="lastupdated" tableName="workflow" remarks="For remote: When refresh all is hit for first time. Hosted: Time created."/>
     </changeSet>
+    <changeSet author="natalieperez (generated)" id="changeLastBuildColumnName">
+        <renameColumn tableName="tag" oldColumnName="lastmodified" newColumnName="lastbuilt"></renameColumn>
+        <setColumnRemarks tableName="tag" columnName="lastbuilt" remarks="For automated builds: The last time the container backing this tool version was built. For hosted: N/A"></setColumnRemarks>
+        <!-- Set lastbuilt to null for versions/tags of hosted tools -->
+        <sql dbms="postgresql">
+            UPDATE tag SET lastbuilt = null FROM tool_tag, tool WHERE tag.id = tool_tag.tagid AND tool.id = tool_tag.toolid AND tool.mode = 'HOSTED';
+        </sql>
+    </changeSet>
     <changeSet id="dyuen" author="frozen">
         <addColumn tableName="tag">
             <column defaultValueBoolean="false" name="frozen" type="bool"/>
@@ -196,6 +204,52 @@
             create policy insert_frozenfiles on sourcefile for insert with check (true);
             create policy update_frozenfiles on sourcefile for update using (not frozen) with check (true);
             create policy delete_frozenfiles on sourcefile for delete using (not frozen);
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen" id="modifyable version metadata">
+        <createTable tableName="version_metadata">
+            <column defaultValue="NOT_REQUESTED" name="doistatus" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="doiurl" type="VARCHAR(255)"/>
+            <column name="hidden" type="BOOLEAN"/>
+            <column defaultValueBoolean="false" name="verified" type="BOOLEAN"/>
+            <column name="verifiedsource" type="VARCHAR(255)"/>
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_metadata_pkey"/>
+            </column>
+        </createTable>
+        <sql dbms="postgresql">
+            insert into version_metadata (doistatus, doiurl, hidden, verified, id)
+            select doistatus, doiurl, hidden, verified, id from tag;
+            insert into version_metadata (doistatus, doiurl, hidden, verified, id)
+            select doistatus, doiurl, hidden, verified, id from workflowversion;
+        </sql>
+        <dropColumn columnName="doistatus" tableName="tag"/>
+        <dropColumn columnName="doistatus" tableName="workflowversion"/>
+        <dropColumn columnName="doiurl" tableName="tag"/>
+        <dropColumn columnName="doiurl" tableName="workflowversion"/>
+        <dropColumn columnName="hidden" tableName="tag"/>
+        <dropColumn columnName="hidden" tableName="workflowversion"/>
+        <dropColumn columnName="verified" tableName="tag"/>
+        <dropColumn columnName="verified" tableName="workflowversion"/>
+        <dropColumn columnName="verifiedsource" tableName="tag"/>
+        <dropColumn columnName="verifiedsource" tableName="workflowversion"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="workflowversion" constraintName="fk_workflowVersionMetadata" deferrable="true"
+                                 initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="version_metadata"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="tag" constraintName="fk_tagVersionMetadata" deferrable="true"
+                                 initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="version_metadata"/>
+    </changeSet>
+
+    <!--  These constraints only appear in the production db, and not when generating the db from scratch. They should not be there due to services being valid workflows in the table.  -->
+    <changeSet author="aduncan" id="remove_weird_fk_constraints">
+        <sql dbms="postgresql">
+            ALTER TABLE workflow_workflowversion DROP CONSTRAINT IF EXISTS fk_esgelvnqxrv53m71tdvwkxut3;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow_workflowversion DROP CONSTRAINT IF EXISTS fkl8yg13ahjhtn0notrlf3amwwi;
         </sql>
     </changeSet>
 </databaseChangeLog>

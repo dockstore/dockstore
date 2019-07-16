@@ -15,11 +15,13 @@
  */
 package io.swagger.api.impl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
@@ -45,7 +47,6 @@ import static org.junit.Assert.assertEquals;
  * @since 17/01/18
  */
 public class ToolsImplCommonTest {
-    private static final Gson gson = new Gson();
     private static final String PLACEHOLDER_CONTENT = "potato";
     private static DockstoreWebserviceConfiguration  actualConfig = new DockstoreWebserviceConfiguration();
 
@@ -200,7 +201,7 @@ public class ToolsImplCommonTest {
      * Tests a workflow with/without a workflowname
      */
     @Test
-    public void convertDockstoreWorkflowToTool() {
+    public void convertDockstoreWorkflowToTool() throws IOException {
         convertDockstoreWorkflowToTool("potato", false);
         convertDockstoreWorkflowToTool(null, false);
 
@@ -208,7 +209,9 @@ public class ToolsImplCommonTest {
         convertDockstoreWorkflowToTool(null, true);
     }
 
-    private void convertDockstoreWorkflowToTool(String toolname, boolean isService) {
+    private void convertDockstoreWorkflowToTool(String toolname, boolean isService) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         final String TOOLNAME = toolname;
         final String REFERENCE1 = "aaa";
         final String REFERENCE2 = "bbb";
@@ -236,15 +239,15 @@ public class ToolsImplCommonTest {
         actualWorkflowVersion1.setValid(false);
         actualWorkflowVersion1.setVerifiedSource(null);
         BioWorkflow workflow = new BioWorkflow();
-        json = gson.toJson(actualWorkflowVersion1);
-        WorkflowVersion actualWorkflowVersion2 = gson.fromJson(json, WorkflowVersion.class);
+        json = mapper.writeValueAsString(actualWorkflowVersion1);
+        WorkflowVersion actualWorkflowVersion2 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion2.setName(REFERENCE2);
         actualWorkflowVersion2.setReference(REFERENCE2);
         actualWorkflowVersion2.setHidden(false);
         actualWorkflowVersion2.setVerifiedSource("potatoTesterSource");
         actualWorkflowVersion2.setVerified(true);
-        json = gson.toJson(actualWorkflowVersion2);
-        WorkflowVersion actualWorkflowVersion3 = gson.fromJson(json, WorkflowVersion.class);
+        json = mapper.writeValueAsString(actualWorkflowVersion2);
+        WorkflowVersion actualWorkflowVersion3 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion3.setName(REFERENCE3);
         actualWorkflowVersion3.setReference(REFERENCE3);
         actualWorkflowVersion3.setVerifiedSource("chickenTesterSource");
@@ -315,8 +318,8 @@ public class ToolsImplCommonTest {
         expectedToolVersion1.setVerifiedSource("potatoTesterSource");
         expectedToolVersion1.setImageName("");
         expectedToolVersion1.setRegistryUrl("");
-        json = gson.toJson(expectedToolVersion1);
-        ToolVersion expectedToolVersion2 = gson.fromJson(json, ToolVersion.class);
+        json = mapper.writeValueAsString(expectedToolVersion1);
+        ToolVersion expectedToolVersion2 = mapper.readValue(json, ToolVersion.class);
         expectedToolVersion2.setName(REFERENCE3);
         expectedToolVersion2.setVerifiedSource("chickenTesterSource");
         expectedToolVersion2.setImageName("");

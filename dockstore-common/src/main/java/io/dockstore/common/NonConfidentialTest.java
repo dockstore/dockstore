@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2019 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,31 +13,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
-package io.dockstore.webservice.jdbi;
-
-import io.dockstore.webservice.core.Version;
-import io.dropwizard.hibernate.AbstractDAO;
-import org.hibernate.SessionFactory;
+package io.dockstore.common;
 
 /**
- * @author xliu
+ * Setting aside integration tests that do not require our confidential data bundles
  */
-public class VersionDAO<T extends Version> extends AbstractDAO<T> {
-
-    VersionDAO(SessionFactory sessionFactory) {
-        super(sessionFactory);
-    }
-
-    public T findById(Long id) {
-        return get(id);
-    }
-
-    public long create(T tag) {
-        return persist(tag).getId();
-    }
-
-    public void delete(T version) {
-        currentSession().delete(version);
-    }
+public interface NonConfidentialTest {
 }

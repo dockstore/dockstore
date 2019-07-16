@@ -216,7 +216,7 @@ public abstract class SourceCodeRepoInterface {
         // Create branches and associated source files
         workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
         // setting last modified date can be done uniformly
-        Optional<Date> max = workflow.getWorkflowVersions().stream().map(Version::getLastModified).max(Comparator.naturalOrder());
+        Optional<Date> max = workflow.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
         if (max.isPresent()) {
             long time = max.get().getTime();

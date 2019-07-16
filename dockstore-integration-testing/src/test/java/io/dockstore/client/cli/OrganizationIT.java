@@ -128,23 +128,23 @@ public class OrganizationIT extends BaseIT {
 
 
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Setup user one
-        final ApiClient webClientUser1 = getWebClient(USER_1_USERNAME);
+        final ApiClient webClientUser1 = getWebClient(USER_1_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser1 = new OrganizationsApi(webClientUser1);
 
         // Setup admin
-        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
         // Setup curator
-        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME);
+        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiCurator = new OrganizationsApi(webClientCuratorUser);
 
         // Setup unauthorized user
-        final ApiClient unauthClient = getWebClient(false, "");
+        final ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "", testingPostgres);
         OrganizationsApi organizationsApiUnauth = new OrganizationsApi(unauthClient);
 
         // Create the organization
@@ -342,7 +342,7 @@ public class OrganizationIT extends BaseIT {
     @Test(expected = ApiException.class)
     public void testDuplicateOrgByCase() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -355,7 +355,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void createOrgInvalidEmail() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -368,7 +368,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void createOrgInvalidLink() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -384,7 +384,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testDuplicateOrgDisplayName() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -409,7 +409,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testRenameOrgByCase() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -433,7 +433,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCollectionAlternateCase() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -457,7 +457,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testDuplicateCollectionDisplayName() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -486,7 +486,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testGetViaAlternateCase() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -503,15 +503,15 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCreateOrganizationAndRejectIt() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Setup curator
-        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME);
+        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiCurator = new OrganizationsApi(webClientCuratorUser);
 
         // Setup admin
-        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
         // Create the Organization
@@ -563,7 +563,7 @@ public class OrganizationIT extends BaseIT {
 
 
         // Setup API client
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
         createOrg(organizationsApi);
 
@@ -634,11 +634,11 @@ public class OrganizationIT extends BaseIT {
 
 
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Setup other user
-        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
         UsersApi usersOtherUser = new UsersApi(webClientOtherUser);
 
@@ -744,11 +744,11 @@ public class OrganizationIT extends BaseIT {
 
 
         // Setup user one
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Setup user two
-        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
 
         // Create an Organization
@@ -815,7 +815,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testCreateOrganizationWithInvalidNames() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badNames.forEach(name -> createOrgWithBadName(name, organizationsApi));
     }
@@ -825,7 +825,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testCreatedOrganizationWithValidDisplayNames() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         goodDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi, "testname" + goodDisplayNames.indexOf(displayName)));
     }
@@ -835,7 +835,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testCreateOrganizationsWithBadDisplayNames() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi, "testname" + badDisplayNames.indexOf(displayName)));
     }
@@ -866,7 +866,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testAvatarUrlConstraints() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badAvatarUrls.forEach(url -> createOrgWithBadAvatarUrl(url, organizationsApi));
     }
@@ -935,7 +935,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCreateCollectionWithValidDisplayNames() {
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -953,7 +953,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCreateCollectionWithInvalidDisplayNames() {
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -1033,19 +1033,19 @@ public class OrganizationIT extends BaseIT {
 
 
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Setup admin
-        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
         // Setup other user
-        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
 
         // Setup unauthorized user
-        final ApiClient unauthClient = getWebClient(false, "");
+        final ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "", testingPostgres);
         OrganizationsApi organizationsApiUnauth = new OrganizationsApi(unauthClient);
 
         // Create the Organization and collection
@@ -1232,7 +1232,7 @@ public class OrganizationIT extends BaseIT {
 
 
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -1289,7 +1289,7 @@ public class OrganizationIT extends BaseIT {
 
 
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -1339,7 +1339,7 @@ public class OrganizationIT extends BaseIT {
 
 
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -1382,10 +1382,10 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testStarringOrganization() {
         // Setup user
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
 
         // Setup admin
-        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
         // Create org

@@ -49,7 +49,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import okhttp3.OkHttpClient;
-import okhttp3.OkUrlFactory;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -66,8 +65,9 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHTagObject;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.HttpConnector;
 import org.kohsuke.github.RateLimitHandler;
-import org.kohsuke.github.extras.OkHttp3Connector;
+import org.kohsuke.github.extras.ImpatientHttpConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -84,9 +84,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
+        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
+                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
+        HttpConnector okHttp3Connector =  new ImpatientHttpConnector(url -> obsoleteUrlFactory.open(url));
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(new OkHttp3Connector(new OkUrlFactory(
-                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build()))).build();
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -405,7 +407,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (workflow.getMode() == WorkflowMode.SERVICE) {
             version = setupServiceFilesForVersion(calculatedPath, ref, repository, version);
             if (version == null) {
-                return version;
+                return null;
             }
         } else {
             version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, repositoryId, existingDefaults);
@@ -506,7 +508,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 file.setAbsolutePath(filePath);
                 file.setPath(filePath);
                 file.setContent(fileContent);
-                file.setType(DescriptorLanguage.FileType.OTHER);
+                file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
                 version.getSourceFiles().add(file);
             }
             return version;
@@ -662,7 +664,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param repository Github repostory name (ex. dockstore/dockstore-ui2)
      * @param gitReference GitHub reference object
      * @param workflows Workflows to upsert version
-     * @return list of workflows with new/updated version
+     * @return workflows with new/updated version
      */
     public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
         GHRepository ghRepository = getRepository(repository);
@@ -686,7 +688,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflow Workflow to upsert version to
      * @return Workflow version corresponding to GitHub tag
      */
-    public WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) throws IOException {
+    private WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow) throws IOException {
         String refName = "tags/" + gitReference;
         GHRef ghRef = ghRepository.getRef(refName);
 
@@ -699,9 +701,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // Find existing version if it exists
         Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-        if (existingVersion.isPresent()) {
-            existingDefaults.put(gitReference, existingVersion.get());
-        }
+        existingVersion.ifPresent(workflowVersion -> existingDefaults.put(gitReference, workflowVersion));
 
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);

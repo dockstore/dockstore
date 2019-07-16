@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import com.codahale.metrics.jdbi3.strategies.TimedAnnotationNameStrategy;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.db.DataSourceFactory;
@@ -31,9 +30,12 @@ import io.dropwizard.jdbi3.JdbiFactory;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
+import io.swagger.client.ApiClient;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Query;
@@ -57,8 +59,19 @@ public final class CommonTestUtilities {
     /**
      * confidential testing config, includes keys
      */
-    public static final String CONFIDENTIAL_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
+    public static final String CONFIDENTIAL_CONFIG_PATH;
     static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
+
+    static {
+        String confidentialConfigPath = null;
+        try {
+            confidentialConfigPath = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
+        } catch (Exception e) {
+            LOG.error("Confidential Dropwizard configuration file not found.", e);
+
+        }
+        CONFIDENTIAL_CONFIG_PATH = confidentialConfigPath;
+    }
 
     private CommonTestUtilities() {
 
@@ -70,10 +83,14 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        dropAndRecreateNoTestData(support, CONFIDENTIAL_CONFIG_PATH);
+    }
+
+    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String dropwizardConfigurationFile) throws Exception {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,1.7.0");
+        application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
+        application.run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,1.7.0");
     }
 
     /**
@@ -82,6 +99,10 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+        dropAndCreateWithTestData(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
+    }
+
+    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, String dropwizardConfigurationFile) throws Exception {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
         Application<DockstoreWebserviceConfiguration> application;
         if (isNewApplication) {
@@ -89,10 +110,27 @@ public final class CommonTestUtilities {
         } else {
             application= support.getApplication();
         }
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
 
         List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0");
-        runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
+        runMigration(migrationList, application, dropwizardConfigurationFile);
+    }
+
+    /**
+     * Shared convenience method
+     * @return
+     */
+    public static ApiClient getWebClient(boolean authenticated, String username, CommonTestUtilities.TestingPostgres testingPostgres) {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        ApiClient client = new ApiClient();
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        if (authenticated) {
+            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
+                    .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
+                            String.class)));
+        }
+        return client;
     }
 
     /**

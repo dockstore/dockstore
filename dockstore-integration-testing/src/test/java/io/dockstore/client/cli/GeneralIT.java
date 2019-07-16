@@ -136,7 +136,7 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         return new ContainersApi(client);
     }
 
@@ -299,16 +299,13 @@ public class GeneralIT extends BaseIT {
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "true", "--script" });
-
-
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 1 hidden tag", 1, count);
 
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "false", "--script" });
-
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", long.class);
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 0 hidden tag", 0, count2);
     }
 
@@ -688,6 +685,15 @@ public class GeneralIT extends BaseIT {
         master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
         assertTrue(master.isFrozen() && master.getImageId().equals("awesomeid"));
 
+        // but should be able to change doi stuff
+        master.setFrozen(true);
+        master.setDoiStatus(Tag.DoiStatusEnum.REQUESTED);
+        master.setDoiURL("foo");
+        tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        assertEquals("foo", master.getDoiURL());
+        assertEquals(Tag.DoiStatusEnum.REQUESTED, master.getDoiStatus());
+
         // try modifying sourcefiles
         // cannot modify sourcefiles for a frozen version
         assertFalse(master.getSourceFiles().isEmpty());
@@ -827,7 +833,7 @@ public class GeneralIT extends BaseIT {
     @Test
     public void testCheckUser() {
         // Authorized user should pass
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
         assertTrue("User DockstoreTestUser2 should exist", userOneExists);
@@ -837,7 +843,7 @@ public class GeneralIT extends BaseIT {
         assertFalse(fakeUserExists);
 
         // Unauthorized user should fail
-        ApiClient unauthClient = getWebClient(false, "");
+        ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "", testingPostgres);
         UsersApi unauthUserApi = new UsersApi(unauthClient);
         boolean failed = false;
         try {
@@ -853,14 +859,14 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testToolAlias() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         EntriesApi entryApi = new EntriesApi(webClient);
 
-        final ApiClient anonWebClient = getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME, testingPostgres);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Add tool
@@ -912,13 +918,13 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void downloadZipFileTestAuth() throws IOException {
-        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
-        final ApiClient anonWebClient = getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME, testingPostgres);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool

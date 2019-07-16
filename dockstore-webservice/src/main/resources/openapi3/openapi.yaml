@@ -103,6 +103,8 @@ components:
           type: string
         dnaStackImportUrl:
           type: string
+        gitHubAppInstallationUrl:
+          type: string
         gitHubAuthUrl:
           type: string
         gitHubRedirectPath:
@@ -479,7 +481,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
-          - OTHER
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         verifiedBySource:
           additionalProperties:
@@ -525,6 +527,9 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        last_built:
+          format: date-time
+          type: string
         last_modified:
           format: date-time
           type: string
@@ -786,7 +791,7 @@ components:
           - DOCKSTORE_YML
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
-          - OTHER
+          - DOCKSTORE_SERVICE_OTHER
           type: string
         valid:
           type: boolean
@@ -833,9 +838,6 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
-        last_modified:
-          format: date-time
-          type: string
         name:
           type: string
         output_file_formats:
@@ -4177,7 +4179,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -4337,7 +4339,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId
@@ -4456,6 +4458,30 @@ paths:
               schema:
                 items:
                   $ref: '#/components/schemas/Tool'
+                type: array
+          description: default response
+  /users/{userId}/services:
+    get:
+      operationId: userServices
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
   /users/{userId}/tokens:

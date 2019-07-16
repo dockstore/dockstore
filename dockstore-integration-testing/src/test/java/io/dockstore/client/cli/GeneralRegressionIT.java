@@ -137,7 +137,7 @@ public class GeneralRegressionIT extends BaseIT {
      * @throws ApiException comes back from a web service error
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         return new ContainersApi(client);
     }
 
