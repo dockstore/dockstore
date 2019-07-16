@@ -136,6 +136,7 @@ import org.slf4j.LoggerFactory;
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -154,6 +155,7 @@ public class WorkflowResource
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
+
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -458,7 +460,7 @@ public class WorkflowResource
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
+    @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow addService(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
@@ -468,23 +470,32 @@ public class WorkflowResource
         String servicePath = "github.com/" + repository;
 
         // Retrieve the user who triggered the call
-        User sendingUser = findUserByGitHubUsername(username);
+        User sendingUser = findUserByGitHubUsername(username, true);
 
         // Determine if service is already in Dockstore
         Workflow existingService = workflowDAO.findByPath(servicePath, false);
 
         if (existingService != null) {
-            // Duplicate service found, don't add
             String msg = "A service already exists for GitHub repository " + repository;
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
         // Get Installation Access Token
         String installationAccessToken = gitHubAppSetup(installationId);
 
         // Create a service object
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
+        final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
+
+        // Check that repository exists on GitHub
+        try {
+            sourceCodeRepo.getRepository(repository);
+        } catch (CustomWebApplicationException ex) {
+            String msg = "Repository " + repository + " does not exist on GitHub";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+
         Service service = sourceCodeRepo.initializeService(repository);
         service.getUsers().add(sendingUser);
         long serviceId = workflowDAO.create(service);
@@ -498,7 +509,7 @@ public class WorkflowResource
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
+    @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
@@ -506,8 +517,8 @@ public class WorkflowResource
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
             @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
 
-        // Retrieve the user who triggered the call
-        User sendingUser = findUserByGitHubUsername(username);
+        // Retrieve the user who triggered the call (may not exist on Dockstore)
+        User sendingUser = findUserByGitHubUsername(username, false);
 
         // Get Installation Access Token
         String installationAccessToken = gitHubAppSetup(installationId);
@@ -517,7 +528,7 @@ public class WorkflowResource
 
         // Add user to service if necessary
         Workflow service = workflowDAO.findByPath(dockstoreServicePath, false);
-        if (!service.getUsers().contains(sendingUser)) {
+        if (sendingUser != null && !service.getUsers().contains(sendingUser)) {
             service.getUsers().add(sendingUser);
         }
 
@@ -604,12 +615,18 @@ public class WorkflowResource
             }
 
             // Pull new version information from GitHub and update the versions
-            workflows = sourceCodeRepo.upsertVersionForWorkflows(repository, gitReference, workflows);
+            workflows = sourceCodeRepo.upsertVersionForWorkflows(repository, gitReference, workflows, workflowMode);
 
             // Update each workflow with reference types
             for (Workflow workflow : workflows) {
                 Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
                 versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
+            }
+        } else {
+            if (workflowMode == WorkflowMode.SERVICE) {
+                String msg = "No service with path " + dockstoreWorkflowPath + " exists on Dockstore.";
+                LOG.error(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
             }
         }
 
@@ -619,15 +636,20 @@ public class WorkflowResource
     /**
      * Based on GitHub username, find the corresponding user
      * @param username GitHub username
+     * @param allowFail If true, throw a failure if user cannot be found
      * @return user with given GitHub username
      */
-    private User findUserByGitHubUsername(String username) {
+    private User findUserByGitHubUsername(String username, boolean allowFail) {
         // Find user by github name
         Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(username);
         if (userGitHubToken == null) {
             String msg = "No user with GitHub username " + username + " exists on Dockstore.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            if (allowFail) {
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            } else {
+                return null;
+            }
         }
 
         // Get user object for github token
@@ -635,7 +657,9 @@ public class WorkflowResource
         if (sendingUser == null) {
             String msg = "No user with GitHub username " + username + " exists on Dockstore.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            if (allowFail) {
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            }
         }
 
         return sendingUser;
