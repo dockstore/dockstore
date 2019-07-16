@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.PrivacyPolicyVersion;
+import io.dockstore.webservice.core.TOSVersion;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -103,6 +106,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
+    private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_1;
+    private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     private final TokenDAO tokenDAO;
@@ -378,6 +383,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             }
         }
 
+        acceptTOSAndPrivacyPolicy(user);
+
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
             dockstoreToken = createDockstoreToken(userID, user.getUsername());
@@ -399,6 +406,17 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             tokenDAO.update(googleToken);
         }
         return dockstoreToken;
+    }
+
+    private void acceptTOSAndPrivacyPolicy(User user) {
+        if (user.getTOSVersion() != CURRENT_TOS_VERSION) {
+            user.setTOSVersion(CURRENT_TOS_VERSION);
+            user.setTOSVersionAcceptanceDate(new Date());
+        }
+        if (user.getPrivacyPolicyVersion() != CURRENT_PRIVACY_POLICY_VERSION) {
+            user.setPrivacyPolicyVersion(CURRENT_PRIVACY_POLICY_VERSION);
+            user.setPrivacyPolicyVersionAcceptanceDate(new Date());
+        }
     }
 
     /**
@@ -492,7 +510,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 githubToken = tokens.get(0);
             }
         }
-
+        // check that user has accepted the latest version of the TOS and privacy policy. If not, update since acceptance for both is passively done by logging in/registering
+        user = userDAO.findById(userID);
+        acceptTOSAndPrivacyPolicy(user);
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
