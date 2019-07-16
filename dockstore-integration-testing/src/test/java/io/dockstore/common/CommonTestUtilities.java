@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
@@ -281,50 +280,21 @@ public final class CommonTestUtilities {
 
         }
         public int runUpdateStatement(String query) {
-            int t = jdbi.withHandle(handle -> handle.createUpdate(query).execute());
-            return t;
+            return jdbi.withHandle(handle -> handle.createUpdate(query).execute());
         }
 
         public <T> T runSelectStatement(String statement, Class<T> handler) {
-            T t =  jdbi.withHandle(handle -> {
+            return jdbi.withHandle(handle -> {
                 Query query = handle.select(statement);
-                Optional<T> first = query.mapTo(handler).findFirst();
-                handle.close();
-                return first.orElse(null);
+                return query.mapTo(handler).findFirst().orElse(null);
             });
-            return t;
         }
 
         public <T> List<T> runSelectListStatement(String statement, Class<T> handler) {
-            List<T> t = jdbi.withHandle(handle -> {
+            return jdbi.withHandle(handle -> {
                 Query query = handle.select(statement);
-                List<T> list = query.mapTo(handler).list();
-                return list;
+                return query.mapTo(handler).list();
             });
-            return t;
-        }
-
-        public void clearDatabase() {
-            runUpdateStatement("delete from user_profile;");
-            runUpdateStatement("delete from user_entry;");
-            runUpdateStatement("delete from starred;");
-            runUpdateStatement("delete from token;");
-            runUpdateStatement("delete from version_sourcefile;");
-            runUpdateStatement("delete from sourcefile;");
-            runUpdateStatement("delete from tool_tag;");
-            runUpdateStatement("delete from tag;");
-            runUpdateStatement("delete from workflow_workflowversion;");
-            runUpdateStatement("delete from workflowversion;");
-            runUpdateStatement("delete from organization_user;");
-            runUpdateStatement("delete from event;");
-            runUpdateStatement("delete from organization;");
-            runUpdateStatement("delete from enduser;");
-            runUpdateStatement("delete from entry_label;");
-            runUpdateStatement("delete from label;");
-            runUpdateStatement("delete from workflow;");
-            runUpdateStatement("delete from tool;");
-            runUpdateStatement("delete from databasechangelog;");
-            runUpdateStatement("delete from databasechangeloglock;");
         }
     }
 }
