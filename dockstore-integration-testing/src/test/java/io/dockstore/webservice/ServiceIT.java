@@ -54,6 +54,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -214,7 +215,7 @@ public class ServiceIT extends BaseIT {
         try {
             client.addService(serviceRepo, "iamnotarealuser", installationId);
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", 418, ex.getCode());
+            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
         final long count = testingPostgres
@@ -242,7 +243,7 @@ public class ServiceIT extends BaseIT {
         try {
             client.addService(serviceRepo, "admin@admin.com", installationId);
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", 418, ex.getCode());
+            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
         final long count = testingPostgres
@@ -272,7 +273,7 @@ public class ServiceIT extends BaseIT {
         try {
             client.upsertServiceVersion(serviceRepo, "admin@admin.com", "1.0-fake", installationId);
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", 418, ex.getCode());
+            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
         final long count = testingPostgres
@@ -306,14 +307,14 @@ public class ServiceIT extends BaseIT {
         try {
             client.upsertServiceVersion(serviceRepo, "admin@admin.com", "noYml", installationId);
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", 418, ex.getCode());
+            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
         // Add version that has invalid dockstore.yml
         try {
             client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalidYml", installationId);
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", 418, ex.getCode());
+            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
     }
 
@@ -333,7 +334,7 @@ public class ServiceIT extends BaseIT {
         try {
             io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
         } catch (ApiException ex) {
-            assertEquals("Should have error code 418", 418, ex.getCode());
+            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
     }
 
