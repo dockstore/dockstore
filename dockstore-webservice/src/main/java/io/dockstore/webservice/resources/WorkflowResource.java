@@ -171,7 +171,6 @@ public class WorkflowResource
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
-    private static final Integer MAX_ITEMS_PER_PAGE = 50;
     private static final String PAGINATION_LIMIT = "100";
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
     private final ElasticManager elasticManager;
