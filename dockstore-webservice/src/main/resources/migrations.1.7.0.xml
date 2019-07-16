@@ -252,4 +252,13 @@
             ALTER TABLE workflow_workflowversion DROP CONSTRAINT IF EXISTS fkl8yg13ahjhtn0notrlf3amwwi;
         </sql>
     </changeSet>
+
+    <changeSet id="add_path_constraint_to_service" author="aduncan">
+        <sql dbms="postgresql">
+            create unique index if not exists full_service_name on service (sourcecontrol, organization, repository, workflowname) where workflowname is not null
+        </sql>
+        <sql dbms="postgresql">
+            create unique index if not exists partial_service_name on service (sourcecontrol, organization, repository) where workflowname is null
+        </sql>
+    </changeSet>
 </databaseChangeLog>
