@@ -17,7 +17,10 @@
 package io.dockstore.webservice.resources;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
@@ -25,6 +28,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -80,6 +86,7 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -92,8 +99,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.doi.DOIGeneratorFactory;
-import io.dockstore.webservice.doi.DOIGeneratorInterface;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
@@ -135,6 +140,7 @@ import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
 import io.swagger.zenodo.client.model.DepositionFile;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
+import io.swagger.zenodo.client.model.RelatedIdentifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
@@ -185,6 +191,7 @@ public class WorkflowResource
     private final PermissionsInterface permissionsInterface;
     private final String gitHubPrivateKeyFile;
     private final String gitHubAppId;
+    private final String zenodoUrl;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
         PermissionsInterface permissionsInterface, EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
@@ -209,6 +216,8 @@ public class WorkflowResource
 
         gitHubAppId = configuration.getGitHubAppId();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
+
+        zenodoUrl = configuration.getZenodoUrl();
     }
 
     /**
@@ -883,17 +892,9 @@ public class WorkflowResource
 
         }
 
-        if (workflowVersion.getDoiStatus() != Version.DOIStatus.CREATED) {
-            //DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
-            //generator.createDOIForWorkflow(workflowId, workflowVersionId);
-
-            registerZenodoDOIForWorkflow(workflow, workflowVersion);
-            //workflowVersion.setDoiStatus(Version.DOIStatus.CREATED);
-
-            //generator.createDOIForWorkflow(workflowId, workflowVersionId);
-            //workflowVersion.setDoiStatus(Version.DOIStatus.REQUESTED);
-            //workflowVersion.setDoiURL();
-        }
+        //TODO: Determine whether workflow DOIStatus is needed; we don't use it
+        //E.g. Version.DOIStatus.CREATED
+        registerZenodoDOIForWorkflow(workflow, workflowVersion);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
@@ -902,29 +903,8 @@ public class WorkflowResource
 
     }
 
-    /*
-    List<Deposit> depositList = null;
-    try {
-        String workflowPath = workflow.getWorkflowPath();
-
-        depositList = depositApi.listDeposits(null, "published", "mostrecent", 1, MAX_ITEMS_PER_PAGE);
-    } catch (ApiException e) {
-        LOG.error("Api exception. Could not list depositions on Zenodo. Error is " + e.getMessage());
-        throw new CustomWebApplicationException("Api exception. Could not list depositions on Zenodo.", HttpStatus.SC_BAD_REQUEST);
-    } catch (Exception ee) {
-        LOG.error("Could not list depositions on Zenodo. Error is " + ee.getMessage());
-        throw new CustomWebApplicationException("Could not list depositions on Zenodo.", HttpStatus.SC_BAD_REQUEST);
-    }
-
-    Iterator depositListIter = depositList.iterator();
-    //Deposit latestWorkflowVersionDOIDeposit = (Deposit)depositListIter.next();
-    while (depositListIter.hasNext()) {
-        Deposit aDeposit = ((Deposit)depositListIter.next());
-    }
-    */
-
     private void fillInMetadata(DepositMetadata depositMetadata, Workflow workflow, WorkflowVersion workflowVersion) {
-        // add some metadata
+        // add some metadata to the deposition that will be published to Zenodo
         depositMetadata.setTitle(workflow.getWorkflowPath());
         // The Zenodo deposit type for Dockstore will always be SOFTWARE
         depositMetadata.setUploadType(DepositMetadata.UploadTypeEnum.SOFTWARE);
@@ -934,7 +914,7 @@ public class WorkflowResource
         depositMetadata.setDescription(descriptionStr);
         depositMetadata.setVersion(workflowVersion.getName());
 
-        // Use the Dockstore workflow labels as Zendo free form keywords for this deposition.
+        // Use the Dockstore workflow labels as Zenodo free form keywords for this deposition.
         Set<Label> workflowLabels = workflow.getLabels();
         Iterator labelIter = workflowLabels.iterator();
         List<String> labelList = new ArrayList<>();
@@ -944,10 +924,16 @@ public class WorkflowResource
         }
         depositMetadata.setKeywords(labelList);
 
-        /*
+
         // Get the aliases for this workflow and add them to the deposit
-        // TODO use aliases for a workflow version instead
+        // The alias must be a format supported by Zenodo such as
+        // DOI, Handle, ARK...URNs and URLs
+        // See http://developers.zenodo.org/#representation 'related identifiers'
         Set<String> workflowAliases = workflow.getAliases().keySet();
+        //Set<String> workflowAliases = new HashSet<String>();
+        //String fullWorkflowPath = workflow.getWorkflowPath();
+        //workflowAliases.add("https://dockstore.org/workflows/" + fullWorkflowPath + ":" + workflowVersion.getName());
+
         Iterator iter = workflowAliases.iterator();
         List<RelatedIdentifier> aliasList = new ArrayList<RelatedIdentifier>();
         while (iter.hasNext()) {
@@ -958,7 +944,7 @@ public class WorkflowResource
             aliasList.add(relatedIdentifier);
         }
         depositMetadata.setRelatedIdentifiers(aliasList);
-        */
+
 
         String wfAuthor = workflow.getAuthor();
         String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "n/a" : workflow.getAuthor();
@@ -1062,9 +1048,8 @@ public class WorkflowResource
     private void registerZenodoDOIForWorkflow(Workflow workflow, WorkflowVersion workflowVersion) {
         ApiClient zendoClient = new ApiClient();
         // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
-        String zenodoURL = "https://sandbox.zenodo.org/api";
-        zendoClient.setBasePath(zenodoURL);
-
+        String zenodoUrlApi = zenodoUrl + "/api";
+        zendoClient.setBasePath(zenodoUrlApi);
         String zenodoAccessToken = System.getProperty("ZENODO_TOKEN");
         zendoClient.setApiKey(zenodoAccessToken);
 
@@ -1089,7 +1074,7 @@ public class WorkflowResource
         // because Zenodo requires that we use it to create the next
         // workflow version DOI
         String latestWorkflowVersionDOIURL = null;
-        Set<WorkflowVersion> setOfWorkflowVersions = workflow.getVersions();
+        Set<WorkflowVersion> setOfWorkflowVersions = workflow.getWorkflowVersions();
         Iterator iter = setOfWorkflowVersions.iterator();
         while (iter.hasNext()) {
             WorkflowVersion myWorkflowVersion = ((WorkflowVersion)iter.next());
