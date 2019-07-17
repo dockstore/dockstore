@@ -97,6 +97,29 @@ public class UserResourceIT extends BaseIT {
         assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo", hostedWorkflow.getOrganization());
     }
 
+    @Test
+    public void testUserTermination() throws ApiException {
+        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME);
+        ApiClient userWebClient = getWebClient(USER_2_USERNAME);
+
+        UsersApi userUserWebClient = new UsersApi(userWebClient);
+        final User user = userUserWebClient.getUser();
+        assertFalse(user.getUsername().isEmpty());
+
+        UsersApi adminAdminWebClient = new UsersApi(adminWebClient);
+        final Boolean aBoolean = adminAdminWebClient.terminateUser(user.getId());
+
+        assertTrue(aBoolean);
+
+        boolean shouldFail = false;
+        try {
+            userUserWebClient.getUser();
+        } catch (ApiException e) {
+            shouldFail = true;
+        }
+        assertTrue(shouldFail);
+    }
+
     /**
      * Should not be able to update username after creating an organisation
      * @throws ApiException

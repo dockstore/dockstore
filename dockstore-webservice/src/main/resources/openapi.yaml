@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.7.0-alpha.11-SNAPSHOT
+  version: 1.7.0-alpha.12-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -4132,6 +4132,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+      security:
+        - BEARER: []
+  "/users/user/{userId}":
+    delete:
+      tags:
+        - users
+      summary: Terminate user if possible.
+      description: ""
+      operationId: terminateUser
+      parameters:
+        - name: userId
+          in: path
+          description: User to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: boolean
       security:
         - BEARER: []
   "/users/user/{userId}/limits":

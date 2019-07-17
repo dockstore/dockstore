@@ -94,6 +94,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
     private boolean isAdmin;
 
+    @Column
+    @JsonIgnore
+    private boolean isBanned;
+
     @ElementCollection(targetClass = Profile.class)
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = {
             @UniqueConstraint(columnNames = { "id", "token_type" }),
@@ -425,7 +429,15 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.temporaryCredential = temporaryCredential;
     }
 
+    @JsonIgnore
+    public boolean isBanned() {
+        return isBanned;
+    }
 
+    @JsonIgnore
+    public void setBanned(boolean banned) {
+        isBanned = banned;
+    }
 
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)

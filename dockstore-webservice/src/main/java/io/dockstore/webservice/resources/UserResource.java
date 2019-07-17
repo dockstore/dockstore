@@ -85,7 +85,6 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
-    private static final String PERMISSIONS_NOTE = "This is not tied into PermissionsInterface but could be";
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -219,6 +218,23 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.authorizer.selfDestruct(user);
 
         // Delete entries for which this user is the only user
+        deleteSelfFromEntries(user);
+
+        invalidateTokensForUser(user);
+
+        return userDAO.delete(user);
+    }
+
+    private void invalidateTokensForUser(User user) {
+        List<Token> byUserId = tokenDAO.findByUserId(user.getId());
+        for (Token token : byUserId) {
+            tokenDAO.delete(token);
+            // invalidate tokens from caching authenticator
+            cachingAuthenticator.invalidate(token.getContent());
+        }
+    }
+
+    private void deleteSelfFromEntries(User user) {
         user.getEntries().stream()
                 // The getIsPublished() check is arguably redundant as canChangeUsername(), above, already checks, but just in case...
                 .filter(e -> e.getUsers().size() == 1 && !e.getIsPublished())
@@ -235,15 +251,25 @@ public class UserResource implements AuthenticatedResourceInterface {
                     }
                     entryDAO.delete(entry);
                 });
+    }
 
-        List<Token> byUserId = tokenDAO.findByUserId(user.getId());
-        for (Token token : byUserId) {
-            tokenDAO.delete(token);
-            // invalidate tokens from caching authenticator
-            cachingAuthenticator.invalidate(token.getContent());
-        }
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/user/{userId}")
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Terminate user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class, nickname = "terminateUser")
+    public boolean terminateUser(
+        @ApiParam(hidden = true) @Auth User authUser,  @ApiParam("User to return") @PathParam("userId") long targetUserId) {
+        // note this terminates the user but leaves behind a tombstone to prevent re-login
+        checkUser(authUser, authUser.getId());
 
-        return userDAO.delete(user);
+        User targetUser = userDAO.findById(targetUserId);
+        deleteSelfFromEntries(targetUser);
+        invalidateTokensForUser(targetUser);
+
+        targetUser.setBanned(true);
+        return true;
     }
 
     @GET
