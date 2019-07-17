@@ -18,7 +18,7 @@ package io.dockstore.webservice.core;
 
 import io.swagger.annotations.ApiModel;
 
-@ApiModel(description = "Enumerates which version, if any, of the TOS a user has accepted ")
+@ApiModel(description = "Enumerates which version, if any, of the TOS a user has accepted")
 public enum TOSVersion {
     NONE,
     TOS_VERSION_1

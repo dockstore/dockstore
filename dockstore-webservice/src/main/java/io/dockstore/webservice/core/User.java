@@ -148,7 +148,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private TOSVersion tosVersion =  TOSVersion.NONE;
 
     @Column
-    @ApiModelProperty(value = "Time TOS was accepted", position = 25)
+    @ApiModelProperty(value = "Time TOS was accepted", position = 15)
     private Date tosVersionAcceptanceDate;
 
     @Column(columnDefinition = "Text default 'NONE'")
@@ -157,7 +157,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private PrivacyPolicyVersion privacyPolicyVersion =  PrivacyPolicyVersion.NONE;
 
     @Column
-    @ApiModelProperty(value = "Time privacy policy was accepted", position = 25)
+    @ApiModelProperty(value = "Time privacy policy was accepted", position = 16)
     private Date privacyPolicyVersionAcceptanceDate;
 
     @Column

@@ -410,13 +410,14 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     }
 
     private void acceptTOSAndPrivacyPolicy(User user) {
+        Date date = new Date();
         if (user.getTOSVersion() != CURRENT_TOS_VERSION) {
             user.setTOSVersion(CURRENT_TOS_VERSION);
-            user.setTOSVersionAcceptanceDate(new Date());
+            user.setTOSVersionAcceptanceDate((date));
         }
         if (user.getPrivacyPolicyVersion() != CURRENT_PRIVACY_POLICY_VERSION) {
             user.setPrivacyPolicyVersion(CURRENT_PRIVACY_POLICY_VERSION);
-            user.setPrivacyPolicyVersionAcceptanceDate(new Date());
+            user.setPrivacyPolicyVersionAcceptanceDate(date);
         }
     }
 
