@@ -66,23 +66,18 @@ public class BaseIT {
         SUPPORT.before();
     }
 
-    public static void assertNoMetricsLeaks(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+    public static void assertNoMetricsLeaks(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws InterruptedException {
         SortedMap<String, Gauge> gauges = support.getEnvironment().metrics().getGauges();
         int active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
         int waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
         if (active != 0 || waiting != 0) {
-            try {
-                // Waiting 10 seconds to see if active connection disappears
-                TimeUnit.SECONDS.sleep(10);
-                active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
-                waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
-                Assert.assertEquals("There should be no active connections", 0, active);
-                Assert.assertEquals("There should be no waiting connections", 0, waiting);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            // Waiting 10 seconds to see if active connection disappears
+            TimeUnit.SECONDS.sleep(10);
+            active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+            waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
+            Assert.assertEquals("There should be no active connections", 0, active);
+            Assert.assertEquals("There should be no waiting connections", 0, waiting);
         }
-
     }
 
     @AfterClass
@@ -91,7 +86,7 @@ public class BaseIT {
     }
 
     @After
-    public void after() {
+    public void after() throws InterruptedException {
         assertNoMetricsLeaks(SUPPORT);
     }
 
