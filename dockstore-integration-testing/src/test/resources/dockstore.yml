@@ -82,6 +82,10 @@ database:
   # whether or not idle connections should be validated
   checkConnectionWhileIdle: false
 
+  removeAbandoned: true
+  abandonWhenPercentageFull: 80
+  logAbandonedConnections: true
+
 logging:
   level: ERROR
   appenders:
