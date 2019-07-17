@@ -685,11 +685,6 @@
                 <artifactId>okhttp-urlconnection</artifactId>
                 <version>${okhttp.version}</version>
             </dependency>
-            <dependency>
-                <groupId>commons-dbutils</groupId>
-                <artifactId>commons-dbutils</artifactId>
-                <version>1.7</version>
-            </dependency>
 
             <!-- https://mvnrepository.com/artifact/com.google.oauth-client/google-oauth-client -->
             <dependency>

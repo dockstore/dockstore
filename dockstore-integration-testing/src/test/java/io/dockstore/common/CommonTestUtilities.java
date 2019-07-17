@@ -24,17 +24,20 @@ import java.util.List;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
+import io.dropwizard.db.DataSourceFactory;
+import io.dropwizard.jdbi3.JdbiFactory;
+import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.dbutils.ResultSetHandler;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.Query;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,8 +119,7 @@ public final class CommonTestUtilities {
      * Shared convenience method
      * @return
      */
-    public static ApiClient getWebClient(boolean authenticated, String username) {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+    public static ApiClient getWebClient(boolean authenticated, String username, CommonTestUtilities.TestingPostgres testingPostgres) {
         File configFile = FileUtils.getFile("src", "test", "resources", "config2");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
@@ -125,7 +127,7 @@ public final class CommonTestUtilities {
         if (authenticated) {
             client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
                     .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
-                            new ScalarHandler<>())));
+                            String.class)));
         }
         return client;
     }
@@ -139,7 +141,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
         // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
-        // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+        // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
@@ -175,7 +177,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
         cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
-        // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+        // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
@@ -228,16 +230,6 @@ public final class CommonTestUtilities {
         runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 
-    /**
-     * Allows tests to clear the database but add basic testing data
-     * @return
-     */
-    public static TestingPostgres getTestingPostgres() {
-        final File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        final INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        return new TestingPostgres(parseConfig);
-    }
-
     public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws RuntimeException {
         List<String> commandList = new ArrayList<>();
         commandList.add(dockstore.getAbsolutePath());
@@ -269,31 +261,40 @@ public final class CommonTestUtilities {
         }
     }
 
+    public static TestingPostgres getTestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+        return new TestingPostgres(support);
+    }
+
     public static void checkToolList(String log) {
         Assert.assertTrue(log.contains("NAME"));
         Assert.assertTrue(log.contains("DESCRIPTION"));
         Assert.assertTrue(log.contains("Git Repo"));
     }
+    public static class TestingPostgres {
+        Jdbi jdbi;
+        public TestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+            DataSourceFactory dataSourceFactory = support.getConfiguration().getDataSourceFactory();
+            Environment environment = support.getEnvironment();
+            JdbiFactory jdbiFactory = new JdbiFactory();
+            jdbi = jdbiFactory.build(environment, dataSourceFactory, "postgresql");
 
-    public static class TestingPostgres extends BasicPostgreSQL {
-
-        TestingPostgres(INIConfiguration config) {
-            super(config);
+        }
+        public int runUpdateStatement(String query) {
+            return jdbi.withHandle(handle -> handle.createUpdate(query).execute());
         }
 
-        @Override
-        public void clearDatabase() {
-            super.clearDatabase();
+        public <T> T runSelectStatement(String statement, Class<T> handler) {
+            return jdbi.withHandle(handle -> {
+                Query query = handle.select(statement);
+                return query.mapTo(handler).findFirst().orElse(null);
+            });
         }
 
-        @Override
-        public <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
-            return super.runSelectStatement(query, handler, params);
-        }
-
-        @Override
-        public int runUpdateStatement(String query, Object... params) {
-            return super.runUpdateStatement(query, params);
+        public <T> List<T> runSelectListStatement(String statement, Class<T> handler) {
+            return jdbi.withHandle(handle -> {
+                Query query = handle.select(statement);
+                return query.mapTo(handler).list();
+            });
         }
     }
 }

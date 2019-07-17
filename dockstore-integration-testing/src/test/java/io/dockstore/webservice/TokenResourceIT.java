@@ -33,7 +33,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -84,7 +83,7 @@ public class TokenResourceIT {
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH);
-
+    private static CommonTestUtilities.TestingPostgres testingPostgres;
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -109,6 +108,7 @@ public class TokenResourceIT {
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, DROPWIZARD_CONFIGURATION_FILE_PATH);
         SUPPORT.before();
+        testingPostgres = new CommonTestUtilities.TestingPostgres(SUPPORT);
     }
 
     @AfterClass
@@ -140,13 +140,13 @@ public class TokenResourceIT {
         this.userDAO = new UserDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
+        testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
+        testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
 
         // used to allow us to use tokenDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
-        initialTokenCount = CommonTestUtilities.getTestingPostgres().runSelectStatement("select count(*) from token", new ScalarHandler<>());
+        initialTokenCount = testingPostgres.runSelectStatement("select count(*) from token", long.class);
     }
 
     /**
@@ -154,7 +154,7 @@ public class TokenResourceIT {
      */
     @Test
     public void getGoogleTokenNewUser() {
-        TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a"));
+        TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.Token token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
 
         // check that the user has the correct two tokens
@@ -172,7 +172,7 @@ public class TokenResourceIT {
         checkUserProfiles(token.getUserId(), Collections.singletonList(TokenType.GOOGLE_COM.toString()));
 
         // check that the tokens work
-        ApiClient webClient = getWebClient(false, "n/a");
+        ApiClient webClient = getWebClient(false, "n/a", testingPostgres);
         UsersApi userApi = new UsersApi(webClient);
         tokensApi = new TokensApi(webClient);
 
@@ -208,9 +208,9 @@ public class TokenResourceIT {
      */
     @Test
     public void testNinjaedGitHubUser() {
-        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a"));
+        TokensApi tokensApi1 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         tokensApi1.addToken(getSatellizer(SUFFIX1, true));
-        UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1));
+        UsersApi usersApi1 = new UsersApi(getWebClient(true, CUSTOM_USERNAME1, testingPostgres));
 
         // registering user 1 again should fail
         boolean shouldFail = false;
@@ -236,9 +236,9 @@ public class TokenResourceIT {
 
 
         // now register user2, should autogenerate a name
-        TokensApi tokensApi2 = new TokensApi(getWebClient(false, "n/a"));
+        TokensApi tokensApi2 = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.Token token = tokensApi2.addToken(getSatellizer(SUFFIX2, true));
-        UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername()));
+        UsersApi usersApi2 = new UsersApi(getWebClient(true, token.getUsername(), testingPostgres));
         assertNotEquals(usersApi2.getUser().getUsername(), CUSTOM_USERNAME2);
         assertEquals(usersApi2.changeUsername("better.name").getUsername(), "better.name");
     }
@@ -253,14 +253,14 @@ public class TokenResourceIT {
      */
     @Test
     public void loginRegisterTestWithMultipleAccounts() {
-        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
+        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
         createAccount2(unAuthenticatedTokensApi);
 
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
 
         // Change Account 1 username to CUSTOM_USERNAME2
-        UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
+        UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
         io.swagger.client.model.User user = mainUsersApi.changeUsername(CUSTOM_USERNAME2);
         Assert.assertEquals(CUSTOM_USERNAME2, user.getUsername());
 
@@ -287,7 +287,7 @@ public class TokenResourceIT {
 
     @Test
     public void recreateAccountsAfterSelfDestruct() {
-        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
+        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
         registerNewUsersAfterSelfDestruct(unAuthenticatedTokensApi);
     }
@@ -300,7 +300,7 @@ public class TokenResourceIT {
     private void createAccount1(TokensApi unAuthenticatedTokensApi) {
         io.swagger.client.model.Token account1DockstoreToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, account1DockstoreToken.getUsername());
-        TokensApi mainUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
+        TokensApi mainUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
         mainUserTokensApi.addGithubToken(getFakeCode(SUFFIX1));
     }
 
@@ -337,7 +337,7 @@ public class TokenResourceIT {
      * GOOGLE_ACCOUNT_USERNAME1 Google account and CUSTOM_USERNAME1 GitHub account
      */
     private void registerNewUsersAfterSelfDestruct(TokensApi unAuthenticatedTokensApi) {
-        UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
+        UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
         Boolean aBoolean = mainUsersApi.selfDestruct();
         assertTrue(aBoolean);
         io.swagger.client.model.Token recreatedGoogleToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
@@ -351,7 +351,7 @@ public class TokenResourceIT {
      * Trying to link GOOGLE_ACCOUNT_USERNAME1 Google account to Dockstore account 2 should fail
      */
     private void addUnavailableGoogleTokenToGitHubUser() {
-        TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
+        TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         // Cannot add token to other user with the same Google account
         try {
             otherUserTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
@@ -369,7 +369,7 @@ public class TokenResourceIT {
      * Trying to link GITHUB_ACCOUNT_USERNAME GitHub account to Dockstore account 1 should fail
      */
     private void addUnavailableGitHubTokenToGoogleUser() {
-        TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME2));
+        TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME2, testingPostgres));
         try {
             otherUserTokensApi.addGithubToken(getFakeCode(SUFFIX1));
             Assert.fail();
@@ -401,7 +401,7 @@ public class TokenResourceIT {
     @Test
     @Ignore("this is probably different now, todo")
     public void getGoogleTokenCase135() {
-        TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a"));
+        TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.Token case5Token = tokensApi
                 .addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 5 check (No Google account, no GitHub account)
@@ -411,7 +411,7 @@ public class TokenResourceIT {
         io.swagger.client.model.Token case3Token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 3 check (Google account with Google token, no GitHub account)
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case3Token.getUsername());
-        TokensApi googleTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
+        TokensApi googleTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
         googleTokensApi.deleteToken(case3Token.getId());
         // Google account dockstore token
         checkTokenCount(initialTokenCount + 1);
@@ -441,14 +441,14 @@ public class TokenResourceIT {
     @Test
     @Ignore("this is probably different now, todo")
     public void getGoogleTokenCase24() {
-        TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
+        TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         io.swagger.client.model.Token token = unauthenticatedTokensApi
                 .addGoogleToken(getSatellizer(SUFFIX3, false));
         // Check token properly added (redundant assertion)
         long googleUserID = token.getUserId();
         Assert.assertEquals(token.getUsername(), GOOGLE_ACCOUNT_USERNAME1);
 
-        TokensApi gitHubTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
+        TokensApi gitHubTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         // Google account dockstore token + Google account Google token
         checkTokenCount(initialTokenCount + 2);
         gitHubTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
@@ -458,7 +458,7 @@ public class TokenResourceIT {
                 .addGoogleToken(getSatellizer(SUFFIX3, false));
         // Case 4 (Google account with Google token, GitHub account with Google token)
         Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, case4Token.getUsername());
-        TokensApi googleUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
+        TokensApi googleUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
 
         List<Token> googleByUserId = tokenDAO.findGoogleByUserId(googleUserID);
 
@@ -491,9 +491,9 @@ public class TokenResourceIT {
     @Test
     @Ignore("this is probably different now, todo")
     public void getGoogleTokenCase6() {
-        TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
+        TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
-        TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
+        TokensApi unauthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         // GitHub account Google token
         checkTokenCount(initialTokenCount + 1);
         io.swagger.client.model.Token case6Token = unauthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
@@ -507,7 +507,7 @@ public class TokenResourceIT {
      * @param size the number of tokens that we expect
      */
     private void checkTokenCount(long size) {
-        long tokenCount = CommonTestUtilities.getTestingPostgres().runSelectStatement("select count(*) from token", new ScalarHandler<>());
+        long tokenCount = testingPostgres.runSelectStatement("select count(*) from token", long.class);
         Assert.assertEquals(size, tokenCount);
     }
 
@@ -521,7 +521,7 @@ public class TokenResourceIT {
         Assert.assertEquals(1, byUserId.size());
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
-        TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
+        TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME, testingPostgres));
         io.swagger.client.model.Token token = tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
 
         // check that the user ends up with the correct two tokens
@@ -550,7 +550,7 @@ public class TokenResourceIT {
         Assert.assertEquals(1, byUserId.size());
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
-        TokensApi tokensApi = new TokensApi(getWebClient(true, getFakeUser().getUsername()));
+        TokensApi tokensApi = new TokensApi(getWebClient(true, getFakeUser().getUsername(), testingPostgres));
         tokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
 
         // fake user should start with the previously created google token

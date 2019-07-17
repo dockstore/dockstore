@@ -43,7 +43,6 @@ import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -54,7 +53,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -138,7 +136,7 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         return new ContainersApi(client);
     }
 
@@ -150,12 +148,12 @@ public class GeneralIT extends BaseIT {
      */
     private String getPathfromDB(String type) {
         // Set up DB
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        // Select data from DB
-        final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", new ScalarHandler<>());
-        final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = " + toolID, new ScalarHandler<>());
 
-        return testingPostgres.runSelectStatement("select " + type + " from tag where id = " + tagID, new ScalarHandler<>());
+        // Select data from DB
+        final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", long.class);
+        final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = " + toolID, long.class);
+
+        return testingPostgres.runSelectStatement("select " + type + " from tag where id = " + tagID, String.class);
     }
 
     /**
@@ -163,8 +161,8 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testListAvailableContainers() {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", new ScalarHandler<>());
+
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", long.class);
         assertEquals("there should be 4 entries, there are " + count, 4, count);
     }
 
@@ -204,14 +202,14 @@ public class GeneralIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubalternate", "--remove", "github", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from entry_label where entryid = '2'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from entry_label where entryid = '2'", long.class);
         assertEquals("there should be 2 labels for the given container, there are " + count, 2, count);
 
         final long count2 = testingPostgres.runSelectStatement(
                 "select count(*) from label where value = 'quay' or value = 'github' or value = 'dockerhub' or value = 'alternate'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("there should be 4 labels in the database (No Duplicates), there are " + count2, 4, count2);
 
     }
@@ -226,10 +224,10 @@ public class GeneralIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--cwl-path", "/testDir/Dockstore.cwl",
                         "--wdl-path", "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("there should now be an invalid tag, found " + count, 1, count);
 
         Client.main(
@@ -242,7 +240,7 @@ public class GeneralIT extends BaseIT {
 
         final long count2 = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("the invalid tag should now be valid, found " + count2, 0, count2);
     }
 
@@ -283,10 +281,10 @@ public class GeneralIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--image-id",
                         "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres.runSelectStatement(
                 " select count(*) from  tool_tag, tool where tool_tag.toolid = tool.id and giturl ='git@github.com:dockstoretestuser2/quayandgithubalternate.git' and toolname = 'alternate'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals(
             "there should be 3 tags, 2  that are autogenerated (master and latest) and the newly added masterTest tag, found " + count, 3,
             count);
@@ -301,16 +299,13 @@ public class GeneralIT extends BaseIT {
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "true", "--script" });
-
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 1 hidden tag", 1, count);
 
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "false", "--script" });
-
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", new ScalarHandler<>());
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 0 hidden tag", 0, count2);
     }
 
@@ -324,10 +319,10 @@ public class GeneralIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/randomDir/Dockstore.wdl",
                         "--script" });
         // should now be invalid
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
-                new ScalarHandler<>());
+                long.class);
 
         assertEquals("there should now be 1 invalid tag, found " + count, 1, count);
 
@@ -337,7 +332,7 @@ public class GeneralIT extends BaseIT {
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("the tag should now be valid", 0, count2);
 
     }
@@ -361,8 +356,8 @@ public class GeneralIT extends BaseIT {
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "remove", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--script" });
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", new ScalarHandler<>());
+
+        final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         assertEquals("there should be no tags with the name masterTest", 0, count);
     }
 
@@ -395,10 +390,10 @@ public class GeneralIT extends BaseIT {
     public void registerUnregisterAndCopy() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         boolean published = testingPostgres
                 .runSelectStatement("select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
-                        new ScalarHandler<>());
+                        boolean.class);
         assertTrue("tool not published", published);
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
@@ -406,7 +401,7 @@ public class GeneralIT extends BaseIT {
 
         long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
-                        new ScalarHandler<>());
+                        long.class);
         assertEquals("should be two after republishing", 2, count);
 
         Client.main(
@@ -415,7 +410,7 @@ public class GeneralIT extends BaseIT {
 
         published = testingPostgres.runSelectStatement(
                 "select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;",
-                new ScalarHandler<>());
+                boolean.class);
         assertFalse(published);
     }
 
@@ -463,7 +458,7 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testUserPrivilege() {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Repo user has access to
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
@@ -471,7 +466,7 @@ public class GeneralIT extends BaseIT {
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
         final long count = testingPostgres.runSelectStatement(
                 "select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithub' and toolname = 'testTool'",
-                new ScalarHandler<>());
+                long.class);
         assertEquals("the container should exist", 1, count);
 
         // Repo user is part of org
@@ -480,7 +475,7 @@ public class GeneralIT extends BaseIT {
                 "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstore2' and name = 'testrepo2' and toolname = 'testOrg'",
-                        new ScalarHandler<>());
+                        long.class);
         assertEquals("the container should exist", 1, count2);
 
         // Repo user doesn't own
@@ -590,7 +585,7 @@ public class GeneralIT extends BaseIT {
         final Long userid = usersApi.getUser().getId();
         usersApi.refresh(userid);
 
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
+        testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         int size = containersApi.getContainer(c.getId(), null).getWorkflowVersions().size();
         long size2 = containersApi.getContainer(c.getId(), null).getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size == size2 && size >= 1);
@@ -602,7 +597,7 @@ public class GeneralIT extends BaseIT {
         assertTrue(size2 == 0 && size >= 1);
 
         // so should overall refresh
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
+        testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refresh(userid);
         container = containersApi.getContainer(c.getId(), null);
         size = container.getWorkflowVersions().size();
@@ -610,7 +605,7 @@ public class GeneralIT extends BaseIT {
         assertTrue(size2 == 0 && size >= 1);
 
         // so should organizational refresh
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
+        testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refreshToolsByOrganization(userid, container.getNamespace());
         container = containersApi.getContainer(c.getId(), null);
         size = container.getWorkflowVersions().size();
@@ -704,9 +699,9 @@ public class GeneralIT extends BaseIT {
         assertFalse(master.getSourceFiles().isEmpty());
         master.getSourceFiles().forEach(s -> {
             assertTrue(s.isFrozen());
-            getTestingPostgres().runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
-            final String content = getTestingPostgres()
-                .runSelectStatement("select content from sourcefile where id = " + s.getId(), new ScalarHandler<>());
+            testingPostgres.runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
+            final String content = testingPostgres
+                .runSelectStatement("select content from sourcefile where id = " + s.getId(), String.class);
             assertNotEquals("foo", content);
         });
 
@@ -808,9 +803,9 @@ public class GeneralIT extends BaseIT {
         DockstoreTool toolTest = toolsApi.registerManual(tool);
         toolsApi.refresh(toolTest.getId());
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", long.class);
         assertEquals("The tool should be auto, there are " + count, 1, count);
     }
 
@@ -826,9 +821,9 @@ public class GeneralIT extends BaseIT {
         DockstoreTool toolTest = toolsApi.registerManual(tool);
         toolsApi.refresh(toolTest.getId());
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", long.class);
         assertEquals("The tool should be manual, there are " + count, 1, count);
     }
 
@@ -838,7 +833,7 @@ public class GeneralIT extends BaseIT {
     @Test
     public void testCheckUser() {
         // Authorized user should pass
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
         assertTrue("User DockstoreTestUser2 should exist", userOneExists);
@@ -848,7 +843,7 @@ public class GeneralIT extends BaseIT {
         assertFalse(fakeUserExists);
 
         // Unauthorized user should fail
-        ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "");
+        ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "", testingPostgres);
         UsersApi unauthUserApi = new UsersApi(unauthClient);
         boolean failed = false;
         try {
@@ -864,14 +859,14 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testToolAlias() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         EntriesApi entryApi = new EntriesApi(webClient);
 
-        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME, testingPostgres);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Add tool
@@ -923,13 +918,13 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void downloadZipFileTestAuth() throws IOException {
-        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
-        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME, testingPostgres);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool
