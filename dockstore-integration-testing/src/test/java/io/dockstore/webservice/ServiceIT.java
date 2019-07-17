@@ -388,7 +388,7 @@ public class ServiceIT extends BaseIT {
             test2Service.setMode(WorkflowMode.SERVICE);
             test2Service.setDescriptorType(DescriptorLanguage.SERVICE);
             test2Service.setOrganization("hydra");
-            test2Service.setRepository("hydra_repo");
+            test2Service.setRepository("hydra_repo2");
             test2Service.setDefaultWorkflowPath(".dockstore.yml");
 
             final Map<DescriptorLanguage.FileType, String> defaultPaths = test2Service.getDefaultPaths();
