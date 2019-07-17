@@ -94,7 +94,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-zenodo-client</artifactId>
-            <version>1.7.0-alpha.4-SNAPSHOT</version>
+            <version>1.7.0-alpha.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
