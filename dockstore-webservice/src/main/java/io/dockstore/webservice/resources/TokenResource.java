@@ -383,6 +383,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             }
         }
 
+        user = userDAO.findById(userID);
         acceptTOSAndPrivacyPolicy(user);
 
         if (dockstoreToken == null) {
