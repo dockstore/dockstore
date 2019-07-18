@@ -299,7 +299,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
-                references.add(getRef(ref, repository));
+                if (workflow.getMode() != WorkflowMode.SERVICE || ref.getRef().startsWith("refs/tags")) {
+                    references.add(getRef(ref, repository));
+                }
             }
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
