@@ -191,6 +191,8 @@ public class WorkflowResource
     private final String gitHubPrivateKeyFile;
     private final String gitHubAppId;
     private final String zenodoUrl;
+    private final String zenodoClientID;
+    private final String zenodoClientSecret;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
         PermissionsInterface permissionsInterface, EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
@@ -217,6 +219,8 @@ public class WorkflowResource
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
 
         zenodoUrl = configuration.getZenodoUrl();
+        zenodoClientID = configuration.getZenodoClientID();
+        zenodoClientSecret = configuration.getZenodoClientSecret();
     }
 
     /**
@@ -870,6 +874,22 @@ public class WorkflowResource
         return result.getWorkflowVersions();
     }
 
+
+    /**
+     * Get the Zenodo access token and refresh it if necessary
+     * @param user Dockstore with Zenodo account
+     */
+    private List<Token> checkOnZenodoToken(User user) {
+        // TODO Implement refresh for Zenodo token
+        // List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
+        // if (!tokens.isEmpty()) {
+        //     Token zenodoToken = tokens.get(0);
+        //     refreshZenodoToken(zenodoToken, client, tokenDAO, zenodoClientID, zenodoClientSecret);
+        // }
+        return tokenDAO.findByUserId(user.getId());
+    }
+
+
     @PUT
     @Timed
     @UnitOfWork
@@ -891,9 +911,13 @@ public class WorkflowResource
 
         }
 
+        List<Token> tokens = checkOnZenodoToken(user);
+        Token zenodoToken = Token.extractToken(tokens, TokenType.ZENODO_ORG);
+        final String zenodoAccessToken = zenodoToken == null ? null : zenodoToken.getContent();
+
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
-        registerZenodoDOIForWorkflow(workflow, workflowVersion);
+        registerZenodoDOIForWorkflow(zenodoAccessToken, workflow, workflowVersion);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
@@ -930,10 +954,6 @@ public class WorkflowResource
         // DOI, Handle, ARK...URNs and URLs
         // See http://developers.zenodo.org/#representation 'related identifiers'
         Set<String> workflowAliases = workflow.getAliases().keySet();
-        //Set<String> workflowAliases = new HashSet<String>();
-        //String fullWorkflowPath = workflow.getWorkflowPath();
-        //workflowAliases.add("https://dockstore.org/workflows/" + fullWorkflowPath + ":" + workflowVersion.getName());
-
         Iterator iter = workflowAliases.iterator();
         List<RelatedIdentifier> aliasList = new ArrayList<RelatedIdentifier>();
         while (iter.hasNext()) {
@@ -953,7 +973,7 @@ public class WorkflowResource
      */
     private void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow) {
         String wfAuthor = workflow.getAuthor();
-        String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "n/a" : workflow.getAuthor();
+        String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "unknown creator" : workflow.getAuthor();
         Author author = new Author();
         author.setName(authorStr);
         depositMetadata.setCreators(Arrays.asList(author));
@@ -1013,7 +1033,8 @@ public class WorkflowResource
         depositMetadata.setUploadType(DepositMetadata.UploadTypeEnum.SOFTWARE);
         // A metadata description is required for Zenodo
         String description = workflow.getDescription();
-        String descriptionStr = (description == null || description.isEmpty()) ? "n/a" : workflow.getDescription();
+        // The Zenodo API requires at description of at least three characters
+        String descriptionStr = (description == null || description.isEmpty()) ? "no description" : workflow.getDescription();
         depositMetadata.setDescription(descriptionStr);
         depositMetadata.setVersion(workflowVersion.getName());
 
@@ -1064,6 +1085,9 @@ public class WorkflowResource
             try {
                 outputStream = new FileOutputStream(fileName);
             } catch (FileNotFoundException fne) {
+                LOG.error("Could not create file " + fileName
+                        + " outputstream for DOI zip file for upload to Zenodo."
+                        + " Error is " + fne.getMessage(), fne);
                 throw new CustomWebApplicationException("Could not create file " + fileName
                         + " outputstream for DOI zip file for upload to Zenodo."
                         + " Error is " + fne.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -1075,7 +1099,7 @@ public class WorkflowResource
             try {
                 filesApi.createFile(depositionID, zipFile, fileName);
             } catch (ApiException e) {
-                LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage());
+                LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
                         + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
@@ -1091,9 +1115,9 @@ public class WorkflowResource
         String workflowVersionDoiURL = workflowVersion.getDoiURL();
         if (workflowVersionDoiURL != null && !workflowVersionDoiURL.isEmpty()) {
             LOG.error("Workflow version " + workflowVersion.getName() + " already has DOI " + workflowVersionDoiURL
-                    + ". Dockstore will only create one DOI per version.");
+                    + ". Dockstore can only create one DOI per version.");
             throw new CustomWebApplicationException("Workflow version " + workflowVersion.getName() + " already has DOI "
-                    + workflowVersionDoiURL + ". Dockstore will only create one DOI per version.", HttpStatus.SC_METHOD_NOT_ALLOWED);
+                    + workflowVersionDoiURL + ". Dockstore can only create one DOI per version.", HttpStatus.SC_METHOD_NOT_ALLOWED);
         }
     }
 
@@ -1135,7 +1159,7 @@ public class WorkflowResource
         try {
             depositApi.putDeposit(depositionID, nestedDepositMetadata);
         } catch (ApiException e) {
-            LOG.error("Could not put deposition metadata on Zenodo. Error is " + e.getMessage());
+            LOG.error("Could not put deposition metadata on Zenodo. Error is " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo." + " Error is " + e.getMessage(),
                     HttpStatus.SC_BAD_REQUEST);
         }
@@ -1151,7 +1175,7 @@ public class WorkflowResource
         try {
             publishedDeposit = actionsApi.publishDeposit(depositionID);
         } catch (ApiException e) {
-            LOG.error("Could not publish DOI on Zenodo. Error is " + e.getMessage());
+            LOG.error("Could not publish DOI on Zenodo. Error is " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not publish DOI on Zenodo."
                     + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
@@ -1163,12 +1187,11 @@ public class WorkflowResource
      * @param workflow    workflow for which DOI is registered
      * @param workflowVersion workflow version for which DOI is registered
      */
-    private void registerZenodoDOIForWorkflow(Workflow workflow, WorkflowVersion workflowVersion) {
+    private void registerZenodoDOIForWorkflow(String zenodoAccessToken, Workflow workflow, WorkflowVersion workflowVersion) {
         ApiClient zendoClient = new ApiClient();
         // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
         String zenodoUrlApi = zenodoUrl + "/api";
         zendoClient.setBasePath(zenodoUrlApi);
-        String zenodoAccessToken = System.getProperty("ZENODO_TOKEN");
         zendoClient.setApiKey(zenodoAccessToken);
 
         DepositsApi depositApi = new DepositsApi(zendoClient);
@@ -1196,7 +1219,7 @@ public class WorkflowResource
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
 
             } catch (ApiException e) {
-                LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage());
+                LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
                         + "Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
@@ -1212,10 +1235,8 @@ public class WorkflowResource
                 // but the original resource. The new version deposition can be
                 // accessed through the "latest_draft" under "links" in the response body.
                 Object links = returnDeposit.getLinks();
-                //LinkedHashMap lhm = (LinkedHashMap)returnDeposit.getLinks();
                 String depositURL = (String)((LinkedHashMap)links).get("latest_draft");
 
-                //String depositURL = (String)lhm.get("latest_draft");
                 String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
                 // Get the deposit object for the new workflow version DOI
                 depositionID = Integer.parseInt(depositionIDStr);
@@ -1225,7 +1246,7 @@ public class WorkflowResource
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
 
             } catch (ApiException e) {
-                LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage());
+                LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
                         + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
