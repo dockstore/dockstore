@@ -22,6 +22,7 @@ import java.util.Map;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -83,7 +84,7 @@ public class TokenResourceIT {
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH);
-    private static CommonTestUtilities.TestingPostgres testingPostgres;
+    private static TestingPostgres testingPostgres;
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -108,7 +109,7 @@ public class TokenResourceIT {
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, DROPWIZARD_CONFIGURATION_FILE_PATH);
         SUPPORT.before();
-        testingPostgres = new CommonTestUtilities.TestingPostgres(SUPPORT);
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     @AfterClass

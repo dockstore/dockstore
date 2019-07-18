@@ -29,6 +29,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -44,7 +45,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
@@ -77,13 +77,13 @@ public class RefreshByOrgIT {
     private static Long id;
     private static List<Tool> previousTools;
     private static List<Workflow> previousWorkflows;
-    private static CommonTestUtilities.TestingPostgres testingPostgres;
+    private static TestingPostgres testingPostgres;
 
     @BeforeClass
     public static void clearDBandSetup() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, true);
         SUPPORT.before();
-        testingPostgres = getTestingPostgres(SUPPORT);
+        testingPostgres = new TestingPostgres(SUPPORT);
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", long.class);
         Environment environment = SUPPORT.getEnvironment();
         token = testingPostgres.runSelectStatement("select content from token where tokensource='dockstore';", String.class);

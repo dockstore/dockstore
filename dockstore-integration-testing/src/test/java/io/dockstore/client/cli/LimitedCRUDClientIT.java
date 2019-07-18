@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -68,7 +69,7 @@ import static org.junit.Assert.assertTrue;
  */
 @Category(ConfidentialTest.class)
 public class LimitedCRUDClientIT {
-    private static CommonTestUtilities.TestingPostgres testingPostgres;
+    private static TestingPostgres testingPostgres;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
@@ -101,7 +102,7 @@ public class LimitedCRUDClientIT {
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
-        testingPostgres = new CommonTestUtilities.TestingPostgres(SUPPORT);
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     @AfterClass

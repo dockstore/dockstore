@@ -5,6 +5,7 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
@@ -37,12 +38,12 @@ public class VerifiedInformationMigrationIT {
         }
     };
 
-    protected static CommonTestUtilities.TestingPostgres testingPostgres;
+    protected static TestingPostgres testingPostgres;
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() {
         SUPPORT.before();
-        testingPostgres = CommonTestUtilities.getTestingPostgres(SUPPORT);
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     @AfterClass

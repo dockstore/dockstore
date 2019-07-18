@@ -23,6 +23,7 @@ import com.codahale.metrics.Gauge;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -57,13 +58,13 @@ public class BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
-    protected static CommonTestUtilities.TestingPostgres testingPostgres;
+    protected static TestingPostgres testingPostgres;
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
-        testingPostgres = new CommonTestUtilities.TestingPostgres(SUPPORT);
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     public static void assertNoMetricsLeaks(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws InterruptedException {
@@ -106,7 +107,7 @@ public class BaseIT {
      * the following were migrated from SwaggerClientIT and can be eventually merged. Note different config file used
      */
 
-    protected static ApiClient getWebClient(String username, CommonTestUtilities.TestingPostgres testingPostgres) {
+    protected static ApiClient getWebClient(String username, TestingPostgres testingPostgres) {
         return CommonTestUtilities.getWebClient(true, username, testingPostgres);
     }
 

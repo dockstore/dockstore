@@ -119,7 +119,7 @@ public final class CommonTestUtilities {
      * Shared convenience method
      * @return
      */
-    public static ApiClient getWebClient(boolean authenticated, String username, CommonTestUtilities.TestingPostgres testingPostgres) {
+    public static ApiClient getWebClient(boolean authenticated, String username, TestingPostgres testingPostgres) {
         File configFile = FileUtils.getFile("src", "test", "resources", "config2");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
@@ -261,40 +261,9 @@ public final class CommonTestUtilities {
         }
     }
 
-    public static TestingPostgres getTestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
-        return new TestingPostgres(support);
-    }
-
     public static void checkToolList(String log) {
         Assert.assertTrue(log.contains("NAME"));
         Assert.assertTrue(log.contains("DESCRIPTION"));
         Assert.assertTrue(log.contains("Git Repo"));
-    }
-    public static class TestingPostgres {
-        Jdbi jdbi;
-        public TestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
-            DataSourceFactory dataSourceFactory = support.getConfiguration().getDataSourceFactory();
-            Environment environment = support.getEnvironment();
-            JdbiFactory jdbiFactory = new JdbiFactory();
-            jdbi = jdbiFactory.build(environment, dataSourceFactory, "postgresql");
-
-        }
-        public int runUpdateStatement(String query) {
-            return jdbi.withHandle(handle -> handle.createUpdate(query).execute());
-        }
-
-        public <T> T runSelectStatement(String statement, Class<T> handler) {
-            return jdbi.withHandle(handle -> {
-                Query query = handle.select(statement);
-                return query.mapTo(handler).findFirst().orElse(null);
-            });
-        }
-
-        public <T> List<T> runSelectListStatement(String statement, Class<T> handler) {
-            return jdbi.withHandle(handle -> {
-                Query query = handle.select(statement);
-                return query.mapTo(handler).list();
-            });
-        }
     }
 }
