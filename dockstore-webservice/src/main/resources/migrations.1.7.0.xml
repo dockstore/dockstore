@@ -261,4 +261,16 @@
             create unique index if not exists partial_service_name on service (sourcecontrol, organization, repository) where workflowname is null
         </sql>
     </changeSet>
+
+    <changeSet author="gluu" id="add_archived_version_names_to_entries">
+        <addColumn tableName="service">
+            <column name="next_version_name" type="VARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="next_version_name" type="VARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="next_version_name" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

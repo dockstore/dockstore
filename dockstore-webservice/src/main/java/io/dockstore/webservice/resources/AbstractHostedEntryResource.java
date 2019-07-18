@@ -189,7 +189,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
-
         return saveVersion(user, entryId, entry, version, versionSourceFiles, Optional.empty());
     }
 
@@ -241,10 +240,23 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         if (validatedVersion instanceof WorkflowVersion) {
             entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());
         }
+        updateNextVersionName(entry, version);
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
+    }
+
+    /**
+     * This updates the entry's next version name.
+     * The next version name is simply a +1 increment of the version that was just added
+     * @param entry The entry that just got a new version
+     * @param version   The version that was just added
+     */
+    private void updateNextVersionName(T entry, U version) {
+        String stringVersionName = version.getName();
+        int integerVersionName = Integer.parseInt(stringVersionName) + 1;
+        entry.setNextVersionName(String.valueOf(integerVersionName));
     }
 
     /**
@@ -356,7 +368,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private Set<SourceFile> handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
         Set<U> versions = entry.getWorkflowVersions();
         Map<String, SourceFile> map = new HashMap<>();
-        tag.setName(calculateNextVersionName(versions));
+        tag.setName(calculateNextVersionName(versions, entry));
 
         if (versions.size() > 0) {
             // get the last one and modify files accordingly
@@ -425,16 +437,20 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     /**
      * Calculates the next version name. Currently assumes versions are always stringified numbers, and returns
      * the highest number + 1 as a string. Need to update when we support arbitrary names for the version.
-     * @param versions
-     * @return
+     * @param versions  The existing list of versions
+     * @return          The version name of the next version
      */
-    String calculateNextVersionName(Set<U> versions) {
+    String calculateNextVersionName(Set<U> versions, T entry) {
         if (versions.isEmpty()) {
             return "1";
         } else {
-            U versionWithTheLargestName = versionWithLargestName(versions);
-            return (String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
-
+            String nextVersionName = entry.getNextVersionName();
+            if (!nextVersionName.isEmpty()) {
+                return nextVersionName;
+            } else {
+                U versionWithTheLargestName = versionWithLargestName(versions);
+                return (String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
+            }
         }
     }
 

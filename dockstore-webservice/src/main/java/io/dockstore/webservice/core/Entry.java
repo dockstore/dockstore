@@ -184,6 +184,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
     private Long topicId;
 
+    @Column(name = "next_version_name")
+    @ApiModelProperty(value = "Name of the next version (applicable to hosted only)")
+    private String nextVersionName;
+
     /**
      * Example of generalizing concept of default paths across tools, workflows
      */
@@ -514,5 +518,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setDefaultPaths(Map<DescriptorLanguage.FileType, String> defaultPaths) {
         this.defaultPaths = defaultPaths;
+    }
+
+    public String getNextVersionName() {
+        return nextVersionName;
+    }
+
+    public void setNextVersionName(String nextVersionName) {
+        this.nextVersionName = nextVersionName;
     }
 }
