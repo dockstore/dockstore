@@ -1984,7 +1984,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted
@@ -3265,7 +3265,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:
@@ -4339,7 +4339,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getSpecificUser
       parameters:
       - in: path
         name: userId
@@ -4739,7 +4739,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
