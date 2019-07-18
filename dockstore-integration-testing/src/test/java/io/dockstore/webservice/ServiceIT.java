@@ -287,7 +287,6 @@ public class ServiceIT extends BaseIT {
 
     /**
      * This tests that you can't add a version with an invalid dockstore.yml or no dockstore.yml
-     * TODO : of course this doesn't work, the git references are branches, should be tags
      */
     @Test
     public void updateServiceNoOrInvalidYml() throws Exception {

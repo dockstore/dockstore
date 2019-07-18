@@ -93,23 +93,23 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
             MinimalLanguageInterface.GenericFileType fileType;
             switch (file.getType()) {
-                case DOCKSTORE_CWL:
-                case DOCKSTORE_WDL:
-                case NEXTFLOW_CONFIG:
-                case NEXTFLOW:
-                case DOCKSTORE_SERVICE_YML:
-                case DOCKSTORE_SERVICE_OTHER:
-                case DOCKSTORE_YML:
-                    fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
-                    break;
-                case CWL_TEST_JSON:
-                case WDL_TEST_JSON:
-                case NEXTFLOW_TEST_PARAMS:
-                case DOCKSTORE_SERVICE_TEST_JSON:
-                    fileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
-                    break;
-                default:
-                    fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
+            case DOCKSTORE_CWL:
+            case DOCKSTORE_WDL:
+            case NEXTFLOW_CONFIG:
+            case NEXTFLOW:
+            case DOCKSTORE_SERVICE_YML:
+            case DOCKSTORE_SERVICE_OTHER:
+            case DOCKSTORE_YML:
+                fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
+                break;
+            case CWL_TEST_JSON:
+            case WDL_TEST_JSON:
+            case NEXTFLOW_TEST_PARAMS:
+            case DOCKSTORE_SERVICE_TEST_JSON:
+                fileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
+                break;
+            default:
+                fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
             }
 
             Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, fileType);
