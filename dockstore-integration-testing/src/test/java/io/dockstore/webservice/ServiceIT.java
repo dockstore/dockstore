@@ -287,11 +287,10 @@ public class ServiceIT extends BaseIT {
 
     /**
      * This tests that you can't add a version with an invalid dockstore.yml or no dockstore.yml
+     * TODO : of course this doesn't work, the git references are branches, should be tags
      */
     @Test
     public void updateServiceNoOrInvalidYml() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com");
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -305,17 +304,17 @@ public class ServiceIT extends BaseIT {
 
         // Add version that has no dockstore.yml
         try {
-            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "noYml", installationId);
+            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "no-yml", installationId);
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
         // Add version that has invalid dockstore.yml
-        try {
-            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalidYml", installationId);
-        } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
-        }
+        io.swagger.client.model.Workflow updatedService = client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
+        assertNotNull(updatedService);
+        assertEquals("Should have a new version", 1, updatedService.getWorkflowVersions().size());
+        assertEquals("Should have 1 source file", 1, updatedService.getWorkflowVersions().get(0).getSourceFiles().size());
+        assertFalse("Should not be valid", updatedService.getWorkflowVersions().get(0).isValid());
     }
 
     /**
