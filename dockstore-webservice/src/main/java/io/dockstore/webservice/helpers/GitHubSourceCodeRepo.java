@@ -411,7 +411,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (workflow.getMode() == WorkflowMode.SERVICE) {
             version = setupServiceFilesForVersion(calculatedPath, ref, repository, version);
             if (version == null) {
-                // Returning null implies either no yml or an invalid yml
+                // Returning null implies either no yml
                 return null;
             }
         } else {
@@ -510,9 +510,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
                 files = (List<String>)serviceObject.get("files");
             } catch (YAMLException | ClassCastException ex) {
-                String msg = "Invalid dockstore.yml";
+                String msg = "Invalid .dockstore.yml";
                 LOG.error(msg, ex);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+                //throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+                return version;
             }
             for (String filePath: files) {
                 String fileContent = this.readFileFromRepo(filePath, ref.getLeft(), repository);
@@ -692,7 +693,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             try {
                 version = getTagVersion(ghRepository, gitReference, workflow);
                 if (version == null && workflowMode == WorkflowMode.SERVICE) {
-                    String msg = "Could not create a version. Please ensure that the dockstore.yml is present and valid.";
+                    String msg = "Could not create a version. Please ensure that the dockstore.yml is present.";
                     LOG.error(msg);
                     throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
                 }
