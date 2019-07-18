@@ -94,7 +94,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
     private boolean isAdmin;
 
-    @Column
+    @Column(columnDefinition = "boolean default false")
     @JsonIgnore
     private boolean isBanned;
 
