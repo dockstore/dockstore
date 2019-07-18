@@ -83,14 +83,7 @@ public class CromwellLauncher extends BaseLauncher {
     @Override
     public List<String> buildRunCommand() {
         final List<String> runCommand;
-        // Don't use imports option for WDL, only for CWL
-        if (zippedEntry == null || abstractEntryClient instanceof ToolClient || Objects.equals(languageType, DescriptorLanguage.WDL)) {
-            runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
-        } else {
-            runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", zippedEntry
-                    .getAbsolutePath());
-        }
-
+        runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
         final String[] s = { "java", "-jar", executionFile.getAbsolutePath(), "run" };
         List<String> arguments = new ArrayList<>();
         arguments.addAll(Arrays.asList(s));
