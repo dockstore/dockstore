@@ -191,8 +191,8 @@ public class WorkflowResource
     private final String gitHubPrivateKeyFile;
     private final String gitHubAppId;
     private final String zenodoUrl;
-    private final String zenodoClientID;
-    private final String zenodoClientSecret;
+    //private final String zenodoClientID;
+    //private final String zenodoClientSecret;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
         PermissionsInterface permissionsInterface, EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
@@ -219,8 +219,8 @@ public class WorkflowResource
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
 
         zenodoUrl = configuration.getZenodoUrl();
-        zenodoClientID = configuration.getZenodoClientID();
-        zenodoClientSecret = configuration.getZenodoClientSecret();
+        //zenodoClientID = configuration.getZenodoClientID();
+        //zenodoClientSecret = configuration.getZenodoClientSecret();
     }
 
     /**
@@ -963,6 +963,17 @@ public class WorkflowResource
             relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
             aliasList.add(relatedIdentifier);
         }
+
+        // TODO Use stream map collect to list
+        // List<RelatedIdentifier> aliasList = workflowAliases.stream().map(s -> {
+        //     RelatedIdentifier relatedIdentifier = new RelatedIdentifier();
+        //     relatedIdentifier.setIdentifier(s);
+        //     relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
+        //     //aliasList.add(relatedIdentifier);
+        //     return relatedIdentifier;
+        // }).collect(Collectors.toList());
+
+
         depositMetadata.setRelatedIdentifiers(aliasList);
     }
 
