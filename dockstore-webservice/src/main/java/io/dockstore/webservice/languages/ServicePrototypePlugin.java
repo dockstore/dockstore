@@ -54,11 +54,12 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
             if (serviceObject == null) {
                 validationMessageObject.put(initialPath, "Service key does not exist.");
                 isValid = false;
-            }
-            files = (List<String>)serviceObject.get("files");
-            if (files == null) {
-                validationMessageObject.put(initialPath, "Files key does not exist.");
-                isValid = false;
+            } else {
+                files = (List<String>)serviceObject.get("files");
+                if (files == null) {
+                    validationMessageObject.put(initialPath, "Files key does not exist.");
+                    isValid = false;
+                }
             }
         } catch (YAMLException | ClassCastException ex) {
             validationMessageObject.put(initialPath, ex.getMessage());
