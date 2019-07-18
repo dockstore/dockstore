@@ -85,6 +85,7 @@ database:
   removeAbandoned: true
   abandonWhenPercentageFull: 80
   logAbandonedConnections: true
+  removeAbandonedTimeout: 300
 
 logging:
   level: ERROR
