@@ -19,7 +19,6 @@ package io.dockstore.webservice.jdbi;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -190,8 +189,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         // Perform disjunctive OR over all predicates in the array
         q.where(cb.or(predicates.toArray(new Predicate[]{})));
 
-        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
-        return entityManager.createQuery(q).getResultList();
+        return list(q);
     }
 
     public List<Workflow> findByGitUrl(String giturl) {
