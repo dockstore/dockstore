@@ -1081,7 +1081,14 @@ public class WorkflowResource
             // Create a SharedWorkFlow map for each Role and the list of workflows that belong to it
             final List<Workflow> workflows = workflowList.stream()
                 // Filter only the workflows that belong to the current Role and where the user is not the owner
-                .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()) && !workflow.getUsers().contains(user))
+                .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()))
+                .filter(workflow -> {
+                    String workflowPath = workflow.getWorkflowPath();
+                    Workflow byPath = workflowDAO.findByPath(workflowPath, false);
+                    return !byPath.getUsers().contains(user);
+                })
+                // This causes a connection pool leak (the active connections keeps going up)
+                // .filter(workflow -> !workflow.getUsers().contains(user))
                 .collect(Collectors.toList());
             return new SharedWorkflows(e.getKey(), workflows);
         }).filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0).collect(Collectors.toList());
