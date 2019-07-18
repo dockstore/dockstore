@@ -110,6 +110,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 break;
             default:
                 fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
+                break;
             }
 
             Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, fileType);
