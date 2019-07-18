@@ -313,7 +313,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (ref != null) {
                 WorkflowVersion version = setupWorkflowVersionsHelper(repositoryId, workflow, ref, existingWorkflow, existingDefaults,
                         repository);
-                workflow.addWorkflowVersion(version);
+                if (version != null) {
+                    workflow.addWorkflowVersion(version);
+                }
             }
         }
 
@@ -512,7 +514,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } catch (YAMLException | ClassCastException ex) {
                 String msg = "Invalid .dockstore.yml";
                 LOG.error(msg, ex);
-                //throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
                 return version;
             }
             for (String filePath: files) {

@@ -318,6 +318,29 @@ public class ServiceIT extends BaseIT {
     }
 
     /**
+     * Tests that refresh will only grab the releases
+     */
+    @Test
+    public void updateServiceSync() throws Exception {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient("DockstoreTestUser2");
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add service
+        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "DockstoreTestUser2", installationId);
+        assertNotNull(service);
+
+        service = client.refresh(service.getId());
+        assertNotNull(service);
+        assertEquals("Should have two new versions (third release has no yaml so do not include)", 2, service.getWorkflowVersions().size());
+    }
+
+    /**
      * This tests that you cannot create a service from an in invalid GitHub repository
      */
     @Test
