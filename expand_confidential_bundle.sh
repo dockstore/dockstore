@@ -20,3 +20,4 @@ unzip -p $zipArchive $zipFolder/migrations.test.confidential2.xml >dockstore-web
 unzip -p $zipArchive $zipFolder/migrations.test.confidential1_1.5.0.xml >dockstore-webservice/src/main/resources/migrations.test.confidential1_1.5.0.xml
 unzip -p $zipArchive $zipFolder/migrations.test.confidential2_1.5.0.xml >dockstore-webservice/src/main/resources/migrations.test.confidential2_1.5.0.xml
 unzip -p $zipArchive $zipFolder/dockstoreTest.yml >dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+unzip -p $zipArchive $zipFolder/dstesting_pcks8.pem >dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem

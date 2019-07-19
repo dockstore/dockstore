@@ -58,7 +58,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
             throws ApiException {
         final String TEST_WORKFLOW_NAME = "test-workflow";
-        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_1_USERNAME));
+        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_1_USERNAME, testingPostgres));
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string

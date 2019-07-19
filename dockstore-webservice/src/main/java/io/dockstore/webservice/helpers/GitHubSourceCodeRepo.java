@@ -71,8 +71,10 @@ import org.kohsuke.github.extras.ImpatientHttpConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 
 /**
  * @author dyuen
@@ -297,7 +299,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
-                references.add(getRef(ref, repository));
+                if (workflow.getMode() != WorkflowMode.SERVICE || ref.getRef().startsWith("refs/tags")) {
+                    references.add(getRef(ref, repository));
+                }
             }
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
@@ -309,7 +313,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (ref != null) {
                 WorkflowVersion version = setupWorkflowVersionsHelper(repositoryId, workflow, ref, existingWorkflow, existingDefaults,
                         repository);
-                workflow.addWorkflowVersion(version);
+                if (version != null) {
+                    workflow.addWorkflowVersion(version);
+                }
             }
         }
 
@@ -324,7 +330,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param repositoryId of the form organization/repository (Ex. dockstore/dockstore-ui2)
      * @return GitHub repository
      */
-    private GHRepository getRepository(String repositoryId) {
+    public GHRepository getRepository(String repositoryId) {
         GHRepository repository;
         try {
             repository = github.getRepository(repositoryId);
@@ -407,6 +413,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (workflow.getMode() == WorkflowMode.SERVICE) {
             version = setupServiceFilesForVersion(calculatedPath, ref, repository, version);
             if (version == null) {
+                // Returning null implies either no yml
                 return null;
             }
         } else {
@@ -499,17 +506,29 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             // Grab all files from files array
             Yaml yaml = new Yaml();
-            Map<String, Object> map = yaml.load(dockstoreYmlContent);
-            Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
-            List<String> files = (List<String>)serviceObject.get("files");
+            List<String> files;
+            try {
+                Map<String, Object> map = yaml.load(dockstoreYmlContent);
+                Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
+                files = (List<String>)serviceObject.get("files");
+            } catch (YAMLException | ClassCastException ex) {
+                String msg = "Invalid .dockstore.yml";
+                LOG.error(msg, ex);
+                return version;
+            }
             for (String filePath: files) {
                 String fileContent = this.readFileFromRepo(filePath, ref.getLeft(), repository);
-                SourceFile file = new SourceFile();
-                file.setAbsolutePath(filePath);
-                file.setPath(filePath);
-                file.setContent(fileContent);
-                file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
-                version.getSourceFiles().add(file);
+                if (fileContent != null) {
+                    SourceFile file = new SourceFile();
+                    file.setAbsolutePath(filePath);
+                    file.setPath(filePath);
+                    file.setContent(fileContent);
+                    file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
+                    version.getSourceFiles().add(file);
+                } else {
+                    // File not found or null
+                    LOG.info("Could not find file " + filePath + " in repo " + repository);
+                }
             }
             return version;
         } else {
@@ -664,18 +683,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param repository Github repostory name (ex. dockstore/dockstore-ui2)
      * @param gitReference GitHub reference object
      * @param workflows Workflows to upsert version
+     * @param workflowMode Mode of workflow
      * @return workflows with new/updated version
      */
-    public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows) {
+    public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows, WorkflowMode workflowMode) {
         GHRepository ghRepository = getRepository(repository);
         for (Workflow workflow : workflows) {
 
             WorkflowVersion version;
             try {
                 version = getTagVersion(ghRepository, gitReference, workflow);
+                if (version == null && workflowMode == WorkflowMode.SERVICE) {
+                    String msg = "Could not create a version. Please ensure that the dockstore.yml is present.";
+                    LOG.error(msg);
+                    throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+                }
                 workflow.addWorkflowVersion(version);
             } catch (IOException ex) {
-                LOG.error("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
+                String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
+                LOG.error(msg);
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
         }
         return workflows;
@@ -694,8 +721,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
         if (ref == null) {
-            LOG.error(gitUsername + ": Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.");
-            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
+            String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
         // Find existing version if it exists

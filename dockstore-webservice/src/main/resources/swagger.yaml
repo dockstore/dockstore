@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.10"
+  version: "1.7.0-alpha.13-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3965,7 +3965,7 @@ paths:
       - "users"
       summary: "Get user by id."
       description: ""
-      operationId: "getUser"
+      operationId: "getSpecificUser"
       produces:
       - "application/json"
       parameters:
@@ -4587,7 +4587,8 @@ paths:
       tags:
       - "workflows"
       summary: "Create a service for the given repository (ex. dockstore/dockstore-ui2)."
-      description: "To be called by a lambda function."
+      description: "To be called by a lambda function. Error code 418 is returned\
+        \ to tell lambda not to retry."
       operationId: "addService"
       consumes:
       - "application/x-www-form-urlencoded"
@@ -4622,7 +4623,8 @@ paths:
       - "workflows"
       summary: "Add or update a service version for a given GitHub tag for a service\
         \ with the given repository (ex. dockstore/dockstore-ui2)."
-      description: "To be called by a lambda function."
+      description: "To be called by a lambda function. Error code 418 is returned\
+        \ to tell lambda not to retry."
       operationId: "upsertServiceVersion"
       consumes:
       - "application/x-www-form-urlencoded"
@@ -6119,6 +6121,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6134,10 +6140,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6350,6 +6352,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Base class for versions of entries in the Dockstore"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6365,10 +6371,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7457,6 +7459,10 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7472,10 +7478,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
