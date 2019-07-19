@@ -52,12 +52,12 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
             Map<String, Object> map = yaml.load(contents);
             Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
             if (serviceObject == null) {
-                validationMessageObject.put(initialPath, "Service key does not exist.");
+                validationMessageObject.put(initialPath, "The key 'service' does not exist.");
                 isValid = false;
             } else {
                 files = (List<String>)serviceObject.get("files");
                 if (files == null) {
-                    validationMessageObject.put(initialPath, "Files key does not exist.");
+                    validationMessageObject.put(initialPath, "The key 'files' does not exist.");
                     isValid = false;
                 }
             }
