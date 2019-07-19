@@ -68,7 +68,6 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -82,7 +81,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -135,7 +133,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testStubRefresh() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
 
@@ -152,10 +150,10 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testTargettedRefresh() throws ApiException, URISyntaxException, IOException {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -200,7 +198,7 @@ public class WorkflowIT extends BaseIT {
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null));
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null, testingPostgres));
         Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(webClient);
         boolean exceptionThrown = false;
         try {
@@ -232,7 +230,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testHostedDelete() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
@@ -249,7 +247,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testHostedEdit() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
@@ -267,9 +265,9 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testWorkflowLaunchOrNotLaunchBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/checker-workflow-wrapping-workflow.cwl",
@@ -294,7 +292,7 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testEntryConvertWDLWithSecondaryDescriptors() {
         String toolpath = SourceControl.GITHUB.toString() + "/dockstore-testing/skylab";
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/skylab", "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl",
@@ -328,7 +326,7 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void downloadZipFile() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // Register and refresh workflow
@@ -352,7 +350,7 @@ public class WorkflowIT extends BaseIT {
         boolean thrownException = false;
         try {
             SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
-            }, CommonTestUtilities.getWebClient(false, null));
+            }, CommonTestUtilities.getWebClient(false, null, testingPostgres));
         } catch (Exception e) {
             thrownException = true;
         }
@@ -361,7 +359,7 @@ public class WorkflowIT extends BaseIT {
         // Download published workflow version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--script" });
         arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
-        }, CommonTestUtilities.getWebClient(false, null));
+        }, CommonTestUtilities.getWebClient(false, null, testingPostgres));
         write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
         zipFile = new ZipFile(write.toFile());
         assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
@@ -388,13 +386,13 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void downloadZipFileTestAuth() {
-        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
 
-        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null);
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
         WorkflowsApi anonWorkflowApi = new WorkflowsApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME);
+        final ApiClient otherUserWebClient = CommonTestUtilities.getWebClient(true, OTHER_USERNAME, testingPostgres);
         WorkflowsApi otherUserWorkflowApi = new WorkflowsApi(otherUserWebClient);
 
         // Register and refresh workflow
@@ -443,10 +441,10 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         Workflow workflow = workflowApi
@@ -481,9 +479,9 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testCheckerWorkflowLaunchBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
@@ -511,7 +509,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testNextflowRefresh() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -565,7 +563,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testNextflowWorkflowWithConfigIncludes() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -595,7 +593,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testNextflowWorkflowWithImages() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -641,23 +639,23 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testRefreshAllForAUser() throws ApiException {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         long userId = 1;
 
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         final List<Workflow> workflows = usersApi.refreshWorkflows(userId);
 
         // Check that there are multiple workflows
-        final long count = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("Workflow entries should exist", count > 0);
 
         // Check that there are only stubs (no workflow version)
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
         assertEquals("No entries in workflowversion", 0, count2);
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("No workflows are in full mode", 0, count3);
 
         // check that a nextflow workflow made it
@@ -726,7 +724,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testPublishingAndListingOfPublished() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // should start with nothing published
@@ -788,7 +786,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testManualRegisterThenPublish() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -798,7 +796,7 @@ public class WorkflowIT extends BaseIT {
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
 
         // Set up postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Get workflows
         usersApi.refreshWorkflows(userId);
@@ -813,10 +811,10 @@ public class WorkflowIT extends BaseIT {
 
         // Assert some things
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("No workflows are in full mode", 0, count);
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where workflowname = 'altname'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where workflowname = 'altname'", long.class);
         assertEquals("There should be two workflows with name altname, there are " + count2, 2, count2);
 
         // Publish github workflow
@@ -827,10 +825,10 @@ public class WorkflowIT extends BaseIT {
         assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(), 1,
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size());
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("One workflow is in full mode", 1, count3);
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflowversion where valid = 't'", long.class);
         assertEquals("There should be 2 valid version tags, there are " + count4, 2, count4);
 
         workflowApi.refresh(bitbucketWorkflow.getId());
@@ -841,7 +839,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         thrown.expect(ApiException.class);
         hostedApi.createHostedWorkflow("name", null, "garbage type", null, null);
@@ -849,7 +847,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testDuplicateHostedWorkflowCreation() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
         thrown.expectMessage("already exists");
@@ -858,7 +856,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testDuplicateHostedToolCreation() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         hostedApi.createHostedTool("name", Registry.DOCKER_HUB.toString(), DescriptorType.CWL.toString(), "namespace", null);
         thrown.expectMessage("already exists");
@@ -867,7 +865,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testHostedWorkflowMetadataAndLaunch() throws IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
         assertNotNull(hostedWorkflow.getLastModifiedDate());
@@ -923,11 +921,11 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testNestedWdlWorkflow() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // Set up postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
@@ -935,7 +933,7 @@ public class WorkflowIT extends BaseIT {
 
         // Assert some things
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("No workflows are in full mode", 0,count);
 
         // Refresh the workflow
@@ -966,7 +964,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testMoreCWLImportsStructure() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/workflow-seq-import", "/cwls/chksum_seqval_wf_interleaved_fq.cwl", "", "cwl", "/examples/chksum_seqval_wf_interleaved_fq.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, null);
@@ -997,7 +995,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = new DockstoreTool();
@@ -1075,7 +1073,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testManualRegisterErrors() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -1106,7 +1104,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testSecondaryFileOperations() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json");
@@ -1133,7 +1131,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testRelativeSecondaryFileOperations() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
@@ -1208,13 +1206,13 @@ public class WorkflowIT extends BaseIT {
     @Test
 
     public void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
-        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME));
+        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
         workflowApi.refresh(workflowByPathGithub.getId());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null));
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null, testingPostgres));
         boolean thrownException = false;
         try {
             anonymousGa4Ghv2Api
@@ -1234,7 +1232,7 @@ public class WorkflowIT extends BaseIT {
         assert (thrownListException);
 
         // can get content via admin user
-        Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(getWebClient(USER_2_USERNAME));
+        Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(getWebClient(USER_2_USERNAME, testingPostgres));
 
         List<ToolFile> toolFiles = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
@@ -1277,7 +1275,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testAliasOperations() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
@@ -1320,7 +1318,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testAbsolutePathForImportedFilesCWL() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl", "/workflows/dnaseq/transform.cwl.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW, null);
@@ -1358,9 +1356,9 @@ public class WorkflowIT extends BaseIT {
      */
     @Ignore
     public void publishWorkflowAndTestDiscourseTopicCreation() {
-        final ApiClient curatorApiClient = getWebClient(CURATOR_USERNAME);
+        final ApiClient curatorApiClient = getWebClient(CURATOR_USERNAME, testingPostgres);
         EntriesApi curatorEntriesApi = new EntriesApi(curatorApiClient);
-        final ApiClient userApiClient = getWebClient(USER_2_USERNAME);
+        final ApiClient userApiClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi userWorkflowsApi = new WorkflowsApi(userApiClient);
 
         // Create a workflow with a random name

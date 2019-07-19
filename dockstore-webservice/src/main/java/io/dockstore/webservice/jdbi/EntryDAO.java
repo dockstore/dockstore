@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -142,10 +141,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
-        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
-        return entityManager
-                .createNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId", CollectionOrganization.class)
-                .setParameter("entryId", entryId).getResultList();
+        return list(namedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", entryId));
     }
 
     public T findPublishedById(long id) {
@@ -164,10 +160,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         processQuery(filter, sortCol, sortOrder, cb, query, entry);
         query.select(entry);
 
-        //TODO: getting the entity manager to convert the criteria query to a TypedQuery is weird, there must be a different way
-        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
         int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
-        TypedQuery<T> typedQuery = entityManager.createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
+        TypedQuery<T> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
     }
 
@@ -188,9 +182,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         Root<T> entry = query.from(typeOfT);
         processQuery(filter.get(), "", "", cb, query, entry);
         query.select(cb.count(entry));
-        //TODO: getting the entity manager to convert the criteria query to a TypedQuery is weird, there must be a different way
-        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
-        return entityManager.createQuery(query).getSingleResult();
+        return currentSession().createQuery(query).getSingleResult();
     }
 
     private long countAllPublished() {

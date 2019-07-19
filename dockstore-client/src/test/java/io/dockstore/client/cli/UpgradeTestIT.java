@@ -16,7 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
 import java.util.Objects;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.7.0-alpha.11-SNAPSHOT</version>
+        <version>1.7.0-alpha.13-SNAPSHOT</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -42,36 +42,28 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.0-alpha.11-SNAPSHOT</version>
+            <version>1.7.0-alpha.13-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.postgresql</groupId>
                     <artifactId>postgresql</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-dbcp2</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-pool2</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.7.0-alpha.11-SNAPSHOT</version>
+            <version>1.7.0-alpha.13-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-wes-client</artifactId>
-            <version>1.7.0-alpha.11-SNAPSHOT</version>
+            <version>1.7.0-alpha.13-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-file-plugin-parent</artifactId>
-            <version>1.7.0-alpha.11-SNAPSHOT</version>
+            <version>1.7.0-alpha.13-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
