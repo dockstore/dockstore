@@ -34,7 +34,6 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public class CromwellLauncher extends BaseLauncher {
     protected static final String DEFAULT_CROMWELL_VERSION = "44";
-    private static final List<String> CWL_SPECIFIC_FLAGS = Arrays.asList("--type", "cwl");
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
 
     public CromwellLauncher(AbstractEntryClient abstractEntryClient, DescriptorLanguage language, boolean script) {
@@ -82,6 +81,7 @@ public class CromwellLauncher extends BaseLauncher {
 
     @Override
     public List<String> buildRunCommand() {
+        final List<String> cwlSpecificFlags = Arrays.asList("--type", "cwl");
         final List<String> runCommand;
         runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
         final String[] s = { "java", "-jar", executionFile.getAbsolutePath(), "run" };
@@ -89,7 +89,7 @@ public class CromwellLauncher extends BaseLauncher {
         arguments.addAll(Arrays.asList(s));
         arguments.addAll(runCommand);
         if (languageType == DescriptorLanguage.CWL) {
-            arguments.addAll(CWL_SPECIFIC_FLAGS);
+            arguments.addAll(cwlSpecificFlags);
         }
         return arguments;
     }
