@@ -3947,6 +3947,24 @@ paths:
                 type: boolean
       security:
         - BEARER: []
+  /users/path/service/sync:
+    post:
+      tags:
+        - users
+      summary: Syncs service data with Git accounts.
+      description: Currently only works with GitHub
+      operationId: syncUserServices
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   /users/starredOrganizations:
     get:
       tags:

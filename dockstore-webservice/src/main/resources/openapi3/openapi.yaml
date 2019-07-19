@@ -2001,7 +2001,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted
@@ -4108,6 +4108,23 @@ paths:
             application/json:
               schema:
                 type: boolean
+          description: default response
+  /users/path/service/sync:
+    post:
+      operationId: syncUserServices
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
           description: default response
   /users/starredOrganizations:
     get:

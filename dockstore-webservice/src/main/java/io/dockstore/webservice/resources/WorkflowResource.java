@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -76,6 +77,9 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
@@ -129,6 +133,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.ApiException;
 import io.swagger.zenodo.client.api.ActionsApi;
@@ -156,6 +162,7 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -418,7 +425,7 @@ public class WorkflowResource
         // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
         if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
-            workflow.setMode(WorkflowMode.SERVICE);
+            workflow.setMode(SERVICE);
         } else {
             workflow.setMode(WorkflowMode.FULL);
         }
@@ -550,7 +557,7 @@ public class WorkflowResource
         String installationAccessToken = gitHubAppSetup(installationId);
 
         // Call common upsert code
-        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, WorkflowMode.SERVICE, installationAccessToken);
+        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, SERVICE, installationAccessToken);
 
         // Add user to service if necessary
         Workflow service = workflowDAO.findByPath(dockstoreServicePath, false);
@@ -559,6 +566,119 @@ public class WorkflowResource
         }
 
         return service;
+    }
+
+    /**
+     * Does the following:
+     * 1) Add user to any existing Dockstore services they should own
+     *
+     * 2) For all of the users organizations that have the GitHub App installed on all repositories in those organizations,
+     * add any services that should be on Dockstore but are not
+     * @param user
+     * @param organization
+     */
+    void syncServicesForUser(User user, String organization) {
+        List<Token> githubByUserId = tokenDAO.findGithubByUserId(user.getId());
+
+        if (githubByUserId.isEmpty()) {
+            String msg = "The user does not have a GitHub token, please create one";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        } else {
+            // Get GitHub token
+            Token gitHubToken = githubByUserId.get(0);
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken, client);
+
+            // Get all GitHub repositories for the user
+            final Map<String, String> workflowGitUrl2Name = gitHubSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+
+            // Filter by organization if necessary
+            Collection<String> repositories = workflowGitUrl2Name.values();
+            if (organization != null) {
+                repositories = repositories.stream().filter((String repositoryName) -> Objects.equals(repositoryName.split("/")[0], organization)).collect(Collectors.toList());
+            }
+
+            // Add user to any services they should have access to that already exist on Dockstore
+            repositories.stream().forEach((String repositoryName) -> {
+                Workflow workflow = workflowDAO.findByPath("github.com/" + repositoryName, false);
+                if (workflow != null && Objects.equals(workflow.getMode(), SERVICE) && !workflow.getUsers().contains(user)) {
+                    workflow.getUsers().add(user);
+                }
+            });
+
+            // Filter to only get organizations with install all
+            Set<String> myOrganizations;
+            if (organization == null) {
+                // TODO: Can rewrite this to just use the repositories collection from above, will result in one less call
+                myOrganizations = gitHubSourceCodeRepo.getMyOrganizations();
+            } else {
+                myOrganizations = new HashSet<>();
+                myOrganizations.add(organization);
+            }
+
+            checkJWT();
+            myOrganizations = getOrganizationsWithGitHubApp(myOrganizations);
+
+            // TODO: For each organization with install all (myOrganizations), add a service stub for each repository that is not already on Dockstore
+        }
+    }
+
+    /**
+     * Retrieves all organizations a user belongs to that have GitHub app installed on all repositories
+     * @return set of organizations
+     */
+    public Set<String> getOrganizationsWithGitHubApp(Set<String> organizations) {
+        Set<String> filteredOrganizations = new HashSet<>();
+        organizations.stream().forEach((String organization) -> {
+            String organizationName = getInstallationForOrganization(organization, CacheConfigManager.getJsonWebToken());
+            if (organizationName != null) {
+                filteredOrganizations.add(organizationName);
+            }
+        });
+
+        return filteredOrganizations;
+    }
+
+    /**
+     * Determine if the organization has GitHub app installed on all repositories
+     * @param organization name of organization
+     * @param jsonWebToken JWT for GitHub App
+     * @return organization name
+     */
+    public String getInstallationForOrganization(String organization, String jsonWebToken) {
+        OkHttpClient okHttpClient = new OkHttpClient();
+
+        Request request = new Request.Builder()
+                .url("https://api.github.com/orgs/" + organization + "/installation")
+                .get()
+                .addHeader("Accept", "application/vnd.github.machine-man-preview+json")
+                .addHeader("Authorization", "Bearer " + jsonWebToken)
+                .build();
+
+        try {
+            okhttp3.Response response = okHttpClient.newCall(request).execute();
+            JsonElement body = new JsonParser().parse(response.body().string());
+            if (body.isJsonObject()) {
+                JsonObject responseBody = body.getAsJsonObject();
+                if (response.isSuccessful()) {
+                    JsonElement repoSelection = responseBody.get("repository_selection");
+                    if (repoSelection.isJsonPrimitive()) {
+                        if (Objects.equals(repoSelection.getAsString(), "all")) {
+                            return organization;
+                        }
+                    }
+                } else {
+                    JsonElement errorMessage = responseBody.get("message");
+                    if (errorMessage.isJsonPrimitive()) {
+                        LOG.error(errorMessage.getAsString());
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            LOG.error("Unable to get GitHub App installation for the organization " + organization, ex);
+        }
+
+        return null;
     }
 
     /**
@@ -649,7 +769,7 @@ public class WorkflowResource
                 versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
             }
         } else {
-            if (workflowMode == WorkflowMode.SERVICE) {
+            if (workflowMode == SERVICE) {
                 String msg = "No service with path " + dockstoreWorkflowPath + " exists on Dockstore.";
                 LOG.error(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);

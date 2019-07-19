@@ -682,6 +682,19 @@ public class UserResource implements AuthenticatedResourceInterface {
         return limits;
     }
 
+    @POST
+    @Path("/path/service/sync/")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Syncs service data with Git accounts.", notes = "Currently only works with GitHub", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser) {
+        User user = userDAO.findById(authUser.getId());
+        workflowResource.syncServicesForUser(user, null);
+
+        return getServices(user);
+    }
+
     /**
      * Updates the user's google access token in the DB
      * @param userId    The user's ID
