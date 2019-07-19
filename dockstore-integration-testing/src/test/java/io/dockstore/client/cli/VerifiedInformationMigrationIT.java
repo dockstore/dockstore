@@ -5,12 +5,12 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -20,8 +20,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * @author gluu
@@ -40,9 +38,12 @@ public class VerifiedInformationMigrationIT {
         }
     };
 
+    protected static TestingPostgres testingPostgres;
+
     @BeforeClass
     public static void dumpDBAndCreateSchema() {
         SUPPORT.before();
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     @AfterClass
@@ -61,7 +62,7 @@ public class VerifiedInformationMigrationIT {
             Assert.fail("Could not run migrations up to 1.4.0");
         }
 
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         testingPostgres.runUpdateStatement("UPDATE tag SET verified='t' where name='fakeName'");
 
@@ -75,7 +76,7 @@ public class VerifiedInformationMigrationIT {
 
         final long afterMigrationVerifiedCount = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile_verified",
-                        new ScalarHandler<>());
+                        long.class);
         Assert.assertEquals("There should be 2 entries in sourcefile_verified after the migration but got: " + afterMigrationVerifiedCount, 5, afterMigrationVerifiedCount);
     }
 
@@ -89,7 +90,7 @@ public class VerifiedInformationMigrationIT {
         } catch (Exception e) {
             Assert.fail("Could not run migrations up to 1.4.0");
         }
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET verified='t' where name='master'");
 
@@ -106,7 +107,7 @@ public class VerifiedInformationMigrationIT {
         }
 
         final long afterMigrationVerifiedCount = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile_verified", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from sourcefile_verified", long.class);
         Assert.assertEquals("There should be 2 entries in sourcefile_verified after the migration but got: " + afterMigrationVerifiedCount, 2,
                 afterMigrationVerifiedCount);
     }

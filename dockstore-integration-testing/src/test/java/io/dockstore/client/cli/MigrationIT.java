@@ -21,7 +21,6 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -31,6 +30,8 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+
+import static io.dockstore.client.cli.BaseIT.testingPostgres;
 
 /**
  * Testing migration
@@ -101,12 +102,11 @@ public class MigrationIT {
 
         SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--migrations", ResourceHelpers.resourceFilePath("funky_migrations.xml"));
         // check that column was added
-        final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(funkfile) from tool", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(funkfile) from tool", long.class);
         // count will be zero, but there should be no exception
         Assert.assertEquals("could select from new column", 0, count);
         final long orphanedTokensCount = testingPostgres
-                .runSelectStatement("select count(*) from token where userid not in (select id from enduser)", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from token where userid not in (select id from enduser)", long.class);
         Assert.assertEquals(0, orphanedTokensCount);
         // reset state
         testingPostgres.runUpdateStatement("alter table tool drop funkfile");

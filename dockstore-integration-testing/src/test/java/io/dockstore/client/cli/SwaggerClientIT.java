@@ -572,7 +572,7 @@ public class SwaggerClientIT extends BaseIT {
         assertEquals(1, containerId);
 
         containersApi.publish(containerId, SwaggerUtility.createPublishRequest(false));
-        final ApiClient otherWebClient = getWebClient(GITHUB_ACCOUNT_USERNAME);
+        final ApiClient otherWebClient = getWebClient(GITHUB_ACCOUNT_USERNAME, testingPostgres);
         assertNotNull(new UsersApi(otherWebClient).getUser());
         boolean expectedFailure = false;
         try {

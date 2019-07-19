@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -68,7 +69,7 @@ import static org.junit.Assert.assertTrue;
  */
 @Category(ConfidentialTest.class)
 public class LimitedCRUDClientIT {
-
+    private static TestingPostgres testingPostgres;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
@@ -101,6 +102,7 @@ public class LimitedCRUDClientIT {
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     @AfterClass
@@ -114,7 +116,7 @@ public class LimitedCRUDClientIT {
 
         // Tests can run in any order, and the CachingAuthenticator is not cleared between tests
         // Reset limits for user between tests so it's not set when it's not supposed to be.
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
         usersApi.setUserLimits(user.getId(), new Limits());
@@ -130,7 +132,7 @@ public class LimitedCRUDClientIT {
 
     @Test
     public void testToolCreation(){
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
@@ -164,7 +166,7 @@ public class LimitedCRUDClientIT {
 
     @Test
     public void testOverrideEntryLimit() {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
 
         // Change limits for current user
@@ -189,7 +191,7 @@ public class LimitedCRUDClientIT {
 
     @Test
     public void testToolVersionCreation() throws IOException {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
@@ -209,7 +211,7 @@ public class LimitedCRUDClientIT {
 
     @Test
     public void testOverrideVersionLimit() throws IOException {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
 
         // Change limits for current user
         UsersApi usersApi = new UsersApi(webClient);
@@ -241,7 +243,7 @@ public class LimitedCRUDClientIT {
 
     @Test
     public void testUploadZipHonorsVersionLimit() {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
         // Created workflow, no versions
