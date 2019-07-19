@@ -72,21 +72,21 @@ public class UserResourceIT extends BaseIT {
 
     @Test(expected = ApiException.class)
     public void testChangingNameFail() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("1direction"); // do not lengthen test, failure expected
     }
 
     @Test(expected = ApiException.class)
     public void testChangingNameFail2() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("foo@gmail.com"); // do not lengthen test, failure expected
     }
 
     @Test
     public void testChangingNameSuccess() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("foo");
         assertEquals("foo", userApi.getUser().getUsername());
@@ -103,7 +103,7 @@ public class UserResourceIT extends BaseIT {
      */
     @Test
     public void testChangeUsernameAfterOrgCreation() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
 
@@ -142,10 +142,10 @@ public class UserResourceIT extends BaseIT {
         assertTrue(shouldFail);
 
         // use a real account
-        client = getWebClient(USER_2_USERNAME);
+        client = getWebClient(USER_2_USERNAME, testingPostgres);
         userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        final ApiClient adminWebClient = getWebClient(ADMIN_USERNAME);
+        final ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
 
         final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
 

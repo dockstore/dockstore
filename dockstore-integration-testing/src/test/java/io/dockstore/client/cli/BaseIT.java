@@ -23,6 +23,7 @@ import com.codahale.metrics.Gauge;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -30,7 +31,6 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.auth.ApiKeyAuth;
 import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -42,8 +42,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * Base integration test class
@@ -60,10 +58,13 @@ public class BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
+    protected static TestingPostgres testingPostgres;
+
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     public static void assertNoMetricsLeaks(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws InterruptedException {
@@ -106,8 +107,8 @@ public class BaseIT {
      * the following were migrated from SwaggerClientIT and can be eventually merged. Note different config file used
      */
 
-    protected static ApiClient getWebClient(String username) {
-        return CommonTestUtilities.getWebClient(true, username);
+    protected static ApiClient getWebClient(String username, TestingPostgres testingPostgres) {
+        return CommonTestUtilities.getWebClient(true, username, testingPostgres);
     }
 
     protected static ApiClient getWebClient() {

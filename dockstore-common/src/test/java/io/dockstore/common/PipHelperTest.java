@@ -3,8 +3,6 @@ package io.dockstore.common;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 /**
  * @author gluu
  * @since 14/08/18

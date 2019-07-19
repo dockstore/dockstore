@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import io.dockstore.client.cli.nested.ToolClient;
-import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.TestUtility;
@@ -81,7 +80,6 @@ public class MockedIT {
 
     @Before
     public void clearDB() throws Exception {
-        CommonTestUtilities.getTestingPostgres().clearDatabase();
         this.client = mock(Client.class);
         ToolClient toolClient = spy(new ToolClient(client, false));
 
