@@ -22,10 +22,10 @@ env:
 
 jobs:
   include:
-          #    - stage: unit-tests
-      #      env:
-              #        - TESTING_PROFILE=unit-tests
-          #      script: mvn --batch-mode clean install -P$TESTING_PROFILE
+    - stage: unit-tests
+      env:
+        - TESTING_PROFILE=unit-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE
 # moved to CircleCI (may move back if build speed improves)
 #    - stage: unit-tests
 #      jdk: openjdk11
@@ -42,24 +42,24 @@ jobs:
 #      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
 #      - scripts/check_migrations.sh
 
-      #    - stage: coverage
-      #      env:
-      #        - TESTING_PROFILE=unit-tests
-      #      script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+    - stage: coverage
+      env:
+        - TESTING_PROFILE=unit-tests
+      script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
     - stage: coverage
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=true
-      #    - stage: coverage
-      #      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      #      env:
-      #        - TESTING_PROFILE=tool-integration-tests
-      #    - stage: coverage
-      #      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      #      env:
-      #        - TESTING_PROFILE=workflow-integration-tests
-      #    - stage: coverage
-      #      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      #      env:
-      #        - TESTING_PROFILE=other-integration-tests
+    - stage: coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=tool-integration-tests
+    - stage: coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=workflow-integration-tests
+    - stage: coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=other-integration-tests
         
 # not feeling the bang-for-the-buck for these, running only in release branch         
     - stage: coverage
