@@ -528,9 +528,11 @@ public class WorkflowIT extends BaseIT {
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
+        workflowByPathGithub.setNextVersionName("veryBadName");
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
+        assertNull("User should not have been able to set the next version name", workflowByPathGithub.getNextVersionName());
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
