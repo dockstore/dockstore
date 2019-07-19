@@ -319,10 +319,9 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void updateServiceSync() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("DockstoreTestUser2");
+        final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
