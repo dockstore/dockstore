@@ -236,6 +236,12 @@ public class CRUDClientIT extends BaseIT {
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
         first = dockstoreWorkflow .getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 3, first.get().getSourceFiles().size());
+        assertEquals("Name of the version that was just created should be 3", "3", first.get().getName());
+        // Delete the workflow version and recreate it
+        api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "3");
+        dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
+        first = dockstoreWorkflow .getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
+        assertEquals("Version name should've skipped 3 because it was previously deleted", "4", first.get().getName());
 
         // delete a file
         file2.setContent(null);
