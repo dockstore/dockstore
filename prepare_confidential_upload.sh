@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # this takes the confidential data from the appropriate places in our build directories and puts it all into one folder for uploading to Google Drive
-# warning: do not commit this newly created folder accidentally!
+# warning: do not commit this newly created data folder accidentally!
 set -o errexit
 set -o pipefail
 set -o nounset
