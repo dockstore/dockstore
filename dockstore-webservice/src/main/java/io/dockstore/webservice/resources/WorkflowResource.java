@@ -574,6 +574,8 @@ public class WorkflowResource
      *
      * 2) For all of the users organizations that have the GitHub App installed on all repositories in those organizations,
      * add any services that should be on Dockstore but are not
+     *
+     * 3) For all of the repositories which have the GitHub App installed, add them to Dockstore if they are missing
      * @param user
      * @param organization
      */
@@ -617,9 +619,17 @@ public class WorkflowResource
             }
 
             checkJWT();
-            myOrganizations = getOrganizationsWithGitHubApp(myOrganizations);
+            final Set<String> filteredOrgs = getOrganizationsWithGitHubApp(myOrganizations);
 
-            // TODO: For each organization with install all (myOrganizations), add a service stub for each repository that is not already on Dockstore
+            // Create services for ALL organization repositories
+            repositories.stream().forEach((String repositoryName) -> {
+                String org = repositoryName.split("/")[0];
+                if (filteredOrgs.contains(org)) {
+                    Service service = gitHubSourceCodeRepo.initializeService(repositoryName);
+                    service.getUsers().add(user);
+                    long serviceId = workflowDAO.create(service);
+                }
+            });
         }
     }
 
@@ -630,7 +640,7 @@ public class WorkflowResource
     public Set<String> getOrganizationsWithGitHubApp(Set<String> organizations) {
         Set<String> filteredOrganizations = new HashSet<>();
         organizations.stream().forEach((String organization) -> {
-            String organizationName = getInstallationForOrganization(organization, CacheConfigManager.getJsonWebToken());
+            String organizationName = checkIfOrganizationHasGitHubAppInstall(organization, CacheConfigManager.getJsonWebToken());
             if (organizationName != null) {
                 filteredOrganizations.add(organizationName);
             }
@@ -645,7 +655,7 @@ public class WorkflowResource
      * @param jsonWebToken JWT for GitHub App
      * @return organization name
      */
-    public String getInstallationForOrganization(String organization, String jsonWebToken) {
+    public String checkIfOrganizationHasGitHubAppInstall(String organization, String jsonWebToken) {
         OkHttpClient okHttpClient = new OkHttpClient();
 
         Request request = new Request.Builder()
