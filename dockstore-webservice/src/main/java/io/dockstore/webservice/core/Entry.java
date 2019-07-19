@@ -184,6 +184,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
     private Long topicId;
 
+    @JsonIgnore
     @Column(name = "next_version_name")
     @ApiModelProperty(value = "Name of the next version (applicable to hosted only)")
     private String nextVersionName;
@@ -525,6 +526,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setNextVersionName(String nextVersionName) {
+        if (this.nextVersionName != null && Integer.parseInt(nextVersionName) != Integer.parseInt(this.nextVersionName) + 1) {
+            throw new IllegalArgumentException("Problems setting next version name");
+        }
         this.nextVersionName = nextVersionName;
     }
 }
