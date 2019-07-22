@@ -16,6 +16,7 @@
 package io.dockstore.webservice.languages;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -23,6 +24,8 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.RecommendedLanguageInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 public class ServicePrototypePlugin implements RecommendedLanguageInterface {
 
@@ -39,13 +42,30 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
     @Override
     public VersionTypeValidation validateWorkflowSet(String initialPath, String contents,
         Map<String, Pair<String, GenericFileType>> indexedFiles) {
-        VersionTypeValidation validation = new VersionTypeValidation(true, new HashMap<>());
-        //        for(String line : contents.split("\\r?\\n")) {
-        //            if (!line.startsWith("import") && !line.startsWith("author") && !line.startsWith("description")) {
-        //                validation.setValid(false);
-        //                validation.getMessage().put(initialPath, "unknown keyword");
-        //            }
-        //        }
+
+        Map<String, String> validationMessageObject = new HashMap<>();
+
+        Yaml yaml = new Yaml();
+        List<String> files;
+        boolean isValid = true;
+        try {
+            Map<String, Object> map = yaml.load(contents);
+            Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
+            if (serviceObject == null) {
+                validationMessageObject.put(initialPath, "The key 'service' does not exist.");
+                isValid = false;
+            } else {
+                files = (List<String>)serviceObject.get("files");
+                if (files == null) {
+                    validationMessageObject.put(initialPath, "The key 'files' does not exist.");
+                    isValid = false;
+                }
+            }
+        } catch (YAMLException | ClassCastException ex) {
+            validationMessageObject.put(initialPath, ex.getMessage());
+            isValid = false;
+        }
+        VersionTypeValidation validation = new VersionTypeValidation(isValid, validationMessageObject);
         return validation;
     }
 

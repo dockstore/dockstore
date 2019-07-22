@@ -18,19 +18,27 @@ package io.dockstore.webservice.languages;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.MinimalLanguageInterface;
+import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
+import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_CONFIG;
 
 public class LanguagePluginHandler implements LanguageHandlerInterface {
 
@@ -58,7 +66,57 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return new VersionTypeValidation(true, new HashMap<>());
+        if (minimalLanguageInterface instanceof RecommendedLanguageInterface) {
+            Optional<SourceFile> mainDescriptor = sourcefiles.stream()
+                    .filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+            String content = null;
+            if (mainDescriptor.isPresent()) {
+                content = mainDescriptor.get().getContent();
+            }
+            return ((RecommendedLanguageInterface)minimalLanguageInterface).validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
+        } else {
+            return new VersionTypeValidation(true, new HashMap<>());
+        }
+    }
+
+    /**
+     * Converts a set of sourcesfiles into the generic indexed files
+     * @param sourceFiles set of sourcefiles
+     * @return Generic indexed files mapping
+     */
+    private Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> sourcefilesToIndexedFiles(Set<SourceFile> sourceFiles) {
+        Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> indexedFiles = new HashMap<>();
+
+        for (SourceFile file : sourceFiles) {
+            String content = file.getContent();
+            String absolutePath = file.getAbsolutePath();
+
+            MinimalLanguageInterface.GenericFileType fileType;
+            switch (file.getType()) {
+            case DOCKSTORE_CWL:
+            case DOCKSTORE_WDL:
+            case NEXTFLOW_CONFIG:
+            case NEXTFLOW:
+            case DOCKSTORE_SERVICE_YML:
+            case DOCKSTORE_SERVICE_OTHER:
+            case DOCKSTORE_YML:
+                fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
+                break;
+            case CWL_TEST_JSON:
+            case WDL_TEST_JSON:
+            case NEXTFLOW_TEST_PARAMS:
+            case DOCKSTORE_SERVICE_TEST_JSON:
+                fileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
+                break;
+            default:
+                fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
+                break;
+            }
+
+            Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, fileType);
+            indexedFiles.put(absolutePath, indexedFile);
+        }
+        return indexedFiles;
     }
 
     @Override

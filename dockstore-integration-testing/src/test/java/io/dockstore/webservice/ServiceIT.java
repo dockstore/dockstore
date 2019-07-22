@@ -288,7 +288,6 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void updateServiceNoOrInvalidYml() throws Exception {
-
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -302,17 +301,39 @@ public class ServiceIT extends BaseIT {
 
         // Add version that has no dockstore.yml
         try {
-            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "noYml", installationId);
+            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "no-yml", installationId);
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
         // Add version that has invalid dockstore.yml
-        try {
-            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalidYml", installationId);
-        } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
-        }
+        io.swagger.client.model.Workflow updatedService = client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
+        assertNotNull(updatedService);
+        assertEquals("Should have a new version", 1, updatedService.getWorkflowVersions().size());
+        assertEquals("Should have 1 source file", 1, updatedService.getWorkflowVersions().get(0).getSourceFiles().size());
+        assertFalse("Should not be valid", updatedService.getWorkflowVersions().get(0).isValid());
+    }
+
+    /**
+     * Tests that refresh will only grab the releases
+     */
+    @Test
+    public void updateServiceSync() throws Exception {
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add service
+        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "DockstoreTestUser2", installationId);
+        assertNotNull(service);
+
+        service = client.refresh(service.getId());
+        assertNotNull(service);
+        assertEquals("Should have two new versions (third release has no yaml so do not include)", 2, service.getWorkflowVersions().size());
     }
 
     /**
