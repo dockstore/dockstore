@@ -19,9 +19,8 @@ jdk: openjdk11
 
 env:
   - TESTING_PROFILE=integration-tests
-  global:
-    - MAVEN_OPTS="-Xmx2048m"
-    - JAVA_TOOL_OPTIONS="-Xmx2048m"
+  - MAVEN_OPTS="-Xms512m -Xmx2048m"
+  - JAVA_TOOL_OPTIONS="-Xms512m -Xmx2048m"
 
 jobs:
   include:
