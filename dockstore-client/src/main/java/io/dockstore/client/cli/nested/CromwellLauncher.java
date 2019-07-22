@@ -88,6 +88,9 @@ public class CromwellLauncher extends BaseLauncher {
         List<String> arguments = new ArrayList<>();
         arguments.addAll(Arrays.asList(s));
         arguments.addAll(runCommand);
+        // There are currently issues with Cromwell 44 automatic type detection.  If it's CWL, the flag must be added.
+        // https://github.com/broadinstitute/cromwell/issues/5085
+        // Remove these 3 lines once the type can be detected again.
         if (languageType == DescriptorLanguage.CWL) {
             arguments.addAll(cwlSpecificFlags);
         }
@@ -163,7 +166,7 @@ public class CromwellLauncher extends BaseLauncher {
      */
     private void handleCWLOutputProvisioning(String stdout, String stderr) {
         // Display output information
-        outputIntegrationOutput(zippedEntry.getParentFile().getAbsolutePath(), stdout,
+        outputIntegrationOutput(workingDirectory, stdout,
                 stderr, launcherName);
 
         // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)
