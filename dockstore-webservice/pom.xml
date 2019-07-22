@@ -943,7 +943,6 @@
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <configuration>
                     <excludeFilterFile>src/main/resources/findbugs-exclude.xml</excludeFilterFile>
-                    <maxHeap>2048</maxHeap>
                 </configuration>
             </plugin>
             <plugin>
