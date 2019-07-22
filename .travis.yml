@@ -18,9 +18,7 @@ language: java
 jdk: openjdk11
 
 env:
-  - TESTING_PROFILE=integration-tests
-  - MAVEN_OPTS="-Xms512m -Xmx2048m"
-  - JAVA_TOOL_OPTIONS="-Xms512m -Xmx2048m"
+  - TESTING_PROFILE=integration-tests MAVEN_OPTS="-Xms512m -Xmx2048m" JAVA_TOOL_OPTIONS="-Xms512m -Xmx2048m"
 
 jobs:
   include:
