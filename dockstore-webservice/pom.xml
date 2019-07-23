@@ -92,6 +92,11 @@
             <artifactId>java-semver</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>swagger-java-zenodo-client</artifactId>
+            <version>1.7.0-beta.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>commons-validator</groupId>
             <artifactId>commons-validator</artifactId>
             <version>1.6</version>

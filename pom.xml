@@ -163,6 +163,7 @@
         <module>reports</module>
         <module>openapi-java-wes-client</module>
         <module>swagger-java-discourse-client</module>
+        <module>swagger-java-zenodo-client</module>
     </modules>
 
 
