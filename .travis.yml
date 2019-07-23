@@ -18,7 +18,7 @@ language: java
 jdk: openjdk11
 
 env:
-  - TESTING_PROFILE=integration-tests MAVEN_OPTS="-Xms512m -Xmx1500m" JAVA_TOOL_OPTIONS="-Xms512m -Xmx1500m"
+  - TESTING_PROFILE=integration-tests MAVEN_OPTS="-Xmx1500m" JAVA_TOOL_OPTIONS="-Xmx1500m"
 
 jobs:
   include:
@@ -59,7 +59,7 @@ jobs:
     - stage: coverage
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
-        - TESTING_PROFILE=other-integration-tests MAVEN_OPTS="-Xms512m -X1024m" JAVA_TOOL_OPTIONS="-Xms512m -Xmx1024m"
+        - TESTING_PROFILE=other-integration-tests MAVEN_OPTS="-X1024m" JAVA_TOOL_OPTIONS="-Xmx1024m"
         
 # not feeling the bang-for-the-buck for these, running only in release branch         
     - stage: coverage
