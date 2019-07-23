@@ -550,13 +550,17 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        List<Workflow> services = getServices(fetchedUser);
-        EntryVersionHelper.stripContent(services, this.userDAO);
-        return services;
+        return getStrippedServices(fetchedUser);
     }
 
     private List<Workflow> getServices(User user) {
         return user.getEntries().stream().filter(Service.class::isInstance).map(Service.class::cast).collect(Collectors.toList());
+    }
+
+    private List<Workflow> getStrippedServices(User user) {
+        final List<Workflow> services = getServices(user);
+        EntryVersionHelper.stripContent(services, this.userDAO);
+        return services;
     }
 
     private List<Tool> getTools(User user) {
@@ -683,16 +687,46 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @POST
-    @Path("/path/service/sync/")
+    @Path("/{userId}/services/refresh")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Syncs service data with Git accounts.", notes = "Currently only works with GitHub", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser) {
-        User user = userDAO.findById(authUser.getId());
-        workflowResource.syncServicesForUser(user, null);
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Workflow.class, responseContainer = "List")
+    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        final User user = userDAO.findById(authUser.getId());
+        return syncAndGetServices(user, Optional.empty());
+    }
 
-        return getServices(user);
+    @POST
+    @Path("/{userId}/services/{organization}/refresh")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Syncs services with Git accounts for a specified organization.",
+            authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Workflow.class, responseContainer = "List")
+    public List<Workflow> syncUserServicesbyOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+        final User user = checkAndGetUser(authUser, userId);
+        return syncAndGetServices(user, Optional.of(organization));
+    }
+
+    private List<Workflow> syncAndGetServices(User user, Optional<String> organization2) {
+        workflowResource.syncServicesForUser(user, organization2);
+        userDAO.clearCache();
+        return getStrippedServices(userDAO.findById(user.getId()));
+    }
+
+    private User checkAndGetUser(User authUser, Long userId) {
+        checkUser(authUser, userId);
+        // Need to get a User for this Hibernate session
+        final User user = userDAO.findById(userId);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+        return user;
     }
 
     /**

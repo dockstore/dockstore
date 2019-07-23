@@ -1,0 +1,41 @@
+{
+  "id": 222222,
+  "account": {
+    "login": "tuber",
+    "id": 1,
+    "node_id": "MDQ6VXNlcjEwNDkzNDA=",
+    "avatar_url": "https://avatars3.githubusercontent.com/u/333333?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/tuber",
+    "html_url": "https://github.com/tuber",
+    "followers_url": "https://api.github.com/users/tuber/followers",
+    "following_url": "https://api.github.com/users/tuber/following{/other_user}",
+    "gists_url": "https://api.github.com/users/tuber/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/tuber/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/tuber/subscriptions",
+    "organizations_url": "https://api.github.com/users/tuber/orgs",
+    "repos_url": "https://api.github.com/users/tuber/repos",
+    "events_url": "https://api.github.com/users/tuber/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/tuber/received_events",
+    "type": "User",
+    "site_admin": false
+  },
+  "repository_selection": "selected",
+  "access_tokens_url": "https://api.github.com/app/installations/222222/access_tokens",
+  "repositories_url": "https://api.github.com/installation/repositories",
+  "html_url": "https://github.com/settings/installations/222222",
+  "app_id": 11111,
+  "target_id": 333333,
+  "target_type": "User",
+  "permissions": {
+    "contents": "read",
+    "metadata": "read"
+  },
+  "events": [
+    "create",
+    "release"
+  ],
+  "created_at": "2019-07-23T22:46:07.000Z",
+  "updated_at": "2019-07-23T22:46:07.000Z",
+  "single_file_name": null
+}

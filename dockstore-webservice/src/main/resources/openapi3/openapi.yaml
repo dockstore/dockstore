@@ -2001,7 +2001,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -4109,23 +4109,6 @@ paths:
               schema:
                 type: boolean
           description: default response
-  /users/path/service/sync:
-    post:
-      operationId: syncUserServices
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Workflow'
-                type: array
-          description: default response
   /users/starredOrganizations:
     get:
       operationId: getStarredOrganizations
@@ -4526,6 +4509,59 @@ paths:
         schema:
           format: int64
           type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+  /users/{userId}/services/refresh:
+    post:
+      operationId: syncUserServices
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+  /users/{userId}/services/{organization}/refresh:
+    post:
+      operationId: syncUserServicesbyOrganization
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: organization
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':

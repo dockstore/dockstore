@@ -1,0 +1,18 @@
+{
+  "name": ".dockstore.yml",
+  "path": ".dockstore.yml",
+  "sha": "38ae2f082cdcb8ebccc4c9dd73386d19c8882df8",
+  "size": 936,
+  "url": "https://api.github.com/repos/coverbeck/xenahub/contents/.dockstore.yml?ref=master",
+  "html_url": "https://github.com/coverbeck/xenahub/blob/master/.dockstore.yml",
+  "git_url": "https://api.github.com/repos/coverbeck/xenahub/git/blobs/38ae2f082cdcb8ebccc4c9dd73386d19c8882df8",
+  "download_url": "https://raw.githubusercontent.com/coverbeck/xenahub/master/.dockstore.yml",
+  "type": "file",
+  "content": "dmVyc2lvbjogMS4xCnNlcnZpY2U6CiAgdHlwZTogZG9ja2VyLWNvbXBvc2UK\nICBuYW1lOiBVQ1NDIFhlbmEgQnJvd3NlcgogIGF1dGhvcjogVUNTQyBHZW5v\nbWljcyBJbnN0aXR1dGUKICBkZXNjcmlwdGlvbjogfAogICAgVGhlIFVDU0Mg\nWGVuYSBicm93c2VyIGlzIGFuIGV4cGxvcmF0aW9uIHRvb2wgZm9yIHB1Ymxp\nYyBhbmQgcHJpdmF0ZSwKICAgIG11bHRpLW9taWMgYW5kIGNsaW5pY2FsL3Bo\nZW5vdHlwZSBkYXRhLgogICAgSXQgaXMgcmVjb21tZW5kZWQgdGhhdCB5b3Ug\nY29uZmlndXJlIGEgcmV2ZXJzZSBwcm94eSB0byBoYW5kbGUgSFRUUFMKICBm\naWxlczoKICAgICAtIGRvY2tlci1jb21wb3NlLnltbAogICAgIC0gUkVBRE1F\nLm1kCiAgICAgLSBzdGFuZF91cC5zaAogICAgIC0gbG9hZC5zaAogICAgIC0g\ncG9ydC5zaAogICAgIC0gc3RvcC5zaAogICAgIC0geGVuYS1hbGwuanNvbgoK\nICBzY3JpcHRzOgogICAgc3RhcnQ6IHN0YW5kX3VwLnNoCiAgICBwb3N0cHJv\ndmlzaW9uOiBsb2FkLnNoCiAgICBwb3J0OiBwb3J0LnNoCiAgICBzdG9wOiBz\ndG9wLnNoCgogIGVudmlyb25tZW50OgogICAgaHR0cFBvcnQ6CiAgICAgICAg\nZGVmYXVsdDogNzIyMgogICAgICAgIGRlc2NyaXB0aW9uOiBUaGUgaG9zdCdz\nIEhUVFAgcG9ydC4gVGhlIGRlZmF1bHQgaXMgNzIyMi4KCiAgZGF0YToKICAg\nIGRhdGFzZXRfMToKICAgICAgICB0YXJnZXREaXJlY3Rvcnk6IHhlbmEvZmls\nZXMgCiAgICAgICAgZmlsZXM6CiAgICAgICAgICAgIHRzdjoKICAgICAgICAg\nICAgICAgIGRlc2NyaXB0aW9uOiBEYXRhIGZvciBYZW5hIGluIFRTViBmb3Jt\nYXQKICAgICAgICAgICAgbWV0YWRhdGE6CiAgICAgICAgICAgICAgICBkZXNj\ncmlwdGlvbjogVGhlIG1ldGFkYXRhLCBpbiBKU09OIGZvcm1hdCwgdGhhdCBj\nb3JyZXNwb25kcyB0byB0aGUgcHJldmlvdXMgdHN2IGZpbGUK\n",
+  "encoding": "base64",
+  "_links": {
+    "self": "https://api.github.com/repos/coverbeck/xenahub/contents/.dockstore.yml?ref=master",
+    "git": "https://api.github.com/repos/coverbeck/xenahub/git/blobs/38ae2f082cdcb8ebccc4c9dd73386d19c8882df8",
+    "html": "https://github.com/coverbeck/xenahub/blob/master/.dockstore.yml"
+  }
+}

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -244,18 +243,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return
      */
     public Set<String> getMyOrganizations() {
-        Set<String> myOrgs = new HashSet<>();
         try {
             final int pageSize = 30;
-            github.getMyself()
+            return github.getMyself()
                     .listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL)
                     .asList()
                     .stream()
-                    .forEach((GHRepository repository) -> {
-                        String org = repository.getFullName().split("/")[0];
-                        myOrgs.add(org);
-                    });
-            return myOrgs;
+                    .map((GHRepository repository) -> repository.getFullName().split("/")[0])
+                    .collect(Collectors.toSet());
         } catch (IOException e) {
             LOG.error("could not find organizations due to ", e);
             throw new CustomWebApplicationException("could not read organizations from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);

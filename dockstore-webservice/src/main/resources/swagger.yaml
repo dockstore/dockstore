@@ -3693,25 +3693,6 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
-  /users/path/service/sync:
-    post:
-      tags:
-      - "users"
-      summary: "Syncs service data with Git accounts."
-      description: "Currently only works with GitHub"
-      operationId: "syncUserServices"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /users/starredOrganizations:
     get:
       tags:
@@ -4145,6 +4126,61 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+  /users/{userId}/services/refresh:
+    post:
+      tags:
+      - "users"
+      summary: "Syncs service data with Git accounts."
+      description: "Currently only works with GitHub"
+      operationId: "syncUserServices"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+  /users/{userId}/services/{organization}/refresh:
+    post:
+      tags:
+      - "users"
+      summary: "Syncs services with Git accounts for a specified organization."
+      description: ""
+      operationId: "syncUserServicesbyOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organization"
+        in: "path"
+        description: "Organization"
+        required: true
+        type: "string"
       responses:
         200:
           description: "successful operation"
