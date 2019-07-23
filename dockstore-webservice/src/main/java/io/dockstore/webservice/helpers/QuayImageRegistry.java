@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
@@ -46,7 +47,6 @@ import io.swagger.quay.client.api.UserApi;
 import io.swagger.quay.client.model.UserView;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
-import org.codehaus.jackson.map.util.StdDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
