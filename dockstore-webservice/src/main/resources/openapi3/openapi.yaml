@@ -530,9 +530,6 @@ components:
         last_built:
           format: date-time
           type: string
-        last_modified:
-          format: date-time
-          type: string
         name:
           type: string
         output_file_formats:

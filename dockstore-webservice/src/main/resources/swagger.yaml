@@ -6974,12 +6974,6 @@ definitions:
       workingDirectory:
         type: "string"
         position: 18
-      last_modified:
-        type: "string"
-        format: "date-time"
-        position: 19
-        description: "For automated tools: The last time the container backing this\
-          \ tool version was built. For hosted: N/A"
       last_built:
         type: "string"
         format: "date-time"
@@ -7475,10 +7469,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      isChecker:
-        type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      isChecker:
+        type: "boolean"
       last_modified_date:
         type: "string"
         format: "date-time"

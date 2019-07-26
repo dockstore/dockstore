@@ -7156,11 +7156,6 @@ components:
             build on quay.io
         workingDirectory:
           type: string
-        last_modified:
-          type: string
-          format: date-time
-          description: "For automated tools: The last time the container backing this tool
-            version was built. For hosted: N/A"
         last_built:
           type: string
           format: date-time
@@ -7633,10 +7628,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        isChecker:
+          type: boolean
         last_modified_date:
           type: string
           format: date-time
