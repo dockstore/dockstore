@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import java.io.Serializable;
 import java.security.Principal;
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,8 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -142,6 +145,24 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
     private boolean setupComplete = false;
+
+    @Column(columnDefinition = "Text default 'NONE'")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Indicates which version of the TOS the user has accepted")
+    private TOSVersion tosVersion =  TOSVersion.NONE;
+
+    @Column
+    @ApiModelProperty(value = "Time TOS was accepted", position = 15)
+    private Date tosVersionAcceptanceDate;
+
+    @Column(columnDefinition = "Text default 'NONE'")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Indicates which version of the privacy policy the user has accepted")
+    private PrivacyPolicyVersion privacyPolicyVersion =  PrivacyPolicyVersion.NONE;
+
+    @Column
+    @ApiModelProperty(value = "Time privacy policy was accepted", position = 16)
+    private Date privacyPolicyVersionAcceptanceDate;
 
     @Column
     @ApiModelProperty(value = "Set of organizations the user belongs to", required = true, position = 13)
@@ -432,6 +453,42 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     public boolean isBanned() {
         return isBanned;
+    }
+    
+    @JsonProperty
+    public TOSVersion getTOSVersion() {
+        return this.tosVersion;
+    }
+
+    public void setTOSVersion(TOSVersion version) {
+        this.tosVersion = version;
+    }
+
+    @JsonProperty
+    public PrivacyPolicyVersion getPrivacyPolicyVersion() {
+        return this.privacyPolicyVersion;
+    }
+
+    public void setPrivacyPolicyVersion(PrivacyPolicyVersion privacyPolicyVersion) {
+        this.privacyPolicyVersion = privacyPolicyVersion;
+    }
+
+    @JsonProperty
+    public Date getTOSAcceptanceDate() {
+        return this.tosVersionAcceptanceDate;
+    }
+
+    public void setTOSVersionAcceptanceDate(Date date) {
+        this.tosVersionAcceptanceDate = date;
+    }
+
+    @JsonProperty
+    public Date getPrivacyPolicyVersionAcceptanceDate() {
+        return this.privacyPolicyVersionAcceptanceDate;
+    }
+
+    public void setPrivacyPolicyVersionAcceptanceDate(Date date) {
+        this.privacyPolicyVersionAcceptanceDate = date;
     }
 
     @JsonIgnore

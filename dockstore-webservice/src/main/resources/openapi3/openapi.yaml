@@ -530,9 +530,6 @@ components:
         last_built:
           format: date-time
           type: string
-        last_modified:
-          format: date-time
-          type: string
         name:
           type: string
         output_file_formats:
@@ -762,8 +759,28 @@ components:
           type: boolean
         name:
           type: string
+        privacyPolicyVersion:
+          enum:
+          - NONE
+          - PRIVACY_POLICY_VERSION_2_5
+          type: string
+        privacyPolicyVersionAcceptanceDate:
+          format: date-time
+          type: string
         setupComplete:
           type: boolean
+        tosacceptanceDate:
+          format: date-time
+          type: string
+        tosversion:
+          enum:
+          - NONE
+          - TOS_VERSION_1
+          type: string
+        tosversionAcceptanceDate:
+          format: date-time
+          type: string
+          writeOnly: true
         userProfiles:
           additionalProperties:
             $ref: '#/components/schemas/Profile'
@@ -3371,7 +3388,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4361,7 +4378,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getSpecificUser
       parameters:
       - in: path
         name: userId

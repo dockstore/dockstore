@@ -4,31 +4,30 @@ package io.dockstore.common
 import java.nio.file.{Files, Paths}
 import java.util
 
+import cats.syntax.validated._
 import com.typesafe.config.ConfigFactory
+import common.Checked
+import common.validation.Checked._
 import common.validation.ErrorOr.ErrorOr
 import cromwell.core.path.DefaultPathBuilder
 import cromwell.languages.LanguageFactory
-import cromwell.languages.util.ImportResolver.{DirectoryResolver, HttpResolver, ImportResolver, ResolvedImportBundle}
-import languages.wdl.draft3.WdlDraft3LanguageFactory
-import wdl.draft3.parser.WdlParser
-import wom.executable.WomBundle
-import cats.syntax.validated._
-import common.Checked
-import common.validation.Checked._
 import cromwell.languages.util.ImportResolver
+import cromwell.languages.util.ImportResolver.{DirectoryResolver, HttpResolver, ImportResolver, ResolvedImportBundle}
 import languages.wdl.biscayne.WdlBiscayneLanguageFactory
 import languages.wdl.draft2.WdlDraft2LanguageFactory
-
-import scala.collection.JavaConverters._
-import scala.util.Try
-import spray.json._
+import languages.wdl.draft3.WdlDraft3LanguageFactory
 import spray.json.DefaultJsonProtocol._
+import spray.json._
+import wdl.draft3.parser.WdlParser
 import wom.callable.{CallableTaskDefinition, WorkflowDefinition}
+import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph.{ExternalGraphInputNode, OptionalGraphInputNode, OptionalGraphInputNodeWithDefault, RequiredGraphInputNode}
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
 
 import scala.collection.JavaConverters
+import scala.collection.JavaConverters._
+import scala.util.Try
 
 
 /**

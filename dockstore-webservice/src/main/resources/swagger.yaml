@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-alpha.13-SNAPSHOT"
+  version: "1.7.0-beta.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3988,7 +3988,7 @@ paths:
       - "users"
       summary: "Get user by id."
       description: ""
-      operationId: "getUser"
+      operationId: "getSpecificUser"
       produces:
       - "application/json"
       parameters:
@@ -6997,12 +6997,6 @@ definitions:
       workingDirectory:
         type: "string"
         position: 18
-      last_modified:
-        type: "string"
-        format: "date-time"
-        position: 19
-        description: "For automated tools: The last time the container backing this\
-          \ tool version was built. For hosted: N/A"
       last_built:
         type: "string"
         format: "date-time"
@@ -7366,6 +7360,21 @@ definitions:
           \ (GitHub, Google, etc)"
         additionalProperties:
           $ref: "#/definitions/Profile"
+      privacyPolicyVersion:
+        type: "string"
+        description: "Indicates which version of the privacy policy the user has accepted"
+        enum:
+        - "NONE"
+        - "PRIVACY_POLICY_VERSION_2_5"
+      tosversion:
+        type: "string"
+        enum:
+        - "NONE"
+        - "TOS_VERSION_1"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7390,6 +7399,11 @@ definitions:
         type: "boolean"
         position: 12
         description: "Indicates whether this user has accepted their username"
+      privacyPolicyVersionAcceptanceDate:
+        type: "string"
+        format: "date-time"
+        position: 16
+        description: "Time privacy policy was accepted"
     description: "End users for the dockstore"
   Validation:
     type: "object"

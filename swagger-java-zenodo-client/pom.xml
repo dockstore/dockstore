@@ -17,9 +17,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>swagger-java-quay-client</artifactId>
+    <artifactId>swagger-java-zenodo-client</artifactId>
     <packaging>jar</packaging>
-    <name>swagger-java-quay-client</name>
+    <name>swagger-java-zenodo-client</name>
 
     <parent>
         <version>1.7.0-beta.1-SNAPSHOT</version>
@@ -39,44 +39,24 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/discovery.formatted.json</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/zenodo-1.0.0-swagger-2.0.yaml</inputSpec>
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
-                                <library>jersey2</library>
-                                <dateLibrary>java8</dateLibrary>
-                                <invokerPackage>io.swagger.quay.client</invokerPackage>
-                                <modelPackage>io.swagger.quay.client.model</modelPackage>
-                                <apiPackage>io.swagger.quay.client.api</apiPackage>
+                                <dateLibrary>legacy</dateLibrary>
+                                <java8>true</java8>
+                                <invokerPackage>io.swagger.zenodo.client</invokerPackage>
+                                <modelPackage>io.swagger.zenodo.client.model</modelPackage>
+                                <apiPackage>io.swagger.zenodo.client.api</apiPackage>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                <useRuntimeException>true</useRuntimeException>
                             </configOptions>
                             <generateModelTests>false</generateModelTests>
                             <generateApiTests>false</generateApiTests>
                             <generateModelDocumentation>false</generateModelDocumentation>
                             <generateApiDocumentation>false</generateApiDocumentation>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>kill-malformed-client</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                        <configuration>
-                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
-                            <filesets>
-                                <fileset>
-                                    <directory>target/generated-sources/swagger/src/gen/java/main/io/swagger/quay/client/api</directory>
-                                    <includes>
-                                        <include>ManifestApi.java</include>
-                                        <include>SecscanApi.java</include>
-                                    </includes>
-                                </fileset>
-                            </filesets>
+                            <withXml>true</withXml>
+                            <library>jersey2</library>
                         </configuration>
                     </execution>
                 </executions>
@@ -150,20 +130,6 @@
                             <outputDirectory>${project.build.directory}/lib</outputDirectory>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>analyze</id>
-                        <goals>
-                            <goal>analyze-only</goal>
-                        </goals>
-                        <configuration>
-                            <failOnWarning>true</failOnWarning>
-                            <outputXML>true</outputXML>
-                            <ignoreNonCompile>true</ignoreNonCompile>
-                            <usedDependencies>
-                                <usedDependency>com.fasterxml.jackson.core:jackson-core</usedDependency>
-                            </usedDependencies>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
 
@@ -231,9 +197,6 @@
         </plugins>
     </build>
     <dependencies>
-        <!-- dependencies are needed for the client being generated -->
-
-
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
@@ -248,37 +211,22 @@
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+            <version>${jersey-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
-            <version>2.25.1</version>
+            <version>${jersey-version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.jaxrs</groupId>
                     <artifactId>jackson-jaxrs-base</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                    <artifactId>jackson-jaxrs-json-provider</artifactId>
-                </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-multipart</artifactId>
         </dependency>
 
         <!-- JSON processing: jackson -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
@@ -288,6 +236,7 @@
                     <artifactId>jackson-annotations</artifactId>
                 </exclusion>
             </exclusions>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -298,20 +247,22 @@
                     <artifactId>jackson-annotations</artifactId>
                 </exclusion>
             </exclusions>
+            <version>${jackson.version}</version>
         </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-common</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+            <version>2.25.1</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
         </dependency>
     </dependencies>
 </project>

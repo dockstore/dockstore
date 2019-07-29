@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
@@ -44,6 +45,7 @@ import io.swagger.quay.client.ApiException;
 import io.swagger.quay.client.Configuration;
 import io.swagger.quay.client.api.UserApi;
 import io.swagger.quay.client.model.UserView;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,6 +95,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 final String s = gson.toJson(stringMapEntry.getValue());
                 try {
                     final Tag tag = objectMapper.readValue(s, Tag.class);
+                    insertQuayLastModifiedIntoLastBuilt(stringMapEntry, tag);
                     tags.add(tag);
                 } catch (IOException ex) {
                     LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
@@ -105,6 +108,18 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         updateTagsWithBuildInformation(repository, tags, tool);
 
         return tags;
+    }
+
+    private void insertQuayLastModifiedIntoLastBuilt(Entry<String, Map<String, String>> stringMapEntry, Tag tag) {
+        String lastModified = "last_modified";
+        String lastModifiedValue = stringMapEntry.getValue().get(lastModified);
+        if (StringUtils.isNotBlank(lastModifiedValue)) {
+            try {
+                tag.setLastBuilt(new StdDateFormat().parse(lastModifiedValue));
+            } catch (ParseException ex) {
+                LOG.error("Error reading " + lastModified, ex);
+            }
+        }
     }
 
     @Override

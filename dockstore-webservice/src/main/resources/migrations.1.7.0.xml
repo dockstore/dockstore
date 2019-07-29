@@ -267,4 +267,18 @@
             <column defaultValue='f' name="isbanned" type="bool"/>
         </addColumn>
     </changeSet>
+    <changeSet author="natalieperez (generated)" id="privacy policy and TOS">
+        <addColumn tableName="enduser">
+            <column defaultValue="NONE" name="privacypolicyversion" type="text"/>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column defaultValue="NONE" name="tosversion" type="text"/>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="privacypolicyversionacceptancedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="tosversionacceptancedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

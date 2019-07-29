@@ -24,9 +24,7 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
@@ -202,12 +200,10 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     @JsonProperty
-    @JsonGetter("last_modified")
     public Date getLastBuilt() {
         return lastBuilt;
     }
 
-    @JsonSetter("last_modified")
     public void setLastBuilt(Date lastBuilt) {
         this.lastBuilt = lastBuilt;
     }

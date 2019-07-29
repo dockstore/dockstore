@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.7.0-alpha.13-SNAPSHOT</version>
+    <version>1.7.0-beta.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -163,6 +163,7 @@
         <module>reports</module>
         <module>openapi-java-wes-client</module>
         <module>swagger-java-discourse-client</module>
+        <module>swagger-java-zenodo-client</module>
     </modules>
 
 
@@ -684,11 +685,6 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp-urlconnection</artifactId>
                 <version>${okhttp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-dbutils</groupId>
-                <artifactId>commons-dbutils</artifactId>
-                <version>1.7</version>
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/com.google.oauth-client/google-oauth-client -->
@@ -1327,6 +1323,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
+                <argLine>-Xmx2048m -Xms2048m</argLine>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
             </properties>
         </profile>
