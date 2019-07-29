@@ -263,12 +263,15 @@ public class UserResource implements AuthenticatedResourceInterface {
     @RolesAllowed("admin")
     @ApiOperation(value = "Terminate user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class, nickname = "terminateUser")
     public boolean terminateUser(
-        @ApiParam(hidden = true) @Auth User authUser,  @ApiParam("User to return") @PathParam("userId") long targetUserId) {
+        @ApiParam(hidden = true) @Auth User authUser,  @ApiParam("User to ban") @PathParam("userId") long targetUserId) {
         // note this terminates the user but leaves behind a tombstone to prevent re-login
         checkUser(authUser, authUser.getId());
 
         User targetUser = userDAO.findById(targetUserId);
-        deleteSelfFromEntries(targetUser);
+        if (targetUser == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_BAD_REQUEST);
+        }
+
         invalidateTokensForUser(targetUser);
 
         targetUser.setBanned(true);
