@@ -700,7 +700,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @POST
-    @Path("/{userId}/services/{organization}/refresh")
+    @Path("/{userId}/services/{organizationName}/refresh")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Syncs services with Git accounts for a specified organization.",
@@ -708,7 +708,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             response = Workflow.class, responseContainer = "List")
     public List<Workflow> syncUserServicesbyOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+            @ApiParam(value = "Organization name", required = true) @PathParam("organizationName") String organization) {
         final User user = checkAndGetUser(authUser, userId);
         return syncAndGetServices(user, Optional.of(organization));
     }

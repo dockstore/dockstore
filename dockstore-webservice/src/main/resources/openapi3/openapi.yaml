@@ -2001,7 +2001,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -2989,7 +2989,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /entries/{id}/collections:
     get:
@@ -3282,7 +3282,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /organizations/name/{name}:
     get:
@@ -4547,7 +4547,7 @@ paths:
                   $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
-  /users/{userId}/services/{organization}/refresh:
+  /users/{userId}/services/{organizationName}/refresh:
     post:
       operationId: syncUserServicesbyOrganization
       parameters:
@@ -4558,7 +4558,7 @@ paths:
           format: int64
           type: integer
       - in: path
-        name: organization
+        name: organizationName
         required: true
         schema:
           type: string
@@ -4831,7 +4831,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
