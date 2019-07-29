@@ -4144,7 +4144,7 @@ paths:
       parameters:
         - name: userId
           in: path
-          description: User to return
+          description: User to terminate
           required: true
           schema:
             type: integer

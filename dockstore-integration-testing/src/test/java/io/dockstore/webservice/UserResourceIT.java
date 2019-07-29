@@ -30,6 +30,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -43,6 +44,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests operations frrom the UserResource
@@ -111,13 +113,12 @@ public class UserResourceIT extends BaseIT {
 
         assertTrue(aBoolean);
 
-        boolean shouldFail = false;
         try {
             userUserWebClient.getUser();
+            fail("should be unreachable, user must not have been banned properly");
         } catch (ApiException e) {
-            shouldFail = true;
+            assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
-        assertTrue(shouldFail);
     }
 
     /**
