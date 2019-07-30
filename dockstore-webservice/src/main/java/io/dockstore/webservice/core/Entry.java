@@ -183,8 +183,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
     private Long topicId;
-
-    @JsonIgnore
+    
     @Column(name = "next_version_name")
     @ApiModelProperty(value = "Name of the next version (applicable to hosted only)")
     private String nextVersionName;
