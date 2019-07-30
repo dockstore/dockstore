@@ -3388,7 +3388,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4290,6 +4290,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: default response
+  /users/user/{userId}:
+    delete:
+      operationId: terminateUser
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: boolean
+          description: default response
   /users/user/{userId}/limits:
     get:
       operationId: getUserLimits
@@ -4756,7 +4778,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:

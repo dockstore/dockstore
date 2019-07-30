@@ -261,6 +261,12 @@
             create unique index if not exists partial_service_name on service (sourcecontrol, organization, repository) where workflowname is null
         </sql>
     </changeSet>
+
+    <changeSet author="dyuen" id="bannable_users">
+        <addColumn tableName="enduser">
+            <column defaultValue='f' name="isbanned" type="bool"/>
+        </addColumn>
+    </changeSet>
     <changeSet author="natalieperez (generated)" id="privacy policy and TOS">
         <addColumn tableName="enduser">
             <column defaultValue="NONE" name="privacypolicyversion" type="text"/>
