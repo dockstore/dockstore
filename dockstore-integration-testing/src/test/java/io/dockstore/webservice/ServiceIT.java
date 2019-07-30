@@ -38,7 +38,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -53,7 +52,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -92,8 +90,8 @@ public class ServiceIT extends BaseIT {
         this.userDAO = new UserDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
+        testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
+        testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
 
         // used to allow us to use tokenDAO outside of the web service
         this.session = application.getHibernate().getSessionFactory().openSession();
@@ -164,10 +162,10 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void testGitHubAppEndpoints() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -186,7 +184,7 @@ public class ServiceIT extends BaseIT {
         assertEquals("Should have 2 users", 2, service.getUsers().size());
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
 
         // Test user endpoints
@@ -202,10 +200,10 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceNoUser() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -219,7 +217,7 @@ public class ServiceIT extends BaseIT {
         }
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be no matching service", 0, count);
     }
 
@@ -228,10 +226,10 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceDuplicate() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -247,7 +245,7 @@ public class ServiceIT extends BaseIT {
         }
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
     }
 
@@ -256,10 +254,10 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void updateServiceIncorrectTag() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -277,11 +275,11 @@ public class ServiceIT extends BaseIT {
         }
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
 
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", long.class);
         Assert.assertEquals("there should be no matching tag", 0, count2);
     }
 
@@ -290,10 +288,8 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void updateServiceNoOrInvalidYml() throws Exception {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
@@ -305,17 +301,39 @@ public class ServiceIT extends BaseIT {
 
         // Add version that has no dockstore.yml
         try {
-            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "noYml", installationId);
+            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "no-yml", installationId);
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
         // Add version that has invalid dockstore.yml
-        try {
-            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalidYml", installationId);
-        } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
-        }
+        io.swagger.client.model.Workflow updatedService = client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
+        assertNotNull(updatedService);
+        assertEquals("Should have a new version", 1, updatedService.getWorkflowVersions().size());
+        assertEquals("Should have 1 source file", 1, updatedService.getWorkflowVersions().get(0).getSourceFiles().size());
+        assertFalse("Should not be valid", updatedService.getWorkflowVersions().get(0).isValid());
+    }
+
+    /**
+     * Tests that refresh will only grab the releases
+     */
+    @Test
+    public void updateServiceSync() throws Exception {
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add service
+        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "DockstoreTestUser2", installationId);
+        assertNotNull(service);
+
+        service = client.refresh(service.getId());
+        assertNotNull(service);
+        assertEquals("Should have two new versions (third release has no yaml so do not include)", 2, service.getWorkflowVersions().size());
     }
 
     /**
@@ -324,7 +342,7 @@ public class ServiceIT extends BaseIT {
     @Test
     public void createServiceNoGitHubRepo() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com");
+        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service-foo-bar-not-real";

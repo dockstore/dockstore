@@ -72,7 +72,7 @@ public class SearchResourceIT extends BaseIT {
 
     @Test
     public void testSearchOperations() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
 
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         // update the search index
@@ -107,7 +107,7 @@ public class SearchResourceIT extends BaseIT {
      */
     @Test
     public void testElasticSearchHealthCheck() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         MetadataApi metadataApi = new MetadataApi(webClient);
 

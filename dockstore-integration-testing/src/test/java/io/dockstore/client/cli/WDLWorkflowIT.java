@@ -87,7 +87,7 @@ public class WDLWorkflowIT extends BaseIT {
      */
     @Test
     public void testRunningCheckerWDLWorkflow() throws IOException {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME);
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), UNIFIED_WORKFLOW_REPO, "/checker.wdl", "", "wdl", "/md5sum.wdl.json");
@@ -117,7 +117,7 @@ public class WDLWorkflowIT extends BaseIT {
      */
     @Test
     public void testEntryConvertWDLWithSecondaryDescriptors() {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME);
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), SKYLAB_WORKFLOW_REPO,
             "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl", "", "wdl", null);
@@ -132,7 +132,7 @@ public class WDLWorkflowIT extends BaseIT {
      */
     @Test
     public void testEntryConvertCheckerWDLWithSecondaryDescriptors() {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME);
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // register underlying workflow
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), SKYLAB_WORKFLOW_REPO,

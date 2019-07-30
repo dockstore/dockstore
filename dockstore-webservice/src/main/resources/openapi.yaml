@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.7.0-alpha.11-SNAPSHOT
+  version: 1.7.0-beta.1-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -4134,6 +4134,30 @@ paths:
                 $ref: "#/components/schemas/User"
       security:
         - BEARER: []
+  "/users/user/{userId}":
+    delete:
+      tags:
+        - users
+      summary: Terminate user if possible.
+      description: ""
+      operationId: terminateUser
+      parameters:
+        - name: userId
+          in: path
+          description: User to terminate
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: boolean
+      security:
+        - BEARER: []
   "/users/user/{userId}/limits":
     get:
       tags:
@@ -4217,7 +4241,7 @@ paths:
         - users
       summary: Get user by id.
       description: ""
-      operationId: getUser
+      operationId: getSpecificUser
       parameters:
         - name: userId
           in: path
@@ -7156,11 +7180,6 @@ components:
             build on quay.io
         workingDirectory:
           type: string
-        last_modified:
-          type: string
-          format: date-time
-          description: "For automated tools: The last time the container backing this tool
-            version was built. For hosted: N/A"
         last_built:
           type: string
           format: date-time
@@ -7511,6 +7530,21 @@ components:
             (GitHub, Google, etc)
           additionalProperties:
             $ref: "#/components/schemas/Profile"
+        privacyPolicyVersion:
+          type: string
+          description: Indicates which version of the privacy policy the user has accepted
+          enum:
+            - NONE
+            - PRIVACY_POLICY_VERSION_2_5
+        tosversion:
+          type: string
+          enum:
+            - NONE
+            - TOS_VERSION_1
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -7528,6 +7562,10 @@ components:
         setupComplete:
           type: boolean
           description: Indicates whether this user has accepted their username
+        privacyPolicyVersionAcceptanceDate:
+          type: string
+          format: date-time
+          description: Time privacy policy was accepted
       description: End users for the dockstore
     Validation:
       type: object

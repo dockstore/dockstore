@@ -88,7 +88,7 @@ public class CRUDClientIT extends BaseIT {
 
     @Test
     public void testToolCreation(){
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
@@ -115,7 +115,7 @@ public class CRUDClientIT extends BaseIT {
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void testToolEditing() throws IOException {
-        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
+        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         SourceFile descriptorFile = new SourceFile();
         descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
@@ -158,7 +158,7 @@ public class CRUDClientIT extends BaseIT {
         assertEquals("all versions do not seem to have editors", count, dockstoreTool.getWorkflowVersions().size());
 
         // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publically
-        ContainersApi otherUserApi = new ContainersApi(getWebClient(USER_1_USERNAME));
+        ContainersApi otherUserApi = new ContainersApi(getWebClient(USER_1_USERNAME, testingPostgres));
         boolean thrownException = false;
         try {
             otherUserApi.getTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile);
@@ -168,7 +168,7 @@ public class CRUDClientIT extends BaseIT {
         assertTrue(thrownException);
 
         // Publish tool
-        ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME));
+        ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         PublishRequest pub = SwaggerUtility.createPublishRequest(true);
         containersApi.publish(dockstoreTool.getId(), pub);
 
@@ -179,7 +179,7 @@ public class CRUDClientIT extends BaseIT {
 
     @Test
     public void testWorkflowCreation(){
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", null, CWL.getLowerShortName(), null, null);
         assertNotNull("workflow was not created properly", hostedTool);
@@ -205,7 +205,7 @@ public class CRUDClientIT extends BaseIT {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     public void testWorkflowEditing() throws IOException {
-        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
+        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, CWL.getLowerShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
@@ -258,7 +258,7 @@ public class CRUDClientIT extends BaseIT {
         assertEquals("all versions do not seem to have editors", count, dockstoreWorkflow.getWorkflowVersions().size());
 
         // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publically
-        WorkflowsApi otherUserApi = new WorkflowsApi(getWebClient(USER_1_USERNAME));
+        WorkflowsApi otherUserApi = new WorkflowsApi(getWebClient(USER_1_USERNAME, testingPostgres));
         boolean thrownException = false;
         try {
             otherUserApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
@@ -268,7 +268,7 @@ public class CRUDClientIT extends BaseIT {
         assertTrue(thrownException);
 
         // Publish workflow
-        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME));
+        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         PublishRequest pub = SwaggerUtility.createPublishRequest(true);
         workflowsApi.publish(dockstoreWorkflow.getId(), pub);
 
@@ -292,7 +292,7 @@ public class CRUDClientIT extends BaseIT {
 
     @Test
     public void testWorkflowEditingWithAuthorMetadataCWL() throws IOException {
-        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
+        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
@@ -304,7 +304,7 @@ public class CRUDClientIT extends BaseIT {
     }
     @Test
     public void testWorkflowEditingWithAuthorMetadataWDL() throws IOException {
-        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
+        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("metadata_example2.wdl")), StandardCharsets.UTF_8));
@@ -320,7 +320,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testToolCreationInvalidDescriptorType(){
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", "anotherName");
@@ -336,7 +336,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testRefreshingHostedTool() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
@@ -351,7 +351,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testUpdatingHostedTool() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
@@ -365,7 +365,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testUpdatingDefaultVersionHostedTool() throws IOException {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
 
@@ -394,7 +394,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testUpdatingDefaultVersionHostedWorkflow() throws IOException {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
 
@@ -418,7 +418,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testAddingTestParameterFilesHostedTool() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
@@ -431,7 +431,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testDeletingTestParameterFilesHostedTool() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
@@ -444,7 +444,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testWorkflowCreationInvalidDescriptorType(){
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         api.createHostedWorkflow("awesomeToolCwl", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         api.createHostedWorkflow("awesomeToolWdl", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
@@ -457,7 +457,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testRefreshingHostedWorkflow() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
@@ -471,7 +471,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testRestubHostedWorkflow() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
@@ -484,7 +484,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testUpdatingHostedWorkflow() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
@@ -498,7 +498,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testUpdatingWorkflowPathHostedWorkflow() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
@@ -512,7 +512,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testAddingTestParameterFilesHostedWorkflow() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
@@ -525,7 +525,7 @@ public class CRUDClientIT extends BaseIT {
      */
     @Test
     public void testDeletingTestParameterFilesHostedWorkflow() {
-        ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);

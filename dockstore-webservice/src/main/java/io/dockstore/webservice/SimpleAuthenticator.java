@@ -60,6 +60,9 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         final Token token = dao.findByContent(credentials);
         if (token != null) { // It's a valid Dockstore token
             User byId = userDAO.findById(token.getUserId());
+            if (byId.isBanned()) {
+                return Optional.empty();
+            }
             initializeUserProfiles(byId);
             return Optional.of(byId);
         } else { // It might be a Google token
@@ -73,7 +76,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
                         user.setTemporaryCredential(credentials);
                         initializeUserProfiles(user);
                         return Optional.of(user);
-                    })
+                    }).filter(user -> !user.get().isBanned())
                     .orElse(Optional.empty());
         }
     }

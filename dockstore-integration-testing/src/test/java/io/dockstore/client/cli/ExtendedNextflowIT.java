@@ -57,7 +57,7 @@ public class ExtendedNextflowIT extends BaseIT {
     @Test
     public void testNextflowSecondaryFiles() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
-        final ApiClient webClient = getWebClient(USER_1_USERNAME);
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -94,7 +94,7 @@ public class ExtendedNextflowIT extends BaseIT {
     @Test
     public void testBitbucketNextflowWorkflow() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
@@ -125,7 +125,7 @@ public class ExtendedNextflowIT extends BaseIT {
     @Test
     public void testBitbucketBinaryWorkflow() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();

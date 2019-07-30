@@ -69,6 +69,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
@@ -85,7 +86,6 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
-    private static final String PERMISSIONS_NOTE = "This is not tied into PermissionsInterface but could be";
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -127,7 +127,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}")
-    @ApiOperation(value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    @Operation(operationId = "getSpecificUser")
+    @ApiOperation(nickname = "getSpecificUser", value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(authUser, userId);
         User user = userDAO.findById(userId);
@@ -141,7 +142,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/user")
-    @ApiOperation(value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    @Operation(operationId = "getUser")
+    @ApiOperation(nickname = "getUser", value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         Hibernate.initialize(foundUser.getUserProfiles());
@@ -219,6 +221,23 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.authorizer.selfDestruct(user);
 
         // Delete entries for which this user is the only user
+        deleteSelfFromEntries(user);
+
+        invalidateTokensForUser(user);
+
+        return userDAO.delete(user);
+    }
+
+    private void invalidateTokensForUser(User user) {
+        List<Token> byUserId = tokenDAO.findByUserId(user.getId());
+        for (Token token : byUserId) {
+            tokenDAO.delete(token);
+            // invalidate tokens from caching authenticator
+            cachingAuthenticator.invalidate(token.getContent());
+        }
+    }
+
+    private void deleteSelfFromEntries(User user) {
         user.getEntries().stream()
                 // The getIsPublished() check is arguably redundant as canChangeUsername(), above, already checks, but just in case...
                 .filter(e -> e.getUsers().size() == 1 && !e.getIsPublished())
@@ -235,15 +254,28 @@ public class UserResource implements AuthenticatedResourceInterface {
                     }
                     entryDAO.delete(entry);
                 });
+    }
 
-        List<Token> byUserId = tokenDAO.findByUserId(user.getId());
-        for (Token token : byUserId) {
-            tokenDAO.delete(token);
-            // invalidate tokens from caching authenticator
-            cachingAuthenticator.invalidate(token.getContent());
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/user/{userId}")
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Terminate user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class, nickname = "terminateUser")
+    public boolean terminateUser(
+        @ApiParam(hidden = true) @Auth User authUser,  @ApiParam("User to terminate") @PathParam("userId") long targetUserId) {
+        // note this terminates the user but leaves behind a tombstone to prevent re-login
+        checkUser(authUser, authUser.getId());
+
+        User targetUser = userDAO.findById(targetUserId);
+        if (targetUser == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_BAD_REQUEST);
         }
 
-        return userDAO.delete(user);
+        invalidateTokensForUser(targetUser);
+
+        targetUser.setBanned(true);
+        return true;
     }
 
     @GET

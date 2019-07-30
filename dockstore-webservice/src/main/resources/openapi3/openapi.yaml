@@ -530,9 +530,6 @@ components:
         last_built:
           format: date-time
           type: string
-        last_modified:
-          format: date-time
-          type: string
         name:
           type: string
         output_file_formats:
@@ -762,8 +759,28 @@ components:
           type: boolean
         name:
           type: string
+        privacyPolicyVersion:
+          enum:
+          - NONE
+          - PRIVACY_POLICY_VERSION_2_5
+          type: string
+        privacyPolicyVersionAcceptanceDate:
+          format: date-time
+          type: string
         setupComplete:
           type: boolean
+        tosacceptanceDate:
+          format: date-time
+          type: string
+        tosversion:
+          enum:
+          - NONE
+          - TOS_VERSION_1
+          type: string
+        tosversionAcceptanceDate:
+          format: date-time
+          type: string
+          writeOnly: true
         userProfiles:
           additionalProperties:
             $ref: '#/components/schemas/Profile'
@@ -3371,7 +3388,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
@@ -4179,7 +4196,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -4273,6 +4290,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: default response
+  /users/user/{userId}:
+    delete:
+      operationId: terminateUser
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: boolean
+          description: default response
   /users/user/{userId}/limits:
     get:
       operationId: getUserLimits
@@ -4339,7 +4378,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getSpecificUser
       parameters:
       - in: path
         name: userId
@@ -4765,7 +4804,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
