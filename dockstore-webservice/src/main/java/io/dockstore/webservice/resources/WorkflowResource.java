@@ -1092,7 +1092,7 @@ public class WorkflowResource
      * @param workflow    workflow for which DOI is registered
      * @param workflowVersion workflow version for which DOI is registered
      */
-    private void provisionWorkflowVersionUploadFiles(ApiClient zendoClient, Deposit returnDeposit,
+    private File provisionWorkflowVersionUploadFiles(ApiClient zendoClient, Deposit returnDeposit,
             int depositionID, Workflow workflow, WorkflowVersion workflowVersion) {
         // Creating a new version copies the files from the previous version
         // We want to delete these since we will upload a new set of files
@@ -1108,13 +1108,14 @@ public class WorkflowResource
         // Add workflow version source files as a zip to the DOI upload deposit
         // Borrow code from getWorkflowZip
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-        java.nio.file.Path path = Paths.get(workflowVersion.getWorkingDirectory());
+        java.nio.file.Path path = Paths.get(System.getProperty("java.io.tmpdir"));
         if (sourceFiles == null || sourceFiles.size() == 0) {
             LOG.warn("No source files found to zip when creating DOI");
             throw new CustomWebApplicationException("No source files found to"
                     + " upload when creating DOI. Zenodo requires at lease one file"
                     + " to be uploaded in order to create a DOI.", HttpStatus.SC_BAD_REQUEST);
         } else {
+            // TODO: do we need a completely unique filename?
             String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
             OutputStream outputStream;
             try {
@@ -1130,6 +1131,9 @@ public class WorkflowResource
             writeStreamAsZip(sourceFiles, outputStream, path);
             java.nio.file.Path zipPath = Paths.get(fileName);
             File zipFile = zipPath.toFile();
+            // Delete the file at least when the program stops; we will try to
+            // delete it right after upload in a deposit to Zenodo anyway
+            zipFile.deleteOnExit();
 
             try {
                 filesApi.createFile(depositionID, zipFile, fileName);
@@ -1138,6 +1142,8 @@ public class WorkflowResource
                 throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
                         + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
+
+            return zipFile;
         }
     }
 
@@ -1287,10 +1293,15 @@ public class WorkflowResource
             }
         }
 
-        provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit,
+        File uploadFile = provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit,
                 depositionID, workflow, workflowVersion);
 
         putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
+
+        // Delete the zip file that contains the workflow files after it has been uploaded
+        // TODO: will the file be deleted by the deleteOnExit call in provisionWorkflowVersionUploadFiles
+        //  if putDepositionOnZenodo throws an exception?
+        uploadFile.delete();
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
