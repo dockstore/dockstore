@@ -1106,38 +1106,50 @@ public class WorkflowResource
         }
 
         // Add workflow version source files as a zip to the DOI upload deposit
-        // Borrow code from getWorkflowZip
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-        java.nio.file.Path path = Paths.get(System.getProperty("java.io.tmpdir"));
         if (sourceFiles == null || sourceFiles.size() == 0) {
             LOG.warn("No source files found to zip when creating DOI");
             throw new CustomWebApplicationException("No source files found to"
                     + " upload when creating DOI. Zenodo requires at lease one file"
                     + " to be uploaded in order to create a DOI.", HttpStatus.SC_BAD_REQUEST);
         } else {
-            // TODO: do we need a completely unique filename?
-            String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
             OutputStream outputStream;
+            String versionOfWorkflow = workflowVersion.getName();
+            String filePrefix = workflow.getWorkflowPath().replaceAll("/", "-")
+                    + "_" + versionOfWorkflow + "_";
+            String fileSuffix = ".zip";
+            File zipFile;
             try {
-                outputStream = new FileOutputStream(fileName);
-            } catch (FileNotFoundException fne) {
-                LOG.error("Could not create file " + fileName
-                        + " outputstream for DOI zip file for upload to Zenodo."
-                        + " Error is " + fne.getMessage(), fne);
-                throw new CustomWebApplicationException("Could not create file " + fileName
-                        + " outputstream for DOI zip file for upload to Zenodo."
-                        + " Error is " + fne.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                zipFile = File.createTempFile(filePrefix, fileSuffix);
+            } catch (IOException e) {
+                LOG.warn("Could not create Zenodo temp upload zip file." + " Error is " + e.getMessage(), e);
+                throw new CustomWebApplicationException("Could not create Zenodo upload temp zip file"
+                        + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
-            writeStreamAsZip(sourceFiles, outputStream, path);
-            java.nio.file.Path zipPath = Paths.get(fileName);
-            File zipFile = zipPath.toFile();
             // Delete the file at least when the program stops; we will try to
             // delete it right after upload in a deposit to Zenodo anyway
             zipFile.deleteOnExit();
 
             try {
-                filesApi.createFile(depositionID, zipFile, fileName);
+                outputStream = new FileOutputStream(zipFile);
+            } catch (FileNotFoundException fne) {
+                zipFile.delete();
+                LOG.error("Could not create file " + zipFile.getAbsolutePath()
+                        + " outputstream for DOI zip file for upload to Zenodo."
+                        + " Error is " + fne.getMessage(), fne);
+                throw new CustomWebApplicationException("Could not create file " + zipFile.getAbsolutePath()
+                        + " outputstream for DOI zip file for upload to Zenodo."
+                        + " Error is " + fne.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+
+            String zipFileDir = zipFile.getParent();
+            java.nio.file.Path zipFilePath = Paths.get(zipFileDir);
+            writeStreamAsZip(sourceFiles, outputStream, zipFilePath);
+
+            try {
+                filesApi.createFile(depositionID, zipFile, zipFile.getName());
             } catch (ApiException e) {
+                zipFile.delete();
                 LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
                         + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
@@ -1194,15 +1206,19 @@ public class WorkflowResource
      * @param depositMetadata Metadata for the workflow version
      * @param depositionID Zenodo's ID for the deposition
      */
-    private void putDepositionOnZenodo(DepositsApi depositApi, DepositMetadata depositMetadata, int depositionID) {
+    private void putDepositionOnZenodo(DepositsApi depositApi, DepositMetadata depositMetadata,
+            int depositionID, File uploadFile) {
         NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
         nestedDepositMetadata.setMetadata(depositMetadata);
         try {
             depositApi.putDeposit(depositionID, nestedDepositMetadata);
         } catch (ApiException e) {
             LOG.error("Could not put deposition metadata on Zenodo. Error is " + e.getMessage(), e);
-            throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo." + " Error is " + e.getMessage(),
-                    HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo."
+                    + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+        } finally {
+            // Delete the zip file that contains the workflow files after it has been uploaded
+            uploadFile.delete();
         }
     }
 
@@ -1296,12 +1312,7 @@ public class WorkflowResource
         File uploadFile = provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit,
                 depositionID, workflow, workflowVersion);
 
-        putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
-
-        // Delete the zip file that contains the workflow files after it has been uploaded
-        // TODO: will the file be deleted by the deleteOnExit call in provisionWorkflowVersionUploadFiles
-        //  if putDepositionOnZenodo throws an exception?
-        uploadFile.delete();
+        putDepositionOnZenodo(depositApi, depositMetadata, depositionID, uploadFile);
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
