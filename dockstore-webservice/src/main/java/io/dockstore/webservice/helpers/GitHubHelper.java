@@ -46,7 +46,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.dockstore.webservice.CustomWebApplicationException;
-import okhttp3.OkHttpClient;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -59,7 +59,6 @@ import static io.dockstore.webservice.resources.TokenResource.JSON_FACTORY;
 public final class GitHubHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubHelper.class);
-    private static final OkHttpClient OK_HTTP_CLIENT = new OkHttpClient(); // OkHttpClient JavaDoc recommends using one instance
 
     private GitHubHelper() {
     }
@@ -104,7 +103,7 @@ public final class GitHubHelper {
      */
     public static String makeGitHubAppRequestAndGetRepositorySelection(Request request) {
         try {
-            okhttp3.Response response = OK_HTTP_CLIENT.newCall(request).execute();
+            okhttp3.Response response = DockstoreWebserviceApplication.okHttpClient.newCall(request).execute();
             JsonElement body = new JsonParser().parse(response.body().string());
             if (body.isJsonObject()) {
                 JsonObject responseBody = body.getAsJsonObject();
