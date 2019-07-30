@@ -84,4 +84,52 @@ public interface SourceControlResourceInterface {
             throw new CustomWebApplicationException(ex.toString(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Refreshes user's token.
+     *
+     * @param refreshUrl e.g. https://sandbox.zenodo.org/oauth/token
+     * @param token
+     * @param client
+     * @param tokenDAO
+     * @param clientID
+     * @param clientSecret
+     * @param payload e.g. "grant_type=refresh_token&refresh_token=" + token.getRefreshToken()
+     * @return the updated token
+     */
+    default Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String clientID,
+            String clientSecret, String payload) {
+
+        try {
+            Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, clientID, clientSecret,
+                    payload);
+
+            if (asString.isPresent()) {
+                String accessToken;
+                String refreshToken;
+                LOG.info(token.getUsername() + ": RESOURCE CALL: {}", refreshUrl);
+                String json = asString.get();
+
+                Gson gson = new Gson();
+                Map<String, String> map = new HashMap<>();
+                map = (Map<String, String>)gson.fromJson(json, map.getClass());
+
+                accessToken = map.get("access_token");
+                refreshToken = map.get("refresh_token");
+
+                token.setContent(accessToken);
+                token.setRefreshToken(refreshToken);
+
+                long create = tokenDAO.create(token);
+                return tokenDAO.findById(create);
+            } else {
+                throw new CustomWebApplicationException("Could not retrieve " + refreshUrl + " token based on code",
+                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+        } catch (UnsupportedEncodingException ex) {
+            LOG.info(token.getUsername() + ": " + ex.toString());
+            throw new CustomWebApplicationException(ex.toString(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }
