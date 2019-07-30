@@ -687,29 +687,27 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @POST
-    @Path("/{userId}/services/refresh")
+    @Path("/services/refresh")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Syncs service data with Git accounts.", notes = "Currently only works with GitHub", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
-    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
         return syncAndGetServices(user, Optional.empty());
     }
 
     @POST
-    @Path("/{userId}/services/{organizationName}/refresh")
+    @Path("/services/{organizationName}/refresh")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Syncs services with Git accounts for a specified organization.",
             authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
     public List<Workflow> syncUserServicesbyOrganization(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization name", required = true) @PathParam("organizationName") String organization) {
-        final User user = checkAndGetUser(authUser, userId);
+        final User user = userDAO.findById(authUser.getId());
         return syncAndGetServices(user, Optional.of(organization));
     }
 
@@ -717,16 +715,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         workflowResource.syncServicesForUser(user, organization2);
         userDAO.clearCache();
         return getStrippedServices(userDAO.findById(user.getId()));
-    }
-
-    private User checkAndGetUser(User authUser, Long userId) {
-        checkUser(authUser, userId);
-        // Need to get a User for this Hibernate session
-        final User user = userDAO.findById(userId);
-        if (user == null) {
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
-        }
-        return user;
     }
 
     /**
