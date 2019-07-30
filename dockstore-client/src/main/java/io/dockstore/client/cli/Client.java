@@ -521,11 +521,7 @@ public class Client {
     }
 
     private static ObjectMapper getObjectMapper() {
-        if (objectMapper == null) {
-            return new ObjectMapper();
-        } else {
-            return objectMapper;
-        }
+        return Objects.requireNonNullElseGet(objectMapper, ObjectMapper::new);
     }
 
     static void setObjectMapper(ObjectMapper objectMapper) {

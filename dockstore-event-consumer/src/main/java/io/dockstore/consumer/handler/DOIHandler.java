@@ -25,10 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.google.common.collect.Lists;
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.exceptions.DockerCertificateException;
-import com.spotify.docker.client.exceptions.DockerException;
 import io.dockstore.common.model.DOIMessage;
 import io.dockstore.zenodo.client.ApiClient;
 import io.dockstore.zenodo.client.ApiException;
@@ -91,21 +87,6 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
             } else {
                 LOG.error("tag does not exist, will not be transient");
                 return true;
-            }
-
-            // Pull an image
-            // Create a client based on DOCKER_HOST and DOCKER_CERT_PATH env vars
-            String image = publishedContainer.getPath() + ":" + tag.getName();
-            File dockerImageFile = new File(image);
-            try (DockerClient docker = DefaultDockerClient.fromEnv().build()) {
-                docker.pull(image);
-                FileUtils.copyInputStreamToFile(docker.save(image), dockerImageFile);
-            } catch (DockerException | DockerCertificateException | InterruptedException e) {
-                LOG.error("could not pull Docker image:" + image, e);
-                return false;
-            } catch (IOException e) {
-                LOG.error("could not save Docker image to file:" + dockerImageFile.getAbsolutePath(), e);
-                return false;
             }
 
             // send documents to zenodo
