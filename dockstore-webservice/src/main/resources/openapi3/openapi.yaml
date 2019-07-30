@@ -1326,7 +1326,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       parameters:
       - in: path
         name: organization
@@ -1341,7 +1341,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       responses:
         default:
           content:
@@ -3282,7 +3282,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:
@@ -4109,7 +4109,7 @@ paths:
               schema:
                 type: boolean
           description: default response
-  /users/services/refresh:
+  /users/services/sync:
     post:
       operationId: syncUserServices
       requestBody:
@@ -4126,7 +4126,7 @@ paths:
                   $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
-  /users/services/{organizationName}/refresh:
+  /users/services/{organizationName}/sync:
     post:
       operationId: syncUserServicesbyOrganization
       parameters:
@@ -4818,7 +4818,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:

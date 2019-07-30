@@ -687,7 +687,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @POST
-    @Path("/services/refresh")
+    @Path("/services/sync")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Syncs service data with Git accounts.", notes = "Currently only works with GitHub", authorizations = {
@@ -699,7 +699,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @POST
-    @Path("/services/{organizationName}/refresh")
+    @Path("/services/{organizationName}/sync")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Syncs services with Git accounts for a specified organization.",
