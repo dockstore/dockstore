@@ -280,15 +280,12 @@
             <column name="tosversionacceptancedate" type="timestamp"/>
         </addColumn>
     </changeSet>
-    <changeSet author="gluu" id="add_archived_version_names_to_entries">
-        <addColumn tableName="service">
-            <column name="next_version_name" type="VARCHAR(255)"/>
-        </addColumn>
-        <addColumn tableName="tool">
-            <column name="next_version_name" type="VARCHAR(255)"/>
-        </addColumn>
-        <addColumn tableName="workflow">
-            <column name="next_version_name" type="VARCHAR(255)"/>
-        </addColumn>
-  </changeSet>
+    <changeSet author="gluu (generated)" id="createBlacklistedVersionNames">
+        <createTable tableName="entry_blacklistedversionnames">
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="blacklistedversionnames" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
 </databaseChangeLog>

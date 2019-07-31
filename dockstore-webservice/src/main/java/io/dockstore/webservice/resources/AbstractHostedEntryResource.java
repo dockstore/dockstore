@@ -16,12 +16,15 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
@@ -240,23 +243,15 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         if (validatedVersion instanceof WorkflowVersion) {
             entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());
         }
-        updateNextVersionName(entry, version);
+        updateBlacklistedVersionNames(entry, version);
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
     }
 
-    /**
-     * This updates the entry's next version name.
-     * The next version name is simply a +1 increment of the version that was just added
-     * @param entry The entry that just got a new version
-     * @param version   The version that was just added
-     */
-    private void updateNextVersionName(T entry, U version) {
-        String stringVersionName = version.getName();
-        int integerVersionName = Integer.parseInt(stringVersionName) + 1;
-        entry.setNextVersionName(String.valueOf(integerVersionName));
+    private void updateBlacklistedVersionNames(T entry, U version) {
+        entry.getBlacklistedVersionNames().add(version.getName());
     }
 
     /**
@@ -441,16 +436,15 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @return          The version name of the next version
      */
     String calculateNextVersionName(Set<U> versions, T entry) {
-        if (versions.isEmpty()) {
+        Set<String> blacklistedVersionNames = entry.getBlacklistedVersionNames();
+        Set<String> currentVersionNames = versions.stream().map(Version::getName).collect(Collectors.toSet());
+        Set<String> combinedVersionNames = Stream.concat(blacklistedVersionNames.stream(), currentVersionNames.stream()).collect(Collectors.toSet());
+        if (combinedVersionNames.isEmpty()) {
             return "1";
         } else {
-            String nextVersionName = entry.getNextVersionName();
-            if (!nextVersionName.isEmpty()) {
-                return nextVersionName;
-            } else {
-                U versionWithTheLargestName = versionWithLargestName(versions);
-                return (String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
-            }
+            Set<Integer> versionNamesAsIntegers = combinedVersionNames.stream().map(Integer::parseInt).collect(Collectors.toSet());
+            Integer max = Collections.max(versionNamesAsIntegers);
+            return String.valueOf(max + 1);
         }
     }
 

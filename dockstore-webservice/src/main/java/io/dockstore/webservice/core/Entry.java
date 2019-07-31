@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -183,10 +184,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
     private Long topicId;
-    
-    @Column(name = "next_version_name")
-    @ApiModelProperty(value = "Name of the next version (applicable to hosted only)")
-    private String nextVersionName;
+
+    @JsonIgnore
+    @ElementCollection
+    private Set<String> blacklistedVersionNames = new LinkedHashSet<>();
 
     /**
      * Example of generalizing concept of default paths across tools, workflows
@@ -520,14 +521,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.defaultPaths = defaultPaths;
     }
 
-    public String getNextVersionName() {
-        return nextVersionName;
+    public Set<String> getBlacklistedVersionNames() {
+        return blacklistedVersionNames;
     }
 
-    public void setNextVersionName(String nextVersionName) {
-        if (this.nextVersionName != null && Integer.parseInt(nextVersionName) != Integer.parseInt(this.nextVersionName) + 1) {
-            throw new IllegalArgumentException("Problems setting next version name");
-        }
-        this.nextVersionName = nextVersionName;
+    public void setBlacklistedVersionNames(Set<String> blacklistedVersionNames) {
+        this.blacklistedVersionNames = blacklistedVersionNames;
     }
 }
