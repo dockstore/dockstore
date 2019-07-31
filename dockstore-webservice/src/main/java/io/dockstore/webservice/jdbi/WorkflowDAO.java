@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -82,14 +83,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     /**
-     * Finds the workflow matching the given workflow path
+     * Finds the workflows matching the given workflow path. A service and
+     * a BioWorkflow can have the same workflow path, which is why this returns
+     * a List.
      * When findPublished is true, will only look at published workflows
      *
      * @param path
      * @param findPublished
      * @return Workflow matching the path
      */
-    public Workflow findByPath(String path, boolean findPublished) {
+    public List<Workflow> findByPath(String path, boolean findPublished) {
         String[] splitPath = Workflow.splitPath(path);
 
         // Not a valid path
@@ -134,7 +137,24 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             query.setParameter("workflowname", workflowname);
         }
 
-        return uniqueResult(query);
+        return list(query);
+    }
+
+    /**
+     * Finds a BioWorkflow or Service matching the given path.
+     *
+     * Initial implementation currently calls findByPath and filters the result; would ideally do it as a query with
+     * no filtering instead.
+     *
+     * @param path
+     * @param findPublished
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    public <T extends Workflow> Optional<T> findByPath(String path, boolean findPublished, Class<T> clazz) {
+        final List<Workflow> workflows = findByPath(path, findPublished);
+        return workflows.stream().filter(w -> w.getClass().equals(clazz)).map(clazz::cast).findFirst();
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {
