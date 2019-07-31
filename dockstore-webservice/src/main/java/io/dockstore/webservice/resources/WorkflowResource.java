@@ -1122,7 +1122,7 @@ public class WorkflowResource
             try {
                 zipFile = File.createTempFile(filePrefix, fileSuffix);
             } catch (IOException e) {
-                LOG.warn("Could not create Zenodo temp upload zip file." + " Error is " + e.getMessage(), e);
+                LOG.error("Could not create Zenodo temp upload zip file." + " Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create Zenodo upload temp zip file"
                         + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
@@ -1137,8 +1137,8 @@ public class WorkflowResource
                 LOG.error("Could not create file " + zipFile.getAbsolutePath()
                         + " outputstream for DOI zip file for upload to Zenodo."
                         + " Error is " + fne.getMessage(), fne);
-                throw new CustomWebApplicationException("Could not create file " + zipFile.getAbsolutePath()
-                        + " outputstream for DOI zip file for upload to Zenodo."
+                throw new CustomWebApplicationException("Could not create "
+                        + "outputstream for DOI zip file for upload to Zenodo."
                         + " Error is " + fne.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
@@ -1152,7 +1152,7 @@ public class WorkflowResource
                 zipFile.delete();
                 LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
-                        + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+                        + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             return zipFile;
@@ -1215,7 +1215,7 @@ public class WorkflowResource
         } catch (ApiException e) {
             LOG.error("Could not put deposition metadata on Zenodo. Error is " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo."
-                    + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+                    + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             // Delete the zip file that contains the workflow files after it has been uploaded
             uploadFile.delete();
@@ -1234,7 +1234,7 @@ public class WorkflowResource
         } catch (ApiException e) {
             LOG.error("Could not publish DOI on Zenodo. Error is " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not publish DOI on Zenodo."
-                    + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+                    + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return publishedDeposit;
     }
