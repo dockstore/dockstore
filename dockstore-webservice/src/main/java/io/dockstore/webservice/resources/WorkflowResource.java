@@ -428,7 +428,7 @@ public class WorkflowResource
             || workflow.getDescriptorType() == WDL) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
             String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
-            BioWorkflow byPath = (BioWorkflow)workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false);
+            BioWorkflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
             if (byPath != null && workflow.getCheckerWorkflow() == null) {
                 workflow.setCheckerWorkflow(byPath);
             }
@@ -499,9 +499,9 @@ public class WorkflowResource
         User sendingUser = findUserByGitHubUsername(username, true);
 
         // Determine if service is already in Dockstore
-        Workflow existingService = workflowDAO.findByPath(servicePath, false);
+        Optional<Service> existingService = workflowDAO.findByPath(servicePath, false, Service.class);
 
-        if (existingService != null) {
+        if (!existingService.isPresent()) {
             String msg = "A service already exists for GitHub repository " + repository;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
@@ -553,7 +553,7 @@ public class WorkflowResource
         String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, WorkflowMode.SERVICE, installationAccessToken);
 
         // Add user to service if necessary
-        Workflow service = workflowDAO.findByPath(dockstoreServicePath, false);
+        Workflow service = workflowDAO.findByPath(dockstoreServicePath, false, Service.class).get();
         if (sendingUser != null && !service.getUsers().contains(sendingUser)) {
             service.getUsers().add(sendingUser);
         }
@@ -809,7 +809,7 @@ public class WorkflowResource
         checkNotHosted(wf);
         checkCanWriteWorkflow(user, wf);
 
-        Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false);
+        Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class).orElse(null);
 
         if (duplicate != null && duplicate.getId() != workflowId) {
             LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getWorkflowPath());
@@ -1489,7 +1489,7 @@ public class WorkflowResource
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
 
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, Workflow.class).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
@@ -1557,7 +1557,7 @@ public class WorkflowResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
@@ -1570,7 +1570,7 @@ public class WorkflowResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);
     }
@@ -1584,7 +1584,7 @@ public class WorkflowResource
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user permission", required = true) Permission permission) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/ga4gh/dockstore/issues/1593
         if (workflow.getMode() != WorkflowMode.HOSTED) {
@@ -1603,7 +1603,7 @@ public class WorkflowResource
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
         @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         this.permissionsInterface.removePermission(user, workflow, email, role);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
@@ -1666,7 +1666,7 @@ public class WorkflowResource
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
-        Workflow workflow = workflowDAO.findByPath(path, true);
+        Workflow workflow = workflowDAO.findByPath(path, true, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
 
         initializeValidations(include, workflow);
@@ -1901,7 +1901,7 @@ public class WorkflowResource
                     + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false);
+        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false, BioWorkflow.class).orElseGet(() -> null);
         if (duplicate != null) {
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
         }
