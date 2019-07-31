@@ -910,9 +910,10 @@ public class WorkflowResource
         List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
         if (!tokens.isEmpty()) {
             Token zenodoToken = tokens.get(0);
-            String refreshUrl = zenodoUrl + "oauth/token";
-            String payload = "grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
-            refreshToken(refreshUrl, zenodoToken, client, tokenDAO, zenodoClientID, zenodoClientSecret, payload);
+            String refreshUrl = zenodoUrl + "/oauth/token";
+            String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret +
+                    "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
+            refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
         }
         return tokenDAO.findByUserId(user.getId());
     }
@@ -935,13 +936,18 @@ public class WorkflowResource
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
             LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
-            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
         }
 
         List<Token> tokens = checkOnZenodoToken(user);
         Token zenodoToken = Token.extractToken(tokens, TokenType.ZENODO_ORG);
-        final String zenodoAccessToken = zenodoToken == null ? null : zenodoToken.getContent();
+        if (zenodoToken == null) {
+            LOG.error("Could not get Zenodo token for user " + user.getUsername());
+            throw new CustomWebApplicationException("Could not get Zenodo token for user " +
+                    user.getUsername(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        final String zenodoAccessToken = zenodoToken.getContent();
 
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
