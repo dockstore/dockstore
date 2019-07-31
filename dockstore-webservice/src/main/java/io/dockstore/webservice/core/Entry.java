@@ -187,6 +187,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore
     @ElementCollection
+    @Column(columnDefinition = "text")
     private Set<String> blacklistedVersionNames = new LinkedHashSet<>();
 
     /**
