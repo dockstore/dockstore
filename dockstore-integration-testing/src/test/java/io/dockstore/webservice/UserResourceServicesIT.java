@@ -85,7 +85,6 @@ public class UserResourceServicesIT {
     // These are not from Hoverfly, it's actually in the starting database
     public final static String GITHUB_ACCOUNT_USERNAME_1 = "tuber";
     public final static String GITHUB_ACCOUNT_USERNAME_2 = "potato";
-    private TokenDAO tokenDAO;
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -113,7 +112,7 @@ public class UserResourceServicesIT {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
-        this.tokenDAO = new TokenDAO(sessionFactory);
+        TokenDAO tokenDAO = new TokenDAO(sessionFactory);
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
         testingPostgres.runUpdateStatement("alter sequence token_id_seq increment by 50 restart with 100");
@@ -124,6 +123,7 @@ public class UserResourceServicesIT {
         tokenDAO.create(createToken(SUFFIX1, GITHUB_ACCOUNT_USERNAME_1, GITHHUB_USER1_ID));
         tokenDAO.create(createToken(SUFFIX2, GITHUB_ACCOUNT_USERNAME_2, GITHHUB_USER2_ID));
         transaction.commit();
+        session.close();
     }
 
     private Token createToken(String token, String username, long id) {
