@@ -17,6 +17,7 @@ package io.dockstore.webservice.helpers;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
@@ -42,6 +43,7 @@ import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.http.GenericUrl;
+import com.google.api.client.util.PemReader;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -206,13 +208,14 @@ public final class GitHubHelper {
         try {
             String pemFileContent = FileUtils
                     .readFileToString(new File(gitHubPrivateKeyFile), Charset.forName("UTF-8"));
-            pemFileContent = pemFileContent
-                    .replaceAll("\\n", "")
-                    .replace("-----BEGIN PRIVATE KEY-----", "")
-                    .replace("-----END PRIVATE KEY-----", "");
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(pemFileContent));
-            rsaPrivateKey = (RSAPrivateKey)keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+            final PemReader.Section privateKey = PemReader.readFirstSectionAndClose(new StringReader(pemFileContent), "PRIVATE KEY");
+            if (privateKey != null) {
+                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKey.getBase64DecodedBytes());
+                rsaPrivateKey = (RSAPrivateKey)keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+            } else {
+                LOG.error("No private key found in " + gitHubPrivateKeyFile);
+            }
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
             LOG.error(ex.getMessage(), ex);
         }
