@@ -1147,7 +1147,7 @@ public class WorkflowResource
             writeStreamAsZip(sourceFiles, outputStream, zipFilePath);
 
             try {
-                filesApi.createFile(depositionID, zipFile, zipFile.getName());
+                filesApi.createFile(depositionID, zipFile, filePrefix);
             } catch (ApiException e) {
                 zipFile.delete();
                 LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage(), e);
