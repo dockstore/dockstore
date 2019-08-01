@@ -46,22 +46,18 @@ jobs:
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-      if: (type = push AND branch IN (master, develop)) OR (type = pull_request)
     - stage: coverage
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=true
     - stage: coverage
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      if: (type = push AND branch IN (master, develop)) OR (type = pull_request)
       env:
         - TESTING_PROFILE=tool-integration-tests
     - stage: coverage
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      if: (type = push AND branch IN (master, develop)) OR (type = pull_request)
       env:
         - TESTING_PROFILE=workflow-integration-tests
     - stage: coverage
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      if: (type = push AND branch IN (master, develop)) OR (type = pull_request)
       env:
         - TESTING_PROFILE=other-integration-tests
         
