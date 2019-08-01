@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/dockstore/dockstore.svg?branch=develop)](https://travis-ci.org/dockstore/dockstore) 
 [![codecov](https://codecov.io/gh/dockstore/dockstore/branch/develop/graph/badge.svg)](https://codecov.io/gh/dockstore/dockstore)
 [![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dockstore/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2630727.svg)](https://doi.org/10.5281/zenodo.2630727)
 [![Uptime Robot status](https://img.shields.io/uptimerobot/status/m779655940-a297af07d1cac2d6ad40c491.svg)]()
 [![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
@@ -110,9 +110,9 @@ The following section is useful for Dockstore developers (e.g. those that want t
 ### Dependencies
 
 The dependency environment for Dockstore is described by our 
-[Travis-CI config](https://github.com/ga4gh/dockstore/blob/develop/.travis.yml). In addition to the dependencies for 
+[Travis-CI config](https://github.com/dockstore/dockstore/blob/develop/.travis.yml). In addition to the dependencies for 
 Dockstore users, note the setup instructions for postgres. Specifically, you will need to have postgres installed 
-and setup with the database user specified in [.travis.yml](https://github.com/ga4gh/dockstore/blob/develop/.travis.yml#L26) (ideally, postgres is need only for integration tests but not unit tests).
+and setup with the database user specified in [.travis.yml](https://github.com/dockstore/dockstore/blob/develop/.travis.yml#L26) (ideally, postgres is need only for integration tests but not unit tests).
 Additional, OpenAPI generation requires swagger2openapi installed with `npm install -g swagger2openapi@2.11.16`.
 
 ### Building
@@ -144,7 +144,7 @@ Refer to the linked document to setup httpClient and database.
 3. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
 4. If you need integration with GitHub.com, Quay.io. or Bitbucket for your work, you will need to follow the appropriate 
 sections below and then fill out the corresponding fields in your 
-[dockstore.yml](https://github.com/ga4gh/dockstore/blob/develop/dockstore.yml#L2). 
+[dockstore.yml](https://github.com/dockstore/dockstore/blob/develop/dockstore.yml#L2). 
 
 ### View Swagger UI
 
@@ -185,14 +185,14 @@ These include
 2. All of swagger-java-quay-client (talks to Quay.io for our webservice)
 3. The Tool Registry Server components (serves up the TRS endpoints)
 
-To update these, you will need to point at a new version of the swagger.yaml provided by a service. For example, update the equivalent of [inputSpec](https://github.com/ga4gh/dockstore/blob/0afe35682bdfb6fa7285b2acab8f80648346e835/dockstore-webservice/pom.xml#L854) in your branch.  
+To update these, you will need to point at a new version of the swagger.yaml provided by a service. For example, update the equivalent of [inputSpec](https://github.com/dockstore/dockstore/blob/0afe35682bdfb6fa7285b2acab8f80648346e835/dockstore-webservice/pom.xml#L854) in your branch.  
 
 ### Encrypted Documents for Travis-CI
 
 Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
 [files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys).
 
-A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. When using this script you will likely want to alter the [CUSTOM\_DIR\_NAME](https://github.com/ga4gh/dockstore/blob/0b59791440af6e3d383d1aede1774c0675b50404/encrypt.sh#L13). This is necessary since running the script will overwrite the existing encryption keys, instantly breaking existing builds using that key. Our current workaround is to use a new directory when providing a new bundle. 
+A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. When using this script you will likely want to alter the [CUSTOM\_DIR\_NAME](https://github.com/dockstore/dockstore/blob/0b59791440af6e3d383d1aede1774c0675b50404/encrypt.sh#L13). This is necessary since running the script will overwrite the existing encryption keys, instantly breaking existing builds using that key. Our current workaround is to use a new directory when providing a new bundle. 
 
 ### Adding Copyright header to all files with IntelliJ
 
@@ -204,4 +204,4 @@ To add copyright headers to all files with IntelliJ
 
 ### Legacy Material
 
-Additional documentation on developing Dockstore is available at [legacy.md](https://github.com/ga4gh/dockstore/blob/develop/legacy.md)
+Additional documentation on developing Dockstore is available at [legacy.md](https://github.com/dockstore/dockstore/blob/develop/legacy.md)

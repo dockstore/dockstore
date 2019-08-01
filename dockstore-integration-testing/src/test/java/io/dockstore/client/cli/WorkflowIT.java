@@ -960,7 +960,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     /**
-     * Tests for https://github.com/ga4gh/dockstore/issues/2154
+     * Tests for https://github.com/dockstore/dockstore/issues/2154
      */
     @Test
     public void testMoreCWLImportsStructure() throws ApiException, URISyntaxException, IOException {

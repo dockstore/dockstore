@@ -364,7 +364,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         + " workflow version that is recognized as valid by Dockstore.", CLIENT_ERROR);
             }
             Long versionId = first.get().getId();
-            // https://github.com/ga4gh/dockstore/issues/1712 client seems to use jersey logging which is not controlled from logback
+            // https://github.com/dockstore/dockstore/issues/1712 client seems to use jersey logging which is not controlled from logback
             workflowsApi.getApiClient().setDebugging(false);
             byte[] arbitraryURL = SwaggerUtility
                 .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<byte[]>() {

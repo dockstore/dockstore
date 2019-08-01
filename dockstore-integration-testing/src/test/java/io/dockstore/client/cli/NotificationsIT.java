@@ -45,7 +45,7 @@ public class NotificationsIT extends BaseIT {
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
     private final static String sampleCWLDescriptor = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
     private final static String sampleWDLDescriptor = ResourceHelpers.resourceFilePath("wdl.wdl");
-    private final static String sampleCWLTestJson = "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json";
+    private final static String sampleCWLTestJson = "https://raw.githubusercontent.com/dockstore/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json";
     private final static String sampleWDLTestJson = ResourceHelpers.resourceFilePath("wdl.json");
     private final static String SLACK_DESTINATION = "Destination is Slack. Message is not 100% compatible.";
     private final static String SENDING_NOTIFICATION = "Sending notifications message.";

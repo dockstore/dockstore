@@ -9,7 +9,7 @@ info:
     url: https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506
   license:
     name: Apache 2.0
-    url: https://github.com/ga4gh/dockstore/blob/develop/LICENSE
+    url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
 externalDocs:
   description: 'User documentation for dockstore'
   url: 'https://docs.dockstore.org/'

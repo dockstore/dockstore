@@ -47,7 +47,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Provider
 @SwaggerDefinition(info = @Info(description =
     "This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as "
-        + "CWL documents and Dockerfiles used to build those images", version = "${project.version}", title = "Dockstore API", contact = @Contact(name = "Dockstore@ga4gh", email = "theglobalalliance@genomicsandhealth.org", url = "https://github.com/ga4gh/dockstore"), license = @License(name = "Apache License Version 2.0", url = "https://github.com/ga4gh/dockstore/blob/develop/LICENSE"), termsOfService = "TBD"), tags = {
+        + "CWL documents and Dockerfiles used to build those images", version = "${project.version}", title = "Dockstore API", contact = @Contact(name = "Dockstore@ga4gh", email = "theglobalalliance@genomicsandhealth.org", url = "https://github.com/dockstore/dockstore"), license = @License(name = "Apache License Version 2.0", url = "https://github.com/dockstore/dockstore/blob/develop/LICENSE"), termsOfService = "TBD"), tags = {
     @Tag(name = "entries", description = "Interact with entries in Dockstore regardless of whether they are containers or workflows"),
     @Tag(name = "containers", description = "List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile))"),
     @Tag(name = "containertags", description = "List and modify tags for containers"),

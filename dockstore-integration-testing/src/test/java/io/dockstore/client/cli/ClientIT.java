@@ -200,7 +200,7 @@ public class ClientIT extends BaseIT {
     public void launchingCWLToolWithRemoteParameters() throws IOException {
         Client.main(
             new String[] { "--script", "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
-                "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
+                "https://raw.githubusercontent.com/dockstore/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
     }
 
     @Test

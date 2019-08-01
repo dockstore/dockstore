@@ -210,7 +210,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
             if (cwlObject instanceof Workflow) {
                 Workflow workflow = (Workflow)cwlObject;
                 // this complex code is to handle the case where secondary files from tools define
-                // additional files that need to be provisioned also see https://github.com/ga4gh/dockstore/issues/563
+                // additional files that need to be provisioned also see https://github.com/dockstore/dockstore/issues/563
                 SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
                 secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
 

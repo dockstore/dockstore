@@ -163,7 +163,7 @@ public class CromwellIT {
     }
 
     /**
-     * This tests compatibility with Cromwell 30.2 by running a workflow (https://github.com/ga4gh/dockstore/issues/1211)
+     * This tests compatibility with Cromwell 30.2 by running a workflow (https://github.com/dockstore/dockstore/issues/1211)
      */
     @Test
     public void testRunWorkflow() throws IOException, ApiException {
@@ -180,7 +180,7 @@ public class CromwellIT {
     }
 
     /**
-     * This tests compatibility with Cromwell 30.2 by converting to JSON (https://github.com/ga4gh/dockstore/issues/1211)
+     * This tests compatibility with Cromwell 30.2 by converting to JSON (https://github.com/dockstore/dockstore/issues/1211)
      */
     @Test
     public void testWDL2JsonIssue() {

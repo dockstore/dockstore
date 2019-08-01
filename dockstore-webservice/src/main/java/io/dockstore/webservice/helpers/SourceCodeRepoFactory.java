@@ -108,7 +108,7 @@ public final class SourceCodeRepoFactory {
      * @return a map with keys: Source, Username, Repository
      */
     public static Map<String, String> parseGitUrl(String url) {
-        // format 1 git@github.com:ga4gh/dockstore-ui.git
+        // format 1 git@github.com:dockstore/dockstore-ui.git
         Pattern p1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m1 = p1.matcher(url);
         // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)
