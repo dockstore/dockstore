@@ -1115,8 +1115,10 @@ public class WorkflowResource
         } else {
             OutputStream outputStream;
             String versionOfWorkflow = workflowVersion.getName();
-            String filePrefix = workflow.getWorkflowPath().replaceAll("/", "-")
-                    + "_" + versionOfWorkflow + "_";
+
+            String fileName = workflow.getWorkflowPath().replaceAll("/", "-")
+                    + "_" + versionOfWorkflow;
+            String filePrefix = fileName + "_";
             String fileSuffix = ".zip";
             File zipFile;
             try {
@@ -1147,7 +1149,7 @@ public class WorkflowResource
             writeStreamAsZip(sourceFiles, outputStream, zipFilePath);
 
             try {
-                filesApi.createFile(depositionID, zipFile, filePrefix);
+                filesApi.createFile(depositionID, zipFile, fileName);
             } catch (ApiException e) {
                 zipFile.delete();
                 LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage(), e);
