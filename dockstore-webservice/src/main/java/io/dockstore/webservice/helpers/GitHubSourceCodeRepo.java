@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -233,6 +234,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException e) {
             LOG.error("could not find projects due to ", e);
             throw new CustomWebApplicationException("could not read projects from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get a list of all the orgs a user has access to
+     * Based on the ALL repository filter, since getAllOrganizations() only returns organizations the user owns
+     * @return
+     */
+    public Set<String> getMyOrganizations() {
+        try {
+            final int pageSize = 30;
+            return github.getMyself()
+                    .listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL)
+                    .asList()
+                    .stream()
+                    .map((GHRepository repository) -> repository.getFullName().split("/")[0])
+                    .collect(Collectors.toSet());
+        } catch (IOException e) {
+            LOG.error("could not find organizations due to ", e);
+            throw new CustomWebApplicationException("could not read organizations from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 

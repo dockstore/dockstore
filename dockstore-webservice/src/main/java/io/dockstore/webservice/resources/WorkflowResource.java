@@ -19,22 +19,14 @@ package io.dockstore.webservice.resources;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.nio.file.Paths;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
-import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,9 +60,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
@@ -99,11 +88,11 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -141,7 +130,6 @@ import io.swagger.zenodo.client.model.DepositMetadata;
 import io.swagger.zenodo.client.model.DepositionFile;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -156,6 +144,7 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -418,7 +407,7 @@ public class WorkflowResource
         // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
         if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
-            workflow.setMode(WorkflowMode.SERVICE);
+            workflow.setMode(SERVICE);
         } else {
             workflow.setMode(WorkflowMode.FULL);
         }
@@ -508,7 +497,7 @@ public class WorkflowResource
         }
 
         // Get Installation Access Token
-        String installationAccessToken = gitHubAppSetup(installationId);
+        String installationAccessToken = GitHubHelper.gitHubAppSetup(gitHubAppId, gitHubPrivateKeyFile, installationId);
 
         // Create a service object
         final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
@@ -547,10 +536,10 @@ public class WorkflowResource
         User sendingUser = findUserByGitHubUsername(username, false);
 
         // Get Installation Access Token
-        String installationAccessToken = gitHubAppSetup(installationId);
+        String installationAccessToken = GitHubHelper.gitHubAppSetup(gitHubAppId, gitHubPrivateKeyFile, installationId);
 
         // Call common upsert code
-        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, WorkflowMode.SERVICE, installationAccessToken);
+        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, SERVICE, installationAccessToken);
 
         // Add user to service if necessary
         Workflow service = workflowDAO.findByPath(dockstoreServicePath, false);
@@ -562,54 +551,63 @@ public class WorkflowResource
     }
 
     /**
-     * Setup tokens required for GitHub apps
-     * @param installationId App installation ID (per repository)
-     * @return Installation access token for the given repository
+     * Does the following:
+     * 1) Add user to any existing Dockstore services they should own
+     *
+     * 2) For all of the users organizations that have the GitHub App installed on all repositories in those organizations,
+     * add any services that should be on Dockstore but are not
+     *
+     * 3) For all of the repositories which have the GitHub App installed, add them to Dockstore if they are missing
+     * @param user
+     * @param organization
      */
-    private String gitHubAppSetup(String installationId) {
-        checkJWT();
-        String installationAccessToken = CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
-        if (installationAccessToken == null) {
-            String msg = "Could not get an installation access token for install with id " + installationId;
+    void syncServicesForUser(User user, Optional<String> organization) {
+        List<Token> githubByUserId = tokenDAO.findGithubByUserId(user.getId());
+
+        if (githubByUserId.isEmpty()) {
+            String msg = "The user does not have a GitHub token, please create one";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        } else {
+            syncServices(user, organization, githubByUserId.get(0));
         }
-        return installationAccessToken;
     }
 
-    /**
-     * Refresh the JWT for GitHub apps
-     */
-    private void checkJWT() {
-        RSAPrivateKey rsaPrivateKey = null;
-        try {
-            String pemFileContent = FileUtils
-                    .readFileToString(new File(gitHubPrivateKeyFile), Charset.forName("UTF-8"));
-            pemFileContent = pemFileContent
-                    .replaceAll("\\n", "")
-                    .replace("-----BEGIN PRIVATE KEY-----", "")
-                    .replace("-----END PRIVATE KEY-----", "");
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(pemFileContent));
-            rsaPrivateKey = (RSAPrivateKey)keyFactory.generatePrivate(pkcs8EncodedKeySpec);
-        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
+    private void syncServices(User user, Optional<String> organization, Token gitHubToken) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken, client);
 
-        if (rsaPrivateKey != null) {
-            final int tenMinutes = 600000;
-            try {
-                Algorithm algorithm = Algorithm.RSA256(null, rsaPrivateKey);
-                String jsonWebToken = JWT.create()
-                        .withIssuer(gitHubAppId)
-                        .withIssuedAt(new Date())
-                        .withExpiresAt(new Date(Calendar.getInstance().getTimeInMillis() + tenMinutes))
-                        .sign(algorithm);
-                CacheConfigManager.setJsonWebToken(jsonWebToken);
-            } catch (JWTCreationException ex) {
-                LOG.error(ex.getMessage(), ex);
-            }
-        }
+        // Get all GitHub repositories for the user
+        final Map<String, String> workflowGitUrl2Name = gitHubSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+
+        // Filter by organization if necessary
+        final Collection<String> repositories = GitHubHelper.filterReposByOrg(workflowGitUrl2Name.values(), organization);
+
+        // Add user to any services they should have access to that already exist on Dockstore
+        final List<Workflow> existingWorkflows = findDockstoreWorkflowsForGitHubRepos(repositories);
+        existingWorkflows.stream()
+                .filter(workflow -> !workflow.getUsers().contains(user))
+                .forEach(workflow -> workflow.getUsers().add(user));
+        final Set<String> existingWorkflowPaths = existingWorkflows.stream()
+                .map(workflow -> workflow.getWorkflowPath()).collect(Collectors.toSet());
+
+        GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
+
+        GitHubHelper.reposToCreateServicesFor(repositories, organization, existingWorkflowPaths).stream()
+                .forEach(repositoryName -> {
+                    final Service service = gitHubSourceCodeRepo.initializeService(repositoryName);
+                    service.addUser(user);
+                    final long serviceId = workflowDAO.create(service);
+                    final Workflow createdService = workflowDAO.findById(serviceId);
+                    final Workflow updatedService = gitHubSourceCodeRepo.getWorkflow(repositoryName, Optional.of(createdService));
+                    updateDBWorkflowWithSourceControlWorkflow(createdService, updatedService);
+                });
+    }
+
+    private List<Workflow> findDockstoreWorkflowsForGitHubRepos(Collection<String> repositories) {
+        final List<String> workflowPaths = repositories.stream().map(repositoryName -> "github.com/" + repositoryName)
+                .collect(Collectors.toList());
+        return workflowDAO.findByPaths(workflowPaths, false).stream()
+                .filter(workflow -> Objects.equals(workflow.getMode(), SERVICE)).collect(Collectors.toList());
     }
 
     /**
@@ -649,7 +647,7 @@ public class WorkflowResource
                 versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
             }
         } else {
-            if (workflowMode == WorkflowMode.SERVICE) {
+            if (workflowMode == SERVICE) {
                 String msg = "No service with path " + dockstoreWorkflowPath + " exists on Dockstore.";
                 LOG.error(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);

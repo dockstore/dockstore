@@ -550,13 +550,17 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        List<Workflow> services = getServices(fetchedUser);
-        EntryVersionHelper.stripContent(services, this.userDAO);
-        return services;
+        return getStrippedServices(fetchedUser);
     }
 
     private List<Workflow> getServices(User user) {
         return user.getEntries().stream().filter(Service.class::isInstance).map(Service.class::cast).collect(Collectors.toList());
+    }
+
+    private List<Workflow> getStrippedServices(User user) {
+        final List<Workflow> services = getServices(user);
+        EntryVersionHelper.stripContent(services, this.userDAO);
+        return services;
     }
 
     private List<Tool> getTools(User user) {
@@ -680,6 +684,37 @@ public class UserResource implements AuthenticatedResourceInterface {
         // User could be cached by Dockstore or Google token -- invalidate all
         tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
         return limits;
+    }
+
+    @POST
+    @Path("/services/sync")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Syncs service data with Git accounts.", notes = "Currently only works with GitHub", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Workflow.class, responseContainer = "List")
+    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser) {
+        final User user = userDAO.findById(authUser.getId());
+        return syncAndGetServices(user, Optional.empty());
+    }
+
+    @POST
+    @Path("/services/{organizationName}/sync")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Syncs services with Git accounts for a specified organization.",
+            authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Workflow.class, responseContainer = "List")
+    public List<Workflow> syncUserServicesbyOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "Organization name", required = true) @PathParam("organizationName") String organization) {
+        final User user = userDAO.findById(authUser.getId());
+        return syncAndGetServices(user, Optional.of(organization));
+    }
+
+    private List<Workflow> syncAndGetServices(User user, Optional<String> organization2) {
+        workflowResource.syncServicesForUser(user, organization2);
+        userDAO.clearCache();
+        return getStrippedServices(userDAO.findById(user.getId()));
     }
 
     /**

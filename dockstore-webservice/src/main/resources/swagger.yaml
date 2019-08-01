@@ -3693,6 +3693,49 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
+  /users/services/sync:
+    post:
+      tags:
+      - "users"
+      summary: "Syncs service data with Git accounts."
+      description: "Currently only works with GitHub"
+      operationId: "syncUserServices"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+  /users/services/{organizationName}/sync:
+    post:
+      tags:
+      - "users"
+      summary: "Syncs services with Git accounts for a specified organization."
+      description: ""
+      operationId: "syncUserServicesbyOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationName"
+        in: "path"
+        description: "Organization name"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /users/starredOrganizations:
     get:
       tags:
@@ -6144,6 +6187,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6159,10 +6206,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6375,6 +6418,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Base class for versions of entries in the Dockstore"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6390,10 +6437,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7366,15 +7409,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7492,10 +7535,14 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      isChecker:
-        type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      isChecker:
+        type: "boolean"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7511,10 +7558,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
