@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -1116,27 +1117,27 @@ public class WorkflowResource
             OutputStream outputStream;
             String versionOfWorkflow = workflowVersion.getName();
 
-            String fileName = workflow.getWorkflowPath().replaceAll("/", "-")
+            String fileNameBase = workflow.getWorkflowPath().replaceAll("/", "-")
                     + "_" + versionOfWorkflow;
-            String filePrefix = fileName + "_";
             String fileSuffix = ".zip";
-            File zipFile;
+            String fileName = fileNameBase + fileSuffix;
+            java.nio.file.Path tempDirPath;
             try {
-                zipFile = File.createTempFile(filePrefix, fileSuffix);
+                tempDirPath = Files.createTempDirectory(null);
             } catch (IOException e) {
-                LOG.error("Could not create Zenodo temp upload zip file." + " Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create Zenodo upload temp zip file"
+                LOG.error("Could not create Zenodo temp upload directory." + " Error is " + e.getMessage(), e);
+                throw new CustomWebApplicationException("Could not create Zenodo upload temp directory"
                         + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
-            // Delete the file at least when the program stops; we will try to
-            // delete it right after upload in a deposit to Zenodo anyway
-            zipFile.deleteOnExit();
+
+            String zipFilePathName = tempDirPath.toString() + "/" + fileName;
 
             try {
-                outputStream = new FileOutputStream(zipFile);
+                outputStream = new FileOutputStream(zipFilePathName);
             } catch (FileNotFoundException fne) {
-                zipFile.delete();
-                LOG.error("Could not create file " + zipFile.getAbsolutePath()
+                // Delete the temporary directory
+                tempDirPath.toFile().delete();
+                LOG.error("Could not create file " + zipFilePathName
                         + " outputstream for DOI zip file for upload to Zenodo."
                         + " Error is " + fne.getMessage(), fne);
                 throw new CustomWebApplicationException("Could not create "
@@ -1144,14 +1145,16 @@ public class WorkflowResource
                         + " Error is " + fne.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
-            String zipFileDir = zipFile.getParent();
-            java.nio.file.Path zipFilePath = Paths.get(zipFileDir);
-            writeStreamAsZip(sourceFiles, outputStream, zipFilePath);
+            writeStreamAsZip(sourceFiles, outputStream, Paths.get(zipFilePathName));
+            File zipFile = new File(zipFilePathName);
 
             try {
                 filesApi.createFile(depositionID, zipFile, fileName);
             } catch (ApiException e) {
+                // Delete the zip file in the temporary directory
                 zipFile.delete();
+                // Delete the temporary directory
+                tempDirPath.toFile().delete();
                 LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
                         + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -1209,7 +1212,7 @@ public class WorkflowResource
      * @param depositionID Zenodo's ID for the deposition
      */
     private void putDepositionOnZenodo(DepositsApi depositApi, DepositMetadata depositMetadata,
-            int depositionID, File uploadFile) {
+            int depositionID) {
         NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
         nestedDepositMetadata.setMetadata(depositMetadata);
         try {
@@ -1218,9 +1221,6 @@ public class WorkflowResource
             LOG.error("Could not put deposition metadata on Zenodo. Error is " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo."
                     + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        } finally {
-            // Delete the zip file that contains the workflow files after it has been uploaded
-            uploadFile.delete();
         }
     }
 
@@ -1311,10 +1311,18 @@ public class WorkflowResource
             }
         }
 
-        File uploadFile = provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit,
-                depositionID, workflow, workflowVersion);
 
-        putDepositionOnZenodo(depositApi, depositMetadata, depositionID, uploadFile);
+        File uploadFile = provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit, depositionID, workflow, workflowVersion);
+        try {
+            putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
+        } finally {
+            // Get the location of the temporary directory
+            File uploadFileTempDir = uploadFile.getParentFile();
+            // Delete the already uploaded zip file
+            uploadFile.delete();
+            // Delete the temporary directory
+            uploadFileTempDir.delete();
+        }
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
