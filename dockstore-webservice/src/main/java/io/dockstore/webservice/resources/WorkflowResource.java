@@ -492,13 +492,11 @@ public class WorkflowResource
         User sendingUser = findUserByGitHubUsername(username, true);
 
         // Determine if service is already in Dockstore
-        Optional<Service> existingService = workflowDAO.findByPath(servicePath, false, Service.class);
-
-        if (!existingService.isPresent()) {
+        workflowDAO.findByPath(servicePath, false, Service.class).ifPresent((service) -> {
             String msg = "A service already exists for GitHub repository " + repository;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-        }
+        });
 
         // Get Installation Access Token
         String installationAccessToken = GitHubHelper.gitHubAppSetup(gitHubAppId, gitHubPrivateKeyFile, installationId);
@@ -1530,7 +1528,7 @@ public class WorkflowResource
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
 
-        Workflow workflow = workflowDAO.findByPath(path, false, Workflow.class).orElse(null);
+        BioWorkflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
@@ -1942,7 +1940,7 @@ public class WorkflowResource
                     + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false, BioWorkflow.class).orElseGet(() -> null);
+        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false, BioWorkflow.class).orElse(null);
         if (duplicate != null) {
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
         }
