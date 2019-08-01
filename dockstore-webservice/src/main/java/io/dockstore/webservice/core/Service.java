@@ -15,7 +15,6 @@
  */
 package io.dockstore.webservice.core;
 
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
@@ -23,7 +22,6 @@ import io.swagger.annotations.ApiModel;
 
 @ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow")
 @Entity
-@DiscriminatorValue("service")
 @Table(name = "service")
 public class Service extends Workflow {
 
