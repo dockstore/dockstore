@@ -74,8 +74,8 @@ public class UserResourceServicesIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, ConfigOverride.config("gitHubAppId", GITHUB_APP_ID),
         ConfigOverride.config("gitHubAppPrivateKeyFile", "./src/test/resources/integrationtest.pem"));
-    public static final long GITHHUB_USER1_ID = 1L;
-    public static final long GITHHUB_USER2_ID = 2L;
+    public static final long GITHUB_USER1_ID = 1L;
+    public static final long GITHUB_USER2_ID = 2L;
     private static TestingPostgres testingPostgres;
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -126,8 +126,8 @@ public class UserResourceServicesIT {
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
         final Transaction transaction = session.beginTransaction();
-        tokenDAO.create(createToken(SUFFIX1, GITHUB_ACCOUNT_USERNAME_1, GITHHUB_USER1_ID));
-        tokenDAO.create(createToken(SUFFIX2, GITHUB_ACCOUNT_USERNAME_2, GITHHUB_USER2_ID));
+        tokenDAO.create(createToken(SUFFIX1, GITHUB_ACCOUNT_USERNAME_1, GITHUB_USER1_ID));
+        tokenDAO.create(createToken(SUFFIX2, GITHUB_ACCOUNT_USERNAME_2, GITHUB_USER2_ID));
         transaction.commit();
         session.close();
     }
@@ -144,9 +144,9 @@ public class UserResourceServicesIT {
     @Test
     public void refreshWithAppInstalledOnOrg() {
         final UsersApi userApi = new UsersApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME_2, testingPostgres));
-        assertEquals(0, userApi.userServices(GITHHUB_USER2_ID).size());
+        assertEquals(0, userApi.userServices(GITHUB_USER2_ID).size());
         userApi.syncUserServices();
-        final List<Workflow> services = userApi.userServices(GITHHUB_USER2_ID);
+        final List<Workflow> services = userApi.userServices(GITHUB_USER2_ID);
         assertEquals(2, services.size()); // 2 from fixtures/GitHubUser1Repos.json
         final Optional<Workflow> jdockerService = services.stream().filter(w -> w.getRepository().equals("jbrowse-docker")).findFirst();
         assertEquals(0, jdockerService.get().getWorkflowVersions().size());
@@ -157,9 +157,9 @@ public class UserResourceServicesIT {
     @Test
     public void refreshWithAppInstalledOnRepo(){
         final UsersApi userApi = new UsersApi(getWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres));
-        assertEquals(0, userApi.userServices(GITHHUB_USER1_ID).size());
+        assertEquals(0, userApi.userServices(GITHUB_USER1_ID).size());
         userApi.syncUserServices();
-        final List<Workflow> services = userApi.userServices(GITHHUB_USER1_ID);
+        final List<Workflow> services = userApi.userServices(GITHUB_USER1_ID);
         assertEquals(1, services.size()); // 1 because only 1 repo has the app installed.
         final Optional<Workflow> xenahubService = services.stream().filter(w -> w.getRepository().equals("xenahub")).findFirst();
         assertEquals(1, xenahubService.get().getWorkflowVersions().size());
