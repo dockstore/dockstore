@@ -936,7 +936,7 @@ public class WorkflowResource
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
             LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
-            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
 
         }
 
@@ -945,7 +945,7 @@ public class WorkflowResource
         if (zenodoToken == null) {
             LOG.error("Could not get Zenodo token for user " + user.getUsername());
             throw new CustomWebApplicationException("Could not get Zenodo token for user " +
-                    user.getUsername(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    user.getUsername(), HttpStatus.SC_BAD_REQUEST);
         }
         final String zenodoAccessToken = zenodoToken.getContent();
 
