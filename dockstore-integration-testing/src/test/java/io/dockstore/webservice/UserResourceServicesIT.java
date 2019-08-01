@@ -35,6 +35,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -105,6 +106,11 @@ public class UserResourceServicesIT {
     @AfterClass
     public static void afterClass(){
         SUPPORT.after();
+    }
+
+    @After
+    public void after() throws InterruptedException {
+        BaseIT.assertNoMetricsLeaks(SUPPORT);
     }
 
     @Before
