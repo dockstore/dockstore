@@ -3947,6 +3947,49 @@ paths:
                 type: boolean
       security:
         - BEARER: []
+  /users/services/sync:
+    post:
+      tags:
+        - users
+      summary: Syncs service data with Git accounts.
+      description: Currently only works with GitHub
+      operationId: syncUserServices
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
+  "/users/services/{organizationName}/sync":
+    post:
+      tags:
+        - users
+      summary: Syncs services with Git accounts for a specified organization.
+      description: ""
+      operationId: syncUserServicesbyOrganization
+      parameters:
+        - name: organizationName
+          in: path
+          description: Organization name
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   /users/starredOrganizations:
     get:
       tags:
@@ -4385,64 +4428,6 @@ paths:
           schema:
             type: integer
             format: int64
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Workflow"
-      security:
-        - BEARER: []
-  "/users/{userId}/services/refresh":
-    post:
-      tags:
-        - users
-      summary: Syncs service data with Git accounts.
-      description: Currently only works with GitHub
-      operationId: syncUserServices
-      parameters:
-        - name: userId
-          in: path
-          description: User ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Workflow"
-      security:
-        - BEARER: []
-  "/users/{userId}/services/{organization}/refresh":
-    post:
-      tags:
-        - users
-      summary: Syncs services with Git accounts for a specified organization.
-      description: ""
-      operationId: syncUserServicesbyOrganization
-      parameters:
-        - name: userId
-          in: path
-          description: User ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: organization
-          in: path
-          description: Organization
-          required: true
-          schema:
-            type: string
       responses:
         "200":
           description: successful operation
@@ -6473,6 +6458,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6488,10 +6477,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6679,6 +6664,10 @@ components:
           items:
             $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
               ockstore"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6694,10 +6683,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7594,15 +7579,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -7710,10 +7695,14 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        isChecker:
+          type: boolean
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7729,10 +7718,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
