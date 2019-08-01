@@ -19,14 +19,17 @@ package io.dockstore.webservice.jdbi;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
+import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
@@ -154,7 +157,15 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      */
     public <T extends Workflow> Optional<T> findByPath(String path, boolean findPublished, Class<T> clazz) {
         final List<Workflow> workflows = findByPath(path, findPublished);
-        return workflows.stream().filter(w -> w.getClass().equals(clazz)).map(clazz::cast).findFirst();
+        final List<T> filteredWorkflows  = workflows.stream()
+                .filter(workflow -> workflow.getClass().equals(clazz))
+                .map(clazz::cast)
+                .collect(Collectors.toList());
+        if (filteredWorkflows.size() > 1) {
+            // DB constraints should never let this happen, I think
+            throw new CustomWebApplicationException("Entries with the same path exist", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {
