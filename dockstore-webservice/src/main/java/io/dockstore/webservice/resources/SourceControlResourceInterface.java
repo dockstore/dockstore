@@ -16,6 +16,8 @@
 package io.dockstore.webservice.resources;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -94,7 +96,14 @@ public interface SourceControlResourceInterface {
                 long create = tokenDAO.create(token);
                 return tokenDAO.findById(create);
             } else {
-                throw new CustomWebApplicationException("Could not retrieve " + refreshUrl + " token based on code",
+                String domain;
+                try {
+                    URI uri = new URI(refreshUrl);
+                    domain = uri.getHost();
+                } catch (URISyntaxException e) {
+                    domain = "web site";
+                }
+                throw new CustomWebApplicationException("Could not retrieve " + domain + " token based on code",
                         HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (UnsupportedEncodingException ex) {
