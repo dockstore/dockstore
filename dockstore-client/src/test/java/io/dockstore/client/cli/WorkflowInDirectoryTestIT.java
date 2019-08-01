@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -60,6 +61,18 @@ public class WorkflowInDirectoryTestIT {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-job.yml"));
         this.baseWorkflowTest(cwlFile, cwlJSON, false, "workflow");
+    }
+
+    /**
+     * This tests whether cwltool can execute a workflow that contains an empty array hints property
+     * cwltool 1.0.20190621234233 does not seem able to do this anymore
+     */
+    @Ignore
+    @Test
+    public void testWorkflowWithEmptyHints() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-empty-hints.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-job.yml"));
+        this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
     }
 
     /**
