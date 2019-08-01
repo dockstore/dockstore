@@ -538,11 +538,11 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
 
     private String cleanFileId(String fileId) {
         // split on # if needed
-        fileId = fileId.contains("#") ? fileId.split("#")[1] : fileId;
+        cleanfileId = fileId.contains("#") ? fileId.split("#")[1] : fileId;
         // remove extra namespace if needed
-        fileId = fileId.contains("/") ? fileId.split("/")[1] : fileId;
+        cleanFileId = fileId.contains("/") ? fileId.split("/")[1] : fileId;
         LOG.info("ID: {}", fileId);
-        return fileId;
+        return cleanFileId;
     }
 
     /**
