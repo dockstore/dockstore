@@ -23,7 +23,6 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -88,7 +87,7 @@ public class ServiceResource extends AbstractWorkflowResource {
         String installationAccessToken = gitHubAppSetup(installationId);
 
         // Call common upsert code
-        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, WorkflowMode.SERVICE, installationAccessToken);
+        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, SERVICE, installationAccessToken);
 
         // Add user to service if necessary
         Workflow service = workflowDAO.findByPath(dockstoreServicePath, false, Service.class).get();
