@@ -65,9 +65,8 @@ public class WorkflowInDirectoryTestIT {
 
     /**
      * This tests whether cwltool can execute a workflow that contains an empty array hints property
-     * cwltool 1.0.20190621234233 does not seem able to do this anymore
      */
-    @Ignore
+    @Ignore("cwltool 1.0.20190621234233 does not seem able to do this anymore")
     @Test
     public void testWorkflowWithEmptyHints() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-empty-hints.cwl"));
@@ -108,7 +107,7 @@ public class WorkflowInDirectoryTestIT {
     public void testWorkflowMissingFilesToCopy() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
-        exit.expectSystemExitWithStatus(3);
+        exit.expectSystemExitWithStatus(Client.IO_ERROR);
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
         systemErrRule.getLog().contains("Missing required secondary file");
     }
