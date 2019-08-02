@@ -91,19 +91,21 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final TokenDAO tokenDAO;
 
     private final WorkflowResource workflowResource;
+    private final ServiceResource serviceResource;
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
 
-    public UserResource(SessionFactory sessionFactory, WorkflowResource workflowResource, DockerRepoResource dockerRepoResource,
-            CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+    public UserResource(SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
+            DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.workflowResource = workflowResource;
+        this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
         elasticManager = new ElasticManager();
@@ -712,7 +714,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     private List<Workflow> syncAndGetServices(User user, Optional<String> organization2) {
-        workflowResource.syncServicesForUser(user, organization2);
+        serviceResource.syncServicesForUser(user, organization2);
         userDAO.clearCache();
         return getStrippedServices(userDAO.findById(user.getId()));
     }

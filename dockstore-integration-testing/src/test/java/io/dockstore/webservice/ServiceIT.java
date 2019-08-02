@@ -249,6 +249,31 @@ public class ServiceIT extends BaseIT {
         Assert.assertEquals("there should be one matching service", 1, count);
     }
 
+//    /**
+//     * Ensures that a service and a workflow can have the same path
+//     * @throws Exception
+//     */
+//    @Test
+//    public void createServiceWithSamePathAsWorkflow() throws Exception {
+//        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+//        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
+//        WorkflowsApi client = new WorkflowsApi(webClient);
+//
+//        String serviceRepo = "DockstoreTestUser2/test-service";
+//        String installationId = "1179416";
+//
+//        // Add service
+//        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
+//        assertNotNull(service);
+//
+//        final long count = testingPostgres
+//                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
+//        Assert.assertEquals("there should be one matching service", 1, count);
+//
+//        client.manualRegister("github", "DockstoreTestUser2/test-service", "/Dockstore.cwl",
+//                "", "cwl", "/test.json");
+//    }
+
     /**
      * This tests that you can't add a version that doesn't exist
      */
