@@ -26,11 +26,14 @@ import io.dockstore.models.Satellizer;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.specto.hoverfly.junit.core.SimulationSource;
+import io.specto.hoverfly.junit.core.model.RequestFieldMatcher;
 import io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
+import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
 import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.notFound;
 import static io.specto.hoverfly.junit.dsl.ResponseCreators.success;
 import static io.specto.hoverfly.junit.dsl.ResponseCreators.unauthorised;
 
@@ -49,7 +52,20 @@ public final class Hoverfly {
     private static final String GITHUB_USER2 = fixture("fixtures/GitHubUser2.json");
     private static final String GITHUB_RATE_LIMIT = fixture("fixtures/GitHubRateLimit.json");
     private static final String GITHUB_ORGANIZATIONS = fixture("fixtures/GitHubOrganizations.json");
+    private static final String GITHUB_USER2_ORGS = fixture("fixtures/GitHubUser2Orgs.json");
     private static final String BASE_SATELLIZER = fixture("fixtures/satellizer.json");
+    private static final String GITHUB_ORGANIZATION_APP = fixture("fixtures/GitHubAppForOrg.json");
+    private static final String GITHUB_NO_APP_ON_ORG = fixture("fixtures/GitHubNoAppOnOrg.json");
+    private static final String GITHUB_APP_ON_TUBER_XENAHUB = fixture("fixtures/GitHubAppForTuberXenahub.json");
+    private static final String GITHUB_USER1_REPOS = fixture("fixtures/GitHubUser1Repos.json");
+    private static final String GITHUB_USER2_REPOS = fixture("fixtures/GitHubUser2Repos.json");
+    private static final String GITHUB_XENAHUB_REPO = fixture("fixtures/GitHubXenahubRepo.json");
+    private static final String GITHUB_JBROWSE_REPO = fixture("fixtures/GitHubJbrowseRepo.json");
+    private static final String GITHUB_REFS = fixture("fixtures/GitHubRefs.json");
+    private static final String GITHUB_COMMIT = fixture(("fixtures/GitHubCommit.json"));
+    private static final String GITHUB_CONTENTS = fixture("fixtures/GitHubContents.json");
+    private static final String GITHUB_DOCKSTORE_YML_CONTENT = fixture("fixtures/GitHubFileContent.json");
+    private static final String EMPTY_JSON_ARRAY = "[]";
 
     public final static String CUSTOM_USERNAME1 = "tuber";
     public final static String CUSTOM_USERNAME2 = "fubar";
@@ -129,6 +145,88 @@ public final class Hoverfly {
 
                     .get("/user/orgs")
                     .willReturn(success(GITHUB_ORGANIZATIONS, MediaType.APPLICATION_JSON)));
+
+    /**
+     * <ul>
+     *     <li>Two users, potato and tuber</li>
+     *     <li>potato org has GitHub app installed</li>
+     *     <li>tuber org does not have app installed, but repo tuber/xenahub does have app installed</li>
+     *     <li>potato/xenahub and tuber/xenahub have 4 GitHub releases, of which only the 4th has a .dockstore.yml</li>
+     * </ul>
+     */
+    public static final SimulationSource SERVICES_SIMULATION_SOURCE = dsl(
+            service("https://api.github.com")
+
+                    .get("/user")
+                    .header("Authorization", (Object[])new String[] { "token " + SUFFIX1 })
+                    .willReturn(success(GITHUB_USER1, MediaType.APPLICATION_JSON)).get("/user")
+
+                    .header("Authorization", (Object[])new String[] { "token " + SUFFIX2 })
+                    .willReturn(success(GITHUB_USER2, MediaType.APPLICATION_JSON))
+
+                    .get("/rate_limit")
+                    .willReturn(success(GITHUB_RATE_LIMIT, MediaType.APPLICATION_JSON))
+
+                    .get("/user/repos")
+                    .anyQueryParams()
+                    .header("Authorization", (Object[])new String[] { "token " + SUFFIX1 })
+                    .willReturn(success(GITHUB_USER1_REPOS, MediaType.APPLICATION_JSON))
+
+                    .get("/user/repos")
+                    .anyQueryParams()
+                    .header("Authorization", (Object[])new String[] { "token " + SUFFIX2 })
+                    .willReturn(success(GITHUB_USER2_REPOS, MediaType.APPLICATION_JSON))
+
+                    .get("/user/orgs")
+                    .willReturn(success(GITHUB_USER2_ORGS, MediaType.APPLICATION_JSON))
+
+                    // Will be overridden by next match
+                    .get(RequestFieldMatcher.newRegexMatcher("/orgs/[^/]+/installation"))
+                    .willReturn(response().status(404).body(GITHUB_NO_APP_ON_ORG).header("Content-type", MediaType.APPLICATION_JSON))
+
+                    .get("/orgs/potato/installation")
+                    .willReturn(success(GITHUB_ORGANIZATION_APP, MediaType.APPLICATION_JSON))
+
+                    .get("/users/potato")
+                    .willReturn(success(GITHUB_USER1, MediaType.APPLICATION_JSON))
+
+                    .get("/users/tuber")
+                    .willReturn(success(GITHUB_USER2, MediaType.APPLICATION_JSON))
+
+                    .get(RequestFieldMatcher.newGlobMatcher("/repos/*/xenahub"))
+                    .willReturn(success(GITHUB_XENAHUB_REPO, MediaType.APPLICATION_JSON))
+
+                    .get(RequestFieldMatcher.newGlobMatcher("/repos/*/jbrowse-docker"))
+                    .willReturn(success(GITHUB_JBROWSE_REPO, MediaType.APPLICATION_JSON))
+
+                    // Only v0.4 of Xenahub has a .dockstore.yml
+                    .get(RequestFieldMatcher.newGlobMatcher("/repos/*/xenahub/contents/")) // Need that trailing slash!
+                    .queryParam("ref", "v0.4")
+                    .willReturn(success(GITHUB_CONTENTS, MediaType.APPLICATION_JSON))
+
+                    .get(RequestFieldMatcher.newGlobMatcher("/repos/*/xenahub/contents/")) // Need that trailing slash!
+                    .anyQueryParams()
+                    .willReturn(success(EMPTY_JSON_ARRAY, MediaType.APPLICATION_JSON))
+
+                    .get("/repos/potato/xenahub/contents/.dockstore.yml") // Need that trailing slash!
+                    .anyQueryParams()
+                    .willReturn(success(GITHUB_DOCKSTORE_YML_CONTENT, MediaType.APPLICATION_JSON))
+
+                    .get(RequestFieldMatcher.newGlobMatcher("/repos/potato/*/git/refs"))
+                    .willReturn(success(EMPTY_JSON_ARRAY, MediaType.APPLICATION_JSON))
+
+                    .get("/repos/potato/xenahub/git/refs")
+                    .willReturn(success(GITHUB_REFS, MediaType.APPLICATION_JSON))
+
+                    .get(RequestFieldMatcher.newGlobMatcher("/repos/potato/*/commits/*"))
+                    .willReturn(success(GITHUB_COMMIT, MediaType.APPLICATION_JSON))
+
+                    .get("/repos/tuber/xenahub/installation")
+                    .willReturn(success(GITHUB_APP_ON_TUBER_XENAHUB, MediaType.APPLICATION_JSON))
+
+                    .get(RequestFieldMatcher.newRegexMatcher("/repos/[^/]+/[^/]+/installation"))
+                    .willReturn(notFound())
+    );
 
     private static TokenResponse getFakeTokenResponse(String suffix) {
         TokenResponse fakeTokenResponse = new TokenResponse();

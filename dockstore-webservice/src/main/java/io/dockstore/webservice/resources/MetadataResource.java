@@ -28,7 +28,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -50,14 +49,13 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Config;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
-import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -124,9 +122,9 @@ public class MetadataResource {
     public String sitemap() {
         //TODO needs to be more efficient via JPA query
         List<Tool> tools = toolDAO.findAllPublished();
-        List<Workflow> workflows = workflowDAO.findAllPublished();
+        // #2683 avoid web crawling services for 1.7.0
+        List<Workflow> workflows = workflowDAO.findAllPublished(null, Integer.MAX_VALUE, null, null, null, (Class)BioWorkflow.class);
         List<Organization> organizations = organizationDAO.findAllApproved();
-        List<Collection> collections;
         StringBuilder builder = new StringBuilder();
         for (Tool tool : tools) {
             builder.append(createToolURL(tool));
@@ -139,7 +137,7 @@ public class MetadataResource {
         for (Organization organization: organizations) {
             builder.append(createOrganizationURL(organization));
             builder.append(System.lineSeparator());
-            collections = collectionDAO.findAllByOrg(organization.getId());
+            List<Collection> collections = collectionDAO.findAllByOrg(organization.getId());
             for (Collection collection: collections) {
                 builder.append(createCollectionURL(collection, organization));
                 builder.append(System.lineSeparator());
@@ -157,7 +155,12 @@ public class MetadataResource {
     }
 
     private String createWorkflowURL(Workflow workflow) {
-        return createBaseURL() + "/workflows/" + workflow.getWorkflowPath();
+        if (workflow instanceof BioWorkflow) {
+            return createBaseURL() + "/workflows/" + workflow.getWorkflowPath();
+        } else if (workflow instanceof Service) {
+            return createBaseURL() + "/services/" + workflow.getWorkflowPath();
+        }
+        throw new UnsupportedOperationException("should be unreachable");
     }
 
     private String createToolURL(Tool tool) {
@@ -179,7 +182,8 @@ public class MetadataResource {
 
         final int limit = 50;
         List<Tool> tools = toolDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
-        List<Workflow> workflows = workflowDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
+        // #2683 avoid web crawling services for 1.7.0
+        List<Workflow> workflows = workflowDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc", (Class)BioWorkflow.class);
 
         List<Entry> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
@@ -204,16 +208,12 @@ public class MetadataResource {
             RSSEntry entry = new RSSEntry();
             if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
-                Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream().filter(v -> v.getDbUpdateDate() != null)
-                    .max(Comparator.comparing(Version::getDbUpdateDate));
                 entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
             } else if (dbEntry instanceof Tool) {
                 Tool tool = (Tool)dbEntry;
-                Optional<Tag> max = tool.getWorkflowVersions().stream().filter(v -> v.getDbUpdateDate() != null)
-                    .max(Comparator.comparing(Version::getDbUpdateDate));
                 entry.setTitle(tool.getPath());
                 String toolURL = createToolURL(tool);
                 entry.setGuid(toolURL);

@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.7.0-beta.1-SNAPSHOT</version>
+    <version>1.7.0-beta.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -1200,6 +1200,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <skip>true</skip>
                     <threshold>High</threshold>
                     <excludeFilterFile>
                         ${project.basedir}/findbugs-exclude.xml
@@ -1269,6 +1270,25 @@
                     io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest
                 </excludeGroups>
             </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>toil-integration-tests</id>
@@ -1335,6 +1355,24 @@
                 <skipITs>true</skipITs>
                 <skipClientITs>true</skipClientITs>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>integration-tests</id>

@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.7.0-beta.1-SNAPSHOT
+  version: 1.7.0-beta.2-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -3947,6 +3947,49 @@ paths:
                 type: boolean
       security:
         - BEARER: []
+  /users/services/sync:
+    post:
+      tags:
+        - users
+      summary: Syncs service data with Git accounts.
+      description: Currently only works with GitHub
+      operationId: syncUserServices
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
+  "/users/services/{organizationName}/sync":
+    post:
+      tags:
+        - users
+      summary: Syncs services with Git accounts for a specified organization.
+      description: ""
+      operationId: syncUserServicesbyOrganization
+      parameters:
+        - name: organizationName
+          in: path
+          description: Organization name
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   /users/starredOrganizations:
     get:
       tags:
@@ -4132,6 +4175,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+      security:
+        - BEARER: []
+  "/users/user/{userId}":
+    delete:
+      tags:
+        - users
+      summary: Terminate user if possible.
+      description: ""
+      operationId: terminateUser
+      parameters:
+        - name: userId
+          in: path
+          description: User to terminate
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: boolean
       security:
         - BEARER: []
   "/users/user/{userId}/limits":
@@ -7512,15 +7579,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         username:
           type: string
           description: Username on dockstore

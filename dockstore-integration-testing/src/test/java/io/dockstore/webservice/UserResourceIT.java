@@ -30,6 +30,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -43,6 +44,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests operations frrom the UserResource
@@ -95,6 +97,28 @@ public class UserResourceIT extends BaseIT {
         HostedApi userHostedApi = new HostedApi(client);
         Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
         assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo", hostedWorkflow.getOrganization());
+    }
+
+    @Test
+    public void testUserTermination() throws ApiException {
+        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        ApiClient userWebClient = getWebClient(USER_2_USERNAME,testingPostgres );
+
+        UsersApi userUserWebClient = new UsersApi(userWebClient);
+        final User user = userUserWebClient.getUser();
+        assertFalse(user.getUsername().isEmpty());
+
+        UsersApi adminAdminWebClient = new UsersApi(adminWebClient);
+        final Boolean aBoolean = adminAdminWebClient.terminateUser(user.getId());
+
+        assertTrue(aBoolean);
+
+        try {
+            userUserWebClient.getUser();
+            fail("should be unreachable, user must not have been banned properly");
+        } catch (ApiException e) {
+            assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
+        }
     }
 
     /**

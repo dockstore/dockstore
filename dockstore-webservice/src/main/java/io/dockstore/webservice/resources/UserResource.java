@@ -86,7 +86,6 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
-    private static final String PERMISSIONS_NOTE = "This is not tied into PermissionsInterface but could be";
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -222,6 +221,23 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.authorizer.selfDestruct(user);
 
         // Delete entries for which this user is the only user
+        deleteSelfFromEntries(user);
+
+        invalidateTokensForUser(user);
+
+        return userDAO.delete(user);
+    }
+
+    private void invalidateTokensForUser(User user) {
+        List<Token> byUserId = tokenDAO.findByUserId(user.getId());
+        for (Token token : byUserId) {
+            tokenDAO.delete(token);
+            // invalidate tokens from caching authenticator
+            cachingAuthenticator.invalidate(token.getContent());
+        }
+    }
+
+    private void deleteSelfFromEntries(User user) {
         user.getEntries().stream()
                 // The getIsPublished() check is arguably redundant as canChangeUsername(), above, already checks, but just in case...
                 .filter(e -> e.getUsers().size() == 1 && !e.getIsPublished())
@@ -238,15 +254,28 @@ public class UserResource implements AuthenticatedResourceInterface {
                     }
                     entryDAO.delete(entry);
                 });
+    }
 
-        List<Token> byUserId = tokenDAO.findByUserId(user.getId());
-        for (Token token : byUserId) {
-            tokenDAO.delete(token);
-            // invalidate tokens from caching authenticator
-            cachingAuthenticator.invalidate(token.getContent());
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/user/{userId}")
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Terminate user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class, nickname = "terminateUser")
+    public boolean terminateUser(
+        @ApiParam(hidden = true) @Auth User authUser,  @ApiParam("User to terminate") @PathParam("userId") long targetUserId) {
+        // note this terminates the user but leaves behind a tombstone to prevent re-login
+        checkUser(authUser, authUser.getId());
+
+        User targetUser = userDAO.findById(targetUserId);
+        if (targetUser == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_BAD_REQUEST);
         }
 
-        return userDAO.delete(user);
+        invalidateTokensForUser(targetUser);
+
+        targetUser.setBanned(true);
+        return true;
     }
 
     @GET
@@ -521,13 +550,17 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        List<Workflow> services = getServices(fetchedUser);
-        EntryVersionHelper.stripContent(services, this.userDAO);
-        return services;
+        return getStrippedServices(fetchedUser);
     }
 
     private List<Workflow> getServices(User user) {
         return user.getEntries().stream().filter(Service.class::isInstance).map(Service.class::cast).collect(Collectors.toList());
+    }
+
+    private List<Workflow> getStrippedServices(User user) {
+        final List<Workflow> services = getServices(user);
+        EntryVersionHelper.stripContent(services, this.userDAO);
+        return services;
     }
 
     private List<Tool> getTools(User user) {
@@ -651,6 +684,37 @@ public class UserResource implements AuthenticatedResourceInterface {
         // User could be cached by Dockstore or Google token -- invalidate all
         tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
         return limits;
+    }
+
+    @POST
+    @Path("/services/sync")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Syncs service data with Git accounts.", notes = "Currently only works with GitHub", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Workflow.class, responseContainer = "List")
+    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser) {
+        final User user = userDAO.findById(authUser.getId());
+        return syncAndGetServices(user, Optional.empty());
+    }
+
+    @POST
+    @Path("/services/{organizationName}/sync")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Syncs services with Git accounts for a specified organization.",
+            authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Workflow.class, responseContainer = "List")
+    public List<Workflow> syncUserServicesbyOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "Organization name", required = true) @PathParam("organizationName") String organization) {
+        final User user = userDAO.findById(authUser.getId());
+        return syncAndGetServices(user, Optional.of(organization));
+    }
+
+    private List<Workflow> syncAndGetServices(User user, Optional<String> organization2) {
+        workflowResource.syncServicesForUser(user, organization2);
+        userDAO.clearCache();
+        return getStrippedServices(userDAO.findById(user.getId()));
     }
 
     /**

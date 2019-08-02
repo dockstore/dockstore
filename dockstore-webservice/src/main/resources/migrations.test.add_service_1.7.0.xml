@@ -1,0 +1,409 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2019 OICR
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd"
+                   context="add_service_1.7.0">
+    <changeSet author="gluu" id="add_service">
+        <insert tableName="entry_defaultpaths">
+            <column name="entry_id" valueNumeric="102"/>
+            <column name="path" value=".dockstore.yml"/>
+            <column name="filetype" value="DOCKSTORE_SERVICE_YML"/>
+        </insert>
+        <insert tableName="service">
+            <column name="id" valueNumeric="102"/>
+            <column name="author"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:02:48.253"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.999"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@github.com:garyluu/another-test-service.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified" valueDate="2019-07-19T13:13:48"/>
+            <column name="lastupdated" valueDate="2019-07-30T10:02:48.236"/>
+            <column name="topicid"/>
+            <column name="checkerid"/>
+            <column name="descriptortype" value="service"/>
+            <column name="mode" value="SERVICE"/>
+            <column name="organization" value="garyluu"/>
+            <column name="repository" value="another-test-service"/>
+            <column name="sourcecontrol" value="github.com"/>
+            <column name="workflowname"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="42"/>
+            <column name="content"
+                    value="version: 1.1&#10;service:&#10;  subclass: docker-compose&#10;  name: A cool service&#10;  author: Andrew Duncan&#10;  description: |&#10;    This is the coolest service,&#10;    it is very cool.&#10;  files:&#10;     - docker-compose.yml &#10;     - README.md&#10;"/>
+            <column name="path" value=".dockstore.yml"/>
+            <column name="type" value="DOCKSTORE_SERVICE_YML"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.943"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.943"/>
+            <column name="absolutepath" value="/.dockstore.yml"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="43"/>
+            <column name="content" value="# another-test-service"/>
+            <column name="path" value="README.md"/>
+            <column name="type" value="DOCKSTORE_SERVICE_OTHER"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.949"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.949"/>
+            <column name="absolutepath" value="/README.md"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="44"/>
+            <column name="content" value="Hello&#10;"/>
+            <column name="path" value="docker-compose.yml"/>
+            <column name="type" value="DOCKSTORE_SERVICE_OTHER"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.952"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.952"/>
+            <column name="absolutepath" value="/docker-compose.yml"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="45"/>
+            <column name="content"
+                    value="version: 1.1&#10;service:&#10;  subclass: docker-compose&#10;  name: A cool service&#10;  author: Andrew Duncan&#10;  description: |&#10;    This is the coolest service,&#10;    it is very cool.&#10;  files:&#10;     - docker-compose.yml &#10;     - README.md&#10;"/>
+            <column name="path" value=".dockstore.yml"/>
+            <column name="type" value="DOCKSTORE_SERVICE_YML"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.963"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.963"/>
+            <column name="absolutepath" value="/.dockstore.yml"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="46"/>
+            <column name="content" value="# another-test-service"/>
+            <column name="path" value="README.md"/>
+            <column name="type" value="DOCKSTORE_SERVICE_OTHER"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.966"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.966"/>
+            <column name="absolutepath" value="/README.md"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="47"/>
+            <column name="content" value="Hello&#10;"/>
+            <column name="path" value="docker-compose.yml"/>
+            <column name="type" value="DOCKSTORE_SERVICE_OTHER"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.968"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.969"/>
+            <column name="absolutepath" value="/docker-compose.yml"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="48"/>
+            <column name="content"
+                    value="version: 1.1&#10;service:&#10;  subclass: docker-compose&#10;  name: A cool service&#10;  author: Andrew Duncan&#10;  description: |&#10;    This is the coolest service,&#10;    it is very cool.&#10;  files:&#10;     - docker-compose.yml &#10;     - README.md&#10;"/>
+            <column name="path" value=".dockstore.yml"/>
+            <column name="type" value="DOCKSTORE_SERVICE_YML"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.975"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.975"/>
+            <column name="absolutepath" value="/.dockstore.yml"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="49"/>
+            <column name="content" value="# another-test-serviceaaaa&#10;"/>
+            <column name="path" value="README.md"/>
+            <column name="type" value="DOCKSTORE_SERVICE_OTHER"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.976"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.976"/>
+            <column name="absolutepath" value="/README.md"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="50"/>
+            <column name="content" value="Hello&#10;"/>
+            <column name="path" value="docker-compose.yml"/>
+            <column name="type" value="DOCKSTORE_SERVICE_OTHER"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.977"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.977"/>
+            <column name="absolutepath" value="/docker-compose.yml"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="51"/>
+            <column name="content"
+                    value="version: 1.1&#10;service:&#10;  subclass: docker-compose&#10;  name: A cool service&#10;  author: Andrew Duncan&#10;  description: |&#10;    This is the coolest service,&#10;    it is very cool.&#10;  files:&#10;     - docker-compose.yml &#10;     - README.md&#10;thisiswrong&#10;"/>
+            <column name="path" value=".dockstore.yml"/>
+            <column name="type" value="DOCKSTORE_SERVICE_YML"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.987"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.987"/>
+            <column name="absolutepath" value="/.dockstore.yml"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="1"/>
+            <column name="entryid" valueNumeric="102"/>
+        </insert>
+        <insert tableName="validation">
+            <column name="id" valueNumeric="1"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.954"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.954"/>
+            <column name="message" value="{}"/>
+            <column name="type" value="DOCKSTORE_SERVICE_YML"/>
+            <column name="valid" valueBoolean="true"/>
+        </insert>
+        <insert tableName="validation">
+            <column name="id" valueNumeric="2"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.956"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.956"/>
+            <column name="message" value="{}"/>
+            <column name="type" value="DOCKSTORE_SERVICE_TEST_JSON"/>
+            <column name="valid" valueBoolean="true"/>
+        </insert>
+        <insert tableName="validation">
+            <column name="id" valueNumeric="3"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.97"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.97"/>
+            <column name="message" value="{}"/>
+            <column name="type" value="DOCKSTORE_SERVICE_YML"/>
+            <column name="valid" valueBoolean="true"/>
+        </insert>
+        <insert tableName="validation">
+            <column name="id" valueNumeric="4"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.971"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.971"/>
+            <column name="message" value="{}"/>
+            <column name="type" value="DOCKSTORE_SERVICE_TEST_JSON"/>
+            <column name="valid" valueBoolean="true"/>
+        </insert>
+        <insert tableName="validation">
+            <column name="id" valueNumeric="5"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.98"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.98"/>
+            <column name="message" value="{}"/>
+            <column name="type" value="DOCKSTORE_SERVICE_YML"/>
+            <column name="valid" valueBoolean="true"/>
+        </insert>
+        <insert tableName="validation">
+            <column name="id" valueNumeric="6"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.982"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.982"/>
+            <column name="message" value="{}"/>
+            <column name="type" value="DOCKSTORE_SERVICE_TEST_JSON"/>
+            <column name="valid" valueBoolean="true"/>
+        </insert>
+        <insert tableName="validation">
+            <column name="id" valueNumeric="7"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.988"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.988"/>
+            <column name="message"
+                    value="{&quot;.dockstore.yml&quot;:&quot;while scanning a simple key\\n in 'string', line 12, column 1:\\n    thisiswrong\\n    ^\\ncould not find expected ':'\\n in 'string', line 13, column 1:\\n    \\n    ^\\n&quot;}"/>
+            <column name="type" value="DOCKSTORE_SERVICE_YML"/>
+            <column name="valid" valueBoolean="false"/>
+        </insert>
+        <insert tableName="validation">
+            <column name="id" valueNumeric="8"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.989"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.989"/>
+            <column name="message" value="{}"/>
+            <column name="type" value="DOCKSTORE_SERVICE_TEST_JSON"/>
+            <column name="valid" valueBoolean="true"/>
+        </insert>
+        <insert tableName="version_metadata">
+            <column name="doistatus" value="NOT_REQUESTED"/>
+            <column name="doiurl"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="id" valueNumeric="102"/>
+        </insert>
+        <insert tableName="version_metadata">
+            <column name="doistatus" value="NOT_REQUESTED"/>
+            <column name="doiurl"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="id" valueNumeric="103"/>
+        </insert>
+        <insert tableName="version_metadata">
+            <column name="doistatus" value="NOT_REQUESTED"/>
+            <column name="doiurl"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="id" valueNumeric="104"/>
+        </insert>
+        <insert tableName="version_metadata">
+            <column name="doistatus" value="NOT_REQUESTED"/>
+            <column name="doiurl"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="id" valueNumeric="105"/>
+        </insert>
+
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="102"/>
+            <column name="sourcefileid" valueNumeric="42"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="102"/>
+            <column name="sourcefileid" valueNumeric="43"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="102"/>
+            <column name="sourcefileid" valueNumeric="44"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="103"/>
+            <column name="sourcefileid" valueNumeric="45"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="103"/>
+            <column name="sourcefileid" valueNumeric="46"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="103"/>
+            <column name="sourcefileid" valueNumeric="47"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="104"/>
+            <column name="sourcefileid" valueNumeric="48"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="104"/>
+            <column name="sourcefileid" valueNumeric="49"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="104"/>
+            <column name="sourcefileid" valueNumeric="50"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="105"/>
+            <column name="sourcefileid" valueNumeric="51"/>
+        </insert>
+        <insert tableName="version_validation">
+            <column name="versionid" valueNumeric="102"/>
+            <column name="validationid" valueNumeric="1"/>
+        </insert>
+        <insert tableName="version_validation">
+            <column name="versionid" valueNumeric="102"/>
+            <column name="validationid" valueNumeric="2"/>
+        </insert>
+        <insert tableName="version_validation">
+            <column name="versionid" valueNumeric="103"/>
+            <column name="validationid" valueNumeric="3"/>
+        </insert>
+        <insert tableName="version_validation">
+            <column name="versionid" valueNumeric="103"/>
+            <column name="validationid" valueNumeric="4"/>
+        </insert>
+        <insert tableName="version_validation">
+            <column name="versionid" valueNumeric="104"/>
+            <column name="validationid" valueNumeric="5"/>
+        </insert>
+        <insert tableName="version_validation">
+            <column name="versionid" valueNumeric="104"/>
+            <column name="validationid" valueNumeric="6"/>
+        </insert>
+        <insert tableName="version_validation">
+            <column name="versionid" valueNumeric="105"/>
+            <column name="validationid" valueNumeric="7"/>
+        </insert>
+        <insert tableName="version_validation">
+            <column name="versionid" valueNumeric="105"/>
+            <column name="validationid" valueNumeric="8"/>
+        </insert>
+
+        <insert tableName="workflowversion">
+            <column name="id" valueNumeric="102"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="lastmodified" valueDate="2019-07-16T11:53:31"/>
+            <column name="name" value="1.0"/>
+            <column name="reference" value="1.0"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="workflowpath" value=".dockstore.yml"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.942"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.942"/>
+            <column name="referencetype" value="TAG"/>
+            <column name="versioneditor_id"/>
+            <column name="commitid" value="08411965122c3115710a15d71e39236f0c918e9f"/>
+            <column name="subclass"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="workflowversion">
+            <column name="id" valueNumeric="103"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="lastmodified" valueDate="2019-07-16T11:53:31"/>
+            <column name="name" value="1.1"/>
+            <column name="reference" value="1.1"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="workflowpath" value=".dockstore.yml"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.961"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.961"/>
+            <column name="referencetype" value="TAG"/>
+            <column name="versioneditor_id"/>
+            <column name="commitid" value="08411965122c3115710a15d71e39236f0c918e9f"/>
+            <column name="subclass"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="workflowversion">
+            <column name="id" valueNumeric="104"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="lastmodified" valueDate="2019-07-19T13:13:48"/>
+            <column name="name" value="1.3"/>
+            <column name="reference" value="1.3"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="workflowpath" value=".dockstore.yml"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.974"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.974"/>
+            <column name="referencetype" value="TAG"/>
+            <column name="versioneditor_id"/>
+            <column name="commitid" value="0694932f8373799ce99dca1c5e3ce94bf2f6463c"/>
+            <column name="subclass"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="workflowversion">
+            <column name="id" valueNumeric="105"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="lastmodified" valueDate="2019-07-18T09:40:08"/>
+            <column name="name" value="invalid-yml-release"/>
+            <column name="reference" value="invalid-yml-release"/>
+            <column name="valid" valueBoolean="false"/>
+            <column name="workflowpath" value=".dockstore.yml"/>
+            <column name="dbcreatedate" valueDate="2019-07-30T10:03:05.986"/>
+            <column name="dbupdatedate" valueDate="2019-07-30T10:03:05.986"/>
+            <column name="referencetype" value="TAG"/>
+            <column name="versioneditor_id"/>
+            <column name="commitid" value="f74e59521e2c8b2f782e3c781981e6d73236da84"/>
+            <column name="subclass"/>
+            <column name="frozen" valueBoolean="false"/>
+        </insert>
+        <insert tableName="workflow_workflowversion">
+            <column name="workflowid" valueNumeric="102"/>
+            <column name="workflowversionid" valueNumeric="102"/>
+        </insert>
+        <insert tableName="workflow_workflowversion">
+            <column name="workflowid" valueNumeric="102"/>
+            <column name="workflowversionid" valueNumeric="103"/>
+        </insert>
+        <insert tableName="workflow_workflowversion">
+            <column name="workflowid" valueNumeric="102"/>
+            <column name="workflowversionid" valueNumeric="104"/>
+        </insert>
+        <insert tableName="workflow_workflowversion">
+            <column name="workflowid" valueNumeric="102"/>
+            <column name="workflowversionid" valueNumeric="105"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
+
