@@ -89,6 +89,7 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -143,7 +144,7 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowResource extends AbstractWorkflowResource
+public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     implements EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {
     private static final String CWL_CHECKER = "_cwl_checker";
@@ -165,7 +166,7 @@ public class WorkflowResource extends AbstractWorkflowResource
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
-        super(client, sessionFactory, configuration);
+        super(client, sessionFactory, configuration, Workflow.class);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
@@ -180,6 +181,12 @@ public class WorkflowResource extends AbstractWorkflowResource
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
     }
+
+    @Override
+    protected Workflow initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo) {
+        return sourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
+    }
+
 
     /**
      * TODO: this should not be a GET either

@@ -259,7 +259,7 @@ public final class GitHubHelper {
     }
 
 
-    public static Collection<String> reposToCreateServicesFor(Collection<String> repositories, Optional<String> organization,
+    public static Collection<String> reposToCreateEntitiesFor(Collection<String> repositories, Optional<String> organization,
             Set<String> existingWorkflowPaths) {
         // Get all unique organizations
         final Set<String> myOrganizations = organization.map(o -> Collections.singleton(o))

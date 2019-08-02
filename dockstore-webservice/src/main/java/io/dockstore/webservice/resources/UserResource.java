@@ -714,7 +714,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     private List<Workflow> syncAndGetServices(User user, Optional<String> organization2) {
-        serviceResource.syncServicesForUser(user, organization2);
+        serviceResource.syncEntitiesForUser(user, organization2);
         userDAO.clearCache();
         return getStrippedServices(userDAO.findById(user.getId()));
     }

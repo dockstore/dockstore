@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -256,21 +257,17 @@ public class ServiceIT extends BaseIT {
     @Test
     public void testServiceWithSamePathAsWorkflow() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
+        io.swagger.client.model.Workflow service = client.addService(serviceRepo, BasicIT.USER_2_USERNAME, installationId);
         assertNotNull(service);
-        try {
-            client.addService(serviceRepo, "admin@admin.com", installationId);
-        } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
-        }
 
+        // Add workflow with same path as service
         final io.swagger.client.model.Workflow workflow = client
                 .manualRegister("github", serviceRepo, "/Dockstore.cwl", "", "cwl", "/test.json");
         assertNotNull(workflow);

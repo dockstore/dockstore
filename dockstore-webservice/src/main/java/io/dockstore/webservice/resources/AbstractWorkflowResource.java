@@ -1,8 +1,11 @@
 package io.dockstore.webservice.resources;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -17,6 +20,8 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -32,10 +37,19 @@ import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
+/**
+ * Base class for ServiceResource and WorkflowResource.
+ *
+ * Mainly has GitHub app logic, although there is also some BitBucket refresh
+ * token logic that was easier to move in here than refactor out.
+ *
+ * @param <T>
+ */
 @Api("workflows")
-public class AbstractWorkflowResource implements SourceControlResourceInterface, AuthenticatedResourceInterface {
+public abstract class AbstractWorkflowResource<T extends Workflow> implements SourceControlResourceInterface, AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractWorkflowResource.class);
 
     protected final HttpClient client;
@@ -44,12 +58,16 @@ public class AbstractWorkflowResource implements SourceControlResourceInterface,
     protected final UserDAO userDAO;
     protected final WorkflowVersionDAO workflowVersionDAO;
     protected final FileDAO fileDAO;
+    protected final String gitHubPrivateKeyFile;
+    protected final String gitHubAppId;
 
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
+    private final Class<T> entityClass;
 
-    public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration) {
+    public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
         this.client = client;
+
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
@@ -58,6 +76,10 @@ public class AbstractWorkflowResource implements SourceControlResourceInterface,
 
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
+        gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
+        gitHubAppId = configuration.getGitHubAppId();
+
+        this.entityClass = clazz;
     }
 
     protected List<Token> checkOnBitbucketToken(User user) {
@@ -72,6 +94,8 @@ public class AbstractWorkflowResource implements SourceControlResourceInterface,
 
         return tokenDAO.findByUserId(user.getId());
     }
+
+    protected abstract T initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo);
 
     /**
      * Finds all workflows from a general Dockstore path that are of type FULL
@@ -142,6 +166,7 @@ public class AbstractWorkflowResource implements SourceControlResourceInterface,
                 versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
             }
         } else {
+            // TODO: Abstract this better; shouldn't be checking for SERVICE in the base class like this.
             if (workflowMode == SERVICE) {
                 String msg = "No service with path " + dockstoreWorkflowPath + " exists on Dockstore.";
                 LOG.error(msg);
@@ -223,4 +248,173 @@ public class AbstractWorkflowResource implements SourceControlResourceInterface,
             }
         }
     }
+
+
+    protected T upsertVersion(String repository, String username, String gitReference, String installationId, WorkflowMode workflowMode) {
+        // Retrieve the user who triggered the call (may not exist on Dockstore)
+        User sendingUser = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+
+        // Get Installation Access Token
+        String installationAccessToken = gitHubAppSetup(installationId);
+
+        // Call common upsert code
+        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, workflowMode, installationAccessToken);
+
+        // Add user to service if necessary
+        T entity = workflowDAO.findByPath(dockstoreServicePath, false, entityClass).get();
+        if (sendingUser != null && !entity.getUsers().contains(sendingUser)) {
+            entity.getUsers().add(sendingUser);
+        }
+
+        return entity;
+    }
+
+    /**
+     * Does the following:
+     * 1) Add user to any existing Dockstore services they should own
+     *
+     * 2) For all of the users organizations that have the GitHub App installed on all repositories in those organizations,
+     * add any services that should be on Dockstore but are not
+     *
+     * 3) For all of the repositories which have the GitHub App installed, add them to Dockstore if they are missing
+     * @param user
+     * @param organization
+     */
+    void syncEntitiesForUser(User user, Optional<String> organization) {
+        List<Token> githubByUserId = tokenDAO.findGithubByUserId(user.getId());
+
+        if (githubByUserId.isEmpty()) {
+            String msg = "The user does not have a GitHub token, please create one";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        } else {
+            syncEntities(user, organization, githubByUserId.get(0));
+        }
+    }
+    /**
+     * Creates an entity (service or workflow) for a GitHub repository.
+     *
+     * Throws an exception if the entity already exists for that GitHub repo.
+     *
+     * Ideally would return T instead of Workflow, but punting on that for now.
+     *
+     * @param githubRepository
+     * @param username
+     * @param installationId
+     * @return
+     */
+    Workflow addEntityFromGitHubRepository(String githubRepository, String username, String installationId) {
+        // Check for duplicates (currently workflows and services share paths)
+        String entityPath = "github.com/" + githubRepository;
+
+        // Retrieve the user who triggered the call
+        User sendingUser = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username, true);
+
+        // Determine if service is already in Dockstore
+        workflowDAO.findByPath(entityPath, false, entityClass).ifPresent((entity) -> {
+            // TODO: When we add support for workflows, this message needs to be updated
+            String msg = "A service already exists for GitHub repository " + githubRepository;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        });
+
+        // Get Installation Access Token
+        String installationAccessToken = GitHubHelper.gitHubAppSetup(gitHubAppId, gitHubPrivateKeyFile, installationId);
+
+        // Create a service object
+        final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
+
+        // Check that repository exists on GitHub
+        try {
+            sourceCodeRepo.getRepository(githubRepository);
+        } catch (CustomWebApplicationException ex) {
+            String msg = "Repository " + githubRepository + " does not exist on GitHub";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+
+        T entity = initializeEntity(githubRepository, sourceCodeRepo);
+        entity.getUsers().add(sendingUser);
+        long serviceId = workflowDAO.create(entity);
+
+        return workflowDAO.findById(serviceId);
+    }
+
+    /**
+     * Syncs entities based on GitHub app installation, optionally limiting to orgs in the GitHub organization <code>organization</code>.
+     *
+     * 1. Finds all repos that have the Dockstore GitHub app installed
+     * 2. For existing entities, ensures that <code>user</code> is one of the entity's users
+     * 3. For repos that don't have a corresponding Dockstore entity, creates the entity
+     *
+     * @param user
+     * @param organization
+     * @param gitHubToken
+     */
+    private void syncEntities(User user, Optional<String> organization, Token gitHubToken) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken, client);
+
+        // Get all GitHub repositories for the user
+        final Map<String, String> workflowGitUrl2Name = gitHubSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+
+        // Filter by organization if necessary
+        final Collection<String> repositories = GitHubHelper.filterReposByOrg(workflowGitUrl2Name.values(), organization);
+
+        // Add user to any services they should have access to that already exist on Dockstore
+        final List<Workflow> existingWorkflows = findDockstoreWorkflowsForGitHubRepos(repositories);
+        existingWorkflows.stream()
+                .filter(workflow -> !workflow.getUsers().contains(user))
+                .forEach(workflow -> workflow.getUsers().add(user));
+        final Set<String> existingWorkflowPaths = existingWorkflows.stream()
+                .map(workflow -> workflow.getWorkflowPath()).collect(Collectors.toSet());
+
+        GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
+
+        GitHubHelper.reposToCreateEntitiesFor(repositories, organization, existingWorkflowPaths).stream()
+                .forEach(repositoryName -> {
+                    final T entity = initializeEntity(repositoryName, gitHubSourceCodeRepo);
+                    entity.addUser(user);
+                    final long entityId = workflowDAO.create(entity);
+                    final Workflow createdEntity = workflowDAO.findById(entityId);
+                    final Workflow updatedEntity = gitHubSourceCodeRepo.getWorkflow(repositoryName, Optional.of(createdEntity));
+                    updateDBWorkflowWithSourceControlWorkflow(createdEntity, updatedEntity);
+                });
+    }
+
+    /**
+     * From the collection of GitHub repositories, returns the list of Dockstore entities (Service or BioWorkflow) that
+     * exist for those repositories.
+     *
+     * Ideally this would return <code>List<T></code>, but not sure if I can use getClass instead of WorkflowMode
+     * for workflows (would it apply to both STUB and WORKFLOW?) in filter call below (see TODO)?
+     *
+     * @param repositories
+     * @return
+     */
+    private List<Workflow> findDockstoreWorkflowsForGitHubRepos(Collection<String> repositories) {
+        final List<String> workflowPaths = repositories.stream().map(repositoryName -> "github.com/" + repositoryName)
+                .collect(Collectors.toList());
+        return workflowDAO.findByPaths(workflowPaths, false).stream()
+                // TODO: Revisit this when support for workflows added.
+                .filter(workflow -> Objects.equals(workflow.getMode(), SERVICE))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Setup tokens required for GitHub apps
+     * @param installationId App installation ID (per repository)
+     * @return Installation access token for the given repository
+     */
+    private String gitHubAppSetup(String installationId) {
+        GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
+        String installationAccessToken = CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
+        if (installationAccessToken == null) {
+            String msg = "Could not get an installation access token for install with id " + installationId;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return installationAccessToken;
+    }
+
+
 }
