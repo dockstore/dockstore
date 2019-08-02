@@ -49,6 +49,11 @@ public final class ResourceUtilities {
         return getResponseAsString(buildHttpGet(input, token), client);
     }
 
+    public static Optional<String> refreshPost(String input, String token, HttpClient client, String clientId, String secret,
+            String payload) throws UnsupportedEncodingException {
+        return getResponseAsString(buildHttpPost(input, token, clientId, secret, payload), client);
+    }
+
     public static Optional<String> bitbucketPost(String input, String token, HttpClient client, String clientId, String secret,
             String payload) throws UnsupportedEncodingException {
         return getResponseAsString(buildHttpPost(input, token, clientId, secret, payload), client);
@@ -66,12 +71,15 @@ public final class ResourceUtilities {
             throws UnsupportedEncodingException {
         HttpPost httpPost = new HttpPost(input);
         if (token == null) {
-            String string = clientId + ':' + secret;
-            byte[] b = string.getBytes(StandardCharsets.UTF_8);
-            String encoding = Base64.getEncoder().encodeToString(b);
+            // if the client ID and the client secret are null then we assume
+            // they are passed as parameters in the request body via the payload variable
+            if (clientId != null && secret != null) {
+                String string = clientId + ':' + secret;
+                byte[] b = string.getBytes(StandardCharsets.UTF_8);
+                String encoding = Base64.getEncoder().encodeToString(b);
 
-            httpPost.addHeader("Authorization", "Basic " + encoding);
-
+                httpPost.addHeader("Authorization", "Basic " + encoding);
+            }
             StringEntity entity = new StringEntity(payload);
             entity.setContentType("application/x-www-form-urlencoded");
             httpPost.setEntity(entity);

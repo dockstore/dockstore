@@ -182,8 +182,8 @@ public class WorkflowResource
     private final String gitHubPrivateKeyFile;
     private final String gitHubAppId;
     private final String zenodoUrl;
-    //private final String zenodoClientID;
-    //private final String zenodoClientSecret;
+    private final String zenodoClientID;
+    private final String zenodoClientSecret;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
         PermissionsInterface permissionsInterface, EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
@@ -210,8 +210,8 @@ public class WorkflowResource
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
 
         zenodoUrl = configuration.getZenodoUrl();
-        //zenodoClientID = configuration.getZenodoClientID();
-        //zenodoClientSecret = configuration.getZenodoClientSecret();
+        zenodoClientID = configuration.getZenodoClientID();
+        zenodoClientSecret = configuration.getZenodoClientSecret();
     }
 
     /**
@@ -378,7 +378,9 @@ public class WorkflowResource
 
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
-            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+            String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
+            String payload = "grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
+            refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
         }
 
         return tokenDAO.findByUserId(user.getId());
@@ -903,11 +905,14 @@ public class WorkflowResource
      */
     private List<Token> checkOnZenodoToken(User user) {
         // TODO Implement refresh for Zenodo token
-        // List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
-        // if (!tokens.isEmpty()) {
-        //     Token zenodoToken = tokens.get(0);
-        //     refreshZenodoToken(zenodoToken, client, tokenDAO, zenodoClientID, zenodoClientSecret);
-        // }
+        List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
+        if (!tokens.isEmpty()) {
+            Token zenodoToken = tokens.get(0);
+            String refreshUrl = zenodoUrl + "/oauth/token";
+            String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
+                    + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
+            refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
+        }
         return tokenDAO.findByUserId(user.getId());
     }
 
@@ -935,7 +940,12 @@ public class WorkflowResource
 
         List<Token> tokens = checkOnZenodoToken(user);
         Token zenodoToken = Token.extractToken(tokens, TokenType.ZENODO_ORG);
-        final String zenodoAccessToken = zenodoToken == null ? null : zenodoToken.getContent();
+        if (zenodoToken == null) {
+            LOG.error("Could not get Zenodo token for user " + user.getUsername());
+            throw new CustomWebApplicationException("Could not get Zenodo token for user "
+                    + user.getUsername(), HttpStatus.SC_BAD_REQUEST);
+        }
+        final String zenodoAccessToken = zenodoToken.getContent();
 
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
