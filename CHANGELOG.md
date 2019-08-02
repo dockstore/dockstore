@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project will eventually adhere to [Semantic Versioning](http://semver.org/).
 
-Beyond this point, reference https://github.com/ga4gh/dockstore/releases
+Beyond this point, reference https://github.com/dockstore/dockstore/releases
 
 ## [0.2.0] - 2015-12-09 - Staging Version
 ### Added

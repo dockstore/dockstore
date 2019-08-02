@@ -191,7 +191,7 @@ public class Client {
         URL url;
         try {
             ObjectMapper mapper = getObjectMapper();
-            url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
+            url = new URL("https://api.github.com/repos/dockstore/dockstore/releases");
             List<Map<String, Object>> mapRel;
             try {
                 TypeFactory typeFactory = mapper.getTypeFactory();
@@ -234,8 +234,8 @@ public class Client {
     private static Boolean compareVersion(String current) {
         URL urlCurrent, urlLatest;
         try {
-            urlCurrent = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + current);
-            urlLatest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
+            urlCurrent = new URL("https://api.github.com/repos/dockstore/dockstore/releases/tags/" + current);
+            urlLatest = new URL("https://api.github.com/repos/dockstore/dockstore/releases/latest");
 
             int idCurrent, idLatest;
             String prerelease;
@@ -264,7 +264,7 @@ public class Client {
      */
     static String getLatestVersion() {
         try {
-            URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
+            URL url = new URL("https://api.github.com/repos/dockstore/dockstore/releases/latest");
             ObjectMapper mapper = getObjectMapper();
             Map<String, Object> map;
             try {
@@ -288,7 +288,7 @@ public class Client {
      */
     private static Boolean checkIfTagExists(String tag) {
         try {
-            URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
+            URL url = new URL("https://api.github.com/repos/dockstore/dockstore/releases");
             ObjectMapper mapper = getObjectMapper();
             try {
                 ArrayList<Map<String, String>> arrayMap = mapper.readValue(url, ArrayList.class);
@@ -362,7 +362,7 @@ public class Client {
         // Update if necessary
         URL url;
 
-        String latestPath = "https://api.github.com/repos/ga4gh/dockstore/releases/latest";
+        String latestPath = "https://api.github.com/repos/dockstore/dockstore/releases/latest";
         String latestVersion, upgradeURL;
         try {
             url = new URL(latestPath);
@@ -461,7 +461,7 @@ public class Client {
             if (checkIfTagExists(currentVersion)) {
                 URL url = null;
                 try {
-                    url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
+                    url = new URL("https://api.github.com/repos/dockstore/dockstore/releases/tags/" + currentVersion);
                 } catch (MalformedURLException e) {
                     LOG.debug("Could not read a release of Dockstore from GitHub", e);
                 }

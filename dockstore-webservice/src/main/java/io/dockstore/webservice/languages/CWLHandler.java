@@ -433,7 +433,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
-                // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
+                // for workflows, bare files may be referenced. See https://github.com/dockstore/dockstore/issues/208
                 //ex:
                 //  run: {import: revtool.cwl}
                 //  run: revtool.cwl

@@ -1594,7 +1594,7 @@ public class WorkflowResource
         @ApiParam(value = "user permission", required = true) Permission permission) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/ga4gh/dockstore/issues/1593
+        // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/dockstore/dockstore/issues/1593
         if (workflow.getMode() != WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Setting permissions is only allowed on hosted workflows.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -1874,7 +1874,7 @@ public class WorkflowResource
         @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
         // Set up source code interface and ensure token is set up
-        // construct git url like git@github.com:ga4gh/dockstore-ui.git
+        // construct git url like git@github.com:dockstore/dockstore-ui.git
         String registryURLPrefix;
         SourceControl sourceControlEnum;
         if (workflowRegistry.equalsIgnoreCase(SourceControl.BITBUCKET.getFriendlyName().toLowerCase())) {

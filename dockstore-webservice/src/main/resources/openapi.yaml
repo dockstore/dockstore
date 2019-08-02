@@ -8,11 +8,11 @@ info:
   termsOfService: TBD
   contact:
     name: Dockstore@ga4gh
-    url: https://github.com/ga4gh/dockstore
+    url: https://github.com/dockstore/dockstore
     email: theglobalalliance@genomicsandhealth.org
   license:
     name: Apache License Version 2.0
-    url: https://github.com/ga4gh/dockstore/blob/develop/LICENSE
+    url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
 tags:
   - name: GA4GH
     description: A curated subset of resources proposed as a common standard for tool
@@ -6458,10 +6458,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6477,6 +6473,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6664,10 +6664,6 @@ components:
           items:
             $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
               ockstore"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6683,6 +6679,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7579,15 +7579,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -7695,14 +7695,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parentEntry:
-          $ref: "#/components/schemas/Entry"
         isChecker:
           type: boolean
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         has_checker:
           type: boolean
           readOnly: true
@@ -7718,6 +7714,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

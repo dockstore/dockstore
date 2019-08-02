@@ -9,11 +9,11 @@ info:
   termsOfService: "TBD"
   contact:
     name: "Dockstore@ga4gh"
-    url: "https://github.com/ga4gh/dockstore"
+    url: "https://github.com/dockstore/dockstore"
     email: "theglobalalliance@genomicsandhealth.org"
   license:
     name: "Apache License Version 2.0"
-    url: "https://github.com/ga4gh/dockstore/blob/develop/LICENSE"
+    url: "https://github.com/dockstore/dockstore/blob/develop/LICENSE"
 basePath: "/"
 tags:
 - name: "GA4GH"
@@ -6187,10 +6187,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6206,6 +6202,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6418,10 +6418,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Base class for versions of entries in the Dockstore"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6437,6 +6433,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7409,15 +7409,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7535,14 +7535,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parentEntry:
-        $ref: "#/definitions/Entry"
       isChecker:
         type: "boolean"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      parentEntry:
+        $ref: "#/definitions/Entry"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7558,6 +7554,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

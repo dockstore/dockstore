@@ -1103,7 +1103,7 @@ info:
   description: The Dockstore API, includes proprietary and GA4GH V1+V2 endpoints
   license:
     name: Apache 2.0
-    url: https://github.com/ga4gh/dockstore/blob/develop/LICENSE
+    url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: http://swagger.io/terms/
   title: Dockstore
   version: 1.6.0
@@ -4818,7 +4818,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:

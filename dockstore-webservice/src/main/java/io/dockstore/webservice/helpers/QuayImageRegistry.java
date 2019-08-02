@@ -372,7 +372,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
     @Override
     public boolean canConvertToAuto(Tool tool) {
-        // TODO: https://github.com/ga4gh/dockstore/issues/1353 
+        // TODO: https://github.com/dockstore/dockstore/issues/1353
         final String repo = tool.getNamespace() + '/' + tool.getName();
         final Gson gson = new Gson();
 
