@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -183,6 +184,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "The Id of the corresponding topic on Dockstore Discuss")
     private Long topicId;
+
+    @JsonIgnore
+    @ElementCollection
+    @Column(columnDefinition = "text")
+    private Set<String> blacklistedVersionNames = new LinkedHashSet<>();
 
     /**
      * Example of generalizing concept of default paths across tools, workflows
@@ -514,5 +520,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setDefaultPaths(Map<DescriptorLanguage.FileType, String> defaultPaths) {
         this.defaultPaths = defaultPaths;
+    }
+
+    public Set<String> getBlacklistedVersionNames() {
+        return blacklistedVersionNames;
+    }
+
+    public void setBlacklistedVersionNames(Set<String> blacklistedVersionNames) {
+        this.blacklistedVersionNames = blacklistedVersionNames;
     }
 }

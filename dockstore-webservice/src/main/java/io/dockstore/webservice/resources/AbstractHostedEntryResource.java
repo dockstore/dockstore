@@ -16,12 +16,15 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
@@ -189,7 +192,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
-
         return saveVersion(user, entryId, entry, version, versionSourceFiles, Optional.empty());
     }
 
@@ -241,10 +243,15 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         if (validatedVersion instanceof WorkflowVersion) {
             entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());
         }
+        updateBlacklistedVersionNames(entry, version);
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
+    }
+
+    private void updateBlacklistedVersionNames(T entry, U version) {
+        entry.getBlacklistedVersionNames().add(version.getName());
     }
 
     /**
@@ -356,7 +363,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private Set<SourceFile> handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
         Set<U> versions = entry.getWorkflowVersions();
         Map<String, SourceFile> map = new HashMap<>();
-        tag.setName(calculateNextVersionName(versions));
+        tag.setName(calculateNextVersionName(versions, entry));
 
         if (versions.size() > 0) {
             // get the last one and modify files accordingly
@@ -425,16 +432,19 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     /**
      * Calculates the next version name. Currently assumes versions are always stringified numbers, and returns
      * the highest number + 1 as a string. Need to update when we support arbitrary names for the version.
-     * @param versions
-     * @return
+     * @param versions  The existing list of versions
+     * @return          The version name of the next version
      */
-    String calculateNextVersionName(Set<U> versions) {
-        if (versions.isEmpty()) {
+    String calculateNextVersionName(Set<U> versions, T entry) {
+        Set<String> blacklistedVersionNames = entry.getBlacklistedVersionNames();
+        Set<String> currentVersionNames = versions.stream().map(Version::getName).collect(Collectors.toSet());
+        Set<String> combinedVersionNames = Stream.concat(blacklistedVersionNames.stream(), currentVersionNames.stream()).collect(Collectors.toSet());
+        if (combinedVersionNames.isEmpty()) {
             return "1";
         } else {
-            U versionWithTheLargestName = versionWithLargestName(versions);
-            return (String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
-
+            Set<Integer> versionNamesAsIntegers = combinedVersionNames.stream().map(Integer::parseInt).collect(Collectors.toSet());
+            Integer max = Collections.max(versionNamesAsIntegers);
+            return String.valueOf(max + 1);
         }
     }
 
