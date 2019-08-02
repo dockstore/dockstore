@@ -33,7 +33,6 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
@@ -49,7 +48,6 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
-@Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
 public class ServiceResource extends AbstractWorkflowResource {
 

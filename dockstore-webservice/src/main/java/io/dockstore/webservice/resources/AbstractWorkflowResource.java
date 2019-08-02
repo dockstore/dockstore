@@ -25,6 +25,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.swagger.annotations.Api;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
+@Api("workflows")
 public class AbstractWorkflowResource implements SourceControlResourceInterface, AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractWorkflowResource.class);
 

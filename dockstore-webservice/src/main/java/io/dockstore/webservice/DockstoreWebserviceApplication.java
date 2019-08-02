@@ -266,6 +266,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
         environment.jersey().register(workflowResource);
         final ServiceResource serviceResource = new ServiceResource(httpClient, hibernate.getSessionFactory(), configuration);
+        environment.jersey().register(serviceResource);
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource, entryResource);
