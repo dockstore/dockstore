@@ -112,13 +112,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
         List<Token> tokens = checkOnBitbucketToken(user);
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
 
-        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
-        final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
-        final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
+        final String bitbucketTokenContent = getToken(tokens, TokenType.BITBUCKET_ORG);
+        final String gitHubTokenContent = getToken(tokens, TokenType.GITHUB_COM);
+        final String gitlabTokenContent = getToken(tokens, TokenType.GITLAB_COM);
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
             .createSourceCodeRepo(gitUrl, client, bitbucketTokenContent, gitlabTokenContent, gitHubTokenContent);
@@ -126,6 +123,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
         }
         return sourceCodeRepo;
+    }
+
+    private String getToken(List<Token> tokens, TokenType tokenType) {
+        final Token token = Token.extractToken(tokens, tokenType);
+        return token == null ? null : token.getContent();
     }
 
     /**
