@@ -21,8 +21,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
@@ -31,8 +29,6 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 @Path("/workflows")
 @Produces(MediaType.APPLICATION_JSON)
 public class ServiceResource extends AbstractWorkflowResource<Service> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ServiceResource.class);
 
     public ServiceResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration) {
         super(client, sessionFactory, configuration, Service.class);
