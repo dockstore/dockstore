@@ -86,6 +86,9 @@ public class CWLHandler implements LanguageHandlerInterface {
                                 description = first.get().getContent();
                             }
                         }
+                    } else if (doc instanceof List) {
+                        List docList = (List)doc;
+                        description = String.join(System.getProperty("line.separator"), docList);
                     }
                 }
                 if (description != null) {
