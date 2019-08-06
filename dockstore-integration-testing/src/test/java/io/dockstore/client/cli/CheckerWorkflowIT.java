@@ -168,6 +168,14 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count9 = testingPostgres
             .runSelectStatement("select count(*) from tool where ispublished = true", long.class);
         assertEquals("the tool should not be published, there are " + count9, 0, count9);
+
+        // Should not be able to directly publish the checker
+        try {
+            workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
+            assertTrue("Should not reach this statement.", false);
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
     }
 
     /**
@@ -330,6 +338,14 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count8 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
         assertEquals("No workflows should be published, there are " + count8, 0, count8);
+
+        // Should not be able to directly publish the checker
+        try {
+            workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
+            assertTrue("Should not reach this statement.", false);
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
     }
 
     /**
