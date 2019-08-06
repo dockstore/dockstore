@@ -71,6 +71,7 @@ import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.OrganizationResource;
+import io.dockstore.webservice.resources.ServiceResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
@@ -262,8 +263,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final EntryResource entryResource = new EntryResource(toolDAO, configuration);
         environment.jersey().register(entryResource);
 
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), authorizer, entryResource, configuration);
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
         environment.jersey().register(workflowResource);
+        final ServiceResource serviceResource = new ServiceResource(httpClient, hibernate.getSessionFactory(), configuration);
+        environment.jersey().register(serviceResource);
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource, entryResource);
@@ -271,7 +274,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator, authorizer));
+        environment.jersey().register(new UserResource(getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer));
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));

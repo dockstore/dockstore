@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.Objects;
 
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.validation.constraints.NotNull;
 
@@ -41,7 +40,6 @@ import org.apache.commons.io.FilenameUtils;
  */
 @ApiModel(value = "Tag", description = "This describes one tag associated with a container.")
 @Entity
-@DiscriminatorValue("tool")
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tag extends Version<Tag> implements Comparable<Tag> {
 

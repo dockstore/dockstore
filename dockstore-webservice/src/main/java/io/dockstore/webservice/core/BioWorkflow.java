@@ -16,7 +16,6 @@
 package io.dockstore.webservice.core;
 
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.OneToOne;
@@ -32,7 +31,6 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(value = "BioWorkflow", description = "This describes one workflow in the dockstore")
 @Entity
-@DiscriminatorValue("bioworkflow")
 @Table(name = "workflow")
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {
