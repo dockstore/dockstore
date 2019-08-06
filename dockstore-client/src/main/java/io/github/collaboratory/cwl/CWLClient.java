@@ -1040,8 +1040,14 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
             } else {
                 assert (files.size() == 1);
                 FileProvisioning.FileInfo file = files.get(0);
-                final Map<String, Object> fileMapDataStructure = (Map)(outputObject).get(key);
-                outputSet.addAll(provisionOutputFile(key, file, fileMapDataStructure));
+                Object o = outputObject.get(key);
+                if (o instanceof Map) {
+                    final Map<String, Object> fileMapDataStructure = (Map)(outputObject).get(key);
+                    outputSet.addAll(provisionOutputFile(key, file, fileMapDataStructure));
+                }
+                if (o instanceof Integer) {
+                    LOG.info("There are no output files found for this workflow.");
+                }
             }
         }
         return outputSet;
