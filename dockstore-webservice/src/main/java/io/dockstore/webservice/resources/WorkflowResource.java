@@ -1119,7 +1119,6 @@ public class WorkflowResource
                     + " to be uploaded in order to create a DOI.", HttpStatus.SC_BAD_REQUEST);
         } else {
             OutputStream outputStream;
-            //String versionOfWorkflow = workflowVersion.getName();
             // Replace forward slashes so we can use the version in a file name
             String versionOfWorkflow = workflowVersion.getName().replaceAll("/", "-");
             // Replace forward slashes so we can use the workflow path in a file name
