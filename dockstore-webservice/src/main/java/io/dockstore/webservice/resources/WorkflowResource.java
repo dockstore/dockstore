@@ -32,7 +32,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +76,6 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -129,7 +127,6 @@ import io.swagger.zenodo.client.model.Author;
 import io.swagger.zenodo.client.model.Community;
 import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
-import io.swagger.zenodo.client.model.DepositionFile;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -967,8 +964,7 @@ public class WorkflowResource
      */
     private void setMetadataKeywords(DepositMetadata depositMetadata, Workflow workflow) {
         // Use the Dockstore workflow labels as Zenodo free form keywords for this deposition.
-        List<String> labelList = workflow.getLabels().stream().map(label
-                -> label.getValue()).collect(Collectors.toList());
+        List<String> labelList = workflow.getLabels().stream().map(label -> label.getValue()).collect(Collectors.toList());
         depositMetadata.setKeywords(labelList);
 
     }
@@ -1074,8 +1070,8 @@ public class WorkflowResource
         // We only set the access right to OPEN at this time, and the default license to cc-by
         // for the metadata (non-datasets)
         if (accessRight == DepositMetadata.AccessRightEnum.OPEN || accessRight == DepositMetadata.AccessRightEnum.EMBARGOED) {
-            String license = (depositMetadata.getLicense() == null || depositMetadata.getLicense().isEmpty()) ?
-            "CC-BY-4.0" : depositMetadata.getLicense();
+            String license = (depositMetadata.getLicense() == null || depositMetadata.getLicense().isEmpty())
+                    ? "CC-BY-4.0" : depositMetadata.getLicense();
             depositMetadata.setLicense(license);
         }
 
@@ -1108,9 +1104,9 @@ public class WorkflowResource
         FilesApi filesApi = new FilesApi(zendoClient);
 
         returnDeposit.getFiles().stream().forEach(file -> {
-                            String fileIdStr = file.getId();
-                            filesApi.deleteFile(depositionID, fileIdStr);
-                        });
+            String fileIdStr = file.getId();
+            filesApi.deleteFile(depositionID, fileIdStr);
+        });
 
 
 
