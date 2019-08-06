@@ -1981,7 +1981,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockerfile on Github.
+      summary: Get the corresponding Dockerfile.
       description: Does not require authentication for published tools, authentication can
         be provided for restricted tools
       operationId: dockerfile
@@ -3994,7 +3994,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get the logged-in user's starred organizations.
+      summary: Get the authenticated user's starred organizations.
       description: ""
       operationId: getStarredOrganizations
       responses:
@@ -4012,7 +4012,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get the logged-in user's starred tools.
+      summary: Get the authenticated user's starred tools.
       description: ""
       operationId: getStarredTools
       responses:
@@ -4030,7 +4030,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get the logged-in user's starred workflows.
+      summary: Get the authenticated user's starred workflows.
       description: ""
       operationId: getStarredWorkflows
       responses:
@@ -4120,7 +4120,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get additional information about the logged-in user.
+      summary: Get additional information about the authenticated user.
       description: ""
       operationId: getExtendedUserData
       responses:
@@ -4136,7 +4136,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get the logged-in users memberships.
+      summary: Get the logged-in user's memberships.
       description: ""
       operationId: getUserMemberships
       responses:
@@ -4306,7 +4306,7 @@ paths:
     get:
       tags:
         - users
-      summary: List all tools owned by the logged-in user.
+      summary: List all tools owned by the authenticated user.
       description: ""
       operationId: userContainers
       parameters:
@@ -4358,7 +4358,7 @@ paths:
     get:
       tags:
         - users
-      summary: Refresh all tools owned by the logged-in user.
+      summary: Refresh all tools owned by the authenticated user.
       description: ""
       operationId: refresh
       parameters:
@@ -4384,7 +4384,7 @@ paths:
     get:
       tags:
         - users
-      summary: Refresh all tools owned by the logged-in user with specified
+      summary: Refresh all tools owned by the authenticated user with specified
         organization.
       description: ""
       operationId: refreshToolsByOrganization
@@ -4417,7 +4417,7 @@ paths:
     get:
       tags:
         - users
-      summary: List all services owned by the logged-in user.
+      summary: List all services owned by the authenticated user.
       description: ""
       operationId: userServices
       parameters:
@@ -4573,7 +4573,7 @@ paths:
     get:
       tags:
         - users
-      summary: List all workflows owned by the logged-in user.
+      summary: List all workflows owned by the authenticated user.
       description: ""
       operationId: userWorkflows
       parameters:
@@ -4625,7 +4625,7 @@ paths:
     get:
       tags:
         - users
-      summary: Refresh all workflows owned by the logged-in user.
+      summary: Refresh all workflows owned by the authenticated user.
       description: ""
       operationId: refreshWorkflows
       parameters:
@@ -4651,7 +4651,7 @@ paths:
     get:
       tags:
         - users
-      summary: Refresh all workflows owned by the logged-in user with specified
+      summary: Refresh all workflows owned by the authenticated user with specified
         organization.
       description: ""
       operationId: refreshWorkflowsByOrganization
@@ -6458,10 +6458,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6477,6 +6473,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6664,10 +6664,6 @@ components:
           items:
             $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
               ockstore"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6683,6 +6679,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7695,14 +7695,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
+        isChecker:
+          type: boolean
         has_checker:
           type: boolean
           readOnly: true
@@ -7718,6 +7714,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

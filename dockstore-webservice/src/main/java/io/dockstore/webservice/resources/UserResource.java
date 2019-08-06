@@ -156,7 +156,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/user/memberships")
-    @ApiOperation(value = "Get the logged-in users memberships.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "set")
+    @ApiOperation(value = "Get the logged-in user's memberships.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "set")
     public Set<OrganizationUser> getUserMemberships(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         Set<OrganizationUser> organizationUsers = foundUser.getOrganizations();
@@ -170,7 +170,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/user/extended")
-    @ApiOperation(value = "Get additional information about the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
+    @ApiOperation(value = "Get additional information about the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
     public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         return new ExtendedUserData(foundUser, this.authorizer);
@@ -387,7 +387,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/{organization}/refresh")
-    @ApiOperation(value = "Refresh all tools owned by the logged-in user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all tools owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
@@ -453,7 +453,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/refresh")
-    @ApiOperation(value = "Refresh all tools owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all tools owned by the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
@@ -478,7 +478,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/{organization}/refresh")
-    @ApiOperation(value = "Refresh all workflows owned by the logged-in user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all workflows owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
@@ -502,7 +502,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/refresh")
-    @ApiOperation(value = "Refresh all workflows owned by the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all workflows owned by the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
@@ -523,7 +523,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "List all workflows owned by the logged-in user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
@@ -544,7 +544,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/services")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "List all services owned by the logged-in user.", nickname = "userServices", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all services owned by the authenticated user.", nickname = "userServices", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userServices(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
@@ -573,7 +573,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/containers")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "List all tools owned by the logged-in user.", nickname = "userContainers", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List all tools owned by the authenticated user.", nickname = "userContainers", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
@@ -587,7 +587,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/starredTools")
-    @ApiOperation(value = "Get the logged-in user's starred tools.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the authenticated user's starred tools.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
@@ -598,7 +598,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/starredWorkflows")
-    @ApiOperation(value = "Get the logged-in user's starred workflows.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the authenticated user's starred workflows.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
@@ -609,7 +609,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/starredOrganizations")
-    @ApiOperation(value = "Get the logged-in user's starred organizations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class, responseContainer = "List")
+    @ApiOperation(value = "Get the authenticated user's starred organizations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class, responseContainer = "List")
     public Set<Organization> getStarredOrganizations(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredOrganizations();

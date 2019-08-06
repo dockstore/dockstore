@@ -1767,7 +1767,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding Dockerfile on Github."
+      summary: "Get the corresponding Dockerfile."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "dockerfile"
@@ -3740,7 +3740,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred organizations."
+      summary: "Get the authenticated user's starred organizations."
       description: ""
       operationId: "getStarredOrganizations"
       produces:
@@ -3759,7 +3759,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred tools."
+      summary: "Get the authenticated user's starred tools."
       description: ""
       operationId: "getStarredTools"
       produces:
@@ -3778,7 +3778,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred workflows."
+      summary: "Get the authenticated user's starred workflows."
       description: ""
       operationId: "getStarredWorkflows"
       produces:
@@ -3871,7 +3871,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get additional information about the logged-in user."
+      summary: "Get additional information about the authenticated user."
       description: ""
       operationId: "getExtendedUserData"
       produces:
@@ -3888,7 +3888,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in users memberships."
+      summary: "Get the logged-in user's memberships."
       description: ""
       operationId: "getUserMemberships"
       produces:
@@ -4052,7 +4052,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all tools owned by the logged-in user."
+      summary: "List all tools owned by the authenticated user."
       description: ""
       operationId: "userContainers"
       produces:
@@ -4102,7 +4102,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh all tools owned by the logged-in user."
+      summary: "Refresh all tools owned by the authenticated user."
       description: ""
       operationId: "refresh"
       produces:
@@ -4127,7 +4127,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh all tools owned by the logged-in user with specified organization."
+      summary: "Refresh all tools owned by the authenticated user with specified organization."
       description: ""
       operationId: "refreshToolsByOrganization"
       produces:
@@ -4157,7 +4157,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all services owned by the logged-in user."
+      summary: "List all services owned by the authenticated user."
       description: ""
       operationId: "userServices"
       produces:
@@ -4307,7 +4307,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all workflows owned by the logged-in user."
+      summary: "List all workflows owned by the authenticated user."
       description: ""
       operationId: "userWorkflows"
       produces:
@@ -4357,7 +4357,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh all workflows owned by the logged-in user."
+      summary: "Refresh all workflows owned by the authenticated user."
       description: ""
       operationId: "refreshWorkflows"
       produces:
@@ -4382,7 +4382,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh all workflows owned by the logged-in user with specified organization."
+      summary: "Refresh all workflows owned by the authenticated user with specified\
+        \ organization."
       description: ""
       operationId: "refreshWorkflowsByOrganization"
       produces:
@@ -6187,10 +6188,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6206,6 +6203,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6418,10 +6419,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Base class for versions of entries in the Dockstore"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6437,6 +6434,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7535,14 +7536,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      isChecker:
-        type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      isChecker:
+        type: "boolean"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7558,6 +7555,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
