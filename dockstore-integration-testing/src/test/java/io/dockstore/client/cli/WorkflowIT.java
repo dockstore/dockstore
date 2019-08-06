@@ -97,7 +97,8 @@ import static org.junit.Assert.fail;
  */
 @Category({ConfidentialTest.class, WorkflowTest.class})
 public class WorkflowIT extends BaseIT {
-
+    final String clientConfig = ResourceHelpers.resourceFilePath("clientConfig");
+    final String jsonFilePath = ResourceHelpers.resourceFilePath("wc-job.json");
     public static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
@@ -1387,5 +1388,63 @@ public class WorkflowIT extends BaseIT {
             public Boolean isPublish() { return true;}
         });
         assertEquals("Topic id should remain the same.", unpublishedWf.getTopicId(), publishedWf.getTopicId());
+    }
+
+    /**
+     * Test for cwl1.1
+     * Of the languages support features, this tests:
+     * Workflow Registration
+     * Metadata Display
+     * Validation
+     * Launch remote workflow
+     */
+    @Test
+    public void cwlVersion1_1() {
+        final ApiClient userApiClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi userWorkflowsApi = new WorkflowsApi(userApiClient);
+        userWorkflowsApi.manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/metadata.cwl", "metadata", "cwl", "/cwl/v1.1/cat-job.json");
+        final Workflow workflowByPathGithub = userWorkflowsApi.getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", null);
+        final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId());
+        Assert.assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
+        Assert.assertEquals("Peter Amstutz", workflow.getAuthor());
+        Assert.assertEquals("peter.amstutz@curoverse.com", workflow.getEmail());
+        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+        Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
+                .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
+        assertTrue(optionalWorkflowVersion.isPresent());
+        WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
+        List<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        Assert.assertEquals(2, sourceFiles.size());
+        Assert.assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/cat-job.json")));
+        Assert.assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/metadata.cwl")));
+        // Check validation works.  It is invalid because this is a tool and not a workflow.
+        Assert.assertFalse(workflowVersion.isValid());
+
+        userWorkflowsApi.manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/count-lines1-wf.cwl", "count-lines1-wf", "cwl", "/cwl/v1.1/wc-job.json");
+        final Workflow workflowByPathGithub2 = userWorkflowsApi.getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", null);
+        final Workflow workflow2 = userWorkflowsApi.refresh(workflowByPathGithub2.getId());
+        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+        Optional<WorkflowVersion> optionalWorkflowVersion2 = workflow2.getWorkflowVersions().stream()
+                .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
+        assertTrue(optionalWorkflowVersion2.isPresent());
+        WorkflowVersion workflowVersion2 = optionalWorkflowVersion2.get();
+        // Check validation works.  It should be valid
+        Assert.assertTrue(workflowVersion2.isValid());
+        userWorkflowsApi.publish(workflowByPathGithub2.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+        ArrayList<String> args = new ArrayList<>() {{
+            add("workflow");
+            add("launch");
+            add("--entry");
+            add("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf");
+            add("--yaml");
+            add(jsonFilePath);
+            add("--config");
+            add(clientConfig);
+            add("--script");
+        }};
+        Client.main(args.toArray(new String[0]));
+        Assert.assertTrue(systemOutRule.getLog().contains("Final process status is success"));
     }
 }
