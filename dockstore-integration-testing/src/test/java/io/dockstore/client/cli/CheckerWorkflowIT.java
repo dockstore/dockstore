@@ -29,6 +29,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -172,9 +173,9 @@ public class CheckerWorkflowIT extends BaseIT {
         // Should not be able to directly publish the checker
         try {
             workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
-            assertTrue("Should not reach this statement.", false);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals(ex.getCode(), 400);
+            assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -342,9 +343,9 @@ public class CheckerWorkflowIT extends BaseIT {
         // Should not be able to directly publish the checker
         try {
             workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
-            assertTrue("Should not reach this statement.", false);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
-            assertEquals(ex.getCode(), 400);
+            assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
         }
     }
 
