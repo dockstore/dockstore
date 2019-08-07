@@ -124,6 +124,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column()
     @UpdateTimestamp
+    @JsonProperty("dbUpdateDate")
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
