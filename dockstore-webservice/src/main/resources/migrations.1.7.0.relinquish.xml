@@ -71,4 +71,12 @@
             ALTER SEQUENCE container_id_seq OWNER TO dockstore;
         </sql>
     </changeSet>
+    <changeSet id="dyuen" author="relinquish">
+        <sql dbms="postgresql">
+            ALTER TABLE entry_blacklistedversionnames OWNER TO dockstore;
+            ALTER TABLE databasechangelog OWNER TO dockstore;
+            ALTER TABLE databasechangeloglock OWNER TO dockstore;
+            GRANT USAGE ON SCHEMA public TO dockstore;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
