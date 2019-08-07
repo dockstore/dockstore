@@ -1245,7 +1245,6 @@ public class WorkflowResource
 
         checkForExistingDOIForWorkflowVersion(workflowVersion);
 
-        //String latestWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
         Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
 
         int depositionID = 0;
