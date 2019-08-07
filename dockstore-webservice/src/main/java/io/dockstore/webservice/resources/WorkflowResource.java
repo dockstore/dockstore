@@ -28,7 +28,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,10 +43,8 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -65,7 +62,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
@@ -83,7 +79,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -92,18 +87,13 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
-import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
-import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.Permission;
@@ -112,7 +102,6 @@ import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.permissions.SharedWorkflows;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
@@ -143,7 +132,6 @@ import org.slf4j.LoggerFactory;
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
 /**
@@ -153,10 +141,9 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
-@Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowResource
-    implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
+public class WorkflowResource extends AbstractWorkflowResource<Workflow>
+    implements EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
@@ -165,54 +152,39 @@ public class WorkflowResource
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
 
     private final ElasticManager elasticManager;
-    private final UserDAO userDAO;
-    private final TokenDAO tokenDAO;
-    private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
-    private final WorkflowVersionDAO workflowVersionDAO;
     private final LabelDAO labelDAO;
-    private final FileDAO fileDAO;
     private final FileFormatDAO fileFormatDAO;
-    private final HttpClient client;
     private final EntryResource entryResource;
 
-    private final String bitbucketClientID;
-    private final String bitbucketClientSecret;
     private final PermissionsInterface permissionsInterface;
-    private final String gitHubPrivateKeyFile;
-    private final String gitHubAppId;
     private final String zenodoUrl;
     private final String zenodoClientID;
     private final String zenodoClientSecret;
 
-    public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
-        PermissionsInterface permissionsInterface, EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
-        this.userDAO = new UserDAO(sessionFactory);
-        this.tokenDAO = new TokenDAO(sessionFactory);
-        this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
+    public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
+            EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
+        super(client, sessionFactory, configuration, Workflow.class);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
-        this.fileDAO = new FileDAO(sessionFactory);
-        this.client = client;
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
-
-        this.bitbucketClientID = bitbucketClientID;
-        this.bitbucketClientSecret = bitbucketClientSecret;
 
         this.permissionsInterface = permissionsInterface;
 
         this.entryResource = entryResource;
 
-        this.workflowDAO = new WorkflowDAO(sessionFactory);
         elasticManager = new ElasticManager();
-
-        gitHubAppId = configuration.getGitHubAppId();
-        gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
 
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
     }
+
+    @Override
+    protected Workflow initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo) {
+        return sourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
+    }
+
 
     /**
      * TODO: this should not be a GET either
@@ -373,19 +345,6 @@ public class WorkflowResource
         }
     }
 
-    private List<Token> checkOnBitbucketToken(User user) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-
-        if (!tokens.isEmpty()) {
-            Token bitbucketToken = tokens.get(0);
-            String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
-            String payload = "grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
-            refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
-        }
-
-        return tokenDAO.findByUserId(user.getId());
-    }
-
     @GET
     @Path("/{workflowId}/refresh")
     @Timed
@@ -419,7 +378,7 @@ public class WorkflowResource
             || workflow.getDescriptorType() == WDL) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
             String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
-            BioWorkflow byPath = (BioWorkflow)workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false);
+            BioWorkflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
             if (byPath != null && workflow.getCheckerWorkflow() == null) {
                 workflow.setCheckerWorkflow(byPath);
             }
@@ -456,311 +415,6 @@ public class WorkflowResource
         String dockstoreWorkflowPath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.FULL, null);
 
         return findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
-    }
-
-    /**
-     * Finds all workflows from a general Dockstore path that are of type FULL
-     * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
-     * @return List of FULL workflows with the given Dockstore path
-     */
-    private List<Workflow> findAllWorkflowsByPath(String dockstoreWorkflowPath, WorkflowMode workflowMode) {
-        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
-                .stream()
-                .filter(workflow ->
-                        workflow.getMode() == workflowMode)
-                .collect(Collectors.toList());
-    }
-
-    @POST
-    @Path("/path/service/")
-    @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Create a service for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow addService(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
-            @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
-            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
-        // Check for duplicates (currently workflows and services share paths)
-        String servicePath = "github.com/" + repository;
-
-        // Retrieve the user who triggered the call
-        User sendingUser = findUserByGitHubUsername(username, true);
-
-        // Determine if service is already in Dockstore
-        Workflow existingService = workflowDAO.findByPath(servicePath, false);
-
-        if (existingService != null) {
-            String msg = "A service already exists for GitHub repository " + repository;
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-        }
-
-        // Get Installation Access Token
-        String installationAccessToken = GitHubHelper.gitHubAppSetup(gitHubAppId, gitHubPrivateKeyFile, installationId);
-
-        // Create a service object
-        final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
-
-        // Check that repository exists on GitHub
-        try {
-            sourceCodeRepo.getRepository(repository);
-        } catch (CustomWebApplicationException ex) {
-            String msg = "Repository " + repository + " does not exist on GitHub";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-        }
-
-        Service service = sourceCodeRepo.initializeService(repository);
-        service.getUsers().add(sendingUser);
-        long serviceId = workflowDAO.create(service);
-
-        return workflowDAO.findById(serviceId);
-    }
-
-    @POST
-    @Path("/path/service/upsertVersion/")
-    @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
-            @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
-            @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
-            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
-
-        // Retrieve the user who triggered the call (may not exist on Dockstore)
-        User sendingUser = findUserByGitHubUsername(username, false);
-
-        // Get Installation Access Token
-        String installationAccessToken = GitHubHelper.gitHubAppSetup(gitHubAppId, gitHubPrivateKeyFile, installationId);
-
-        // Call common upsert code
-        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, SERVICE, installationAccessToken);
-
-        // Add user to service if necessary
-        Workflow service = workflowDAO.findByPath(dockstoreServicePath, false);
-        if (sendingUser != null && !service.getUsers().contains(sendingUser)) {
-            service.getUsers().add(sendingUser);
-        }
-
-        return service;
-    }
-
-    /**
-     * Does the following:
-     * 1) Add user to any existing Dockstore services they should own
-     *
-     * 2) For all of the users organizations that have the GitHub App installed on all repositories in those organizations,
-     * add any services that should be on Dockstore but are not
-     *
-     * 3) For all of the repositories which have the GitHub App installed, add them to Dockstore if they are missing
-     * @param user
-     * @param organization
-     */
-    void syncServicesForUser(User user, Optional<String> organization) {
-        List<Token> githubByUserId = tokenDAO.findGithubByUserId(user.getId());
-
-        if (githubByUserId.isEmpty()) {
-            String msg = "The user does not have a GitHub token, please create one";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        } else {
-            syncServices(user, organization, githubByUserId.get(0));
-        }
-    }
-
-    private void syncServices(User user, Optional<String> organization, Token gitHubToken) {
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken, client);
-
-        // Get all GitHub repositories for the user
-        final Map<String, String> workflowGitUrl2Name = gitHubSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-
-        // Filter by organization if necessary
-        final Collection<String> repositories = GitHubHelper.filterReposByOrg(workflowGitUrl2Name.values(), organization);
-
-        // Add user to any services they should have access to that already exist on Dockstore
-        final List<Workflow> existingWorkflows = findDockstoreWorkflowsForGitHubRepos(repositories);
-        existingWorkflows.stream()
-                .filter(workflow -> !workflow.getUsers().contains(user))
-                .forEach(workflow -> workflow.getUsers().add(user));
-        final Set<String> existingWorkflowPaths = existingWorkflows.stream()
-                .map(workflow -> workflow.getWorkflowPath()).collect(Collectors.toSet());
-
-        GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
-
-        GitHubHelper.reposToCreateServicesFor(repositories, organization, existingWorkflowPaths).stream()
-                .forEach(repositoryName -> {
-                    final Service service = gitHubSourceCodeRepo.initializeService(repositoryName);
-                    service.addUser(user);
-                    final long serviceId = workflowDAO.create(service);
-                    final Workflow createdService = workflowDAO.findById(serviceId);
-                    final Workflow updatedService = gitHubSourceCodeRepo.getWorkflow(repositoryName, Optional.of(createdService));
-                    updateDBWorkflowWithSourceControlWorkflow(createdService, updatedService);
-                });
-    }
-
-    private List<Workflow> findDockstoreWorkflowsForGitHubRepos(Collection<String> repositories) {
-        final List<String> workflowPaths = repositories.stream().map(repositoryName -> "github.com/" + repositoryName)
-                .collect(Collectors.toList());
-        return workflowDAO.findByPaths(workflowPaths, false).stream()
-                .filter(workflow -> Objects.equals(workflow.getMode(), SERVICE)).collect(Collectors.toList());
-    }
-
-    /**
-     * Common code for upserting a version to a workflow/service
-     * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Git reference (ex. master)
-     * @param user User calling endpoint
-     * @param workflowMode Mode of workflows to filter by
-     * @return Shared dockstore path to workflow/service
-     */
-    private String upsertVersionHelper(String repository, String gitReference, User user, WorkflowMode workflowMode, String installationAccessToken) {
-        // Create path on Dockstore (not unique across workflows)
-        String dockstoreWorkflowPath = String.join("/", TokenType.GITHUB_COM.toString(), repository);
-
-        // Find all workflows with the given path that are full
-        List<Workflow> workflows = findAllWorkflowsByPath(dockstoreWorkflowPath, workflowMode);
-
-        if (workflows.size() > 0) {
-            // All workflows with the same path have the same Git Url
-            String sharedGitUrl = workflows.get(0).getGitUrl();
-
-            // Set up source code interface and ensure token is set up
-            GitHubSourceCodeRepo sourceCodeRepo;
-            if (user != null) {
-                User updatedUser = userDAO.findById(user.getId());
-                sourceCodeRepo = (GitHubSourceCodeRepo)getSourceCodeRepoInterface(sharedGitUrl, updatedUser);
-            } else {
-                sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
-            }
-
-            // Pull new version information from GitHub and update the versions
-            workflows = sourceCodeRepo.upsertVersionForWorkflows(repository, gitReference, workflows, workflowMode);
-
-            // Update each workflow with reference types
-            for (Workflow workflow : workflows) {
-                Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
-                versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
-            }
-        } else {
-            if (workflowMode == SERVICE) {
-                String msg = "No service with path " + dockstoreWorkflowPath + " exists on Dockstore.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            }
-        }
-
-        return dockstoreWorkflowPath;
-    }
-
-    /**
-     * Based on GitHub username, find the corresponding user
-     * @param username GitHub username
-     * @param allowFail If true, throw a failure if user cannot be found
-     * @return user with given GitHub username
-     */
-    private User findUserByGitHubUsername(String username, boolean allowFail) {
-        // Find user by github name
-        Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(username);
-        if (userGitHubToken == null) {
-            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
-            LOG.info(msg);
-            if (allowFail) {
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            } else {
-                return null;
-            }
-        }
-
-        // Get user object for github token
-        User sendingUser = userDAO.findById(userGitHubToken.getUserId());
-        if (sendingUser == null) {
-            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
-            LOG.info(msg);
-            if (allowFail) {
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            }
-        }
-
-        return sendingUser;
-    }
-
-    /**
-     * Updates the existing workflow in the database with new information from newWorkflow, including new, updated, and removed
-     * workflow verions.
-     * @param workflow    workflow to be updated
-     * @param newWorkflow workflow to grab new content from
-     */
-    private void updateDBWorkflowWithSourceControlWorkflow(Workflow workflow, Workflow newWorkflow) {
-        // update root workflow
-        workflow.update(newWorkflow);
-        // update workflow versions
-        Map<String, WorkflowVersion> existingVersionMap = new HashMap<>();
-        workflow.getWorkflowVersions().forEach(version -> existingVersionMap.put(version.getName(), version));
-
-        // delete versions that exist in old workflow but do not exist in newWorkflow
-        Map<String, WorkflowVersion> newVersionMap = new HashMap<>();
-        newWorkflow.getWorkflowVersions().forEach(version -> newVersionMap.put(version.getName(), version));
-        Sets.SetView<String> removedVersions = Sets.difference(existingVersionMap.keySet(), newVersionMap.keySet());
-        for (String version : removedVersions) {
-            workflow.removeWorkflowVersion(existingVersionMap.get(version));
-        }
-
-        // Then copy over content that changed
-        for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
-            // skip frozen versions
-            WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
-            if (existingVersionMap.containsKey(version.getName())) {
-                if (workflowVersionFromDB.isFrozen()) {
-                    continue;
-                }
-                workflowVersionFromDB.update(version);
-            } else {
-                // create a new one and replace the old one
-                final long workflowVersionId = workflowVersionDAO.create(version);
-                workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
-                workflow.getWorkflowVersions().add(workflowVersionFromDB);
-                existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
-            }
-
-            // Update source files for each version
-            Map<String, SourceFile> existingFileMap = new HashMap<>();
-            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getAbsolutePath(), file));
-
-            for (SourceFile file : version.getSourceFiles()) {
-                if (existingFileMap.containsKey(file.getType().toString() + file.getAbsolutePath())) {
-                    existingFileMap.get(file.getType().toString() + file.getAbsolutePath()).setContent(file.getContent());
-                } else {
-                    final long fileID = fileDAO.create(file);
-                    final SourceFile fileFromDB = fileDAO.findById(fileID);
-                    workflowVersionFromDB.getSourceFiles().add(fileFromDB);
-                }
-            }
-
-            // Remove existing files that are no longer present on remote
-            for (Map.Entry<String, SourceFile> entry : existingFileMap.entrySet()) {
-                boolean toDelete = true;
-                for (SourceFile file : version.getSourceFiles()) {
-                    if (entry.getKey().equals(file.getType().toString() + file.getAbsolutePath())) {
-                        toDelete = false;
-                    }
-                }
-                if (toDelete) {
-                    workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
-                }
-            }
-
-            // Update the validations
-            for (Validation versionValidation : version.getValidations()) {
-                workflowVersionFromDB.addOrUpdateValidation(versionValidation);
-            }
-        }
     }
 
     @GET
@@ -809,7 +463,7 @@ public class WorkflowResource
         checkNotHosted(wf);
         checkCanWriteWorkflow(user, wf);
 
-        Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false);
+        Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class).orElse(null);
 
         if (duplicate != null && duplicate.getId() != workflowId) {
             LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getWorkflowPath());
@@ -1497,7 +1151,7 @@ public class WorkflowResource
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
 
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        BioWorkflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
@@ -1565,7 +1219,7 @@ public class WorkflowResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
@@ -1578,7 +1232,7 @@ public class WorkflowResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);
     }
@@ -1592,7 +1246,7 @@ public class WorkflowResource
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user permission", required = true) Permission permission) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/dockstore/dockstore/issues/1593
         if (workflow.getMode() != WorkflowMode.HOSTED) {
@@ -1611,7 +1265,7 @@ public class WorkflowResource
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
         @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
+        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
         this.permissionsInterface.removePermission(user, workflow, email, role);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
@@ -1674,7 +1328,7 @@ public class WorkflowResource
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
-        Workflow workflow = workflowDAO.findByPath(path, true);
+        Workflow workflow = workflowDAO.findByPath(path, true, BioWorkflow.class).orElse(null);
         checkEntry(workflow);
 
         initializeValidations(include, workflow);
@@ -1909,7 +1563,7 @@ public class WorkflowResource
                     + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false);
+        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false, BioWorkflow.class).orElse(null);
         if (duplicate != null) {
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -1936,24 +1590,6 @@ public class WorkflowResource
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
         return workflowDAO.findById(workflowID);
 
-    }
-
-    private SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
-        List<Token> tokens = checkOnBitbucketToken(user);
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
-
-        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
-        final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
-        final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
-
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(gitUrl, client, bitbucketTokenContent, gitlabTokenContent, gitHubTokenContent);
-        if (sourceCodeRepo == null) {
-            throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
-        }
-        return sourceCodeRepo;
     }
 
     @PUT

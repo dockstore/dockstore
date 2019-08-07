@@ -18,14 +18,18 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
+import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
@@ -82,14 +86,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     /**
-     * Finds the workflow matching the given workflow path
+     * Finds the workflows matching the given workflow path. A service and
+     * a BioWorkflow can have the same workflow path, which is why this returns
+     * a List.
      * When findPublished is true, will only look at published workflows
      *
      * @param path
      * @param findPublished
      * @return Workflow matching the path
      */
-    public Workflow findByPath(String path, boolean findPublished) {
+    public List<Workflow> findByPath(String path, boolean findPublished) {
         String[] splitPath = Workflow.splitPath(path);
 
         // Not a valid path
@@ -134,7 +140,32 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             query.setParameter("workflowname", workflowname);
         }
 
-        return uniqueResult(query);
+        return list(query);
+    }
+
+    /**
+     * Finds a BioWorkflow or Service matching the given path.
+     *
+     * Initial implementation currently calls findByPath and filters the result; would ideally do it as a query with
+     * no filtering instead.
+     *
+     * @param path
+     * @param findPublished
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    public <T extends Workflow> Optional<T> findByPath(String path, boolean findPublished, Class<T> clazz) {
+        final List<Workflow> workflows = findByPath(path, findPublished);
+        final List<T> filteredWorkflows  = workflows.stream()
+                .filter(workflow -> workflow.getClass().equals(clazz))
+                .map(clazz::cast)
+                .collect(Collectors.toList());
+        if (filteredWorkflows.size() > 1) {
+            // DB constraints should never let this happen, I think
+            throw new CustomWebApplicationException("Entries with the same path exist", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {

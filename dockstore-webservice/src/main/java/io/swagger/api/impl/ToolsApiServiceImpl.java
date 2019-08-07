@@ -48,6 +48,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -175,7 +176,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (parsedID.isTool()) {
             entry = toolDAO.findByPath(entryPath, user.isEmpty());
         } else {
-            entry = workflowDAO.findByPath(entryPath, user.isEmpty());
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElseGet(null);
         }
         if (entry != null && entry.getIsPublished()) {
             return entry;

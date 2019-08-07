@@ -16,7 +16,7 @@ if [ "${TESTING_PROFILE}" = "toil-integration-tests" ]; then
 elif [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
     pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.5.0/requirements.txt
 else
-    pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.6.0/requirements.txt
+    pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.7.0/requirements.txt
 fi
 
 # hook up integration tests with elastic search

@@ -5011,7 +5011,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Service'
           description: default response
   /workflows/path/workflow/{repository}:
     get:
