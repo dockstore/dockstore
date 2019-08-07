@@ -129,6 +129,7 @@ import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -1061,20 +1062,6 @@ public class WorkflowResource
         String descriptionStr = (description == null || description.isEmpty()) ? "no description" : workflow.getDescription();
         depositMetadata.setDescription(descriptionStr);
 
-        // The Zenodo API requires an access right
-        DepositMetadata.AccessRightEnum accessRight = (depositMetadata.getAccessRight() == null)
-                ? DepositMetadata.AccessRightEnum.OPEN : depositMetadata.getAccessRight();
-        depositMetadata.setAccessRight(accessRight);
-
-        // The Zenodo API requires a license type if access right is 'open' or 'embargoed'
-        // We only set the access right to OPEN at this time, and the default license to cc-by
-        // for the metadata (non-datasets)
-        if (accessRight == DepositMetadata.AccessRightEnum.OPEN || accessRight == DepositMetadata.AccessRightEnum.EMBARGOED) {
-            String license = (depositMetadata.getLicense() == null || depositMetadata.getLicense().isEmpty())
-                    ? "CC-BY-4.0" : depositMetadata.getLicense();
-            depositMetadata.setLicense(license);
-        }
-
         depositMetadata.setVersion(workflowVersion.getName());
 
         setMetadataKeywords(depositMetadata, workflow);
@@ -1188,7 +1175,7 @@ public class WorkflowResource
      * otherwise return null
      * @param workflow workflow
      */
-    private String getAnExistingDOIForWorkflow(Workflow workflow) {
+    private Optional<String> getAnExistingDOIForWorkflow(Workflow workflow) {
         // Find out if this workflow already has at least one
         // version that has been assigned a DOI
         // If a version DOI exists, we will create another version DOI
@@ -1196,17 +1183,10 @@ public class WorkflowResource
         // Get the ID of one of the workflow version DOIs
         // because Zenodo requires that we use it to create the next
         // workflow version DOI
-        String latestWorkflowVersionDOIURL = null;
-        Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream()
-                .filter((WorkflowVersion v) -> v.getDoiURL() != null)
-                .filter((WorkflowVersion v) -> !v.getDoiURL().isEmpty())
-                .findAny();
 
-        if (potentialWorfklowVersion.isPresent()) {
-            latestWorkflowVersionDOIURL = potentialWorfklowVersion.get().getDoiURL();
-        }
-        return latestWorkflowVersionDOIURL;
-
+        return workflow.getWorkflowVersions().stream()
+                .map(v -> v.getDoiURL())
+                .filter(doi -> !StringUtils.isEmpty(doi)).findAny();
     }
 
     /**
@@ -1265,12 +1245,13 @@ public class WorkflowResource
 
         checkForExistingDOIForWorkflowVersion(workflowVersion);
 
-        String latestWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
+        //String latestWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
+        Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
 
         int depositionID = 0;
         DepositMetadata depositMetadata = null;
 
-        if (latestWorkflowVersionDOIURL == null) {
+        if (!existingWorkflowVersionDOIURL.isPresent()) {
             try {
                 // No DOI has been assigned to any version of the workflow yet
                 // So create a new deposit which will enable creation of a new
@@ -1287,7 +1268,8 @@ public class WorkflowResource
                         + "Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            String depositIdStr = latestWorkflowVersionDOIURL.substring(latestWorkflowVersionDOIURL.lastIndexOf(".") + 1).trim();
+            String depositIdStr = existingWorkflowVersionDOIURL.get()
+                    .substring(existingWorkflowVersionDOIURL.get().lastIndexOf(".") + 1).trim();
             int depositId = Integer.parseInt(depositIdStr);
             try {
                 // A DOI was assigned to a workflow version so we will
