@@ -140,9 +140,9 @@ public class LimitedCRUDClientIT {
         assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
         hostedTool.getUsers().forEach(user -> {
             assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles());
-            // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return user profiles
-            user.setUserProfiles(null);
         });
+        // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return user profiles
+        hostedTool.setUsers(null);
 
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
@@ -152,8 +152,7 @@ public class LimitedCRUDClientIT {
         hostedTool.setAliases(null);
         container.setAliases(null);
         assertEquals(container, hostedTool);
-        assertEquals(1, container.getUsers().size());
-        container.getUsers().forEach(user -> assertNull("getContainer() endpoint should not have user profiles", user.getUserProfiles()));
+        assertNull(container.getUsers());
 
         // test repeated workflow creation up to limit
         for(int i = 1; i < SYSTEM_LIMIT; i++) {
