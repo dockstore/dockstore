@@ -245,8 +245,9 @@ public class DockerRepoResource
         Map<String, String> gitMap = SourceCodeRepoFactory.parseGitUrl(gitUrl);
 
         if (gitMap == null) {
-            LOG.info("Could not parse Git URL. Unable to refresh tool!");
-            return tool;
+            LOG.error("Could not parse Git URL:" + gitUrl + " Unable to refresh tool!");
+            throw new CustomWebApplicationException("Could not parse Git URL:" + gitUrl + " Unable to refresh tool!",
+                HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
         // Get user's quay and git tokens
@@ -285,9 +286,6 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
         checkUser(user, tool);
-
-        // This somehow forces users to get loaded, c.getUsers() does not work.  c.getUsers().size works too.
-        Hibernate.initialize(tool.getUsers());
 
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
@@ -400,7 +398,7 @@ public class DockerRepoResource
         checkNotHosted(foundTool);
         checkUser(user, foundTool);
 
-        //update the workflow path in all workflowVersions
+        //update the tool path in all workflowVersions
         Set<Tag> tags = foundTool.getWorkflowVersions();
         for (Tag tag : tags) {
             if (!tag.isDirtyBit()) {
@@ -762,7 +760,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{containerId}/dockerfile")
-    @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = {
+    @ApiOperation(value = "Get the corresponding Dockerfile.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile dockerfile(@ApiParam(hidden = true) @Auth Optional<User> user,
