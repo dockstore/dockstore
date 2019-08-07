@@ -176,7 +176,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (parsedID.isTool()) {
             entry = toolDAO.findByPath(entryPath, user.isEmpty());
         } else {
-            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElseGet(null);
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElse(null);
         }
         if (entry != null && entry.getIsPublished()) {
             return entry;
