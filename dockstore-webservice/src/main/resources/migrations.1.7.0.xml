@@ -288,4 +288,28 @@
             <column name="blacklistedversionnames" type="text"/>
         </createTable>
     </changeSet>
+
+    <changeSet id="fix_checker_workflow_publish_mismatch" author="aduncan">
+        <sql dbms="postgresql">
+            UPDATE workflow SET ispublished=false WHERE id IN (
+                SELECT c.id FROM tool t INNER JOIN workflow c ON t.checkerid=c.id WHERE t.ispublished != c.ispublished AND t.ispublished = false
+            )
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE workflow SET ispublished=true WHERE id IN (
+                SELECT c.id FROM tool t INNER JOIN workflow c ON t.checkerid=c.id WHERE t.ispublished != c.ispublished AND t.ispublished = true
+            )
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET ispublished=false WHERE id IN (
+                SELECT c.id FROM workflow w INNER JOIN workflow c ON w.checkerid=c.id WHERE w.ispublished != c.ispublished AND w.ispublished = false
+            )
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE workflow SET ispublished=true WHERE id IN (
+                SELECT c.id FROM workflow w INNER JOIN workflow c ON w.checkerid=c.id WHERE w.ispublished != c.ispublished AND w.ispublished = true
+            )
+        </sql>
+    </changeSet>
 </databaseChangeLog>

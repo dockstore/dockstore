@@ -29,6 +29,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -168,6 +169,14 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count9 = testingPostgres
             .runSelectStatement("select count(*) from tool where ispublished = true", long.class);
         assertEquals("the tool should not be published, there are " + count9, 0, count9);
+
+        // Should not be able to directly publish the checker
+        try {
+            workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
+            Assert.fail("Should not reach this statement.");
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     /**
@@ -330,6 +339,14 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count8 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
         assertEquals("No workflows should be published, there are " + count8, 0, count8);
+
+        // Should not be able to directly publish the checker
+        try {
+            workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
+            Assert.fail("Should not reach this statement.");
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     /**

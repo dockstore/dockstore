@@ -1071,16 +1071,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow publish(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
-        Workflow c = workflowDAO.findById(workflowId);
-        checkEntry(c);
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
 
-        checkCanShareWorkflow(user, c);
+        checkCanShareWorkflow(user, workflow);
 
-        Workflow checker = c.getCheckerWorkflow();
+        Workflow checker = workflow.getCheckerWorkflow();
+
+        if (workflow.isIsChecker()) {
+            String msg = "Cannot directly publish/unpublish a checker workflow.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
 
         if (request.getPublish()) {
             boolean validTag = false;
-            Set<WorkflowVersion> versions = c.getWorkflowVersions();
+            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
             for (WorkflowVersion workflowVersion : versions) {
                 if (workflowVersion.isValid()) {
                     validTag = true;
@@ -1088,8 +1094,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 }
             }
 
-            if (validTag && (!c.getGitUrl().isEmpty() || Objects.equals(c.getMode(), WorkflowMode.HOSTED))) {
-                c.setIsPublished(true);
+            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
+                workflow.setIsPublished(true);
                 if (checker != null) {
                     checker.setIsPublished(true);
                 }
@@ -1097,17 +1103,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            c.setIsPublished(false);
+            workflow.setIsPublished(false);
             if (checker != null) {
                 checker.setIsPublished(false);
             }
         }
 
-        long id = workflowDAO.create(c);
-        c = workflowDAO.findById(id);
+        long id = workflowDAO.create(workflow);
+        workflow = workflowDAO.findById(id);
         if (request.getPublish()) {
-            elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
-            if (c.getTopicId() == null) {
+            elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+            if (workflow.getTopicId() == null) {
                 try {
                     entryResource.createAndSetDiscourseTopic(id);
                 } catch (CustomWebApplicationException ex) {
@@ -1115,9 +1121,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 }
             }
         } else {
-            elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
+            elasticManager.handleIndexUpdate(workflow, ElasticMode.DELETE);
         }
-        return c;
+        return workflow;
     }
 
     @GET
