@@ -501,6 +501,9 @@ components:
           type: string
         cwl_path:
           type: string
+        dbUpdateDate:
+          format: date-time
+          type: string
         dirtyBit:
           type: boolean
         dockerfile_path:
@@ -833,6 +836,9 @@ components:
       properties:
         commitID:
           type: string
+        dbUpdateDate:
+          format: date-time
+          type: string
         dirtyBit:
           type: boolean
         doiStatus:
@@ -1014,6 +1020,9 @@ components:
     WorkflowVersion:
       properties:
         commitID:
+          type: string
+        dbUpdateDate:
+          format: date-time
           type: string
         dirtyBit:
           type: boolean
