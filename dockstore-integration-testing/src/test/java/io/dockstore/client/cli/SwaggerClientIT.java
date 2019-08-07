@@ -183,13 +183,13 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
-        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null);
+        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null, false);
         assertTrue(workflow.isIsPublished());
 
         long containerId = workflow.getId();
 
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
-        workflow = userApi1.getWorkflowByPath("github.com/A/l", null);
+        workflow = userApi1.getWorkflowByPath("github.com/A/l", null, false);
         assertEquals(3, workflow.getLabels().size());
         thrown.expect(ApiException.class);
         userApi2.updateLabels(containerId, "foobar", "");
@@ -695,7 +695,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarStarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null, false);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
@@ -717,7 +717,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testUnstarUnstarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", null);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", null, false);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         thrown.expect(ApiException.class);
@@ -870,7 +870,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null);
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, false);
             Assert.fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             Assert.assertEquals(403, e.getCode());
@@ -888,7 +888,7 @@ public class SwaggerClientIT extends BaseIT {
         Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null);
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, false);
         user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId(), null);
 
         // But User 2 cannot edit the hosted workflow
@@ -950,12 +950,12 @@ public class SwaggerClientIT extends BaseIT {
         final Permission permission = new Permission();
         permission.setEmail(user);
         permission.setRole(role);
-        workflowsApi.addWorkflowPermission(path, permission);
+        workflowsApi.addWorkflowPermission(path, permission, false);
     }
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
         try {
-            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null);
+            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null, false);
             Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
         } catch (ApiException ex) {
             Assert.assertEquals(401, ex.getCode());

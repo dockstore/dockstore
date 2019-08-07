@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.0-beta.2-SNAPSHOT"
+  version: "1.7.0-beta.3-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -4745,6 +4745,12 @@ paths:
         description: "Comma-delimited list of fields to include: validations"
         required: false
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4767,6 +4773,12 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4796,6 +4808,12 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4833,6 +4851,12 @@ paths:
         - "OWNER"
         - "WRITER"
         - "READER"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4863,6 +4887,12 @@ paths:
         required: true
         schema:
           $ref: "#/definitions/Permission"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4892,6 +4922,12 @@ paths:
         description: "Comma-delimited list of fields to include: validations"
         required: false
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -6188,6 +6224,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6203,10 +6243,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6419,6 +6455,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Base class for versions of entries in the Dockstore"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6434,10 +6474,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7540,6 +7576,10 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7555,10 +7595,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1

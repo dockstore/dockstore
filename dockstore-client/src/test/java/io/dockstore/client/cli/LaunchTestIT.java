@@ -100,7 +100,7 @@ public class LaunchTestIT {
         WorkflowsApi api = mock(WorkflowsApi.class);
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
@@ -171,7 +171,7 @@ public class LaunchTestIT {
         WorkflowsApi api = mock(WorkflowsApi.class);
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
 
         PluginClient.handleCommand(Lists.newArrayList("download"), Utilities.parseConfig(client.getConfigFile()));
@@ -871,7 +871,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         exit.expectSystemExit();
 
@@ -1270,7 +1270,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
 
-        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null));
+        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null), false);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
 
@@ -1309,7 +1309,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
 
-        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null));
+        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null), false);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
 
