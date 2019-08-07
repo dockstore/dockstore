@@ -177,9 +177,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (parsedID.toolType() == ParsedRegistryID.ToolType.TOOL) {
             entry = toolDAO.findByPath(entryPath, user.isEmpty());
         } else if (parsedID.toolType() == ParsedRegistryID.ToolType.WORKFLOW) {
-            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElseGet(() -> null);
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElse(null);
         } else if (parsedID.toolType() == ParsedRegistryID.ToolType.SERVICE) {
-            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), Service.class).orElseGet(() -> null);
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), Service.class).orElse(null);
         } else {
             throw new UnsupportedOperationException("Tool type that should not be present found:" + parsedID.toolType());
         }
