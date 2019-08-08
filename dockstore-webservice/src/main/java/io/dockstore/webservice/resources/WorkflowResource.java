@@ -1261,7 +1261,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
