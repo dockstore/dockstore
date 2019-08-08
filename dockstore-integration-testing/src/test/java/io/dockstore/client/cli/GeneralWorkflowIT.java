@@ -46,7 +46,9 @@ import static io.dockstore.client.cli.Client.API_ERROR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * This test suite will have tests for the workflow mode of the Dockstore Client.
@@ -1158,5 +1160,50 @@ public class GeneralWorkflowIT extends BaseIT {
         // final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", long.class);
         final long count = testingPostgres.runSelectStatement("select count(*) from user_profile where location='Toronto'", long.class);
         assertEquals("One user should have this info now, there are  " + count, 1, count);
+    }
+    @Test
+    public void testGenerateDOIFrozenVersion() throws ApiException {
+        // Set up webservice
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Get workflows
+        usersApi.refreshWorkflows(userId);
+
+        Workflow githubWorkflow = workflowApi
+                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
+
+        // Publish github workflow
+        workflowApi.refresh(githubWorkflow.getId());
+
+        Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
+        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+
+        //try issuing DOI for workflow version that is not frozen.
+        try {
+            workflowApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
+            fail("This line should never execute if version is mutable. DOI should only be generated for frozen versions of workflows.");
+        } catch (ApiException ex) {
+            assertFalse("Version should not be frozen", master.isFrozen());
+            assertNull("version DOI is null", master.getDoiURL());
+        }
+
+        //freeze version 'master'
+        master.setFrozen(true);
+        final List<WorkflowVersion> workflowVersions1 = workflowApi
+                .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        master = workflowVersions1.stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        assertTrue(master.isFrozen());
+
+        //TODO: For now just checking for next failure (no Zenodo token), but should replace with when DOI registration tests are written
+        try {
+            workflowApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
+            fail("This line should never execute without valid Zenodo token");
+        } catch (ApiException ex) {
+        }
+
     }
 }

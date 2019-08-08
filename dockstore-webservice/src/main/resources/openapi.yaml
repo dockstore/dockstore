@@ -5780,6 +5780,8 @@ paths:
           schema:
             type: integer
             format: int64
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation

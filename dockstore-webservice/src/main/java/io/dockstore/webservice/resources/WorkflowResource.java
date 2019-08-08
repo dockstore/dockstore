@@ -556,19 +556,26 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Beta
     @Path("/{workflowId}/requestDOI/{workflowVersionId}")
     @ApiOperation(value = "Request a DOI for this version of a workflow.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
+        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkUser(user, workflow);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
-            LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
+            LOG.error(user.getUsername() + ": could not find version: " + workflow.getWorkflowPath());
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
 
+        }
+
+        //Only issue doi if workflow is frozen.
+        if (!workflowVersion.isFrozen()) {
+            LOG.error(user.getUsername() + ": Could not generate DOI for " +  workflowNameAndVersion(workflow, workflowVersion) + ", frozen version required to generate DOI.");
+            throw new CustomWebApplicationException("Could not generate DOI for " + workflowNameAndVersion(workflow, workflowVersion) + ". Frozen version required to generate DOI.", HttpStatus.SC_BAD_REQUEST);
         }
 
         List<Token> tokens = checkOnZenodoToken(user);
@@ -592,8 +599,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     }
 
-
-
+    private String workflowNameAndVersion(Workflow workflow, WorkflowVersion workflowVersion) {
+        return workflow.getWorkflowPath() + ":" + workflowVersion.getName();
+    }
 
     @PUT
     @Timed
