@@ -146,7 +146,7 @@ public class LaunchTestIT {
         WorkflowsApi api = mock(WorkflowsApi.class);
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
@@ -596,7 +596,7 @@ public class LaunchTestIT {
             add("--cwl");
             add(cwlFile.getAbsolutePath());
         }};
-        runClientCommand(args, false);
+        runClientCommand(args);
         final String log = systemOutRule.getLog();
         Gson gson = new Gson();
         final Map<String, Map<String, Object>> map = gson.fromJson(log, Map.class);
@@ -615,7 +615,7 @@ public class LaunchTestIT {
             add("--cwl");
             add(cwlFile.getAbsolutePath());
         }};
-        runClientCommand(args, false);
+        runClientCommand(args);
         final String log = systemOutRule.getLog();
         Gson gson = new Gson();
         final Map<String, Map<String, Object>> map = gson.fromJson(log, Map.class);
@@ -644,9 +644,8 @@ public class LaunchTestIT {
         runWorkflow(cwlFile, args, api, usersApi, client, true);
     }
 
-    private void runClientCommand(ArrayList<String> args, boolean useCache) {
-
-        args.add(0, ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
+    private void runClientCommand(ArrayList<String> args) {
+        args.add(0, ResourceHelpers.resourceFilePath("config"));
         args.add(0, "--config");
         args.add(0, "--script");
         Client.main(args.toArray(new String[0]));
@@ -661,7 +660,7 @@ public class LaunchTestIT {
     }
 
     private void runToolThreaded(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client) {
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withThreads"));
 
         runToolShared(cwlFile, args, api, usersApi, client);
@@ -676,13 +675,13 @@ public class LaunchTestIT {
 
     private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
         runToolShared(cwlFile, args, api, usersApi, client);
     }
 
     private void runWorkflow(File cwlFile, ArrayList<String> args, WorkflowsApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
@@ -735,7 +734,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL.getLowerShortName());
@@ -761,7 +760,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
@@ -786,7 +785,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
@@ -811,7 +810,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
@@ -841,7 +840,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL.getLowerShortName());
@@ -900,7 +899,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         exit.expectSystemExit();
 
@@ -927,7 +926,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
@@ -954,7 +953,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
@@ -983,7 +982,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1011,7 +1010,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1039,7 +1038,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1067,7 +1066,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1095,7 +1094,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1123,7 +1122,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        client.SCRIPT.set(true);
+        Client.SCRIPT.set(true);
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
@@ -1149,7 +1148,7 @@ public class LaunchTestIT {
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
                 () -> assertTrue("Out should suggest to run as tool instead", systemErrRule.getLog().contains("Expected a workflow but the")));
-        runClientCommand(args, false);
+        runClientCommand(args);
     }
 
     @Test
@@ -1167,7 +1166,7 @@ public class LaunchTestIT {
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
                 () -> assertTrue("Out should suggest to run as workflow instead", systemErrRule.getLog().contains("Expected a tool but the")));
-        runClientCommand(args, false);
+        runClientCommand(args);
     }
 
     @Test
@@ -1186,7 +1185,7 @@ public class LaunchTestIT {
         exit.checkAssertionAfterwards(
                 () -> assertTrue("output should include an error message and exit",
                         systemErrRule.getLog().contains("Required fields that are missing from CWL file : 'outputs'")));
-        runClientCommand(args, false);
+        runClientCommand(args);
     }
 
     @Test
@@ -1202,7 +1201,7 @@ public class LaunchTestIT {
             add(json.getAbsolutePath());
         }};
 
-        runClientCommand(args, false);
+        runClientCommand(args);
 
         assertTrue("output should include an error message", systemErrRule.getLog().contains("\"outputs\" section is not valid"));
     }
@@ -1223,7 +1222,7 @@ public class LaunchTestIT {
         exit.checkAssertionAfterwards(
                 () -> assertTrue("output should have started provisioning",
                         systemOutRule.getLog().contains("Provisioning your input files to your local machine")));
-        runClientCommand(args, false);
+        runClientCommand(args);
     }
 
     @Test
@@ -1239,7 +1238,7 @@ public class LaunchTestIT {
             add(json.getAbsolutePath());
         }};
 
-        runClientCommand(args, false);
+        runClientCommand(args);
 
         assertTrue("output should include an error message", systemErrRule.getLog().contains("Syntax error while parsing a block collection"));
     }
@@ -1270,7 +1269,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
 
-        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null), false);
+        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null), eq(false));
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
 
@@ -1309,7 +1308,7 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
 
-        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null), false);
+        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null), eq(false));
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
 
@@ -1335,7 +1334,7 @@ public class LaunchTestIT {
             add(file.getAbsolutePath());
         }};
 
-        runClientCommand(args, false);
+        runClientCommand(args);
         exit.checkAssertionAfterwards(() ->
                 assertTrue("output should include an error message", systemErrRule.getLog().contains("\"outputs section is not valid\""))
         );
