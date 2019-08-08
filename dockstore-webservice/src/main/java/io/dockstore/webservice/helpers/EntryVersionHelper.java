@@ -331,6 +331,9 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             List<String> paths = new ArrayList<>();
+
+            // If this sourceFile content is null, do not write it.  Empty is acceptable though.
+            sourceFiles.removeIf(sourceFile -> sourceFile.getContent() == null);
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
                 Path resolve = workingDirectory.resolve(sourceFile.getAbsolutePath());
