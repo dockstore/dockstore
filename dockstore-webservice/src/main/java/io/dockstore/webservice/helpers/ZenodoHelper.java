@@ -44,6 +44,90 @@ public final class ZenodoHelper {
     }
 
     /**
+     * Register a Zenodo DOI for the workflow version
+     * @param zenodoUrl URL of the Zenodo website, e.g. 'https://sandbox.zenodo.org' or 'https://zenodo.org'
+     * @param workflow    workflow for which DOI is registered
+     * @param workflowVersion workflow version for which DOI is registered
+     * @param entryVersionHelper code for interacting with the files of versions, we use zip file creation methods
+     */
+    public static void registerZenodoDOIForWorkflow(String zenodoUrl, String zenodoAccessToken, Workflow workflow,
+            WorkflowVersion workflowVersion, EntryVersionHelper entryVersionHelper) {
+
+        ApiClient zendoClient = new ApiClient();
+        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
+        String zenodoUrlApi = zenodoUrl + "/api";
+        zendoClient.setBasePath(zenodoUrlApi);
+        zendoClient.setApiKey(zenodoAccessToken);
+
+        DepositsApi depositApi = new DepositsApi(zendoClient);
+        ActionsApi actionsApi = new ActionsApi(zendoClient);
+
+        Deposit deposit = new Deposit();
+        Deposit returnDeposit;
+
+        checkForExistingDOIForWorkflowVersion(workflowVersion);
+
+        Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
+
+        int depositionID = 0;
+        DepositMetadata depositMetadata = null;
+
+        if (!existingWorkflowVersionDOIURL.isPresent()) {
+            try {
+                // No DOI has been assigned to any version of the workflow yet
+                // So create a new deposit which will enable creation of a new
+                // concept DOI and new version DOI
+                returnDeposit = depositApi.createDeposit(deposit);
+                depositionID = returnDeposit.getId();
+                depositMetadata = returnDeposit.getMetadata();
+
+                fillInMetadata(depositMetadata, workflow, workflowVersion);
+
+            } catch (ApiException e) {
+                LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
+                throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
+                        + "Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            }
+        } else {
+            String depositIdStr = existingWorkflowVersionDOIURL.get()
+                    .substring(existingWorkflowVersionDOIURL.get().lastIndexOf(".") + 1).trim();
+            int depositId = Integer.parseInt(depositIdStr);
+            try {
+                // A DOI was assigned to a workflow version so we will
+                // use the ID associated with the workflow version DOI
+                // to create a new workflow version DOI
+                returnDeposit = actionsApi.newDepositVersion(depositId);
+                // The response body of this action is NOT the new version deposit,
+                // but the original resource. The new version deposition can be
+                // accessed through the "latest_draft" under "links" in the response body.
+                Object links = returnDeposit.getLinks();
+                String depositURL = (String)((LinkedHashMap)links).get("latest_draft");
+
+                String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
+                // Get the deposit object for the new workflow version DOI
+                depositionID = Integer.parseInt(depositionIDStr);
+                returnDeposit = depositApi.getDeposit(depositionID);
+
+                depositMetadata = returnDeposit.getMetadata();
+                fillInMetadata(depositMetadata, workflow, workflowVersion);
+
+            } catch (ApiException e) {
+                LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
+                throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
+                        + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
+        provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit, depositionID, workflow, workflowVersion, entryVersionHelper);
+
+        putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
+
+        Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
+
+        workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
+    }
+
+    /**
      * Add the workflow labels as keywords to the deposition metadata
      * @param depositMetadata Metadata for the workflow version
      * @param workflow    workflow for which DOI is registered
@@ -257,7 +341,7 @@ public final class ZenodoHelper {
     }
 
     /**
-     * Check if a Zenodo DOI already exists for the workflow version
+     * Put the deposit data on Zenodo
      * @param depositApi Zenodo API for working with depositions
      * @param depositMetadata Metadata for the workflow version
      * @param depositionID Zenodo's ID for the deposition
@@ -290,90 +374,6 @@ public final class ZenodoHelper {
                     + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return publishedDeposit;
-    }
-
-    /**
-     * Register a Zenodo DOI for the workflow version
-     * @param zenodoUrl URL of the Zenodo website, e.g. 'https://sandbox.zenodo.org' or 'https://zenodo.org'
-     * @param workflow    workflow for which DOI is registered
-     * @param workflowVersion workflow version for which DOI is registered
-     * @param entryVersionHelper code for interacting with the files of versions, we use zip file creation methods
-     */
-    public static void registerZenodoDOIForWorkflow(String zenodoUrl, String zenodoAccessToken, Workflow workflow,
-            WorkflowVersion workflowVersion, EntryVersionHelper entryVersionHelper) {
-
-        ApiClient zendoClient = new ApiClient();
-        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
-        String zenodoUrlApi = zenodoUrl + "/api";
-        zendoClient.setBasePath(zenodoUrlApi);
-        zendoClient.setApiKey(zenodoAccessToken);
-
-        DepositsApi depositApi = new DepositsApi(zendoClient);
-        ActionsApi actionsApi = new ActionsApi(zendoClient);
-
-        Deposit deposit = new Deposit();
-        Deposit returnDeposit;
-
-        checkForExistingDOIForWorkflowVersion(workflowVersion);
-
-        Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
-
-        int depositionID = 0;
-        DepositMetadata depositMetadata = null;
-
-        if (!existingWorkflowVersionDOIURL.isPresent()) {
-            try {
-                // No DOI has been assigned to any version of the workflow yet
-                // So create a new deposit which will enable creation of a new
-                // concept DOI and new version DOI
-                returnDeposit = depositApi.createDeposit(deposit);
-                depositionID = returnDeposit.getId();
-                depositMetadata = returnDeposit.getMetadata();
-
-                fillInMetadata(depositMetadata, workflow, workflowVersion);
-
-            } catch (ApiException e) {
-                LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
-                        + "Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
-            }
-        } else {
-            String depositIdStr = existingWorkflowVersionDOIURL.get()
-                    .substring(existingWorkflowVersionDOIURL.get().lastIndexOf(".") + 1).trim();
-            int depositId = Integer.parseInt(depositIdStr);
-            try {
-                // A DOI was assigned to a workflow version so we will
-                // use the ID associated with the workflow version DOI
-                // to create a new workflow version DOI
-                returnDeposit = actionsApi.newDepositVersion(depositId);
-                // The response body of this action is NOT the new version deposit,
-                // but the original resource. The new version deposition can be
-                // accessed through the "latest_draft" under "links" in the response body.
-                Object links = returnDeposit.getLinks();
-                String depositURL = (String)((LinkedHashMap)links).get("latest_draft");
-
-                String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
-                // Get the deposit object for the new workflow version DOI
-                depositionID = Integer.parseInt(depositionIDStr);
-                returnDeposit = depositApi.getDeposit(depositionID);
-
-                depositMetadata = returnDeposit.getMetadata();
-                fillInMetadata(depositMetadata, workflow, workflowVersion);
-
-            } catch (ApiException e) {
-                LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
-                        + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
-            }
-        }
-
-        provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit, depositionID, workflow, workflowVersion, entryVersionHelper);
-
-        putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
-
-        Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
-
-        workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
     }
 
 }
