@@ -4745,6 +4745,12 @@ paths:
         description: "Comma-delimited list of fields to include: validations"
         required: false
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4767,6 +4773,12 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4796,6 +4808,12 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4833,6 +4851,12 @@ paths:
         - "OWNER"
         - "WRITER"
         - "READER"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4863,6 +4887,12 @@ paths:
         required: true
         schema:
           $ref: "#/definitions/Permission"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4892,6 +4922,12 @@ paths:
         description: "Comma-delimited list of fields to include: validations"
         required: false
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"

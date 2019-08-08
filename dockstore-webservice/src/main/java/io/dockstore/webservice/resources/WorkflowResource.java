@@ -1134,9 +1134,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Get a workflow by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
-
-        BioWorkflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
@@ -1203,8 +1204,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Get all permissions for a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
@@ -1216,8 +1219,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Gets all actions a user can perform on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);
     }
@@ -1230,8 +1235,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-        @ApiParam(value = "user permission", required = true) Permission permission) {
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "user permission", required = true) Permission permission,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/dockstore/dockstore/issues/1593
         if (workflow.getMode() != WorkflowMode.HOSTED) {
@@ -1249,8 +1256,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
-        @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "role", required = true) @QueryParam("role") Role role, @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         this.permissionsInterface.removePermission(user, workflow, email, role);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
@@ -1312,8 +1320,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
-    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
-        Workflow workflow = workflowDAO.findByPath(path, true, BioWorkflow.class).orElse(null);
+    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
         initializeValidations(include, workflow);

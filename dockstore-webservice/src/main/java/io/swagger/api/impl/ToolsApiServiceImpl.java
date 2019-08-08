@@ -50,6 +50,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -173,10 +174,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (entryName != null) {
             entryPath += "/" + parsedID.getToolName();
         }
-        if (parsedID.isTool()) {
+        if (parsedID.toolType() == ParsedRegistryID.ToolType.TOOL) {
             entry = toolDAO.findByPath(entryPath, user.isEmpty());
+        } else if (parsedID.toolType() == ParsedRegistryID.ToolType.WORKFLOW) {
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElse(null);
+        } else if (parsedID.toolType() == ParsedRegistryID.ToolType.SERVICE) {
+            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), Service.class).orElse(null);
         } else {
-            entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElseGet(null);
+            throw new UnsupportedOperationException("Tool type that should not be present found:" + parsedID.toolType());
         }
         if (entry != null && entry.getIsPublished()) {
             return entry;
@@ -734,7 +739,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * and services have a "#service" prepended to it.
      */
     public static class ParsedRegistryID {
-        private boolean tool = true;
+        private enum ToolType {TOOL, SERVICE, WORKFLOW};
+        private ToolType type = ToolType.TOOL;
         private String registry;
         private String organization;
         private String name;
@@ -749,9 +755,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
             List<String> list = new ArrayList<>(textSegments);
             String firstTextSegment = list.get(0);
-            if (WORKFLOW_PREFIX.equalsIgnoreCase(firstTextSegment) || SERVICE_PREFIX.equalsIgnoreCase(firstTextSegment)) {
-                list.remove(0); // Remove #workflow or #service from ArrayList to make parsing similar to tool
-                tool = false;
+            if (WORKFLOW_PREFIX.equalsIgnoreCase(firstTextSegment)) {
+                list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
+                type = ToolType.WORKFLOW;
+            }
+            if (SERVICE_PREFIX.equalsIgnoreCase(firstTextSegment)) {
+                list.remove(0); // Remove #service from ArrayList to make parsing similar to tool
+                type = ToolType.SERVICE;
             }
             checkToolId(list);
             registry = list.get(0);
@@ -802,8 +812,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return registry + "/" + organization + "/" + name;
         }
 
-        public boolean isTool() {
-            return tool;
+        public ToolType toolType() {
+            return type;
         }
     }
 }
