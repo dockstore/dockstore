@@ -23,9 +23,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -659,26 +657,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Add the workflow version last modified data as publication date to the deposition metadata
-     * @param depositMetadata Metadata for the workflow version
-     * @param workflowVersion    workflow version for which DOI is registered
-     */
-    private void setMetadataPublicationDate(DepositMetadata depositMetadata, WorkflowVersion workflowVersion) {
-        // get last modified time of workflow version in milliseconds
-        // after Jan 1, 1970. The idea is that this will usually be
-        // the date when the workflow was published
-        // in Dockstore; we will set the Zenodo publication
-        // date to the Dockstore publication date
-        Date wfvDate = workflowVersion.getLastModified();
-        // Creating date format  ISO8601 format (YYYY-MM-DD)
-        // Format required by Zenodo
-        long lastModifiedDate = wfvDate.getTime();
-        LocalDate date =
-                Instant.ofEpochMilli(lastModifiedDate).atZone(ZoneId.systemDefault()).toLocalDate();
-        depositMetadata.setPublicationDate(date.toString());
-    }
-
-    /**
      * Add a communites list to to the deposition metadata even if it is empty
      * @param depositMetadata Metadata for the workflow version
      */
@@ -716,6 +694,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         String descriptionStr = (description == null || description.isEmpty()) ? "no description" : workflow.getDescription();
         depositMetadata.setDescription(descriptionStr);
 
+        // We will set the Zenodo workflow version publication date to the date of the DOI issuance
+        depositMetadata.setPublicationDate(ZonedDateTime.now().toLocalDate().toString());
+
         depositMetadata.setVersion(workflowVersion.getName());
 
         setMetadataKeywords(depositMetadata, workflow);
@@ -723,8 +704,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         setMetadataRelatedIdentifiers(depositMetadata, workflow);
 
         setMetadataCreator(depositMetadata, workflow);
-
-        setMetadataPublicationDate(depositMetadata, workflowVersion);
 
         setMetadataCommunities(depositMetadata);
     }
