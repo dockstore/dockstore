@@ -1046,6 +1046,9 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
                     outputSet.addAll(provisionOutputFile(key, file, fileMapDataStructure));
                 }
                 if (o instanceof Integer) {
+                    // This integer appears to be the result of the workflow execution.
+                    // For example, if the workflow is supposed to count the number of lines in the file,
+                    // o would be the number of lines (this is printed out already)
                     LOG.info("There are no output files found for this workflow.");
                 }
             }
