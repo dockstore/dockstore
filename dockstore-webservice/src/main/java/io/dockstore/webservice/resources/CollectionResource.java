@@ -257,8 +257,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     /**
      * Common code used to add and delete from a collection. Will ensure that both the entry and collection are
      * visible to the user and that the user has the correct credentials to edit the collection.
-     * @param entryId
-     * @param collectionId
+     * @param entryId the entry to add, will be considered a bad request if the entry doesn't exist
+     * @param collectionId the collection to modify, will be considered a not found exception if the collection doesn't exist
      * @param user User performing the action
      * @return Pair of found Entry and Collection
      */
@@ -269,7 +269,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         if (entry == null || !entry.getIsPublished()) {
             String msg = "Entry not found.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
         Collection collection = getAndCheckCollection(Optional.of(organizationId), collectionId, user);
 
@@ -331,7 +331,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             collections.forEach(collection -> Hibernate.initialize(collection.getEntries()));
         }
 
-        return collectionDAO.findAllByOrg(organizationId);
+        return collections;
     }
 
     private void throwExceptionForNullOrganization(Organization organization) {
@@ -445,14 +445,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization ID", required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID", required = true) @PathParam("collectionId") Long collectionId,
             @ApiParam(value = "Collections's description in markdown", required = true) String description) {
-
-        boolean doesColExistToUser = doesCollectionExistToUser(collectionId, user.getId());
-        if (!doesColExistToUser) {
-            String msg = "Collection" + collectionId + " not found for organization " + organizationId;
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-
         Organization oldOrganization = organizationDAO.findById(organizationId);
 
         // Ensure that the user is a member of the organization
@@ -463,7 +455,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
-        Collection oldCollection = collectionDAO.findById(collectionId);
+        Collection oldCollection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
 
         // Update collection
         oldCollection.setDescription(description);

@@ -32,6 +32,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.Ga4GhApi;
@@ -57,6 +58,7 @@ import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -260,6 +262,7 @@ public class ServiceIT extends BaseIT {
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
+        final String github = SourceControl.GITHUB.toString();
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
 
@@ -269,9 +272,23 @@ public class ServiceIT extends BaseIT {
 
         // Add workflow with same path as service
         final io.swagger.client.model.Workflow workflow = client
-                .manualRegister("github", serviceRepo, "/Dockstore.cwl", "", "cwl", "/test.json");
+            .manualRegister("github", serviceRepo, "/Dockstore.cwl", "", "cwl", "/test.json");
         assertNotNull(workflow);
 
+        // forcibly publish both for testing
+        testingPostgres.runUpdateStatement("update workflow set ispublished = 't'");
+        testingPostgres.runUpdateStatement("update service set ispublished = 't'");
+
+        // test retrieval
+        final io.swagger.client.model.Workflow returnedWorkflow = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, "", false);
+        final io.swagger.client.model.Workflow returnedService = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, "", true);
+        assertNotSame(returnedWorkflow.getId(), returnedService.getId());
+
+        // test GA4GH retrieval
+        Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
+        final Tool tool1 = ga4GhApi.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/" + github + "/" + serviceRepo);
+        final Tool tool2 = ga4GhApi.toolsIdGet(ToolsImplCommon.SERVICE_PREFIX + "/" + github + "/" + serviceRepo);
+        assertNotSame(tool1.getId(), tool2.getId());
     }
 
     /**

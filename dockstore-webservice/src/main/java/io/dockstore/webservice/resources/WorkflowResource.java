@@ -16,23 +16,12 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -73,7 +62,6 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -92,6 +80,7 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -109,18 +98,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
-import io.swagger.zenodo.client.ApiClient;
-import io.swagger.zenodo.client.ApiException;
-import io.swagger.zenodo.client.api.ActionsApi;
-import io.swagger.zenodo.client.api.DepositsApi;
-import io.swagger.zenodo.client.api.FilesApi;
-import io.swagger.zenodo.client.model.Author;
-import io.swagger.zenodo.client.model.Community;
-import io.swagger.zenodo.client.model.Deposit;
-import io.swagger.zenodo.client.model.DepositMetadata;
-import io.swagger.zenodo.client.model.DepositionFile;
-import io.swagger.zenodo.client.model.NestedDepositMetadata;
-import io.swagger.zenodo.client.model.RelatedIdentifier;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -579,10 +556,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Beta
     @Path("/{workflowId}/requestDOI/{workflowVersionId}")
     @ApiOperation(value = "Request a DOI for this version of a workflow.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkUser(user, workflow);
@@ -605,7 +582,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
-        registerZenodoDOIForWorkflow(zenodoAccessToken, workflow, workflowVersion);
+
+        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, zenodoAccessToken, workflow, workflowVersion, this);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
@@ -614,383 +592,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     }
 
-    /**
-     * Add the workflow labels as keywords to the deposition metadata
-     * @param depositMetadata Metadata for the workflow version
-     * @param workflow    workflow for which DOI is registered
-     */
-    private void setMetadataKeywords(DepositMetadata depositMetadata, Workflow workflow) {
-        // Use the Dockstore workflow labels as Zenodo free form keywords for this deposition.
-        Set<Label> workflowLabels = workflow.getLabels();
-        Iterator labelIter = workflowLabels.iterator();
-        List<String> labelList = new ArrayList<>();
-        while (labelIter.hasNext()) {
-            String label = ((Label)labelIter.next()).getValue();
-            labelList.add(label);
-        }
-        depositMetadata.setKeywords(labelList);
-    }
-
-    /**
-     * Add the workflow aliases as related identifiers to the deposition metadata
-     * @param depositMetadata Metadata for the workflow version
-     * @param workflow    workflow for which DOI is registered
-     */
-    private void setMetadataRelatedIdentifiers(DepositMetadata depositMetadata, Workflow workflow) {
-        // Get the aliases for this workflow and add them to the deposit
-        // The alias must be a format supported by Zenodo such as
-        // DOI, Handle, ARK...URNs and URLs
-        // See http://developers.zenodo.org/#representation 'related identifiers'
-        Set<String> workflowAliases = workflow.getAliases().keySet();
-        Iterator iter = workflowAliases.iterator();
-        List<RelatedIdentifier> aliasList = new ArrayList<RelatedIdentifier>();
-        while (iter.hasNext()) {
-            RelatedIdentifier relatedIdentifier = new RelatedIdentifier();
-            String workflowAlias = ((String)iter.next());
-            relatedIdentifier.setIdentifier(workflowAlias);
-            relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
-            aliasList.add(relatedIdentifier);
-        }
-
-        // TODO Use stream map collect to list
-        // List<RelatedIdentifier> aliasList = workflowAliases.stream().map(s -> {
-        //     RelatedIdentifier relatedIdentifier = new RelatedIdentifier();
-        //     relatedIdentifier.setIdentifier(s);
-        //     relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
-        //     //aliasList.add(relatedIdentifier);
-        //     return relatedIdentifier;
-        // }).collect(Collectors.toList());
-
-
-        depositMetadata.setRelatedIdentifiers(aliasList);
-    }
-
-    /**
-     * Add the workflow author as creator to the deposition metadata
-     * @param depositMetadata Metadata for the workflow version
-     * @param workflow    workflow for which DOI is registered
-     */
-    private void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow) {
-        String wfAuthor = workflow.getAuthor();
-        String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "unknown creator" : workflow.getAuthor();
-        Author author = new Author();
-        author.setName(authorStr);
-        depositMetadata.setCreators(Arrays.asList(author));
-    }
-
-    /**
-     * Add the workflow version last modified data as publication date to the deposition metadata
-     * @param depositMetadata Metadata for the workflow version
-     * @param workflowVersion    workflow version for which DOI is registered
-     */
-    private void setMetadataPublicationDate(DepositMetadata depositMetadata, WorkflowVersion workflowVersion) {
-        // get last modified time of workflow version in milliseconds
-        // after Jan 1, 1970. The idea is that this will usually be
-        // the date when the workflow was published
-        // in Dockstore; we will set the Zenodo publication
-        // date to the Dockstore publication date
-        Date wfvDate = workflowVersion.getLastModified();
-        // Creating date format  ISO8601 format (YYYY-MM-DD)
-        // Format required by Zenodo
-        long lastModifiedDate = wfvDate.getTime();
-        LocalDate date =
-                Instant.ofEpochMilli(lastModifiedDate).atZone(ZoneId.systemDefault()).toLocalDate();
-        depositMetadata.setPublicationDate(date.toString());
-    }
-
-    /**
-     * Add a communites list to to the deposition metadata even if it is empty
-     * @param depositMetadata Metadata for the workflow version
-     */
-    private void setMetadataCommunities(DepositMetadata depositMetadata) {
-        // A communities entry must not be null, but it can be a null
-        // List for Zenodo
-        List<Community> communities = depositMetadata.getCommunities();
-        if (communities == null || communities.isEmpty()) {
-            List<Community> myList = new ArrayList<>();
-            depositMetadata.setCommunities(myList);
-        } else if (communities.size() == 1 && communities.get(0).getId() == null) {
-            // Sometimes the list of communities contains one object
-            // with a null id when Zenodo copies the metadata.
-            // This will cause the call to publish to fail, so clear
-            // the list of communities in this case
-            List<Community> myList = new ArrayList<>();
-            depositMetadata.setCommunities(myList);
-        }
-    }
-
-    /**
-     * Add the workflow version information to the deposition metadata
-     * @param depositMetadata Metadata for the workflow version
-     * @param workflow    workflow for which DOI is registered
-     * @param workflowVersion workflow version for which DOI is registered
-     */
-    private void fillInMetadata(DepositMetadata depositMetadata, Workflow workflow, WorkflowVersion workflowVersion) {
-        // add some metadata to the deposition that will be published to Zenodo
-        depositMetadata.setTitle(workflow.getWorkflowPath());
-        // The Zenodo deposit type for Dockstore will always be SOFTWARE
-        depositMetadata.setUploadType(DepositMetadata.UploadTypeEnum.SOFTWARE);
-        // A metadata description is required for Zenodo
-        String description = workflow.getDescription();
-        // The Zenodo API requires at description of at least three characters
-        String descriptionStr = (description == null || description.isEmpty()) ? "no description" : workflow.getDescription();
-        depositMetadata.setDescription(descriptionStr);
-        depositMetadata.setVersion(workflowVersion.getName());
-
-        setMetadataKeywords(depositMetadata, workflow);
-
-        setMetadataRelatedIdentifiers(depositMetadata, workflow);
-
-        setMetadataCreator(depositMetadata, workflow);
-
-        setMetadataPublicationDate(depositMetadata, workflowVersion);
-
-        setMetadataCommunities(depositMetadata);
-    }
-
-    /**
-     * Provision files to upload to Zenodo
-     * @param zendoClient Zenodo api client
-     * @param returnDeposit Deposit object for the new version
-     * @param depositionID ID of Zendo deposit to which files will be attached
-     * @param workflow    workflow for which DOI is registered
-     * @param workflowVersion workflow version for which DOI is registered
-     */
-    private File provisionWorkflowVersionUploadFiles(ApiClient zendoClient, Deposit returnDeposit,
-            int depositionID, Workflow workflow, WorkflowVersion workflowVersion) {
-        // Creating a new version copies the files from the previous version
-        // We want to delete these since we will upload a new set of files
-        // if creating a completely new deposit this should not cause a problem
-        FilesApi filesApi = new FilesApi(zendoClient);
-        List<DepositionFile> originalFilesInNewVersion = returnDeposit.getFiles();
-        Iterator filesIter = originalFilesInNewVersion.iterator();
-        while (filesIter.hasNext()) {
-            String fileIdStr = ((DepositionFile)filesIter.next()).getId();
-            filesApi.deleteFile(depositionID, fileIdStr);
-        }
-
-        // Add workflow version source files as a zip to the DOI upload deposit
-        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-        if (sourceFiles == null || sourceFiles.size() == 0) {
-            LOG.warn("No source files found to zip when creating DOI");
-            throw new CustomWebApplicationException("No source files found to"
-                    + " upload when creating DOI. Zenodo requires at lease one file"
-                    + " to be uploaded in order to create a DOI.", HttpStatus.SC_BAD_REQUEST);
-        } else {
-            OutputStream outputStream;
-            String versionOfWorkflow = workflowVersion.getName();
-
-            String fileNameBase = workflow.getWorkflowPath().replaceAll("/", "-")
-                    + "_" + versionOfWorkflow;
-            String fileSuffix = ".zip";
-            String fileName = fileNameBase + fileSuffix;
-            java.nio.file.Path tempDirPath;
-            try {
-                tempDirPath = Files.createTempDirectory(null);
-            } catch (IOException e) {
-                LOG.error("Could not create Zenodo temp upload directory." + " Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create Zenodo upload temp directory"
-                        + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-
-            String zipFilePathName = tempDirPath.toString() + "/" + fileName;
-
-            try {
-                outputStream = new FileOutputStream(zipFilePathName);
-            } catch (FileNotFoundException fne) {
-                // Delete the temporary directory
-                tempDirPath.toFile().delete();
-                LOG.error("Could not create file " + zipFilePathName
-                        + " outputstream for DOI zip file for upload to Zenodo."
-                        + " Error is " + fne.getMessage(), fne);
-                throw new CustomWebApplicationException("Could not create "
-                        + "outputstream for DOI zip file for upload to Zenodo."
-                        + " Error is " + fne.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-
-            writeStreamAsZip(sourceFiles, outputStream, Paths.get(zipFilePathName));
-            File zipFile = new File(zipFilePathName);
-
-            try {
-                filesApi.createFile(depositionID, zipFile, fileName);
-            } catch (ApiException e) {
-                // Delete the zip file in the temporary directory
-                zipFile.delete();
-                // Delete the temporary directory
-                tempDirPath.toFile().delete();
-                LOG.error("Could not create files for new version on Zenodo. Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create files for new version on Zenodo."
-                        + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-
-            return zipFile;
-        }
-    }
-
-
-    /**
-     * Check if a Zenodo DOI already exists for the workflow version
-     * @param workflowVersion workflow version
-     */
-    private void checkForExistingDOIForWorkflowVersion(WorkflowVersion workflowVersion) {
-        String workflowVersionDoiURL = workflowVersion.getDoiURL();
-        if (workflowVersionDoiURL != null && !workflowVersionDoiURL.isEmpty()) {
-            LOG.error("Workflow version " + workflowVersion.getName() + " already has DOI " + workflowVersionDoiURL
-                    + ". Dockstore can only create one DOI per version.");
-            throw new CustomWebApplicationException("Workflow version " + workflowVersion.getName() + " already has DOI "
-                    + workflowVersionDoiURL + ". Dockstore can only create one DOI per version.", HttpStatus.SC_METHOD_NOT_ALLOWED);
-        }
-    }
-
-    /**
-     * Get an existing Zenodo DOI for the workflow if one exists
-     * otherwise return null
-     * @param workflow workflow
-     */
-    private String getAnExistingDOIForWorkflow(Workflow workflow) {
-        // Find out if this workflow already has at least one
-        // version that has been assigned a DOI
-        // If a version DOI exists, we will create another version DOI
-        // instead of creating a new workflow concept DOI and version DOI
-        // Get the ID of one of the workflow version DOIs
-        // because Zenodo requires that we use it to create the next
-        // workflow version DOI
-        String latestWorkflowVersionDOIURL = null;
-        Set<WorkflowVersion> setOfWorkflowVersions = workflow.getWorkflowVersions();
-        Iterator iter = setOfWorkflowVersions.iterator();
-        while (iter.hasNext()) {
-            WorkflowVersion myWorkflowVersion = ((WorkflowVersion)iter.next());
-            latestWorkflowVersionDOIURL = myWorkflowVersion.getDoiURL();
-            if (latestWorkflowVersionDOIURL != null && !latestWorkflowVersionDOIURL.isEmpty()) {
-                break;
-            }
-        }
-        return latestWorkflowVersionDOIURL;
-    }
-
-    /**
-     * Check if a Zenodo DOI already exists for the workflow version
-     * @param depositApi Zenodo API for working with depositions
-     * @param depositMetadata Metadata for the workflow version
-     * @param depositionID Zenodo's ID for the deposition
-     */
-    private void putDepositionOnZenodo(DepositsApi depositApi, DepositMetadata depositMetadata,
-            int depositionID) {
-        NestedDepositMetadata nestedDepositMetadata = new NestedDepositMetadata();
-        nestedDepositMetadata.setMetadata(depositMetadata);
-        try {
-            depositApi.putDeposit(depositionID, nestedDepositMetadata);
-        } catch (ApiException e) {
-            LOG.error("Could not put deposition metadata on Zenodo. Error is " + e.getMessage(), e);
-            throw new CustomWebApplicationException("Could not put deposition metadata on Zenodo."
-                    + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Publish the deposit on Zenodo
-     * @param actionsApi Zenodo API for publishing deposits
-     * @param depositionID Zenodo's ID for the deposition
-     */
-    private Deposit publishDepositOnZenodo(ActionsApi actionsApi, int depositionID) {
-        Deposit publishedDeposit;
-        try {
-            publishedDeposit = actionsApi.publishDeposit(depositionID);
-        } catch (ApiException e) {
-            LOG.error("Could not publish DOI on Zenodo. Error is " + e.getMessage(), e);
-            throw new CustomWebApplicationException("Could not publish DOI on Zenodo."
-                    + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        return publishedDeposit;
-    }
-
-    /**
-     * Register a Zenodo DOI for the workflow version
-     * @param workflow    workflow for which DOI is registered
-     * @param workflowVersion workflow version for which DOI is registered
-     */
-    private void registerZenodoDOIForWorkflow(String zenodoAccessToken, Workflow workflow, WorkflowVersion workflowVersion) {
-        ApiClient zendoClient = new ApiClient();
-        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
-        String zenodoUrlApi = zenodoUrl + "/api";
-        zendoClient.setBasePath(zenodoUrlApi);
-        zendoClient.setApiKey(zenodoAccessToken);
-
-        DepositsApi depositApi = new DepositsApi(zendoClient);
-        ActionsApi actionsApi = new ActionsApi(zendoClient);
-
-        Deposit deposit = new Deposit();
-        Deposit returnDeposit;
-
-        checkForExistingDOIForWorkflowVersion(workflowVersion);
-
-        String latestWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
-
-        int depositionID = 0;
-        DepositMetadata depositMetadata = null;
-
-        if (latestWorkflowVersionDOIURL == null || latestWorkflowVersionDOIURL.isEmpty()) {
-            try {
-                // No DOI has been assigned to any version of the workflow yet
-                // So create a new deposit which will enable creation of a new
-                // concept DOI and new version DOI
-                returnDeposit = depositApi.createDeposit(deposit);
-                depositionID = returnDeposit.getId();
-                depositMetadata = returnDeposit.getMetadata();
-
-                fillInMetadata(depositMetadata, workflow, workflowVersion);
-
-            } catch (ApiException e) {
-                LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
-                        + "Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
-            }
-        } else {
-            String depositIdStr = latestWorkflowVersionDOIURL.substring(latestWorkflowVersionDOIURL.lastIndexOf(".") + 1).trim();
-            int depositId = Integer.parseInt(depositIdStr);
-            try {
-                // A DOI was assigned to a workflow version so we will
-                // use the ID associated with the workflow version DOI
-                // to create a new workflow version DOI
-                returnDeposit = actionsApi.newDepositVersion(depositId);
-                // The response body of this action is NOT the new version deposit,
-                // but the original resource. The new version deposition can be
-                // accessed through the "latest_draft" under "links" in the response body.
-                Object links = returnDeposit.getLinks();
-                String depositURL = (String)((LinkedHashMap)links).get("latest_draft");
-
-                String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
-                // Get the deposit object for the new workflow version DOI
-                depositionID = Integer.parseInt(depositionIDStr);
-                returnDeposit = depositApi.getDeposit(depositionID);
-
-                depositMetadata = returnDeposit.getMetadata();
-                fillInMetadata(depositMetadata, workflow, workflowVersion);
-
-            } catch (ApiException e) {
-                LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
-                        + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
-            }
-        }
-
-
-        File uploadFile = provisionWorkflowVersionUploadFiles(zendoClient, returnDeposit, depositionID, workflow, workflowVersion);
-        try {
-            putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
-        } finally {
-            // Get the location of the temporary directory
-            File uploadFileTempDir = uploadFile.getParentFile();
-            // Delete the already uploaded zip file
-            uploadFile.delete();
-            // Delete the temporary directory
-            uploadFileTempDir.delete();
-        }
-
-        Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
-
-        workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
-    }
 
 
 
@@ -1071,16 +672,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow publish(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
-        Workflow c = workflowDAO.findById(workflowId);
-        checkEntry(c);
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
 
-        checkCanShareWorkflow(user, c);
+        checkCanShareWorkflow(user, workflow);
 
-        Workflow checker = c.getCheckerWorkflow();
+        Workflow checker = workflow.getCheckerWorkflow();
+
+        if (workflow.isIsChecker()) {
+            String msg = "Cannot directly publish/unpublish a checker workflow.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
 
         if (request.getPublish()) {
             boolean validTag = false;
-            Set<WorkflowVersion> versions = c.getWorkflowVersions();
+            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
             for (WorkflowVersion workflowVersion : versions) {
                 if (workflowVersion.isValid()) {
                     validTag = true;
@@ -1088,8 +695,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 }
             }
 
-            if (validTag && (!c.getGitUrl().isEmpty() || Objects.equals(c.getMode(), WorkflowMode.HOSTED))) {
-                c.setIsPublished(true);
+            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
+                workflow.setIsPublished(true);
                 if (checker != null) {
                     checker.setIsPublished(true);
                 }
@@ -1097,17 +704,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            c.setIsPublished(false);
+            workflow.setIsPublished(false);
             if (checker != null) {
                 checker.setIsPublished(false);
             }
         }
 
-        long id = workflowDAO.create(c);
-        c = workflowDAO.findById(id);
+        long id = workflowDAO.create(workflow);
+        workflow = workflowDAO.findById(id);
         if (request.getPublish()) {
-            elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
-            if (c.getTopicId() == null) {
+            elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+            if (workflow.getTopicId() == null) {
                 try {
                     entryResource.createAndSetDiscourseTopic(id);
                 } catch (CustomWebApplicationException ex) {
@@ -1115,9 +722,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 }
             }
         } else {
-            elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
+            elasticManager.handleIndexUpdate(workflow, ElasticMode.DELETE);
         }
-        return c;
+        return workflow;
     }
 
     @GET
@@ -1182,9 +789,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Get a workflow by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
-
-        BioWorkflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
@@ -1251,8 +859,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Get all permissions for a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
@@ -1264,8 +874,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Gets all actions a user can perform on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);
     }
@@ -1278,8 +890,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-        @ApiParam(value = "user permission", required = true) Permission permission) {
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "user permission", required = true) Permission permission,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/dockstore/dockstore/issues/1593
         if (workflow.getMode() != WorkflowMode.HOSTED) {
@@ -1297,8 +911,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
-        @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
-        Workflow workflow = workflowDAO.findByPath(path, false, BioWorkflow.class).orElse(null);
+        @ApiParam(value = "role", required = true) @QueryParam("role") Role role, @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         this.permissionsInterface.removePermission(user, workflow, email, role);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
@@ -1360,8 +975,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
-    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
-        Workflow workflow = workflowDAO.findByPath(path, true, BioWorkflow.class).orElse(null);
+    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include,
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
         initializeValidations(include, workflow);

@@ -196,7 +196,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     public void handleLabels(String entryPath, Set<String> addsSet, Set<String> removesSet) {
         // Try and update the labels for the given workflow
         try {
-            Workflow workflow = workflowsApi.getWorkflowByPath(entryPath, null);
+            Workflow workflow = workflowsApi.getWorkflowByPath(entryPath, null, false);
             long workflowId = workflow.getId();
             List<Label> existingLabels = workflow.getLabels();
 
@@ -299,11 +299,11 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         // simply getting published descriptors does not require permissions
         Workflow workflow = null;
         try {
-            workflow = workflowsApi.getPublishedWorkflowByPath(path, null);
+            workflow = workflowsApi.getPublishedWorkflowByPath(path, null, false);
         } catch (ApiException e) {
             if (e.getResponseBody().contains("Entry not found")) {
                 LOG.info("Unable to locate entry without credentials, trying again as authenticated user");
-                workflow = workflowsApi.getWorkflowByPath(path, null);
+                workflow = workflowsApi.getWorkflowByPath(path, null, false);
             }
         } finally {
             if (workflow == null) {
@@ -535,7 +535,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     public void handleInfo(String entryPath) {
         try {
-            Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entryPath, null);
+            Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entryPath, null, false);
             if (workflow == null || !workflow.isIsPublished()) {
                 errorMessage("This workflow is not published.", COMMAND_ERROR);
             } else {
@@ -612,7 +612,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     protected void refreshTargetEntry(String path) {
         try {
-            Workflow workflow = workflowsApi.getWorkflowByPath(path, null);
+            Workflow workflow = workflowsApi.getWorkflowByPath(path, null, false);
             final Long workflowId = workflow.getId();
             out("Refreshing workflow...");
             Workflow updatedWorkflow = workflowsApi.refresh(workflowId);
@@ -631,7 +631,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         Workflow existingWorkflow;
         boolean isPublished = false;
         try {
-            existingWorkflow = workflowsApi.getWorkflowByPath(entryPath, null);
+            existingWorkflow = workflowsApi.getWorkflowByPath(entryPath, null, false);
             isPublished = existingWorkflow.isIsPublished();
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to publish/unpublish " + newName, Client.API_ERROR);
@@ -681,7 +681,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         boolean toOverwrite = true;
 
         try {
-            Workflow workflow = workflowsApi.getWorkflowByPath(entry, null);
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry, null, false);
             List<WorkflowVersion> versions = workflow.getWorkflowVersions();
 
             final Optional<WorkflowVersion> first = versions.stream().filter((WorkflowVersion u) -> u.getName().equals(versionName))
@@ -765,7 +765,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         }
 
         try {
-            Workflow workflow = workflowsApi.getWorkflowByPath(entry, null);
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry, null, false);
             PublishRequest pub = SwaggerUtility.createPublishRequest(publish);
             workflow = workflowsApi.publish(workflow.getId(), pub);
 
@@ -792,7 +792,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             action = "unstar";
         }
         try {
-            Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry, null);
+            Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry, null, false);
             if (star) {
                 StarRequest request = SwaggerUtility.createStarRequest(true);
                 workflowsApi.starEntry(workflow.getId(), request);
@@ -940,7 +940,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         } else {
             final String entry = reqVal(args, "--entry");
             try {
-                Workflow workflow = workflowsApi.getWorkflowByPath(entry, null);
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry, null, false);
                 long workflowId = workflow.getId();
 
                 String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType().getValue());
@@ -1004,7 +1004,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType, String parentEntry) {
         try {
-            Workflow workflow = workflowsApi.getWorkflowByPath(entry, null);
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry, null, false);
             long workflowId = workflow.getId();
 
             if (adds.size() > 0) {
@@ -1036,7 +1036,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             final String name = reqVal(args, "--name");
 
             try {
-                Workflow workflow = workflowsApi.getWorkflowByPath(entry, null);
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry, null, false);
                 List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
 
                 for (WorkflowVersion workflowVersion : workflowVersions) {
@@ -1075,7 +1075,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         } else {
             try {
                 final String entry = reqVal(args, "--entry");
-                Workflow workflow = workflowsApi.getWorkflowByPath(entry, null);
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry, null, false);
 
                 if (workflow.isIsPublished()) {
                     errorMessage("Cannot restub a published workflow. Please unpublish if you wish to restub.", Client.CLIENT_ERROR);
