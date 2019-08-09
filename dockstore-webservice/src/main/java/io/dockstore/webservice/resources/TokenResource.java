@@ -663,7 +663,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 token.setContent(accessToken);
                 token.setRefreshToken(refreshToken);
                 token.setUserId(user.getId());
-                token.setUsername("");
+                token.setUsername(user.getUsername());
                 long create = tokenDAO.create(token);
                 LOG.info("Zenodo token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
