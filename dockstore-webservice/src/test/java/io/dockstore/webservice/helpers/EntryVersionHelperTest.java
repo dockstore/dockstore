@@ -7,7 +7,6 @@ import java.util.HashSet;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.jdbi.EntryDAO;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -36,14 +35,8 @@ public class EntryVersionHelperTest {
      * @throws IOException
      */
     @Test
-    public void writeStreamAsZip() throws IOException {
-        class AnonymousClass implements EntryVersionHelper {
-            @Override
-            public EntryDAO getDAO() {
-                return null;
-            }
-        }
-        AnonymousClass anonymousClass = new AnonymousClass();
+    public void testWriteStreamAsZip() throws IOException {
+        EntryVersionHelper anonymousClass = () -> null;
         SourceFile sourceFile1 = new SourceFile();
         sourceFile1.setContent(null);
         sourceFile1.setPath("/nullSourcefile");
@@ -59,20 +52,22 @@ public class EntryVersionHelperTest {
         sourceFile3.setPath("/actualSourcefile");
         sourceFile3.setAbsolutePath("/actualSourcefile");
         sourceFile3.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        SourceFile sourceFile4 = new SourceFile();
-        sourceFile4.setContent("potato in directory");
-        sourceFile4.setPath("/directory/actualSourcefile");
-        sourceFile4.setAbsolutePath("/directory/actualSourcefile");
-        sourceFile4.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
-        HashSet<SourceFile> sourceFiles = new HashSet<>();
-        sourceFiles.add(sourceFile1);
-        sourceFiles.add(sourceFile2);
-        sourceFiles.add(sourceFile3);
-        sourceFiles.add(sourceFile4);
-        anonymousClass.writeStreamAsZip(sourceFiles, byteArrayOutputStream, Paths.get(""));
-        // Very weird way of checking that the zip contains the correct sourcefiles
-        String zipAsString = byteArrayOutputStream.toString();
+        String zipAsString;
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+            SourceFile sourceFile4 = new SourceFile();
+            sourceFile4.setContent("potato in directory");
+            sourceFile4.setPath("/directory/actualSourcefile");
+            sourceFile4.setAbsolutePath("/directory/actualSourcefile");
+            sourceFile4.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
+            HashSet<SourceFile> sourceFiles = new HashSet<>();
+            sourceFiles.add(sourceFile1);
+            sourceFiles.add(sourceFile2);
+            sourceFiles.add(sourceFile3);
+            sourceFiles.add(sourceFile4);
+            anonymousClass.writeStreamAsZip(sourceFiles, byteArrayOutputStream, Paths.get(""));
+            // Very weird way of checking that the zip contains the correct sourcefiles
+            zipAsString = byteArrayOutputStream.toString();
+        }
         Assert.assertTrue(zipAsString.contains("actualSourcefile"));
         Assert.assertTrue(zipAsString.contains("emptySourcefile"));
         Assert.assertTrue(zipAsString.contains("directory/actualSourcefile"));
