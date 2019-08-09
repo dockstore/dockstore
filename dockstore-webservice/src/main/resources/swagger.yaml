@@ -5954,6 +5954,9 @@ definitions:
           $ref: "#/definitions/Validation"
       workingDirectory:
         type: "string"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
       reference:
         type: "string"
         position: 2
@@ -6996,6 +6999,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Validation"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
       reference:
         type: "string"
         position: 2
@@ -7777,6 +7783,9 @@ definitions:
         - "HELM"
       workingDirectory:
         type: "string"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
       last_modified:
         type: "string"
         format: "date-time"

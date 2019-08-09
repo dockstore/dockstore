@@ -7204,6 +7204,9 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
+        dbUpdateDate:
+          type: string
+          format: date-time
         reference:
           type: string
           description: git commit/tag/branch
@@ -7919,6 +7922,9 @@ components:
             - HELM
         workingDirectory:
           type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
         last_modified:
           type: string
           format: date-time
@@ -8019,6 +8025,9 @@ components:
             $ref: "#/components/schemas/Validation"
         workingDirectory:
           type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
         reference:
           type: string
           description: git commit/tag/branch
