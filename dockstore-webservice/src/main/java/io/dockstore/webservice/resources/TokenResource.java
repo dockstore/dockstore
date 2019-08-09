@@ -663,6 +663,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 token.setContent(accessToken);
                 token.setRefreshToken(refreshToken);
                 token.setUserId(user.getId());
+                // Zenodo does not return a user name in the token response
+                // so set the token user name to the Dockstore user name
+                // otherwise we will get a DB error when trying to
+                // link another user's Zenodo credentials
                 token.setUsername(user.getUsername());
                 long create = tokenDAO.create(token);
                 LOG.info("Zenodo token created for {}", user.getUsername());
