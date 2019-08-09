@@ -1187,8 +1187,7 @@ public class GeneralWorkflowIT extends BaseIT {
             workflowApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
             fail("This line should never execute if version is mutable. DOI should only be generated for frozen versions of workflows.");
         } catch (ApiException ex) {
-            assertFalse("Version should not be frozen", master.isFrozen());
-            assertNull("version DOI is null", master.getDoiURL());
+            assertTrue(ex.getResponseBody().contains("Frozen version required to generate DOI"));
         }
 
         //freeze version 'master'
@@ -1203,6 +1202,8 @@ public class GeneralWorkflowIT extends BaseIT {
             workflowApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
             fail("This line should never execute without valid Zenodo token");
         } catch (ApiException ex) {
+            assertTrue(ex.getResponseBody().contains("Could not get Zenodo token for user"));
+
         }
 
     }
