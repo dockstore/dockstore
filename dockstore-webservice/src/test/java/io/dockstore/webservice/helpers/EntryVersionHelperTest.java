@@ -1,5 +1,13 @@
 package io.dockstore.webservice.helpers;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.HashSet;
+
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.jdbi.EntryDAO;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,5 +28,54 @@ public class EntryVersionHelperTest {
         Assert.assertEquals(".dockstore.yml", EntryVersionHelper.removeWorkingDirectory("/.dockstore.yml", ".dockstore.yml"));
         Assert.assertEquals(".dockstore.yml", EntryVersionHelper.removeWorkingDirectory("./.dockstore.yml", ".dockstore.yml"));
         Assert.assertEquals(".dockstore.yml", EntryVersionHelper.removeWorkingDirectory("././.dockstore.yml", ".dockstore.yml"));
+    }
+
+    /**
+     * Tests that there's no exceptions when create zip file with null content or empty content
+     * Does not test the possible IOException from zipOutputStream.putNextEntry and zipOutputStream.closeEntry
+     * @throws IOException
+     */
+    @Test
+    public void writeStreamAsZip() throws IOException {
+        class AnonymousClass implements EntryVersionHelper {
+            @Override
+            public EntryDAO getDAO() {
+                return null;
+            }
+        }
+        AnonymousClass anonymousClass = new AnonymousClass();
+        SourceFile sourceFile1 = new SourceFile();
+        sourceFile1.setContent(null);
+        sourceFile1.setPath("/nullSourcefile");
+        sourceFile1.setAbsolutePath("/nullSourcefile");
+        sourceFile1.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
+        SourceFile sourceFile2 = new SourceFile();
+        sourceFile2.setContent("");
+        sourceFile2.setPath("/emptySourcefile");
+        sourceFile2.setAbsolutePath("/emptySourcefile");
+        sourceFile2.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
+        SourceFile sourceFile3 = new SourceFile();
+        sourceFile3.setContent("potato");
+        sourceFile3.setPath("/actualSourcefile");
+        sourceFile3.setAbsolutePath("/actualSourcefile");
+        sourceFile3.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        SourceFile sourceFile4 = new SourceFile();
+        sourceFile4.setContent("potato in directory");
+        sourceFile4.setPath("/directory/actualSourcefile");
+        sourceFile4.setAbsolutePath("/directory/actualSourcefile");
+        sourceFile4.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
+        HashSet<SourceFile> sourceFiles = new HashSet<>();
+        sourceFiles.add(sourceFile1);
+        sourceFiles.add(sourceFile2);
+        sourceFiles.add(sourceFile3);
+        sourceFiles.add(sourceFile4);
+        anonymousClass.writeStreamAsZip(sourceFiles, byteArrayOutputStream, Paths.get(""));
+        // Very weird way of checking that the zip contains the correct sourcefiles
+        String zipAsString = byteArrayOutputStream.toString();
+        Assert.assertTrue(zipAsString.contains("actualSourcefile"));
+        Assert.assertTrue(zipAsString.contains("emptySourcefile"));
+        Assert.assertTrue(zipAsString.contains("directory/actualSourcefile"));
+        Assert.assertFalse(zipAsString.contains("/nullSourcefile"));
     }
 }
