@@ -43,6 +43,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.client.cli.Client.API_ERROR;
+import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -1167,17 +1168,9 @@ public class GeneralWorkflowIT extends BaseIT {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-
-        // Get workflows
-        usersApi.refreshWorkflows(userId);
-
+        //register workflow
         Workflow githubWorkflow = workflowApi
                 .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
-
-        // Publish github workflow
-        workflowApi.refresh(githubWorkflow.getId());
 
         Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
         WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
@@ -1187,7 +1180,7 @@ public class GeneralWorkflowIT extends BaseIT {
             workflowApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
             fail("This line should never execute if version is mutable. DOI should only be generated for frozen versions of workflows.");
         } catch (ApiException ex) {
-            assertTrue(ex.getResponseBody().contains("Frozen version required to generate DOI"));
+            assertTrue(ex.getResponseBody().contains(FROZEN_VERSION_REQUIRED));
         }
 
         //freeze version 'master'

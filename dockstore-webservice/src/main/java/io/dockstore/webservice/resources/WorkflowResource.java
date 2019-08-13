@@ -124,11 +124,13 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     implements EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {
+    public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
+
 
     private final ElasticManager elasticManager;
     private final ToolDAO toolDAO;
@@ -573,9 +575,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         //Only issue doi if workflow is frozen.
+        final String workflowNameAndVersion = workflowNameAndVersion(workflow, workflowVersion);
         if (!workflowVersion.isFrozen()) {
-            LOG.error(user.getUsername() + ": Could not generate DOI for " +  workflowNameAndVersion(workflow, workflowVersion) + ", frozen version required to generate DOI.");
-            throw new CustomWebApplicationException("Could not generate DOI for " + workflowNameAndVersion(workflow, workflowVersion) + ". Frozen version required to generate DOI.", HttpStatus.SC_BAD_REQUEST);
+            LOG.error(user.getUsername() + ": Could not generate DOI for " +  workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED);
+            throw new CustomWebApplicationException("Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED + ". ", HttpStatus.SC_BAD_REQUEST);
         }
 
         List<Token> tokens = checkOnZenodoToken(user);

@@ -7626,15 +7626,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -7742,10 +7742,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        isChecker:
+          type: boolean
         last_modified_date:
           type: string
           format: date-time
