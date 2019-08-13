@@ -44,10 +44,10 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
+import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1195,7 +1195,7 @@ public class GeneralWorkflowIT extends BaseIT {
             workflowApi.requestDOIForWorkflowVersion(workflowBeforeFreezing.getId(), master.getId(), "");
             fail("This line should never execute without valid Zenodo token");
         } catch (ApiException ex) {
-            assertTrue(ex.getResponseBody().contains("Could not get Zenodo token for user"));
+            assertTrue(ex.getResponseBody().contains(NO_ZENDO_USER_TOKEN));
 
         }
 

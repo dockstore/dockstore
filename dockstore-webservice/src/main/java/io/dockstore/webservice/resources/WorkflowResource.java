@@ -125,6 +125,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     implements EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
+    public static final String NO_ZENDO_USER_TOKEN = "Could not get Zenodo token for user";
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
@@ -584,9 +585,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         List<Token> tokens = checkOnZenodoToken(user);
         Token zenodoToken = Token.extractToken(tokens, TokenType.ZENODO_ORG);
         if (zenodoToken == null) {
-            LOG.error("Could not get Zenodo token for user " + user.getUsername());
-            throw new CustomWebApplicationException("Could not get Zenodo token for user "
-                    + user.getUsername(), HttpStatus.SC_BAD_REQUEST);
+            LOG.error(NO_ZENDO_USER_TOKEN + " " + user.getUsername());
+            throw new CustomWebApplicationException(NO_ZENDO_USER_TOKEN + " " + user.getUsername(), HttpStatus.SC_BAD_REQUEST);
         }
         final String zenodoAccessToken = zenodoToken.getContent();
 
