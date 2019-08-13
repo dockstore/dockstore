@@ -1403,7 +1403,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient userApiClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi userWorkflowsApi = new WorkflowsApi(userApiClient);
         userWorkflowsApi.manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/metadata.cwl", "metadata", "cwl", "/cwl/v1.1/cat-job.json");
-        final Workflow workflowByPathGithub = userWorkflowsApi.getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", null);
+        final Workflow workflowByPathGithub = userWorkflowsApi.getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", null, false);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId());
         Assert.assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
         Assert.assertEquals("Peter Amstutz", workflow.getAuthor());
@@ -1421,7 +1421,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertFalse(workflowVersion.isValid());
 
         userWorkflowsApi.manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/count-lines1-wf.cwl", "count-lines1-wf", "cwl", "/cwl/v1.1/wc-job.json");
-        final Workflow workflowByPathGithub2 = userWorkflowsApi.getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", null);
+        final Workflow workflowByPathGithub2 = userWorkflowsApi.getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", null, false);
         final Workflow workflow2 = userWorkflowsApi.refresh(workflowByPathGithub2.getId());
         Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         Optional<WorkflowVersion> optionalWorkflowVersion2 = workflow2.getWorkflowVersions().stream()
