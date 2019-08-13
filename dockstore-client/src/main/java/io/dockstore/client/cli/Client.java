@@ -777,6 +777,9 @@ public class Client {
         // pull out the variables from the config
         String token = config.getString("token", "");
         String serverUrl = config.getString("server-url", "https://dockstore.org/api");
+        if (serverUrl.contains(":8443")) {
+            out("Dockstore webservice has deprecated port 8443 and may no longer expose it. Please change it to use the standard 443 port via the Dockstore config file (\"~/.dockstore/config\" by default).");
+        }
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
         String cliVersion = getClientVersion();
