@@ -54,4 +54,15 @@ public class ClientTestIT {
         Client.main(command);
         Assert.assertTrue("There are unexpected error logs", systemErrRule.getLog().isBlank());
     }
+
+    /**
+     * When the old 8443 port is used, the user should be warned
+     */
+    @Test
+    public void testPort8443() {
+        String clientConfig = ResourceHelpers.resourceFilePath("oldClientConfig");
+        String[] command = { "--help", "--config", clientConfig };
+        Client.main(command);
+        Assert.assertTrue("Should have warned about port 8443", systemOutRule.getLog().contains("deprecated port 8443"));
+    }
 }
