@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import io.dropwizard.testing.ResourceHelpers;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -121,7 +122,7 @@ public class WorkflowInDirectoryTestIT {
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
         exit.expectSystemExitWithStatus(3);
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
-        systemErrRule.getLog().contains("Missing required secondary file");
+        Assert.assertTrue(systemErrRule.getLog().contains("Missing required secondary file"));
     }
 
     @Test
@@ -152,7 +153,7 @@ public class WorkflowInDirectoryTestIT {
     }
 
     private void baseWorkflowTest(File descriptor, File testParameter, boolean script, String entryType) {
-        ArrayList<String> args = new ArrayList<String>() {{
+        ArrayList<String> args = new ArrayList<>() {{
             add("--config");
             add(configFile.getPath());
             add(entryType);
@@ -165,6 +166,6 @@ public class WorkflowInDirectoryTestIT {
                 add("--script");
             }
         }};
-        Client.main(args.toArray(new String[args.size()]));
+        Client.main(args.toArray(new String[0]));
     }
 }
