@@ -24,6 +24,8 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
+import static io.dockstore.client.cli.Client.DEPRECATED_PORT_MESSAGE;
+
 /**
  * Created by dyuen on 2/23/17.
  */
@@ -53,6 +55,7 @@ public class ClientTestIT {
         String[] command = { "--help", "--config", clientConfig };
         Client.main(command);
         Assert.assertTrue("There are unexpected error logs", systemErrRule.getLog().isBlank());
+        Assert.assertFalse("Should not have warned about port 8443", systemErrRule.getLog().contains(DEPRECATED_PORT_MESSAGE));
     }
 
     /**
@@ -63,6 +66,6 @@ public class ClientTestIT {
         String clientConfig = ResourceHelpers.resourceFilePath("oldClientConfig");
         String[] command = { "--help", "--config", clientConfig };
         Client.main(command);
-        Assert.assertTrue("Should have warned about port 8443", systemOutRule.getLog().contains("deprecated port 8443"));
+        Assert.assertTrue("Should have warned about port 8443", systemErrRule.getLog().contains(DEPRECATED_PORT_MESSAGE));
     }
 }
