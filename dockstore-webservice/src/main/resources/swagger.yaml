@@ -5460,6 +5460,13 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -7578,10 +7585,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      isChecker:
-        type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      isChecker:
+        type: "boolean"
       last_modified_date:
         type: "string"
         format: "date-time"

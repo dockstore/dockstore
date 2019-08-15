@@ -124,11 +124,14 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     implements EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {
+    public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
+    public static final String NO_ZENDO_USER_TOKEN = "Could not get Zenodo token for user";
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
+
 
     private final ElasticManager elasticManager;
     private final ToolDAO toolDAO;
@@ -556,27 +559,34 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Beta
     @Path("/{workflowId}/requestDOI/{workflowVersionId}")
     @ApiOperation(value = "Request a DOI for this version of a workflow.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
+        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkUser(user, workflow);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
-            LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
+            LOG.error(user.getUsername() + ": could not find version: " + workflow.getWorkflowPath());
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
 
+        }
+
+        //Only issue doi if workflow is frozen.
+        final String workflowNameAndVersion = workflowNameAndVersion(workflow, workflowVersion);
+        if (!workflowVersion.isFrozen()) {
+            LOG.error(user.getUsername() + ": Could not generate DOI for " +  workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED);
+            throw new CustomWebApplicationException("Could not generate DOI for " + workflowNameAndVersion + ". " + FROZEN_VERSION_REQUIRED + ". ", HttpStatus.SC_BAD_REQUEST);
         }
 
         List<Token> tokens = checkOnZenodoToken(user);
         Token zenodoToken = Token.extractToken(tokens, TokenType.ZENODO_ORG);
         if (zenodoToken == null) {
-            LOG.error("Could not get Zenodo token for user " + user.getUsername());
-            throw new CustomWebApplicationException("Could not get Zenodo token for user "
-                    + user.getUsername(), HttpStatus.SC_BAD_REQUEST);
+            LOG.error(NO_ZENDO_USER_TOKEN + " " + user.getUsername());
+            throw new CustomWebApplicationException(NO_ZENDO_USER_TOKEN + " " + user.getUsername(), HttpStatus.SC_BAD_REQUEST);
         }
         final String zenodoAccessToken = zenodoToken.getContent();
 
@@ -592,8 +602,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     }
 
-
-
+    private String workflowNameAndVersion(Workflow workflow, WorkflowVersion workflowVersion) {
+        return workflow.getWorkflowPath() + ":" + workflowVersion.getName();
+    }
 
     @PUT
     @Timed
