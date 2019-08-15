@@ -100,6 +100,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -564,15 +565,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     /**
      * Construct a URL for Dockstore
-     * @param scheme Dockstore scheme, e.g. http or https
-     * @param hostName Dockstore host name, e.g. dockstore.org
-     * @param port Dockstore port, e.g. 4200
+     * @param dockstoreScheme Dockstore scheme, e.g. http or https
+     * @param dockstoreHostName Dockstore host name, e.g. dockstore.org
+     * @param dockstorePort Dockstore port, e.g. 4200
      */
-    private String createHostUrl(String scheme, String hostName, String port) {
+    private String createHostUrl(String dockstoreScheme, String dockstoreHostName, String dockstorePort) {
         URI url;
         try {
-            int iport = port.isEmpty() ? null : Integer.parseInt(port);
-            url = new URI(scheme, null, hostName, iport, null, null, null);
+            int iport = StringUtils.isEmpty(dockstorePort) ? -1 : Integer.parseInt(dockstorePort);
+            url = new URI(dockstoreScheme, null, dockstoreHostName, iport, null, null, null);
         } catch (URISyntaxException e) {
             LOG.error("Could not create Dockstore URL."
                     + " Error is " + e.getMessage(), e);
