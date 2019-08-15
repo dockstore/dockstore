@@ -144,6 +144,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String zenodoClientID;
     private final String zenodoClientSecret;
 
+    private final String hostName;
+    private final String scheme;
+    private final String port;
+
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
         super(client, sessionFactory, configuration, Workflow.class);
@@ -160,6 +164,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
+
+        hostName = configuration.getExternalConfig().getHostname();
+        scheme = configuration.getExternalConfig().getScheme();
+        port = configuration.getExternalConfig().getPort();
     }
 
     @Override
@@ -593,7 +601,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
-        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, zenodoAccessToken, workflow, workflowVersion, this);
+        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, hostName, scheme, port, zenodoAccessToken, workflow, workflowVersion, this);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
