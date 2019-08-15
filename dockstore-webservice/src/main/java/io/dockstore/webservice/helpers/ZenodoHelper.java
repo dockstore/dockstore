@@ -5,8 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
@@ -52,7 +50,7 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      * @param entryVersionHelper code for interacting with the files of versions, we use zip file creation methods
      */
-    public static void registerZenodoDOIForWorkflow(String zenodoUrl, String hostName, String scheme, String port,
+    public static void registerZenodoDOIForWorkflow(String zenodoUrl, String dockstorUrl,
             String zenodoAccessToken, Workflow workflow,
             WorkflowVersion workflowVersion, EntryVersionHelper entryVersionHelper) {
 
@@ -84,7 +82,7 @@ public final class ZenodoHelper {
                 depositionID = returnDeposit.getId();
                 depositMetadata = returnDeposit.getMetadata();
 
-                fillInMetadata(depositMetadata, hostName, scheme, port, workflow, workflowVersion);
+                fillInMetadata(depositMetadata, dockstorUrl, workflow, workflowVersion);
 
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
@@ -112,7 +110,7 @@ public final class ZenodoHelper {
                 returnDeposit = depositApi.getDeposit(depositionID);
 
                 depositMetadata = returnDeposit.getMetadata();
-                fillInMetadata(depositMetadata, hostName, scheme, port, workflow, workflowVersion);
+                fillInMetadata(depositMetadata, dockstorUrl, workflow, workflowVersion);
 
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
@@ -147,7 +145,7 @@ public final class ZenodoHelper {
      * @param depositMetadata Metadata for the workflow version
      * @param workflow    workflow for which DOI is registered
      */
-    private static void setMetadataRelatedIdentifiers(DepositMetadata depositMetadata, String hostName, String scheme, String port,
+    private static void setMetadataRelatedIdentifiers(DepositMetadata depositMetadata, String dockstoreUrl,
             Workflow workflow) {
         // Get the aliases for this workflow and add them to the deposit
         // The alias must be a format supported by Zenodo such as
@@ -156,19 +154,8 @@ public final class ZenodoHelper {
         List<RelatedIdentifier> aliasList = workflow.getAliases().keySet().stream()
                 .map(alias -> {
                     RelatedIdentifier relatedIdentifier = new RelatedIdentifier();
-                    URI aliasUri;
-                    try {
-                        int iport = port.isEmpty() ? null : Integer.parseInt(port);
-                        aliasUri = new URI(scheme, null, hostName, iport, "/aliases/workflows/"
-                                + alias, null, null);
-                    } catch (URISyntaxException e) {
-                        LOG.error("Could not create URI for related identifier for upload to Zenodo."
-                                + " Error is " + e.getMessage(), e);
-                        throw new CustomWebApplicationException("Could not create "
-                                + "URI for related identifier for upload to Zenodo."
-                                + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    }
-                    relatedIdentifier.setIdentifier(aliasUri.toString());
+                    String aliasUrl = dockstoreUrl + "/aliases/workflows/" + alias;
+                    relatedIdentifier.setIdentifier(aliasUrl.toString());
                     relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
                     return relatedIdentifier;
                 }).collect(Collectors.toList());
@@ -216,7 +203,7 @@ public final class ZenodoHelper {
      * @param workflow    workflow for which DOI is registered
      * @param workflowVersion workflow version for which DOI is registered
      */
-    private static void fillInMetadata(DepositMetadata depositMetadata, String hostName, String scheme, String port,
+    private static void fillInMetadata(DepositMetadata depositMetadata, String dockstoreUrl,
             Workflow workflow, WorkflowVersion workflowVersion) {
         // add some metadata to the deposition that will be published to Zenodo
         depositMetadata.setTitle(workflow.getWorkflowPath());
@@ -235,7 +222,7 @@ public final class ZenodoHelper {
 
         setMetadataKeywords(depositMetadata, workflow);
 
-        setMetadataRelatedIdentifiers(depositMetadata, hostName, scheme, port, workflow);
+        setMetadataRelatedIdentifiers(depositMetadata, dockstoreUrl, workflow);
 
         setMetadataCreator(depositMetadata, workflow);
 

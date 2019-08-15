@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.resources;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -560,6 +562,25 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return tokenDAO.findByUserId(user.getId());
     }
 
+    /**
+     * Construct a URL for Dockstore
+     * @param scheme Dockstore scheme, e.g. http or https
+     * @param hostName Dockstore host name, e.g. dockstore.org
+     * @param port Dockstore port, e.g. 4200
+     */
+    private String createHostUrl(String scheme, String hostName, String port) {
+        URI url;
+        try {
+            int iport = port.isEmpty() ? null : Integer.parseInt(port);
+            url = new URI(scheme, null, hostName, iport, null, null, null);
+        } catch (URISyntaxException e) {
+            LOG.error("Could not create Dockstore URL."
+                    + " Error is " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not create Dockstore URL."
+                    + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return url.toString();
+    }
 
     @PUT
     @Timed
@@ -601,7 +622,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
-        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, hostName, scheme, port, zenodoAccessToken, workflow, workflowVersion, this);
+        String dockstoreUrl = createHostUrl(scheme, hostName, port);
+        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, dockstoreUrl, zenodoAccessToken, workflow, workflowVersion, this);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
