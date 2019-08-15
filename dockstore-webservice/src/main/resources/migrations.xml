@@ -34,4 +34,5 @@
     <include file="migrations.test.confidential2_1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test_1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.add_service_1.7.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.alter_test_user_1.7.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
