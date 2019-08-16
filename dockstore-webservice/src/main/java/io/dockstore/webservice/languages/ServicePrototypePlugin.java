@@ -24,11 +24,13 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.RecommendedLanguageInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
 public class ServicePrototypePlugin implements RecommendedLanguageInterface {
-
+    Logger LOG = LoggerFactory.getLogger(ServicePrototypePlugin.class);
     @Override
     public boolean isService() {
         return true;
@@ -104,7 +106,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
             metadata.setDescription((String)serviceObject.get("description"));
             metadata.setEmail((String)serviceObject.get("email"));
         } catch (YAMLException | ClassCastException ex) {
-
+            LOG.info("Error parsing service metadata.", ex);
         }
         return metadata;
     }
