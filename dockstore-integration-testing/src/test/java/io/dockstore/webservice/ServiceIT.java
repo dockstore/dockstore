@@ -196,6 +196,13 @@ public class ServiceIT extends BaseIT {
         List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(service.getUsers().get(0).getId());
         assertEquals("There should be one service", 1,  services.size());
         assertEquals("There should be no workflows", 0, workflows.size());
+
+        // Set default version
+        service = client.updateWorkflowDefaultVersion(service.getId(), "1.0");
+        service = client.refresh(service.getId());
+
+        assertEquals("Should have an author", "Andrew Duncan", service.getAuthor());
+        assertEquals("Should have a description", "This is the coolest service, it is very cool.", service.getDescription());
     }
 
     /**
