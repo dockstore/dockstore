@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +17,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.WorkflowResource;
@@ -32,6 +34,7 @@ import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -69,10 +72,10 @@ public final class ZenodoHelper {
 
         Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
 
-        int depositionID = 0;
-        DepositMetadata depositMetadata = null;
+        int depositionID;
+        DepositMetadata depositMetadata;
 
-        if (!existingWorkflowVersionDOIURL.isPresent()) {
+        if (existingWorkflowVersionDOIURL.isEmpty()) {
             try {
                 // No DOI has been assigned to any version of the workflow yet
                 // So create a new deposit which will enable creation of a new
@@ -134,7 +137,7 @@ public final class ZenodoHelper {
      */
     private static void setMetadataKeywords(DepositMetadata depositMetadata, Workflow workflow) {
         // Use the Dockstore workflow labels as Zenodo free form keywords for this deposition.
-        List<String> labelList = workflow.getLabels().stream().map(label -> label.getValue()).collect(Collectors.toList());
+        List<String> labelList = workflow.getLabels().stream().map(Label::getValue).collect(Collectors.toList());
         depositMetadata.setKeywords(labelList);
 
     }
@@ -170,7 +173,7 @@ public final class ZenodoHelper {
         String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "unknown creator" : workflow.getAuthor();
         Author author = new Author();
         author.setName(authorStr);
-        depositMetadata.setCreators(Arrays.asList(author));
+        depositMetadata.setCreators(Collections.singletonList(author));
     }
 
     /**
@@ -241,7 +244,7 @@ public final class ZenodoHelper {
         // if creating a completely new deposit this should not cause a problem
         FilesApi filesApi = new FilesApi(zendoClient);
 
-        returnDeposit.getFiles().stream().forEach(file -> {
+        returnDeposit.getFiles().forEach(file -> {
             String fileIdStr = file.getId();
             filesApi.deleteFile(depositionID, fileIdStr);
         });
@@ -269,8 +272,7 @@ public final class ZenodoHelper {
                 tempDirPath = Files.createTempDirectory(null);
             } catch (IOException e) {
                 LOG.error("Could not create Zenodo temp upload directory." + " Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create Zenodo upload temp directory"
-                        + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Internal server error creating Zenodo upload temp directory", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             String zipFilePathName = tempDirPath.toString() + "/" + fileName;
@@ -279,13 +281,12 @@ public final class ZenodoHelper {
                 outputStream = new FileOutputStream(zipFilePathName);
             } catch (FileNotFoundException fne) {
                 // Delete the temporary directory
-                tempDirPath.toFile().delete();
+                FileUtils.deleteQuietly(tempDirPath.toFile());
                 LOG.error("Could not create file " + zipFilePathName
                         + " outputstream for DOI zip file for upload to Zenodo."
                         + " Error is " + fne.getMessage(), fne);
-                throw new CustomWebApplicationException("Could not create "
-                        + " zip file for upload to Zenodo."
-                        + " Error is " + fne.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Internal server error creating Zenodo upload temp directory",
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             entryVersionHelper.writeStreamAsZip(sourceFiles, outputStream, Paths.get(zipFilePathName));
@@ -299,9 +300,9 @@ public final class ZenodoHelper {
                         + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
                 // Delete the zip file in the temporary directory
-                zipFile.delete();
+                FileUtils.deleteQuietly(zipFile);
                 // Delete the temporary directory
-                tempDirPath.toFile().delete();
+                FileUtils.deleteQuietly(tempDirPath.toFile());
             }
         }
     }
@@ -336,7 +337,7 @@ public final class ZenodoHelper {
         // workflow version DOI
 
         return workflow.getWorkflowVersions().stream()
-                .map(v -> v.getDoiURL())
+                .map(Version::getDoiURL)
                 .filter(doi -> !StringUtils.isEmpty(doi)).findAny();
     }
 
