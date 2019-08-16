@@ -16,8 +16,10 @@
 
 package io.dockstore.webservice.resources;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -570,11 +572,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param dockstorePort Dockstore port, e.g. 4200
      */
     private String createHostUrl(String dockstoreScheme, String dockstoreHostName, String dockstorePort) {
-        URI url;
+        URL url;
         try {
             int iport = StringUtils.isEmpty(dockstorePort) ? -1 : Integer.parseInt(dockstorePort);
-            url = new URI(dockstoreScheme, null, dockstoreHostName, iport, null, null, null);
-        } catch (URISyntaxException e) {
+            url = new URL(dockstoreScheme, dockstoreHostName, iport, "");
+        } catch (MalformedURLException e) {
             LOG.error("Could not create Dockstore URL."
                     + " Error is " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not create Dockstore URL."

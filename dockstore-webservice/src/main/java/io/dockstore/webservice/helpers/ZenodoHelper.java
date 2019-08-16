@@ -50,7 +50,7 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      * @param entryVersionHelper code for interacting with the files of versions, we use zip file creation methods
      */
-    public static void registerZenodoDOIForWorkflow(String zenodoUrl, String dockstorUrl,
+    public static void registerZenodoDOIForWorkflow(String zenodoUrl, String dockstoreUrl,
             String zenodoAccessToken, Workflow workflow,
             WorkflowVersion workflowVersion, EntryVersionHelper entryVersionHelper) {
 
@@ -82,7 +82,7 @@ public final class ZenodoHelper {
                 depositionID = returnDeposit.getId();
                 depositMetadata = returnDeposit.getMetadata();
 
-                fillInMetadata(depositMetadata, dockstorUrl, workflow, workflowVersion);
+                fillInMetadata(depositMetadata, dockstoreUrl, workflow, workflowVersion);
 
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
@@ -110,7 +110,7 @@ public final class ZenodoHelper {
                 returnDeposit = depositApi.getDeposit(depositionID);
 
                 depositMetadata = returnDeposit.getMetadata();
-                fillInMetadata(depositMetadata, dockstorUrl, workflow, workflowVersion);
+                fillInMetadata(depositMetadata, dockstoreUrl, workflow, workflowVersion);
 
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
