@@ -102,7 +102,7 @@ public class Client {
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean INFO = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
-    public static final String DEPRECATED_PORT_MESSAGE = "Dockstore webservice has deprecated port 8443 and may remove it without warning. Please change it to use the standard 443 port via the Dockstore config file (\"~/.dockstore/config\" by default).";
+    public static final String DEPRECATED_PORT_MESSAGE = "Dockstore webservice has deprecated port 8443 and may remove it without warning. Please use 'https://dockstore.org/api' via the Dockstore config file (\"~/.dockstore/config\" by default) instead.";
 
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static ObjectMapper objectMapper;
