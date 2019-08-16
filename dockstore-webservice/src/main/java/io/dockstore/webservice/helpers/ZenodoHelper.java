@@ -155,7 +155,7 @@ public final class ZenodoHelper {
                 .map(alias -> {
                     RelatedIdentifier relatedIdentifier = new RelatedIdentifier();
                     String aliasUrl = dockstoreUrl + "/aliases/workflows/" + alias;
-                    relatedIdentifier.setIdentifier(aliasUrl.toString());
+                    relatedIdentifier.setIdentifier(aliasUrl);
                     relatedIdentifier.setRelation(RelatedIdentifier.RelationEnum.ISIDENTICALTO);
                     return relatedIdentifier;
                 }).collect(Collectors.toList());
