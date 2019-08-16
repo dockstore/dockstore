@@ -30,7 +30,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
 public class ServicePrototypePlugin implements RecommendedLanguageInterface {
-    Logger LOG = LoggerFactory.getLogger(ServicePrototypePlugin.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ServicePrototypePlugin.class);
     @Override
     public boolean isService() {
         return true;
