@@ -82,6 +82,7 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -147,9 +148,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String zenodoClientID;
     private final String zenodoClientSecret;
 
-    private final String hostName;
-    private final String scheme;
-    private final String port;
+    private final String dockstoreUrl;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
@@ -168,9 +167,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
 
-        hostName = configuration.getExternalConfig().getHostname();
-        scheme = configuration.getExternalConfig().getScheme();
-        port = configuration.getExternalConfig().getPort();
+        dockstoreUrl = URIHelper.createBaseUrl(configuration.getExternalConfig().getScheme(),
+                configuration.getExternalConfig().getHostname(), configuration.getExternalConfig().getUiPort());
     }
 
     @Override
@@ -623,7 +621,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
-        String dockstoreUrl = createHostUrl(scheme, hostName, port);
         ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, dockstoreUrl, zenodoAccessToken, workflow, workflowVersion, this);
 
         Workflow result = workflowDAO.findById(workflowId);
