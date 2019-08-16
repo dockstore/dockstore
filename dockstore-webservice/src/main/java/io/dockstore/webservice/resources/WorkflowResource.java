@@ -16,8 +16,6 @@
 
 package io.dockstore.webservice.resources;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -101,7 +99,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -559,26 +556,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
         }
         return tokenDAO.findByUserId(user.getId());
-    }
-
-    /**
-     * Construct a URL for Dockstore
-     * @param dockstoreScheme Dockstore scheme, e.g. http or https
-     * @param dockstoreHostName Dockstore host name, e.g. dockstore.org
-     * @param dockstorePort Dockstore port, e.g. 4200
-     */
-    private String createHostUrl(String dockstoreScheme, String dockstoreHostName, String dockstorePort) {
-        URL url;
-        try {
-            int iport = StringUtils.isEmpty(dockstorePort) ? -1 : Integer.parseInt(dockstorePort);
-            url = new URL(dockstoreScheme, dockstoreHostName, iport, "");
-        } catch (MalformedURLException e) {
-            LOG.error("Could not create Dockstore URL."
-                    + " Error is " + e.getMessage(), e);
-            throw new CustomWebApplicationException("Could not create Dockstore URL."
-                    + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        return url.toString();
     }
 
     @PUT
