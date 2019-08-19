@@ -39,6 +39,7 @@ import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -58,34 +59,38 @@ public class NextflowHandler implements LanguageHandlerInterface {
     private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         // this is where we can look for things like Nextflow config files or maybe a future Dockstore.yml
-        final Configuration configuration = NextflowUtilities.grabConfig(content);
-        String descriptionInProgress = null;
-        if (configuration.containsKey("manifest.description")) {
-            entry.setDescription(configuration.getString("manifest.description"));
-            descriptionInProgress = entry.getDescription();
-        }
-        if (configuration.containsKey("manifest.author")) {
-            entry.setAuthor(configuration.getString("manifest.author"));
-        }
-        // look for extended help message from nf-core workflows when it is available
-        String mainScriptPath = "main.nf";
-        if (configuration.containsKey("manifest.mainScript")) {
-            mainScriptPath = configuration.getString("manifest.mainScript");
-        }
-        String finalMainScriptPath = mainScriptPath;
-        final Optional<SourceFile> potentialScript = sourceFiles.stream().filter(file -> file.getPath().equals(finalMainScriptPath))
-            .findFirst();
-        if (potentialScript.isPresent()) {
-            String helpMessage = getHelpMessage(potentialScript.get().getContent());
-            // abitrarily follow description, markdown looks funny without the line breaks
-            if (!StringUtils.isEmpty(helpMessage)) {
-                helpMessage = "\n\n" + helpMessage;
+        try {
+            final Configuration configuration = NextflowUtilities.grabConfig(content);
+            String descriptionInProgress = null;
+            if (configuration.containsKey("manifest.description")) {
+                entry.setDescription(configuration.getString("manifest.description"));
+                descriptionInProgress = entry.getDescription();
             }
-            String builder = Stream.of(descriptionInProgress, helpMessage).filter(s -> s != null && !s.isEmpty())
-                .collect(Collectors.joining(""));
-            entry.setDescription(builder);
+            if (configuration.containsKey("manifest.author")) {
+                entry.setAuthor(configuration.getString("manifest.author"));
+            }
+            // look for extended help message from nf-core workflows when it is available
+            String mainScriptPath = "main.nf";
+            if (configuration.containsKey("manifest.mainScript")) {
+                mainScriptPath = configuration.getString("manifest.mainScript");
+            }
+            String finalMainScriptPath = mainScriptPath;
+            final Optional<SourceFile> potentialScript = sourceFiles.stream().filter(file -> file.getPath().equals(finalMainScriptPath))
+                .findFirst();
+            if (potentialScript.isPresent()) {
+                String helpMessage = getHelpMessage(potentialScript.get().getContent());
+                // abitrarily follow description, markdown looks funny without the line breaks
+                if (!StringUtils.isEmpty(helpMessage)) {
+                    helpMessage = "\n\n" + helpMessage;
+                }
+                String builder = Stream.of(descriptionInProgress, helpMessage).filter(s -> s != null && !s.isEmpty())
+                    .collect(Collectors.joining(""));
+                entry.setDescription(builder);
+            }
+        } catch (NextflowUtilities.NextflowParsingException e) {
+            createValidationMessageForGeneralFailure(version, filepath);
         }
         return entry;
     }
@@ -100,9 +105,14 @@ public class NextflowHandler implements LanguageHandlerInterface {
         while (matcher.find()) {
             suspectedConfigImports.add(CharMatcher.is('\'').trimFrom(matcher.group(1).trim()));
         }
-
-        final Configuration configuration = NextflowUtilities.grabConfig(content);
         Map<String, SourceFile> imports = new HashMap<>();
+        Configuration configuration;
+        try {
+            configuration = NextflowUtilities.grabConfig(content);
+        } catch (Exception e) {
+            createValidationMessageForGeneralFailure(version, filepath);
+            return imports;
+        }
 
         // add the Nextflow scripts
         String mainScriptPath = "main.nf";
@@ -127,6 +137,12 @@ public class NextflowHandler implements LanguageHandlerInterface {
         handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
         handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
         return imports;
+    }
+
+    private void createValidationMessageForGeneralFailure(Version version, String filepath) {
+        Map<String, String> validationMessageObject = new HashMap<>();
+        validationMessageObject.put(filepath, "Nextflow config file is malformed or missing, cannot extract metadata");
+        version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.NEXTFLOW_CONFIG, false, validationMessageObject));
     }
 
     private void handleNextflowImports(String repositoryId, Version version, SourceCodeRepoInterface sourceCodeRepoInterface,

@@ -36,10 +36,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
-import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_CONFIG;
-
 public class LanguagePluginHandler implements LanguageHandlerInterface {
 
     public static final Logger LOG = LoggerFactory.getLogger(LanguagePluginHandler.class);
@@ -55,12 +51,13 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         final MinimalLanguageInterface.WorkflowMetadata workflowMetadata = minimalLanguageInterface
             .parseWorkflowForMetadata(filepath, content, new HashMap<>());
         entry.setAuthor(workflowMetadata.getAuthor());
         entry.setEmail(workflowMetadata.getEmail());
         entry.setDescription(workflowMetadata.getDescription());
+        // TODO: hook up validation object to version for parsing metadata
         return entry;
     }
 

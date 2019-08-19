@@ -242,6 +242,7 @@ public abstract class SourceCodeRepoInterface {
     Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
+        Version version = null;
 
         if (repositoryId == null) {
             LOG.info("Could not find repository information.");
@@ -272,8 +273,10 @@ public abstract class SourceCodeRepoInterface {
                     sourceFiles = tag.getSourceFiles();
                     if (type == DescriptorLanguage.CWL) {
                         filePath = tag.getCwlPath();
+                        version = tag;
                     } else if (type == DescriptorLanguage.WDL) {
                         filePath = tag.getWdlPath();
+                        version = tag;
                     } else {
                         throw new UnsupportedOperationException("tool is not a CWL or WDL file");
                     }
@@ -289,6 +292,7 @@ public abstract class SourceCodeRepoInterface {
                 if (workflowVersion.getReference().equals(branch)) {
                     filePath = workflowVersion.getWorkflowPath();
                     sourceFiles = workflowVersion.getSourceFiles();
+                    version = workflowVersion;
                 }
             }
         }
@@ -314,7 +318,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Parse file content and update
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        return anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles);
+        return anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles, version);
     }
 
     /**

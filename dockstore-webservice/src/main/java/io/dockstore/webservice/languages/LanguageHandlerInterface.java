@@ -61,7 +61,7 @@ public interface LanguageHandlerInterface {
      * @param content  a cwl document
      * @return the updated entry
      */
-    Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles);
+    Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version);
 
     /**
      * Validates a workflow set for the workflow described by with primaryDescriptorFilePath

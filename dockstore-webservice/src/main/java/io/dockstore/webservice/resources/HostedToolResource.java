@@ -113,7 +113,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         for (SourceFile file : sourceFiles) {
             if (file.getPath().equals(tag.getCwlPath()) || file.getPath().equals(tag.getWdlPath())) {
                 LOG.info("refreshing metadata based on " + file.getPath() + " from " + tag.getName());
-                LanguageHandlerFactory.getInterface(file.getType()).parseWorkflowContent(entry, file.getPath(), file.getContent(), sourceFiles);
+                LanguageHandlerFactory.getInterface(file.getType()).parseWorkflowContent(entry, file.getPath(), file.getContent(), sourceFiles, tag);
             }
         }
     }

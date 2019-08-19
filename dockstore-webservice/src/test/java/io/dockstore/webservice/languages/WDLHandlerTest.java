@@ -9,6 +9,7 @@ import java.util.HashSet;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -38,7 +39,7 @@ public class WDLHandlerTest {
         final String goodWdl = FileUtils
                 .readFileToString(new File(validFilePath),
                         StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(workflow, validFilePath, goodWdl, Collections.emptySet());
+        wdlHandler.parseWorkflowContent(workflow, validFilePath, goodWdl, Collections.emptySet(), new WorkflowVersion());
         Assert.assertEquals(workflow.getAuthor(), "Mr. Foo");
         Assert.assertEquals(workflow.getEmail(), "foo@foo.com");
         Assert.assertEquals(workflow.getDescription(),
@@ -49,11 +50,9 @@ public class WDLHandlerTest {
         final String invalidDescriptionWdl = FileUtils
                 .readFileToString(new File(invalidFilePath),
                         StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet());
+        wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());
-        Assert.assertEquals(WDLHandler.WDL_SYNTAX_ERROR, workflow.getDescription());
-
     }
 
     @Test

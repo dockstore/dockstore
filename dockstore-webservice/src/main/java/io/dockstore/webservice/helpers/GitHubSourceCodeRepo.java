@@ -59,6 +59,7 @@ import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
+import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
@@ -324,6 +325,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     references.add(getRef(ref, repository));
                 }
             }
+        } catch (GHFileNotFoundException e) {
+            // seems to legitimately do this when the repo has no tags or releases
+            LOG.debug("repo had no releases or tags: " + repositoryId);
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
@@ -532,9 +536,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 Map<String, Object> map = yaml.load(dockstoreYmlContent);
                 Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
                 files = (List<String>)serviceObject.get("files");
-            } catch (YAMLException | ClassCastException ex) {
+                // null catch due to .dockstore.yml files like https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/.dockstore.yml
+            } catch (YAMLException | ClassCastException | NullPointerException ex) {
                 String msg = "Invalid .dockstore.yml";
-                LOG.error(msg, ex);
+                LOG.warn(msg, ex);
                 return version;
             }
             for (String filePath: files) {

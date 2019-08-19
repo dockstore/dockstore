@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,6 +41,7 @@ import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -57,11 +58,10 @@ import org.slf4j.LoggerFactory;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-    public static final String WDL_SYNTAX_ERROR = "There is a syntax error, please ensure your WDL document is valid.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         WdlBridge wdlBridge = new WdlBridge();
         Map<String, String> secondaryFiles = new HashMap<>();
         sourceFiles.stream().forEach(file -> {
@@ -109,6 +109,9 @@ public class WDLHandler implements LanguageHandlerInterface {
             }
         } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
             LOG.error("Unable to parse WDL file " + filepath, ex);
+            Map<String, String> validationMessageObject = new HashMap<>();
+            validationMessageObject.put(filepath, "WDL file is malformed or missing , cannot extract metadata");
+            version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
             clearMetadata(entry);
             return entry;
         }
@@ -118,7 +121,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     private void clearMetadata(Entry entry) {
         entry.setAuthor(null);
         entry.setEmail(null);
-        entry.setDescription(WDL_SYNTAX_ERROR);
+        entry.setDescription(null);
     }
 
     /**
@@ -132,7 +135,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         File tempMainDescriptor = null;
         String mainDescriptor = null;
 
-        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_WDL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Collections.singletonList(DescriptorLanguage.FileType.DOCKSTORE_WDL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
 
         Map<String, String> validationMessageObject = new HashMap<>();
