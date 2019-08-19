@@ -376,6 +376,13 @@ public class ServiceIT extends BaseIT {
         service = client.refresh(service.getId());
         assertNotNull(service);
         assertEquals("Should have two new versions (third release has no yaml so do not include)", 2, service.getWorkflowVersions().size());
+
+        // Set default version
+        service = client.updateWorkflowDefaultVersion(service.getId(), "1.0");
+        service = client.refresh(service.getId());
+
+        assertEquals("Should have an author", "Andrew Duncan", service.getAuthor());
+        assertTrue("Should have a description", service.getDescription().contains("This is the coolest service"));
     }
 
     /**

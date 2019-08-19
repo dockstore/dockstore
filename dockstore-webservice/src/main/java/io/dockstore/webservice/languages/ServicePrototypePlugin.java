@@ -24,11 +24,13 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.RecommendedLanguageInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
 public class ServicePrototypePlugin implements RecommendedLanguageInterface {
-
+    private static final Logger LOG = LoggerFactory.getLogger(ServicePrototypePlugin.class);
     @Override
     public boolean isService() {
         return true;
@@ -96,15 +98,15 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
     public WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents,
         Map<String, Pair<String, GenericFileType>> indexedFiles) {
         WorkflowMetadata metadata = new WorkflowMetadata();
-        for (String line : contents.split("\\r?\\n")) {
-            //            if (line.startsWith("author")) {
-            //                final String[] s = line.split(":");
-            //                metadata.setAuthor(s[1].trim());
-            //            }
-            if (line.startsWith("description")) {
-                final String[] s = line.split(":");
-                metadata.setDescription(s[1].trim());
-            }
+        Yaml yaml = new Yaml();
+        try {
+            Map<String, Object> map = yaml.load(contents);
+            Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
+            metadata.setAuthor((String)serviceObject.get("author"));
+            metadata.setDescription((String)serviceObject.get("description"));
+            metadata.setEmail((String)serviceObject.get("email"));
+        } catch (YAMLException | ClassCastException ex) {
+            LOG.info("Error parsing service metadata.", ex);
         }
         return metadata;
     }
