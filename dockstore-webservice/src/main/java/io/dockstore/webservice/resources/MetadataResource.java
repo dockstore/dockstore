@@ -56,6 +56,7 @@ import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -168,7 +169,8 @@ public class MetadataResource {
     }
 
     private String createBaseURL() {
-        return config.getExternalConfig().getScheme() + "://" + config.getExternalConfig().getHostname() + (config.getExternalConfig().getUiPort() == null ? "" : ":" + config.getExternalConfig().getUiPort());
+        return URIHelper.createBaseUrl(config.getExternalConfig().getScheme(), config.getExternalConfig().getHostname(),
+                config.getExternalConfig().getUiPort());
     }
 
     @GET

@@ -80,6 +80,7 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -144,6 +145,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String zenodoClientID;
     private final String zenodoClientSecret;
 
+    private final String dockstoreUrl;
+
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
         super(client, sessionFactory, configuration, Workflow.class);
@@ -160,6 +163,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
+
+        dockstoreUrl = URIHelper.createBaseUrl(configuration.getExternalConfig().getScheme(),
+                configuration.getExternalConfig().getHostname(), configuration.getExternalConfig().getUiPort());
     }
 
     @Override
@@ -552,7 +558,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return tokenDAO.findByUserId(user.getId());
     }
 
-
     @PUT
     @Timed
     @UnitOfWork
@@ -593,7 +598,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
-        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, zenodoAccessToken, workflow, workflowVersion, this);
+        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, dockstoreUrl, zenodoAccessToken, workflow, workflowVersion, this);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
