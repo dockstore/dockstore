@@ -157,7 +157,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)
     public boolean isVerified() {
-        return getVersionMetadata().verified;
+        return this.getSourceFiles().stream().anyMatch(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified));
     }
 
     public void setVerified(boolean verified) {
