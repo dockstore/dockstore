@@ -105,11 +105,19 @@ public class CWLHandler implements LanguageHandlerInterface {
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
-            } catch (YAMLException | NullPointerException ex) {
-                LOG.info("CWL file is malformed " + ex.getCause().toString());
+            } catch (YAMLException | NullPointerException | ClassCastException ex) {
+                String message;
+                if (ex.getCause() != null) {
+                    // seems to be possible to get underlying cause in some cases
+                    message = ex.getCause().toString();
+                } else {
+                    // in other cases, the above will NullPointer
+                    message = ex.toString();
+                }
+                LOG.info("CWL file is malformed " + message);
                 // should just report on the malformed workflow
                 Map<String, String> validationMessageObject = new HashMap<>();
-                validationMessageObject.put(filepath, "CWL file is malformed or missing, cannot extract metadata");
+                validationMessageObject.put(filepath, "CWL file is malformed or missing, cannot extract metadata: " + message);
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_CWL, false, validationMessageObject));
             }
         }
