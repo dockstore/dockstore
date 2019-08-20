@@ -90,7 +90,7 @@ public class ElasticManagerIT {
     }
 
     @Test
-    public void addAService() throws IOException {
+    public void addAService() {
         manager.handleIndexUpdate(new Service(), ElasticMode.UPDATE);
         Assert.assertFalse(systemOutRule.getLog().contains("Performing index update"));
     }

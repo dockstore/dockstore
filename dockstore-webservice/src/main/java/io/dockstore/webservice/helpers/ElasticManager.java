@@ -162,7 +162,7 @@ public class ElasticManager {
 
     public void bulkUpsert(List<Entry> entries) {
         entries = filterCheckerWorkflows(entries);
-        // filter out services too
+        // #2771 will need to disable this and properly create objects to get services into the index
         entries = entries.stream().filter(entry -> !(entry instanceof Service)).collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
