@@ -316,6 +316,7 @@ class WdlBridge {
       DirectoryResolver.localFilesystemResolvers(Some(filePathObj)) :+ HttpResolver(relativeTo = None) :+ mapResolver
 
     val bundle = factory.getWomBundle(content, "{}", importResolvers, List(factory))
+    HttpResolver.closeBackendIfNecessary()
     if (bundle.isRight) {
       bundle.getOrElse(null)
     } else {
