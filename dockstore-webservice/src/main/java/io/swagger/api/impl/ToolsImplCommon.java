@@ -422,7 +422,7 @@ public final class ToolsImplCommon {
      * @param toolID    The ID of the GA4GH Tool
      * @return          The GA4GH /tools/{id} url
      */
-    private static String getUrlFromId(DockstoreWebserviceConfiguration config, String toolID) {
+    public static String getUrlFromId(DockstoreWebserviceConfiguration config, String toolID) {
         String url;
         if (toolID == null) {
             return null;
