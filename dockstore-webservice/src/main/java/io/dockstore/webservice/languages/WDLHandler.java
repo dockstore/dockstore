@@ -58,8 +58,8 @@ import org.slf4j.LoggerFactory;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-    private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
     public static final String ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT = "Error parsing workflow. You may have a recursive import.";
+    private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
@@ -229,7 +229,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                             String fileContents = IOUtils.toString(boundedInputStream, StandardCharsets.UTF_8);
                             // need a depth-first search to avoid triggering warning on workflows
                             // where two files legitimately import the same file
-                            HashSet<String> importsForThisPath = new HashSet<>(currentFileImports);
+                            Set<String> importsForThisPath = new HashSet<>(currentFileImports);
                             importsForThisPath.add(match);
                             checkForRecursiveHTTPImports(fileContents, importsForThisPath);
                         }
