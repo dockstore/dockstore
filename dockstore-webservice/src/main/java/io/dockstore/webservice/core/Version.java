@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -45,6 +46,8 @@ import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Strings;
+import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -166,7 +169,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(value = "Verified source for the version", position = 9)
     public String getVerifiedSource() {
-        return versionMetadata.verifiedSource;
+        Set<String> verifiedSources = new TreeSet<>();
+        this.getSourceFiles().forEach(sourceFile -> {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
+                if (thing.getValue().verified) {
+                    verifiedSources.add(thing.getKey());
+                }
+            }
+        });
+        // How strange that we're returning an array-like string
+        Gson gson = new Gson();
+        return Strings.nullToEmpty(gson.toJson(verifiedSources));
     }
 
     public void setVerifiedSource(String verifiedSource) {
@@ -279,6 +293,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void updateVerified(boolean newVerified, String newVerifiedSource) {
         this.getVersionMetadata().verified = newVerified;
         this.getVersionMetadata().verifiedSource = newVerifiedSource;
+        // Alternate solution
+        this.getVersionMetadata().verified = this.getSourceFiles().stream().anyMatch(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified));
+        this.getVersionMetadata().verifiedSource = this.getSourceFiles().stream().filter(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified)).findFirst().map(file -> file.getVerifiedBySource().keySet().toString()).get();
     }
 
     @JsonProperty

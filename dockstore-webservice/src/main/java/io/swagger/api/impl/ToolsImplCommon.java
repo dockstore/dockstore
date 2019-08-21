@@ -22,13 +22,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
+import java.util.TreeSet;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
@@ -60,6 +59,7 @@ public final class ToolsImplCommon {
     public static final String WORKFLOW_PREFIX = "#workflow";
     public static final String SERVICE_PREFIX = "#service";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
+    private static final Gson GSON = new Gson();
 
     private ToolsImplCommon() { }
 
@@ -279,12 +279,15 @@ public final class ToolsImplCommon {
      */
     private static Tool setVerified(Tool tool, Set<? extends Version> versions) {
         tool.setVerified(versions.stream().anyMatch(Version::isVerified));
-        final List<String> collect = versions.stream().filter(Version::isVerified)
-            .map(e -> e.getVerifiedSource() != null ? e.getVerifiedSource() : "")
-            .collect(Collectors.toList());
-        Gson gson = new Gson();
-        Collections.sort(collect);
-        tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
+        Set<String> verifiedSources = new TreeSet<>();
+        versions.stream().filter(Version::isVerified).forEach(e -> {
+            if (e.getVerifiedSource() != null) {
+                String[] array = GSON.fromJson(e.getVerifiedSource(), String[].class);
+                List<String> stringList = Arrays.asList(array);
+                verifiedSources.addAll(stringList);
+            }
+        });
+        tool.setVerifiedSource(Strings.nullToEmpty(GSON.toJson(verifiedSources)));
         return tool;
     }
 
