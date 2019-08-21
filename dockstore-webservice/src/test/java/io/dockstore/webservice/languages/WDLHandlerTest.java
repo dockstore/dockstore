@@ -18,6 +18,8 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
+import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+
 public class WDLHandlerTest {
 
     @Rule
@@ -65,7 +67,7 @@ public class WDLHandlerTest {
             wdlHandler.checkForRecursiveHTTPImports(s, new HashSet<>());
             Assert.fail("Should've detected recursive import");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals("Error parsing workflow. You may have a recursive import.", e.getErrorMessage());
+            Assert.assertEquals(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, e.getErrorMessage());
         }
 
         final File notRecursiveWdl = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));

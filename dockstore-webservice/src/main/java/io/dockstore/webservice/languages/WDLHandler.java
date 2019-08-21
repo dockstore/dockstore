@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory;
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
+    public static final String ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT = "Error parsing workflow. You may have a recursive import.";
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
@@ -202,6 +203,12 @@ public class WDLHandler implements LanguageHandlerInterface {
         return new VersionTypeValidation(true, null);
     }
 
+    /**
+     *
+     * @param content
+     * @param currentFileImports
+     * @throws IOException
+     */
     public void checkForRecursiveHTTPImports(String content, Set<String> currentFileImports) throws IOException {
         // Use matcher to get imports
         String[] lines = StringUtils.split(content, '\n');
@@ -213,18 +220,20 @@ public class WDLHandler implements LanguageHandlerInterface {
                 String match = m.group(1);
                 if (match.startsWith("http://") || match.startsWith("https://")) { // Don't resolve URLs
                     if (currentFileImports.contains(match)) {
-                        throw new CustomWebApplicationException("Error parsing workflow. You may have a recursive import.",
+                        throw new CustomWebApplicationException(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT,
                                 HttpStatus.SC_BAD_REQUEST);
                     } else {
-                        currentFileImports.add(match);
                         URL url = new URL(match);
                         try (InputStream is = url.openStream()) {
                             BoundedInputStream boundedInputStream = new BoundedInputStream(is, FileUtils.ONE_MB);
                             String fileContents = IOUtils.toString(boundedInputStream, StandardCharsets.UTF_8);
-                            checkForRecursiveHTTPImports(fileContents, currentFileImports);
+                            // need a depth-first search to avoid triggering warning on workflows
+                            // where two files legitimately import the same file
+                            HashSet<String> importsForThisPath = new HashSet<>(currentFileImports);
+                            importsForThisPath.add(match);
+                            checkForRecursiveHTTPImports(fileContents, importsForThisPath);
                         }
                     }
-                    currentFileImports.add(match);
                 }
             }
         }
