@@ -1,6 +1,3 @@
-import "a.wdl" as f1
-import "b.wdl" as f2
-
 workflow c {
   File inputFile
 
