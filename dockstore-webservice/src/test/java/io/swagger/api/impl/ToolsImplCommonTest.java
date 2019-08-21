@@ -18,7 +18,9 @@ package io.swagger.api.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +39,7 @@ import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolVersion;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -209,6 +212,36 @@ public class ToolsImplCommonTest {
         convertDockstoreWorkflowToTool(null, true);
     }
 
+    /**
+     * Gets a fake source file to use for testing.  Only a few parameters
+     * @param verifiedSource    If verified, what the verified source is
+     * @param isService         Whether the entry that's going to add this file is a service or not
+     * @param path              The path of the sourcefile, must be unique if added to the same version
+     * @return
+     */
+    private SourceFile getFakeSourceFile(String verifiedSource, boolean isService, String path) {
+        SourceFile sourceFile = new SourceFile();
+        sourceFile.setId(461402);
+        sourceFile.setContent(PLACEHOLDER_CONTENT);
+        sourceFile.setPath(path);
+        sourceFile.setAbsolutePath(path);
+        if (verifiedSource != null) {
+            SourceFile.VerificationInformation verificationInformation1 = new SourceFile.VerificationInformation();
+            verificationInformation1.verified = true;
+            verificationInformation1.metadata = "Dockstore team";
+            verificationInformation1.platformVersion = "1.7.0";
+            Map<String, SourceFile.VerificationInformation> verificationInformationMap = new HashMap<>();
+            verificationInformationMap.put(verifiedSource, verificationInformation1);
+            sourceFile.setVerifiedBySource(verificationInformationMap);
+        }
+        if (isService) {
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+        } else {
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        }
+        return sourceFile;
+    }
+
     private void convertDockstoreWorkflowToTool(String toolname, boolean isService) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -217,16 +250,7 @@ public class ToolsImplCommonTest {
         final String REFERENCE2 = "bbb";
         final String REFERENCE3 = "ccc";
         String json;
-        SourceFile actualSourceFile1 = new SourceFile();
-        actualSourceFile1.setId(461402);
-        if (isService) {
-            actualSourceFile1.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
-        } else {
-            actualSourceFile1.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        }
-        actualSourceFile1.setContent(PLACEHOLDER_CONTENT);
-        actualSourceFile1.setPath("/pcawg-cgp-somatic-workflow.wdl");
-        actualSourceFile1.setAbsolutePath("/pcawg-cgp-somatic-workflow.wdl");
+        SourceFile actualSourceFile1 = getFakeSourceFile(null, isService, "/pcawg-cgp-somatic-workflow.wdl");
         WorkflowVersion actualWorkflowVersion1 = new WorkflowVersion();
         actualWorkflowVersion1.setWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         actualWorkflowVersion1.setLastModified(null);
@@ -237,20 +261,22 @@ public class ToolsImplCommonTest {
         actualWorkflowVersion1.setName(REFERENCE1);
         actualWorkflowVersion1.setDirtyBit(false);
         actualWorkflowVersion1.setValid(false);
-        actualWorkflowVersion1.setVerifiedSource(null);
         BioWorkflow workflow = new BioWorkflow();
         json = mapper.writeValueAsString(actualWorkflowVersion1);
         WorkflowVersion actualWorkflowVersion2 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion2.setName(REFERENCE2);
         actualWorkflowVersion2.setReference(REFERENCE2);
         actualWorkflowVersion2.setHidden(false);
-        actualWorkflowVersion2.setVerifiedSource("potatoTesterSource");
-        actualWorkflowVersion2.setVerified(true);
+        SourceFile sourceFile2 = getFakeSourceFile("chickenTesterSource", isService, "/pcawg-cgp-somatic-workflow2.wdl");
+        actualWorkflowVersion2.addSourceFile(sourceFile2);
         json = mapper.writeValueAsString(actualWorkflowVersion2);
         WorkflowVersion actualWorkflowVersion3 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion3.setName(REFERENCE3);
         actualWorkflowVersion3.setReference(REFERENCE3);
-        actualWorkflowVersion3.setVerifiedSource("chickenTesterSource");
+        SourceFile sourceFile3 = getFakeSourceFile("potatoTesterSource", isService, "/pcawg-cgp-somatic-workflow.wdl3");
+        actualWorkflowVersion3.addSourceFile(sourceFile3);
+        // Check that Dockstore version is actually has the right verified source
+        Assert.assertEquals("[\"chickenTesterSource\",\"potatoTesterSource\"]", actualWorkflowVersion3.getVerifiedSource());
         workflow.addWorkflowVersion(actualWorkflowVersion1);
         workflow.addWorkflowVersion(actualWorkflowVersion2);
         workflow.addWorkflowVersion(actualWorkflowVersion3);
@@ -315,13 +341,13 @@ public class ToolsImplCommonTest {
         // Meta-version dates are currently dependant on the environment, disabling for now
         expectedToolVersion1.setMetaVersion(null);
         expectedToolVersion1.setVerified(true);
-        expectedToolVersion1.setVerifiedSource("potatoTesterSource");
+        expectedToolVersion1.setVerifiedSource("[\"chickenTesterSource\"]");
         expectedToolVersion1.setImageName("");
         expectedToolVersion1.setRegistryUrl("");
         json = mapper.writeValueAsString(expectedToolVersion1);
         ToolVersion expectedToolVersion2 = mapper.readValue(json, ToolVersion.class);
         expectedToolVersion2.setName(REFERENCE3);
-        expectedToolVersion2.setVerifiedSource("chickenTesterSource");
+        expectedToolVersion2.setVerifiedSource("[\"chickenTesterSource\",\"potatoTesterSource\"]");
         expectedToolVersion2.setImageName("");
         expectedToolVersion2.setRegistryUrl("");
 
