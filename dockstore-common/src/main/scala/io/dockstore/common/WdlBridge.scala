@@ -16,6 +16,7 @@ import cromwell.languages.util.ImportResolver.{DirectoryResolver, HttpResolver, 
 import languages.wdl.biscayne.WdlBiscayneLanguageFactory
 import languages.wdl.draft2.WdlDraft2LanguageFactory
 import languages.wdl.draft3.WdlDraft3LanguageFactory
+import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import wdl.draft3.parser.WdlParser
@@ -307,14 +308,11 @@ class WdlBridge {
   def getBundleFromContent(content: String, filePath: String): WomBundle = {
     val factory = getLanguageFactory(content)
     val filePathObj = DefaultPathBuilder.build(filePath).get
-
     // Resolve from mapping, local filesystem, or http import
     val mapResolver = MapResolver()
     mapResolver.setSecondaryFiles(secondaryWdlFiles)
-
     lazy val importResolvers: List[ImportResolver] =
       DirectoryResolver.localFilesystemResolvers(Some(filePathObj)) :+ HttpResolver(relativeTo = None) :+ mapResolver
-
     val bundle = factory.getWomBundle(content, "{}", importResolvers, List(factory))
     if (bundle.isRight) {
       bundle.getOrElse(null)
@@ -370,4 +368,12 @@ case class MapResolver() extends ImportResolver {
   }
 
   override def cleanupIfNecessary(): ErrorOr[Unit] = ().validNel
+}
+
+object WdlBridgeShutDown {
+  private val logger = LoggerFactory.getLogger("WdlBridge")
+  def shutdownSTTP(): Unit = {
+    HttpResolver.closeBackendIfNecessary();
+    logger.info("WDL HTTP import resolver closed")
+  }
 }
