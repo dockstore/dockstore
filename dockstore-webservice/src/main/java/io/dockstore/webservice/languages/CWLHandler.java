@@ -46,6 +46,7 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
@@ -69,29 +70,46 @@ public class CWLHandler implements LanguageHandlerInterface {
             try {
                 Yaml yaml = new Yaml();
                 Map map = yaml.loadAs(content, Map.class);
-                String description = (String)map.get("description");
-                // changed for CWL 1.0
+                String description = null;
+                try {
+                    // draft-3 construct
+                    description = (String)map.get("description");
+                } catch (ClassCastException e) {
+                    LOG.debug("\"description:\" is malformed, but was only in CWL draft-3 anyway");
+                }
+                String label = null;
+                try {
+                    label = (String)map.get("label");
+                } catch (ClassCastException e) {
+                    LOG.debug("\"label:\" is malformed");
+                }
+                // "doc:" added for CWL 1.0
+                String doc = null;
                 if (map.containsKey("doc")) {
-                    Object doc = map.get("doc");
-                    if (doc instanceof String) {
-                        description = (String)doc;
-                    } else if (doc instanceof Map) {
-                        Map docMap = (Map)doc;
+                    Object objectDoc = map.get("doc");
+                    if (objectDoc instanceof String) {
+                        doc = (String)objectDoc;
+                    } else if (objectDoc instanceof Map) {
+                        Map docMap = (Map)objectDoc;
                         if (docMap.containsKey("$include")) {
                             String enclosingFile = (String)docMap.get("$include");
                             Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFile))
                                 .findFirst();
                             if (first.isPresent()) {
-                                description = first.get().getContent();
+                                doc = first.get().getContent();
                             }
                         }
-                    } else if (doc instanceof List) {
-                        List docList = (List)doc;
-                        description = String.join(System.getProperty("line.separator"), docList);
+                    } else if (objectDoc instanceof List) {
+                        // arrays for "doc:" added in CWL 1.1
+                        List docList = (List)objectDoc;
+                        doc = String.join(System.getProperty("line.separator"), docList);
                     }
                 }
-                if (description != null) {
-                    entry.setDescription(description);
+
+                final String finalChoiceForDescription = ObjectUtils.firstNonNull(doc, description, label);
+
+                if (finalChoiceForDescription != null) {
+                    entry.setDescription(finalChoiceForDescription);
                 } else {
                     LOG.info("Description not found!");
                 }
