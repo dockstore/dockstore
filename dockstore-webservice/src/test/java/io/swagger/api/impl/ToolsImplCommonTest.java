@@ -181,7 +181,7 @@ public class ToolsImplCommonTest {
         expectedToolVersion.setContainerfile(true);
         expectedToolVersion.setMetaVersion(null);
         expectedToolVersion.setVerified(false);
-        expectedToolVersion.setVerifiedSource("");
+        expectedToolVersion.setVerifiedSource("[]");
         expectedToolVersion.setRegistryUrl("quay.io");
         expectedToolVersion.setImageName("quay.io/test_org/test6");
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
