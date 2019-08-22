@@ -46,6 +46,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.Ga4Ghv1Api;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.MetadataApi;
@@ -64,8 +65,10 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
+import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
@@ -447,10 +450,15 @@ public class SwaggerClientIT extends BaseIT {
         assertTrue(strings.get(1).contains("moretestparameterstuff"));
     }
 
+    /**
+     * This test should be removed once tag.setVerified is removed because verification should solely depend on the version's source files
+     * @throws ApiException
+     */
     @Test
-    public void testVerifiedToolsViaGA4GH() throws IOException, ApiException {
+    public void testVerifiedToolsViaGA4GH() throws ApiException {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
+        Ga4GhApi ga4GhApi = new Ga4GhApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         c.setIsPublished(true);
@@ -462,28 +470,15 @@ public class SwaggerClientIT extends BaseIT {
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID);
-        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
-        // test root version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true") && strings.get(0).contains("\"verified_source\":\"[\\\"funky source\\\"]\""));
-
-        // TODO: really, we should be using deserialized versions, but this is not currently working
-        //        ObjectMapper mapper = new ObjectMapper();
-        //        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        //        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        //        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        //        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-        //        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
-        //        mapper.registerModule(new JodaModule());
-        //        final DockstoreTool dockstoreTool = mapper.readValue(strings.get(0), DockstoreTool.class);
+        Tool tool = ga4GhApi.toolsIdGet(encodedID);
+        // Verifying the tag does nothing because the TRS verification endpoint was not used
+        Assert.assertFalse(tool.isVerified());
+        Assert.assertEquals("[]", tool.getVerifiedSource());
 
         // hit up a specific version
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
-        strings = Resources.readLines(url, Charset.forName("UTF-8"));
-        // test nested version
-        assertEquals(1, strings.size());
-        assertTrue(strings.get(0).contains("\"verified\":true"));
-        assertTrue(strings.get(0).contains("\"verified_source\":\"funky source\""));
+        ToolVersion master = ga4GhApi.toolsIdVersionsVersionIdGet(encodedID, "master");
+        Assert.assertFalse(master.isVerified());
+        Assert.assertEquals("[]", master.getVerifiedSource());
     }
 
     // Can't test publish repos that don't exist
