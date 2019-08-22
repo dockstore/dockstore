@@ -1224,6 +1224,7 @@ public class BasicIT extends BaseIT {
     /**
      * This tests that you can verify and unverify a tool
      */
+    @Ignore("Deprecated. CLI needs to be changed to use new Extended TRS verification endpoint")
     @Test
     public void testVerify() {
         // Setup DB
