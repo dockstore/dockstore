@@ -37,6 +37,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -95,7 +96,30 @@ public class WDLParseTest {
         } catch (IOException e) {
             Assert.fail();
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals("Error parsing workflow. You may have a recursive import.", e.getErrorMessage());
+            Assert.assertEquals(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, e.getErrorMessage());
+        }
+    }
+
+    /**
+     * Tests that Dockstore can handle a workflow with something that kinda looks recursive but isn't
+     */
+    @Test
+    public void testNotReallyRecursiveImport() {
+        String type = "workflow";
+        File recursiveWDL = new File(ResourceHelpers.resourceFilePath("not-really-recursive/not-really-recursive.wdl"));
+        String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
+        SourceFile sourceFile = new SourceFile();
+        try {
+            sourceFile.setContent(FileUtils.readFileToString(recursiveWDL, StandardCharsets.UTF_8));
+            sourceFile.setAbsolutePath(recursiveWDL.getAbsolutePath());
+            sourceFile.setPath(recursiveWDL.getAbsolutePath());
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+            Set<SourceFile> sourceFileSet = new HashSet<>();
+            sourceFileSet.add(sourceFile);
+            WDLHandler wdlHandler = new WDLHandler();
+            wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
+        } catch (IOException | CustomWebApplicationException e) {
+            Assert.fail();
         }
     }
 

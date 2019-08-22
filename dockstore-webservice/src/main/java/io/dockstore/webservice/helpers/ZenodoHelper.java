@@ -173,7 +173,7 @@ public final class ZenodoHelper {
      */
     private static void setMetadataCreator(DepositMetadata depositMetadata, Workflow workflow) {
         String wfAuthor = workflow.getAuthor();
-        String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "unknown creator" : workflow.getAuthor();
+        String authorStr = (wfAuthor == null || wfAuthor.isEmpty()) ? "Author not specified" : workflow.getAuthor();
         Author author = new Author();
         author.setName(authorStr);
         depositMetadata.setCreators(Collections.singletonList(author));
@@ -215,7 +215,7 @@ public final class ZenodoHelper {
         // A metadata description is required for Zenodo
         String description = workflow.getDescription();
         // The Zenodo API requires at description of at least three characters
-        String descriptionStr = (description == null || description.isEmpty()) ? "no description" : workflow.getDescription();
+        String descriptionStr = (description == null || description.isEmpty()) ? "No description specified" : workflow.getDescription();
         depositMetadata.setDescription(descriptionStr);
 
         // We will set the Zenodo workflow version publication date to the date of the DOI issuance
