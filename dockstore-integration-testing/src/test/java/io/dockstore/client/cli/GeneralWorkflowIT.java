@@ -1083,6 +1083,7 @@ public class GeneralWorkflowIT extends BaseIT {
     /**
      * This tests that you can verify and unverify a workflow
      */
+    @Ignore("Deprecated. CLI needs to be changed to use new Extended TRS verification endpoint")
     @Test
     public void testVerify() {
         // Setup DB

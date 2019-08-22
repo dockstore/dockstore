@@ -373,6 +373,7 @@ public class SwaggerClientIT extends BaseIT {
         containertagsApi.addTags(dockstoreTool.getId(), Lists.newArrayList(secondTag));
     }
 
+    @Ignore("Deprecated. Need to use the new verification endpoint")
     @Test
     public void testGetVerifiedSpecificTool() throws ApiException {
         ApiClient client = getAdminWebClient();
