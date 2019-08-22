@@ -53,10 +53,9 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
-import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.URIHelper;
+import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -148,29 +147,19 @@ public class MetadataResource {
     }
 
     private String createOrganizationURL(Organization organization) {
-        return createBaseURL() + "/organizations/" + organization.getName();
+        return MetadataResourceHelper.createOrganizationURL(config, organization);
     }
 
     private String createCollectionURL(Collection collection, Organization organization) {
-        return createBaseURL() + "/organizations/" + organization.getName() + "/collections/"  + collection.getName();
+        return MetadataResourceHelper.createCollectionURL(config, collection, organization);
     }
 
     private String createWorkflowURL(Workflow workflow) {
-        if (workflow instanceof BioWorkflow) {
-            return createBaseURL() + "/workflows/" + workflow.getWorkflowPath();
-        } else if (workflow instanceof Service) {
-            return createBaseURL() + "/services/" + workflow.getWorkflowPath();
-        }
-        throw new UnsupportedOperationException("should be unreachable");
+        return MetadataResourceHelper.createWorkflowURL(config, workflow);
     }
 
     private String createToolURL(Tool tool) {
-        return createBaseURL() + "/containers/" + tool.getToolPath();
-    }
-
-    private String createBaseURL() {
-        return URIHelper.createBaseUrl(config.getExternalConfig().getScheme(), config.getExternalConfig().getHostname(),
-                config.getExternalConfig().getUiPort());
+        return MetadataResourceHelper.createToolURL(config, tool);
     }
 
     @GET
