@@ -232,7 +232,7 @@ public final class ToolsImplCommon {
      * @return The URL of the Tool
      * @throws UnsupportedEncodingException When URL encoding has failed
      */
-    private static String getUrl(String newID, String baseURL) throws UnsupportedEncodingException {
+    public static String getUrl(String newID, String baseURL) throws UnsupportedEncodingException {
         String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
         return baseURL + escapedID;
     }
@@ -244,7 +244,7 @@ public final class ToolsImplCommon {
      * @return The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
      * @throws URISyntaxException When URI building goes wrong
      */
-    private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
+    public static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
         int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
         // basePath should be "/" or "/api/"
         String basePath = MoreObjects.firstNonNull(config.getExternalConfig().getBasePath(), "/");

@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,6 +79,7 @@ import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.URIHelper;
@@ -97,8 +99,10 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
+import io.swagger.zenodo.client.ApiClient;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -146,7 +150,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String zenodoClientSecret;
 
     private final String dockstoreUrl;
-
+    private final String dockstoreGA4GHBaseUrl;
     private final DockstoreWebserviceConfiguration webserviceConfiguration;
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
@@ -169,7 +173,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         dockstoreUrl = URIHelper.createBaseUrl(configuration.getExternalConfig().getScheme(),
                 configuration.getExternalConfig().getHostname(), configuration.getExternalConfig().getUiPort());
 
+        try {
+            dockstoreGA4GHBaseUrl = ToolsImplCommon.baseURL(configuration);
+        } catch (URISyntaxException e) {
+            LOG.error("Could create Dockstore base URL. Error is " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could create Dockstore base URL. "
+                    + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
         webserviceConfiguration = configuration;
+
     }
 
     @Override
@@ -602,8 +614,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
-        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoUrl, dockstoreUrl, zenodoAccessToken, workflow, workflowVersion,
-                this, webserviceConfiguration);
+
+        ApiClient zenodoClient = new ApiClient();
+        // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
+        String zenodoUrlApi = zenodoUrl + "/api";
+        zenodoClient.setBasePath(zenodoUrlApi);
+        zenodoClient.setApiKey(zenodoAccessToken);
+
+        String workflowUrl = MetadataResourceHelper.createWorkflowURL(webserviceConfiguration, workflow);
+        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoClient, dockstoreGA4GHBaseUrl, dockstoreUrl,
+                workflowUrl, workflow, workflowVersion, this);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
