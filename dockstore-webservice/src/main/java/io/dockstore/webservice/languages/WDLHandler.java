@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -65,56 +66,70 @@ public class WDLHandler implements LanguageHandlerInterface {
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         WdlBridge wdlBridge = new WdlBridge();
         Map<String, String> secondaryFiles = new HashMap<>();
-        sourceFiles.stream().forEach(file -> {
-            secondaryFiles.put(file.getAbsolutePath(), file.getContent());
+        sourceFiles.forEach(file -> {
+            secondaryFiles.put(file.getPath(), file.getContent());
         });
         wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
 
+        File tempMainDescriptor = null;
         try {
-            List<Map<String, String>> metadata = wdlBridge.getMetadata(filepath, content);
-            Set<String> authors = new HashSet<>();
-            Set<String> emails = new HashSet<>();
-            final String[] mainDescription = { null };
+            //TODO: there is repeated code with validation, but the bigger issue is that we shouldnt be running methods like
+            // checkForRecursiveHTTPImports more than once per version of a workflow since it can be costly
+            tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
+            String contentToCheck = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
+            checkForRecursiveHTTPImports(contentToCheck, new HashSet<>());
 
-            metadata.stream().forEach(metaBlock -> {
-                String author = metaBlock.get("author");
-                String[] callAuthors = author != null ? author.split(",") : null;
-                if (callAuthors != null) {
-                    for (String callAuthor : callAuthors) {
-                        authors.add(callAuthor.trim());
+            try {
+                List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath());
+                Set<String> authors = new HashSet<>();
+                Set<String> emails = new HashSet<>();
+                final String[] mainDescription = { null };
+
+                metadata.forEach(metaBlock -> {
+                    String author = metaBlock.get("author");
+                    String[] callAuthors = author != null ? author.split(",") : null;
+                    if (callAuthors != null) {
+                        for (String callAuthor : callAuthors) {
+                            authors.add(callAuthor.trim());
+                        }
                     }
-                }
 
-                String email = metaBlock.get("email");
-                String[] callEmails = email != null ? email.split(",") : null;
-                if (callEmails != null) {
-                    for (String callEmail : callEmails) {
-                        emails.add(callEmail.trim());
+                    String email = metaBlock.get("email");
+                    String[] callEmails = email != null ? email.split(",") : null;
+                    if (callEmails != null) {
+                        for (String callEmail : callEmails) {
+                            emails.add(callEmail.trim());
+                        }
                     }
-                }
 
-                String description = metaBlock.get("description");
-                if (description != null && !description.isBlank()) {
-                    mainDescription[0] = description;
-                }
-            });
+                    String description = metaBlock.get("description");
+                    if (description != null && !description.isBlank()) {
+                        mainDescription[0] = description;
+                    }
+                });
 
-            if (!authors.isEmpty()) {
-                entry.setAuthor(Joiner.on(", ").join(authors));
+                if (!authors.isEmpty()) {
+                    entry.setAuthor(Joiner.on(", ").join(authors));
+                }
+                if (!emails.isEmpty()) {
+                    entry.setEmail(Joiner.on(", ").join(emails));
+                }
+                if (!Strings.isNullOrEmpty(mainDescription[0])) {
+                    entry.setDescription(mainDescription[0]);
+                }
+            } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
+                LOG.error("Unable to parse WDL file " + filepath, ex);
+                Map<String, String> validationMessageObject = new HashMap<>();
+                validationMessageObject.put(filepath, "WDL file is malformed or missing , cannot extract metadata");
+                version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
+                clearMetadata(entry);
+                return entry;
             }
-            if (!emails.isEmpty()) {
-                entry.setEmail(Joiner.on(", ").join(emails));
-            }
-            if (!Strings.isNullOrEmpty(mainDescription[0])) {
-                entry.setDescription(mainDescription[0]);
-            }
-        } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
-            LOG.error("Unable to parse WDL file " + filepath, ex);
-            Map<String, String> validationMessageObject = new HashMap<>();
-            validationMessageObject.put(filepath, "WDL file is malformed or missing , cannot extract metadata");
-            version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
-            clearMetadata(entry);
-            return entry;
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } finally {
+            FileUtils.deleteQuietly(tempMainDescriptor);
         }
         return entry;
     }
@@ -338,7 +353,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
             // Get import files
             namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath());
-        } catch (IOException | wdl.draft3.parser.WdlParser.SyntaxError e) {
+        } catch (IOException | NoSuchElementException | wdl.draft3.parser.WdlParser.SyntaxError e) {
             throw new CustomWebApplicationException("could not process wdl into DAG: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);

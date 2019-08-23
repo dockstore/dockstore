@@ -214,6 +214,7 @@ public abstract class SourceCodeRepoInterface {
         existingWorkflow.get().copyWorkflow(workflow);
 
         // Create branches and associated source files
+        //TODO: calls validation, but is partly redundant with updateEntryMetadata
         workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
         // setting last modified date can be done uniformly
         Optional<Date> max = workflow.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
@@ -228,6 +229,7 @@ public abstract class SourceCodeRepoInterface {
         versions.forEach(version -> updateReferenceType(repositoryId, version));
 
         // Get metadata for workflow and update workflow with it
+        //TODO to parse metadata in WDL, this is much duplicated with validation with happens in setupWorkflowVersions above
         updateEntryMetadata(workflow, workflow.getDescriptorType());
         return workflow;
     }

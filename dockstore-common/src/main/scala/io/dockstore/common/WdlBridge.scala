@@ -97,8 +97,8 @@ class WdlBridge {
     * @return list of metadata mappings
     */
   @throws(classOf[WdlParser.SyntaxError])
-  def getMetadata(filePath: String, fileContent: String) = {
-    val bundle = getBundleFromContent(fileContent, filePath)
+  def getMetadata(filePath: String) = {
+    val bundle = getBundle(filePath)
     val metadataList = new util.ArrayList[util.Map[String, String]]()
     bundle.allCallables.foreach(callable => {
       callable._2 match {
