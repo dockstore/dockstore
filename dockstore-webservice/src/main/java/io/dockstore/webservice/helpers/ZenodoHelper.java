@@ -230,7 +230,7 @@ public final class ZenodoHelper {
      * @return TRS URL to workflow (e.g. https://dockstore.org/api/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere
      * %2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl)
      */
-    private static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion, String dockstoreGA4GHBaseUrl) {
+    protected static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion, String dockstoreGA4GHBaseUrl) {
         final String sourceControlPath = workflow.getWorkflowPath();
         final String workflowVersionPrimaryDescriptorPath = "#workflow/" + sourceControlPath;
         final String workflowVersionPrimaryDescriptorPathPlainText;
@@ -449,7 +449,7 @@ public final class ZenodoHelper {
      * Get an existing Zenodo DOI for the workflow if one exists
      * otherwise return null
      * @param workflow workflow
-     * @return the DOI for a workflow or null
+     * @return the DOI for a workflow
      */
     private static Optional<String> getAnExistingDOIForWorkflow(Workflow workflow) {
         // Find out if this workflow already has at least one
