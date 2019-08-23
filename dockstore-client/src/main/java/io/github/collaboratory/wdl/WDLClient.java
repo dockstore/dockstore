@@ -104,7 +104,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
      * @param descriptorAbsolutePath The local descriptor's absolute path
      * @return A map of the inputs
      */
-    public static Map<String, String> getInputFiles(String descriptorAbsolutePath) {
+    static Map<String, String> getInputFiles(String descriptorAbsolutePath) {
         WdlBridge wdlBridge = new WdlBridge();
         Map<String, String> wdlInputs = null;
         try {

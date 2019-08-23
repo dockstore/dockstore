@@ -127,6 +127,7 @@ class WdlBridge {
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getInputFiles(filePath: String):  util.HashMap[String, String] = {
+    val fileStrings: List[String] = List("File", "File?", "Array[File]", "Array[File]?")
     val inputList = new util.HashMap[String, String]()
     val bundle = getBundle(filePath)
     val primaryCallable = bundle.primaryCallable.orNull
@@ -136,7 +137,7 @@ class WdlBridge {
 
     val workflowName = primaryCallable.name
     primaryCallable.inputs
-      .filter(input => input.womType.stableName.toString.contains("File"))
+      .filter(input => fileStrings.contains(input.womType.stableName.toString))
       .foreach(input => inputList.put(workflowName + "." + input.name, input.womType.stableName.toString))
     inputList
   }
