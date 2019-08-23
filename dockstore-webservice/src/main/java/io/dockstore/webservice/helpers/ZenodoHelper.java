@@ -88,7 +88,7 @@ public final class ZenodoHelper {
                 depositMetadata = returnDeposit.getMetadata();
 
                 // Set the attribute that will reserve a DOI before publishing
-                fillInMetadata(depositMetadata, dockstoreUrl, workflow, workflowVersion);
+                fillInMetadata(depositMetadata, workflow, workflowVersion);
                 depositMetadata.prereserveDoi(true);
 
                 // Put the deposit on Zenodo; the returned deposit will contain
@@ -139,7 +139,7 @@ public final class ZenodoHelper {
                 createAliasAndsetUpRelatedIdentifiers(depositMetadata, dockstoreGA4GHBaseUrl, dockstoreUrl,
                         workflowUrl, workflow, workflowVersion, doi);
 
-                fillInMetadata(depositMetadata, dockstoreUrl, workflow, workflowVersion);
+                fillInMetadata(depositMetadata, workflow, workflowVersion);
 
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
@@ -327,7 +327,7 @@ public final class ZenodoHelper {
      * @param workflow    workflow for which DOI is registered
      * @param workflowVersion workflow version for which DOI is registered
      */
-    private static void fillInMetadata(DepositMetadata depositMetadata, String dockstoreUrl,
+    private static void fillInMetadata(DepositMetadata depositMetadata,
             Workflow workflow, WorkflowVersion workflowVersion) {
         // add some metadata to the deposition that will be published to Zenodo
         depositMetadata.setTitle(workflow.getWorkflowPath());
@@ -390,7 +390,7 @@ public final class ZenodoHelper {
                     + "_" + versionOfWorkflow;
             String fileSuffix = ".zip";
             String fileName = fileNameBase + fileSuffix;
-            java.nio.file.Path tempDirPath;
+            Path tempDirPath;
             try {
                 tempDirPath = Files.createTempDirectory(null);
             } catch (IOException e) {

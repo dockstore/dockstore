@@ -7,12 +7,8 @@ import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class MetadataResourceHelper {
-
-    private static final Logger LOG = LoggerFactory.getLogger(MetadataResourceHelper.class);
 
     private MetadataResourceHelper() {
     }
