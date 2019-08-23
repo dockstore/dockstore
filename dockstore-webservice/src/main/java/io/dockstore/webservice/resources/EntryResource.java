@@ -34,12 +34,7 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.CollectionOrganization;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.*;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
@@ -168,9 +163,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         // Create title and link to entry
         String entryLink = "https://dockstore.org/";
         String title;
-        if (entry instanceof Workflow) {
+        if (entry instanceof BioWorkflow) {
             title = ((Workflow)(entry)).getWorkflowPath();
             entryLink += "workflows/";
+        } else if (entry instanceof Service) {
+            title = ((Workflow)(entry)).getWorkflowPath();
+            entryLink += "services/";
         } else {
             title = ((Tool)(entry)).getToolPath();
             entryLink += "tools/";
