@@ -34,7 +34,13 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.*;
+import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.CollectionOrganization;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
@@ -107,9 +113,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiOperation(nickname = "updateAliases", value = "Update the aliases linked to a entry in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Entry.class)
     public Entry updateAliases(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Entry to modify.", required = true) @PathParam("id") Long id,
-        @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
-        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+                               @ApiParam(value = "Entry to modify.", required = true) @PathParam("id") Long id,
+                               @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
+                               @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         return AliasableResourceInterface.super.updateAliases(user, id, aliases, emptyBody);
     }
 
@@ -164,10 +170,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         String entryLink = "https://dockstore.org/";
         String title;
         if (entry instanceof BioWorkflow) {
-            title = ((Workflow)(entry)).getWorkflowPath();
+            title = ((BioWorkflow)(entry)).getWorkflowPath();
             entryLink += "workflows/";
         } else if (entry instanceof Service) {
-            title = ((Workflow)(entry)).getWorkflowPath();
+            title = ((Service)(entry)).getWorkflowPath();
             entryLink += "services/";
         } else {
             title = ((Tool)(entry)).getToolPath();
