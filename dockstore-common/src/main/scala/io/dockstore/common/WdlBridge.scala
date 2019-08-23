@@ -136,7 +136,7 @@ class WdlBridge {
 
     val workflowName = primaryCallable.name
     primaryCallable.inputs
-      .filter(input => input.womType.stableName.toString.equals("File") || input.womType.stableName.toString.equals("Array[File]"))
+      .filter(input => input.womType.stableName.toString.contains("File"))
       .foreach(input => inputList.put(workflowName + "." + input.name, input.womType.stableName.toString))
     inputList
   }
