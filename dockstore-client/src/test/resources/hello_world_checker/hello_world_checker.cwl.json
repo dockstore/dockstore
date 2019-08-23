@@ -1,0 +1,10 @@
+{
+    "knowngood_file": {
+        "class": "File",
+        "path": "knownoutput.txt"
+    },
+    "helloworld_file": {
+        "class": "File",
+        "path": "helloworld.txt"
+    }
+}

@@ -30,6 +30,7 @@ import io.dockstore.client.cli.Client;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
+import io.dropwizard.testing.ResourceHelpers;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import io.swagger.client.Configuration;
@@ -186,6 +187,14 @@ public abstract class LauncherIT {
         fileMap.put("variants__calls", simulatedList);
         fileMap.put("variants__gvcf", simulatedList);
         CWLClient.registerOutputFiles(fileMap, outputObject, "");
+    }
+
+    @Test
+    public void testCheckerWorkflow() {
+        String descriptorPath = ResourceHelpers.resourceFilePath("hello_world_checker/hello_world_checker.cwl");
+        String testParameterPath = ResourceHelpers.resourceFilePath("hello_world_checker/hello_world_checker.cwl.json");
+        String[] command = {"workflow", "launch", "--local-entry",  descriptorPath, "--yaml", testParameterPath };
+        Client.main(command);
     }
 
     @Test
