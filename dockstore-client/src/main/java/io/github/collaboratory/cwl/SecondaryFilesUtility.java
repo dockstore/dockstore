@@ -173,6 +173,9 @@ class SecondaryFilesUtility {
                     throwUnhandledTypeException(step);
                 }
             });
+        }
+        if (steps == null) {
+            LOG.debug("Steps is null. This appears to be ok because maybe there are no secondary files.");
         } else {
             throwUnhandledTypeException(steps);
         }
