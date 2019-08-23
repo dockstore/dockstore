@@ -53,6 +53,7 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
+import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -658,6 +659,38 @@ public class GeneralIT extends BaseIT {
     }
 
     @Test
+    public void testToolFreezingWithNoFiles() {
+        //setup webservice and get tool api
+        ContainersApi toolsApi = setupWebService();
+        ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
+
+        //register tool
+        DockstoreTool c = getContainer();
+        c.setDefaultCwlPath("foo.cwl");
+        c.setDefaultWdlPath("foo.wdl");
+        c.setDefaultDockerfilePath("foo");
+        c.getWorkflowVersions().forEach(tag -> {
+            tag.setCwlPath("foo.cwl");
+            tag.setWdlPath("foo.wdl");
+            tag.setDockerfilePath("foo");
+        });
+        DockstoreTool toolTest = toolsApi.registerManual(c);
+        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        assertFalse(refresh.getWorkflowVersions().isEmpty());
+        Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
+        master.setFrozen(true);
+        master.setImageId("awesomeid");
+        try {
+            tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
+        } catch (ApiException e) {
+            // should exception
+            assertTrue("missing error message", e.getMessage().contains(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES));
+            return;
+        }
+        fail("should be unreachable");
+    }
+
+    @Test
     public void testToolFreezing() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
@@ -666,9 +699,8 @@ public class GeneralIT extends BaseIT {
         //register tool
         DockstoreTool c = getContainer();
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
-
         DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+
         assertFalse(refresh.getWorkflowVersions().isEmpty());
         Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
         master.setFrozen(true);
