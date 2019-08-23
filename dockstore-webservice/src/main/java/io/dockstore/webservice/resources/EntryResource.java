@@ -129,7 +129,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @POST
     @Path("/{id}/topic")
     @Timed
-    @RolesAllowed({ "curator" })
+    @RolesAllowed({ "curator", "admin" })
     @UnitOfWork
     @ApiOperation(value = "Create a discourse topic for an entry.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
