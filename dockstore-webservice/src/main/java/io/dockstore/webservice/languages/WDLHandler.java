@@ -65,20 +65,16 @@ public class WDLHandler implements LanguageHandlerInterface {
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         WdlBridge wdlBridge = new WdlBridge();
-        Map<String, String> secondaryFiles = new HashMap<>();
+        HashMap<String, String> secondaryFiles = new HashMap<>();
         sourceFiles.forEach(file -> {
             secondaryFiles.put(file.getPath(), file.getContent());
         });
-        wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
+        wdlBridge.setSecondaryFiles(secondaryFiles);
 
         File tempMainDescriptor = null;
         try {
-            //TODO: there is repeated code with validation, but the bigger issue is that we shouldnt be running methods like
-            // checkForRecursiveHTTPImports more than once per version of a workflow since it can be costly
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
-            String contentToCheck = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
-            checkForRecursiveHTTPImports(contentToCheck, new HashSet<>());
 
             try {
                 List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath());

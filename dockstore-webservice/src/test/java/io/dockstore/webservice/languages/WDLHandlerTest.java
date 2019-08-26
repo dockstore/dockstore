@@ -38,9 +38,7 @@ public class WDLHandlerTest {
 
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
 
-        final String goodWdl = FileUtils
-                .readFileToString(new File(validFilePath),
-                        StandardCharsets.UTF_8);
+        final String goodWdl = FileUtils.readFileToString(new File(validFilePath), StandardCharsets.UTF_8);
         wdlHandler.parseWorkflowContent(workflow, validFilePath, goodWdl, Collections.emptySet(), new WorkflowVersion());
         Assert.assertEquals(workflow.getAuthor(), "Mr. Foo");
         Assert.assertEquals(workflow.getEmail(), "foo@foo.com");
@@ -49,9 +47,7 @@ public class WDLHandlerTest {
 
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
-        final String invalidDescriptionWdl = FileUtils
-                .readFileToString(new File(invalidFilePath),
-                        StandardCharsets.UTF_8);
+        final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
         wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());

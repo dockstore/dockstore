@@ -120,7 +120,7 @@ public interface LanguageHandlerInterface {
      * @return Pair of isValid and validationMessage
      */
     default VersionTypeValidation checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, DescriptorLanguage.FileType fileType) {
-        Boolean isValid = true;
+        boolean isValid = true;
         Map<String, String> validationMessageObject = new HashMap<>();
         for (SourceFile sourcefile : sourcefiles) {
             if (Objects.equals(sourcefile.getType(), fileType)) {
