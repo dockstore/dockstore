@@ -45,6 +45,8 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
+
 public final class ZenodoHelper {
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
 
@@ -232,7 +234,7 @@ public final class ZenodoHelper {
      */
     protected static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion, String dockstoreGA4GHBaseUrl) {
         final String sourceControlPath = workflow.getWorkflowPath();
-        final String workflowVersionPrimaryDescriptorPath = "#workflow/" + sourceControlPath;
+        final String workflowVersionPrimaryDescriptorPath = WORKFLOW_PREFIX + "/" + sourceControlPath;
         final String workflowVersionPrimaryDescriptorPathPlainText;
         try {
             workflowVersionPrimaryDescriptorPathPlainText =

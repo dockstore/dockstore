@@ -301,7 +301,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         GoogleHelper.setConfig(configuration);
 
-
         ToolsApi toolsApi = new ToolsApi(null);
         environment.jersey().register(toolsApi);
         environment.jersey().register(new ToolsExtendedApi());
