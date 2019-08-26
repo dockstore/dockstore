@@ -6234,6 +6234,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6249,10 +6253,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6465,6 +6465,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Base class for versions of entries in the Dockstore"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6480,10 +6484,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7459,15 +7459,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7589,6 +7589,10 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7604,10 +7608,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
