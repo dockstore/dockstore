@@ -277,7 +277,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new UserResource(getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer));
 
-        MetadataResourceHelper.setConfig(configuration);
+        MetadataResourceHelper.init(configuration);
 
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
