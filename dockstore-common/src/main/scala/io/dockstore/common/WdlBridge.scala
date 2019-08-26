@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import wdl.draft3.parser.WdlParser
-import wom.callable.{CallableTaskDefinition, WorkflowDefinition}
+import wom.callable.{CallableTaskDefinition, ExecutableCallable, WorkflowDefinition}
 import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph.{ExternalGraphInputNode, OptionalGraphInputNode, OptionalGraphInputNodeWithDefault, RequiredGraphInputNode}
@@ -71,11 +71,7 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   def validateTool(filePath: String) = {
     validateWorkflow(filePath)
-    val bundle = getBundle(filePath)
-    val executableCallable = bundle.toExecutableCallable.right.getOrElse(null)
-    if (executableCallable == null) {
-      throw new WdlParser.SyntaxError("Error parsing WDL file.")
-    }
+    val executableCallable = convertFilePathToExecutableCallable(filePath)
 
     if (executableCallable.taskCallNodes.seq.size > 1) {
       throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
@@ -97,8 +93,8 @@ class WdlBridge {
     * @return list of metadata mappings
     */
   @throws(classOf[WdlParser.SyntaxError])
-  def getMetadata(filePath: String, fileContent: String) = {
-    val bundle = getBundleFromContent(fileContent, filePath)
+  def getMetadata(filePath: String) = {
+    val bundle = getBundle(filePath)
     val metadataList = new util.ArrayList[util.Map[String, String]]()
     bundle.allCallables.foreach(callable => {
       callable._2 match {
@@ -171,11 +167,7 @@ class WdlBridge {
     */
   def getImportMap(filePath: String): util.LinkedHashMap[String, String] = {
     val importMap = new util.LinkedHashMap[String, String]()
-    val bundle = getBundle(filePath)
-    val executableCallable = bundle.toExecutableCallable.right.getOrElse(null)
-    if (executableCallable == null) {
-      throw new WdlParser.SyntaxError("Error parsing WDL file.")
-    }
+    val executableCallable = convertFilePathToExecutableCallable(filePath)
     executableCallable.taskCallNodes
       .foreach(call => {
         val callName = call.identifier.localName.value
@@ -192,11 +184,7 @@ class WdlBridge {
     */
   def getCallsToDependencies(filePath: String): util.LinkedHashMap[String, util.List[String]] = {
     val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
-    val bundle = getBundle(filePath)
-    val executableCallable = bundle.toExecutableCallable.right.getOrElse(null)
-    if (executableCallable == null) {
-      throw new WdlParser.SyntaxError("Error parsing WDL file.")
-    }
+    val executableCallable = convertFilePathToExecutableCallable(filePath)
 
     executableCallable.taskCallNodes
       .foreach(call => {
@@ -235,11 +223,7 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   def getCallsToDockerMap(filePath: String): util.LinkedHashMap[String, String] = {
     val callsToDockerMap = new util.LinkedHashMap[String, String]()
-    val bundle = getBundle(filePath)
-    val executableCallable = bundle.toExecutableCallable.right.getOrElse(null)
-    if (executableCallable == null) {
-      throw new WdlParser.SyntaxError("Error parsing WDL file.")
-    }
+    val executableCallable = convertFilePathToExecutableCallable(filePath)
     executableCallable.taskCallNodes
       .foreach(call => {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
@@ -261,12 +245,18 @@ class WdlBridge {
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getParameterFile(filePath: String): String = {
+    val executableCallable = convertFilePathToExecutableCallable(filePath)
+    executableCallable.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
+  }
+
+  @throws(classOf[WdlParser.SyntaxError])
+  private def convertFilePathToExecutableCallable(filePath: String): ExecutableCallable = {
     val bundle = getBundle(filePath)
     val executableCallable = bundle.toExecutableCallable.right.getOrElse(null)
     if (executableCallable == null) {
-      throw new WdlParser.SyntaxError("Error parsing WDL file.")
+      throw new WdlParser.SyntaxError("Error parsing WDL file")
     }
-    executableCallable.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
+    executableCallable
   }
 
   private def inputNodeWriter(showOptionals: Boolean): JsonWriter[Set[ExternalGraphInputNode]] = set => {
