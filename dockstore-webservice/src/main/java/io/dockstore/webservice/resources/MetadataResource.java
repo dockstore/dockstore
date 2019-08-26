@@ -111,8 +111,6 @@ public class MetadataResource {
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.config = config;
-
-        MetadataResourceHelper.setConfig(config);
     }
 
     @GET

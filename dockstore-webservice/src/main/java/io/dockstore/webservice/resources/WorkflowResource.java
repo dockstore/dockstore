@@ -179,8 +179,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Could create Dockstore base URL. "
                     + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        MetadataResourceHelper.setConfig(configuration);
-
     }
 
     @Override
