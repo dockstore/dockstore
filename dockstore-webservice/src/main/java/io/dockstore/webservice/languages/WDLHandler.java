@@ -65,11 +65,11 @@ public class WDLHandler implements LanguageHandlerInterface {
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         WdlBridge wdlBridge = new WdlBridge();
-        HashMap<String, String> secondaryFiles = new HashMap<>();
+        Map<String, String> secondaryFiles = new HashMap<>();
         sourceFiles.forEach(file -> {
             secondaryFiles.put(file.getPath(), file.getContent());
         });
-        wdlBridge.setSecondaryFiles(secondaryFiles);
+        wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
 
         File tempMainDescriptor = null;
         try {
