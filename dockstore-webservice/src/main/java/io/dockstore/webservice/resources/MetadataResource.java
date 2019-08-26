@@ -111,6 +111,8 @@ public class MetadataResource {
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.config = config;
+
+        MetadataResourceHelper.setConfig(config);
     }
 
     @GET
@@ -147,19 +149,19 @@ public class MetadataResource {
     }
 
     private String createOrganizationURL(Organization organization) {
-        return MetadataResourceHelper.createOrganizationURL(config, organization);
+        return MetadataResourceHelper.createOrganizationURL(organization);
     }
 
     private String createCollectionURL(Collection collection, Organization organization) {
-        return MetadataResourceHelper.createCollectionURL(config, collection, organization);
+        return MetadataResourceHelper.createCollectionURL(collection, organization);
     }
 
     private String createWorkflowURL(Workflow workflow) {
-        return MetadataResourceHelper.createWorkflowURL(config, workflow);
+        return MetadataResourceHelper.createWorkflowURL(workflow);
     }
 
     private String createToolURL(Tool tool) {
-        return MetadataResourceHelper.createToolURL(config, tool);
+        return MetadataResourceHelper.createToolURL(tool);
     }
 
     @GET

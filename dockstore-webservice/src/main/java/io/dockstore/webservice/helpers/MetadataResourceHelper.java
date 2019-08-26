@@ -10,34 +10,40 @@ import io.dockstore.webservice.core.Workflow;
 
 public final class MetadataResourceHelper {
 
+    private static DockstoreWebserviceConfiguration config;
+
     private MetadataResourceHelper() {
     }
 
-    public static String createWorkflowURL(DockstoreWebserviceConfiguration webserviceConfiguration, Workflow workflow) {
+    public static void setConfig(DockstoreWebserviceConfiguration config) {
+        MetadataResourceHelper.config = config;
+    }
+
+    public static String createWorkflowURL(Workflow workflow) {
         if (workflow instanceof BioWorkflow) {
-            return createBaseURL(webserviceConfiguration) + "/workflows/" + workflow.getWorkflowPath();
+            return createBaseURL() + "/workflows/" + workflow.getWorkflowPath();
         } else if (workflow instanceof Service) {
-            return createBaseURL(webserviceConfiguration) + "/services/" + workflow.getWorkflowPath();
+            return createBaseURL() + "/services/" + workflow.getWorkflowPath();
         }
         throw new UnsupportedOperationException("should be unreachable");
     }
 
-    public static String createOrganizationURL(DockstoreWebserviceConfiguration webserviceConfiguration, Organization organization) {
-        return createBaseURL(webserviceConfiguration) + "/organizations/" + organization.getName();
+    public static String createOrganizationURL(Organization organization) {
+        return createBaseURL() + "/organizations/" + organization.getName();
     }
 
-    public static String createCollectionURL(DockstoreWebserviceConfiguration webserviceConfiguration, Collection collection, Organization organization) {
-        return createBaseURL(webserviceConfiguration) + "/organizations/" + organization.getName() + "/collections/"  + collection.getName();
+    public static String createCollectionURL(Collection collection, Organization organization) {
+        return createBaseURL() + "/organizations/" + organization.getName() + "/collections/"  + collection.getName();
     }
 
 
-    public static String createToolURL(DockstoreWebserviceConfiguration webserviceConfiguration, Tool tool) {
-        return createBaseURL(webserviceConfiguration) + "/containers/" + tool.getToolPath();
+    public static String createToolURL(Tool tool) {
+        return createBaseURL() + "/containers/" + tool.getToolPath();
     }
 
-    private static String createBaseURL(DockstoreWebserviceConfiguration webserviceConfiguration) {
-        return URIHelper.createBaseUrl(webserviceConfiguration.getExternalConfig().getScheme(), webserviceConfiguration.getExternalConfig().getHostname(),
-                webserviceConfiguration.getExternalConfig().getUiPort());
+    private static String createBaseURL() {
+        return URIHelper.createBaseUrl(config.getExternalConfig().getScheme(), config.getExternalConfig().getHostname(),
+                config.getExternalConfig().getUiPort());
     }
 
 }
