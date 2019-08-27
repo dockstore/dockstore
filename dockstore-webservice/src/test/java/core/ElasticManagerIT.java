@@ -17,12 +17,14 @@ package core;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import com.google.api.client.util.Charsets;
-import com.google.common.io.Files;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -62,25 +64,49 @@ public class ElasticManagerIT {
     }
 
     @Test
-    public void addAnEntry() throws IOException {
+    public void dockstoreEntryToElasticSearchObject() throws IOException {
+        Tool tool = getFakeTool(false);
+        JsonNode jsonNode = ElasticManager.dockstoreEntryToElasticSearchObject(tool);
+        boolean verified = jsonNode.get("verified").booleanValue();
+        Assert.assertFalse(verified);
+        tool = getFakeTool(true);
+        jsonNode = ElasticManager.dockstoreEntryToElasticSearchObject(tool);
+        verified = jsonNode.get("verified").booleanValue();
+        Assert.assertTrue(verified);
+    }
+
+    private Tool getFakeTool(boolean verified) throws IOException {
         Tool tool = new Tool();
         Tag tag = new Tag();
         SourceFile file = new SourceFile();
-
-        File cwlFile = new File(ResourceHelpers.resourceFilePath("schema.cwl"));
-
-        String cwlContent = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
-
+        File cwlFilePath = new File(ResourceHelpers.resourceFilePath("schema.cwl"));
+        String cwlContent = Files.readString(cwlFilePath.toPath());
         file.setPath("dummypath");
         file.setAbsolutePath("/dummypath");
         file.setContent(cwlContent);
         file.setType(DOCKSTORE_CWL);
+        if (verified) {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = new HashMap<>();
+            SourceFile.VerificationInformation verificationInformation = new SourceFile.VerificationInformation();
+            verificationInformation.verified = true;
+            verificationInformation.platformVersion = "1.7.0";
+            verificationInformation.metadata = "Dockstore team";
+            verifiedBySource.put("Dockstore CLI", verificationInformation);
+            file.setVerifiedBySource(verifiedBySource);
+            tag.setVerified(true);
+        }
         tag.addSourceFile(file);
         tag.setReference("master");
+        tool.setRegistry("potato");
         tool.addWorkflowVersion(tag);
         tool.setDefaultVersion("master");
         tool.setIsPublished(true);
+        return tool;
+    }
 
+    @Test
+    public void addAnEntry() throws IOException {
+        Tool tool = getFakeTool(false);
         manager.handleIndexUpdate(tool, ElasticMode.UPDATE);
 
         manager.bulkUpsert(Collections.singletonList(tool));
