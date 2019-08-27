@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -56,7 +55,7 @@ public class ElasticManager {
     private static int port;
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
-
+    private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     public ElasticManager() {
 
     }
@@ -77,17 +76,18 @@ public class ElasticManager {
      * @param entry The entry that needs updating
      * @return The entry converted into a json string
      */
-    private String getDocumentValueFromEntry(Entry entry) throws IOException {
+    private String getDocumentValueFromEntry(Entry entry) {
         ObjectMapper mapper = Jackson.newObjectMapper();
         StringBuilder builder = new StringBuilder();
         Map<String, Object> doc = new HashMap<>();
-        JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
-        doc.put("doc", jsonNode);
-        doc.put("doc_as_upsert", true);
         try {
+            JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
+            doc.put("doc", jsonNode);
+            doc.put("doc_as_upsert", true);
             builder.append(mapper.writeValueAsString(doc));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(MAPPER_ERROR,
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return builder.toString();
     }
@@ -115,11 +115,7 @@ public class ElasticManager {
             return;
         }
         String json;
-        try {
-            json = getDocumentValueFromEntry(entry);
-        } catch (IOException e) {
-            throw new CustomWebApplicationException("Could not convert Dockstore entry to Elasticsearch object. ", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
+        json = getDocumentValueFromEntry(entry);
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String entryType = entry instanceof Tool ? "tool" : "workflow";
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
@@ -228,7 +224,7 @@ public class ElasticManager {
             try {
                 builder.append(MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry)));
             } catch (IOException e) {
-                throw new CustomWebApplicationException("Could not convert Dockstore entry to Elasticsearch object. ", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             builder.append('\n');
         });
