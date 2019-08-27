@@ -198,17 +198,17 @@ class WdlBridge {
           val dependencies = new util.ArrayList[String]()
           call.inputDefinitionMappings
             .foreach(inputMap => {
-              (inputMap._2 match {
+              val maybePorts = inputMap._2 match {
                 case Inl(head) => Some(head.graphNode.inputPorts)
                 case a => None
-              }).foreach((inputPorts: Set[GraphNodePort.InputPort]) => {
+              }
+              maybePorts.foreach((inputPorts: Set[GraphNodePort.InputPort]) => {
                 inputPorts
                   .foreach(inputPort => {
-                    var inputName = inputPort.name
+                    val inputName = inputPort.name
                     val lastPeriodIndex = inputName.lastIndexOf(".")
                     if (lastPeriodIndex != -1) {
-                      inputName = inputName.substring(0, lastPeriodIndex)
-                      dependencies.add("dockstore_" + inputName)
+                      dependencies.add("dockstore_" + inputName.substring(0, lastPeriodIndex))
                     }
                   })
               })
