@@ -312,4 +312,10 @@
             )
         </sql>
     </changeSet>
+    
+    <changeSet id="wdlValidationMessageAppend" author="agduncan">
+        <sql dbms="postgresql">
+            UPDATE validation SET message = REPLACE(message, 'Unknown methods were found', 'NOTE: WDL 1.0 is now supported by Dockstore. Please refresh to fix validation. Unknown methods were found')
+        </sql>
+    </changeSet>
 </databaseChangeLog>
