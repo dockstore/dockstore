@@ -50,6 +50,7 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.GeneratedConstants;
 import io.dockstore.common.Utilities;
+import io.dockstore.common.WdlBridgeShutDown;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import io.swagger.client.ApiClient;
@@ -610,6 +611,7 @@ public class Client {
     public static void main(String[] argv) {
         Client client = new Client();
         client.run(argv);
+        WdlBridgeShutDown.shutdownSTTP();
     }
 
     /*

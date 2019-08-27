@@ -370,10 +370,15 @@ public abstract class AbstractImageRegistry {
             Set<Tag> tags = tool.getWorkflowVersions();
             for (Tag tag : tags) {
                 // check to see whether the commit id has changed
+
+                //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
                 updateFiles(tool, tag, fileDAO, sourceCodeRepoInterface, sourceCodeRepoInterface.gitUsername);
                 // Grab and parse files to get tool information
                 // Add for new descriptor types
             }
+
+            //TODO to parse metadata in WDL, there is a hidden dependency on validation now (validation does checks for things like recursive imports)
+            // this means that two paths need to pass data in the same way to avoid oddities like validation passing and metadata parsing crashing on an invalid parse tree
 
             //Check if default version is set
             // If not set or invalid, set tag of interest to tag stored in main tag

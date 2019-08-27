@@ -29,6 +29,7 @@ import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.jackson.Jackson;
@@ -93,6 +94,8 @@ public class ElasticManager {
      */
     public void handleIndexUpdate(Entry entry, ElasticMode command) {
         entry = filterCheckerWorkflows(entry);
+        // #2771 will need to disable this and properly create objects to get services into the index
+        entry = entry instanceof Service ? null : entry;
         if (entry == null) {
             return;
         }
@@ -159,6 +162,8 @@ public class ElasticManager {
 
     public void bulkUpsert(List<Entry> entries) {
         entries = filterCheckerWorkflows(entries);
+        // #2771 will need to disable this and properly create objects to get services into the index
+        entries = entries.stream().filter(entry -> !(entry instanceof Service)).collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
         }
@@ -179,7 +184,7 @@ public class ElasticManager {
      * @param entry     The entry to check
      * @return          null if checker, entry otherwise
      */
-    public static Entry filterCheckerWorkflows(Entry entry) {
+    private static Entry filterCheckerWorkflows(Entry entry) {
         return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
     }
 

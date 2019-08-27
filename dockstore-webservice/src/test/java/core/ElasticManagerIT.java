@@ -26,6 +26,7 @@ import com.google.common.io.Files;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -89,16 +90,21 @@ public class ElasticManagerIT {
     }
 
     @Test
+    public void addAService() {
+        manager.handleIndexUpdate(new Service(), ElasticMode.UPDATE);
+        Assert.assertFalse(systemOutRule.getLog().contains("Performing index update"));
+    }
+
+    @Test
     public void filterCheckerWorkflows() {
         Workflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setIsChecker(true);
         Workflow workflow = new BioWorkflow();
         workflow.setIsChecker(false);
         Tool tool = new Tool();
-        List<Entry> entries = manager.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
+        List<Entry> entries = ElasticManager.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
         Assert.assertEquals("There should've been 2 entries without the checker workflow", 2, entries.size());
         entries.forEach(entry -> Assert.assertFalse("There should be no checker workflows", entry instanceof Workflow && ((Workflow)entry).isIsChecker()));
     }
-
 
 }

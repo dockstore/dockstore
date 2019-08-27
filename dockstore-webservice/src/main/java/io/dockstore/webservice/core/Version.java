@@ -48,8 +48,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -64,6 +66,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
+    public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
     /**
      * re-use existing generator for backwards compatibility
      */
@@ -83,7 +86,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 22)
-    String commitID;
+    private String commitID;
 
     @Column(columnDefinition = "boolean default false")
     @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
@@ -199,6 +202,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.setDoiStatus(version.getDoiStatus());
         this.setDoiURL(version.getDoiURL());
         if (!this.isFrozen()) {
+            if (version.frozen && this.sourceFiles.isEmpty()) {
+                throw new CustomWebApplicationException(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES, HttpStatus.SC_BAD_REQUEST);
+            }
             this.setFrozen(version.frozen);
             reference = version.reference;
         }

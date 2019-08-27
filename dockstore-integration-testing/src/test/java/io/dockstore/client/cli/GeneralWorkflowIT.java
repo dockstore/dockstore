@@ -43,6 +43,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.client.cli.Client.API_ERROR;
+import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
 import static org.junit.Assert.assertEquals;
@@ -548,6 +549,33 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testWorkflowFreezingWithNoFiles(){
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Get workflows
+        usersApi.refreshWorkflows(userId);
+
+        Workflow githubWorkflow = workflowApi
+            .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/wrongpath.wdl", "test-update-workflow", "wdl", "/wrong-test.json");
+
+        Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
+        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        master.setFrozen(true);
+        try {
+            List<WorkflowVersion> workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        } catch (ApiException e) {
+            // should exception
+            assertTrue("missing error message", e.getMessage().contains(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES));
+            return;
+        }
+        fail("should be unreachable");
+    }
+
+    @Test
     public void testWorkflowFreezing() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
@@ -563,8 +591,6 @@ public class GeneralWorkflowIT extends BaseIT {
             .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
 
         // Publish github workflow
-        workflowApi.refresh(githubWorkflow.getId());
-
         Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
         WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
         master.setFrozen(true);

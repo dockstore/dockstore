@@ -1,7 +1,6 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
@@ -11,9 +10,7 @@ import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.GenericUrl;
-import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
@@ -106,12 +103,12 @@ public final class GoogleHelper {
                         try {
                             tokenResponse.setRefreshToken(token.getRefreshToken());
                             GoogleCredential credential = new GoogleCredential.Builder()
-                                    .setTransport(GoogleNetHttpTransport.newTrustedTransport()).setJsonFactory(new JacksonFactory())
+                                    .setTransport(TokenResource.HTTP_TRANSPORT).setJsonFactory(TokenResource.JSON_FACTORY)
                                     .setClientSecrets(config.getGoogleClientID(), config.getGoogleClientSecret()).build()
                                     .setFromTokenResponse(tokenResponse);
                             credential.refreshToken();
                             return Optional.ofNullable(credential.getAccessToken());
-                        } catch (GeneralSecurityException | IOException e) {
+                        } catch (IOException e) {
                             LOG.error("Error refreshing token", e);
                         }
                     }

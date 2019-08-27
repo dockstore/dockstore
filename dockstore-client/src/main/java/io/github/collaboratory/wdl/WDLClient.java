@@ -98,16 +98,27 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         zippedEntryFile = launcherFiles.getZippedEntry();
     }
 
-    @Override
-    public File provisionInputFiles() {
-        // Get list of input files
-        Map<String, String> wdlInputs = null;
+    /**
+     * Gets the WDL inputs of a descriptor.  This should probably be moved to a helper class.
+     *
+     * @param descriptorAbsolutePath The local descriptor's absolute path
+     * @return A map of the inputs
+     */
+    static Map<String, String> getInputFiles(String descriptorAbsolutePath) {
         WdlBridge wdlBridge = new WdlBridge();
+        Map<String, String> wdlInputs = null;
         try {
-            wdlInputs = wdlBridge.getInputFiles(localPrimaryDescriptorFile.getAbsolutePath());
+            wdlInputs = wdlBridge.getInputFiles(descriptorAbsolutePath);
         } catch (WdlParser.SyntaxError ex) {
             exceptionMessage(ex, "Problem parsing WDL file: " + ex.getMessage(), API_ERROR);
         }
+        return wdlInputs;
+    }
+
+    @Override
+    public File provisionInputFiles() {
+        // Get list of input files
+        Map<String, String> wdlInputs = getInputFiles(localPrimaryDescriptorFile.getAbsolutePath());
 
         // Convert parameter JSON to a map
         WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(abstractEntryClient.getConfigFile());

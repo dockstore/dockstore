@@ -18,6 +18,8 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
+import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+
 public class WDLHandlerTest {
 
     @Rule
@@ -36,9 +38,7 @@ public class WDLHandlerTest {
 
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
 
-        final String goodWdl = FileUtils
-                .readFileToString(new File(validFilePath),
-                        StandardCharsets.UTF_8);
+        final String goodWdl = FileUtils.readFileToString(new File(validFilePath), StandardCharsets.UTF_8);
         wdlHandler.parseWorkflowContent(workflow, validFilePath, goodWdl, Collections.emptySet(), new WorkflowVersion());
         Assert.assertEquals(workflow.getAuthor(), "Mr. Foo");
         Assert.assertEquals(workflow.getEmail(), "foo@foo.com");
@@ -47,9 +47,7 @@ public class WDLHandlerTest {
 
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
-        final String invalidDescriptionWdl = FileUtils
-                .readFileToString(new File(invalidFilePath),
-                        StandardCharsets.UTF_8);
+        final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
         wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());
@@ -65,7 +63,7 @@ public class WDLHandlerTest {
             wdlHandler.checkForRecursiveHTTPImports(s, new HashSet<>());
             Assert.fail("Should've detected recursive import");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals("Error parsing workflow. You may have a recursive import.", e.getErrorMessage());
+            Assert.assertEquals(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, e.getErrorMessage());
         }
 
         final File notRecursiveWdl = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
