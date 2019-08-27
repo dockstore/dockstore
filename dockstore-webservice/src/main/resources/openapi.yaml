@@ -7626,15 +7626,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         username:
           type: string
           description: Username on dockstore

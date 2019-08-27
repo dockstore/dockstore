@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.common.io.Files;
@@ -192,5 +194,16 @@ public class CromwellIT {
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("Should properly parse document");
         }
+    }
+
+    /**
+     * Tests that we can generate a DAG for https://staging.dockstore.org/workflows/github.com/HumanCellAtlas/skylab/Snap-ATAC:gl_576?tab=info
+     */
+    @Test
+    public void testSnapAtacDag() {
+        final File file = new File(ResourceHelpers.resourceFilePath("snap_atac.wdl"));
+        final WdlBridge wdlBridge = new WdlBridge();
+        final LinkedHashMap<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(file.getAbsolutePath());
+        Assert.assertEquals(5, callsToDependencies.size());
     }
 }
