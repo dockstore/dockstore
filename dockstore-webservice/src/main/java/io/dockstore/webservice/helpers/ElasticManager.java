@@ -82,7 +82,7 @@ public class ElasticManager {
         StringBuilder builder = new StringBuilder();
         Map<String, Object> doc = new HashMap<>();
         JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
-        doc.put("doc", entry);
+        doc.put("doc", jsonNode);
         doc.put("doc_as_upsert", true);
         try {
             builder.append(mapper.writeValueAsString(doc));
@@ -237,11 +237,12 @@ public class ElasticManager {
 
     /**
      * This should be using an actual Elasticsearch object class instead of jsonNode
+     *
      * @param entry The Dockstore entry
-     * @return  The Elasticsearch object string to be placed into the index
-     * @throws IOException
+     * @return The Elasticsearch object string to be placed into the index
+     * @throws IOException  Mapper problems
      */
-    private JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
+    public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
