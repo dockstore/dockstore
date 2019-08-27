@@ -17,13 +17,14 @@ import languages.wdl.biscayne.WdlBiscayneLanguageFactory
 import languages.wdl.draft2.WdlDraft2LanguageFactory
 import languages.wdl.draft3.WdlDraft3LanguageFactory
 import org.slf4j.LoggerFactory
+import shapeless.Inl
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import wdl.draft3.parser.WdlParser
 import wom.callable.{CallableTaskDefinition, ExecutableCallable, WorkflowDefinition}
 import wom.executable.WomBundle
 import wom.expression.WomExpression
-import wom.graph.{ExternalGraphInputNode, OptionalGraphInputNode, OptionalGraphInputNodeWithDefault, RequiredGraphInputNode}
+import wom.graph._
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
 
 import scala.collection.JavaConverters
@@ -197,15 +198,20 @@ class WdlBridge {
           val dependencies = new util.ArrayList[String]()
           call.inputDefinitionMappings
             .foreach(inputMap => {
-              inputMap._2.head.get.graphNode.inputPorts
-                .foreach(inputPorts => {
-                  var inputName = inputPorts.name
-                  val lastPeriodIndex = inputName.lastIndexOf(".")
-                  if (lastPeriodIndex != -1) {
-                    inputName = inputName.substring(0, lastPeriodIndex)
-                    dependencies.add("dockstore_" + inputName)
-                  }
-                })
+              val maybePorts = inputMap._2 match {
+                case Inl(head) => Some(head.graphNode.inputPorts)
+                case a => None
+              }
+              maybePorts.foreach((inputPorts: Set[GraphNodePort.InputPort]) => {
+                inputPorts
+                  .foreach(inputPort => {
+                    val inputName = inputPort.name
+                    val lastPeriodIndex = inputName.lastIndexOf(".")
+                    if (lastPeriodIndex != -1) {
+                      dependencies.add("dockstore_" + inputName.substring(0, lastPeriodIndex))
+                    }
+                  })
+              })
             })
           dependencyMap.replace("dockstore_" + call.identifier.localName.value, dependencies)
 
