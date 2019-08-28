@@ -198,7 +198,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                     LOG.info("Quay.io tokenusername is null, did not create token");
                     throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
                 }
-                long create = tokenDAO.create(token);
+                long create = createToken(token, "Quay");
                 LOG.info("Quay token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
@@ -278,7 +278,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                     LOG.info("Gitlab.com tokenusername is null, did not create token");
                     throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
                 }
-                long create = tokenDAO.create(token);
+                long create = createToken(token, "GitLab");
                 LOG.info("Gitlab token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
@@ -395,7 +395,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             LOG.info("Could not find user's Google token. Making new one...");
             // CREATE GOOGLE TOKEN
             googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM);
-            tokenDAO.create(googleToken);
+            createToken(googleToken, "GitLab");
             // Update user profile too
             user = userDAO.findById(userID);
             GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
@@ -529,7 +529,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             githubToken.setContent(accessToken);
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
-            tokenDAO.create(githubToken);
+            createToken(githubToken, "GitHub");
             user = userDAO.findById(userID);
             GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
             gitHubSourceCodeRepo.getUserMetadata(user);
@@ -537,7 +537,15 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return dockstoreToken;
     }
 
-
+    private long createToken(Token token, String tokenType) {
+        try {
+            return tokenDAO.create(token);
+        } catch (Exception ex) {
+            String msg = "Error linking " + tokenType + " account";
+            LOG.error(msg, ex);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
 
     private Token createDockstoreToken(long userID, String githubLogin) {
         Token dockstoreToken;
@@ -668,7 +676,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 // otherwise we will get a DB error when trying to
                 // link another user's Zenodo credentials
                 token.setUsername(user.getUsername());
-                long create = tokenDAO.create(token);
+                long create = createToken(token, "Zenodo");
                 LOG.info("Zenodo token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
