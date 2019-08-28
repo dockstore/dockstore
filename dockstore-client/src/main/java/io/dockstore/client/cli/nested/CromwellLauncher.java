@@ -84,6 +84,8 @@ public class CromwellLauncher extends BaseLauncher {
         final List<String> cwlSpecificFlags = Arrays.asList("--type", "cwl");
         final List<String> runCommand;
         runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
+        // NOTE: Support for ZIP imports exists, but we decided to comment it out for now as it was causing some issues.
+        //runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", zippedEntry.getAbsolutePath());
         final String[] s = { "java", "-jar", executionFile.getAbsolutePath(), "run" };
         List<String> arguments = new ArrayList<>();
         arguments.addAll(Arrays.asList(s));
