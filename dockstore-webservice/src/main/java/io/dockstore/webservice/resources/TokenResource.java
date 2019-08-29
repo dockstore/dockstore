@@ -543,7 +543,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         } catch (Exception ex) {
             String msg = "Error linking " + tokenType + " account";
             LOG.error(msg, ex);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
