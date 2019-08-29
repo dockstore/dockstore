@@ -12,11 +12,11 @@ if [ "${TESTING_PROFILE}" = "unit-tests" ] || [ "${TESTING_PROFILE}" == "automat
 fi
 
 if [ "${TESTING_PROFILE}" = "toil-integration-tests" ]; then
-    pip2.7 install --user toil[cwl]==3.15.0
+    pip3 install --user toil[cwl]==3.15.0
 elif [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
-    pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.5.0/requirements.txt
+    pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.5.0/requirements3.txt
 else
-    pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.7.0/requirements.txt
+    pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.7.0/requirements3.txt
 fi
 
 # hook up integration tests with elastic search
