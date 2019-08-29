@@ -445,7 +445,7 @@ public class SwaggerClientIT extends BaseIT {
         // hit up a specific version
         ToolVersion master = ga4GhApi.toolsIdVersionsVersionIdGet(encodedID, "master");
         Assert.assertFalse(master.isVerified());
-        Assert.assertEquals("[]", master.getVerifiedSource());
+        Assert.assertEquals("", master.getVerifiedSource());
     }
 
     // Can't test publish repos that don't exist
