@@ -139,6 +139,7 @@ public class ToolsImplCommonTest {
         sourceFile2.setAbsolutePath("/Dockstore.cwl");
         tag.addSourceFile(sourceFile);
         tag.addSourceFile(sourceFile2);
+        tag.updateVerified();
         tool.addWorkflowVersion(tag);
         tool.setCheckerWorkflow(null);
         Tool expectedTool = new Tool();
@@ -275,6 +276,9 @@ public class ToolsImplCommonTest {
         actualWorkflowVersion3.setReference(REFERENCE3);
         SourceFile sourceFile3 = getFakeSourceFile("potatoTesterSource", isService, "/pcawg-cgp-somatic-workflow.wdl3");
         actualWorkflowVersion3.addSourceFile(sourceFile3);
+        actualWorkflowVersion1.updateVerified();
+        actualWorkflowVersion2.updateVerified();
+        actualWorkflowVersion3.updateVerified();
         // Check that Dockstore version is actually has the right verified source
         Assert.assertEquals("[\"chickenTesterSource\",\"potatoTesterSource\"]", actualWorkflowVersion3.getVerifiedSource());
         workflow.addWorkflowVersion(actualWorkflowVersion1);

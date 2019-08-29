@@ -692,7 +692,11 @@ public abstract class AbstractEntryClient<T> {
 
     private void verify(List<String> args) {
         if (isAdmin) {
-            out("This command is currently deprecated. Use the extended TRS webservice endpoint instead.");
+            if (containsHelpRequest(args) || args.isEmpty()) {
+                verifyHelp();
+            } else {
+                out("This command is currently deprecated. Use the extended TRS webservice endpoint instead.");
+            }
         } else {
             out("This command is only accessible to Admins.");
         }

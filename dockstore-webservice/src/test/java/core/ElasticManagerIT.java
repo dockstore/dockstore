@@ -96,6 +96,7 @@ public class ElasticManagerIT {
         }
         tag.addSourceFile(file);
         tag.setReference("master");
+        tag.updateVerified();
         tool.setRegistry("potato");
         tool.addWorkflowVersion(tag);
         tool.setDefaultVersion("master");
