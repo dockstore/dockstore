@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,7 +48,6 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.User;
-import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.io.FileUtils;
@@ -674,57 +672,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         //TODO add support for optional parameter '--entryname'
         printHelpFooter();
-    }
-
-    @Override
-    protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
-        boolean toOverwrite = true;
-
-        try {
-            Workflow workflow = workflowsApi.getWorkflowByPath(entry, null, false);
-            List<WorkflowVersion> versions = workflow.getWorkflowVersions();
-
-            final Optional<WorkflowVersion> first = versions.stream().filter((WorkflowVersion u) -> u.getName().equals(versionName))
-                    .findFirst();
-
-            WorkflowVersion versionToUpdate;
-            if (first.isEmpty()) {
-                errorMessage(versionName + " is not a valid version for " + entry, Client.CLIENT_ERROR);
-            }
-            versionToUpdate = first.get();
-
-            VerifyRequest verifyRequest = new VerifyRequest();
-            if (unverifyRequest) {
-                verifyRequest = SwaggerUtility.createVerifyRequest(false, null);
-            } else {
-                // Check if already has been verified
-                if (versionToUpdate.isVerified() && !isScript) {
-                    Scanner scanner = new Scanner(System.in, "utf-8");
-                    out("The version " + versionName + " has already been verified by \'" + versionToUpdate.getVerifiedSource() + "\'");
-                    out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
-                    String overwrite = scanner.nextLine();
-                    if ("y".equalsIgnoreCase(overwrite)) {
-                        verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
-                    } else {
-                        toOverwrite = false;
-                    }
-                } else {
-                    verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
-                }
-            }
-
-            if (toOverwrite) {
-                List<WorkflowVersion> result = workflowsApi.verifyWorkflowVersion(workflow.getId(), versionToUpdate.getId(), verifyRequest);
-
-                if (unverifyRequest) {
-                    out("Version " + versionName + " has been unverified.");
-                } else {
-                    out("Version " + versionName + " has been verified by \'" + verifySource + "\'");
-                }
-            }
-        } catch (ApiException ex) {
-            exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " version " + versionName, Client.API_ERROR);
-        }
     }
 
     @Override

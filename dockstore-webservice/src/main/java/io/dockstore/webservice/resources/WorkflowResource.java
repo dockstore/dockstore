@@ -60,7 +60,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
-import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
@@ -396,6 +395,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
+        workflow.getWorkflowVersions().forEach(Version::updateVerified);
         // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflow;
@@ -514,39 +514,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/verify/{workflowVersionId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", authorizations = {
+    @ApiOperation(value = "Updates the verification status of a version. ADMIN ONLY", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> verifyWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
-        @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        // Note: if you set someone as an admin, they are not actually admin right away. Users must wait until after the
-        // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
-        checkAdmin(user);
-
+        @ApiParam(value = "ID of the workflow to update.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "Id of the version to update.", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+        Workflow workflow = findWorkflowByIdAndCheckWorkflowAndUser(workflowId, user);
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
             LOG.error(user.getUsername() + ": could not find version: " + workflow.getWorkflowPath());
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
-
         }
-
-        if (verifyRequest.getVerify()) {
-            if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
-                throw new CustomWebApplicationException("A source must be included to verify a workflow.", HttpStatus.SC_BAD_REQUEST);
-            }
-            workflowVersion.updateVerified(true, verifyRequest.getVerifiedSource());
-        } else {
-            workflowVersion.updateVerified(false, null);
-        }
-
+        workflowVersion.updateVerified();
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
@@ -1689,6 +1673,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final Workflow workflow = this.workflowDAO.findByAlias(alias);
         checkEntry(workflow);
         optionalUserCheckEntry(user, workflow);
+        return workflow;
+    }
+
+    /**
+     * Finds the tool by Id, and then checks that it exists and that the user has access to it
+     * @param entryId Id of tool of interest
+     * @param user User to authenticate
+     * @return Tool
+     */
+    public Workflow findWorkflowByIdAndCheckWorkflowAndUser(Long entryId, User user) {
+        Workflow workflow = workflowDAO.findById(entryId);
+        checkEntry(workflow);
+        checkUser(user, workflow);
         return workflow;
     }
 }
