@@ -20,10 +20,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -31,6 +33,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.jackson.Jackson;
 import org.apache.http.HttpEntity;
@@ -51,7 +54,8 @@ public class ElasticManager {
     private static String hostname;
     private static int port;
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
-
+    private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+    private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     public ElasticManager() {
 
     }
@@ -76,12 +80,14 @@ public class ElasticManager {
         ObjectMapper mapper = Jackson.newObjectMapper();
         StringBuilder builder = new StringBuilder();
         Map<String, Object> doc = new HashMap<>();
-        doc.put("doc", entry);
-        doc.put("doc_as_upsert", true);
         try {
+            JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
+            doc.put("doc", jsonNode);
+            doc.put("doc_as_upsert", true);
             builder.append(mapper.writeValueAsString(doc));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(MAPPER_ERROR,
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return builder.toString();
     }
@@ -108,7 +114,8 @@ public class ElasticManager {
             LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
-        String json = getDocumentValueFromEntry(entry);
+        String json;
+        json = getDocumentValueFromEntry(entry);
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String entryType = entry instanceof Tool ? "tool" : "workflow";
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
@@ -204,7 +211,6 @@ public class ElasticManager {
      * @return The json used for bulk insert
      */
     private String getNDJSON(List<Entry> publishedEntries) {
-        ObjectMapper mapper = Jackson.newObjectMapper();
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
         publishedEntries.forEach(entry -> {
@@ -216,12 +222,27 @@ public class ElasticManager {
             builder.append(gson.toJson(index));
             builder.append('\n');
             try {
-                builder.append(mapper.writeValueAsString(entry));
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
+                builder.append(MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry)));
+            } catch (IOException e) {
+                throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             builder.append('\n');
         });
         return builder.toString();
+    }
+
+    /**
+     * This should be using an actual Elasticsearch object class instead of jsonNode
+     *
+     * @param entry The Dockstore entry
+     * @return The Elasticsearch object string to be placed into the index
+     * @throws IOException  Mapper problems
+     */
+    public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
+        Set<Version> workflowVersions = entry.getWorkflowVersions();
+        boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
+        JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
+        ((ObjectNode)jsonNode).put("verified", verified);
+        return jsonNode;
     }
 }
