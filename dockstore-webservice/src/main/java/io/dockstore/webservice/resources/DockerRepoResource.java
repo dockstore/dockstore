@@ -233,6 +233,7 @@ public class DockerRepoResource
         if (refreshedTool.getCheckerWorkflow() != null) {
             workflowResource.refresh(user, refreshedTool.getCheckerWorkflow().getId());
         }
+        refreshedTool.getWorkflowVersions().forEach(Version::updateVerified);
         elasticManager.handleIndexUpdate(refreshedTool, ElasticMode.UPDATE);
         return refreshedTool;
     }

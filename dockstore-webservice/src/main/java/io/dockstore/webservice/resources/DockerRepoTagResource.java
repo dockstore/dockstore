@@ -34,9 +34,7 @@ import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
-import com.google.common.base.Strings;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
@@ -192,33 +190,23 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         }
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @Path("/{containerId}/verify/{tagId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a version . ADMIN ONLY", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
+    @ApiOperation(value = "Updates the verification status of a version. ADMIN ONLY", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> verifyToolTag(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "Tag to verify.", required = true) @PathParam("tagId") Long tagId,
-            @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
+            @ApiParam(value = "ID of the tool to update.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "ID of the tag to update.", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
-
         Tag tag = tagDAO.findById(tagId);
         if (tag == null) {
             LOG.error(user.getUsername() + ": could not find tag: " + tool.getToolPath());
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
-
-        if (verifyRequest.getVerify()) {
-            if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
-                throw new CustomWebApplicationException("A source must be included to verify a tag.", HttpStatus.SC_BAD_REQUEST);
-            }
-            tag.updateVerified(true, verifyRequest.getVerifiedSource());
-        } else {
-            tag.updateVerified(false, null);
-        }
-
+        tag.updateVerified();
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
@@ -233,7 +221,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Request a DOI for this version of a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-        @ApiParam(value = "Tag to verify.", required = true) @PathParam("tagId") Long tagId) {
+            @ApiParam(value = "Tag to request DOI.", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
 
         Tag tag = tagDAO.findById(tagId);

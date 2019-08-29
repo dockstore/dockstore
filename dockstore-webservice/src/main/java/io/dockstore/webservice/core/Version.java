@@ -160,31 +160,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)
     public boolean isVerified() {
-        return this.getSourceFiles().stream().anyMatch(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified));
-    }
-
-    public void setVerified(boolean verified) {
-        this.getVersionMetadata().verified = verified;
+        return this.versionMetadata.verified;
     }
 
     @ApiModelProperty(value = "Verified source for the version", position = 9)
     public String getVerifiedSource() {
-        Set<String> verifiedSources = new TreeSet<>();
-        this.getSourceFiles().forEach(sourceFile -> {
-            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
-            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
-                if (thing.getValue().verified) {
-                    verifiedSources.add(thing.getKey());
-                }
-            }
-        });
-        // How strange that we're returning an array-like string
-        Gson gson = new Gson();
-        return Strings.nullToEmpty(gson.toJson(verifiedSources));
-    }
-
-    public void setVerifiedSource(String verifiedSource) {
-        this.getVersionMetadata().verifiedSource = verifiedSource;
+        return this.getVersionMetadata().verifiedSource;
     }
 
     public boolean isDirtyBit() {
@@ -290,12 +271,28 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.name = name;
     }
 
-    public void updateVerified(boolean newVerified, String newVerifiedSource) {
-        this.getVersionMetadata().verified = newVerified;
-        this.getVersionMetadata().verifiedSource = newVerifiedSource;
-        // Alternate solution
-        this.getVersionMetadata().verified = this.getSourceFiles().stream().anyMatch(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified));
-        this.getVersionMetadata().verifiedSource = this.getSourceFiles().stream().filter(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified)).findFirst().map(file -> file.getVerifiedBySource().keySet().toString()).get();
+    public void updateVerified() {
+        this.getVersionMetadata().verified = calculateVerified(this.getSourceFiles());
+        this.getVersionMetadata().verifiedSource = calculateVerifiedSource(this.getSourceFiles());
+    }
+
+    private static boolean calculateVerified(SortedSet<SourceFile> versionSourceFiles) {
+        return versionSourceFiles.stream().anyMatch(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified));
+    }
+
+    public static String calculateVerifiedSource(SortedSet<SourceFile> versionSourceFiles) {
+        Set<String> verifiedSources = new TreeSet<>();
+        versionSourceFiles.forEach(sourceFile -> {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
+                if (thing.getValue().verified) {
+                    verifiedSources.add(thing.getKey());
+                }
+            }
+        });
+        // How strange that we're returning an array-like string
+        Gson gson = new Gson();
+        return Strings.nullToEmpty(gson.toJson(verifiedSources));
     }
 
     @JsonProperty

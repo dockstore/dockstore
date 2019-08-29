@@ -71,7 +71,6 @@ import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
-import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
@@ -92,7 +91,6 @@ import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -374,37 +372,6 @@ public class SwaggerClientIT extends BaseIT {
         secondTag.setReference("funky_tag");
         thrown.expect(ApiException.class);
         containertagsApi.addTags(dockstoreTool.getId(), Lists.newArrayList(secondTag));
-    }
-
-    @Ignore("Deprecated. Need to use the new verification endpoint")
-    @Test
-    public void testGetVerifiedSpecificTool() throws ApiException {
-        ApiClient client = getAdminWebClient();
-        Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
-        ContainersApi containersApi = new ContainersApi(client);
-        ContainertagsApi containertagsApi = new ContainertagsApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        final DockstoreTool dockstoreTool = containersApi.registerManual(c);
-
-        io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        assertNotNull(tool);
-        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        assertEquals(1, tags.size());
-        Tag tag = tags.get(0);
-
-        // verify master branch
-        assertFalse(tag.isVerified());
-        assertNull(tag.getVerifiedSource());
-        VerifyRequest request = SwaggerUtility.createVerifyRequest(true, "test-source");
-        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(), request);
-
-        // check again
-        tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        tag = tags.get(0);
-        assertTrue(tag.isVerified());
-        assertEquals("test-source", tag.getVerifiedSource());
     }
 
     @Test

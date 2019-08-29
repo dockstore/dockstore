@@ -825,13 +825,6 @@ components:
         verified:
           type: boolean
       type: object
-    VerifyRequest:
-      properties:
-        verifiedSource:
-          type: string
-        verify:
-          type: boolean
-      type: object
     Version:
       properties:
         commitID:
@@ -2896,7 +2889,7 @@ paths:
                 type: string
           description: default response
   /containers/{containerId}/verify/{tagId}:
-    put:
+    post:
       operationId: verifyToolTag
       parameters:
       - in: path
@@ -2998,7 +2991,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /entries/{id}/collections:
     get:
@@ -5979,7 +5972,7 @@ paths:
                 type: string
           description: default response
   /workflows/{workflowId}/verify/{workflowVersionId}:
-    put:
+    post:
       operationId: verifyWorkflowVersion
       parameters:
       - in: path

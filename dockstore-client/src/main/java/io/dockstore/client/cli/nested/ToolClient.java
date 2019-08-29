@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -48,7 +47,6 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.User;
-import io.swagger.client.model.VerifyRequest;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
@@ -706,53 +704,6 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
 
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
-        }
-    }
-
-    @Override
-    protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
-        boolean toOverwrite = true;
-
-        try {
-            DockstoreTool tool = containersApi.getContainerByToolPath(entry, null);
-            List<Tag> tags = Optional.ofNullable(tool.getWorkflowVersions()).orElse(new ArrayList<>());
-            final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
-
-            if (first.isEmpty()) {
-                errorMessage(versionName + " is not a valid tag for " + entry, Client.CLIENT_ERROR);
-            }
-            Tag tagToUpdate = first.get();
-
-            VerifyRequest verifyRequest = new VerifyRequest();
-            if (unverifyRequest) {
-                verifyRequest = SwaggerUtility.createVerifyRequest(false, null);
-            } else {
-                // Check if already has been verified
-                if (tagToUpdate.isVerified() && !isScript) {
-                    Scanner scanner = new Scanner(System.in, "utf-8");
-                    out("The tag " + versionName + " has already been verified by \'" + tagToUpdate.getVerifiedSource() + "\'");
-                    out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
-                    String overwrite = scanner.nextLine();
-                    if ("y".equalsIgnoreCase(overwrite)) {
-                        verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
-                    } else {
-                        toOverwrite = false;
-                    }
-                } else {
-                    verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
-                }
-            }
-
-            if (toOverwrite) {
-                containerTagsApi.verifyToolTag(tool.getId(), tagToUpdate.getId(), verifyRequest);
-                if (unverifyRequest) {
-                    out("Tag " + versionName + " has been unverified.");
-                } else {
-                    out("Tag " + versionName + " has been verified by \'" + verifySource + "\'");
-                }
-            }
-        } catch (ApiException ex) {
-            exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " tag " + versionName, Client.API_ERROR);
         }
     }
 
