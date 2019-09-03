@@ -41,7 +41,7 @@ public class VersionMetadata {
     protected boolean verified;
 
     @Column()
-    protected String verifiedSource = "[]";
+    protected String verifiedSource;
 
     @Column()
     protected String doiURL;

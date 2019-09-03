@@ -287,7 +287,11 @@ public final class ToolsImplCommon {
                 verifiedSources.addAll(stringList);
             }
         });
-        tool.setVerifiedSource(Strings.nullToEmpty(GSON.toJson(verifiedSources)));
+        if (verifiedSources.isEmpty()) {
+            tool.setVerifiedSource(null);
+        } else {
+            tool.setVerifiedSource(Strings.nullToEmpty(GSON.toJson(verifiedSources)));
+        }
         return tool;
     }
 
@@ -331,7 +335,12 @@ public final class ToolsImplCommon {
         toolVersion.setUrl(globalVersionId);
         toolVersion.setName(version.getName());
         toolVersion.setVerified(version.isVerified());
-        toolVersion.setVerifiedSource(Strings.nullToEmpty(version.getVerifiedSource()));
+        String verifiedSource = version.getVerifiedSource();
+        if (verifiedSource == null || verifiedSource.isBlank()) {
+            toolVersion.setVerifiedSource(null);
+        } else {
+            toolVersion.setVerifiedSource(Strings.nullToEmpty(version.getVerifiedSource()));
+        }
         toolVersion.setContainerfile(false);
 
         // Set image if it's a DockstoreTool, otherwise make it empty string (for now)

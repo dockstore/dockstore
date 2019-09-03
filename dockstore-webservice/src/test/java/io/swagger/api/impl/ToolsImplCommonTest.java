@@ -165,7 +165,7 @@ public class ToolsImplCommonTest {
         expectedTool.setVerified(false);
         expectedTool.setSigned(false);
         expectedTool.setVersions(Collections.EMPTY_LIST);
-        expectedTool.setVerifiedSource("[]");
+        expectedTool.setVerifiedSource(null);
         ToolVersion expectedToolVersion = new ToolVersion();
         expectedToolVersion.setName("sampleTag");
         if (toolname != null) {
@@ -182,7 +182,7 @@ public class ToolsImplCommonTest {
         expectedToolVersion.setContainerfile(true);
         expectedToolVersion.setMetaVersion(null);
         expectedToolVersion.setVerified(false);
-        expectedToolVersion.setVerifiedSource("[]");
+        expectedToolVersion.setVerifiedSource(null);
         expectedToolVersion.setRegistryUrl("quay.io");
         expectedToolVersion.setImageName("quay.io/test_org/test6");
         List<ToolVersion> expectedToolVersions = new ArrayList<>();

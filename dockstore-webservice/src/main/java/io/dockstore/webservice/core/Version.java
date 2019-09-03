@@ -292,7 +292,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         });
         // How strange that we're returning an array-like string
         Gson gson = new Gson();
-        return Strings.nullToEmpty(gson.toJson(verifiedSources));
+        if (verifiedSources.isEmpty()) {
+            return null;
+        } else {
+            return Strings.nullToEmpty(gson.toJson(verifiedSources));
+        }
     }
 
     @JsonProperty
