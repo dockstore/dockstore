@@ -249,7 +249,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
      * @param user User to authenticate
      * @return Tool
      */
-    public Tool findToolByIdAndCheckToolAndUser(Long toolId, User user) {
+    private Tool findToolByIdAndCheckToolAndUser(Long toolId, User user) {
         Tool tool = toolDAO.findById(toolId);
         checkEntry(tool);
         checkUser(user, tool);

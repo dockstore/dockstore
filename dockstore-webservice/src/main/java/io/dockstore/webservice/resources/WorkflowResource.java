@@ -1682,7 +1682,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param user User to authenticate
      * @return Tool
      */
-    public Workflow findWorkflowByIdAndCheckWorkflowAndUser(Long entryId, User user) {
+    private Workflow findWorkflowByIdAndCheckWorkflowAndUser(Long entryId, User user) {
         Workflow workflow = workflowDAO.findById(entryId);
         checkEntry(workflow);
         checkUser(user, workflow);

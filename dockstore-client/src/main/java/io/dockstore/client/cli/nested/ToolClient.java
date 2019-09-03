@@ -708,6 +708,55 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
     }
 
     @Override
+    protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
+        // TODO: Implement this with extended TRS endpoint
+        /*
+        boolean toOverwrite = true;
+        try {
+            DockstoreTool tool = containersApi.getContainerByToolPath(entry, null);
+            List<Tag> tags = Optional.ofNullable(tool.getWorkflowVersions()).orElse(new ArrayList<>());
+            final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
+
+            if (first.isEmpty()) {
+                errorMessage(versionName + " is not a valid tag for " + entry, Client.CLIENT_ERROR);
+            }
+            Tag tagToUpdate = first.get();
+
+            VerifyRequest verifyRequest = new VerifyRequest();
+            if (unverifyRequest) {
+                verifyRequest = SwaggerUtility.createVerifyRequest(false, null);
+            } else {
+                // Check if already has been verified
+                if (tagToUpdate.isVerified() && !isScript) {
+                    Scanner scanner = new Scanner(System.in, "utf-8");
+                    out("The tag " + versionName + " has already been verified by \'" + tagToUpdate.getVerifiedSource() + "\'");
+                    out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
+                    String overwrite = scanner.nextLine();
+                    if ("y".equalsIgnoreCase(overwrite)) {
+                        verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
+                    } else {
+                        toOverwrite = false;
+                    }
+                } else {
+                    verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
+                }
+            }
+
+            if (toOverwrite) {
+                containerTagsApi.verifyToolTag(tool.getId(), tagToUpdate.getId(), verifyRequest);
+                if (unverifyRequest) {
+                    out("Tag " + versionName + " has been unverified.");
+                } else {
+                    out("Tag " + versionName + " has been verified by \'" + verifySource + "\'");
+                }
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " tag " + versionName, Client.API_ERROR);
+        }
+        */
+    }
+
+    @Override
     public void handleInfo(String entryPath) {
         try {
             DockstoreTool container = containersApi.getPublishedContainerByToolPath(entryPath, null);
