@@ -440,12 +440,12 @@ public class SwaggerClientIT extends BaseIT {
         Tool tool = ga4GhApi.toolsIdGet(encodedID);
         // Verifying the tag does nothing because the TRS verification endpoint was not used
         Assert.assertFalse(tool.isVerified());
-        Assert.assertEquals(null, tool.getVerifiedSource());
+        Assert.assertEquals("[]", tool.getVerifiedSource());
 
         // hit up a specific version
         ToolVersion master = ga4GhApi.toolsIdVersionsVersionIdGet(encodedID, "master");
         Assert.assertFalse(master.isVerified());
-        Assert.assertEquals(null, master.getVerifiedSource());
+        Assert.assertEquals("[]", master.getVerifiedSource());
     }
 
     // Can't test publish repos that don't exist
