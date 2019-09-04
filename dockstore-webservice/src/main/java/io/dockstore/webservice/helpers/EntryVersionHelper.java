@@ -64,6 +64,8 @@ import org.apache.http.HttpStatus;
 public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W extends EntryDAO<T>>
     extends AuthenticatedResourceInterface {
 
+    String CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY = "Cannot modify frozen versions this way";
+
     /**
      * Implementors of this interface require a DAO
      */
@@ -376,6 +378,12 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         String includeString = (include == null ? "" : include);
         ArrayList<String> includeSplit = new ArrayList(Arrays.asList(includeString.split(",")));
         return includeSplit.contains(field);
+    }
+
+    default void checkNotFrozen(Version version) {
+        if (version.isFrozen()) {
+            throw new CustomWebApplicationException(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY, HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     /**

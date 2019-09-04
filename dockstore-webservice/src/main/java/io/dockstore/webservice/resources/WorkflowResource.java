@@ -1153,6 +1153,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
+        checkNotFrozen(workflowVersion);
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
@@ -1178,17 +1179,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkCanWriteWorkflow(user, workflow);
         checkNotHosted(workflow);
 
-        Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream()
+        Optional<WorkflowVersion> potentialWorkflowVersion = workflow.getWorkflowVersions().stream()
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
-        if (potentialWorfklowVersion.isEmpty()) {
+        if (potentialWorkflowVersion.isEmpty()) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.");
             throw new CustomWebApplicationException(
                 "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
-        WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
+        WorkflowVersion workflowVersion = potentialWorkflowVersion.get();
+        checkNotFrozen(workflowVersion);
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 

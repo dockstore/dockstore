@@ -417,6 +417,4 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         return installationAccessToken;
     }
-
-
 }
