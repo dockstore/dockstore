@@ -8,6 +8,7 @@ import java.util.HashSet;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dropwizard.testing.ResourceHelpers;
@@ -51,6 +52,28 @@ public class WDLHandlerTest {
         wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());
+    }
+
+    @Test
+    public void getWorkflowContentOfTool() throws IOException {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final Tool tool = new Tool();
+        tool.setAuthor("Jane Doe");
+        tool.setDescription("A good description");
+        tool.setEmail("janedoe@example.org");
+
+        Assert.assertEquals("Jane Doe", tool.getAuthor());
+        Assert.assertEquals("A good description", tool.getDescription());
+        Assert.assertEquals("janedoe@example.org", tool.getEmail());
+
+        final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
+        final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
+        wdlHandler.parseWorkflowContent(tool, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
+
+        // Check that parsing an invalid WDL workflow does not corrupt the CWL metadata
+        Assert.assertEquals("Jane Doe", tool.getAuthor());
+        Assert.assertEquals("A good description", tool.getDescription());
+        Assert.assertEquals("janedoe@example.org", tool.getEmail());
     }
 
     @Test

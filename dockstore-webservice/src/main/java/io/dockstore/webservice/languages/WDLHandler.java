@@ -44,6 +44,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
@@ -131,9 +132,11 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     private void clearMetadata(Entry entry) {
-        entry.setAuthor(null);
-        entry.setEmail(null);
-        entry.setDescription(null);
+        if (entry instanceof Workflow) {
+            entry.setAuthor(null);
+            entry.setEmail(null);
+            entry.setDescription(null);
+        }
     }
 
     /**
