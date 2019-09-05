@@ -44,6 +44,7 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
+import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
 import static org.junit.Assert.assertEquals;
@@ -632,6 +633,20 @@ public class GeneralWorkflowIT extends BaseIT {
                 .runSelectStatement("select content from sourcefile where id = " + s.getId(), String.class);
             assertNotEquals("foo", content);
         });
+
+        // cannot add or delete test files for frozen versions
+        try {
+            workflowApi.deleteTestParameterFiles(githubWorkflow.getId(), Lists.newArrayList("foo"), "master");
+            fail("could delete test parameter file");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
+        }
+        try {
+            workflowApi.addTestParameterFiles(githubWorkflow.getId(), Lists.newArrayList("foo"), "", "master");
+            fail("could add test parameter file");
+        } catch(ApiException e) {
+            assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
+        }
     }
 
     /**

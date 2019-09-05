@@ -907,6 +907,7 @@ public class DockerRepoResource
         }
 
         Tag tag = firstTag.get();
+        checkNotFrozen(tag);
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Add new test parameter files
@@ -941,6 +942,7 @@ public class DockerRepoResource
         }
 
         Tag tag = firstTag.get();
+        checkNotFrozen(tag);
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Remove test parameter files

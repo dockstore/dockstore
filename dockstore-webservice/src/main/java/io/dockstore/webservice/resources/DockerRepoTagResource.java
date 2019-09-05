@@ -40,9 +40,6 @@ import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.doi.DOIGeneratorFactory;
-import io.dockstore.webservice.doi.DOIGeneratorInterface;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -242,16 +239,19 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (tag.getDoiStatus() != Version.DOIStatus.CREATED) {
-            DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
-            generator.createDOIForTool(containerId, tagId);
-            tag.setDoiStatus(Version.DOIStatus.REQUESTED);
-        }
+        // DOI submission (SQS or not) has not been implemented yet for tools
+        throw new CustomWebApplicationException("DOI creation for tools has not been implemented yet.", HttpStatus.SC_BAD_REQUEST);
 
-        Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getWorkflowVersions();
+        //        if (tag.getDoiStatus() != Version.DOIStatus.CREATED) {
+        //            DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
+        //            generator.createDOIForTool(containerId, tagId);
+        //            tag.setDoiStatus(Version.DOIStatus.REQUESTED);
+        //        }
+        //
+        //        Tool result = toolDAO.findById(containerId);
+        //        checkEntry(result);
+        //        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        //        return result.getWorkflowVersions();
     }
 
 

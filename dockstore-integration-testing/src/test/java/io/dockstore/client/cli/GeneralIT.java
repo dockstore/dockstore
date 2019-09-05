@@ -54,6 +54,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
+import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -736,6 +737,20 @@ public class GeneralIT extends BaseIT {
                 .runSelectStatement("select content from sourcefile where id = " + s.getId(), String.class);
             assertNotEquals("foo", content);
         });
+
+        // cannot add or delete test files for frozen versions
+        try {
+            toolsApi.deleteTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "1.0");
+            fail("could delete test parameter file");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
+        }
+        try {
+            toolsApi.addTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "", "1.0");
+            fail("could add test parameter file");
+        } catch(ApiException e) {
+            assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
+        }
 
     }
 
