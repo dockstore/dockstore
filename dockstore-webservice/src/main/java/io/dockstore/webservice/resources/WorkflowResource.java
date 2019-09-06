@@ -612,7 +612,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Update the zenodo token in case it changed. This handles the case where the token has been changed but an error occurred, so the token in the database was not updated
         tokenDAO.update(zenodoToken);
-        sessionFactory.getCurrentSession().flush();
+        sessionFactory.getCurrentSession().getTransaction().commit();
+        sessionFactory.getCurrentSession().beginTransaction();
 
         if (zenodoToken == null) {
             LOG.error(NO_ZENDO_USER_TOKEN + " " + user.getUsername());
