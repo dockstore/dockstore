@@ -145,7 +145,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected Workflow getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
+    protected Workflow getEntry(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Workflow workflow = new BioWorkflow();
         workflow.setMode(WorkflowMode.HOSTED);
         // TODO: We set the organization to the username of the user creating it. However, for gmail accounts this is an
@@ -283,7 +283,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected Registry checkRegistry(String registry) {
+    protected String checkRegistry(String registry) {
         // Registry does not matter for workflows
         return null;
     }

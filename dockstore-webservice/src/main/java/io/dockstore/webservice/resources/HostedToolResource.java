@@ -88,9 +88,9 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    protected Tool getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
+    protected Tool getEntry(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Tool tool = new Tool();
-        tool.setRegistry(registry.toString());
+        tool.setRegistry(registry);
         tool.setNamespace(namespace);
         tool.setName(name);
         tool.setMode(ToolMode.HOSTED);
@@ -229,12 +229,21 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    protected Registry checkRegistry(String registry) {
+    protected String checkRegistry(String registry) {
         for (Registry registryObject : Registry.values()) {
             if (Objects.equals(registry.toLowerCase(), registryObject.toString())) {
-                return registryObject;
+                return registry;
+            } else if (Objects.equals(registryObject.name(), Registry.AMAZON_ECR.name())) {
+                if (registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+                    return registry;
+                }
+            } else if (Objects.equals(registryObject.name(), Registry.SEVEN_BRIDGES.name())) {
+                if (registry.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
+                    return registry;
+                }
             }
         }
+
         throw new CustomWebApplicationException(registry + " is not a valid registry type", HttpStatus.SC_BAD_REQUEST);
     }
 }

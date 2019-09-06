@@ -135,7 +135,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         // Only check type for workflows
         DescriptorLanguage convertedDescriptorType = checkType(descriptorType);
-        Registry convertedRegistry = checkRegistry(registry);
+        String convertedRegistry = checkRegistry(registry);
         T entry = getEntry(user, convertedRegistry, name, convertedDescriptorType, namespace, entryName);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
@@ -156,7 +156,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @param entryName Optional entry name
      * @return Newly created entry
      */
-    protected abstract T getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName);
+    protected abstract T getEntry(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName);
 
     @Override
     public void checkUserCanUpdate(User user, Entry entry) {
@@ -335,7 +335,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @param registry
      * @return
      */
-    protected abstract Registry checkRegistry(String registry);
+    protected abstract String checkRegistry(String registry);
 
     /**
      * Create new version of a workflow or tag of a tool
