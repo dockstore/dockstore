@@ -38,7 +38,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
