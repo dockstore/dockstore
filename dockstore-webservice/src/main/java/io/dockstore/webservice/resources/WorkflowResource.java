@@ -573,8 +573,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
                         + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
                 refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
-            } else {
-                LOG.info("Zenodo Token is still valid");
             }
         }
         return tokenDAO.findByUserId(user.getId());
