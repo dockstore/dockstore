@@ -108,6 +108,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
+import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -563,10 +564,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
         if (!tokens.isEmpty()) {
             Token zenodoToken = tokens.get(0);
-            String refreshUrl = zenodoUrl + "/oauth/token";
-            String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
-                    + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
-            refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
+
+            // Check that token is an hour old
+            DateTime updateTime = new DateTime(zenodoToken.getDbUpdateDate());
+            if (updateTime.plusHours(1).isBeforeNow()) {
+                LOG.info("Refreshing the Zenodo Token");
+                String refreshUrl = zenodoUrl + "/oauth/token";
+                String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
+                        + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
+                refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
+            } else {
+                LOG.info("Zenodo Token is still valid");
+            }
         }
         return tokenDAO.findByUserId(user.getId());
     }
