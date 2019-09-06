@@ -101,8 +101,6 @@ public interface SourceControlResourceInterface {
                     URI uri = new URI(refreshUrl);
                     domain = uri.getHost();
                 } catch (URISyntaxException e) {
-
-
                     domain = "web site";
                 }
                 throw new CustomWebApplicationException("Could not retrieve " + domain + " token based on code",
