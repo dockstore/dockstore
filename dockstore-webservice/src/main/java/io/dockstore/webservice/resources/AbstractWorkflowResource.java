@@ -60,6 +60,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final FileDAO fileDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
+    protected final SessionFactory sessionFactory;
 
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
@@ -67,6 +68,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
         this.client = client;
+        this.sessionFactory = sessionFactory;
 
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
