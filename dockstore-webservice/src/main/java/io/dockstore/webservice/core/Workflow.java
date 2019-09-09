@@ -105,10 +105,13 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     // DOCKSTORE-2428 - demo how to add new workflow language
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
-    @Column(nullable = false)
+    @Column(nullable = false, name = "descriptortype")
     @Convert(converter = DescriptorLanguageConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18, allowableValues = "CWL, WDL, NFL, service")
-    private DescriptorLanguage descriptorType;
+    @ApiModelProperty(name = "descriptorType", value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18, allowableValues = "CWL, WDL, NFL, service")
+    private DescriptorLanguage descriptorTypeEnum;
+
+    @ApiModelProperty(value = "This is a deprecated version of descriptorTypeEnum for backwards compatibility", hidden = true)
+    private String descriptorType;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
@@ -160,7 +163,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setOrganization(getOrganization());
         targetWorkflow.setRepository(getRepository());
         targetWorkflow.setGitUrl(getGitUrl());
-        targetWorkflow.setDescriptorType(getDescriptorType());
+        targetWorkflow.setDescriptorTypeEnum(getDescriptorTypeEnum());
         targetWorkflow.setDefaultVersion(getDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
         targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
@@ -197,12 +200,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JsonProperty("workflow_path")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the primary descriptor document", required = true, position = 19)
     public String getDefaultWorkflowPath() {
-        return getDefaultPaths().getOrDefault(this.getDescriptorType().getFileType(), "/Dockstore.cwl");
+        return getDefaultPaths().getOrDefault(this.getDescriptorTypeEnum().getFileType(), "/Dockstore.cwl");
     }
 
     //TODO: odd side effect, this means that if the descriptor language is set wrong, we will get or set the wrong the default paths
     public void setDefaultWorkflowPath(String defaultWorkflowPath) {
-        getDefaultPaths().put(this.getDescriptorType().getFileType(), defaultWorkflowPath);
+        getDefaultPaths().put(this.getDescriptorTypeEnum().getFileType(), defaultWorkflowPath);
     }
 
     @JsonProperty
@@ -243,33 +246,33 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.sourceControl.name();
     }
 
-    public void setDescriptorType(DescriptorLanguage descriptorType) {
-        this.descriptorType = descriptorType;
+    public void setDescriptorTypeEnum(DescriptorLanguage descriptorTypeEnum) {
+        this.descriptorTypeEnum = descriptorTypeEnum;
     }
 
-    public DescriptorLanguage getDescriptorType() {
+    public DescriptorLanguage getDescriptorTypeEnum() {
         // due to DB constraints, this should only come into play with newly created, non-persisted Workflows
-        return Objects.requireNonNullElse(this.descriptorType, DescriptorLanguage.CWL);
+        return Objects.requireNonNullElse(this.descriptorTypeEnum, DescriptorLanguage.CWL);
     }
 
     @JsonIgnore
     public DescriptorLanguage.FileType getFileType() {
-        return this.getDescriptorType().getFileType();
+        return this.getDescriptorTypeEnum().getFileType();
     }
 
     @JsonIgnore
     public DescriptorLanguage.FileType getTestParameterType() {
-        return this.getDescriptorType().getTestParamType();
+        return this.getDescriptorTypeEnum().getTestParamType();
     }
 
     @JsonProperty("defaultTestParameterFilePath")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 20)
     public String getDefaultTestParameterFilePath() {
-        return getDefaultPaths().getOrDefault(this.getDescriptorType().getTestParamType(), "/test.json");
+        return getDefaultPaths().getOrDefault(this.getDescriptorTypeEnum().getTestParamType(), "/test.json");
     }
 
     public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
-        getDefaultPaths().put(this.getDescriptorType().getTestParamType(), defaultTestParameterFilePath);
+        getDefaultPaths().put(this.getDescriptorTypeEnum().getTestParamType(), defaultTestParameterFilePath);
     }
     public SourceControl getSourceControl() {
         return sourceControl;
@@ -282,6 +285,10 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     public abstract boolean isIsChecker();
 
     public abstract void setIsChecker(boolean isChecker);
+
+    public String getDescriptorType() {
+        return descriptorTypeEnum.getLowerShortName();
+    }
 
     public static class DescriptorLanguageConverter implements AttributeConverter<DescriptorLanguage, String> {
 

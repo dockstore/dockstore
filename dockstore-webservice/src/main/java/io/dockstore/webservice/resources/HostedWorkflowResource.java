@@ -153,7 +153,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setOrganization(user.getUsername());
         workflow.setRepository(name);
         workflow.setSourceControl(SourceControl.DOCKSTORE);
-        workflow.setDescriptorType(descriptorType);
+        workflow.setDescriptorTypeEnum(descriptorType);
         workflow.setLastUpdated(new Date());
         workflow.setLastModified(new Date());
         // Uncomment if we add entry name to hosted workflows
@@ -205,7 +205,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion getVersion(Workflow workflow) {
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
-        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorType().getLowerShortName()));
+        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorTypeEnum().getLowerShortName()));
         version.setLastModified(new Date());
         return version;
     }
@@ -221,7 +221,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         DescriptorLanguage.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().getLowerShortName()));
+        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorTypeEnum().getLowerShortName()));
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set

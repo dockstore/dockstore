@@ -368,17 +368,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
+        if (workflow.getDescriptorTypeEnum() == DescriptorLanguage.SERVICE) {
             workflow.setMode(SERVICE);
         } else {
             workflow.setMode(WorkflowMode.FULL);
         }
 
         // look for checker workflows to associate with if applicable
-        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL
-            || workflow.getDescriptorType() == WDL) {
+        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorTypeEnum() == CWL
+            || workflow.getDescriptorTypeEnum() == WDL) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
-            String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
+            String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorTypeEnum() == CWL ? CWL_CHECKER : WDL_CHECKER);
             BioWorkflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
             if (byPath != null && workflow.getCheckerWorkflow() == null) {
                 workflow.setCheckerWorkflow(byPath);
@@ -496,13 +496,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
         // If workflow is FULL and descriptor type is being changed throw an error
         if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) && !Objects
-            .equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
+            .equals(oldWorkflow.getDescriptorTypeEnum(), newWorkflow.getDescriptorTypeEnum())) {
             throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL workflow.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Only copy workflow type if old workflow is a STUB
         if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.STUB)) {
-            oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
+            oldWorkflow.setDescriptorTypeEnum(newWorkflow.getDescriptorTypeEnum());
         }
 
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
@@ -1268,7 +1268,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
         }
         // hmmm, will need to set the descriptor type now before the default path, lest the wrong language be recorded till we get multiple language workflows
-        newWorkflow.setDescriptorType(DescriptorLanguage.convertShortStringToEnum(descriptorType));
+        newWorkflow.setDescriptorTypeEnum(DescriptorLanguage.convertShortStringToEnum(descriptorType));
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
@@ -1584,12 +1584,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(workflow.getWorkflowName(), "");
 
-            if (workflow.getDescriptorType() == CWL) {
+            if (workflow.getDescriptorTypeEnum() == CWL) {
                 workflowName += CWL_CHECKER;
-            } else if (workflow.getDescriptorType() == WDL) {
+            } else if (workflow.getDescriptorTypeEnum() == WDL) {
                 workflowName += WDL_CHECKER;
             } else {
-                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getLowerShortName()
+                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorTypeEnum().getLowerShortName()
                     + " is not valid.\nSupported types include cwl and wdl.");
             }
         } else {
@@ -1599,7 +1599,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Create checker workflow
         BioWorkflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setMode(WorkflowMode.STUB);
-        checkerWorkflow.setDescriptorType(DescriptorLanguage.convertShortStringToEnum(descriptorType));
+        checkerWorkflow.setDescriptorTypeEnum(DescriptorLanguage.convertShortStringToEnum(descriptorType));
         checkerWorkflow.setDefaultWorkflowPath(checkerWorkflowPath);
         checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
         checkerWorkflow.setOrganization(organization);

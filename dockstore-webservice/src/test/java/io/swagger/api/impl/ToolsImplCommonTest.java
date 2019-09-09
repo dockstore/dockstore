@@ -260,9 +260,9 @@ public class ToolsImplCommonTest {
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
         workflow.setSourceControl(SourceControl.GITHUB);
         if (isService) {
-            workflow.setDescriptorType(DescriptorLanguage.SERVICE);
+            workflow.setDescriptorTypeEnum(DescriptorLanguage.SERVICE);
         } else {
-            workflow.setDescriptorType(DescriptorLanguage.WDL);
+            workflow.setDescriptorTypeEnum(DescriptorLanguage.WDL);
         }
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);

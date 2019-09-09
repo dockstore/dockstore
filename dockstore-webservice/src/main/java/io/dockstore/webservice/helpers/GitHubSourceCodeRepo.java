@@ -302,7 +302,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setSourceControl(SourceControl.GITHUB);
         service.setGitUrl("git@github.com:" + repositoryId + ".git");
         service.setLastUpdated(new Date());
-        service.setDescriptorType(DescriptorLanguage.SERVICE);
+        service.setDescriptorTypeEnum(DescriptorLanguage.SERVICE);
         service.setMode(WorkflowMode.SERVICE);
         service.setDefaultWorkflowPath(".dockstore.yml");
         return service;

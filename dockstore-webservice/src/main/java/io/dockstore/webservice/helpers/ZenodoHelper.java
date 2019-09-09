@@ -244,7 +244,7 @@ public final class ZenodoHelper {
             throw new CustomWebApplicationException("Could not create Zenodo related identifier",
                     HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        final String workflowVersionType = workflow.getDescriptorType().toString();
+        final String workflowVersionType = workflow.getDescriptorTypeEnum().toString();
         final String workflowDescriptorName = workflowVersion.getWorkflowPath();
         Path p = Paths.get(workflowDescriptorName);
         final String descriptorFile = p.getFileName().toString();

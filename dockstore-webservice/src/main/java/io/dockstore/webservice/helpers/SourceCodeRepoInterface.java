@@ -155,7 +155,7 @@ public abstract class SourceCodeRepoInterface {
      */
     public Service initializeService(String repositoryId) {
         Service service = (Service)initializeWorkflow(repositoryId, new Service());
-        service.setDescriptorType(DescriptorLanguage.SERVICE);
+        service.setDescriptorTypeEnum(DescriptorLanguage.SERVICE);
         service.setMode(WorkflowMode.SERVICE);
         service.setDefaultWorkflowPath(".dockstore.yml");
         return service;
@@ -189,7 +189,7 @@ public abstract class SourceCodeRepoInterface {
         // Determine if workflow should be returned as a STUB or FULL
         if (existingWorkflow.isEmpty()) {
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
-            workflow.setDescriptorType(DescriptorLanguage.CWL);
+            workflow.setDescriptorTypeEnum(DescriptorLanguage.CWL);
             return workflow;
         }
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
@@ -198,7 +198,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (Objects.equals(existingWorkflow.get().getDescriptorType(), DescriptorLanguage.SERVICE)) {
+        if (Objects.equals(existingWorkflow.get().getDescriptorTypeEnum(), DescriptorLanguage.SERVICE)) {
             workflow.setMode(WorkflowMode.SERVICE);
         } else {
             workflow.setMode(WorkflowMode.FULL);
@@ -231,7 +231,7 @@ public abstract class SourceCodeRepoInterface {
         // Get metadata for workflow and update workflow with it
         //TODO to parse metadata in WDL, there is a hidden dependency on validation now (validation does checks for things like recursive imports)
         // this means that two paths need to pass data in the same way to avoid oddities like validation passing and metadata parsing crashing on an invalid parse tree
-        updateEntryMetadata(workflow, workflow.getDescriptorType());
+        updateEntryMetadata(workflow, workflow.getDescriptorTypeEnum());
         return workflow;
     }
 

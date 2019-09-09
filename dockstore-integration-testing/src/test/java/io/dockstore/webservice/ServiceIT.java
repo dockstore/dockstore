@@ -433,7 +433,7 @@ public class ServiceIT extends BaseIT {
             testWorkflow.setDescription("foo workflow");
             testWorkflow.setIsPublished(true);
             testWorkflow.setSourceControl(SourceControl.GITHUB);
-            testWorkflow.setDescriptorType(DescriptorLanguage.CWL);
+            testWorkflow.setDescriptorTypeEnum(DescriptorLanguage.CWL);
             testWorkflow.setOrganization("shield");
             testWorkflow.setRepository("shield_repo");
 
@@ -442,7 +442,7 @@ public class ServiceIT extends BaseIT {
             testService.setDescription("test service");
             testService.setIsPublished(true);
             testService.setSourceControl(SourceControl.GITHUB);
-            testService.setDescriptorType(DescriptorLanguage.SERVICE);
+            testService.setDescriptorTypeEnum(DescriptorLanguage.SERVICE);
             testService.setMode(WorkflowMode.SERVICE);
             testService.setOrganization("hydra");
             testService.setRepository("hydra_repo");
@@ -453,7 +453,7 @@ public class ServiceIT extends BaseIT {
             test2Service.setIsPublished(true);
             test2Service.setSourceControl(SourceControl.GITHUB);
             test2Service.setMode(WorkflowMode.SERVICE);
-            test2Service.setDescriptorType(DescriptorLanguage.SERVICE);
+            test2Service.setDescriptorTypeEnum(DescriptorLanguage.SERVICE);
             test2Service.setOrganization("hydra");
             test2Service.setRepository("hydra_repo2");
             test2Service.setDefaultWorkflowPath(".dockstore.yml");

@@ -19,7 +19,7 @@ public class ZenodoHelperTest {
         workflow.setOrganization("DataBiosphere");
         workflow.setRepository("topmed-workflows");
         workflow.setWorkflowName("UM_variant_caller_wdl");
-        workflow.setDescriptorType(DescriptorLanguage.WDL);
+        workflow.setDescriptorTypeEnum(DescriptorLanguage.WDL);
 
         workflowVersion.setWorkflowPath("topmed_freeze3_calling.wdl");
         workflowVersion.setName("1.32.0");

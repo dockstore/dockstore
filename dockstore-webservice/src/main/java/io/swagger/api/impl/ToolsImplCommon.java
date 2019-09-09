@@ -299,7 +299,7 @@ public final class ToolsImplCommon {
             return ((io.dockstore.webservice.core.Tool)container).getToolPath();
         } else if (container instanceof Workflow) {
             Workflow workflow = (Workflow)container;
-            DescriptorLanguage descriptorType = workflow.getDescriptorType();
+            DescriptorLanguage descriptorType = workflow.getDescriptorTypeEnum();
             String workflowPath = workflow.getWorkflowPath();
             if (descriptorType == DescriptorLanguage.SERVICE) {
                 return SERVICE_PREFIX + "/" + workflowPath;
