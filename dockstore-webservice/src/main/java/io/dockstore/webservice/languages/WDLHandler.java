@@ -206,6 +206,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (CustomWebApplicationException e) {
                 throw e;
             } catch (Exception e) {
+                LOG.error("Unhandled exception", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
                 FileUtils.deleteQuietly(tempMainDescriptor);
