@@ -114,6 +114,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a deprecated version of descriptorTypeEnum for backwards compatibility", hidden = true)
     @Deprecated
     @Transient
+    @JsonProperty
     private String descriptorType;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)

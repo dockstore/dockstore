@@ -7566,6 +7566,16 @@ definitions:
     - "workflow_path"
     discriminator: "type"
     properties:
+      descriptorType:
+        type: "string"
+        position: 18
+        description: "This is a descriptor type for the workflow, either CWL, WDL,\
+          \ or Nextflow (Defaults to CWL)"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "NFL"
+        - "service"
       id:
         type: "integer"
         format: "int64"
@@ -7710,16 +7720,6 @@ definitions:
         position: 17
         description: "This is a specific source control provider like github or bitbucket\
           \ or n/a?, required: GA4GH"
-      descriptorType:
-        type: "string"
-        position: 18
-        description: "This is a descriptor type for the workflow, either CWL, WDL,\
-          \ or Nextflow (Defaults to CWL)"
-        enum:
-        - "CWL"
-        - "WDL"
-        - "NFL"
-        - "service"
       workflow_path:
         type: "string"
         position: 19
