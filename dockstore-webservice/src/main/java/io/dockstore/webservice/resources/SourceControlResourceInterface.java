@@ -102,6 +102,7 @@ public interface SourceControlResourceInterface {
                     domain = uri.getHost();
                 } catch (URISyntaxException e) {
                     domain = "web site";
+                    LOG.debug(e.getMessage(), e);
                 }
                 throw new CustomWebApplicationException("Could not retrieve " + domain + " token based on code",
                         HttpStatus.SC_INTERNAL_SERVER_ERROR);

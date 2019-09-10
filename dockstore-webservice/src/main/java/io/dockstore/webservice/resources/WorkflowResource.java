@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -547,10 +548,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
         if (!tokens.isEmpty()) {
             Token zenodoToken = tokens.get(0);
-            String refreshUrl = zenodoUrl + "/oauth/token";
-            String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
-                    + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
-            refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
+
+            // Check that token is an hour old
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime updateTime = zenodoToken.getDbUpdateDate().toLocalDateTime();
+            if (now.isAfter(updateTime.plusHours(1).minusMinutes(1))) {
+                LOG.info("Refreshing the Zenodo Token");
+                String refreshUrl = zenodoUrl + "/oauth/token";
+                String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
+                        + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
+                refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
+            }
         }
         return tokenDAO.findByUserId(user.getId());
     }
@@ -586,6 +594,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         List<Token> tokens = checkOnZenodoToken(user);
         Token zenodoToken = Token.extractToken(tokens, TokenType.ZENODO_ORG);
+
+        // Update the zenodo token in case it changed. This handles the case where the token has been changed but an error occurred, so the token in the database was not updated
+        if (zenodoToken != null) {
+            tokenDAO.update(zenodoToken);
+            sessionFactory.getCurrentSession().getTransaction().commit();
+            sessionFactory.getCurrentSession().beginTransaction();
+        }
+
         if (zenodoToken == null) {
             LOG.error(NO_ZENDO_USER_TOKEN + " " + user.getUsername());
             throw new CustomWebApplicationException(NO_ZENDO_USER_TOKEN + " " + user.getUsername(), HttpStatus.SC_BAD_REQUEST);

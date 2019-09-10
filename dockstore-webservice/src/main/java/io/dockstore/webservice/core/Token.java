@@ -197,6 +197,16 @@ public class Token implements Comparable<Token> {
         this.userId = userId;
     }
 
+    @JsonProperty
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    @JsonProperty
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
