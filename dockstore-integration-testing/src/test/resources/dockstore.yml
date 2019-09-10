@@ -125,4 +125,5 @@ uiConfig:
   tagManagerId: <fill me in>
 
   gitHubAppInstallationUrl: https://github.com/apps/<fill me in>
+  documentationUrl: https://docs.dockstore.org/en/latest
 
