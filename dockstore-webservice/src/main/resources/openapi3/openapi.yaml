@@ -103,6 +103,8 @@ components:
           type: string
         dnaStackImportUrl:
           type: string
+        documentationUrl:
+          type: string
         gitHubAppInstallationUrl:
           type: string
         gitHubAuthUrl:
@@ -1984,7 +1986,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -2998,7 +3000,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
   /entries/{id}/collections:
     get:
@@ -3397,7 +3399,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
