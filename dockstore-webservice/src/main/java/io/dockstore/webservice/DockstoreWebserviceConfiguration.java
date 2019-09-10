@@ -641,6 +641,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String gitHubAppInstallationUrl;
 
+        private String documentationUrl;
+
 
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
@@ -802,6 +804,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setGitHubAppInstallationUrl(String gitHubAppInstallationUrl) {
             this.gitHubAppInstallationUrl = gitHubAppInstallationUrl;
+        }
+
+        public String getDocumentationUrl() {
+            return documentationUrl;
+        }
+
+        public void setDocumentationUrl(String documentationUrl) {
+            this.documentationUrl = documentationUrl;
         }
     }
 }
