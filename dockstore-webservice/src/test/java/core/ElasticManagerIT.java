@@ -93,10 +93,10 @@ public class ElasticManagerIT {
             verificationInformation.metadata = "Dockstore team";
             verifiedBySource.put("Dockstore CLI", verificationInformation);
             file.setVerifiedBySource(verifiedBySource);
-            tag.setVerified(true);
         }
         tag.addSourceFile(file);
         tag.setReference("master");
+        tag.updateVerified();
         tool.setRegistry("potato");
         tool.addWorkflowVersion(tag);
         tool.setDefaultVersion("master");

@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -48,7 +47,6 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.User;
-import io.swagger.client.model.VerifyRequest;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
@@ -711,8 +709,9 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
 
     @Override
     protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
+        // TODO: Implement this with extended TRS endpoint
+        /*
         boolean toOverwrite = true;
-
         try {
             DockstoreTool tool = containersApi.getContainerByToolPath(entry, null);
             List<Tag> tags = Optional.ofNullable(tool.getWorkflowVersions()).orElse(new ArrayList<>());
@@ -754,6 +753,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " tag " + versionName, Client.API_ERROR);
         }
+        */
     }
 
     @Override

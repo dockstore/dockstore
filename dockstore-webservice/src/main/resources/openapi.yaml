@@ -2142,7 +2142,7 @@ paths:
             format: int64
         - name: tagId
           in: path
-          description: Tag to verify.
+          description: Tag to request DOI.
           required: true
           schema:
             type: integer
@@ -2575,29 +2575,27 @@ paths:
               schema:
                 type: string
   "/containers/{containerId}/verify/{tagId}":
-    put:
+    post:
       tags:
         - containertags
-      summary: Verify or unverify a version . ADMIN ONLY
+      summary: Updates the verification status of a version. ADMIN ONLY
       description: ""
       operationId: verifyToolTag
       parameters:
         - name: containerId
           in: path
-          description: Tool to modify.
+          description: ID of the tool to update.
           required: true
           schema:
             type: integer
             format: int64
         - name: tagId
           in: path
-          description: Tag to verify.
+          description: ID of the tag to update.
           required: true
           schema:
             type: integer
             format: int64
-      requestBody:
-        $ref: "#/components/requestBodies/VerifyRequest"
       responses:
         "200":
           description: successful operation
@@ -6142,29 +6140,27 @@ paths:
               schema:
                 type: string
   "/workflows/{workflowId}/verify/{workflowVersionId}":
-    put:
+    post:
       tags:
         - workflows
-      summary: Verify or unverify a workflow. ADMIN ONLY
+      summary: Updates the verification status of a version. ADMIN ONLY
       description: ""
       operationId: verifyWorkflowVersion
       parameters:
         - name: workflowId
           in: path
-          description: Workflow to modify.
+          description: ID of the workflow to update.
           required: true
           schema:
             type: integer
             format: int64
         - name: workflowVersionId
           in: path
-          description: workflowVersionId
+          description: Id of the version to update.
           required: true
           schema:
             type: integer
             format: int64
-      requestBody:
-        $ref: "#/components/requestBodies/VerifyRequest"
       responses:
         "200":
           description: successful operation
@@ -6295,13 +6291,6 @@ components:
           schema:
             $ref: "#/components/schemas/StarRequest"
       description: StarRequest to star a repo for a user
-      required: true
-    VerifyRequest:
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/VerifyRequest"
-      description: Object containing verification information.
       required: true
   securitySchemes:
     BEARER:
@@ -7702,15 +7691,6 @@ components:
           type: string
         platformVersion:
           type: string
-    VerifyRequest:
-      type: object
-      properties:
-        verify:
-          type: boolean
-          readOnly: true
-        verifiedSource:
-          type: string
-          readOnly: true
     Workflow:
       type: object
       required:

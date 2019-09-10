@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,7 +48,6 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.User;
-import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.io.FileUtils;
@@ -678,8 +676,9 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
     @Override
     protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
+        // TODO: Implement this with extended TRS endpoint
+        /*
         boolean toOverwrite = true;
-
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry, null, false);
             List<WorkflowVersion> versions = workflow.getWorkflowVersions();
@@ -725,6 +724,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " version " + versionName, Client.API_ERROR);
         }
+         */
     }
 
     @Override

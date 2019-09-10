@@ -257,7 +257,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
                 // denormalizes verification out to the version level for performance
                 // not sure why the cast is needed
-                version.setVerified(version.getSourceFiles().stream().anyMatch(file -> ((SourceFile)file).getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified)));
+                version.updateVerified();
                 return Response.ok().entity(sourceFile.getVerifiedBySource()).build();
             }
         }
