@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -108,7 +109,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
-import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -566,8 +566,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             Token zenodoToken = tokens.get(0);
 
             // Check that token is an hour old
-            DateTime updateTime = new DateTime(zenodoToken.getDbUpdateDate());
-            if (updateTime.plusHours(1).isBeforeNow()) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime updateTime = zenodoToken.getDbUpdateDate().toLocalDateTime();
+            if (now.isAfter(updateTime.plusHours(1).minusMinutes(1))) {
                 LOG.info("Refreshing the Zenodo Token");
                 String refreshUrl = zenodoUrl + "/oauth/token";
                 String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
