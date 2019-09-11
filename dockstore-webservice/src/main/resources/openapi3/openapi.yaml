@@ -582,6 +582,12 @@ components:
       properties:
         content:
           type: string
+        dbCreateDate:
+          format: date-time
+          type: string
+        dbUpdateDate:
+          format: date-time
+          type: string
         id:
           format: int64
           type: integer
@@ -1979,7 +1985,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -3392,7 +3398,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
   /organizations/{organizationId}/approve:
     post:
