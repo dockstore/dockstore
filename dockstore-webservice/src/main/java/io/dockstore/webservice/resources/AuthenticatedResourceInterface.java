@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
 
+import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
@@ -219,7 +220,7 @@ public interface AuthenticatedResourceInterface {
 
     default void mutateBasedOnUserAgent(Entry entry, ManipulateEntry m, ContainerRequestContext containerContext) {
         try {
-            final List<String> strings = containerContext.getHeaders().get("User-Agent");
+            final List<String> strings = containerContext.getHeaders().getOrDefault("User-Agent", Lists.newArrayList());
             strings.forEach(s -> {
                 final String[] split = s.split("/");
                 if (split[0].equals("Dockstore-CLI")) {
