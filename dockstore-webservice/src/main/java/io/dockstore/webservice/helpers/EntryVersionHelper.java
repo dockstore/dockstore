@@ -237,7 +237,9 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
             }
         }
-        this.filterContainersForHiddenTags(entry);
+        if (!user.isPresent() || AuthenticatedResourceInterface.userCannotRead(user.get(), entry)) {
+            this.filterContainersForHiddenTags(entry);
+        }
         Version tagInstance = null;
 
         Map<String, ImmutablePair<SourceFile, FileDescription>> resultMap = new HashMap<>();

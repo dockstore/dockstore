@@ -71,10 +71,14 @@ public interface AuthenticatedResourceInterface {
      * @param entry entry to check permissions for
      */
     default void checkUser(User user, Entry entry) {
-        if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
+        if (userCannotRead(user, entry)) {
             throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
                     HttpStatus.SC_FORBIDDEN);
         }
+    }
+
+    static boolean userCannotRead(User user, Entry entry) {
+        return !user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId());
     }
 
     /**
