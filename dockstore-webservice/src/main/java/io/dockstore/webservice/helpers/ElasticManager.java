@@ -45,6 +45,9 @@ import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.helpers.VerificationHelper.getVerifiedPlatforms;
+import static io.dockstore.webservice.helpers.VerificationHelper.getVerifiedSources;
+
 /**
  * @author gluu
  * @since 26/07/17
@@ -214,6 +217,9 @@ public class ElasticManager {
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
         publishedEntries.forEach(entry -> {
+            entry.getWorkflowVersions().forEach(entryVersion -> {
+                ((Version)entryVersion).updateVerified();
+            });
             Map<String, Map<String, String>> index = new HashMap<>();
             Map<String, String> internal = new HashMap<>();
             internal.put("_id", String.valueOf(entry.getId()));
@@ -241,8 +247,12 @@ public class ElasticManager {
     public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
+        Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
+        Set<String> verifiedSources = getVerifiedSources(workflowVersions);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
         ((ObjectNode)jsonNode).put("verified", verified);
+        ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        ((ObjectNode)jsonNode).put("verified_sources", MAPPER.valueToTree(verifiedSources));
         return jsonNode;
     }
 }

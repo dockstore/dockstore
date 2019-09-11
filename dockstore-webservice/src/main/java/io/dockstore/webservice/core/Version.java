@@ -17,7 +17,6 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -56,6 +55,8 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import static io.dockstore.webservice.helpers.VerificationHelper.getVerifiedSources;
+
 /**
  * This describes one version of either a workflow or a tool.
  *
@@ -66,6 +67,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
+    public static final Gson GSON = new Gson();
     public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
     /**
      * re-use existing generator for backwards compatibility
@@ -281,16 +283,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public static String calculateVerifiedSource(SortedSet<SourceFile> versionSourceFiles) {
-        Set<String> verifiedSources = new TreeSet<>();
-        versionSourceFiles.forEach(sourceFile -> {
-            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
-            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
-                if (thing.getValue().verified) {
-                    verifiedSources.add(thing.getKey());
-                }
-            }
-        });
+        Set<String> verifiedSources = getVerifiedSources(versionSourceFiles);
         // How strange that we're returning an array-like string
+        return convertStringSetToString(verifiedSources);
+    }
+
+    private static String convertStringSetToString(Set<String> verifiedSources) {
         Gson gson = new Gson();
         if (verifiedSources.isEmpty()) {
             return null;
