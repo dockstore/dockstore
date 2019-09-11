@@ -77,10 +77,6 @@ public interface AuthenticatedResourceInterface {
         }
     }
 
-    static boolean userCannotRead(User user, Entry entry) {
-        return !user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId());
-    }
-
     /**
      * Check if admin or if container belongs to user
      *
@@ -106,6 +102,10 @@ public interface AuthenticatedResourceInterface {
         if (!user.getIsAdmin() && user.getId() != id) {
             throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
         }
+    }
+
+    static boolean userCannotRead(User user, Entry entry) {
+        return !user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId());
     }
 
     /**
