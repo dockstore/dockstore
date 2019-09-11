@@ -721,21 +721,9 @@ public class DockerRepoResource
 
             // for backwards compatibility for 1.6.0 clients, return versions as tags
             // this seems sufficient to maintain backwards compatibility for launching
-            try {
-                final List<String> strings = containerContext.getHeaders().get("User-Agent");
-                strings.forEach(s -> {
-                    final String[] split = s.split("/");
-                    if (split[0].equals("Dockstore-CLI")) {
-                        com.github.zafarkhaja.semver.Version clientVersion = com.github.zafarkhaja.semver.Version.valueOf(split[1]);
-                        com.github.zafarkhaja.semver.Version v17 = com.github.zafarkhaja.semver.Version.valueOf("1.7.0");
-                        if (clientVersion.lessThan(v17)) {
-                            tool.setTags(tool.getWorkflowVersions());
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                LOG.debug("encountered a user agent that we could not parse, meh", e);
-            }
+            this.mutateBasedOnUserAgent(tool, entry -> {
+                tool.setTags(tool.getWorkflowVersions());
+            }, containerContext);
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new CustomWebApplicationException(path + " not found", HttpStatus.SC_NOT_FOUND);

@@ -31,6 +31,45 @@
     <build>
         <plugins>
             <plugin>
+                <!-- this is terrible and due to 1.6.0 backwards compatibility https://github.com/dockstore/dockstore/issues/2860 -->
+                <!-- remove when 1.6.0 clients age out -->
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <version>1.5.3</version>
+                <executions>
+                    <execution>
+                        <id>replace1</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                    <!-- not sure why swagger-codegen-maven-plugin runs in two phases -->
+                    <execution>
+                        <id>replace2</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <file>${project.basedir}/src/main/resources/api.yaml</file>
+                    <regex>true</regex>
+                    <regexFlags>MULTILINE</regexFlags>
+                    <replacements>
+                        <replacement>
+                            <token>- cwl$</token>
+                            <value></value>
+                        </replacement>
+                        <replacement>
+                            <token>- wdl$</token>
+                            <value></value>
+                        </replacement>
+                    </replacements>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>io.swagger.codegen.v3</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <version>3.0.4</version>
