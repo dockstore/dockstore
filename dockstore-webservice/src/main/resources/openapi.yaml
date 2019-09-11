@@ -7294,6 +7294,14 @@ components:
           format: int64
           description: Implementation specific ID for the token in this web service
           readOnly: true
+        dbCreateDate:
+          type: string
+          format: date-time
+          readOnly: true
+        dbUpdateDate:
+          type: string
+          format: date-time
+          readOnly: true
         tokenSource:
           type: string
           description: Source website for this token
