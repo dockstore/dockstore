@@ -84,8 +84,10 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
+import io.dockstore.webservice.jdbi.ServiceEntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -143,6 +145,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final LabelDAO labelDAO;
     private final FileFormatDAO fileFormatDAO;
     private final EntryResource entryResource;
+    private final ServiceEntryDAO serviceEntryDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
 
     private final PermissionsInterface permissionsInterface;
     private final String zenodoUrl;
@@ -157,6 +161,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         super(client, sessionFactory, configuration, Workflow.class);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
+        this.serviceEntryDAO = new ServiceEntryDAO(sessionFactory);
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
 
         this.permissionsInterface = permissionsInterface;
@@ -786,7 +792,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             ? Service.class : BioWorkflow.class));
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
-        response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished(Optional.of(filter))));
+        if (services) {
+            response.addHeader("X-total-count", String.valueOf(serviceEntryDAO.countAllPublished(Optional.of(filter))));
+        } else {
+            response.addHeader("X-total-count", String.valueOf(bioWorkflowDAO.countAllPublished(Optional.of(filter))));
+        }
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;
     }
