@@ -16,6 +16,8 @@
 
 package io.dockstore.client.cli;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
@@ -246,10 +248,10 @@ public class ExtendedTRSIT extends BaseIT {
         ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
         // Check that it's no longer out of sync in dockstore
         Assert.assertTrue(tag.isVerified());
-        Assert.assertEquals("[\"awesome platform\",\"crummy platform\"]", tag.getVerifiedSource());
+        Assert.assertEquals(Collections.singletonList("metadata"), tag.getVerifiedSource());
         // Check that it's no longer out of sync in TRS
         Assert.assertTrue(toolVersion.isVerified());
-        Assert.assertEquals("[\"awesome platform\",\"crummy platform\"]", toolVersion.getVerifiedSource());
+        Assert.assertEquals("[\"metadata\"]", toolVersion.getVerifiedSource());
     }
 
     private void assertOutOfSync(Long toolId, ContainersApi containersApi, Ga4GhApi ga4GhApi) {
@@ -259,7 +261,7 @@ public class ExtendedTRSIT extends BaseIT {
         ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
         // Check that it's out of sync in dockstore
         Assert.assertFalse(tag.isVerified());
-        Assert.assertNull(tag.getVerifiedSource());
+        Assert.assertEquals(new ArrayList<String>(), tag.getVerifiedSource());
         // Check that it's out of sync in TRS
         Assert.assertFalse(toolVersion.isVerified());
         Assert.assertEquals("[]", toolVersion.getVerifiedSource());
