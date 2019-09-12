@@ -529,16 +529,17 @@ public class GeneralIT extends BaseIT {
                 "quay.io/dockstoretestuser2/quayandgithub", "--script" });
     }
 
-    /**
-     * Tests that a developer can launch a CWL Tool locally, instead of getting files from Dockstore
-     */
-    @Test
-    @Category(ToilCompatibleTest.class)
-    public void testLocalLaunchCWL() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
-                ResourceHelpers.resourceFilePath("arrays.cwl"), "--json",
-                ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script" });
-    }
+// moved to dockstore-cli
+//    /**
+//     * Tests that a developer can launch a CWL Tool locally, instead of getting files from Dockstore
+//     */
+//    @Test
+//    @Category(ToilCompatibleTest.class)
+//    public void testLocalLaunchCWL() {
+//        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
+//                ResourceHelpers.resourceFilePath("arrays.cwl"), "--json",
+//                ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script" });
+//    }
 
     /**
      * Test to update the default path of CWL and it should change the tag's CWL path in the database
@@ -779,45 +780,46 @@ public class GeneralIT extends BaseIT {
         assertEquals("the cwl path should be changed to /test1/Dockerfile", "/test1/Dockerfile", path);
     }
 
-    /**
-     * This tests that attempting to launch a CWL tool locally, where no file exists, an IOError will occur
-     */
-    @Test
-    public void testLocalLaunchCWLNoFile() {
-        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
-                "imnotreal.cwl", "--json", "filtercount-job.json", "--script" });
-    }
-
-    /**
-     * This tests that attempting to launch a WDL tool locally, where no file exists, an IOError will occur
-     */
-    @Test
-    public void testLocalLaunchWDLNoFile() {
-        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
-                "imnotreal.wdl", "--json", "imnotreal-job.json", "--descriptor", "wdl", "--script" });
-    }
-
-    /**
-     * This tests that attempting to launch a CWL tool remotely, where no file exists, an APIError will occur
-     */
-    @Test
-    public void testRemoteLaunchCWLNoFile() {
-        systemExit.expectSystemExitWithStatus(Client.IO_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
-                "imnotreal.cwl", "--json", "imnotreal-job.json", "--script" });
-    }
-
-    /**
-     * This tests that attempting to launch a WDL tool remotely, where no file exists, an APIError will occur
-     */
-    @Test
-    public void testRemoteLaunchWDLNoFile() {
-        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
-                "imnotreal.wdl", "--json", "imnotreal-job.json", "--descriptor", "wdl", "--script" });
-    }
+// moved to dockstore-cli
+//    /**
+//     * This tests that attempting to launch a CWL tool locally, where no file exists, an IOError will occur
+//     */
+//    @Test
+//    public void testLocalLaunchCWLNoFile() {
+//        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+//        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
+//                "imnotreal.cwl", "--json", "filtercount-job.json", "--script" });
+//    }
+//
+//    /**
+//     * This tests that attempting to launch a WDL tool locally, where no file exists, an IOError will occur
+//     */
+//    @Test
+//    public void testLocalLaunchWDLNoFile() {
+//        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+//        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
+//                "imnotreal.wdl", "--json", "imnotreal-job.json", "--descriptor", "wdl", "--script" });
+//    }
+//
+//    /**
+//     * This tests that attempting to launch a CWL tool remotely, where no file exists, an APIError will occur
+//     */
+//    @Test
+//    public void testRemoteLaunchCWLNoFile() {
+//        systemExit.expectSystemExitWithStatus(Client.IO_ERROR);
+//        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
+//                "imnotreal.cwl", "--json", "imnotreal-job.json", "--script" });
+//    }
+//
+//    /**
+//     * This tests that attempting to launch a WDL tool remotely, where no file exists, an APIError will occur
+//     */
+//    @Test
+//    public void testRemoteLaunchWDLNoFile() {
+//        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+//        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
+//                "imnotreal.wdl", "--json", "imnotreal-job.json", "--descriptor", "wdl", "--script" });
+//    }
 
     /**
      * Creates a basic Manual Tool with Quay
