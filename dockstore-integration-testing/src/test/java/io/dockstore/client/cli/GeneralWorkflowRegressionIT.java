@@ -150,6 +150,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This test manually publishing a workflow and grabbing valid descriptor
      */
     @Test
+    @Ignore(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
     public void testManualPublishAndGrabWDLOld() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
