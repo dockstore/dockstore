@@ -166,8 +166,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     @ApiModelProperty(value = "Verified source for the version", position = 9)
-    public String getVerifiedSource() {
-        return this.getVersionMetadata().verifiedSource;
+    public String[] getVerifiedSource() {
+        if (this.getVersionMetadata().verifiedSource == null) {
+            return new String[0];
+        } else {
+            return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedSource), String[].class);
+        }
     }
 
     public boolean isDirtyBit() {

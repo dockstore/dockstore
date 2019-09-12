@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -54,6 +53,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
@@ -83,6 +83,7 @@ import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.URIHelper;
+import io.dockstore.webservice.helpers.VerificationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -108,8 +109,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1045,20 +1044,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
-
-        Set<String> verifiedSourcesArray = new HashSet<>();
-        workflow.getWorkflowVersions().stream().filter(Version::isVerified)
-            .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
-
-        JSONArray jsonArray;
-        try {
-            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
-        } catch (JSONException ex) {
-            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.",
-                HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-
-        return jsonArray.toString();
+        Set<String> verifiedSources = VerificationHelper.getVerifiedSources(workflow.getWorkflowVersions());
+        Gson gson = new Gson();
+        return gson.toJson(verifiedSources);
     }
 
     @GET

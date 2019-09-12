@@ -229,10 +229,10 @@ public class ToolsImplCommonTest {
         if (verifiedSource != null) {
             SourceFile.VerificationInformation verificationInformation1 = new SourceFile.VerificationInformation();
             verificationInformation1.verified = true;
-            verificationInformation1.metadata = "Dockstore team";
+            verificationInformation1.metadata = verifiedSource;
             verificationInformation1.platformVersion = "1.7.0";
             Map<String, SourceFile.VerificationInformation> verificationInformationMap = new HashMap<>();
-            verificationInformationMap.put(verifiedSource, verificationInformation1);
+            verificationInformationMap.put("platform", verificationInformation1);
             sourceFile.setVerifiedBySource(verificationInformationMap);
         }
         if (isService) {
@@ -280,7 +280,9 @@ public class ToolsImplCommonTest {
         actualWorkflowVersion2.updateVerified();
         actualWorkflowVersion3.updateVerified();
         // Check that Dockstore version is actually has the right verified source
-        Assert.assertEquals("[\"chickenTesterSource\",\"potatoTesterSource\"]", actualWorkflowVersion3.getVerifiedSource());
+        String[] expectedVerifiedSource = { "chickenTesterSource", "potatoTesterSource" };
+        String[] actualVerifiedSource = actualWorkflowVersion3.getVerifiedSource();
+        Assert.assertEquals(expectedVerifiedSource, actualVerifiedSource);
         workflow.addWorkflowVersion(actualWorkflowVersion1);
         workflow.addWorkflowVersion(actualWorkflowVersion2);
         workflow.addWorkflowVersion(actualWorkflowVersion3);

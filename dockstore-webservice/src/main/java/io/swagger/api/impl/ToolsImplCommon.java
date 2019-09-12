@@ -208,8 +208,7 @@ public final class ToolsImplCommon {
                 if (isDockstoreTool) {
                     Tag castedTag = (Tag)version;
                     toolVersion.setMetaVersion(String.valueOf(castedTag.getLastBuilt() != null ? castedTag.getLastBuilt() : new Date(0)));
-                }
-                else {
+                } else {
                     io.dockstore.webservice.core.WorkflowVersion castedWorkflowVersion = (io.dockstore.webservice.core.WorkflowVersion)version;
                     toolVersion.setMetaVersion(String.valueOf(castedWorkflowVersion.getLastModified() != null ? castedWorkflowVersion.getLastModified() : new Date(0)));
                 }
@@ -282,7 +281,7 @@ public final class ToolsImplCommon {
         Set<String> verifiedSources = new TreeSet<>();
         versions.stream().filter(Version::isVerified).forEach(e -> {
             if (e.getVerifiedSource() != null) {
-                String[] array = GSON.fromJson(e.getVerifiedSource(), String[].class);
+                String[] array = e.getVerifiedSource();
                 List<String> stringList = Arrays.asList(array);
                 verifiedSources.addAll(stringList);
             }
@@ -331,8 +330,8 @@ public final class ToolsImplCommon {
         toolVersion.setUrl(globalVersionId);
         toolVersion.setName(version.getName());
         toolVersion.setVerified(version.isVerified());
-        String toolVerifiedSource = version.getVerifiedSource();
-        String verifiedSource = toolVerifiedSource == null || toolVerifiedSource.isBlank() ? "[]" : version.getVerifiedSource();
+        String[] toolVerifiedSources = version.getVerifiedSource();
+        String verifiedSource = GSON.toJson(toolVerifiedSources);
         toolVersion.setVerifiedSource(Strings.nullToEmpty(verifiedSource));
         toolVersion.setContainerfile(false);
 
@@ -370,7 +369,7 @@ public final class ToolsImplCommon {
             tool.setToolclass(ToolClassesApiServiceImpl.getCommandLineToolClass());
         } else if (container instanceof BioWorkflow) {
             tool.setToolclass(ToolClassesApiServiceImpl.getWorkflowClass());
-        } else if (container instanceof Service){
+        } else if (container instanceof Service) {
             tool.setToolclass(ToolClassesApiServiceImpl.getServiceClass());
         } else {
             throw new UnsupportedOperationException("encountered unknown entry type in TRS");

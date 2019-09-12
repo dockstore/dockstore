@@ -464,7 +464,7 @@ public class SwaggerClientIT extends BaseIT {
         c.setIsPublished(true);
         final Tag tag = c.getWorkflowVersions().get(0);
         tag.setVerified(true);
-        tag.setVerifiedSource("funky source");
+        tag.setVerifiedSource(Arrays.asList("funky source"));
         containersApi.registerManual(c);
 
         // hit up the plain text versions
