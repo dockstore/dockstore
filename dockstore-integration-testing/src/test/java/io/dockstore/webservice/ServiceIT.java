@@ -18,6 +18,10 @@ package io.dockstore.webservice;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
@@ -32,6 +36,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dropwizard.client.JerseyClientBuilder;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -40,6 +45,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -138,6 +144,9 @@ public class ServiceIT extends BaseIT {
         final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true);
         final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false);
         assertTrue(workflows.size() >= 2 && workflows.stream().noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
+        Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
+        testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published", SUPPORT.getLocalPort()));
+        testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published?services=true", SUPPORT.getLocalPort()));
         assertTrue(services.size() >= 1 && services.stream().allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
         // try some standard things we would like services to be able to do
@@ -148,6 +157,20 @@ public class ServiceIT extends BaseIT {
         final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
         assertFalse(workflow.getStarredUsers().isEmpty());
         assertTrue(workflow.getLabels().stream().anyMatch(label -> "batman".equals(label.getValue())));
+    }
+
+    /**
+     * Test X-total-count.  It so happens there's two services and two bioworkflows
+     * @param jerseyClient  Jersey Client to test endpoint
+     * @param path          Path of endpoint
+     */
+    private void testXTotalCount(Client jerseyClient, String path) {
+        Response response = jerseyClient.target(path).request()
+                .get();
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+        MultivaluedMap<String, Object> headers = response.getHeaders();
+        Object xTotalCount = headers.getFirst("X-total-count");
+        assertEquals("2", xTotalCount);
     }
 
     @Test
