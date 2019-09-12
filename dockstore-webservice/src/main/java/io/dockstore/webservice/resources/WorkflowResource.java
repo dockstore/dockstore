@@ -85,6 +85,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
+import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.ServiceEntryDAO;
@@ -792,11 +793,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             ? Service.class : BioWorkflow.class));
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
-        if (services) {
-            response.addHeader("X-total-count", String.valueOf(serviceEntryDAO.countAllPublished(Optional.of(filter))));
-        } else {
-            response.addHeader("X-total-count", String.valueOf(bioWorkflowDAO.countAllPublished(Optional.of(filter))));
-        }
+        EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
+        response.addHeader("X-total-count", String.valueOf(entryDAO.countAllPublished(Optional.of(filter))));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;
     }
