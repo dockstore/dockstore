@@ -394,7 +394,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // verify master branch
         assertFalse(tag.isVerified());
-        assertNull(tag.getVerifiedSource());
+        assertEquals(new ArrayList<>(), tag.getVerifiedSource());
 
         containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId());
 
@@ -404,7 +404,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // The tag verification endpoint does nothing unless the extended TRS endpoint was used to verify
         assertFalse(tag.isVerified());
-        assertNull(tag.getVerifiedSource());
+        assertEquals(new ArrayList<>(), tag.getVerifiedSource());
     }
 
     @Test
