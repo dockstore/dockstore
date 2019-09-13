@@ -44,6 +44,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -111,6 +112,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.OLD_CWL;
+import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
@@ -1011,13 +1014,24 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
         initializeValidations(include, workflow);
         filterContainersForHiddenTags(workflow);
+
+        // evil hack for backwards compatibility with 1.6.0 CLI, sorry
+        // https://github.com/dockstore/dockstore/issues/2860
+        this.mutateBasedOnUserAgent(workflow, entry -> {
+            if (workflow.getDescriptorType() == CWL) {
+                workflow.setDescriptorType(OLD_CWL);
+            } else if (workflow.getDescriptorType() == WDL) {
+                workflow.setDescriptorType(OLD_WDL);
+            }
+        }, containerContext);
+
         return workflow;
     }
 

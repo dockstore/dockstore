@@ -24,9 +24,6 @@ import java.util.List;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
-import io.dropwizard.db.DataSourceFactory;
-import io.dropwizard.jdbi3.JdbiFactory;
-import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -36,8 +33,6 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.statement.Query;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
-    public final static String OLD_DOCKSTORE_VERSION = "1.4.5";
+    public final static String OLD_DOCKSTORE_VERSION = "1.6.0";
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
 
     // Travis is slow, need to wait up to 1 min for webservice to return
