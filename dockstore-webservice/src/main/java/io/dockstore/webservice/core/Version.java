@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -55,8 +56,6 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import static io.dockstore.webservice.helpers.VerificationHelper.getVerifiedSources;
-
 /**
  * This describes one version of either a workflow or a tool.
  *
@@ -67,8 +66,9 @@ import static io.dockstore.webservice.helpers.VerificationHelper.getVerifiedSour
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
-    public static final Gson GSON = new Gson();
     public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
+    private static final Gson GSON = new Gson();
+
     /**
      * re-use existing generator for backwards compatibility
      */
@@ -286,8 +286,16 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return versionSourceFiles.stream().anyMatch(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified));
     }
 
-    public static String calculateVerifiedSource(SortedSet<SourceFile> versionSourceFiles) {
-        Set<String> verifiedSources = getVerifiedSources(versionSourceFiles);
+    private static String calculateVerifiedSource(SortedSet<SourceFile> versionSourceFiles) {
+        Set<String> verifiedSources = new TreeSet<>();
+        versionSourceFiles.forEach(sourceFile -> {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
+                if (thing.getValue().verified) {
+                    verifiedSources.add(thing.getValue().metadata);
+                }
+            }
+        });
         // How strange that we're returning an array-like string
         return convertStringSetToString(verifiedSources);
     }
