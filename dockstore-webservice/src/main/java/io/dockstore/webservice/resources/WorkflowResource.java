@@ -45,6 +45,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -84,8 +85,11 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
+import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
+import io.dockstore.webservice.jdbi.ServiceEntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -114,6 +118,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.OLD_CWL;
+import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
@@ -143,6 +149,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final LabelDAO labelDAO;
     private final FileFormatDAO fileFormatDAO;
     private final EntryResource entryResource;
+    private final ServiceEntryDAO serviceEntryDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
 
     private final PermissionsInterface permissionsInterface;
     private final String zenodoUrl;
@@ -157,6 +165,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         super(client, sessionFactory, configuration, Workflow.class);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
+        this.serviceEntryDAO = new ServiceEntryDAO(sessionFactory);
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
 
         this.permissionsInterface = permissionsInterface;
@@ -786,7 +796,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             ? Service.class : BioWorkflow.class));
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
-        response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished(Optional.of(filter))));
+        EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
+        response.addHeader("X-total-count", String.valueOf(entryDAO.countAllPublished(Optional.of(filter))));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;
     }
@@ -1014,13 +1025,24 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
         initializeValidations(include, workflow);
         filterContainersForHiddenTags(workflow);
+
+        // evil hack for backwards compatibility with 1.6.0 CLI, sorry
+        // https://github.com/dockstore/dockstore/issues/2860
+        this.mutateBasedOnUserAgent(workflow, entry -> {
+            if (workflow.getDescriptorType() == CWL) {
+                workflow.setDescriptorType(OLD_CWL);
+            } else if (workflow.getDescriptorType() == WDL) {
+                workflow.setDescriptorType(OLD_WDL);
+            }
+        }, containerContext);
+
         return workflow;
     }
 
