@@ -37,6 +37,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -45,6 +46,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
+import static io.dockstore.client.cli.GeneralWorkflowRegressionIT.KNOWN_BREAKAGE_MOVING_TO_1_6_0;
 import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 import static org.junit.Assert.assertEquals;
@@ -194,6 +196,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests altering the cwl and dockerfile paths to invalid locations (quick registered)
      */
     @Test
+    @Ignore(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
     public void testVersionTagWDLCWLAndDockerfilePathsAlterationOldClient() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
@@ -252,6 +255,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests hiding and unhiding different versions of a container (quick registered)
      */
     @Test
+    @Ignore(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
     public void testVersionTagHideOld() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
@@ -273,6 +277,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Test update tag with only WDL to invalid then valid
      */
     @Test
+    @Ignore(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
     public void testVersionTagWDLOldClient() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
@@ -402,6 +407,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests that WDL and CWL files can be grabbed from the command line
      */
     @Test
+    @Ignore(KNOWN_BREAKAGE_MOVING_TO_1_6_0)
     public void testGetWdlAndCwlOld() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
