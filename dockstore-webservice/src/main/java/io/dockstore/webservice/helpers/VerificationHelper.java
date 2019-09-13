@@ -32,18 +32,6 @@ public final class VerificationHelper {
 
     }
 
-    static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
-        Set<String> platforms = new TreeSet<>();
-        workflowVersions.forEach(workflowVersion -> {
-            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> {
-                Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
-                platforms.addAll(verifiedBySource.keySet());
-            });
-        });
-        return platforms;
-    }
-
     public static Set<String> getVerifiedSources(SortedSet<SourceFile> versionSourceFiles) {
         Set<String> verifiedSources = new TreeSet<>();
         versionSourceFiles.forEach(sourceFile -> {

@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,6 +34,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -44,8 +47,6 @@ import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.helpers.VerificationHelper.getVerifiedPlatforms;
 
 /**
  * @author gluu
@@ -69,6 +70,18 @@ public class ElasticManager {
         ElasticManager.config = config;
         ElasticManager.hostname = config.getEsConfiguration().getHostname();
         ElasticManager.port = config.getEsConfiguration().getPort();
+    }
+
+    private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
+        Set<String> platforms = new TreeSet<>();
+        workflowVersions.forEach(workflowVersion -> {
+            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+            sourceFiles.forEach(sourceFile -> {
+                Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+                platforms.addAll(verifiedBySource.keySet());
+            });
+        });
+        return platforms;
     }
 
     /**
