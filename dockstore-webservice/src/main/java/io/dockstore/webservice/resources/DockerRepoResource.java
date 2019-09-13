@@ -47,7 +47,6 @@ import javax.ws.rs.core.StreamingOutput;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
@@ -73,7 +72,6 @@ import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.helpers.VerificationHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -766,20 +764,6 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
         return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{containerId}/verifiedSources")
-    @ApiOperation(value = "Get the sources that verified a tool.", tags = {
-        "containers" }, notes = "NO authentication", response = String.class)
-    public String verifiedSources(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId) {
-        Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
-        Set<String> verifiedSources = VerificationHelper.getVerifiedSources(tool.getWorkflowVersions());
-        Gson gson = new Gson();
-        return gson.toJson(verifiedSources);
     }
 
     // Add for new descriptor types

@@ -53,7 +53,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
-import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
@@ -83,7 +82,6 @@ import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.URIHelper;
-import io.dockstore.webservice.helpers.VerificationHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -1033,20 +1031,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow repository = workflowDAO.findPublishedById(workflowId);
         checkEntry(repository);
         return new ArrayList<>(repository.getWorkflowVersions());
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/verifiedSources")
-    @ApiOperation(value = "Get a semicolon delimited list of verified sources.", tags = {
-        "workflows" }, notes = "NO authentication", response = String.class)
-    public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        Set<String> verifiedSources = VerificationHelper.getVerifiedSources(workflow.getWorkflowVersions());
-        Gson gson = new Gson();
-        return gson.toJson(verifiedSources);
     }
 
     @GET
