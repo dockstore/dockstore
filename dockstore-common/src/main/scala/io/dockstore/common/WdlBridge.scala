@@ -310,11 +310,15 @@ class WdlBridge {
     mapResolver.setSecondaryFiles(secondaryWdlFiles)
     lazy val importResolvers: List[ImportResolver] =
       DirectoryResolver.localFilesystemResolvers(Some(filePathObj)) :+ HttpResolver(relativeTo = None) :+ mapResolver
-    val bundle = factory.getWomBundle(content, "{}", importResolvers, List(factory))
-    if (bundle.isRight) {
-      bundle.getOrElse(null)
-    } else {
-      throw new WdlParser.SyntaxError(bundle.left.get.head)
+    try {
+      val bundle = factory.getWomBundle(content, "{}", importResolvers, List(factory))
+      if (bundle.isRight) {
+        bundle.getOrElse(null)
+      } else {
+        throw new WdlParser.SyntaxError(bundle.left.get.head)
+      }
+    } catch {
+      case _: Throwable => throw new WdlParser.SyntaxError("There was an error creating a Wom Bundle for the workflow.")
     }
   }
 
