@@ -5946,8 +5946,12 @@ definitions:
         position: 8
         description: "Whether this version has been verified or not"
       verifiedSource:
-        type: "array"
+        type: "string"
         position: 9
+        description: "Verified source for the version"
+      verifiedSources:
+        type: "array"
+        position: 10
         description: "Verified source for the version"
         items:
           type: "string"
@@ -6184,6 +6188,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6199,10 +6207,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6415,6 +6419,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Base class for versions of entries in the Dockstore"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6430,10 +6438,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6995,8 +6999,12 @@ definitions:
         position: 8
         description: "Whether this version has been verified or not"
       verifiedSource:
-        type: "array"
+        type: "string"
         position: 9
+        description: "Verified source for the version"
+      verifiedSources:
+        type: "array"
+        position: 10
         description: "Verified source for the version"
         items:
           type: "string"
@@ -7540,6 +7548,10 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7555,10 +7567,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7785,8 +7793,12 @@ definitions:
         position: 8
         description: "Whether this version has been verified or not"
       verifiedSource:
-        type: "array"
+        type: "string"
         position: 9
+        description: "Verified source for the version"
+      verifiedSources:
+        type: "array"
+        position: 10
         description: "Verified source for the version"
         items:
           type: "string"

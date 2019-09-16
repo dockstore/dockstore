@@ -281,7 +281,7 @@ public class ToolsImplCommonTest {
         actualWorkflowVersion3.updateVerified();
         // Check that Dockstore version is actually has the right verified source
         String[] expectedVerifiedSource = { "chickenTesterSource", "potatoTesterSource" };
-        String[] actualVerifiedSource = actualWorkflowVersion3.getVerifiedSource();
+        String[] actualVerifiedSource = actualWorkflowVersion3.getVerifiedSources();
         Assert.assertEquals(expectedVerifiedSource, actualVerifiedSource);
         workflow.addWorkflowVersion(actualWorkflowVersion1);
         workflow.addWorkflowVersion(actualWorkflowVersion2);

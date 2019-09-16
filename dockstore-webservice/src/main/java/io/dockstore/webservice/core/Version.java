@@ -166,7 +166,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     @ApiModelProperty(value = "Verified source for the version", position = 9)
-    public String[] getVerifiedSource() {
+    @Deprecated
+    public String getVerifiedSource() {
+        return this.getVersionMetadata().verifiedSource;
+    }
+
+    @ApiModelProperty(value = "Verified source for the version", position = 10)
+    public String[] getVerifiedSources() {
         if (this.getVersionMetadata().verifiedSource == null) {
             return new String[0];
         } else {

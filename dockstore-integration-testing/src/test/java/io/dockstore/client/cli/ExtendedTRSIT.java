@@ -248,7 +248,7 @@ public class ExtendedTRSIT extends BaseIT {
         ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
         // Check that it's no longer out of sync in dockstore
         Assert.assertTrue(tag.isVerified());
-        Assert.assertEquals(Collections.singletonList("metadata"), tag.getVerifiedSource());
+        Assert.assertEquals(Collections.singletonList("metadata"), tag.getVerifiedSources());
         // Check that it's no longer out of sync in TRS
         Assert.assertTrue(toolVersion.isVerified());
         Assert.assertEquals("[\"metadata\"]", toolVersion.getVerifiedSource());
@@ -261,7 +261,7 @@ public class ExtendedTRSIT extends BaseIT {
         ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
         // Check that it's out of sync in dockstore
         Assert.assertFalse(tag.isVerified());
-        Assert.assertEquals(new ArrayList<String>(), tag.getVerifiedSource());
+        Assert.assertEquals(new ArrayList<String>(), tag.getVerifiedSources());
         // Check that it's out of sync in TRS
         Assert.assertFalse(toolVersion.isVerified());
         Assert.assertEquals("[]", toolVersion.getVerifiedSource());

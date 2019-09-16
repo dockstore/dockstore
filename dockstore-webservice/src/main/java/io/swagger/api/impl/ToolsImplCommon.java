@@ -280,8 +280,8 @@ public final class ToolsImplCommon {
         tool.setVerified(versions.stream().anyMatch(Version::isVerified));
         Set<String> verifiedSources = new TreeSet<>();
         versions.stream().filter(Version::isVerified).forEach(e -> {
-            if (e.getVerifiedSource() != null) {
-                String[] array = e.getVerifiedSource();
+            if (e.getVerifiedSources() != null) {
+                String[] array = e.getVerifiedSources();
                 List<String> stringList = Arrays.asList(array);
                 verifiedSources.addAll(stringList);
             }
@@ -330,7 +330,7 @@ public final class ToolsImplCommon {
         toolVersion.setUrl(globalVersionId);
         toolVersion.setName(version.getName());
         toolVersion.setVerified(version.isVerified());
-        String[] toolVerifiedSources = version.getVerifiedSource();
+        String[] toolVerifiedSources = version.getVerifiedSources();
         String verifiedSource = GSON.toJson(toolVerifiedSources);
         toolVersion.setVerifiedSource(Strings.nullToEmpty(verifiedSource));
         toolVersion.setContainerfile(false);
