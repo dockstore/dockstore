@@ -318,7 +318,7 @@ class WdlBridge {
         throw new WdlParser.SyntaxError(bundle.left.get.head)
       }
     } catch {
-      case _: Throwable => throw new WdlParser.SyntaxError("There was an error creating a Wom Bundle for the workflow.")
+      case ex: Exception => throw new WdlParser.SyntaxError("There was an error creating a Wom Bundle for the workflow.\n" + ex.getMessage())
     }
   }
 
