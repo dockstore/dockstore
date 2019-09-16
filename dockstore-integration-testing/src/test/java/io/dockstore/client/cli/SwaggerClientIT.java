@@ -25,8 +25,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
@@ -749,6 +751,12 @@ public class SwaggerClientIT extends BaseIT {
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         assertNotNull(dockerRegistries);
         assertNotNull(descriptorLanguages);
+        Set<String> names = new HashSet<>();
+        descriptorLanguages.forEach(lang -> {
+            final String val = lang.getValue().toLowerCase();
+            assertFalse(names.contains(val));
+            names.add(val);
+        });
     }
 
     @Test
