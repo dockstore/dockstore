@@ -523,6 +523,8 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
+        final Set<String> collect = new HashSet<>(containers.get(0).getDescriptorType());
+        assertEquals(collect.size(), containers.get(0).getDescriptorType().size());
         assertEquals(containers.get(0).getPath(), QUAY_IO_TEST_ORG_TEST6);
 
         containers = containersApi.allPublishedContainers(null, null, "test52", null, null);
