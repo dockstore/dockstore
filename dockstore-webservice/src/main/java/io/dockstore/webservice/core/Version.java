@@ -79,40 +79,40 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     protected long id;
 
     @Column
-    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 2)
+    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1)
     protected String reference;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 6)
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2)
     protected String name;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 22)
+    @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 3)
     private String commitID;
 
     @Column(columnDefinition = "boolean default false")
-    @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
+    @ApiModelProperty(value = "When true, this version cannot be affected by refreshes to the content or updates to its metadata", position = 4)
     private boolean frozen = false;
 
     @Column(columnDefinition = "text default 'UNSET'", nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates the type of git (or other source control) reference")
+    @ApiModelProperty(value = "This indicates the type of git (or other source control) reference", position = 5)
     private ReferenceType referenceType = ReferenceType.UNSET;
 
     // watch out for https://hibernate.atlassian.net/browse/HHH-3799 if this is set to EAGER
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 3)
+    @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
     @OrderBy("path")
     private final SortedSet<SourceFile> sourceFiles;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, whether this tag has valid files from source code repo", position = 5)
+    @ApiModelProperty(value = "Implementation specific, whether this tag has valid files from source code repo", position = 7)
     private boolean valid;
 
     @Column(columnDefinition = "boolean default false")
-    @ApiModelProperty(value = "True if user has altered the tag", position = 7)
+    @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
 
     @JsonIgnore
@@ -121,35 +121,37 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @PrimaryKeyJoinColumn
     private VersionMetadata versionMetadata = new VersionMetadata();
 
-    @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 12)
+    @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 9)
     @OneToOne
     private User versionEditor;
 
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
+    @ApiModelProperty(position = 10)
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
+    @ApiModelProperty(position = 11)
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 20)
+    @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 12)
     @OrderBy("id")
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 21)
+    @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
     @OrderBy("id")
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Cached validations for each version.")
+    @ApiModelProperty(value = "Cached validations for each version.", position = 14)
     @OrderBy("type")
     private final SortedSet<Validation> validations;
 
@@ -160,18 +162,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         versionMetadata.parent = this;
     }
 
-    @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)
+    @ApiModelProperty(value = "Whether this version has been verified or not", position = 15)
     public boolean isVerified() {
         return this.versionMetadata.verified;
     }
 
-    @ApiModelProperty(value = "Verified source for the version", position = 9)
+    @ApiModelProperty(value = "Verified source for the version", position = 16)
     @Deprecated
     public String getVerifiedSource() {
         return this.getVersionMetadata().verifiedSource;
     }
 
-    @ApiModelProperty(value = "Verified source for the version", position = 10)
+    @ApiModelProperty(value = "Verified source for the version", position = 17)
     public String[] getVerifiedSources() {
         if (this.getVersionMetadata().verifiedSource == null) {
             return new String[0];
@@ -256,7 +258,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     @JsonProperty
-    @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 4)
+    @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 18)
     public boolean isHidden() {
         return versionMetadata.hidden;
     }
@@ -316,7 +318,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     @JsonProperty
-    @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 10)
+    @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 19)
     public String getDoiURL() {
         return versionMetadata.doiURL;
     }
@@ -325,7 +327,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().doiURL = doiURL;
     }
 
-    @ApiModelProperty(value = "This indicates the DOI status", position = 11)
+    @ApiModelProperty(value = "This indicates the DOI status", position = 20)
     public DOIStatus getDoiStatus() {
         return versionMetadata.doiStatus;
     }

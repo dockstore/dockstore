@@ -6449,10 +6449,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6468,6 +6464,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6655,10 +6655,6 @@ components:
           items:
             $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
               ockstore"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6674,6 +6670,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7134,6 +7134,15 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        reference:
+          type: string
+          description: git commit/tag/branch
+        name:
+          type: string
+          description: Implementation specific, can be a quay.io or docker hub tag name
+        commitID:
+          type: string
+          description: This is the commit id for the source control that the files belong to
         frozen:
           type: boolean
           description: When true, this version cannot be affected by refreshes to the
@@ -7147,18 +7156,6 @@ components:
             - BRANCH
             - NOT_APPLICABLE
             - UNSET
-        validations:
-          type: array
-          description: Cached validations for each version.
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Validation"
-        dbUpdateDate:
-          type: string
-          format: date-time
-        reference:
-          type: string
-          description: git commit/tag/branch
         sourceFiles:
           type: array
           description: Cached files for each version. Includes Dockerfile and Descriptor
@@ -7166,20 +7163,38 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/SourceFile"
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         valid:
           type: boolean
           description: Implementation specific, whether this tag has valid files from
             source code repo
-        name:
-          type: string
-          description: Implementation specific, can be a quay.io or docker hub tag name
         dirtyBit:
           type: boolean
           description: True if user has altered the tag
+        versionEditor:
+          $ref: "#/components/schemas/User"
+        dbUpdateDate:
+          type: string
+          format: date-time
+        input_file_formats:
+          type: array
+          description: File formats for describing the input file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        output_file_formats:
+          type: array
+          description: File formats for describing the output file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Validation"
         verified:
           type: boolean
           description: Whether this version has been verified or not
@@ -7191,9 +7206,15 @@ components:
           description: Verified source for the version
           items:
             type: string
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
         doiURL:
           type: string
           description: This is a URL for the DOI for the version of the entry
+        image_id:
+          type: string
         doiStatus:
           type: string
           description: This indicates the DOI status
@@ -7201,8 +7222,11 @@ components:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
-        versionEditor:
-          $ref: "#/components/schemas/User"
+        last_built:
+          type: string
+          format: date-time
+          description: "For automated tools: The last time the container backing this tool
+            version was built. For hosted: N/A"
         size:
           type: integer
           format: int64
@@ -7222,30 +7246,6 @@ components:
             build on quay.io
         workingDirectory:
           type: string
-        last_built:
-          type: string
-          format: date-time
-          description: "For automated tools: The last time the container backing this tool
-            version was built. For hosted: N/A"
-        image_id:
-          type: string
-        input_file_formats:
-          type: array
-          description: File formats for describing the input file formats of versions
-            (tag/workflowVersion)
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/FileFormat"
-        output_file_formats:
-          type: array
-          description: File formats for describing the output file formats of versions
-            (tag/workflowVersion)
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/FileFormat"
-        commitID:
-          type: string
-          description: This is the commit id for the source control that the files belong to
       description: This describes one tag associated with a container.
     Token:
       type: object
@@ -7697,10 +7697,6 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7716,6 +7712,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7846,6 +7846,17 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        workingDirectory:
+          type: string
+        reference:
+          type: string
+          description: git commit/tag/branch
+        name:
+          type: string
+          description: Implementation specific, can be a quay.io or docker hub tag name
+        commitID:
+          type: string
+          description: This is the commit id for the source control that the files belong to
         frozen:
           type: boolean
           description: When true, this version cannot be affected by refreshes to the
@@ -7859,33 +7870,6 @@ components:
             - BRANCH
             - NOT_APPLICABLE
             - UNSET
-        validations:
-          type: array
-          description: Cached validations for each version.
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Validation"
-        subClass:
-          type: string
-          description: The subclass of this for services.
-          enum:
-            - DOCKER_COMPOSE
-            - SWARM
-            - KUBERNETES
-            - HELM
-        workingDirectory:
-          type: string
-        dbUpdateDate:
-          type: string
-          format: date-time
-        last_modified:
-          type: string
-          format: date-time
-          description: "Remote: Last time version on GitHub repo was changed. Hosted: time
-            version created."
-        reference:
-          type: string
-          description: git commit/tag/branch
         sourceFiles:
           type: array
           description: Cached files for each version. Includes Dockerfile and Descriptor
@@ -7893,46 +7877,18 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/SourceFile"
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         valid:
           type: boolean
           description: Implementation specific, whether this tag has valid files from
             source code repo
-        name:
-          type: string
-          description: Implementation specific, can be a quay.io or docker hub tag name
         dirtyBit:
           type: boolean
           description: True if user has altered the tag
-        verified:
-          type: boolean
-          description: Whether this version has been verified or not
-        verifiedSource:
-          type: string
-          description: Verified source for the version
-        verifiedSources:
-          type: array
-          description: Verified source for the version
-          items:
-            type: string
-        doiURL:
-          type: string
-          description: This is a URL for the DOI for the version of the entry
-        doiStatus:
-          type: string
-          description: This indicates the DOI status
-          enum:
-            - NOT_REQUESTED
-            - REQUESTED
-            - CREATED
         versionEditor:
           $ref: "#/components/schemas/User"
-        workflow_path:
+        dbUpdateDate:
           type: string
-          description: Path for the workflow
+          format: date-time
         input_file_formats:
           type: array
           description: File formats for describing the input file formats of versions
@@ -7947,9 +7903,53 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        commitID:
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Validation"
+        verified:
+          type: boolean
+          description: Whether this version has been verified or not
+        verifiedSource:
           type: string
-          description: This is the commit id for the source control that the files belong to
+          description: Verified source for the version
+        verifiedSources:
+          type: array
+          description: Verified source for the version
+          items:
+            type: string
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
+        doiURL:
+          type: string
+          description: This is a URL for the DOI for the version of the entry
+        doiStatus:
+          type: string
+          description: This indicates the DOI status
+          enum:
+            - NOT_REQUESTED
+            - REQUESTED
+            - CREATED
+        workflow_path:
+          type: string
+          description: Path for the workflow
+        last_modified:
+          type: string
+          format: date-time
+          description: "Remote: Last time version on GitHub repo was changed. Hosted: time
+            version created."
+        subClass:
+          type: string
+          description: The subclass of this for services.
+          enum:
+            - DOCKER_COMPOSE
+            - SWARM
+            - KUBERNETES
+            - HELM
       description: This describes one workflow version associated with a workflow.
     Base_class_for_versions_of_entries_in_the_Dockstore:
       type: object
@@ -7962,6 +7962,17 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        workingDirectory:
+          type: string
+        reference:
+          type: string
+          description: git commit/tag/branch
+        name:
+          type: string
+          description: Implementation specific, can be a quay.io or docker hub tag name
+        commitID:
+          type: string
+          description: This is the commit id for the source control that the files belong to
         frozen:
           type: boolean
           description: When true, this version cannot be affected by refreshes to the
@@ -7975,20 +7986,6 @@ components:
             - BRANCH
             - NOT_APPLICABLE
             - UNSET
-        validations:
-          type: array
-          description: Cached validations for each version.
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Validation"
-        workingDirectory:
-          type: string
-        dbUpdateDate:
-          type: string
-          format: date-time
-        reference:
-          type: string
-          description: git commit/tag/branch
         sourceFiles:
           type: array
           description: Cached files for each version. Includes Dockerfile and Descriptor
@@ -7996,43 +7993,18 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/SourceFile"
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         valid:
           type: boolean
           description: Implementation specific, whether this tag has valid files from
             source code repo
-        name:
-          type: string
-          description: Implementation specific, can be a quay.io or docker hub tag name
         dirtyBit:
           type: boolean
           description: True if user has altered the tag
-        verified:
-          type: boolean
-          description: Whether this version has been verified or not
-        verifiedSource:
-          type: string
-          description: Verified source for the version
-        verifiedSources:
-          type: array
-          description: Verified source for the version
-          items:
-            type: string
-        doiURL:
-          type: string
-          description: This is a URL for the DOI for the version of the entry
-        doiStatus:
-          type: string
-          description: This indicates the DOI status
-          enum:
-            - NOT_REQUESTED
-            - REQUESTED
-            - CREATED
         versionEditor:
           $ref: "#/components/schemas/User"
+        dbUpdateDate:
+          type: string
+          format: date-time
         input_file_formats:
           type: array
           description: File formats for describing the input file formats of versions
@@ -8047,6 +8019,34 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        commitID:
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Validation"
+        verified:
+          type: boolean
+          description: Whether this version has been verified or not
+        verifiedSource:
           type: string
-          description: This is the commit id for the source control that the files belong to
+          description: Verified source for the version
+        verifiedSources:
+          type: array
+          description: Verified source for the version
+          items:
+            type: string
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
+        doiURL:
+          type: string
+          description: This is a URL for the DOI for the version of the entry
+        doiStatus:
+          type: string
+          description: This indicates the DOI status
+          enum:
+            - NOT_REQUESTED
+            - REQUESTED
+            - CREATED
