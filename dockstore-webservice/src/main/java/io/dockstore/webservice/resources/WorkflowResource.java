@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -112,8 +111,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1056,31 +1053,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow repository = workflowDAO.findPublishedById(workflowId);
         checkEntry(repository);
         return new ArrayList<>(repository.getWorkflowVersions());
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{workflowId}/verifiedSources")
-    @ApiOperation(value = "Get a semicolon delimited list of verified sources.", tags = {
-        "workflows" }, notes = "NO authentication", response = String.class)
-    public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-
-        Set<String> verifiedSourcesArray = new HashSet<>();
-        workflow.getWorkflowVersions().stream().filter(Version::isVerified)
-            .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
-
-        JSONArray jsonArray;
-        try {
-            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
-        } catch (JSONException ex) {
-            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.",
-                HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-
-        return jsonArray.toString();
     }
 
     @GET

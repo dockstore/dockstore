@@ -571,6 +571,10 @@ components:
           type: boolean
         verifiedSource:
           type: string
+        verifiedSources:
+          items:
+            type: string
+          type: array
         versionEditor:
           $ref: '#/components/schemas/User'
         wdl_path:
@@ -895,6 +899,10 @@ components:
           type: boolean
         verifiedSource:
           type: string
+        verifiedSources:
+          items:
+            type: string
+          type: array
         versionEditor:
           $ref: '#/components/schemas/User'
         workingDirectory:
@@ -931,8 +939,8 @@ components:
           - WDL
           - NFL
           - service
-          
-          
+          - cwl
+          - wdl
           type: string
         email:
           type: string
@@ -1092,6 +1100,10 @@ components:
           type: boolean
         verifiedSource:
           type: string
+        verifiedSources:
+          items:
+            type: string
+          type: array
         versionEditor:
           $ref: '#/components/schemas/User'
         workflow_path:
@@ -2880,23 +2892,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
                 type: array
-          description: default response
-  /containers/{containerId}/verifiedSources:
-    get:
-      operationId: verifiedSources
-      parameters:
-      - in: path
-        name: containerId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: string
           description: default response
   /containers/{containerId}/verify/{tagId}:
     post:
@@ -5963,23 +5958,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
                 type: array
-          description: default response
-  /workflows/{workflowId}/verifiedSources:
-    get:
-      operationId: verifiedSources_1
-      parameters:
-      - in: path
-        name: workflowId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: string
           description: default response
   /workflows/{workflowId}/verify/{workflowVersionId}:
     post:
