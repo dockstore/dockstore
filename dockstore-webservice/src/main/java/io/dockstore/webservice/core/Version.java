@@ -62,7 +62,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author dyuen
  */
 @Entity
-@ApiModel(value = "Base class for versions of entries in the Dockstore")
+@ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
