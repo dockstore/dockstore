@@ -49,7 +49,7 @@ public class ToolsApiV1 {
     @GET
     @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List all tools", notes = "This endpoint returns all tools available or a filtered subset using metadata query parameters. ", response = ToolV1.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolsGet", value = "List all tools", notes = "This endpoint returns all tools available or a filtered subset using metadata query parameters. ", response = ToolV1.class, responseContainer = "List", tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "An array of Tools that match the filter.", response = ToolV1.class, responseContainer = "List") })
@@ -72,7 +72,7 @@ public class ToolsApiV1 {
     @Path("/{id}")
     @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List one specific tool, acts as an anchor for self references", notes = "This endpoint returns one specific tool (which has ToolVersions nested inside it)", response = ToolV1.class, tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolsIdGet", value = "List one specific tool, acts as an anchor for self references", notes = "This endpoint returns one specific tool (which has ToolVersions nested inside it)", response = ToolV1.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "A tool.", response = ToolV1.class) })
@@ -86,7 +86,7 @@ public class ToolsApiV1 {
     @Path("/{id}/versions")
     @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List versions of a tool", notes = "Returns all versions of the specified tool", response = ToolVersionV1.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsGet", value = "List versions of a tool", notes = "Returns all versions of the specified tool", response = ToolVersionV1.class, responseContainer = "List", tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "An array of tool versions", response = ToolVersionV1.class, responseContainer = "List") })
@@ -101,7 +101,7 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}/dockerfile")
     @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get the dockerfile for the specified image.", notes = "Returns the dockerfile for the specified image.", response = ToolDockerfile.class, tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdDockerfileGet", value = "Get the dockerfile for the specified image.", notes = "Returns the dockerfile for the specified image.", response = ToolDockerfile.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "The tool payload.", response = ToolDockerfile.class),
@@ -118,7 +118,7 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}")
     @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersionV1.class, tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdGet", value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersionV1.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "A tool version.", response = ToolVersionV1.class) })
@@ -133,7 +133,7 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}/{type}/descriptor")
     @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get the tool descriptor (CWL/WDL) for the specified tool.", notes = "Returns the CWL or WDL descriptor for the specified tool.", response = ToolDescriptor.class, tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdTypeDescriptorGet", value = "Get the tool descriptor (CWL/WDL) for the specified tool.", notes = "Returns the CWL or WDL descriptor for the specified tool.", response = ToolDescriptor.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
@@ -152,7 +152,7 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}/{type}/descriptor/{relative_path}")
     @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = ToolDescriptor.class, tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdTypeDescriptorRelativePathGet", value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = ToolDescriptor.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
@@ -172,7 +172,7 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}/{type}/tests")
     @UnitOfWork(readOnly = true)
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get an array of test JSONs suitable for use with this descriptor type.", notes = "", response = ToolTestsV1.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdTypeTestsGet", value = "Get an array of test JSONs suitable for use with this descriptor type.", notes = "", response = ToolTestsV1.class, responseContainer = "List", tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "The tool test JSON response.", response = ToolTestsV1.class, responseContainer = "List"),
