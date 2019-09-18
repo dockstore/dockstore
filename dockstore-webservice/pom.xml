@@ -933,7 +933,9 @@
                     <!-- skip the swagger generated classes -->
                     <excludes>**/swagger/**/*</excludes>
                     <!-- skip the generated description class -->
-                    <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                    <sourceDirectories>
+                        <directory>${project.build.sourceDirectory}</directory>
+                    </sourceDirectories>
                 </configuration>
             </plugin>
             <plugin>

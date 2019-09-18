@@ -54,9 +54,9 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
     /**
      * Deprecated method, is mostly likely dangerous if the username can be changed
      *
-     * @param username
-     * @return
+     * @param username username of user to find
      * @deprecated likely dangerous to use with changing usernames
+     * @return
      */
     @Deprecated
     public User findByUsername(String username) {

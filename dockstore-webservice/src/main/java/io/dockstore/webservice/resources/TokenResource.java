@@ -313,16 +313,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      * Otherwise, below table indicates what happens when the "Login with Google" button in the UI2 is clicked
      * <table border="1">
      * <tr>
-     * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
+     * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</b></td> <td><b>Have GitHub account with Google token</b></td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account no Google token</td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
+     * <td> <b>Have Google Account no Google token</b></td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account with Google token</td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
+     * <td> <b>Have Google Account with Google token</b></td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
      * </tr>
      * <tr>
-     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
+     * <td> <b>No Google Account</b></td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
      * </tr>
      * </table>
      *

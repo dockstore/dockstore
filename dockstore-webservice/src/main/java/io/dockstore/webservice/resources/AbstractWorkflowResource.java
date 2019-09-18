@@ -389,7 +389,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * From the collection of GitHub repositories, returns the list of Dockstore entities (Service or BioWorkflow) that
      * exist for those repositories.
      *
-     * Ideally this would return <code>List<T></code>, but not sure if I can use getClass instead of WorkflowMode
+     * Ideally this would return <code>List&lt;T&gt;</code>, but not sure if I can use getClass instead of WorkflowMode
      * for workflows (would it apply to both STUB and WORKFLOW?) in filter call below (see TODO)?
      *
      * @param repositories
