@@ -365,7 +365,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             // https://github.com/dockstore/dockstore/issues/1712 client seems to use jersey logging which is not controlled from logback
             workflowsApi.getApiClient().setDebugging(false);
             byte[] arbitraryURL = SwaggerUtility
-                .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<>() {
+                .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
                 }, workflowsApi.getApiClient());
             workflowsApi.getApiClient().setDebugging(Client.DEBUG.get());
             File zipFile = new File(directory, zipFilename(workflow));
