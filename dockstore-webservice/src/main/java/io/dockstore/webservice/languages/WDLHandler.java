@@ -239,8 +239,8 @@ public class WDLHandler implements LanguageHandlerInterface {
                                 HttpStatus.SC_BAD_REQUEST);
                     } else {
                         URL url = new URL(match);
-                        try (InputStream is = url.openStream()) {
-                            BoundedInputStream boundedInputStream = new BoundedInputStream(is, FileUtils.ONE_MB);
+                        try (InputStream is = url.openStream();
+                            BoundedInputStream boundedInputStream = new BoundedInputStream(is, FileUtils.ONE_MB)) {
                             String fileContents = IOUtils.toString(boundedInputStream, StandardCharsets.UTF_8);
                             // need a depth-first search to avoid triggering warning on workflows
                             // where two files legitimately import the same file

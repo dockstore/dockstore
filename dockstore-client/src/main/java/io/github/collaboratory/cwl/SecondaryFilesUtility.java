@@ -206,7 +206,7 @@ class SecondaryFilesUtility {
      * @param toolSecondaryFiles The tool's secondary files
      * @param workflowId         The given workflow's input file ID
      */
-    private void setInputFile(InputParameter input, ArrayList<String> toolSecondaryFiles, String workflowId) {
+    private void setInputFile(InputParameter input, List<String> toolSecondaryFiles, String workflowId) {
         Object workflowSecondaryFiles = input.getSecondaryFiles();
         if (workflowSecondaryFiles == null) {
             LOG.info("Copying the secondary files to " + workflowId);
@@ -214,10 +214,10 @@ class SecondaryFilesUtility {
         } else if (workflowSecondaryFiles instanceof List) {
             LOG.info("Copying the secondary files to " + workflowId);
             @SuppressWarnings("unchecked")
-            ArrayList<String> arrayListWorkflowSecondaryFiles = (ArrayList<String>)workflowSecondaryFiles;
-            Set secondaryFiles = new HashSet(arrayListWorkflowSecondaryFiles);
+            List<String> arrayListWorkflowSecondaryFiles = (ArrayList<String>)workflowSecondaryFiles;
+            Set<String> secondaryFiles = new HashSet<>(arrayListWorkflowSecondaryFiles);
             secondaryFiles.addAll(toolSecondaryFiles);
-            List mergedSecondaryFiles = new ArrayList(secondaryFiles);
+            List<String> mergedSecondaryFiles = new ArrayList<>(secondaryFiles);
             input.setSecondaryFiles(mergedSecondaryFiles);
         } else if (workflowSecondaryFiles instanceof String) {
             // Not sure if this case ever occurs

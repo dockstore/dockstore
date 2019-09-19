@@ -365,7 +365,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             // https://github.com/dockstore/dockstore/issues/1712 client seems to use jersey logging which is not controlled from logback
             workflowsApi.getApiClient().setDebugging(false);
             byte[] arbitraryURL = SwaggerUtility
-                .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
+                .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<>() {
                 }, workflowsApi.getApiClient());
             workflowsApi.getApiClient().setDebugging(Client.DEBUG.get());
             File zipFile = new File(directory, zipFilename(workflow));
@@ -549,10 +549,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     author = "";
                 }
 
-                String date = "";
-                if (lastUpdated != null) {
-                    date = lastUpdated.toString();
-                }
+                String date = lastUpdated.toString();
 
                 out(workflow.getPath());
                 out("");
@@ -648,10 +645,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     publish(true, entryPath);
                 }
             } else {
-                if (newName != null) {
-                    //for workflows method currently doesn't work with --entryname flag
-                    errorMessage("Parameter '--entryname' not valid for workflows. See `workflow publish --help` for more information.", CLIENT_ERROR);
-                }
+                //for workflows method currently doesn't work with --entryname flag
+                errorMessage("Parameter '--entryname' not valid for workflows. See `workflow publish --help` for more information.", CLIENT_ERROR);
             }
         }
     }

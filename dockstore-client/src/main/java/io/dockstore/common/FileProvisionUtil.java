@@ -26,7 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -156,7 +156,7 @@ public final class FileProvisionUtil {
             }
         };
 
-        long size = getSize(src).map(s -> s.longValue()).orElse(CopyStreamEvent.UNKNOWN_STREAM_SIZE);
+        long size = getSize(src).orElse(CopyStreamEvent.UNKNOWN_STREAM_SIZE);
 
         try (FileContent srcContent = src.getContent();
             FileContent destContent = dest.getContent();
@@ -178,7 +178,7 @@ public final class FileProvisionUtil {
     private static Optional<Long> getSize(FileObject src)  {
         try {
             FileContent srcContent = src.getContent();
-            return Optional.of(Long.valueOf(srcContent.getSize()));
+            return Optional.of(srcContent.getSize());
         } catch (FileSystemException e) {
             return Optional.empty();
         }
@@ -241,13 +241,15 @@ public final class FileProvisionUtil {
             }
         }
         Gson gson = new Gson();
-        try {
-            JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(pluginJSONPath), Charset.forName("UTF-8")));
+        try (FileInputStream inputStream = new FileInputStream(pluginJSONPath)) {
+            JsonReader reader = new JsonReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             PluginJSON[] arrayJSON = gson.fromJson(reader, PluginJSON[].class);
             List<PluginJSON> listJSON = Arrays.asList(arrayJSON);
             listJSON.forEach(t -> downloadPlugin(filePluginLocation, t));
         } catch (FileNotFoundException e) {
             LOG.error(PLUGINS_JSON_FILENAME + " not found");
+        } catch (IOException e) {
+            LOG.error(PLUGINS_JSON_FILENAME + " could not be downloaded");
         }
     }
 
