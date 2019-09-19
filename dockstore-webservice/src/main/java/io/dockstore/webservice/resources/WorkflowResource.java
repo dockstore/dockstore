@@ -360,7 +360,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
+    @ApiOperation(nickname = "refresh", value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
@@ -433,7 +433,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}")
-    @ApiOperation(value = "Retrieve a workflow", authorizations = {
+    @ApiOperation(nickname = "getWorkflow", value = "Retrieve a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
@@ -451,7 +451,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/labels")
-    @ApiOperation(value = "Update the labels linked to a workflow.", authorizations = {
+    @ApiOperation(nickname = "updateLabels", value = "Update the labels linked to a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
     public Workflow updateLabels(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
@@ -464,7 +464,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Update the workflow with the given workflow.", authorizations = {
+    @ApiOperation(nickname = "updateWorkflow", value = "Update the workflow with the given workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class,
             notes = "Updates descriptor type (if stub), default workflow path, default file path, and default version")
     public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user,
@@ -675,7 +675,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/users")
-    @ApiOperation(value = "Get users of a workflow.", authorizations = {
+    @ApiOperation(nickname = "getUsers", value = "Get users of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
     public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
@@ -715,7 +715,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/publish")
-    @ApiOperation(value = "Publish or unpublish a workflow.", authorizations = {
+    @ApiOperation(nickname = "publish", value = "Publish or unpublish a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
     public Workflow publish(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
@@ -993,7 +993,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/entry/{repository}/published")
-    @ApiOperation(value = "Get a published entry by path.", notes = "Requires full path (including entry name if applicable).", response = Entry.class)
+    @ApiOperation(nickname = "getPublishedEntryByPath", value = "Get a published entry by path.", notes = "Requires full path (including entry name if applicable).", response = Entry.class)
     public Entry getPublishedEntryByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, true);
 
@@ -1009,7 +1009,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
-    @ApiOperation(value = "Get a list of workflows by path.", authorizations = {
+    @ApiOperation(nickname = "getAllWorkflowByPath", value = "Get a list of workflows by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Does not require workflow name.", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
@@ -1023,7 +1023,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/published")
-    @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
+    @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include,
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
@@ -1050,7 +1050,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/versions")
-    @ApiOperation(value = "List the versions for a published workflow.", authorizations = {
+    @ApiOperation(nickname = "tags", value = "List the versions for a published workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findPublishedById(workflowId);
@@ -1062,7 +1062,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/verifiedSources")
-    @ApiOperation(value = "Get a semicolon delimited list of verified sources.", tags = {
+    @ApiOperation(nickname = "verifiedSources", value = "Get a semicolon delimited list of verified sources.", tags = {
         "workflows" }, notes = "NO authentication", response = String.class)
     public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -1087,7 +1087,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/primaryDescriptor")
-    @ApiOperation(value = "Get the primary descriptor file.", tags = {
+    @ApiOperation(nickname = "primaryDescriptor", value = "Get the primary descriptor file.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1101,7 +1101,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/descriptor/{relative-path}")
-    @ApiOperation(value = "Get the corresponding descriptor file from source control.", tags = {
+    @ApiOperation(nickname = "secondaryDescriptorPath", value = "Get the corresponding descriptor file from source control.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1115,7 +1115,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/secondaryDescriptors")
-    @ApiOperation(value = "Get the corresponding descriptor documents from source control.", tags = {
+    @ApiOperation(nickname = "secondaryDescriptors", value = "Get the corresponding descriptor documents from source control.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1130,7 +1130,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
+    @ApiOperation(nickname = "getTestParameterFiles", value = "Get the corresponding test parameter files.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1146,7 +1146,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Add test parameter files for a given version.", authorizations = {
+    @ApiOperation(nickname = "addTestParameterFiles", value = "Add test parameter files for a given version.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
@@ -1190,7 +1190,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Delete test parameter files for a given version.", authorizations = {
+    @ApiOperation(nickname = "deleteTestParameterFiles", value = "Delete test parameter files for a given version.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
@@ -1466,7 +1466,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/star")
-    @ApiOperation(value = "Star a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(nickname = "starEntry", value = "Star a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
@@ -1480,7 +1480,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/unstar")
-    @ApiOperation(value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -1492,7 +1492,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/starredUsers")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "Returns list of users who starred the given workflow.", response = User.class, responseContainer = "List")
+    @ApiOperation(nickname = "getStarredUsers", value = "Returns list of users who starred the given workflow.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsers(
         @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);

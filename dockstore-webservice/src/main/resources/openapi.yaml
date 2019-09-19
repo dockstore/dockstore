@@ -14,6 +14,16 @@ info:
     name: Apache License Version 2.0
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
 tags:
+  - name: containers
+    description: List and register entries in the dockstore (pairs of images + metadata
+      (CWL and Dockerfile))
+  - name: containertags
+    description: List and modify tags for containers
+  - name: entries
+    description: Interact with entries in Dockstore regardless of whether they are
+      containers or workflows
+  - name: extendedGA4GH
+    description: Optional experimental extensions of the GA4GH API
   - name: GA4GH
     description: A curated subset of resources proposed as a common standard for tool
       repositories. Implements TRS
@@ -26,16 +36,6 @@ tags:
       repositories. Implements TRS
       [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)
       and is considered final (not subject to change)
-  - name: containers
-    description: List and register entries in the dockstore (pairs of images + metadata
-      (CWL and Dockerfile))
-  - name: containertags
-    description: List and modify tags for containers
-  - name: entries
-    description: Interact with entries in Dockstore regardless of whether they are
-      containers or workflows
-  - name: extendedGA4GH
-    description: Optional experimental extensions of the GA4GH API
   - name: hosted
     description: Created and modify hosted entries in the dockstore
   - name: metadata
@@ -1648,9 +1648,9 @@ paths:
             application/json:
               schema:
                 type: array
-                uniqueItems: true
                 items:
                   $ref: "#/components/schemas/Tag"
+                uniqueItems: true
       security:
         - BEARER: []
   "/containers/path/{repository}":
@@ -2425,9 +2425,9 @@ paths:
             application/json:
               schema:
                 type: array
-                uniqueItems: true
                 items:
                   $ref: "#/components/schemas/SourceFile"
+                uniqueItems: true
       security:
         - BEARER: []
     delete:
@@ -2474,9 +2474,9 @@ paths:
             application/json:
               schema:
                 type: array
-                uniqueItems: true
                 items:
                   $ref: "#/components/schemas/SourceFile"
+                uniqueItems: true
       security:
         - BEARER: []
   "/containers/{containerId}/unstar":
@@ -3624,9 +3624,9 @@ paths:
             application/json:
               schema:
                 type: array
-                uniqueItems: true
                 items:
                   $ref: "#/components/schemas/OrganizationUser"
+                uniqueItems: true
       security:
         - BEARER: []
   "/organizations/{organizationId}/reject":
@@ -4144,9 +4144,9 @@ paths:
             application/json:
               schema:
                 type: array
-                uniqueItems: true
                 items:
                   $ref: "#/components/schemas/OrganizationUser"
+                uniqueItems: true
       security:
         - BEARER: []
   /users/user/updateUserMetadata:
@@ -5994,9 +5994,9 @@ paths:
             application/json:
               schema:
                 type: array
-                uniqueItems: true
                 items:
                   $ref: "#/components/schemas/SourceFile"
+                uniqueItems: true
       security:
         - BEARER: []
     delete:
@@ -6034,9 +6034,9 @@ paths:
             application/json:
               schema:
                 type: array
-                uniqueItems: true
                 items:
                   $ref: "#/components/schemas/SourceFile"
+                uniqueItems: true
       security:
         - BEARER: []
   "/workflows/{workflowId}/tools/{workflowVersionId}":
@@ -6697,8 +6697,7 @@ components:
           type: array
           uniqueItems: true
           items:
-            $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
-              ockstore"
+            $ref: "#/components/schemas/Version"
         has_checker:
           type: boolean
           readOnly: true
@@ -7699,6 +7698,101 @@ components:
           type: string
         platformVersion:
           type: string
+    Version:
+      type: object
+      required:
+        - name
+        - reference
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the tag in this web service
+          readOnly: true
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
+        referenceType:
+          type: string
+          description: This indicates the type of git (or other source control) reference
+          enum:
+            - COMMIT
+            - TAG
+            - BRANCH
+            - NOT_APPLICABLE
+            - UNSET
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Validation"
+        workingDirectory:
+          type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
+        reference:
+          type: string
+          description: git commit/tag/branch
+        sourceFiles:
+          type: array
+          description: Cached files for each version. Includes Dockerfile and Descriptor
+            files
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/SourceFile"
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
+        valid:
+          type: boolean
+          description: Implementation specific, whether this tag has valid files from
+            source code repo
+        name:
+          type: string
+          description: Implementation specific, can be a quay.io or docker hub tag name
+        dirtyBit:
+          type: boolean
+          description: True if user has altered the tag
+        verified:
+          type: boolean
+          description: Whether this version has been verified or not
+        verifiedSource:
+          type: string
+          description: Verified source for the version
+        doiURL:
+          type: string
+          description: This is a URL for the DOI for the version of the entry
+        doiStatus:
+          type: string
+          description: This indicates the DOI status
+          enum:
+            - NOT_REQUESTED
+            - REQUESTED
+            - CREATED
+        versionEditor:
+          $ref: "#/components/schemas/User"
+        input_file_formats:
+          type: array
+          description: File formats for describing the input file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        output_file_formats:
+          type: array
+          description: File formats for describing the output file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        commitID:
+          type: string
+          description: This is the commit id for the source control that the files belong to
+      description: Base class for versions of entries in the Dockstore
     Workflow:
       type: object
       required:
@@ -7985,97 +8079,3 @@ components:
           type: string
           description: This is the commit id for the source control that the files belong to
       description: This describes one workflow version associated with a workflow.
-    Base_class_for_versions_of_entries_in_the_Dockstore:
-      type: object
-      required:
-        - name
-        - reference
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the tag in this web service
-          readOnly: true
-        frozen:
-          type: boolean
-          description: When true, this version cannot be affected by refreshes to the
-            content or updates to its metadata
-        referenceType:
-          type: string
-          description: This indicates the type of git (or other source control) reference
-          enum:
-            - COMMIT
-            - TAG
-            - BRANCH
-            - NOT_APPLICABLE
-            - UNSET
-        validations:
-          type: array
-          description: Cached validations for each version.
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Validation"
-        workingDirectory:
-          type: string
-        dbUpdateDate:
-          type: string
-          format: date-time
-        reference:
-          type: string
-          description: git commit/tag/branch
-        sourceFiles:
-          type: array
-          description: Cached files for each version. Includes Dockerfile and Descriptor
-            files
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/SourceFile"
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
-        valid:
-          type: boolean
-          description: Implementation specific, whether this tag has valid files from
-            source code repo
-        name:
-          type: string
-          description: Implementation specific, can be a quay.io or docker hub tag name
-        dirtyBit:
-          type: boolean
-          description: True if user has altered the tag
-        verified:
-          type: boolean
-          description: Whether this version has been verified or not
-        verifiedSource:
-          type: string
-          description: Verified source for the version
-        doiURL:
-          type: string
-          description: This is a URL for the DOI for the version of the entry
-        doiStatus:
-          type: string
-          description: This indicates the DOI status
-          enum:
-            - NOT_REQUESTED
-            - REQUESTED
-            - CREATED
-        versionEditor:
-          $ref: "#/components/schemas/User"
-        input_file_formats:
-          type: array
-          description: File formats for describing the input file formats of versions
-            (tag/workflowVersion)
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/FileFormat"
-        output_file_formats:
-          type: array
-          description: File formats for describing the output file formats of versions
-            (tag/workflowVersion)
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/FileFormat"
-        commitID:
-          type: string
-          description: This is the commit id for the source control that the files belong to
