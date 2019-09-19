@@ -312,7 +312,7 @@
                     </execution>
                 </executions>
             </plugin>
-	    <plugin>
+            <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
@@ -326,7 +326,7 @@
                             <ignoreNonCompile>true</ignoreNonCompile>
 
                             <usedDependencies>
-				    <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
+                                <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

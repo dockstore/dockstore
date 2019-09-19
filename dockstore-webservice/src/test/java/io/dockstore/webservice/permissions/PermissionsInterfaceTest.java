@@ -22,18 +22,16 @@ import static org.mockito.Mockito.when;
 
 public class PermissionsInterfaceTest {
 
-    public static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
-    public static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";
+    private static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
+    private static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
     private User userJohn;
     private Permission janeDoeOwnerPermission;
     private Permission janeDoeWriterPermission;
     private User userJane;
     private PermissionsInterface permissionsInterface;
-
-    private Workflow workflow = Mockito.mock(Workflow.class);
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    private Workflow mockedWorkflow = Mockito.mock(Workflow.class);
 
     @Before
     public void setup() {
@@ -95,33 +93,33 @@ public class PermissionsInterfaceTest {
 
     @Test
     public void mergePermissions() {
-        Assert.assertEquals(2, PermissionsInterface.mergePermissions(Arrays.asList(janeDoeOwnerPermission), Arrays.asList(
+        Assert.assertEquals(2, PermissionsInterface.mergePermissions(Collections.singletonList(janeDoeOwnerPermission), Arrays.asList(
                 janeDoeOwnerPermission, janeDoeWriterPermission)).size());
     }
 
     @Test
     public void getOriginalOwnersForWorkflow() {
-        final Set<User> users = new HashSet<>(Arrays.asList(userJohn));
-        workflow = Mockito.mock(Workflow.class);
-        when(workflow.getUsers()).thenReturn(users);
+        final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
+        mockedWorkflow = Mockito.mock(Workflow.class);
+        when(mockedWorkflow.getUsers()).thenReturn(users);
 
-        Assert.assertEquals(1, PermissionsInterface.getOriginalOwnersForWorkflow(workflow).size());
+        Assert.assertEquals(1, PermissionsInterface.getOriginalOwnersForWorkflow(mockedWorkflow).size());
     }
 
     @Test
     public void unauthorizedGetPermissionsForWorkflow() {
-        final Set<User> users = new HashSet<>(Arrays.asList(userJohn));
-        when(workflow.getUsers()).thenReturn(users);
+        final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
+        when(mockedWorkflow.getUsers()).thenReturn(users);
         thrown.expect(CustomWebApplicationException.class);
-        permissionsInterface.getPermissionsForWorkflow(userJane, workflow);
+        permissionsInterface.getPermissionsForWorkflow(userJane, mockedWorkflow);
     }
 
     @Test
     public void checkUserNotOriginalOwner() {
-        final Set<User> users = new HashSet<>(Arrays.asList(userJohn));
-        when(workflow.getUsers()).thenReturn(users);
+        final Set<User> users = new HashSet<>(Collections.singletonList(userJohn));
+        when(mockedWorkflow.getUsers()).thenReturn(users);
         thrown.expect(CustomWebApplicationException.class);
-        PermissionsInterface.checkUserNotOriginalOwner(JOHN_DOE_EXAMPLE_COM, workflow);
-        PermissionsInterface.checkUserNotOriginalOwner(JANE_DOE_EXAMPLE_COM, workflow);
+        PermissionsInterface.checkUserNotOriginalOwner(JOHN_DOE_EXAMPLE_COM, mockedWorkflow);
+        PermissionsInterface.checkUserNotOriginalOwner(JANE_DOE_EXAMPLE_COM, mockedWorkflow);
     }
 }
