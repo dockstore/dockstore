@@ -453,7 +453,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/refresh")
-    @ApiOperation(value = "Refresh all tools owned by the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
+    @ApiOperation(nickname =  "refresh", value = "Refresh all tools owned by the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 

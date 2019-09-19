@@ -16,15 +16,6 @@ info:
     url: "https://github.com/dockstore/dockstore/blob/develop/LICENSE"
 basePath: "/"
 tags:
-- name: "GA4GH"
-  description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\
-    \ . Integrators are welcome to use these endpoints but they are subject to change\
-    \ based on community input."
-- name: "GA4GHV1"
-  description: "A curated subset of resources proposed as a common standard for tool\
-    \ repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)\
-    \ and is considered final (not subject to change)"
 - name: "containers"
   description: "List and register entries in the dockstore (pairs of images + metadata\
     \ (CWL and Dockerfile))"
@@ -35,6 +26,15 @@ tags:
     \ containers or workflows"
 - name: "extendedGA4GH"
   description: "Optional experimental extensions of the GA4GH API"
+- name: "GA4GH"
+  description: "A curated subset of resources proposed as a common standard for tool\
+    \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\
+    \ . Integrators are welcome to use these endpoints but they are subject to change\
+    \ based on community input."
+- name: "GA4GHV1"
+  description: "A curated subset of resources proposed as a common standard for tool\
+    \ repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)\
+    \ and is considered final (not subject to change)"
 - name: "hosted"
   description: "Created and modify hosted entries in the dockstore"
 - name: "metadata"
@@ -1448,9 +1448,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/Tag"
+            uniqueItems: true
       security:
       - BEARER: []
   /containers/path/{repository}:
@@ -2204,9 +2204,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
     delete:
@@ -2249,9 +2249,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
   /containers/{containerId}/unstar:
@@ -3375,9 +3375,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/OrganizationUser"
+            uniqueItems: true
       security:
       - BEARER: []
   /organizations/{organizationId}/reject:
@@ -3893,9 +3893,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/OrganizationUser"
+            uniqueItems: true
       security:
       - BEARER: []
   /users/user/updateUserMetadata:
@@ -5676,9 +5676,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
     delete:
@@ -5713,9 +5713,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
   /workflows/{workflowId}/tools/{workflowVersionId}:
