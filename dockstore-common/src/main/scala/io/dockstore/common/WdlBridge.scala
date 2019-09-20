@@ -325,7 +325,7 @@ class WdlBridge {
 
   /**
     * Retrieve the language factory for the given primary descriptor file
-    * @param fileContent Content of the primary workfflow file
+    * @param fileContent Content of the primary workflow file
     * @return Correct language factory based on the version of WDL
     */
   def getLanguageFactory(fileContent: String) : LanguageFactory = {
