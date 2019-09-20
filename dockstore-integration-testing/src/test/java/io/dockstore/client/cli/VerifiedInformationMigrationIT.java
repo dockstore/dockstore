@@ -28,7 +28,8 @@ import org.junit.runner.Description;
 public class VerifiedInformationMigrationIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
+    protected static TestingPostgres testingPostgres;
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
     @Rule
@@ -37,8 +38,6 @@ public class VerifiedInformationMigrationIT {
             System.out.println("Starting test: " + description.getMethodName());
         }
     };
-
-    protected static TestingPostgres testingPostgres;
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() {
@@ -62,8 +61,6 @@ public class VerifiedInformationMigrationIT {
             Assert.fail("Could not run migrations up to 1.4.0");
         }
 
-
-
         testingPostgres.runUpdateStatement("UPDATE tag SET verified='t' where name='fakeName'");
 
         // Run full 1.5.0 migration
@@ -74,10 +71,10 @@ public class VerifiedInformationMigrationIT {
             Assert.fail("Could not run 1.5.0 migration");
         }
 
-        final long afterMigrationVerifiedCount = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile_verified",
-                        long.class);
-        Assert.assertEquals("There should be 2 entries in sourcefile_verified after the migration but got: " + afterMigrationVerifiedCount, 5, afterMigrationVerifiedCount);
+        final long afterMigrationVerifiedCount = testingPostgres.runSelectStatement("select count(*) from sourcefile_verified", long.class);
+        Assert
+            .assertEquals("There should be 2 entries in sourcefile_verified after the migration but got: " + afterMigrationVerifiedCount, 5,
+                afterMigrationVerifiedCount);
     }
 
     @Test
@@ -91,12 +88,11 @@ public class VerifiedInformationMigrationIT {
             Assert.fail("Could not run migrations up to 1.4.0");
         }
 
-
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET verified='t' where name='master'");
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
-                SourceControl.GITHUB.toString() + "/testWorkflow/testWorkflow", "--verified-source",
-                "Docker testing group", "--version", "master", "--script" });
+            SourceControl.GITHUB.toString() + "/testWorkflow/testWorkflow", "--verified-source", "Docker testing group", "--version",
+            "master", "--script" });
 
         // Run full 1.5.0 migration
         try {
@@ -106,9 +102,9 @@ public class VerifiedInformationMigrationIT {
             Assert.fail("Could not run 1.5.0 migration");
         }
 
-        final long afterMigrationVerifiedCount = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile_verified", long.class);
-        Assert.assertEquals("There should be 2 entries in sourcefile_verified after the migration but got: " + afterMigrationVerifiedCount, 2,
+        final long afterMigrationVerifiedCount = testingPostgres.runSelectStatement("select count(*) from sourcefile_verified", long.class);
+        Assert
+            .assertEquals("There should be 2 entries in sourcefile_verified after the migration but got: " + afterMigrationVerifiedCount, 2,
                 afterMigrationVerifiedCount);
     }
 }

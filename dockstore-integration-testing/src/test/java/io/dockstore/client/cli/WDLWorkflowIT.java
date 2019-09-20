@@ -52,8 +52,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 /**
- * Gathers a few tests that focus on WDL workflows, testing things like generation of wdl test parameter files 
+ * Gathers a few tests that focus on WDL workflows, testing things like generation of wdl test parameter files
  * and launching workflows with imports
+ *
  * @author dyuen
  */
 @Category(ConfidentialTest.class)

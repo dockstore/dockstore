@@ -25,7 +25,7 @@ googleClientSecret: <fill me in>
 # port should match the port where the UI is being hosted, 4200 by default
 googleRedirectURI: http://<fill me in>:8080/auth/tokens/google.com
 
-externalConfig: 
+externalConfig:
   basePath: /api/
   hostname: localhost
   scheme: http
@@ -35,11 +35,11 @@ authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 
 server:
   applicationConnectors:
-  - type: http 
-    port: 8080
+    - type: http
+      port: 8080
   adminConnectors:
-  - type: http
-    port: 8001
+    - type: http
+      port: 8001
 
 limitConfig:
   workflowLimit: 10

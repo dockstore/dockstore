@@ -53,12 +53,17 @@ public class BaseIT {
     public static final String ADMIN_USERNAME = "admin@admin.com";
     public static final String USER_1_USERNAME = "DockstoreTestUser";
     public static final String USER_2_USERNAME = "DockstoreTestUser2";
-    static final String OTHER_USERNAME = "OtherUser";
-    final String CURATOR_USERNAME = "curator@curator.com";
-
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     protected static TestingPostgres testingPostgres;
+    static final String OTHER_USERNAME = "OtherUser";
+    @Rule
+    public final TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
+    final String curatorUsername = "curator@curator.com";
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
@@ -86,33 +91,28 @@ public class BaseIT {
         SUPPORT.after();
     }
 
-    @After
-    public void after() throws InterruptedException {
-        assertNoMetricsLeaks(SUPPORT);
-    }
-
-    @Before
-    public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
-    }
-
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
-
     /**
      * the following were migrated from SwaggerClientIT and can be eventually merged. Note different config file used
      */
 
-    protected static ApiClient getWebClient(String username, TestingPostgres testingPostgres) {
-        return CommonTestUtilities.getWebClient(true, username, testingPostgres);
+    protected static ApiClient getWebClient(String username, TestingPostgres testingPostgresParameter) {
+        return CommonTestUtilities.getWebClient(true, username, testingPostgresParameter);
     }
 
     protected static ApiClient getWebClient() {
         return getWebClient(true, false);
+    }
+
+    protected static ApiClient getWebClient(boolean correctUser, boolean admin) {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        ApiClient client = new ApiClient();
+        ApiKeyAuth bearer = (ApiKeyAuth)client.getAuthentication("BEARER");
+        bearer.setApiKeyPrefix("BEARER");
+        bearer.setApiKey((correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2)
+            : "foobar"));
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        return client;
     }
 
     static ApiClient getAdminWebClient() {
@@ -127,16 +127,13 @@ public class BaseIT {
         return client;
     }
 
-    protected static ApiClient getWebClient(boolean correctUser, boolean admin) {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        ApiClient client = new ApiClient();
-        ApiKeyAuth bearer = (ApiKeyAuth) client.getAuthentication("BEARER");
-        bearer.setApiKeyPrefix("BEARER");
-        bearer.setApiKey((correctUser ?
-                parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) :
-                "foobar"));
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        return client;
+    @After
+    public void after() throws InterruptedException {
+        assertNoMetricsLeaks(SUPPORT);
+    }
+
+    @Before
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 }

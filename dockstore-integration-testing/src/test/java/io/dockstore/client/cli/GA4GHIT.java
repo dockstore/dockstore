@@ -54,22 +54,20 @@ import static org.junit.Assert.assertEquals;
  */
 public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH, ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
+        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
+        ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
     protected static javax.ws.rs.client.Client client;
-    final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
-    final String baseURL = String.format("http://localhost:%d" + basePath + getApiVersion(), SUPPORT.getLocalPort());
-
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
     @Rule
-    public ExpectedException thrown= ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
+
+    final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
+    final String baseURL = String.format("http://localhost:%d" + basePath + getApiVersion(), SUPPORT.getLocalPort());
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
@@ -244,6 +242,7 @@ public abstract class GA4GHIT {
 
     /**
      * checks that a descriptor or equivalent has the right fields
+     *
      * @param descriptor the descriptor to check
      */
     abstract void assertDescriptor(String descriptor);
@@ -283,13 +282,14 @@ public abstract class GA4GHIT {
 
     /**
      * Checks the JsonElement for URLs
-     * @param jsonElement   The JsonElement to check
+     *
+     * @param jsonElement The JsonElement to check
      */
     private void parseJSONElementForURLs(JsonElement jsonElement) {
         if (jsonElement.isJsonObject()) {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             Set<Map.Entry<String, JsonElement>> keys = jsonObject.entrySet();
-            for (Map.Entry<String, JsonElement> jsonElementEntry: keys) {
+            for (Map.Entry<String, JsonElement> jsonElementEntry : keys) {
                 if (jsonElementEntry.getKey().equals("url")) {
                     checkURL(jsonElementEntry.getValue().getAsString());
                 } else {
@@ -299,7 +299,7 @@ public abstract class GA4GHIT {
         } else {
             if (jsonElement.isJsonArray()) {
                 JsonArray jsonArray = jsonElement.getAsJsonArray();
-                jsonArray.forEach(jsonArrayElement -> parseJSONElementForURLs(jsonArrayElement));
+                jsonArray.forEach(this::parseJSONElementForURLs);
             } else {
                 if (!jsonElement.isJsonPrimitive()) {
                     Assert.fail("Unknown type: " + jsonElement.toString());
@@ -310,7 +310,8 @@ public abstract class GA4GHIT {
 
     /**
      * Checks if the URL has an OK response status
-     * @param url   The URL to check
+     *
+     * @param url The URL to check
      */
     private void checkURL(String url) {
         url = TestUtility.mimicNginxRewrite(url, basePath);

@@ -6,10 +6,13 @@
   {
     "path": "Dockstore.cwl",
     "file_type": "PRIMARY_DESCRIPTOR"
-  },{"file_type":"TEST_FILE","path":"nested/test.cwl.json"},
+  },
+  {
+    "file_type": "TEST_FILE",
+    "path": "nested/test.cwl.json"
+  },
   {
     "path": "test.cwl.json",
     "file_type": "TEST_FILE"
   }
-
 ]
