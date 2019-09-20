@@ -31,7 +31,7 @@
         <dependency>
             <groupId>com.beust</groupId>
             <artifactId>jcommander</artifactId>
-            <version>1.60</version>
+            <version>1.78</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -128,12 +128,11 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-base</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.major.version}</version>
         </dependency>
         <dependency>
             <groupId>io.cwl</groupId>

@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -744,7 +745,7 @@ public abstract class AbstractEntryClient<T> {
                         break;
                     }
                 }
-                final String joinedLanguages = Joiner.on(',').join(DescriptorLanguage.values());
+                final String joinedLanguages = Joiner.on(',').join(Arrays.stream(DescriptorLanguage.values()).map(DescriptorLanguage::getLowerShortName).collect(Collectors.toSet()));
                 if (!validType) {
                     errorMessage("Only " + joinedLanguages + " are valid descriptor types", CLIENT_ERROR);
                 }

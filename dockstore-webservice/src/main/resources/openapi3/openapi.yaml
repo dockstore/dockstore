@@ -1,581 +1,74 @@
-components:
-  schemas:
-    Alias:
-      properties:
-        content:
-          type: string
-      type: object
-    Config:
-      properties:
-        bitBucketAuthUrl:
-          type: string
-        bitBucketClientId:
-          type: string
-        cwlVisualizerUri:
-          type: string
-        discourseUrl:
-          type: string
-        dnaNexusImportUrl:
-          type: string
-        dnaStackImportUrl:
-          type: string
-        documentationUrl:
-          type: string
-        gitHubAppInstallationUrl:
-          type: string
-        gitHubAuthUrl:
-          type: string
-        gitHubRedirectPath:
-          type: string
-        gitHubScope:
-          type: string
-        githubClientId:
-          type: string
-        gitlabAuthUrl:
-          type: string
-        gitlabClientId:
-          type: string
-        gitlabRedirectPath:
-          type: string
-        gitlabScope:
-          type: string
-        googleClientId:
-          type: string
-        googleScope:
-          type: string
-        quayIoAuthUrl:
-          type: string
-        quayIoClientId:
-          type: string
-        quayIoRedirectPath:
-          type: string
-        quayIoScope:
-          type: string
-        tagManagerId:
-          type: string
-        terraImportUrl:
-          type: string
-        zenodoAuthUrl:
-          type: string
-        zenodoClientId:
-          type: string
-        zenodoRedirectPath:
-          type: string
-        zenodoScope:
-          type: string
-      type: object
-    DescriptorLanguageBean:
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
-      type: object
-    Entry:
-      properties:
-        aliases:
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-          type: object
-        author:
-          type: string
-        checker_id:
-          format: int64
-          type: integer
-        dbCreateDate:
-          format: date-time
-          type: string
-        dbUpdateDate:
-          format: date-time
-          type: string
-        defaultVersion:
-          type: string
-        description:
-          type: string
-        email:
-          type: string
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          format: int64
-          type: integer
-        input_file_formats:
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          type: array
-          uniqueItems: true
-        is_published:
-          type: boolean
-        labels:
-          items:
-            $ref: '#/components/schemas/Label'
-          type: array
-          uniqueItems: true
-        lastUpdated:
-          format: date-time
-          type: string
-        last_modified:
-          format: int32
-          type: integer
-        last_modified_date:
-          format: date-time
-          type: string
-        output_file_formats:
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          type: array
-          uniqueItems: true
-        starredUsers:
-          items:
-            $ref: '#/components/schemas/User'
-          type: array
-          uniqueItems: true
-        topicId:
-          format: int64
-          type: integer
-        users:
-          items:
-            $ref: '#/components/schemas/User'
-          type: array
-          uniqueItems: true
-        workflowVersions:
-          items:
-            $ref: '#/components/schemas/Version'
-          type: array
-          uniqueItems: true
-      type: object
-    FileFormat:
-      properties:
-        value:
-          type: string
-      type: object
-    Label:
-      properties:
-        id:
-          format: int64
-          type: integer
-        value:
-          type: string
-      type: object
-    Profile:
-      properties:
-        avatarURL:
-          type: string
-        bio:
-          type: string
-        company:
-          type: string
-        email:
-          type: string
-        location:
-          type: string
-        name:
-          type: string
-        username:
-          type: string
-      type: object
-    RegistryBean:
-      properties:
-        customDockerPath:
-          type: string
-        dockerPath:
-          type: string
-        enum:
-          type: string
-        friendlyName:
-          type: string
-        privateOnly:
-          type: string
-        url:
-          type: string
-      type: object
-    SourceControlBean:
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
-      type: object
-    SourceFile:
-      properties:
-        absolutePath:
-          type: string
-        content:
-          type: string
-        frozen:
-          type: boolean
-        id:
-          format: int64
-          type: integer
-        path:
-          type: string
-        type:
-          enum:
-          - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
-          - CWL_TEST_JSON
-          - WDL_TEST_JSON
-          - NEXTFLOW
-          - NEXTFLOW_CONFIG
-          - NEXTFLOW_TEST_PARAMS
-          - DOCKSTORE_YML
-          - DOCKSTORE_SERVICE_YML
-          - DOCKSTORE_SERVICE_TEST_JSON
-          - DOCKSTORE_SERVICE_OTHER
-          type: string
-        verifiedBySource:
-          additionalProperties:
-            $ref: '#/components/schemas/VerificationInformation'
-          type: object
-      type: object
-    ToolTesterLog:
-      properties:
-        filename:
-          type: string
-        logType:
-          enum:
-          - FULL
-          - SUMMARY
-          type: string
-        runner:
-          type: string
-        testFilename:
-          type: string
-        toolId:
-          type: string
-        toolVersionName:
-          type: string
-      type: object
-    User:
-      properties:
-        avatarUrl:
-          type: string
-        curator:
-          type: boolean
-        id:
-          format: int64
-          type: integer
-        isAdmin:
-          type: boolean
-        name:
-          type: string
-        privacyPolicyVersion:
-          enum:
-          - NONE
-          - PRIVACY_POLICY_VERSION_2_5
-          type: string
-        privacyPolicyVersionAcceptanceDate:
-          format: date-time
-          type: string
-        setupComplete:
-          type: boolean
-        tosacceptanceDate:
-          format: date-time
-          type: string
-        tosversion:
-          enum:
-          - NONE
-          - TOS_VERSION_1
-          type: string
-        tosversionAcceptanceDate:
-          format: date-time
-          type: string
-          writeOnly: true
-        userProfiles:
-          additionalProperties:
-            $ref: '#/components/schemas/Profile'
-          type: object
-        username:
-          type: string
-      type: object
-    Validation:
-      properties:
-        id:
-          format: int64
-          type: integer
-        message:
-          type: string
-        type:
-          enum:
-          - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
-          - CWL_TEST_JSON
-          - WDL_TEST_JSON
-          - NEXTFLOW
-          - NEXTFLOW_CONFIG
-          - NEXTFLOW_TEST_PARAMS
-          - DOCKSTORE_YML
-          - DOCKSTORE_SERVICE_YML
-          - DOCKSTORE_SERVICE_TEST_JSON
-          - DOCKSTORE_SERVICE_OTHER
-          type: string
-        valid:
-          type: boolean
-      type: object
-    VerificationInformation:
-      properties:
-        metadata:
-          type: string
-        platformVersion:
-          type: string
-        verified:
-          type: boolean
-      type: object
-    Version:
-      properties:
-        commitID:
-          type: string
-        dbUpdateDate:
-          format: date-time
-          type: string
-        dirtyBit:
-          type: boolean
-        doiStatus:
-          enum:
-          - NOT_REQUESTED
-          - REQUESTED
-          - CREATED
-          type: string
-        doiURL:
-          type: string
-        frozen:
-          type: boolean
-        hidden:
-          type: boolean
-        id:
-          format: int64
-          type: integer
-        input_file_formats:
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          type: array
-          uniqueItems: true
-        name:
-          type: string
-        output_file_formats:
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          type: array
-          uniqueItems: true
-        reference:
-          type: string
-        referenceType:
-          enum:
-          - COMMIT
-          - TAG
-          - BRANCH
-          - NOT_APPLICABLE
-          - UNSET
-          type: string
-        sourceFiles:
-          items:
-            $ref: '#/components/schemas/SourceFile'
-          type: array
-          uniqueItems: true
-        valid:
-          type: boolean
-        validations:
-          items:
-            $ref: '#/components/schemas/Validation'
-          type: array
-          uniqueItems: true
-        verified:
-          type: boolean
-        verifiedSource:
-          type: string
-        versionEditor:
-          $ref: '#/components/schemas/User'
-        workingDirectory:
-          type: string
-      type: object
-  securitySchemes:
-    bearer:
-      bearerFormat: JWT
-      scheme: bearer
-      type: http
-externalDocs:
-  description: User documentation for dockstore
-  url: https://docs.dockstore.org/
+openapi: 3.0.1
 info:
+  title: Dockstore
+  description: The Dockstore API, includes proprietary and GA4GH V1+V2 endpoints
+  termsOfService: http://swagger.io/terms/
   contact:
-    email: theglobalalliance@genomicsandhealth.org
     name: Dockstore@ga4gh
     url: https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506
-  description: The Dockstore API, includes proprietary and GA4GH V1+V2 endpoints
+    email: theglobalalliance@genomicsandhealth.org
   license:
     name: Apache 2.0
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
-  termsOfService: http://swagger.io/terms/
-  title: Dockstore
   version: 1.6.0
-openapi: 3.0.1
+externalDocs:
+  description: User documentation for dockstore
+  url: https://docs.dockstore.org/
+tags:
+- name: metadata
+  description: description of the webservice itself
+- name: toolTester
+  description: Interactions with the Dockstore-support's ToolTester application
 paths:
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.
       operationId: setDiscourseTopic
       parameters:
-      - description: The id of the entry to add a topic to.
+      - name: id
         in: path
-        name: id
+        description: The id of the entry to add a topic to.
         required: true
         schema:
-          format: int64
           type: integer
+          format: int64
       responses:
         default:
+          description: default response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-          description: default response
       security:
       - bearer: []
-  /metadata/config.json:
-    get:
-      description: Configuration, NO authentication
-      operationId: getConfig
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Config'
-          description: default response
-      summary: Configuration for UI clients of the API
-      tags:
-      - metadata
-  /metadata/descriptorLanguageList:
-    get:
-      description: Get the list of descriptor languages supported on Dockstore, NO
-        authentication
-      operationId: getDescriptorLanguages
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/DescriptorLanguageBean'
-                type: array
-          description: List of descriptor languages
-      summary: Get the list of descriptor languages supported on Dockstore
-      tags:
-      - metadata
   /metadata/dockerRegistryList:
     get:
+      tags:
+      - metadata
+      summary: Get the list of docker registries supported on Dockstore
       description: Get the list of docker registries supported on Dockstore, NO authentication
       operationId: getDockerRegistries
       responses:
         default:
+          description: List of Docker registries
           content:
             application/json:
               schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
-                type: array
-          description: List of Docker registries
-      summary: Get the list of docker registries supported on Dockstore
-      tags:
-      - metadata
-  /metadata/elasticSearch:
-    get:
-      description: Successful response if elastic search is up and running, NO authentication
-      operationId: checkElasticSearch
-      responses:
-        default:
-          content:
-            text/html: {}
-            text/xml: {}
-          description: default response
-      summary: Successful response if elastic search is up and running
-      tags:
-      - metadata
-  /metadata/okHttpCachePerformance:
-    get:
-      description: Get measures of cache performance, NO authentication
-      operationId: getCachePerformance
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                additionalProperties:
-                  type: string
-                type: object
-          description: Cache performance information
-      summary: Get measures of cache performance
-      tags:
-      - metadata
-  /metadata/rss:
-    get:
-      description: List all published tools and workflows in creation order, NO authentication
-      operationId: rssFeed
-      responses:
-        default:
-          content:
-            text/xml:
-              schema:
-                type: string
-          description: default response
-      summary: List all published tools and workflows in creation order
-      tags:
-      - metadata
-  /metadata/runner_dependencies:
-    get:
-      description: Returns the file containing runner dependencies, NO authentication
-      operationId: getRunnerDependencies
-      parameters:
-      - description: The Dockstore client version
-        in: query
-        name: client_version
-        schema:
-          type: string
-      - description: Python version, only relevant for the cwltool runner
-        in: query
-        name: python_version
-        schema:
-          default: "2"
-          type: string
-      - description: The tool runner
-        in: query
-        name: runner
-        schema:
-          default: cwltool
-          enum:
-          - cwltool
-          type: string
-      - description: Response type
-        in: query
-        name: output
-        schema:
-          default: text
-          enum:
-          - json
-          - text
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: string
-          description: The requirements.txt file
-      summary: Returns the file containing runner dependencies
-      tags:
-      - metadata
   /metadata/sitemap:
     get:
+      tags:
+      - metadata
+      summary: List all available workflow, tool, organization, and collection paths.
       description: List all available workflow, tool, organization, and collection
         paths. Available means published for tools/workflows, and approved for organizations
         and their respective collections. NO authentication
       operationId: sitemap
       responses:
         default:
+          description: default response
           content:
             text/html:
               schema:
@@ -583,108 +76,243 @@ paths:
             text/xml:
               schema:
                 type: string
-          description: default response
-      summary: List all available workflow, tool, organization, and collection paths.
+  /metadata/rss:
+    get:
       tags:
       - metadata
+      summary: List all published tools and workflows in creation order
+      description: List all published tools and workflows in creation order, NO authentication
+      operationId: rssFeed
+      responses:
+        default:
+          description: default response
+          content:
+            text/xml:
+              schema:
+                type: string
+  /metadata/runner_dependencies:
+    get:
+      tags:
+      - metadata
+      summary: Returns the file containing runner dependencies
+      description: Returns the file containing runner dependencies, NO authentication
+      operationId: getRunnerDependencies
+      parameters:
+      - name: client_version
+        in: query
+        description: The Dockstore client version
+        schema:
+          type: string
+      - name: python_version
+        in: query
+        description: Python version, only relevant for the cwltool runner
+        schema:
+          type: string
+          default: "2"
+      - name: runner
+        in: query
+        description: The tool runner
+        schema:
+          type: string
+          default: cwltool
+          enum:
+          - cwltool
+      - name: output
+        in: query
+        description: Response type
+        schema:
+          type: string
+          default: text
+          enum:
+          - json
+          - text
+      responses:
+        default:
+          description: The requirements.txt file
+          content:
+            application/json:
+              schema:
+                type: string
   /metadata/sourceControlList:
     get:
+      tags:
+      - metadata
+      summary: Get the list of source controls supported on Dockstore
       description: Get the list of source controls supported on Dockstore, NO authentication
       operationId: getSourceControlList
       responses:
         default:
+          description: List of source control repositories
           content:
             application/json:
               schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
-                type: array
-          description: List of source control repositories
-      summary: Get the list of source controls supported on Dockstore
+  /metadata/descriptorLanguageList:
+    get:
       tags:
       - metadata
+      summary: Get the list of descriptor languages supported on Dockstore
+      description: Get the list of descriptor languages supported on Dockstore, NO
+        authentication
+      operationId: getDescriptorLanguages
+      responses:
+        default:
+          description: List of descriptor languages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DescriptorLanguageBean'
+  /metadata/okHttpCachePerformance:
+    get:
+      tags:
+      - metadata
+      summary: Get measures of cache performance
+      description: Get measures of cache performance, NO authentication
+      operationId: getCachePerformance
+      responses:
+        default:
+          description: Cache performance information
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /metadata/elasticSearch:
+    get:
+      tags:
+      - metadata
+      summary: Successful response if elastic search is up and running
+      description: Successful response if elastic search is up and running, NO authentication
+      operationId: checkElasticSearch
+      responses:
+        default:
+          description: default response
+          content:
+            text/html: {}
+            text/xml: {}
+  /metadata/config.json:
+    get:
+      tags:
+      - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+  /toolTester/logs/search:
+    get:
+      tags:
+      - toolTester
+      summary: Search for ToolTester log files
+      operationId: search
+      parameters:
+      - name: tool_id
+        in: query
+        description: TRS Tool Id
+        required: true
+        schema:
+          type: string
+        example: '#workflow/github.com/dockstore/hello_world'
+      - name: tool_version_name
+        in: query
+        required: true
+        schema:
+          type: string
+        example: v1.0.0
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTesterLog'
   /toolTester/logs:
     get:
+      tags:
+      - toolTester
+      summary: Get ToolTester log file
       operationId: getToolTesterLog
       parameters:
-      - description: TRS Tool Id
+      - name: tool_id
+        in: query
+        description: TRS Tool Id
+        required: true
+        schema:
+          type: string
         example: '#workflow/github.com/dockstore/hello_world'
+      - name: tool_version_name
         in: query
-        name: tool_id
         required: true
         schema:
           type: string
-      - example: v1.0.0
+        example: v1.0.0
+      - name: test_filename
         in: query
-        name: tool_version_name
         required: true
         schema:
           type: string
-      - example: hello_world.cwl.json
+        example: hello_world.cwl.json
+      - name: runner
         in: query
-        name: test_filename
         required: true
         schema:
           type: string
-      - example: cwltool
+        example: cwltool
+      - name: log_type
         in: query
-        name: runner
         required: true
         schema:
           type: string
-      - in: query
-        name: log_type
-        required: true
-        schema:
           enum:
           - FULL
           - SUMMARY
-          type: string
-      - example: 1554477737092.log
+      - name: filename
         in: query
-        name: filename
         required: true
         schema:
           type: string
+        example: 1554477737092.log
       responses:
         default:
+          description: default response
           content:
             text/plain:
               schema:
                 type: string
-          description: default response
-      summary: Get ToolTester log file
-      tags:
-      - toolTester
-  /toolTester/logs/search:
+  /users/{userId}:
     get:
-      operationId: search
+      operationId: getSpecificUser
       parameters:
-      - description: TRS Tool Id
-        example: '#workflow/github.com/dockstore/hello_world'
-        in: query
-        name: tool_id
+      - name: userId
+        in: path
         required: true
         schema:
-          type: string
-      - example: v1.0.0
-        in: query
-        name: tool_version_name
-        required: true
-        schema:
-          type: string
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
         default:
+          description: default response
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ToolTesterLog'
-                type: array
-          description: default response
-      summary: Search for ToolTester log files
-      tags:
-      - toolTester
+                $ref: '#/components/schemas/User'
   /users/user:
     get:
       operationId: getUser
@@ -695,35 +323,411 @@ paths:
               $ref: '#/components/schemas/User'
       responses:
         default:
+          description: default response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
-  /users/{userId}:
-    get:
-      operationId: getSpecificUser
-      parameters:
-      - in: path
-        name: userId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      requestBody:
+components:
+  schemas:
+    Alias:
+      type: object
+      properties:
         content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: default response
-tags:
-- description: description of the webservice itself
-  name: metadata
-- description: Interactions with the Dockstore-support's ToolTester application
-  name: toolTester
+          type: string
+    Entry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          type: string
+        description:
+          type: string
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        email:
+          type: string
+        defaultVersion:
+          type: string
+        lastUpdated:
+          type: string
+          format: date-time
+        gitUrl:
+          type: string
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        topicId:
+          type: integer
+          format: int64
+        workflowVersions:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Version'
+        is_published:
+          type: boolean
+        last_modified:
+          type: integer
+          format: int32
+        checker_id:
+          type: integer
+          format: int64
+        has_checker:
+          type: boolean
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+    FileFormat:
+      type: object
+      properties:
+        value:
+          type: string
+    Label:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        value:
+          type: string
+    Profile:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        avatarURL:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        username:
+          type: string
+    SourceFile:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum:
+          - DOCKSTORE_CWL
+          - DOCKSTORE_WDL
+          - DOCKERFILE
+          - CWL_TEST_JSON
+          - WDL_TEST_JSON
+          - NEXTFLOW
+          - NEXTFLOW_CONFIG
+          - NEXTFLOW_TEST_PARAMS
+          - DOCKSTORE_YML
+          - DOCKSTORE_SERVICE_YML
+          - DOCKSTORE_SERVICE_TEST_JSON
+          - DOCKSTORE_SERVICE_OTHER
+        content:
+          type: string
+        path:
+          type: string
+        absolutePath:
+          type: string
+        frozen:
+          type: boolean
+        verifiedBySource:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/VerificationInformation'
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        isAdmin:
+          type: boolean
+        userProfiles:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Profile'
+        avatarUrl:
+          type: string
+        curator:
+          type: boolean
+        setupComplete:
+          type: boolean
+        privacyPolicyVersion:
+          type: string
+          enum:
+          - NONE
+          - PRIVACY_POLICY_VERSION_2_5
+        privacyPolicyVersionAcceptanceDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+        tosversion:
+          type: string
+          enum:
+          - NONE
+          - TOS_VERSION_1
+        tosversionAcceptanceDate:
+          type: string
+          format: date-time
+          writeOnly: true
+        tosacceptanceDate:
+          type: string
+          format: date-time
+    Validation:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum:
+          - DOCKSTORE_CWL
+          - DOCKSTORE_WDL
+          - DOCKERFILE
+          - CWL_TEST_JSON
+          - WDL_TEST_JSON
+          - NEXTFLOW
+          - NEXTFLOW_CONFIG
+          - NEXTFLOW_TEST_PARAMS
+          - DOCKSTORE_YML
+          - DOCKSTORE_SERVICE_YML
+          - DOCKSTORE_SERVICE_TEST_JSON
+          - DOCKSTORE_SERVICE_OTHER
+        valid:
+          type: boolean
+        message:
+          type: string
+    VerificationInformation:
+      type: object
+      properties:
+        verified:
+          type: boolean
+        metadata:
+          type: string
+        platformVersion:
+          type: string
+    Version:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        reference:
+          type: string
+        name:
+          type: string
+        commitID:
+          type: string
+        frozen:
+          type: boolean
+        referenceType:
+          type: string
+          enum:
+          - COMMIT
+          - TAG
+          - BRANCH
+          - NOT_APPLICABLE
+          - UNSET
+        sourceFiles:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        valid:
+          type: boolean
+        dirtyBit:
+          type: boolean
+        versionEditor:
+          $ref: '#/components/schemas/User'
+        validations:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Validation'
+        hidden:
+          type: boolean
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
+        verifiedSources:
+          type: array
+          items:
+            type: string
+        doiURL:
+          type: string
+        doiStatus:
+          type: string
+          enum:
+          - NOT_REQUESTED
+          - REQUESTED
+          - CREATED
+        workingDirectory:
+          type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+    RegistryBean:
+      type: object
+      properties:
+        dockerPath:
+          type: string
+        friendlyName:
+          type: string
+        url:
+          type: string
+        privateOnly:
+          type: string
+        customDockerPath:
+          type: string
+        enum:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    Config:
+      type: object
+      properties:
+        dnaStackImportUrl:
+          type: string
+        dnaNexusImportUrl:
+          type: string
+        terraImportUrl:
+          type: string
+        gitHubAuthUrl:
+          type: string
+        gitHubRedirectPath:
+          type: string
+        gitHubScope:
+          type: string
+        quayIoAuthUrl:
+          type: string
+        quayIoRedirectPath:
+          type: string
+        quayIoScope:
+          type: string
+        bitBucketAuthUrl:
+          type: string
+        gitlabAuthUrl:
+          type: string
+        gitlabRedirectPath:
+          type: string
+        gitlabScope:
+          type: string
+        zenodoAuthUrl:
+          type: string
+        zenodoRedirectPath:
+          type: string
+        zenodoScope:
+          type: string
+        googleScope:
+          type: string
+        cwlVisualizerUri:
+          type: string
+        tagManagerId:
+          type: string
+        gitHubAppInstallationUrl:
+          type: string
+        documentationUrl:
+          type: string
+        githubClientId:
+          type: string
+        quayIoClientId:
+          type: string
+        bitBucketClientId:
+          type: string
+        gitlabClientId:
+          type: string
+        zenodoClientId:
+          type: string
+        googleClientId:
+          type: string
+        discourseUrl:
+          type: string
+    ToolTesterLog:
+      type: object
+      properties:
+        toolId:
+          type: string
+        toolVersionName:
+          type: string
+        testFilename:
+          type: string
+        runner:
+          type: string
+        logType:
+          type: string
+          enum:
+          - FULL
+          - SUMMARY
+        filename:
+          type: string
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
