@@ -14,7 +14,7 @@ cache:
 
 dist: bionic
 language: java
-jdk: openjdk11
+jdk: openjdk12
 
 env:
   - TESTING_PROFILE=integration-tests
