@@ -379,6 +379,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
+  /containers/{containerId}/labels:
+    put:
+      operationId: updateLabels
+      parameters:
+      - name: containerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: labels
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
   /containers/{containerId}:
     get:
       operationId: getContainer
@@ -712,23 +738,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-  /containers/{containerId}/verifiedSources:
-    get:
-      operationId: verifiedSources
-      parameters:
-      - name: containerId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
   /containers/{containerId}/primaryDescriptor:
     get:
       operationId: primaryDescriptor
@@ -1019,32 +1028,6 @@ paths:
       - name: alias
         in: path
         required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-  /containers/{containerId}/labels:
-    put:
-      operationId: updateLabels
-      parameters:
-      - name: containerId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: labels
-        in: query
         schema:
           type: string
       requestBody:
@@ -2231,67 +2214,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
-  /auth/tokens/{tokenId}:
-    get:
-      operationId: listToken
-      parameters:
-      - name: tokenId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Token'
-    delete:
-      operationId: deleteToken
-      parameters:
-      - name: tokenId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-  /auth/tokens/quay.io:
-    get:
-      operationId: addQuayToken
-      parameters:
-      - name: access_token
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Token'
   /auth/tokens/gitlab.com:
     get:
       operationId: addGitlabToken
@@ -2372,6 +2294,67 @@ paths:
       operationId: addZenodoToken
       parameters:
       - name: code
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+  /auth/tokens/{tokenId}:
+    get:
+      operationId: listToken
+      parameters:
+      - name: tokenId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+    delete:
+      operationId: deleteToken
+      parameters:
+      - name: tokenId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+  /auth/tokens/quay.io:
+    get:
+      operationId: addQuayToken
+      parameters:
+      - name: access_token
         in: query
         schema:
           type: string
@@ -3247,6 +3230,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+  /workflows/{workflowId}/labels:
+    put:
+      operationId: updateLabels_1
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: labels
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
   /workflows/{workflowId}/defaultVersion:
     put:
       operationId: updateDefaultVersion_1
@@ -3269,23 +3278,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
-  /workflows/{workflowId}/verifiedSources:
-    get:
-      operationId: verifiedSources_1
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
   /workflows/{workflowId}/primaryDescriptor:
     get:
       operationId: primaryDescriptor_1
@@ -3519,32 +3511,6 @@ paths:
           description: default response
           content:
             application/json: {}
-  /workflows/{workflowId}/labels:
-    put:
-      operationId: updateLabels_1
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: labels
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
   /workflows/{workflowId}/users:
     get:
       operationId: getUsers_1
@@ -4550,46 +4516,6 @@ paths:
           content:
             application/json: {}
             text/plain: {}
-  /api/ga4gh/v2/tools/{id}:
-    get:
-      operationId: toolsIdGet
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
-  /api/ga4gh/v2/tools/{id}/versions:
-    get:
-      operationId: toolsIdVersionsGet
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
   /api/ga4gh/v2/tools/{id}/versions/{version_id}:
     get:
       operationId: toolsIdVersionsVersionIdGet
@@ -4765,6 +4691,46 @@ paths:
           content:
             application/json: {}
             text/plain: {}
+  /api/ga4gh/v2/tools/{id}:
+    get:
+      operationId: toolsIdGet
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
+  /api/ga4gh/v2/tools/{id}/versions:
+    get:
+      operationId: toolsIdVersionsGet
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
   /api/ga4gh/v1/tools:
     get:
       operationId: toolsGet_1
@@ -4806,36 +4772,6 @@ paths:
         schema:
           type: integer
           format: int32
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
-  /api/ga4gh/v1/tools/{id}:
-    get:
-      operationId: toolsIdGet_1
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
-  /api/ga4gh/v1/tools/{id}/versions:
-    get:
-      operationId: toolsIdVersionsGet_1
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
       responses:
         default:
           description: default response
@@ -4952,6 +4888,36 @@ paths:
         schema:
           type: string
       - name: version_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
+  /api/ga4gh/v1/tools/{id}:
+    get:
+      operationId: toolsIdGet_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
+  /api/ga4gh/v1/tools/{id}/versions:
+    get:
+      operationId: toolsIdVersionsGet_1
+      parameters:
+      - name: id
         in: path
         required: true
         schema:
@@ -5277,6 +5243,10 @@ components:
           type: boolean
         verifiedSource:
           type: string
+        verifiedSources:
+          type: array
+          items:
+            type: string
         doiURL:
           type: string
         doiStatus:
@@ -5358,6 +5328,10 @@ components:
           type: boolean
         verifiedSource:
           type: string
+        verifiedSources:
+          type: array
+          items:
+            type: string
         doiURL:
           type: string
         doiStatus:
@@ -5486,8 +5460,6 @@ components:
         registry:
           type: integer
           format: int32
-        custom_docker_registry_path:
-          type: string
         tool_path:
           type: string
         default_cwl_path:
@@ -5499,6 +5471,8 @@ components:
         defaultCWLTestParameterFile:
           type: string
         defaultWDLTestParameterFile:
+          type: string
+        custom_docker_registry_path:
           type: string
         checker_id:
           type: integer
@@ -5752,6 +5726,10 @@ components:
           type: boolean
         verifiedSource:
           type: string
+        verifiedSources:
+          type: array
+          items:
+            type: string
         doiURL:
           type: string
         doiStatus:

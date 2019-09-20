@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,6 +34,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -59,7 +62,6 @@ public class ElasticManager {
     public ElasticManager() {
 
     }
-
     public static DockstoreWebserviceConfiguration getConfig() {
         return config;
     }
@@ -68,6 +70,18 @@ public class ElasticManager {
         ElasticManager.config = config;
         ElasticManager.hostname = config.getEsConfiguration().getHostname();
         ElasticManager.port = config.getEsConfiguration().getPort();
+    }
+
+    private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
+        Set<String> platforms = new TreeSet<>();
+        workflowVersions.forEach(workflowVersion -> {
+            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+            sourceFiles.forEach(sourceFile -> {
+                Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+                platforms.addAll(verifiedBySource.keySet());
+            });
+        });
+        return platforms;
     }
 
     /**
@@ -214,6 +228,9 @@ public class ElasticManager {
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
         publishedEntries.forEach(entry -> {
+            entry.getWorkflowVersions().forEach(entryVersion -> {
+                ((Version)entryVersion).updateVerified();
+            });
             Map<String, Map<String, String>> index = new HashMap<>();
             Map<String, String> internal = new HashMap<>();
             internal.put("_id", String.valueOf(entry.getId()));
@@ -241,8 +258,10 @@ public class ElasticManager {
     public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
+        Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
         ((ObjectNode)jsonNode).put("verified", verified);
+        ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         return jsonNode;
     }
 }
