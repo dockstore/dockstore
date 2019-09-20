@@ -26,8 +26,8 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
+import io.swagger.client.ApiClient;
 import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
-    public final static String OLD_DOCKSTORE_VERSION = "1.4.5";
+    public final static String OLD_DOCKSTORE_VERSION = "1.6.0";
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
 
     // Travis is slow, need to wait up to 1 min for webservice to return
@@ -53,8 +53,19 @@ public final class CommonTestUtilities {
     /**
      * confidential testing config, includes keys
      */
-    public static final String CONFIDENTIAL_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
+    public static final String CONFIDENTIAL_CONFIG_PATH;
     static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
+
+    static {
+        String confidentialConfigPath = null;
+        try {
+            confidentialConfigPath = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
+        } catch (Exception e) {
+            LOG.error("Confidential Dropwizard configuration file not found.", e);
+
+        }
+        CONFIDENTIAL_CONFIG_PATH = confidentialConfigPath;
+    }
 
     private CommonTestUtilities() {
 
@@ -66,10 +77,14 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        dropAndRecreateNoTestData(support, CONFIDENTIAL_CONFIG_PATH);
+    }
+
+    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String dropwizardConfigurationFile) throws Exception {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0");
+        application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
+        application.run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,1.7.0");
     }
 
     /**
@@ -78,6 +93,10 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+        dropAndCreateWithTestData(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
+    }
+
+    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication, String dropwizardConfigurationFile) throws Exception {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
         Application<DockstoreWebserviceConfiguration> application;
         if (isNewApplication) {
@@ -85,10 +104,27 @@ public final class CommonTestUtilities {
         } else {
             application= support.getApplication();
         }
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
 
-        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0");
-        runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0");
+        runMigration(migrationList, application, dropwizardConfigurationFile);
+    }
+
+    /**
+     * Shared convenience method
+     * @return
+     */
+    public static ApiClient getWebClient(boolean authenticated, String username, TestingPostgres testingPostgres) {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        ApiClient client = new ApiClient();
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        if (authenticated) {
+            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
+                    .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
+                            String.class)));
+        }
+        return client;
     }
 
     /**
@@ -100,7 +136,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
         // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
-        // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+        // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
@@ -113,7 +149,7 @@ public final class CommonTestUtilities {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
 
-        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0");
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0", "1.7.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -136,7 +172,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
         cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
-        // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+        // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
@@ -155,7 +191,7 @@ public final class CommonTestUtilities {
         }
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
 
-        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0");
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0", "1.7.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -167,8 +203,11 @@ public final class CommonTestUtilities {
      */
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating samepaths migrations");
-        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "samepaths");
+        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0");
+
     }
 
 
@@ -182,18 +221,8 @@ public final class CommonTestUtilities {
         LOG.info("Migrating testworkflow migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0");
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0");
         runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
-    }
-
-    /**
-     * Allows tests to clear the database but add basic testing data
-     * @return
-     */
-    public static TestingPostgres getTestingPostgres() {
-        final File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        final INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        return new TestingPostgres(parseConfig);
     }
 
     public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws RuntimeException {
@@ -231,27 +260,5 @@ public final class CommonTestUtilities {
         Assert.assertTrue(log.contains("NAME"));
         Assert.assertTrue(log.contains("DESCRIPTION"));
         Assert.assertTrue(log.contains("Git Repo"));
-    }
-
-    public static class TestingPostgres extends BasicPostgreSQL {
-
-        TestingPostgres(INIConfiguration config) {
-            super(config);
-        }
-
-        @Override
-        public void clearDatabase() {
-            super.clearDatabase();
-        }
-
-        @Override
-        public <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
-            return super.runSelectStatement(query, handler, params);
-        }
-
-        @Override
-        public int runUpdateStatement(String query, Object... params) {
-            return super.runUpdateStatement(query, params);
-        }
     }
 }

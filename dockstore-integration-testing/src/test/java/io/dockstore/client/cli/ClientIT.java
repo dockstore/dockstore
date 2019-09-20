@@ -21,14 +21,12 @@ import java.util.ArrayList;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.ToilCompatibleTest;
 import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -41,7 +39,6 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.common.CommonTestUtilities.checkToolList;
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * @author dyuen
@@ -96,8 +93,7 @@ public class ClientIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6" });
 
         // verify DB
-        final TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where name = 'test6'", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where name = 'test6'", long.class);
         Assert.assertEquals("should see three entries", 1, count);
     }
 
@@ -130,8 +126,7 @@ public class ClientIT extends BaseIT {
             new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6", "view2" });
 
         // verify DB
-        final TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from container where name = 'test6'", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from container where name = 'test6'", long.class);
         Assert.assertEquals("should see three entries", 3, count);
     }
 
@@ -171,9 +166,8 @@ public class ClientIT extends BaseIT {
             "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
 
         // verify DB
-        final TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres
-            .runSelectStatement("select count(*) from container where name = 'bd2k-python-lib'", new ScalarHandler<>());
+            .runSelectStatement("select count(*) from container where name = 'bd2k-python-lib'", long.class);
         Assert.assertEquals("should see three entries", 5, count);
     }
 
@@ -205,8 +199,8 @@ public class ClientIT extends BaseIT {
     @Category(ToilCompatibleTest.class)
     public void launchingCWLToolWithRemoteParameters() throws IOException {
         Client.main(
-            new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
-                "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
+            new String[] { "--script", "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
+                "https://raw.githubusercontent.com/dockstore/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
     }
 
     @Test
@@ -237,8 +231,8 @@ public class ClientIT extends BaseIT {
      */
     @Test
     public void testDepsCommandWithVersionAndPython3() throws IOException {
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.4.0", "--python-version", "3"});
-        Assert.assertTrue(systemOutRule.getLog().contains("avro-cwl=="));
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.7.0", "--python-version", "3"});
+        Assert.assertFalse(systemOutRule.getLog().contains("monotonic=="));
         assertDepsCommandOutput();
     }
 
@@ -263,7 +257,7 @@ public class ClientIT extends BaseIT {
     @Test
     public void testDepsCommand() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps" });
-        Assert.assertTrue(systemOutRule.getLog().contains("avro=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("monotonic=="));
         assertDepsCommandOutput();
     }
 
@@ -279,8 +273,7 @@ public class ClientIT extends BaseIT {
     }
 
     private void assertDepsCommandOutput() {
-        Assert.assertTrue(systemOutRule.getLog().contains("setuptools=="));
-        Assert.assertTrue(systemOutRule.getLog().contains("cwl-runner"));
+        Assert.assertTrue(systemOutRule.getLog().contains("cwlref-runner"));
         Assert.assertTrue(systemOutRule.getLog().contains("cwltool=="));
         Assert.assertTrue(systemOutRule.getLog().contains("schema-salad=="));
         Assert.assertTrue(systemOutRule.getLog().contains("ruamel.yaml=="));

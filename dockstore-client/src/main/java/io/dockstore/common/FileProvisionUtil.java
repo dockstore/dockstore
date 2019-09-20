@@ -46,11 +46,17 @@ import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemOptions;
+import org.apache.commons.vfs2.UserAuthenticationData;
 import org.apache.commons.vfs2.VFS;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
+import org.apache.commons.vfs2.provider.GenericFileName;
 import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 import org.apache.commons.vfs2.provider.http4.Http4FileProvider;
+import org.apache.commons.vfs2.provider.http4.Http4FileSystemConfigBuilder;
 import org.apache.commons.vfs2.provider.http4s.Http4sFileProvider;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
@@ -69,12 +75,33 @@ public final class FileProvisionUtil {
     }
 
     static boolean downloadFromVFS2(String path, Path targetFilePath, int threads) {
+
+        /** An extension of the Http4sFileProvider class to allow for setting the cookie specification to something
+         * other than DEFAULT. This cannot be set through the fileSystemOptions argument.
+         * Github responds with a cookie header containing a date in 4-digit year format.
+         * Cookie spec DEFAULT only allows 2-digit years; STANDARD allows 4-digits.
+         * Addresses #2261 warning messages, see https://github.com/dockstore/dockstore/issues/2261
+         */
+        class CustomHttp4sFileProvider extends Http4sFileProvider {
+            public HttpClientContext createHttpClientContext(final Http4FileSystemConfigBuilder builder,
+                                                             final GenericFileName rootName, final FileSystemOptions fileSystemOptions,
+                                                             final UserAuthenticationData authData) throws FileSystemException {
+
+                HttpClientContext def = super.createHttpClientContext(builder, rootName, fileSystemOptions, authData);
+                if (rootName.getHostName().equals("github.com")) {
+                    def.setRequestConfig(RequestConfig.copy(def.getRequestConfig()).setCookieSpec(CookieSpecs.STANDARD).build());
+                }
+                return def;
+            }
+        }
+
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
             DefaultFileSystemManager fsManager = (DefaultFileSystemManager)VFS.getManager();
             // https://issues.apache.org/jira/browse/VFS-360 replace http and http prefix with http and http4 to properly use httpclient4
             String newPath = path;
+
             if (path.startsWith("http")) {
                 // TODO: http not provided by default via commons-httpclient 4
                 // https://github.com/apache/commons-vfs/blob/commons-vfs-2.3/commons-vfs2/src/test/java/org/apache/commons/vfs2/provider/http4s/test/Http4sGetContentInfoTest.java#L42
@@ -82,7 +109,7 @@ public final class FileProvisionUtil {
                     fsManager.addProvider("http4", new Http4FileProvider());
                 }
                 if (!fsManager.hasProvider("http4s")) {
-                    fsManager.addProvider("http4s", new Http4sFileProvider());
+                    fsManager.addProvider("http4s", new CustomHttp4sFileProvider());
                 }
                 if (path.startsWith("http:")) {
                     newPath = newPath.replaceFirst("http:", "http4:");
@@ -90,6 +117,7 @@ public final class FileProvisionUtil {
                     newPath = newPath.replaceFirst("https:", "http4s:");
                 }
             }
+
             // force passive mode for FTP (see emails from Keiran)
             FileSystemOptions opts = new FileSystemOptions();
             FtpFileSystemConfigBuilder.getInstance().setPassiveMode(opts, true);
@@ -127,7 +155,6 @@ public final class FileProvisionUtil {
                 }
             }
         };
-        System.out.println("Downloading: " + src.toString() + " to " + dest.toString());
 
         long size = getSize(src).map(s -> s.longValue()).orElse(CopyStreamEvent.UNKNOWN_STREAM_SIZE);
 

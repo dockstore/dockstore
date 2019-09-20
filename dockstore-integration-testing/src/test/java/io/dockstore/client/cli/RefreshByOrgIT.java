@@ -29,14 +29,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -76,15 +77,16 @@ public class RefreshByOrgIT {
     private static Long id;
     private static List<Tool> previousTools;
     private static List<Workflow> previousWorkflows;
+    private static TestingPostgres testingPostgres;
 
     @BeforeClass
     public static void clearDBandSetup() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, true);
         SUPPORT.before();
-        final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
-        id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());
+        testingPostgres = new TestingPostgres(SUPPORT);
+        id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", long.class);
         Environment environment = SUPPORT.getEnvironment();
-        token = testingPostgres.runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>());
+        token = testingPostgres.runSelectStatement("select content from token where tokensource='dockstore';", String.class);
         client = new JerseyClientBuilder(environment).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
         objectMapper = environment.getObjectMapper();
     }
@@ -115,14 +117,14 @@ public class RefreshByOrgIT {
         usersURLPrefix = "http://localhost:%d/users/" + id;
         checkInitialDB();
         // insert a non-existent tool to be deleted during refresh
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("insert into tool (id, giturl, defaultdockerfilepath, mode, name, namespace, registry, ispublished) select 100, giturl, defaultdockerfilepath, mode, 'newtool', namespace, registry, ispublished from tool where id = 2;");
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("insert into user_entry (userid, entryid) values (1, 100)");
-        Long count = CommonTestUtilities.getTestingPostgres()
-            .runSelectStatement("select count(*) from tool where id = 100;", new ScalarHandler<>());
+        testingPostgres.runUpdateStatement("insert into tool (id, giturl, mode, name, namespace, registry, ispublished) select 100, giturl, mode, 'newtool', namespace, registry, ispublished from tool where id = 2;");
+        testingPostgres.runUpdateStatement("insert into user_entry (userid, entryid) values (1, 100)");
+        Long count = testingPostgres
+            .runSelectStatement("select count(*) from tool where id = 100;", long.class);
         assertEquals(1, (long)count);
         testRefreshToolsByOrg2();
-        count = CommonTestUtilities.getTestingPostgres()
-            .runSelectStatement("select count(*) from tool where id = 100;", new ScalarHandler<>());
+        count = testingPostgres
+            .runSelectStatement("select count(*) from tool where id = 100;", long.class);
         // tool should have been deleted
         assertEquals(0, (long)count);
     }
@@ -295,7 +297,7 @@ public class RefreshByOrgIT {
         Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
-        return objectMapper.readValue(entity, new TypeReference<List<Workflow>>() {
+        return objectMapper.readValue(entity, new TypeReference<List<BioWorkflow>>() {
         });
     }
 

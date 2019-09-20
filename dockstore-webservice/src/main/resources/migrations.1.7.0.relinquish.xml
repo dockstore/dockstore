@@ -1,0 +1,82 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2019 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.7.0.relinquish">
+    <changeSet id="dyuen" author="relinquish">
+        <sql dbms="postgresql">
+            CREATE USER dockstore with password 'dockstore' createdb;
+
+            ALTER DATABASE postgres owner to dockstore;
+
+            ALTER TABLE label OWNER TO dockstore;
+            ALTER TABLE tool OWNER TO dockstore;
+            ALTER TABLE workflowversion OWNER TO dockstore;
+            ALTER TABLE workflow_workflowversion OWNER TO dockstore;
+            ALTER TABLE workflow OWNER TO dockstore;
+            ALTER TABLE version_validation OWNER TO dockstore;
+            ALTER TABLE version_sourcefile OWNER TO dockstore;
+            ALTER TABLE version_output_fileformat OWNER TO dockstore;
+            ALTER TABLE version_metadata OWNER TO dockstore;
+            ALTER TABLE version_input_fileformat OWNER TO dockstore;
+            ALTER TABLE validation OWNER TO dockstore;
+            ALTER TABLE user_profile OWNER TO dockstore;
+            ALTER TABLE user_entry OWNER TO dockstore;
+            ALTER TABLE tool_tag OWNER TO dockstore;
+            ALTER TABLE token OWNER TO dockstore;
+            ALTER TABLE tag OWNER TO dockstore;
+            ALTER TABLE starred_organizations OWNER TO dockstore;
+            ALTER TABLE starred OWNER TO dockstore;
+            ALTER TABLE sourcefile_verified OWNER TO dockstore;
+            ALTER TABLE sourcefile OWNER TO dockstore;
+            ALTER TABLE service OWNER TO dockstore;
+            ALTER TABLE organization_user OWNER TO dockstore;
+            ALTER TABLE organization_alias OWNER TO dockstore;
+            ALTER TABLE organization OWNER TO dockstore;
+            ALTER TABLE fileformat OWNER TO dockstore;
+            ALTER TABLE event OWNER TO dockstore;
+            ALTER TABLE entry_label OWNER TO dockstore;
+            ALTER TABLE entry_defaultpaths OWNER TO dockstore;
+            ALTER TABLE entry_alias OWNER TO dockstore;
+            ALTER TABLE enduser OWNER TO dockstore;
+            ALTER TABLE collection_entry OWNER TO dockstore;
+            ALTER TABLE collection_alias OWNER TO dockstore;
+            ALTER TABLE collection OWNER TO dockstore;
+
+            ALTER SEQUENCE organization_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE sourcefile_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE validation_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE token_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE label_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE fileformat_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE event_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE enduser_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE collection_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE tag_id_seq OWNER TO dockstore;
+            ALTER SEQUENCE container_id_seq OWNER TO dockstore;
+        </sql>
+    </changeSet>
+    <changeSet id="dyuen" author="relinquish2">
+        <sql dbms="postgresql">
+            ALTER TABLE entry_blacklistedversionnames OWNER TO dockstore;
+            ALTER TABLE databasechangelog OWNER TO dockstore;
+            ALTER TABLE databasechangeloglock OWNER TO dockstore;
+            GRANT USAGE ON SCHEMA public TO dockstore;
+        </sql>
+    </changeSet>
+</databaseChangeLog>

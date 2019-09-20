@@ -59,6 +59,7 @@ import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
 /**
@@ -175,23 +176,11 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         List<Tool> tools = response.readEntity(new GenericType<List<Tool>>() {
         });
         int actualToolCount = tools.size();
-                assertTrue("Supposed to have " + TOOL_COUNT
-                        + " tools.  Instead got " + actualToolCount + " tools.", actualToolCount == TOOL_COUNT);
+        assertEquals("Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.", actualToolCount, TOOL_COUNT);
                 LOGGER.error("Amount of tools created: " + String.valueOf(actualToolCount));
         for (Long indexTime : indexTimes) {
             LOGGER.error(String.valueOf(indexTime));
         }
-    }
-
-    private void buildIndex() {
-        Response response = client.target("http://localhost:" + SUPPORT.getLocalPort() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended/tools/index").request()
-                .post(null);
-        long startTime = System.nanoTime();
-        String output = response.readEntity(String.class);
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
-        Long convertedDuration = new Long(duration);
-        indexTimes.add(convertedDuration);
     }
 
     private void refresh(long id) {
@@ -202,7 +191,6 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private void refreshAndBuildIndex(long id) {
         refresh(id);
-//        buildIndex();
         addLabels(id);
     }
 
@@ -212,7 +200,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
                 .put(Entity.entity("asdf", MediaType.APPLICATION_JSON_TYPE));
         Tool registeredTool = registerPutLabelResponse.readEntity(Tool.class);
-        assertTrue(id == registeredTool.getId());
+        assertEquals(id, registeredTool.getId());
     }
 
     // Directly injecting into database to avoid authentication issues
@@ -223,7 +211,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
                 .post(Entity.entity(tool, MediaType.APPLICATION_JSON_TYPE));
 
         Tool registeredTool = registerManualResponse.readEntity(Tool.class);
-        assertTrue(registeredTool.getName().equals(tool.getName()));
+        assertEquals(registeredTool.getName(), tool.getName());
         refreshAndBuildIndex(registeredTool.getId());
     }
 
@@ -244,23 +232,20 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
             set.add(randomIdentifier());
         }
         ArrayList<String> authors = new ArrayList<>(set);
-        assertTrue(authors.size() == MAX_AUTHORS);
+        assertEquals(authors.size(), MAX_AUTHORS);
         return authors;
     }
 
     private String randomLabel() {
-        String label = fixedStringLabels.get(RAND.nextInt(fixedStringLabels.size()));
-        return label;
+        return fixedStringLabels.get(RAND.nextInt(fixedStringLabels.size()));
     }
 
     private String randomAuthor() {
-        String author = fixedAuthors.get(RAND.nextInt(fixedAuthors.size()));
-        return author;
+        return fixedAuthors.get(RAND.nextInt(fixedAuthors.size()));
     }
 
     private String randomOrganization() {
-        String organization = fixedOrganization.get(RAND.nextInt(fixedOrganization.size()));
-        return organization;
+        return fixedOrganization.get(RAND.nextInt(fixedOrganization.size()));
     }
 
     private Tool randomlyGenerateTool() {

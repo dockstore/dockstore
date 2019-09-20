@@ -1,5 +1,6 @@
 package io.dockstore.client.cli;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -20,7 +21,8 @@ import io.swagger.client.model.Limits;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
+import io.swagger.client.model.StarRequest;
+import io.swagger.client.model.User;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,7 +33,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -124,26 +125,26 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCreateNewOrganization() {
         // Setup postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Setup user one
-        final ApiClient webClientUser1 = getWebClient(USER_1_USERNAME);
+        final ApiClient webClientUser1 = getWebClient(USER_1_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser1 = new OrganizationsApi(webClientUser1);
 
         // Setup admin
-        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
         // Setup curator
-        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME);
+        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiCurator = new OrganizationsApi(webClientCuratorUser);
 
         // Setup unauthorized user
-        final ApiClient unauthClient = getWebClient(false, "");
+        final ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "", testingPostgres);
         OrganizationsApi organizationsApiUnauth = new OrganizationsApi(unauthClient);
 
         // Create the organization
@@ -152,7 +153,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
         assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
 
         // Should not appear in approved list
@@ -220,7 +221,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one MODIFY_ORG event
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
         assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count2, 1, count2);
 
         // organization should have new information
@@ -242,7 +243,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one APPROVE_ORG event
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'APPROVE_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'APPROVE_ORG'", long.class);
         assertEquals("There should be 1 event of type APPROVE_ORG, there are " + count3, 1, count3);
 
         // Should be in APPROVED state
@@ -294,7 +295,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be two MODIFY_ORG events
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
         assertEquals("There should be 2 events of type MODIFY_ORG, there are " + count4, 2, count4);
 
         // organization should have new information
@@ -324,7 +325,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be three MODIFY_ORG events
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
         assertEquals("There should be 2 events of type MODIFY_ORG, there are " + count5, 3, count5);
 
         // organization should have new information
@@ -341,7 +342,7 @@ public class OrganizationIT extends BaseIT {
     @Test(expected = ApiException.class)
     public void testDuplicateOrgByCase() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -354,7 +355,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void createOrgInvalidEmail() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -367,7 +368,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void createOrgInvalidLink() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -383,7 +384,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testDuplicateOrgDisplayName() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -408,7 +409,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testRenameOrgByCase() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -432,7 +433,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCollectionAlternateCase() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -456,7 +457,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testDuplicateCollectionDisplayName() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -485,7 +486,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testGetViaAlternateCase() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Create the organisation
@@ -502,15 +503,15 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCreateOrganizationAndRejectIt() {
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Setup curator
-        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME);
+        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiCurator = new OrganizationsApi(webClientCuratorUser);
 
         // Setup admin
-        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
         // Create the Organization
@@ -559,16 +560,16 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCreateDuplicateOrganization() {
         // Setup postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Setup API client
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
         createOrg(organizationsApi);
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
         assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
 
         boolean throwsError = false;
@@ -592,7 +593,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
         assertEquals("There should be 2 events of type CREATE_ORG, there are " + count2, 2, count2);
 
         // Try renaming Organization to testname, should fail
@@ -614,7 +615,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be two MODIFY_ORG events
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
         assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count3, 1, count3);
 
         assertEquals("The Organization should have an updated name", "testname2", organization.getName());
@@ -630,14 +631,14 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testRequestUserJoinOrgAndApprove() {
         // Setup postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Setup user two
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Setup other user
-        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
         UsersApi usersOtherUser = new UsersApi(webClientOtherUser);
 
@@ -647,7 +648,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
         assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
 
         long orgId = organization.getId();
@@ -662,12 +663,12 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one ADD_USER_TO_ORG event
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
         assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
 
         // There should exist a role that is not accepted
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from organization_user where accepted = false and organizationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from organization_user where accepted = false and organizationId = '" + 1 + "' and userId = '" + 2 + "'", long.class);
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
         // Should exist in the users membership list
@@ -683,12 +684,12 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one APPROVE_ORG_INVITE event
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'APPROVE_ORG_INVITE'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'APPROVE_ORG_INVITE'", long.class);
         assertEquals("There should be 1 event of type APPROVE_ORG_INVITE, there are " + count4, 1, count4);
 
         // There should exist a role that is accepted
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from organization_user where accepted = true and organizationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from organization_user where accepted = true and organizationId = '" + 1 + "' and userId = '" + 2 + "'", long.class);
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
         List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(organization.getId());
@@ -703,7 +704,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one MODIFY_ORG event
         final long count6 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
         assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count6, 1, count6);
 
         // Maintainer should be able to change the members role to maintainer
@@ -711,7 +712,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one MODIFY_USER_ROLE_ORG event
         final long count7 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'MODIFY_USER_ROLE_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_USER_ROLE_ORG'", long.class);
         assertEquals("There should be 1 event of type MODIFY_USER_ROLE_ORG, there are " + count7, 1, count7);
 
         // Remove the user
@@ -719,7 +720,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one REMOVE_USER_FROM_ORG event
         final long count8 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'REMOVE_USER_FROM_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'REMOVE_USER_FROM_ORG'", long.class);
         assertEquals("There should be 1 event of type REMOVE_USER_FROM_ORG, there are " + count8, 1, count8);
 
         // Should once again not be able to update the email
@@ -740,14 +741,14 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testRequestUserJoinOrgAndDisapprove() {
         // Setup postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Setup user one
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
         // Setup user two
-        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
 
         // Create an Organization
@@ -756,7 +757,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", long.class);
         assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
 
         long orgId = organization.getId();
@@ -767,12 +768,12 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one ADD_USER_TO_ORG event
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
         assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
 
         // There should exist a role that is not accepted
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from organization_user where accepted = false and organizationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from organization_user where accepted = false and organizationId = '" + 1 + "' and userId = '" + 2 + "'", long.class);
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
         // Disapprove request
@@ -780,12 +781,12 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one REJECT_ORG_INVITE event
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'REJECT_ORG_INVITE'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'REJECT_ORG_INVITE'", long.class);
         assertEquals("There should be 1 event of type REJECT_ORG_INVITE, there are " + count4, 1, count4);
 
         // Should not have a role
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from organization_user where organizationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from organization_user where organizationId = '" + 1 + "' and userId = '" + 2 + "'", long.class);
         assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
 
         // Test that events are sorted by DESC dbCreateDate
@@ -814,7 +815,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testCreateOrganizationWithInvalidNames() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badNames.forEach(name -> createOrgWithBadName(name, organizationsApi));
     }
@@ -824,7 +825,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testCreatedOrganizationWithValidDisplayNames() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         goodDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi, "testname" + goodDisplayNames.indexOf(displayName)));
     }
@@ -834,7 +835,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testCreateOrganizationsWithBadDisplayNames() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi, "testname" + badDisplayNames.indexOf(displayName)));
     }
@@ -865,7 +866,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testAvatarUrlConstraints() {
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
         badAvatarUrls.forEach(url -> createOrgWithBadAvatarUrl(url, organizationsApi));
     }
@@ -934,7 +935,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCreateCollectionWithValidDisplayNames() {
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -952,7 +953,7 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCreateCollectionWithInvalidDisplayNames() {
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -1029,22 +1030,22 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testBasicCollections() {
         // Setup postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Setup admin
-        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
         // Setup other user
-        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
 
         // Setup unauthorized user
-        final ApiClient unauthClient = getWebClient(false, "");
+        final ApiClient unauthClient = CommonTestUtilities.getWebClient(false, "", testingPostgres);
         OrganizationsApi organizationsApiUnauth = new OrganizationsApi(unauthClient);
 
         // Create the Organization and collection
@@ -1062,7 +1063,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one CREATE_COLLECTION event
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'CREATE_COLLECTION'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'CREATE_COLLECTION'", long.class);
         assertEquals("There should be 1 event of type CREATE_COLLECTION, there are " + count, 1, count);
 
         // The creating user should be able to see the collection even though the Organization is not approved
@@ -1156,12 +1157,12 @@ public class OrganizationIT extends BaseIT {
 
         // There should be two entries for collection with ID 1
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", long.class);
         assertEquals("There should be 2 entries associated with the collection, there are " + count2, 2, count2);
 
         // There should be two ADD_TO_COLLECTION events
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'ADD_TO_COLLECTION'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'ADD_TO_COLLECTION'", long.class);
         assertEquals("There should be 2 events of type ADD_TO_COLLECTION, there are " + count3, 2, count3);
 
         // Unpublish tool
@@ -1184,12 +1185,12 @@ public class OrganizationIT extends BaseIT {
 
         // There should be one REMOVE_FROM_COLLECTION events
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from event where type = 'REMOVE_FROM_COLLECTION'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from event where type = 'REMOVE_FROM_COLLECTION'", long.class);
         assertEquals("There should be 1 event of type REMOVE_FROM_COLLECTION, there are " + count4, 1, count4);
 
         // There should now be one entry for collection with ID 1
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", long.class);
         assertEquals("There should be 1 entry associated with the collection, there are " + count5, 1, count5);
 
         // Try getting all collections
@@ -1228,10 +1229,10 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testAliasOperations() {
         // Setup postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -1285,10 +1286,10 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testDuplicateAliasOperations() {
         // Setup postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -1335,10 +1336,10 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testUpdatingCollectionMetadata() {
         // Setup postgres
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
 
         // Setup user who creates Organization and collection
-        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
 
         // Create the Organization and collection
@@ -1361,7 +1362,7 @@ public class OrganizationIT extends BaseIT {
         collection = organizationsApi.updateCollection(collection, organization.getId(), collectionId);
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from collection where description = '" + desc + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from collection where description = '" + desc + "'", long.class);
         assertEquals("There should be 1 collection with the updated description, there are " + count, 1, count);
 
         // Update collection name to existing one
@@ -1376,5 +1377,71 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to update a collection with an existing name.");
         }
+    }
+
+    @Test
+    public void testStarringOrganization() {
+        // Setup user
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+
+        // Setup admin
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        // Create org
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        Organization organization = createOrg(organizationsApi);
+
+        // Create user and star request body
+        UsersApi usersApi = new UsersApi(webClientUser2);
+        User user = usersApi.getUser();
+        List<User> users = new ArrayList<>();
+        users.add(user);
+        StarRequest body = new StarRequest();
+        body.setStar(false);
+
+        // Should only be able to star approved organizations
+        try {
+            organizationsApi.starOrganization(organization.getId(), body);
+            Assert.fail();
+        } catch (ApiException ex) {
+            Assert.assertEquals("Organization not found", ex.getMessage());
+        }
+
+        // Approve organization and star it
+        organizationsApiAdmin.approveOrganization(organization.getId());
+        organizationsApi.starOrganization(organization.getId(), body);
+
+        assertEquals(1, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
+        assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).get(0).getUsername());
+
+        // Should not be able to star twice
+        try {
+            organizationsApi.starOrganization(organization.getId(), body);
+            Assert.fail();
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains("You cannot star the organization"));
+        }
+
+
+        organizationsApi.unstarOrganization(organization.getId());
+        assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
+
+        // Should not be able to unstar twice
+        try {
+            organizationsApi.unstarOrganization(organization.getId());
+            Assert.fail();
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
+        }
+
+        // Test setting/getting starred users
+        organization.setStarredUsers(users);
+        assertEquals(1, organization.getStarredUsers().size());
+        assertEquals(user.getUsername(), organization.getStarredUsers().get(0).getUsername());
+
+        users.remove(user);
+        organization.setStarredUsers(users);
+        assertEquals(0, organization.getStarredUsers().size());
     }
 }

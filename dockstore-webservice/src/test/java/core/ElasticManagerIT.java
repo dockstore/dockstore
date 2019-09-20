@@ -17,14 +17,18 @@ package core;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import com.google.api.client.util.Charsets;
-import com.google.common.io.Files;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -39,7 +43,7 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 
 public class ElasticManagerIT {
     private static ElasticManager manager;
@@ -60,44 +64,73 @@ public class ElasticManagerIT {
     }
 
     @Test
-    public void addAnEntry() throws IOException {
+    public void dockstoreEntryToElasticSearchObject() throws IOException {
+        Tool tool = getFakeTool(false);
+        JsonNode jsonNode = ElasticManager.dockstoreEntryToElasticSearchObject(tool);
+        boolean verified = jsonNode.get("verified").booleanValue();
+        Assert.assertFalse(verified);
+        tool = getFakeTool(true);
+        jsonNode = ElasticManager.dockstoreEntryToElasticSearchObject(tool);
+        verified = jsonNode.get("verified").booleanValue();
+        Assert.assertTrue(verified);
+    }
+
+    private Tool getFakeTool(boolean verified) throws IOException {
         Tool tool = new Tool();
         Tag tag = new Tag();
         SourceFile file = new SourceFile();
-
-        File cwlFile = new File(ResourceHelpers.resourceFilePath("schema.cwl"));
-
-        String cwlContent = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
-
+        File cwlFilePath = new File(ResourceHelpers.resourceFilePath("schema.cwl"));
+        String cwlContent = Files.readString(cwlFilePath.toPath());
         file.setPath("dummypath");
         file.setAbsolutePath("/dummypath");
         file.setContent(cwlContent);
         file.setType(DOCKSTORE_CWL);
+        if (verified) {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = new HashMap<>();
+            SourceFile.VerificationInformation verificationInformation = new SourceFile.VerificationInformation();
+            verificationInformation.verified = true;
+            verificationInformation.platformVersion = "1.7.0";
+            verificationInformation.metadata = "Dockstore team";
+            verifiedBySource.put("Dockstore CLI", verificationInformation);
+            file.setVerifiedBySource(verifiedBySource);
+        }
         tag.addSourceFile(file);
         tag.setReference("master");
-        tool.addTag(tag);
+        tag.updateVerified();
+        tool.setRegistry("potato");
+        tool.addWorkflowVersion(tag);
         tool.setDefaultVersion("master");
         tool.setIsPublished(true);
+        return tool;
+    }
 
+    @Test
+    public void addAnEntry() throws IOException {
+        Tool tool = getFakeTool(false);
         manager.handleIndexUpdate(tool, ElasticMode.UPDATE);
 
         manager.bulkUpsert(Collections.singletonList(tool));
 
         //TODO: should extend this by checking that elastic search holds the content we expect
-        Assert.assertTrue("could not talk to elastic search", !systemOutRule.getLog().contains("Connection refused"));
+        Assert.assertFalse(systemOutRule.getLog().contains("Connection refused"));
+    }
+
+    @Test
+    public void addAService() {
+        manager.handleIndexUpdate(new Service(), ElasticMode.UPDATE);
+        Assert.assertFalse(systemOutRule.getLog().contains("Performing index update"));
     }
 
     @Test
     public void filterCheckerWorkflows() {
-        Workflow checkerWorkflow = new Workflow();
+        Workflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setIsChecker(true);
-        Workflow workflow = new Workflow();
+        Workflow workflow = new BioWorkflow();
         workflow.setIsChecker(false);
         Tool tool = new Tool();
-        List<Entry> entries = manager.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
+        List<Entry> entries = ElasticManager.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
         Assert.assertEquals("There should've been 2 entries without the checker workflow", 2, entries.size());
         entries.forEach(entry -> Assert.assertFalse("There should be no checker workflows", entry instanceof Workflow && ((Workflow)entry).isIsChecker()));
     }
-
 
 }

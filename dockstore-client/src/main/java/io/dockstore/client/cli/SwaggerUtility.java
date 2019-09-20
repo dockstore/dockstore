@@ -29,7 +29,6 @@ import com.google.gson.Gson;
 import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
-import io.swagger.client.model.VerifyRequest;
 import org.apache.commons.io.FileUtils;
 
 public final class SwaggerUtility {
@@ -41,7 +40,7 @@ public final class SwaggerUtility {
     public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
         return client
             .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
-                new String[] { "BEARER" }, type);
+                new String[] { "BEARER" }, type).getData();
     }
 
     public static void unzipFile(File zipFile, File unzipDirectory) throws IOException {
@@ -81,15 +80,6 @@ public final class SwaggerUtility {
         Gson gson = new Gson();
         String s = gson.toJson(publishRequest);
         return gson.fromJson(s, PublishRequest.class);
-    }
-
-    public static VerifyRequest createVerifyRequest(Boolean bool, String verifiedSource) {
-        Map<String, Object> verifyRequest = new HashMap<>();
-        verifyRequest.put("verify", bool);
-        verifyRequest.put("verifiedSource", verifiedSource);
-        Gson gson = new Gson();
-        String s = gson.toJson(verifyRequest);
-        return gson.fromJson(s, VerifyRequest.class);
     }
 
     public static StarRequest createStarRequest(Boolean bool) {

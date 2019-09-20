@@ -29,7 +29,7 @@ public class SourceCodeRepoFactoryTest {
     @Test
     public void parseGitUrl() {
         // test format 1
-        final Map<String, String> stringStringMap1 = SourceCodeRepoFactory.parseGitUrl("git@github.com:ga4gh/dockstore-ui.git");
+        final Map<String, String> stringStringMap1 = SourceCodeRepoFactory.parseGitUrl("git@github.com:dockstore/dockstore-ui.git");
         Assert.assertNotNull(stringStringMap1);
         Assert.assertTrue("values not found",
                 stringStringMap1.containsKey("Source") && stringStringMap1.containsKey("Username") && stringStringMap1

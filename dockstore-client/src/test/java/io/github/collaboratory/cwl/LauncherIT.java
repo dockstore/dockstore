@@ -91,6 +91,7 @@ public abstract class LauncherIT {
             expectedEx.expectMessage("Unexpected call of System.exit(1)");
         }
 
+        Client.SCRIPT.set(true);
         Client.main(new String[] { "--config", getConfigFile(), "tool", "launch", "--local-entry",
                 cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
@@ -113,6 +114,7 @@ public abstract class LauncherIT {
             expectedEx.expectMessage("Unexpected call of System.exit(1)");
         }
 
+        Client.SCRIPT.set(true);
         Client.main(new String[] { "--config", getConfigFileWithExtraParameters(), "tool", "launch", "--local-entry",
                 cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
@@ -133,6 +135,8 @@ public abstract class LauncherIT {
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
             expectedEx.expectMessage("Unexpected call of System.exit(1)");
         }
+
+        Client.SCRIPT.set(true);
         Client.main(new String[] { "--config", getConfigFile(), "tool", "launch", "--local-entry",
                 cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
@@ -153,6 +157,8 @@ public abstract class LauncherIT {
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
             expectedEx.expectMessage("Unexpected call of System.exit(1)");
         }
+
+        Client.SCRIPT.set(true);
         Client.main(new String[] { "--config", getConfigFile(), "workflow", "launch", "--local-entry",
                 cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 

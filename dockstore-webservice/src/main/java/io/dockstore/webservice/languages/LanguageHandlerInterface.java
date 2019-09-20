@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -59,7 +61,7 @@ public interface LanguageHandlerInterface {
      * @param content  a cwl document
      * @return the updated entry
      */
-    Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles);
+    Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version);
 
     /**
      * Validates a workflow set for the workflow described by with primaryDescriptorFilePath
@@ -117,8 +119,8 @@ public interface LanguageHandlerInterface {
      * @param fileType Test parameter file type
      * @return Pair of isValid and validationMessage
      */
-    default VersionTypeValidation checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
-        Boolean isValid = true;
+    default VersionTypeValidation checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, DescriptorLanguage.FileType fileType) {
+        boolean isValid = true;
         Map<String, String> validationMessageObject = new HashMap<>();
         for (SourceFile sourcefile : sourcefiles) {
             if (Objects.equals(sourcefile.getType(), fileType)) {
@@ -140,7 +142,7 @@ public interface LanguageHandlerInterface {
      * @param fileTypes
      * @return Filtered sourcefile set
      */
-    default Set<SourceFile> filterSourcefiles(Set<SourceFile> sourcefiles, List<SourceFile.FileType> fileTypes) {
+    default Set<SourceFile> filterSourcefiles(Set<SourceFile> sourcefiles, List<DescriptorLanguage.FileType> fileTypes) {
         return sourcefiles.stream()
                 .filter(sourcefile -> fileTypes.contains(sourcefile.getType()))
                 .collect(Collectors.toSet());
@@ -443,29 +445,4 @@ public interface LanguageHandlerInterface {
         }
     }
 
-    class VersionTypeValidation {
-        protected boolean isValid;
-        protected Map<String, String> message;
-
-        public VersionTypeValidation(boolean isValid, Map<String, String> message) {
-            this.isValid = isValid;
-            this.message = message;
-        }
-
-        public boolean isValid() {
-            return isValid;
-        }
-
-        public void setValid(boolean valid) {
-            isValid = valid;
-        }
-
-        public Map<String, String> getMessage() {
-            return message;
-        }
-
-        public void setMessage(Map<String, String> message) {
-            this.message = message;
-        }
-    }
 }

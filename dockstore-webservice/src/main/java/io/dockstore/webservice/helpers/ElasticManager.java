@@ -20,16 +20,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.jackson.Jackson;
 import org.apache.http.HttpEntity;
@@ -50,11 +57,11 @@ public class ElasticManager {
     private static String hostname;
     private static int port;
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
-
+    private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+    private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     public ElasticManager() {
 
     }
-
     public static DockstoreWebserviceConfiguration getConfig() {
         return config;
     }
@@ -63,6 +70,18 @@ public class ElasticManager {
         ElasticManager.config = config;
         ElasticManager.hostname = config.getEsConfiguration().getHostname();
         ElasticManager.port = config.getEsConfiguration().getPort();
+    }
+
+    private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
+        Set<String> platforms = new TreeSet<>();
+        workflowVersions.forEach(workflowVersion -> {
+            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+            sourceFiles.forEach(sourceFile -> {
+                Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+                platforms.addAll(verifiedBySource.keySet());
+            });
+        });
+        return platforms;
     }
 
     /**
@@ -75,12 +94,14 @@ public class ElasticManager {
         ObjectMapper mapper = Jackson.newObjectMapper();
         StringBuilder builder = new StringBuilder();
         Map<String, Object> doc = new HashMap<>();
-        doc.put("doc", entry);
-        doc.put("doc_as_upsert", true);
         try {
+            JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
+            doc.put("doc", jsonNode);
+            doc.put("doc_as_upsert", true);
             builder.append(mapper.writeValueAsString(doc));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(MAPPER_ERROR,
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return builder.toString();
     }
@@ -93,6 +114,8 @@ public class ElasticManager {
      */
     public void handleIndexUpdate(Entry entry, ElasticMode command) {
         entry = filterCheckerWorkflows(entry);
+        // #2771 will need to disable this and properly create objects to get services into the index
+        entry = entry instanceof Service ? null : entry;
         if (entry == null) {
             return;
         }
@@ -105,7 +128,8 @@ public class ElasticManager {
             LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
-        String json = getDocumentValueFromEntry(entry);
+        String json;
+        json = getDocumentValueFromEntry(entry);
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String entryType = entry instanceof Tool ? "tool" : "workflow";
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
@@ -127,7 +151,7 @@ public class ElasticManager {
             } else {
                 LOGGER.error("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
         }
     }
@@ -159,6 +183,8 @@ public class ElasticManager {
 
     public void bulkUpsert(List<Entry> entries) {
         entries = filterCheckerWorkflows(entries);
+        // #2771 will need to disable this and properly create objects to get services into the index
+        entries = entries.stream().filter(entry -> !(entry instanceof Service)).collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
         }
@@ -179,7 +205,7 @@ public class ElasticManager {
      * @param entry     The entry to check
      * @return          null if checker, entry otherwise
      */
-    public static Entry filterCheckerWorkflows(Entry entry) {
+    private static Entry filterCheckerWorkflows(Entry entry) {
         return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
     }
 
@@ -199,10 +225,12 @@ public class ElasticManager {
      * @return The json used for bulk insert
      */
     private String getNDJSON(List<Entry> publishedEntries) {
-        ObjectMapper mapper = Jackson.newObjectMapper();
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
         publishedEntries.forEach(entry -> {
+            entry.getWorkflowVersions().forEach(entryVersion -> {
+                ((Version)entryVersion).updateVerified();
+            });
             Map<String, Map<String, String>> index = new HashMap<>();
             Map<String, String> internal = new HashMap<>();
             internal.put("_id", String.valueOf(entry.getId()));
@@ -211,12 +239,29 @@ public class ElasticManager {
             builder.append(gson.toJson(index));
             builder.append('\n');
             try {
-                builder.append(mapper.writeValueAsString(entry));
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
+                builder.append(MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry)));
+            } catch (IOException e) {
+                throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             builder.append('\n');
         });
         return builder.toString();
+    }
+
+    /**
+     * This should be using an actual Elasticsearch object class instead of jsonNode
+     *
+     * @param entry The Dockstore entry
+     * @return The Elasticsearch object string to be placed into the index
+     * @throws IOException  Mapper problems
+     */
+    public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
+        Set<Version> workflowVersions = entry.getWorkflowVersions();
+        boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
+        Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
+        JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
+        ((ObjectNode)jsonNode).put("verified", verified);
+        ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        return jsonNode;
     }
 }

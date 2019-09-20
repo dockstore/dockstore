@@ -34,15 +34,10 @@ import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
-import com.google.common.base.Strings;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.doi.DOIGeneratorFactory;
-import io.dockstore.webservice.doi.DOIGeneratorInterface;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -80,13 +75,13 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/{containerId}/tags")
     @ApiOperation(value = "Get tags for a tool by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "Set")
     public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
-        return tool.getTags();
+        return tool.getWorkflowVersions();
     }
 
     @PUT
@@ -101,7 +96,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
 
         // create a map for quick lookup
         Map<Long, Tag> mapOfExistingTags = new HashMap<>();
-        for (Tag tag : tool.getTags()) {
+        for (Tag tag : tool.getWorkflowVersions()) {
             mapOfExistingTags.put(tag.getId(), tag);
         }
 
@@ -125,7 +120,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getTags();
+        return result.getWorkflowVersions();
     }
 
     @POST
@@ -146,7 +141,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             // Set dirty bit since this is a manual add
             byId.setDirtyBit(true);
 
-            boolean ableToAdd = tool.addTag(byId);
+            boolean ableToAdd = tool.addWorkflowVersion(byId);
             if (!ableToAdd) {
                 tagDAO.delete(byId);
                 throw new CustomWebApplicationException("Rollback of tag creation due to duplicate name", HttpStatus.SC_BAD_REQUEST);
@@ -156,7 +151,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getTags();
+        return result.getWorkflowVersions();
     }
 
     @DELETE
@@ -175,12 +170,12 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        Set<Tag> listOfTags = tool.getTags();
+        Set<Tag> listOfTags = tool.getWorkflowVersions();
 
         if (listOfTags.contains(tag)) {
             tag.getSourceFiles().clear();
 
-            if (tool.getTags().remove(tag)) {
+            if (tool.getWorkflowVersions().remove(tag)) {
                 elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
                 return Response.noContent().build();
             } else {
@@ -192,37 +187,27 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         }
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @Path("/{containerId}/verify/{tagId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a version . ADMIN ONLY", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
+    @ApiOperation(value = "Updates the verification status of a version. ADMIN ONLY", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> verifyToolTag(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "Tag to verify.", required = true) @PathParam("tagId") Long tagId,
-            @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
+            @ApiParam(value = "ID of the tool to update.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "ID of the tag to update.", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
-
         Tag tag = tagDAO.findById(tagId);
         if (tag == null) {
             LOG.error(user.getUsername() + ": could not find tag: " + tool.getToolPath());
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
-
-        if (verifyRequest.getVerify()) {
-            if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
-                throw new CustomWebApplicationException("A source must be included to verify a tag.", HttpStatus.SC_BAD_REQUEST);
-            }
-            tag.updateVerified(true, verifyRequest.getVerifiedSource());
-        } else {
-            tag.updateVerified(false, null);
-        }
-
+        tag.updateVerified();
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getTags();
+        return result.getWorkflowVersions();
     }
 
     @POST
@@ -233,7 +218,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Request a DOI for this version of a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-        @ApiParam(value = "Tag to verify.", required = true) @PathParam("tagId") Long tagId) {
+            @ApiParam(value = "Tag to request DOI.", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
 
         Tag tag = tagDAO.findById(tagId);
@@ -242,16 +227,19 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (tag.getDoiStatus() != Version.DOIStatus.CREATED) {
-            DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
-            generator.createDOIForTool(containerId, tagId);
-            tag.setDoiStatus(Version.DOIStatus.REQUESTED);
-        }
+        // DOI submission (SQS or not) has not been implemented yet for tools
+        throw new CustomWebApplicationException("DOI creation for tools has not been implemented yet.", HttpStatus.SC_BAD_REQUEST);
 
-        Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getTags();
+        //        if (tag.getDoiStatus() != Version.DOIStatus.CREATED) {
+        //            DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
+        //            generator.createDOIForTool(containerId, tagId);
+        //            tag.setDoiStatus(Version.DOIStatus.REQUESTED);
+        //        }
+        //
+        //        Tool result = toolDAO.findById(containerId);
+        //        checkEntry(result);
+        //        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        //        return result.getWorkflowVersions();
     }
 
 
@@ -261,7 +249,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
      * @param user User to authenticate
      * @return Tool
      */
-    public Tool findToolByIdAndCheckToolAndUser(Long toolId, User user) {
+    private Tool findToolByIdAndCheckToolAndUser(Long toolId, User user) {
         Tool tool = toolDAO.findById(toolId);
         checkEntry(tool);
         checkUser(user, tool);

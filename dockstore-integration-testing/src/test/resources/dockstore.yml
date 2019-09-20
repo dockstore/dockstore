@@ -10,6 +10,15 @@ gitlabClientSecret: <fill me in>
 gitlabRedirectURI: http://<fill me in>:8080/auth/tokens/gitlab.com
 bitbucketClientID: <fill me in>
 bitbucketClientSecret: <fill me in>
+discourseKey: <fill me in>
+discourseUrl: <fill me in>
+discourseCategoryId: 9
+zenodoClientID: <fill me in>
+zenodoClientSecret: <fill me in>
+zenodoRedirectURI: http://<fill me in>:8080/auth/zenodo.org
+zenodoUrl: https://zenodo.org
+gitHubAppId: <fill me in>
+gitHubAppPrivateKeyFile: <fill me in>
 
 googleClientID: <fill me in>
 googleClientSecret: <fill me in>
@@ -73,6 +82,11 @@ database:
   # whether or not idle connections should be validated
   checkConnectionWhileIdle: false
 
+  removeAbandoned: true
+  abandonWhenPercentageFull: 80
+  logAbandonedConnections: true
+  removeAbandonedTimeout: 5 minutes
+
 logging:
   level: ERROR
   appenders:
@@ -81,3 +95,35 @@ logging:
       timeZone: UTC
       target: stdout
       logFormat: # TODO
+
+uiConfig:
+  dnaStackImportUrl: https://app.dnastack.com/#/app/workflow/import/dockstore
+  dnaNexusImportUrl: https://platform.dnanexus.com/panx/tools/import-workflow
+  terraImportUrl: https://app.terra.bio/#import-tool/dockstore
+
+  gitHubAuthUrl: https://github.com/login/oauth/authorize
+  gitHubRedirectPath: /auth/github.com
+  gitHubScope: read:org,user:email
+
+  quayIoAuthUrl: https://quay.io/oauth/authorize
+  quayIoRedirectPath: /auth/quay.io
+  quayIoScope: repo:read,user:read
+
+  bitBucketAuthUrl: https://bitbucket.org/site/oauth2/authorize
+
+  gitlabAuthUrl: https://gitlab.com/oauth/authorize
+  gitlabRedirectPath: /auth/gitlab.com
+  gitlabScope: api
+
+  zenodoAuthUrl: https://zenodo.org/oauth/authorize
+  zenodoRedirectPath: /auth/zenodo.org
+  zenodoScope: deposit:write deposit:actions
+
+  googleScope: profile email
+
+  cwlVisualizerUri: https://view.commonwl.org
+  tagManagerId: <fill me in>
+
+  gitHubAppInstallationUrl: https://github.com/apps/<fill me in>
+  documentationUrl: https://docs.dockstore.org/en/latest
+

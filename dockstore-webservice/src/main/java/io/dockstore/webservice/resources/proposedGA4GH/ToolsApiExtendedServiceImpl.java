@@ -54,13 +54,17 @@ import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Created by kcao on 01/03/17.
+ * @author kcao on 01/03/17.
  *
  * Implementations of methods to return responses containing organization related information
  */
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -160,7 +164,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 try {
                     restClient.performRequest("DELETE", "/entry");
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.warn("Could not delete previous elastic search index, not an issue if this is cold start", e);
                 }
 
                 // Get index mapping
@@ -176,6 +180,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 ElasticManager elasticManager = new ElasticManager();
                 elasticManager.bulkUpsert(published);
             } catch (IOException e) {
+                LOG.error("Could not create elastic search index", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             return Response.ok().entity(published.size()).build();
@@ -203,6 +208,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
                 return Response.ok().entity(get.getEntity().getContent()).build();
             } catch (IOException e) {
+                LOG.error("Could not use elastic search index", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
@@ -225,7 +231,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             versionOptional = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
         } else if (entry instanceof Tool) {
             Tool tool = (Tool)entry;
-            Set<Tag> versions = tool.getVersions();
+            Set<Tag> versions = tool.getWorkflowVersions();
             versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -251,7 +257,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
                 // denormalizes verification out to the version level for performance
                 // not sure why the cast is needed
-                version.setVerified(version.getSourceFiles().stream().anyMatch(file -> ((SourceFile)file).getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified)));
+                version.updateVerified();
                 return Response.ok().entity(sourceFile.getVerifiedBySource()).build();
             }
         }

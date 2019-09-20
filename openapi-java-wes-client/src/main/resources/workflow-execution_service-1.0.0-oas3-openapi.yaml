@@ -199,7 +199,7 @@ paths:
               properties:
                 workflow_params:
                   type: string
-                  format: binary
+                  format: application/json
                 workflow_type:
                   type: string
                 workflow_type_version:

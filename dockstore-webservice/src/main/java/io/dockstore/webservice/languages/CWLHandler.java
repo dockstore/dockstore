@@ -37,18 +37,20 @@ import io.cwl.avro.ExpressionTool;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
-import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,32 +64,52 @@ public class CWLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
                 Yaml yaml = new Yaml();
                 Map map = yaml.loadAs(content, Map.class);
-                String description = (String)map.get("description");
-                // changed for CWL 1.0
+                String description = null;
+                try {
+                    // draft-3 construct
+                    description = (String)map.get("description");
+                } catch (ClassCastException e) {
+                    LOG.debug("\"description:\" is malformed, but was only in CWL draft-3 anyway");
+                }
+                String label = null;
+                try {
+                    label = (String)map.get("label");
+                } catch (ClassCastException e) {
+                    LOG.debug("\"label:\" is malformed");
+                }
+                // "doc:" added for CWL 1.0
+                String doc = null;
                 if (map.containsKey("doc")) {
-                    Object doc = map.get("doc");
-                    if (doc instanceof String) {
-                        description = (String)doc;
-                    } else if (doc instanceof Map) {
-                        Map docMap = (Map)doc;
+                    Object objectDoc = map.get("doc");
+                    if (objectDoc instanceof String) {
+                        doc = (String)objectDoc;
+                    } else if (objectDoc instanceof Map) {
+                        Map docMap = (Map)objectDoc;
                         if (docMap.containsKey("$include")) {
                             String enclosingFile = (String)docMap.get("$include");
                             Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFile))
                                 .findFirst();
                             if (first.isPresent()) {
-                                description = first.get().getContent();
+                                doc = first.get().getContent();
                             }
                         }
+                    } else if (objectDoc instanceof List) {
+                        // arrays for "doc:" added in CWL 1.1
+                        List docList = (List)objectDoc;
+                        doc = String.join(System.getProperty("line.separator"), docList);
                     }
                 }
-                if (description != null) {
-                    entry.setDescription(description);
+
+                final String finalChoiceForDescription = ObjectUtils.firstNonNull(doc, description, label);
+
+                if (finalChoiceForDescription != null) {
+                    entry.setDescription(finalChoiceForDescription);
                 } else {
                     LOG.info("Description not found!");
                 }
@@ -101,9 +123,20 @@ public class CWLHandler implements LanguageHandlerInterface {
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
-            } catch (YAMLException ex) {
-                LOG.info("CWL file is malformed " + ex.getCause().toString());
-                throw new CustomWebApplicationException("Could not parse yaml: " + ex.getCause().toString(), HttpStatus.SC_BAD_REQUEST);
+            } catch (YAMLException | NullPointerException | ClassCastException ex) {
+                String message;
+                if (ex.getCause() != null) {
+                    // seems to be possible to get underlying cause in some cases
+                    message = ex.getCause().toString();
+                } else {
+                    // in other cases, the above will NullPointer
+                    message = ex.toString();
+                }
+                LOG.info("CWL file is malformed " + message);
+                // should just report on the malformed workflow
+                Map<String, String> validationMessageObject = new HashMap<>();
+                validationMessageObject.put(filepath, "CWL file is malformed or missing, cannot extract metadata: " + message);
+                version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_CWL, false, validationMessageObject));
             }
         }
         return entry;
@@ -339,7 +372,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                         } else if (isWorkflow(secondaryDescContent.get(secondaryFile), yaml)) {
                             stepToType.put(workflowStepId, workflowType);
                         } else {
-                            stepToType.put(workflowStepId, nodePrefix);
+                            stepToType.put(workflowStepId, "n/a");
                         }
                     }
 
@@ -431,7 +464,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
-                // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
+                // for workflows, bare files may be referenced. See https://github.com/dockstore/dockstore/issues/208
                 //ex:
                 //  run: {import: revtool.cwl}
                 //  run: revtool.cwl
@@ -478,7 +511,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      * @param absoluteImportPath        absolute path of import in git repository
      */
     private void handleImport(String repositoryId, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath) {
-        SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_CWL;
+        DescriptorLanguage.FileType fileType = DescriptorLanguage.FileType.DOCKSTORE_CWL;
         // create a new source file
         final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
         if (fileResponse == null) {
@@ -684,7 +717,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
@@ -716,7 +749,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
@@ -748,6 +781,6 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.CWL_TEST_JSON);
+        return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
     }
 }

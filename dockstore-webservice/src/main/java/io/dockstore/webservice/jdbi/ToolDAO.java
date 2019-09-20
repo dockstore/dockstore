@@ -142,4 +142,8 @@ public class ToolDAO extends EntryDAO<Tool> {
         Tool tool = findPublishedById(id);
         return JsonLdRetriever.getSchema(tool);
     }
+
+    public Tool findByAlias(String alias) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
+    }
 }

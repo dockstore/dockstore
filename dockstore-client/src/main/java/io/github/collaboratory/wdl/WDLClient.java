@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
@@ -37,14 +36,15 @@ import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.LauncherFiles;
 import io.dockstore.client.cli.nested.WESLauncher;
 import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
-import io.dockstore.common.Bridge;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.WDLFileProvisioning;
+import io.dockstore.common.WdlBridge;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.exec.ExecuteException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import wdl.draft3.parser.WdlParser;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -65,9 +65,9 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
 
         BaseLauncher launcher;
         if (!abstractEntryClient.isWesCommand()) {
-            launcher = new CromwellLauncher(abstractEntryClient, LanguageType.WDL, SCRIPT.get());
+            launcher = new CromwellLauncher(abstractEntryClient, DescriptorLanguage.WDL, SCRIPT.get());
         } else {
-            launcher = new WESLauncher(abstractEntryClient, LanguageType.WDL, SCRIPT.get());
+            launcher = new WESLauncher(abstractEntryClient, DescriptorLanguage.WDL, SCRIPT.get());
         }
         this.setLauncher(launcher);
     }
@@ -98,16 +98,27 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         zippedEntryFile = launcherFiles.getZippedEntry();
     }
 
+    /**
+     * Gets the WDL inputs of a descriptor.  This should probably be moved to a helper class.
+     *
+     * @param descriptorAbsolutePath The local descriptor's absolute path
+     * @return A map of the inputs
+     */
+    static Map<String, String> getInputFiles(String descriptorAbsolutePath) {
+        WdlBridge wdlBridge = new WdlBridge();
+        Map<String, String> wdlInputs = null;
+        try {
+            wdlInputs = wdlBridge.getInputFiles(descriptorAbsolutePath);
+        } catch (WdlParser.SyntaxError ex) {
+            exceptionMessage(ex, "Problem parsing WDL file: " + ex.getMessage(), API_ERROR);
+        }
+        return wdlInputs;
+    }
+
     @Override
     public File provisionInputFiles() {
         // Get list of input files
-        Bridge bridge = new Bridge(localPrimaryDescriptorFile.getParent());
-        Map<String, String> wdlInputs = null;
-        try {
-            wdlInputs = bridge.getInputFiles(localPrimaryDescriptorFile);
-        } catch (NullPointerException e) {
-            exceptionMessage(e, "Could not get WDL imports: " + e.getMessage(), API_ERROR);
-        }
+        Map<String, String> wdlInputs = getInputFiles(localPrimaryDescriptorFile.getAbsolutePath());
 
         // Convert parameter JSON to a map
         WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(abstractEntryClient.getConfigFile());
@@ -242,10 +253,13 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         final File primaryFile = abstractEntryClient.downloadTargetEntry(entry, ToolDescriptor.TypeEnum.WDL, true, tempDir);
 
         if (json) {
-            final List<String> wdlDocuments = Lists.newArrayList(primaryFile.getAbsolutePath());
-            final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge b = new Bridge(primaryFile.getParent());
-            return b.inputs(wdlList);
+            WdlBridge wdlBridge = new WdlBridge();
+            try {
+                String parameterFile = wdlBridge.getParameterFile(primaryFile.getAbsolutePath());
+                return parameterFile;
+            } catch (WdlParser.SyntaxError ex) {
+                throw new IOException(ex.getMessage());
+            }
         }
         return null;
     }

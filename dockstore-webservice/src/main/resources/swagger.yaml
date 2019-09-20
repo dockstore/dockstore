@@ -4,16 +4,16 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-rc.0-SNAPSHOT"
+  version: "1.7.0-rc.3-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
     name: "Dockstore@ga4gh"
-    url: "https://github.com/ga4gh/dockstore"
+    url: "https://github.com/dockstore/dockstore"
     email: "theglobalalliance@genomicsandhealth.org"
   license:
     name: "Apache License Version 2.0"
-    url: "https://github.com/ga4gh/dockstore/blob/develop/LICENSE"
+    url: "https://github.com/dockstore/dockstore/blob/develop/LICENSE"
 basePath: "/"
 tags:
 - name: "GA4GH"
@@ -437,7 +437,7 @@ paths:
       - "extendedGA4GH"
       summary: "List all organizations"
       description: "This endpoint returns list of all organizations. "
-      operationId: "entriesOrgGet"
+      operationId: "entriesOrgsGet"
       produces:
       - "application/json"
       - "text/plain"
@@ -1055,7 +1055,7 @@ paths:
       - "tokens"
       summary: "Allow satellizer to post a new GitHub token to dockstore, used by\
         \ login, can create new users."
-      description: "A post method is required by saetillizer to send the GitHub token"
+      description: "A post method is required by satellizer to send the GitHub token"
       operationId: "addToken"
       produces:
       - "application/json"
@@ -1155,6 +1155,29 @@ paths:
       - "application/json"
       parameters:
       - name: "access_token"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Token"
+      security:
+      - BEARER: []
+  /auth/tokens/zenodo.org:
+    get:
+      tags:
+      - "tokens"
+      summary: "Add a new zenodo.org token, used by accounts page."
+      description: "This is used as part of the OAuth 2 web flow. Once a user has\
+        \ approved permissions for CollaboratoryTheir browser will load the redirect\
+        \ URI which should resolve here"
+      operationId: "addZenodoToken"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "code"
         in: "query"
         required: false
         type: "string"
@@ -1602,6 +1625,29 @@ paths:
               type: "array"
               items:
                 type: "object"
+  /containers/{alias}/aliases:
+    get:
+      tags:
+      - "containers"
+      summary: "Retrieves a tool by alias."
+      description: "Does not require authentication for published tools, authentication\
+        \ can be provided for restricted tools"
+      operationId: "getToolByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
   /containers/{containerId}:
     get:
       tags:
@@ -1681,42 +1727,14 @@ paths:
           description: "Invalid "
       security:
       - BEARER: []
-  /containers/{containerId}/cwl:
+  /containers/{containerId}/descriptor/{relative-path}:
     get:
       tags:
       - "containers"
-      summary: "Get the primary CWL descriptor file on Github."
+      summary: "Get the corresponding descriptor file."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
-      operationId: "cwl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/cwl/{relative-path}:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the corresponding CWL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryCwlPath"
+      operationId: "secondaryDescriptorPath"
       produces:
       - "application/json"
       parameters:
@@ -1734,6 +1752,10 @@ paths:
         in: "path"
         required: true
         type: "string"
+      - name: "language"
+        in: "query"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -1745,7 +1767,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding Dockerfile on Github."
+      summary: "Get the corresponding Dockerfile."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "dockerfile"
@@ -1803,6 +1825,38 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
+  /containers/{containerId}/primaryDescriptor:
+    get:
+      tags:
+      - "containers"
+      summary: "Get the primary descriptor file."
+      description: "Does not require authentication for published tools, authentication\
+        \ can be provided for restricted tools"
+      operationId: "primaryDescriptor"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "language"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
       security:
       - BEARER: []
   /containers/{containerId}/publish:
@@ -1875,7 +1929,7 @@ paths:
         format: "int64"
       - name: "tagId"
         in: "path"
-        description: "Tag to verify."
+        description: "Tag to request DOI."
         required: true
         type: "integer"
         format: "int64"
@@ -1888,14 +1942,14 @@ paths:
               $ref: "#/definitions/Tag"
       security:
       - BEARER: []
-  /containers/{containerId}/secondaryCwl:
+  /containers/{containerId}/secondaryDescriptors:
     get:
       tags:
       - "containers"
-      summary: "Get a list of secondary CWL files from Git."
+      summary: "Get a list of secondary descriptor files."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
-      operationId: "secondaryCwl"
+      operationId: "secondaryDescriptors"
       produces:
       - "application/json"
       parameters:
@@ -1909,33 +1963,7 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/secondaryWdl:
-    get:
-      tags:
-      - "containers"
-      summary: "Get a list of secondary WDL files from Git."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryWdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
         type: "string"
@@ -2094,7 +2122,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding wdl test parameter files."
+      summary: "Get the corresponding test parameter files."
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "getTestParameterFiles"
@@ -2302,32 +2330,11 @@ paths:
               $ref: "#/definitions/User"
       security:
       - BEARER: []
-  /containers/{containerId}/verifiedSources:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the sources that verified a tool."
-      description: "NO authentication"
-      operationId: "verifiedSources"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "string"
   /containers/{containerId}/verify/{tagId}:
-    put:
+    post:
       tags:
       - "containertags"
-      summary: "Verify or unverify a version . ADMIN ONLY"
+      summary: "Updates the verification status of a version. ADMIN ONLY"
       description: ""
       operationId: "verifyToolTag"
       produces:
@@ -2335,22 +2342,16 @@ paths:
       parameters:
       - name: "containerId"
         in: "path"
-        description: "Tool to modify."
+        description: "ID of the tool to update."
         required: true
         type: "integer"
         format: "int64"
       - name: "tagId"
         in: "path"
-        description: "Tag to verify."
+        description: "ID of the tag to update."
         required: true
         type: "integer"
         format: "int64"
-      - in: "body"
-        name: "body"
-        description: "Object containing verification information."
-        required: true
-        schema:
-          $ref: "#/definitions/VerifyRequest"
       responses:
         200:
           description: "successful operation"
@@ -2358,66 +2359,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tag"
-      security:
-      - BEARER: []
-  /containers/{containerId}/wdl:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the primary WDL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "wdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /containers/{containerId}/wdl/{relative-path}:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the corresponding WDL descriptor file on Github."
-      description: "Does not require authentication for published tools, authentication\
-        \ can be provided for restricted tools"
-      operationId: "secondaryWdlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
       security:
       - BEARER: []
   /containers/{toolId}/defaultVersion:
@@ -2535,6 +2476,44 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/CollectionOrganization"
+  /entries/{id}/topic:
+    post:
+      tags:
+      - "entries"
+      summary: "Create a discourse topic for an entry."
+      description: ""
+      operationId: "setDiscourseTopic"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The id of the entry to add a topic to."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
+  /metadata/config.json:
+    get:
+      tags:
+      - "metadata"
+      summary: "Configuration for UI clients of the API"
+      description: "NO authentication"
+      operationId: "getConfig"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Config"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -2597,11 +2576,9 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
+            type: "object"
+            additionalProperties:
               type: "object"
-              additionalProperties:
-                type: "object"
   /metadata/rss:
     get:
       tags:
@@ -2665,8 +2642,10 @@ paths:
     get:
       tags:
       - "metadata"
-      summary: "List all published workflow and tool paths."
-      description: "NO authentication"
+      summary: "List all available workflow, tool, organization, and collection paths."
+      description: "List all available workflow, tool, organization, and collection\
+        \ paths. Available means published for tools/workflows, and approved for organizations\
+        \ and their respective collections."
       operationId: "sitemap"
       produces:
       - "text/html"
@@ -2795,7 +2774,7 @@ paths:
       parameters:
       - name: "collectionId"
         in: "path"
-        description: "Entry to modify."
+        description: "Collection to modify."
         required: true
         type: "integer"
         format: "int64"
@@ -2889,8 +2868,8 @@ paths:
       tags:
       - "organizations"
       summary: "Update an organization."
-      description: "Currently only name, description, email, link, avatarUrl, and\
-        \ location can be updated."
+      description: "Currently only name, display name, description, topic, email,\
+        \ link, avatarUrl, and location can be updated."
       operationId: "updateOrganization"
       produces:
       - "application/json"
@@ -2992,6 +2971,7 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
+        description: "Included fields"
         required: false
         type: "string"
       responses:
@@ -3065,7 +3045,8 @@ paths:
       tags:
       - "organizations"
       summary: "Update a collection."
-      description: "Currently only name and description can be updated."
+      description: "Currently only name, display name, description, and topic can\
+        \ be updated."
       operationId: "updateCollection"
       produces:
       - "application/json"
@@ -3424,6 +3405,77 @@ paths:
             $ref: "#/definitions/Organization"
       security:
       - BEARER: []
+  /organizations/{organizationId}/star:
+    put:
+      tags:
+      - "organizations"
+      summary: "Star an organization."
+      description: ""
+      operationId: "starOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization to star."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "StarRequest to star an organization for a user"
+        required: true
+        schema:
+          $ref: "#/definitions/StarRequest"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/starredUsers:
+    get:
+      tags:
+      - "organizations"
+      summary: "Returns list of users who starred the given approved organization."
+      description: ""
+      operationId: "getStarredUsersForApprovedOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Get starred users of an approved organization by id."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/User"
+  /organizations/{organizationId}/unstar:
+    delete:
+      tags:
+      - "organizations"
+      summary: "Unstar an organization."
+      description: ""
+      operationId: "unstarOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization to unstar."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
   /organizations/{organizationId}/user:
     post:
       tags:
@@ -3444,7 +3496,7 @@ paths:
         - "MEMBER"
       - name: "userId"
         in: "query"
-        description: "User to add to org."
+        description: "User ID of user to update within organization."
         required: true
         type: "integer"
         format: "int64"
@@ -3480,7 +3532,7 @@ paths:
         - "MEMBER"
       - name: "userId"
         in: "query"
-        description: "User to add to org."
+        description: "User ID of user to add to organization."
         required: true
         type: "integer"
         format: "int64"
@@ -3515,7 +3567,7 @@ paths:
       parameters:
       - name: "userId"
         in: "query"
-        description: "User to add to org."
+        description: "User ID of user to remove from organization."
         required: true
         type: "integer"
         format: "int64"
@@ -3614,11 +3666,73 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
+  /users/services/sync:
+    post:
+      tags:
+      - "users"
+      summary: "Syncs service data with Git accounts."
+      description: "Currently only works with GitHub"
+      operationId: "syncUserServices"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+  /users/services/{organizationName}/sync:
+    post:
+      tags:
+      - "users"
+      summary: "Syncs services with Git accounts for a specified organization."
+      description: ""
+      operationId: "syncUserServicesbyOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationName"
+        in: "path"
+        description: "Organization name"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+  /users/starredOrganizations:
+    get:
+      tags:
+      - "users"
+      summary: "Get the authenticated user's starred organizations."
+      description: ""
+      operationId: "getStarredOrganizations"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
   /users/starredTools:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred tools."
+      summary: "Get the authenticated user's starred tools."
       description: ""
       operationId: "getStarredTools"
       produces:
@@ -3637,7 +3751,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred workflows."
+      summary: "Get the authenticated user's starred workflows."
       description: ""
       operationId: "getStarredWorkflows"
       produces:
@@ -3730,7 +3844,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get additional information about the logged-in user."
+      summary: "Get additional information about the authenticated user."
       description: ""
       operationId: "getExtendedUserData"
       produces:
@@ -3747,7 +3861,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in users memberships."
+      summary: "Get the logged-in user's memberships."
       description: ""
       operationId: "getUserMemberships"
       produces:
@@ -3786,6 +3900,29 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/User"
+      security:
+      - BEARER: []
+  /users/user/{userId}:
+    delete:
+      tags:
+      - "users"
+      summary: "Terminate user if possible."
+      description: ""
+      operationId: "terminateUser"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User to terminate"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "boolean"
       security:
       - BEARER: []
   /users/user/{userId}/limits:
@@ -3867,7 +4004,7 @@ paths:
       - "users"
       summary: "Get user by id."
       description: ""
-      operationId: "getUser"
+      operationId: "getSpecificUser"
       produces:
       - "application/json"
       parameters:
@@ -3888,7 +4025,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all tools owned by the logged-in user."
+      summary: "List all tools owned by the authenticated user."
       description: ""
       operationId: "userContainers"
       produces:
@@ -3938,7 +4075,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh all tools owned by the logged-in user."
+      summary: "Refresh all tools owned by the authenticated user."
       description: ""
       operationId: "refresh"
       produces:
@@ -3963,7 +4100,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh all tools owned by the logged-in user with specified organization."
+      summary: "Refresh all tools owned by the authenticated user with specified organization."
       description: ""
       operationId: "refreshToolsByOrganization"
       produces:
@@ -3987,6 +4124,31 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
+  /users/{userId}/services:
+    get:
+      tags:
+      - "users"
+      summary: "List all services owned by the authenticated user."
+      description: ""
+      operationId: "userServices"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /users/{userId}/tokens:
@@ -4118,7 +4280,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all workflows owned by the logged-in user."
+      summary: "List all workflows owned by the authenticated user."
       description: ""
       operationId: "userWorkflows"
       produces:
@@ -4168,7 +4330,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh all workflows owned by the logged-in user."
+      summary: "Refresh all workflows owned by the authenticated user."
       description: ""
       operationId: "refreshWorkflows"
       produces:
@@ -4193,7 +4355,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh all workflows owned by the logged-in user with specified organization."
+      summary: "Refresh all workflows owned by the authenticated user with specified\
+        \ organization."
       description: ""
       operationId: "refreshWorkflowsByOrganization"
       produces:
@@ -4459,6 +4622,82 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
+  /workflows/path/service:
+    post:
+      tags:
+      - "workflows"
+      summary: "Create a service for the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function. Error code 418 is returned\
+        \ to tell lambda not to retry."
+      operationId: "addService"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "formData"
+        description: "Repository path"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Name of user on GitHub"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+  /workflows/path/service/upsertVersion:
+    post:
+      tags:
+      - "workflows"
+      summary: "Add or update a service version for a given GitHub tag for a service\
+        \ with the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function. Error code 418 is returned\
+        \ to tell lambda not to retry."
+      operationId: "upsertServiceVersion"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "formData"
+        description: "Repository path"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Name of user on GitHub"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "formData"
+        description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/path/workflow/{repository}:
     get:
       tags:
@@ -4479,6 +4718,12 @@ paths:
         description: "Comma-delimited list of fields to include: validations"
         required: false
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4501,6 +4746,12 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4530,6 +4781,12 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4567,6 +4824,12 @@ paths:
         - "OWNER"
         - "WRITER"
         - "READER"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4597,6 +4860,12 @@ paths:
         required: true
         schema:
           $ref: "#/definitions/Permission"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4626,11 +4895,54 @@ paths:
         description: "Comma-delimited list of fields to include: validations"
         required: false
         type: "string"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
+  /workflows/path/workflow/{repository}/upsertVersion:
+    put:
+      tags:
+      - "workflows"
+      summary: "Add or update a workflow version for a given GitHub tag to all workflows\
+        \ associated with the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function."
+      operationId: "upsertVersions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "query"
+        description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/path/{repository}:
     get:
       tags:
@@ -4702,6 +5014,12 @@ paths:
         enum:
         - "asc"
         - "desc"
+      - name: "services"
+        in: "query"
+        description: "services"
+        required: false
+        type: "boolean"
+        default: false
       responses:
         200:
           description: "successful operation"
@@ -4752,6 +5070,29 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SharedWorkflows"
+      security:
+      - BEARER: []
+  /workflows/{alias}/aliases:
+    get:
+      tags:
+      - "workflows"
+      summary: "Retrieves a workflow by alias."
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
+      operationId: "getWorkflowByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
@@ -4855,66 +5196,6 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/cwl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the primary CWL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "cwl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/cwl/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding CWL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryCwlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
   /workflows/{workflowId}/dag/{workflowVersionId}:
     get:
       tags:
@@ -4974,6 +5255,42 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+  /workflows/{workflowId}/descriptor/{relative-path}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding descriptor file from source control."
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
+      operationId: "secondaryDescriptorPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "language"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
+      security:
+      - BEARER: []
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -5010,14 +5327,14 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/nextflow:
+  /workflows/{workflowId}/primaryDescriptor:
     get:
       tags:
       - "workflows"
-      summary: "Get the nextflow.config file on Github."
+      summary: "Get the primary descriptor file."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
-      operationId: "nextflow"
+      operationId: "primaryDescriptor"
       produces:
       - "application/json"
       parameters:
@@ -5031,37 +5348,9 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/nextflow/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding nextflow documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryNextFlowPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
         type: "string"
       responses:
         200:
@@ -5144,6 +5433,13 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -5206,14 +5502,14 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/{workflowId}/secondaryCwl:
+  /workflows/{workflowId}/secondaryDescriptors:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding cwl documents on Github."
+      summary: "Get the corresponding descriptor documents from source control."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
-      operationId: "secondaryCwl"
+      operationId: "secondaryDescriptors"
       produces:
       - "application/json"
       parameters:
@@ -5227,63 +5523,7 @@ paths:
         in: "query"
         required: false
         type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/secondaryNextflow:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding Nextflow documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryNextflow"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/secondaryWdl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding wdl documents on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryWdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
+      - name: "language"
         in: "query"
         required: false
         type: "string"
@@ -5533,32 +5773,11 @@ paths:
               $ref: "#/definitions/User"
       security:
       - BEARER: []
-  /workflows/{workflowId}/verifiedSources:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get a semicolon delimited list of verified sources."
-      description: "NO authentication"
-      operationId: "verifiedSources"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "string"
   /workflows/{workflowId}/verify/{workflowVersionId}:
-    put:
+    post:
       tags:
       - "workflows"
-      summary: "Verify or unverify a workflow. ADMIN ONLY"
+      summary: "Updates the verification status of a version. ADMIN ONLY"
       description: ""
       operationId: "verifyWorkflowVersion"
       produces:
@@ -5566,22 +5785,16 @@ paths:
       parameters:
       - name: "workflowId"
         in: "path"
-        description: "Workflow to modify."
+        description: "ID of the workflow to update."
         required: true
         type: "integer"
         format: "int64"
       - name: "workflowVersionId"
         in: "path"
-        description: "workflowVersionId"
+        description: "Id of the version to update."
         required: true
         type: "integer"
         format: "int64"
-      - in: "body"
-        name: "body"
-        description: "Object containing verification information."
-        required: true
-        schema:
-          $ref: "#/definitions/VerifyRequest"
       responses:
         200:
           description: "successful operation"
@@ -5589,66 +5802,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/WorkflowVersion"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/wdl:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the primary WDL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "wdl"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/wdl/{relative-path}:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the corresponding WDL descriptor file on Github."
-      description: "Does not require authentication for published workflows, authentication\
-        \ can be provided for restricted workflows"
-      operationId: "secondaryWdlPath"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow id"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tag"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/SourceFile"
       security:
       - BEARER: []
   /workflows/{workflowId}/workflowVersions:
@@ -5722,6 +5875,141 @@ definitions:
     properties:
       content:
         type: "string"
+  Base class for versions of entries in the Dockstore:
+    type: "object"
+    required:
+    - "name"
+    - "reference"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the tag in this web service"
+        readOnly: true
+      workingDirectory:
+        type: "string"
+      reference:
+        type: "string"
+        position: 1
+        description: "git commit/tag/branch"
+      name:
+        type: "string"
+        position: 2
+        description: "Implementation specific, can be a quay.io or docker hub tag\
+          \ name"
+      commitID:
+        type: "string"
+        position: 3
+        description: "This is the commit id for the source control that the files\
+          \ belong to"
+      frozen:
+        type: "boolean"
+        position: 4
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
+      referenceType:
+        type: "string"
+        position: 5
+        description: "This indicates the type of git (or other source control) reference"
+        enum:
+        - "COMMIT"
+        - "TAG"
+        - "BRANCH"
+        - "NOT_APPLICABLE"
+        - "UNSET"
+      sourceFiles:
+        type: "array"
+        position: 6
+        description: "Cached files for each version. Includes Dockerfile and Descriptor\
+          \ files"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/SourceFile"
+      valid:
+        type: "boolean"
+        position: 7
+        description: "Implementation specific, whether this tag has valid files from\
+          \ source code repo"
+      dirtyBit:
+        type: "boolean"
+        position: 8
+        description: "True if user has altered the tag"
+      versionEditor:
+        position: 9
+        description: "Particularly for hosted workflows, this records who edited to\
+          \ create a revision"
+        $ref: "#/definitions/User"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+        position: 11
+      input_file_formats:
+        type: "array"
+        position: 12
+        description: "File formats for describing the input file formats of versions\
+          \ (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      output_file_formats:
+        type: "array"
+        position: 13
+        description: "File formats for describing the output file formats of versions\
+          \ (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      validations:
+        type: "array"
+        position: 14
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
+      verified:
+        type: "boolean"
+        position: 15
+        description: "Whether this version has been verified or not"
+      verifiedSource:
+        type: "string"
+        position: 16
+        description: "Verified source for the version"
+      verifiedSources:
+        type: "array"
+        position: 17
+        description: "Verified source for the version"
+        items:
+          type: "string"
+      hidden:
+        type: "boolean"
+        position: 18
+        description: "Implementation specific, whether this row is visible to other\
+          \ users aside from the owner"
+      doiURL:
+        type: "string"
+        position: 19
+        description: "This is a URL for the DOI for the version of the entry"
+      doiStatus:
+        type: "string"
+        position: 20
+        description: "This indicates the DOI status"
+        enum:
+        - "NOT_REQUESTED"
+        - "REQUESTED"
+        - "CREATED"
+  BioWorkflow:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties:
+        parent_id:
+          type: "integer"
+          format: "int64"
+          readOnly: true
+        is_checker:
+          type: "boolean"
+          position: 23
+      description: "This describes one workflow in the dockstore"
   Collection:
     type: "object"
     required:
@@ -5795,6 +6083,66 @@ definitions:
         type: "string"
       organizationDisplayName:
         type: "string"
+  Config:
+    type: "object"
+    properties:
+      dnaStackImportUrl:
+        type: "string"
+      dnaNexusImportUrl:
+        type: "string"
+      terraImportUrl:
+        type: "string"
+      gitHubAuthUrl:
+        type: "string"
+      gitHubRedirectPath:
+        type: "string"
+      gitHubScope:
+        type: "string"
+      quayIoAuthUrl:
+        type: "string"
+      quayIoRedirectPath:
+        type: "string"
+      quayIoScope:
+        type: "string"
+      bitBucketAuthUrl:
+        type: "string"
+      gitlabAuthUrl:
+        type: "string"
+      gitlabRedirectPath:
+        type: "string"
+      gitlabScope:
+        type: "string"
+      zenodoAuthUrl:
+        type: "string"
+      zenodoRedirectPath:
+        type: "string"
+      zenodoScope:
+        type: "string"
+      googleScope:
+        type: "string"
+      cwlVisualizerUri:
+        type: "string"
+      tagManagerId:
+        type: "string"
+      gitHubAppInstallationUrl:
+        type: "string"
+      documentationUrl:
+        type: "string"
+      githubClientId:
+        type: "string"
+      quayIoClientId:
+        type: "string"
+      bitBucketClientId:
+        type: "string"
+      gitlabClientId:
+        type: "string"
+      zenodoClientId:
+        type: "string"
+      googleClientId:
+        type: "string"
+      discourseUrl:
+        type: "string"
+    description: "Configuration information for UI clients of the Dockstore webservice."
   DescriptorLanguageBean:
     type: "object"
     properties:
@@ -5832,12 +6180,17 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
+      tags:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Tag"
       custom_docker_registry_path:
         type: "string"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
         readOnly: true
       has_checker:
         type: "boolean"
@@ -5854,6 +6207,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5903,12 +6260,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified"
+        description: "Implementation specific timestamp for last modified. Tools->\
+          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
+          \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice"
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -5992,8 +6357,11 @@ definitions:
         type: "string"
         format: "date-time"
         position: 25
-        description: "Implementation specific timestamp for last built"
-      tags:
+        description: "Implementation specific timestamp for last built. For automated\
+          \ builds: When refresh is hit, the last time the tool was built gets stored\
+          \ here. If tool was never built on quay.io, then last build will be null.\
+          \ N/A for hosted/manual path tools"
+      workflowVersions:
         type: "array"
         position: 26
         description: "Implementation specific tracking of valid build tags for the\
@@ -6046,10 +6414,15 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
+      workflowVersions:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Base class for versions of entries in the Dockstore"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6065,6 +6438,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6114,12 +6491,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified"
+        description: "Implementation specific timestamp for last modified. Tools->\
+          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
+          \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice"
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -6375,6 +6760,13 @@ definitions:
         position: 9
         description: "Logo URL"
         pattern: "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
+      starredUsers:
+        type: "array"
+        position: 10
+        description: "This indicates the users that have starred this organization"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/User"
   OrganizationUser:
     type: "object"
     required:
@@ -6460,6 +6852,13 @@ definitions:
         type: "string"
       enum:
         type: "string"
+  Service:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties: {}
+      description: "This describes one service in the dockstore as a special degenerate\
+        \ case of a workflow"
   SharedWorkflows:
     type: "object"
     properties:
@@ -6491,6 +6890,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the source file in this web service"
+      frozen:
+        type: "boolean"
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
       verifiedBySource:
         type: "object"
         description: "maps from platform to whether an entry successfully ran on it\
@@ -6511,6 +6914,9 @@ definitions:
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
         - "DOCKSTORE_YML"
+        - "DOCKSTORE_SERVICE_YML"
+        - "DOCKSTORE_SERVICE_TEST_JSON"
+        - "DOCKSTORE_SERVICE_OTHER"
       content:
         type: "string"
         position: 2
@@ -6528,7 +6934,6 @@ definitions:
     properties:
       star:
         type: "boolean"
-        readOnly: true
   Tag:
     type: "object"
     required:
@@ -6540,8 +6945,28 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      reference:
+        type: "string"
+        position: 1
+        description: "git commit/tag/branch"
+      name:
+        type: "string"
+        position: 2
+        description: "Implementation specific, can be a quay.io or docker hub tag\
+          \ name"
+      commitID:
+        type: "string"
+        position: 3
+        description: "This is the commit id for the source control that the files\
+          \ belong to"
+      frozen:
+        type: "boolean"
+        position: 4
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
       referenceType:
         type: "string"
+        position: 5
         description: "This indicates the type of git (or other source control) reference"
         enum:
         - "COMMIT"
@@ -6549,104 +6974,35 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
-      validations:
-        type: "array"
-        description: "Cached validations for each version."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Validation"
-      last_modified:
-        type: "string"
-        format: "date-time"
-        position: 1
-        description: "The last time this image was modified in the image registry"
-      reference:
-        type: "string"
-        position: 2
-        description: "git commit/tag/branch"
       sourceFiles:
         type: "array"
-        position: 3
+        position: 6
         description: "Cached files for each version. Includes Dockerfile and Descriptor\
           \ files"
         uniqueItems: true
         items:
           $ref: "#/definitions/SourceFile"
-      hidden:
-        type: "boolean"
-        position: 4
-        description: "Implementation specific, whether this row is visible to other\
-          \ users aside from the owner"
       valid:
         type: "boolean"
-        position: 5
+        position: 7
         description: "Implementation specific, whether this tag has valid files from\
           \ source code repo"
-      name:
-        type: "string"
-        position: 6
-        description: "Implementation specific, can be a quay.io or docker hub tag\
-          \ name"
       dirtyBit:
         type: "boolean"
-        position: 7
-        description: "True if user has altered the tag"
-      verified:
-        type: "boolean"
         position: 8
-        description: "Whether this version has been verified or not"
-      verifiedSource:
-        type: "string"
-        position: 9
-        description: "Verified source for the version"
-      doiURL:
-        type: "string"
-        position: 10
-        description: "This is a URL for the DOI for the version of the entry"
-      doiStatus:
-        type: "string"
-        position: 11
-        description: "This indicates the DOI status"
-        enum:
-        - "NOT_REQUESTED"
-        - "REQUESTED"
-        - "CREATED"
+        description: "True if user has altered the tag"
       versionEditor:
-        position: 12
+        position: 9
         description: "Particularly for hosted workflows, this records who edited to\
           \ create a revision"
         $ref: "#/definitions/User"
-      size:
-        type: "integer"
-        format: "int64"
-        position: 13
-        description: "Size of the image"
-      dockerfile_path:
+      dbUpdateDate:
         type: "string"
-        position: 14
-        description: "Path for the Dockerfile"
-      cwl_path:
-        type: "string"
-        position: 15
-        description: "Path for the CWL document"
-      wdl_path:
-        type: "string"
-        position: 16
-        description: "Path for the WDL document"
-      automated:
-        type: "boolean"
-        position: 17
-        description: "Implementation specific, indicates whether this is an automated\
-          \ build on quay.io"
-      workingDirectory:
-        type: "string"
-        position: 18
-      image_id:
-        type: "string"
-        position: 19
+        format: "date-time"
+        position: 11
       input_file_formats:
         type: "array"
-        position: 20
+        position: 12
         description: "File formats for describing the input file formats of versions\
           \ (tag/workflowVersion)"
         uniqueItems: true
@@ -6654,17 +7010,84 @@ definitions:
           $ref: "#/definitions/FileFormat"
       output_file_formats:
         type: "array"
-        position: 21
+        position: 13
         description: "File formats for describing the output file formats of versions\
           \ (tag/workflowVersion)"
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      commitID:
+      validations:
+        type: "array"
+        position: 14
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
+      verified:
+        type: "boolean"
+        position: 15
+        description: "Whether this version has been verified or not"
+      verifiedSource:
         type: "string"
-        position: 22
-        description: "This is the commit id for the source control that the files\
-          \ belong to"
+        position: 16
+        description: "Verified source for the version"
+      verifiedSources:
+        type: "array"
+        position: 17
+        description: "Verified source for the version"
+        items:
+          type: "string"
+      hidden:
+        type: "boolean"
+        position: 18
+        description: "Implementation specific, whether this row is visible to other\
+          \ users aside from the owner"
+      doiURL:
+        type: "string"
+        position: 19
+        description: "This is a URL for the DOI for the version of the entry"
+      image_id:
+        type: "string"
+        position: 19
+      doiStatus:
+        type: "string"
+        position: 20
+        description: "This indicates the DOI status"
+        enum:
+        - "NOT_REQUESTED"
+        - "REQUESTED"
+        - "CREATED"
+      last_built:
+        type: "string"
+        format: "date-time"
+        position: 101
+        description: "For automated tools: The last time the container backing this\
+          \ tool version was built. For hosted: N/A"
+      size:
+        type: "integer"
+        format: "int64"
+        position: 103
+        description: "Size of the image"
+      dockerfile_path:
+        type: "string"
+        position: 104
+        description: "Path for the Dockerfile"
+      cwl_path:
+        type: "string"
+        position: 105
+        description: "Path for the CWL document"
+      wdl_path:
+        type: "string"
+        position: 106
+        description: "Path for the WDL document"
+      automated:
+        type: "boolean"
+        position: 107
+        description: "Implementation specific, indicates whether this is an automated\
+          \ build on quay.io"
+      workingDirectory:
+        type: "string"
+        position: 108
     description: "This describes one tag associated with a container."
   Token:
     type: "object"
@@ -6673,6 +7096,14 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the token in this web service"
+        readOnly: true
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
         readOnly: true
       tokenSource:
         type: "string"
@@ -6803,6 +7234,7 @@ definitions:
         - "CWL"
         - "WDL"
         - "NFL"
+        - "SERVICE"
       descriptor:
         type: "string"
         description: "The descriptor that represents this version of the tool."
@@ -6933,6 +7365,7 @@ definitions:
           - "CWL"
           - "WDL"
           - "NFL"
+          - "SERVICE"
       containerfile:
         type: "boolean"
         description: "Reports if this tool has a containerfile available."
@@ -6996,6 +7429,21 @@ definitions:
           \ (GitHub, Google, etc)"
         additionalProperties:
           $ref: "#/definitions/Profile"
+      privacyPolicyVersion:
+        type: "string"
+        description: "Indicates which version of the privacy policy the user has accepted"
+        enum:
+        - "NONE"
+        - "PRIVACY_POLICY_VERSION_2_5"
+      tosversion:
+        type: "string"
+        enum:
+        - "NONE"
+        - "TOS_VERSION_1"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7020,6 +7468,11 @@ definitions:
         type: "boolean"
         position: 12
         description: "Indicates whether this user has accepted their username"
+      privacyPolicyVersionAcceptanceDate:
+        type: "string"
+        format: "date-time"
+        position: 16
+        description: "Time privacy policy was accepted"
     description: "End users for the dockstore"
   Validation:
     type: "object"
@@ -7047,6 +7500,9 @@ definitions:
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
         - "DOCKSTORE_YML"
+        - "DOCKSTORE_SERVICE_YML"
+        - "DOCKSTORE_SERVICE_TEST_JSON"
+        - "DOCKSTORE_SERVICE_OTHER"
       valid:
         type: "boolean"
         position: 2
@@ -7064,15 +7520,6 @@ definitions:
         type: "string"
       platformVersion:
         type: "string"
-  VerifyRequest:
-    type: "object"
-    properties:
-      verify:
-        type: "boolean"
-        readOnly: true
-      verifiedSource:
-        type: "string"
-        readOnly: true
   Workflow:
     type: "object"
     required:
@@ -7084,6 +7531,7 @@ definitions:
     - "repository"
     - "sourceControl"
     - "workflow_path"
+    discriminator: "type"
     properties:
       id:
         type: "integer"
@@ -7100,14 +7548,14 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      parent_id:
+      topicId:
         type: "integer"
         format: "int64"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+        description: "The Id of the corresponding topic on Dockstore Discuss"
+      isChecker:
+        type: "boolean"
+      parentEntry:
+        $ref: "#/definitions/Entry"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7123,6 +7571,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7172,12 +7624,20 @@ definitions:
         type: "integer"
         format: "int32"
         position: 9
-        description: "Implementation specific timestamp for last modified"
+        description: "Implementation specific timestamp for last modified. Tools->\
+          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
+          \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
         type: "string"
         format: "date-time"
         position: 10
-        description: "Implementation specific timestamp for last updated on webservice"
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
       gitUrl:
         type: "string"
         position: 11
@@ -7198,6 +7658,7 @@ definitions:
         - "FULL"
         - "STUB"
         - "HOSTED"
+        - "SERVICE"
       workflowName:
         type: "string"
         position: 14
@@ -7219,13 +7680,18 @@ definitions:
       descriptorType:
         type: "string"
         position: 18
-        description: "This is a descriptor type for the workflow, either CWL or WDL\
-          \ (Defaults to CWL)"
+        description: "This is a descriptor type for the workflow, either CWL, WDL,\
+          \ or Nextflow (Defaults to CWL)"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "NFL"
+        - "service"
       workflow_path:
         type: "string"
         position: 19
         description: "This indicates for the associated git repository, the default\
-          \ path to the CWL document"
+          \ path to the primary descriptor document"
       defaultTestParameterFilePath:
         type: "string"
         position: 20
@@ -7239,9 +7705,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
-      is_checker:
-        type: "boolean"
-        position: 23
       full_workflow_path:
         type: "string"
         position: 24
@@ -7265,8 +7728,30 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      workingDirectory:
+        type: "string"
+      reference:
+        type: "string"
+        position: 1
+        description: "git commit/tag/branch"
+      name:
+        type: "string"
+        position: 2
+        description: "Implementation specific, can be a quay.io or docker hub tag\
+          \ name"
+      commitID:
+        type: "string"
+        position: 3
+        description: "This is the commit id for the source control that the files\
+          \ belong to"
+      frozen:
+        type: "boolean"
+        position: 4
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
       referenceType:
         type: "string"
+        position: 5
         description: "This indicates the type of git (or other source control) reference"
         enum:
         - "COMMIT"
@@ -7274,82 +7759,35 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
-      validations:
-        type: "array"
-        description: "Cached validations for each version."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Validation"
-      workingDirectory:
-        type: "string"
-      last_modified:
-        type: "string"
-        format: "date-time"
-        position: 1
-        description: "The last time this image was modified in the image registry"
-      reference:
-        type: "string"
-        position: 2
-        description: "git commit/tag/branch"
       sourceFiles:
         type: "array"
-        position: 3
+        position: 6
         description: "Cached files for each version. Includes Dockerfile and Descriptor\
           \ files"
         uniqueItems: true
         items:
           $ref: "#/definitions/SourceFile"
-      hidden:
-        type: "boolean"
-        position: 4
-        description: "Implementation specific, whether this row is visible to other\
-          \ users aside from the owner"
       valid:
         type: "boolean"
-        position: 5
+        position: 7
         description: "Implementation specific, whether this tag has valid files from\
           \ source code repo"
-      name:
-        type: "string"
-        position: 6
-        description: "Implementation specific, can be a quay.io or docker hub tag\
-          \ name"
       dirtyBit:
         type: "boolean"
-        position: 7
-        description: "True if user has altered the tag"
-      verified:
-        type: "boolean"
         position: 8
-        description: "Whether this version has been verified or not"
-      verifiedSource:
-        type: "string"
-        position: 9
-        description: "Verified source for the version"
-      doiURL:
-        type: "string"
-        position: 10
-        description: "This is a URL for the DOI for the version of the entry"
-      doiStatus:
-        type: "string"
-        position: 11
-        description: "This indicates the DOI status"
-        enum:
-        - "NOT_REQUESTED"
-        - "REQUESTED"
-        - "CREATED"
+        description: "True if user has altered the tag"
       versionEditor:
-        position: 12
+        position: 9
         description: "Particularly for hosted workflows, this records who edited to\
           \ create a revision"
         $ref: "#/definitions/User"
-      workflow_path:
+      dbUpdateDate:
         type: "string"
-        position: 12
-        description: "Path for the workflow"
+        format: "date-time"
+        position: 11
       input_file_formats:
         type: "array"
-        position: 20
+        position: 12
         description: "File formats for describing the input file formats of versions\
           \ (tag/workflowVersion)"
         uniqueItems: true
@@ -7357,17 +7795,69 @@ definitions:
           $ref: "#/definitions/FileFormat"
       output_file_formats:
         type: "array"
-        position: 21
+        position: 13
         description: "File formats for describing the output file formats of versions\
           \ (tag/workflowVersion)"
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      commitID:
+      validations:
+        type: "array"
+        position: 14
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
+      verified:
+        type: "boolean"
+        position: 15
+        description: "Whether this version has been verified or not"
+      verifiedSource:
         type: "string"
-        position: 22
-        description: "This is the commit id for the source control that the files\
-          \ belong to"
+        position: 16
+        description: "Verified source for the version"
+      verifiedSources:
+        type: "array"
+        position: 17
+        description: "Verified source for the version"
+        items:
+          type: "string"
+      hidden:
+        type: "boolean"
+        position: 18
+        description: "Implementation specific, whether this row is visible to other\
+          \ users aside from the owner"
+      doiURL:
+        type: "string"
+        position: 19
+        description: "This is a URL for the DOI for the version of the entry"
+      doiStatus:
+        type: "string"
+        position: 20
+        description: "This indicates the DOI status"
+        enum:
+        - "NOT_REQUESTED"
+        - "REQUESTED"
+        - "CREATED"
+      workflow_path:
+        type: "string"
+        position: 101
+        description: "Path for the workflow"
+      last_modified:
+        type: "string"
+        format: "date-time"
+        position: 102
+        description: "Remote: Last time version on GitHub repo was changed. Hosted:\
+          \ time version created."
+      subClass:
+        type: "string"
+        position: 103
+        description: "The subclass of this for services."
+        enum:
+        - "DOCKER_COMPOSE"
+        - "SWARM"
+        - "KUBERNETES"
+        - "HELM"
     description: "This describes one workflow version associated with a workflow."
 externalDocs:
   description: "Dockstore documentation"

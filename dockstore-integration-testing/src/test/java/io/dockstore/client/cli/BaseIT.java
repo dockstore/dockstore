@@ -16,10 +16,14 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
+import java.util.SortedMap;
+import java.util.concurrent.TimeUnit;
 
+import com.codahale.metrics.Gauge;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -27,9 +31,10 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.auth.ApiKeyAuth;
 import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -37,8 +42,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * Base integration test class
@@ -55,16 +58,37 @@ public class BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
+    protected static TestingPostgres testingPostgres;
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
+        testingPostgres = new TestingPostgres(SUPPORT);
+    }
+
+    public static void assertNoMetricsLeaks(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws InterruptedException {
+        SortedMap<String, Gauge> gauges = support.getEnvironment().metrics().getGauges();
+        int active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+        int waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
+        if (active != 0 || waiting != 0) {
+            // Waiting 10 seconds to see if active connection disappears
+            TimeUnit.SECONDS.sleep(10);
+            active = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.active").getValue();
+            waiting = (int)gauges.get("io.dropwizard.db.ManagedPooledDataSource.hibernate.waiting").getValue();
+            Assert.assertEquals("There should be no active connections", 0, active);
+            Assert.assertEquals("There should be no waiting connections", 0, waiting);
+        }
     }
 
     @AfterClass
-    public static void afterClass(){
+    public static void afterClass() {
         SUPPORT.after();
+    }
+
+    @After
+    public void after() throws InterruptedException {
+        assertNoMetricsLeaks(SUPPORT);
     }
 
     @Before
@@ -80,29 +104,11 @@ public class BaseIT {
     };
 
     /**
-     * Shared convenience method
-     * @return
-     */
-    protected static ApiClient getWebClient(boolean authenticated, String username) {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        ApiClient client = new ApiClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        if (authenticated) {
-            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                    .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
-                            new ScalarHandler<>())));
-        }
-        return client;
-    }
-
-    /**
      * the following were migrated from SwaggerClientIT and can be eventually merged. Note different config file used
      */
 
-    protected static ApiClient getWebClient(String username) {
-        return getWebClient(true, username);
+    protected static ApiClient getWebClient(String username, TestingPostgres testingPostgres) {
+        return CommonTestUtilities.getWebClient(true, username, testingPostgres);
     }
 
     protected static ApiClient getWebClient() {

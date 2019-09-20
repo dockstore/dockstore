@@ -58,7 +58,7 @@ public class ToolsExtendedApi {
 
     @GET
     @Path("/tools/{organization}")
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
     @ApiOperation(value = "List tools of an organization", notes = "This endpoint returns tools of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
@@ -71,7 +71,6 @@ public class ToolsExtendedApi {
 
     @POST
     @Path("/tools/entry/_search")
-    @UnitOfWork
     @Produces({ "application/json" })
     @ApiOperation(value = "Search the index of tools", notes = "This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint", response = String.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An elastic search result.", response = String.class) })
@@ -95,7 +94,7 @@ public class ToolsExtendedApi {
 
     @GET
     @Path("/workflows/{organization}")
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
     @ApiOperation(value = "List workflows of an organization", notes = "This endpoint returns workflows of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
@@ -108,9 +107,9 @@ public class ToolsExtendedApi {
 
     @GET
     @Path("/containers/{organization}")
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List entries of an organization", notes = "This endpoint returns entries of an organization. ", response = ToolV1.class, responseContainer = "List")
+    @ApiOperation(value = "List entries of an organization", nickname = "entriesOrgGet", notes = "This endpoint returns entries of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = ToolV1.class, responseContainer = "List") })
     public Response entriesOrgGet(
@@ -121,9 +120,9 @@ public class ToolsExtendedApi {
 
     @GET
     @Path("/organizations")
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List all organizations", notes = "This endpoint returns list of all organizations. ", response = String.class, responseContainer = "List")
+    @ApiOperation(value = "List all organizations", nickname = "entriesOrgsGet", notes = "This endpoint returns list of all organizations. ", response = String.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.SC_OK, message = "An array of organizations' names.", response = String.class, responseContainer = "List") })
     public Response entriesOrgGet(
@@ -136,12 +135,12 @@ public class ToolsExtendedApi {
     @RolesAllowed({ "curator", "admin" })
     @Path("/{id}/versions/{version_id}/{type}/tests/{relative_path : .+}")
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Annotate test JSON with information on whether it ran successfully on particular platforms plus metadata", notes = "Test JSON can be annotated with whether they ran correctly keyed by platform and associated with some metadata ", response = Map.class, authorizations = {
+    @ApiOperation(value = "Annotate test JSON with information on whether it ran successfully on particular platforms plus metadata", notes = "Test JSON can be annotated with whether they ran correctly keyed by platform and associated with some metadata ", response = Map.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "The tool test JSON response.", response = Map.class),
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "The tool test cannot be found to annotate.", response = Error.class),
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = "Credentials not provided or incorrect", response = Error.class) })
+    @ApiResponses(value = {
+        @ApiResponse(code = HttpStatus.SC_OK, message = "The tool test JSON response.", response = Map.class),
+        @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "The tool test cannot be found to annotate.", response = Error.class),
+        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = "Credentials not provided or incorrect", response = Error.class) })
     @SuppressWarnings("checkstyle:parameternumber")
     public Response toolsIdVersionsVersionIdTypeTestsPost(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "The type of the underlying descriptor. Allowable values include \"CWL\", \"WDL\", \"NFL\".", required = true) @PathParam("type") String type,

@@ -32,10 +32,11 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
@@ -143,15 +144,15 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected Workflow getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
-        Workflow workflow = new Workflow();
+    protected Workflow getEntry(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
+        Workflow workflow = new BioWorkflow();
         workflow.setMode(WorkflowMode.HOSTED);
         // TODO: We set the organization to the username of the user creating it. However, for gmail accounts this is an
         // email. This might not be a good idea. Especially if users don't want their emails displayed.
         workflow.setOrganization(user.getUsername());
         workflow.setRepository(name);
         workflow.setSourceControl(SourceControl.DOCKSTORE);
-        workflow.setDescriptorType(descriptorType.toString().toLowerCase());
+        workflow.setDescriptorType(descriptorType);
         workflow.setLastUpdated(new Date());
         workflow.setLastModified(new Date());
         // Uncomment if we add entry name to hosted workflows
@@ -187,8 +188,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         final WorkflowVersion version = getVersion(workflow);
         this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
         version.setWorkflowPath(sourceFiles.getPrimaryDescriptor().getPath());
-        version.setName(calculateNextVersionName(workflow.getVersions()));
-        return this.saveVersion(user, entryId, workflow, version, new HashSet(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
+        version.setName(calculateNextVersionName(workflow.getWorkflowVersions(), workflow));
+        return this.saveVersion(user, entryId, workflow, version, new HashSet<>(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
     }
 
     @Override
@@ -196,14 +197,14 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
         Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(version.getWorkflowPath())).findFirst();
         first.ifPresent(sourceFile -> LOG.info("refreshing metadata based on " + sourceFile.getPath() + " from " + version.getName()));
-        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(workflow, sourceFile.getPath(), sourceFile.getContent(), sourceFiles));
+        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(workflow, sourceFile.getPath(), sourceFile.getContent(), sourceFiles, version));
     }
 
     @Override
     protected WorkflowVersion getVersion(Workflow workflow) {
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
-        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorType().toLowerCase()));
+        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorType().getLowerShortName()));
         version.setLastModified(new Date());
         return version;
     }
@@ -218,30 +219,30 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Override
     protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
-        SourceFile.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = mainDescriptorOpt.map(sf -> sf.getPath()).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
+        DescriptorLanguage.FileType identifiedType = entry.getFileType();
+        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().getLowerShortName()));
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
-        LanguageHandlerInterface.VersionTypeValidation validDescriptorSet;
+        VersionTypeValidation validDescriptorSet;
         Validation descriptorValidation;
         if (mainDescriptor.isPresent()) {
             validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
             validationMessage.put("Unknown", "Missing the primary descriptor.");
-            validDescriptorSet = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
+            validDescriptorSet = new VersionTypeValidation(false, validationMessage);
         }
         descriptorValidation = new Validation(identifiedType, validDescriptorSet);
         version.addOrUpdateValidation(descriptorValidation);
 
-        SourceFile.FileType testParameterType = null;
+        DescriptorLanguage.FileType testParameterType = null;
         switch (identifiedType) {
         case DOCKSTORE_CWL:
-            testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            testParameterType = DescriptorLanguage.FileType.CWL_TEST_JSON;
             break;
         case DOCKSTORE_WDL:
-            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
             break;
         case NEXTFLOW_CONFIG:
             // Nextflow does not have test parameter files, so do not fail
@@ -251,7 +252,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         }
 
         if (testParameterType != null) {
-            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
             Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
             version.addOrUpdateValidation(testParameterValidation);
         }
@@ -267,7 +268,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
      */
     @Override
     protected boolean isValidVersion(WorkflowVersion version) {
-        return !version.getValidations().stream().filter(Validation -> !Validation.isValid()).findFirst().isPresent();
+        return version.getValidations().stream().allMatch(Validation::isValid);
     }
 
     @Override
@@ -281,7 +282,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected Registry checkRegistry(String registry) {
+    protected String checkRegistry(String registry) {
         // Registry does not matter for workflows
         return null;
     }

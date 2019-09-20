@@ -1,6 +1,5 @@
 class: Workflow
 cwlVersion: v1.0
-hints: []
 inputs:
 - id: inp
   type: File

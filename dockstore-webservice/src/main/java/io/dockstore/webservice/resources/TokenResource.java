@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.PrivacyPolicyVersion;
+import io.dockstore.webservice.core.TOSVersion;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -103,18 +106,25 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
+    private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_1;
+    private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
 
-    private final List<String> githubClientID;
-    private final List<String> githubClientSecret;
+    private final String githubClientID;
+    private final String githubClientSecret;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final String gitlabClientID;
     private final String gitlabRedirectUri;
     private final String gitlabClientSecret;
+    private final String zenodoClientID;
+    private final String zenodoRedirectUri;
+    private final String zenodoUrl;
+    private final String zenodoAuthUrl;
+    private final String zenodoClientSecret;
     private final String googleClientID;
     private final String googleClientSecret;
     private final HttpClient client;
@@ -131,6 +141,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.gitlabClientID = configuration.getGitlabClientID();
         this.gitlabClientSecret = configuration.getGitlabClientSecret();
         this.gitlabRedirectUri = configuration.getGitlabRedirectURI();
+        this.zenodoClientID = configuration.getZenodoClientID();
+        this.zenodoClientSecret = configuration.getZenodoClientSecret();
+        this.zenodoRedirectUri = configuration.getZenodoRedirectURI();
+        this.zenodoUrl = configuration.getZenodoUrl();
+        this.zenodoAuthUrl = configuration.getUiConfig().getZenodoAuthUrl();
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
         this.client = client;
@@ -140,7 +155,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @GET
     @Path("/{tokenId}")
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @ApiOperation(value = "Get a specific token by id.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class)
     @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
@@ -277,6 +292,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     }
 
+
     private String getCodeFromSatellizerObject(JsonObject satellizerObject) {
         JsonObject oauthData = satellizerObject.get("oauthData").getAsJsonObject();
         return oauthData.get("code").getAsString();
@@ -291,7 +307,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         JsonObject userData = satellizerObject.get("userData").getAsJsonObject();
         return userData.has("register") && userData.get("register").getAsBoolean();
     }
-
 
     /**
      * Adds a Google token to the existing user if user is authenticated already.
@@ -339,7 +354,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String googleLoginName = userinfo.getEmail();
         User user = userDAO.findByGoogleEmail(googleLoginName);
 
-        if (registerUser && !authUser.isPresent()) {
+        if (registerUser && authUser.isEmpty()) {
             if (user == null) {
                 user = new User();
                 // Pull user information from Google
@@ -368,6 +383,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             }
         }
 
+        user = userDAO.findById(userID);
+        acceptTOSAndPrivacyPolicy(user);
+
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
             dockstoreToken = createDockstoreToken(userID, user.getUsername());
@@ -391,6 +409,18 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return dockstoreToken;
     }
 
+    private void acceptTOSAndPrivacyPolicy(User user) {
+        Date date = new Date();
+        if (user.getTOSVersion() != CURRENT_TOS_VERSION) {
+            user.setTOSVersion(CURRENT_TOS_VERSION);
+            user.setTOSVersionAcceptanceDate((date));
+        }
+        if (user.getPrivacyPolicyVersion() != CURRENT_PRIVACY_POLICY_VERSION) {
+            user.setPrivacyPolicyVersion(CURRENT_PRIVACY_POLICY_VERSION);
+            user.setPrivacyPolicyVersionAcceptanceDate(date);
+        }
+    }
+
     /**
      * Get the Google Userinfoplus object
      *
@@ -411,7 +441,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @UnitOfWork
     @Path("/github")
     @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by saetillizer to send the GitHub token", response = Token.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
@@ -482,7 +512,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 githubToken = tokens.get(0);
             }
         }
-
+        // check that user has accepted the latest version of the TOS and privacy policy. If not, update since acceptance for both is passively done by logging in/registering
+        user = userDAO.findById(userID);
+        acceptTOSAndPrivacyPolicy(user);
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
@@ -587,6 +619,70 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
         }
     }
+
+
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/zenodo.org")
+    @ApiOperation(value = "Add a new zenodo.org token, used by accounts page.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
+            + "Once a user has approved permissions for Collaboratory"
+            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    public Token addZenodoToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
+        if (code.isEmpty()) {
+            throw new CustomWebApplicationException("Please provide a Zenodo access code", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                JSON_FACTORY, new GenericUrl(zenodoUrl + "/oauth/token"),
+                new ClientParametersAuthentication(zenodoClientID, zenodoClientSecret), zenodoClientID,
+                zenodoAuthUrl).build();
+
+        LOG.info("About to request zenodo access token");
+        String accessToken;
+        String refreshToken;
+        try {
+            TokenResponse tokenResponse = flow.newTokenRequest(code)
+                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).setGrantType("authorization_code")
+                    .setRedirectUri(zenodoRedirectUri).execute();
+            accessToken = tokenResponse.getAccessToken();
+            refreshToken = tokenResponse.getRefreshToken();
+        } catch (IOException e) {
+            LOG.error("Retrieving zenodo access token was unsuccessful.", e);
+            throw new CustomWebApplicationException("Could not retrieve zenodo token based on code " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (user != null) {
+            List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
+
+            if (tokens.isEmpty()) {
+                Token token = new Token();
+                token.setTokenSource(TokenType.ZENODO_ORG);
+                token.setContent(accessToken);
+                token.setRefreshToken(refreshToken);
+                token.setUserId(user.getId());
+                // Zenodo does not return a user name in the token response
+                // so set the token user name to the Dockstore user name
+                // otherwise we will get a DB error when trying to
+                // link another user's Zenodo credentials
+                token.setUsername(user.getUsername());
+                long create = tokenDAO.create(token);
+                LOG.info("Zenodo token created for {}", user.getUsername());
+                return tokenDAO.findById(create);
+            } else {
+                LOG.info("Zenodo token already exists for {}", user.getUsername());
+                throw new CustomWebApplicationException("Zenodo token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
+            }
+        } else {
+            LOG.info("Could not find user");
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+
+
 
     private String getUserName(String url, Optional<String> asString2) {
         String username;

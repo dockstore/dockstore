@@ -29,7 +29,7 @@ import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -39,6 +39,7 @@ import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -87,7 +88,7 @@ public class WDLWorkflowIT extends BaseIT {
      */
     @Test
     public void testRunningCheckerWDLWorkflow() throws IOException {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME);
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), UNIFIED_WORKFLOW_REPO, "/checker.wdl", "", "wdl", "/md5sum.wdl.json");
@@ -96,16 +97,24 @@ public class WDLWorkflowIT extends BaseIT {
         workflowApi.publish(refresh.getId(), publishRequest);
         // get test json
         String testVersion = "1.3.0";
+        // Also test that files can be gotten by owner even though it's hidden
+        List<WorkflowVersion> workflowVersions = refresh.getWorkflowVersions();
+        workflowVersions.forEach(version -> version.setHidden(true));
+        workflowApi.updateWorkflowVersion(refresh.getId(), workflowVersions);
         List<SourceFile> testParameterFiles = workflowApi.getTestParameterFiles(refresh.getId(), testVersion);
         Assert.assertEquals(1, testParameterFiles.size());
         Path tempFile = Files.createTempFile("test", "json");
+
+        // Unhiding version because launching is not possible on hidden workflows (even for the owner)
+        workflowVersions.forEach(version -> version.setHidden(false));
+        workflowApi.updateWorkflowVersion(refresh.getId(), workflowVersions);
         FileUtils.writeStringToFile(tempFile.toFile(), testParameterFiles.get(0).getContent(), StandardCharsets.UTF_8);
         // launch without error
         // run a workflow
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new WorkflowClient(workflowApi, new UsersApi(webClient), client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, DescriptorLanguage.WDL)
             .orElseThrow(RuntimeException::new);
         final long run = wdlClient
             .launch(UNIFIED_WORKFLOW + ":" + testVersion, false, null, tempFile.toFile().getAbsolutePath(), null, null);
@@ -117,7 +126,7 @@ public class WDLWorkflowIT extends BaseIT {
      */
     @Test
     public void testEntryConvertWDLWithSecondaryDescriptors() {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME);
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), SKYLAB_WORKFLOW_REPO,
             "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl", "", "wdl", null);
@@ -132,7 +141,7 @@ public class WDLWorkflowIT extends BaseIT {
      */
     @Test
     public void testEntryConvertCheckerWDLWithSecondaryDescriptors() {
-        final ApiClient webClient = getWebClient(USER_1_USERNAME);
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         // register underlying workflow
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), SKYLAB_WORKFLOW_REPO,

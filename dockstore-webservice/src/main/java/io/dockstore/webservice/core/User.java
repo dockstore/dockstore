@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import java.io.Serializable;
 import java.security.Principal;
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,8 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -94,6 +97,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
     private boolean isAdmin;
 
+    @Column(columnDefinition = "boolean default false")
+    @JsonIgnore
+    private boolean isBanned;
+
     @ElementCollection(targetClass = Profile.class)
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = {
             @UniqueConstraint(columnNames = { "id", "token_type" }),
@@ -139,11 +146,36 @@ public class User implements Principal, Comparable<User>, Serializable {
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
     private boolean setupComplete = false;
 
+    @Column(columnDefinition = "Text default 'NONE'")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Indicates which version of the TOS the user has accepted")
+    private TOSVersion tosVersion =  TOSVersion.NONE;
+
+    @Column
+    @ApiModelProperty(value = "Time TOS was accepted", position = 15)
+    private Date tosVersionAcceptanceDate;
+
+    @Column(columnDefinition = "Text default 'NONE'")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Indicates which version of the privacy policy the user has accepted")
+    private PrivacyPolicyVersion privacyPolicyVersion =  PrivacyPolicyVersion.NONE;
+
+    @Column
+    @ApiModelProperty(value = "Time privacy policy was accepted", position = 16)
+    private Date privacyPolicyVersionAcceptanceDate;
+
     @Column
     @ApiModelProperty(value = "Set of organizations the user belongs to", required = true, position = 13)
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<OrganizationUser> organizations;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty(value = "Organizations in Dockstore that this user starred", position = 14)
+    @OrderBy("id")
+    @JsonIgnore
+    private final Set<Organization> starredOrganizations;
 
     /**
      * The total number of hosted entries (workflows and tools) a user is allowed to create.  A value of null
@@ -176,6 +208,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         entries = new TreeSet<>();
         starredEntries = new TreeSet<>();
         organizations = new HashSet<>();
+        starredOrganizations = new TreeSet<>();
     }
 
     public Set<OrganizationUser> getOrganizations() {
@@ -302,12 +335,24 @@ public class User implements Principal, Comparable<User>, Serializable {
         return starredEntries;
     }
 
+    public Set<Organization> getStarredOrganizations() {
+        return starredOrganizations;
+    }
+
     public void addStarredEntry(Entry entry) {
         starredEntries.add(entry);
     }
 
     public boolean removeStarredEntry(Entry entry) {
         return starredEntries.remove(entry);
+    }
+
+    public void addStarredOrganization(Organization organization) {
+        starredOrganizations.add(organization);
+    }
+
+    public boolean removeStarredOrganization(Organization organization) {
+        return starredOrganizations.remove(organization);
     }
 
     @Override
@@ -405,7 +450,51 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.temporaryCredential = temporaryCredential;
     }
 
+    @JsonIgnore
+    public boolean isBanned() {
+        return isBanned;
+    }
+    
+    @JsonProperty
+    public TOSVersion getTOSVersion() {
+        return this.tosVersion;
+    }
 
+    public void setTOSVersion(TOSVersion version) {
+        this.tosVersion = version;
+    }
+
+    @JsonProperty
+    public PrivacyPolicyVersion getPrivacyPolicyVersion() {
+        return this.privacyPolicyVersion;
+    }
+
+    public void setPrivacyPolicyVersion(PrivacyPolicyVersion privacyPolicyVersion) {
+        this.privacyPolicyVersion = privacyPolicyVersion;
+    }
+
+    @JsonProperty
+    public Date getTOSAcceptanceDate() {
+        return this.tosVersionAcceptanceDate;
+    }
+
+    public void setTOSVersionAcceptanceDate(Date date) {
+        this.tosVersionAcceptanceDate = date;
+    }
+
+    @JsonProperty
+    public Date getPrivacyPolicyVersionAcceptanceDate() {
+        return this.privacyPolicyVersionAcceptanceDate;
+    }
+
+    public void setPrivacyPolicyVersionAcceptanceDate(Date date) {
+        this.privacyPolicyVersionAcceptanceDate = date;
+    }
+
+    @JsonIgnore
+    public void setBanned(boolean banned) {
+        isBanned = banned;
+    }
 
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)

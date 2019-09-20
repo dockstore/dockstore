@@ -42,6 +42,11 @@ public final class SourceCodeRepoFactory {
         // hide the constructor for utility classes
     }
 
+    public static SourceCodeRepoInterface createGitHubAppRepo(String token) {
+        // The gitUsername doesn't seem to matter
+        return new GitHubSourceCodeRepo("dockstore", token);
+    }
+
     public static SourceCodeRepoInterface createSourceCodeRepo(Token token, HttpClient client) {
         SourceCodeRepoInterface repo;
         if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
@@ -103,7 +108,7 @@ public final class SourceCodeRepoFactory {
      * @return a map with keys: Source, Username, Repository
      */
     public static Map<String, String> parseGitUrl(String url) {
-        // format 1 git@github.com:ga4gh/dockstore-ui.git
+        // format 1 git@github.com:dockstore/dockstore-ui.git
         Pattern p1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m1 = p1.matcher(url);
         // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)

@@ -248,7 +248,9 @@ public abstract class BaseLanguageClient {
             if (parentFile == null) {
                 errorMessage("Could not find parent directory of primary descriptor", GENERIC_ERROR);
             }
-            zipFile = zipDirectory(workingDir, parentFile);
+            // NOTE: Support for ZIP imports exists, but we decided to comment it out for now as it was causing some issues.
+            //zipFile = zipDirectory(workingDir, parentFile);
+            zipFile = null;
             out("Using local file '" + entry + "' as primary descriptor");
         }
 

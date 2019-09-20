@@ -50,6 +50,7 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.GeneratedConstants;
 import io.dockstore.common.Utilities;
+import io.dockstore.common.WdlBridgeShutDown;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import io.swagger.client.ApiClient;
@@ -102,6 +103,7 @@ public class Client {
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean INFO = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+    public static final String DEPRECATED_PORT_MESSAGE = "Dockstore webservice has deprecated port 8443 and may remove it without warning. Please use 'https://dockstore.org/api' via the Dockstore config file (\"~/.dockstore/config\" by default) instead.";
 
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static ObjectMapper objectMapper;
@@ -191,7 +193,7 @@ public class Client {
         URL url;
         try {
             ObjectMapper mapper = getObjectMapper();
-            url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
+            url = new URL("https://api.github.com/repos/dockstore/dockstore/releases");
             List<Map<String, Object>> mapRel;
             try {
                 TypeFactory typeFactory = mapper.getTypeFactory();
@@ -234,8 +236,8 @@ public class Client {
     private static Boolean compareVersion(String current) {
         URL urlCurrent, urlLatest;
         try {
-            urlCurrent = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + current);
-            urlLatest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
+            urlCurrent = new URL("https://api.github.com/repos/dockstore/dockstore/releases/tags/" + current);
+            urlLatest = new URL("https://api.github.com/repos/dockstore/dockstore/releases/latest");
 
             int idCurrent, idLatest;
             String prerelease;
@@ -264,7 +266,7 @@ public class Client {
      */
     static String getLatestVersion() {
         try {
-            URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
+            URL url = new URL("https://api.github.com/repos/dockstore/dockstore/releases/latest");
             ObjectMapper mapper = getObjectMapper();
             Map<String, Object> map;
             try {
@@ -288,7 +290,7 @@ public class Client {
      */
     private static Boolean checkIfTagExists(String tag) {
         try {
-            URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
+            URL url = new URL("https://api.github.com/repos/dockstore/dockstore/releases");
             ObjectMapper mapper = getObjectMapper();
             try {
                 ArrayList<Map<String, String>> arrayMap = mapper.readValue(url, ArrayList.class);
@@ -362,7 +364,7 @@ public class Client {
         // Update if necessary
         URL url;
 
-        String latestPath = "https://api.github.com/repos/ga4gh/dockstore/releases/latest";
+        String latestPath = "https://api.github.com/repos/dockstore/dockstore/releases/latest";
         String latestVersion, upgradeURL;
         try {
             url = new URL(latestPath);
@@ -461,7 +463,7 @@ public class Client {
             if (checkIfTagExists(currentVersion)) {
                 URL url = null;
                 try {
-                    url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
+                    url = new URL("https://api.github.com/repos/dockstore/dockstore/releases/tags/" + currentVersion);
                 } catch (MalformedURLException e) {
                     LOG.debug("Could not read a release of Dockstore from GitHub", e);
                 }
@@ -609,6 +611,7 @@ public class Client {
     public static void main(String[] argv) {
         Client client = new Client();
         client.run(argv);
+        WdlBridgeShutDown.shutdownSTTP();
     }
 
     /*
@@ -664,6 +667,8 @@ public class Client {
         }
         if (flag(args, "--script") || flag(args, "--s")) {
             SCRIPT.set(true);
+        } else {
+            SCRIPT.set(false);
         }
 
         try {
@@ -775,6 +780,9 @@ public class Client {
         // pull out the variables from the config
         String token = config.getString("token", "");
         String serverUrl = config.getString("server-url", "https://dockstore.org/api");
+        if (serverUrl.contains(":8443")) {
+            err(DEPRECATED_PORT_MESSAGE);
+        }
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
         String cliVersion = getClientVersion();

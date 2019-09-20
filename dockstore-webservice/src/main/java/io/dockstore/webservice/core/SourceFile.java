@@ -42,6 +42,7 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -61,16 +62,7 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile implements Comparable<SourceFile> {
 
-    public static final EnumSet<FileType> TEST_FILE_TYPES = EnumSet.of(FileType.CWL_TEST_JSON, FileType.WDL_TEST_JSON, FileType.NEXTFLOW_TEST_PARAMS);
-
-    /**
-     * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
-     *
-     */
-    public enum FileType {
-        // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML
-    }
+    public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -81,7 +73,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
-    private FileType type;
+    private DescriptorLanguage.FileType type;
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
@@ -94,6 +86,10 @@ public class SourceFile implements Comparable<SourceFile> {
     @Column(nullable = false)
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
     private String absolutePath;
+
+    @Column(columnDefinition = "boolean default false")
+    @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
+    private boolean frozen = false;
 
     // database timestamps
     @Column(updatable = false)
@@ -127,11 +123,11 @@ public class SourceFile implements Comparable<SourceFile> {
         this.id = id;
     }
 
-    public FileType getType() {
+    public DescriptorLanguage.FileType getType() {
         return type;
     }
 
-    public void setType(FileType type) {
+    public void setType(DescriptorLanguage.FileType type) {
         this.type = type;
     }
 
@@ -191,6 +187,14 @@ public class SourceFile implements Comparable<SourceFile> {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).toString();
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
     }
 
     /**

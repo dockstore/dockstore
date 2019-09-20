@@ -21,6 +21,7 @@ package io.dockstore.webservice;
  */
 public final class Constants {
     public static final String JWT_SECURITY_DEFINITION_NAME = "BEARER";
+    public static final int LAMBDA_FAILURE = 418; // Tell lambda to not try again
     private Constants() {
         // not called
     }

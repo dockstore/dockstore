@@ -11,9 +11,11 @@ cache:
   - $HOME/.cache/pip
   - $HOME/.m2/repository
   - $HOME/apache-maven-3.5.4
+  - $HOME/apache-maven-3.6.0
 
+dist: xenial
 language: java
-jdk: openjdk10
+jdk: openjdk11
 
 env:
   - TESTING_PROFILE=integration-tests
@@ -21,20 +23,19 @@ env:
 jobs:
   include:
     - stage: unit-tests
-      jdk: oraclejdk8
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE
 # moved to CircleCI (may move back if build speed improves)
 #    - stage: unit-tests
-#      jdk: openjdk10
+#      jdk: openjdk11
 #      env:
 #      - TESTING_PROFILE=unit-tests
 #      script: mvn --batch-mode clean install -P$TESTING_PROFILE
 
 # moved to CircleCI (may move back if build speed improves)
 #    - stage: automated-review
-#      jdk: openjdk10
+#      jdk: openjdk11
 #      env:
 #      - TESTING_PROFILE=automated-review
 #      script:
@@ -59,24 +60,27 @@ jobs:
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=other-integration-tests
+        
+# not feeling the bang-for-the-buck for these, running only in release branch         
+#    - stage: coverage
+#      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+#      if: branch = master OR branch =~ /^release.*$/
+#      env:
+#        - TESTING_PROFILE=toil-integration-tests
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=toil-integration-tests         
-    - stage: coverage
-      jdk: oraclejdk8
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=regression-integration-tests
+      if: branch = master OR branch =~ /^release.*$/
         
 # build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
 before_install:
-- export M2_HOME=$HOME/apache-maven-3.5.4
-- if [ ! -d $M2_HOME/bin ]; then curl https://archive.apache.org/dist/maven/maven-3/3.5.4/binaries/apache-maven-3.5.4-bin.tar.gz | tar zxf - -C $HOME; fi
+- export M2_HOME=$HOME/apache-maven-3.6.0
+- if [ ! -d $M2_HOME/bin ]; then curl https://archive.apache.org/dist/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz | tar zxf - -C $HOME; fi
 - export PATH=$M2_HOME/bin:$PATH
 # see https://www.deps.co/guides/travis-ci-latest-java/
-- if [ -e $JAVA_HOME/lib/security/cacerts ]; then rm $JAVA_HOME/lib/security/cacerts && ln -s /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts; fi
+- if [ -e $JAVA_HOME/lib/security/cacerts ]; then sudo rm $JAVA_HOME/lib/security/cacerts && sudo ln -s /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts; fi
 # need to clear out old version of the plugin till everything is merged due to https://github.com/maven-download-plugin/maven-download-plugin/issues/80
 - rm -Rf $HOME/.m2/repository/.cache/download-maven-plugin/
 # turn this back on when npm settles down/we find a swagger2openapi replacement
@@ -87,7 +91,8 @@ before_install:
 #- scripts/check-swagger.sh
 # codacy hookup
 - sudo apt-get install jq
-- wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
+- wget --no-verbose -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
+- pyenv global 3.6.7
 
 install:
 - docker version
@@ -95,9 +100,11 @@ install:
 
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-- psql -c "ALTER USER dockstore WITH superuser;" -U postgres
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
+# debug by double checking versions of stuff
+- mvn -version
+- echo $JAVA_HOME
 
 before_cache:
 - rm -rf /home/travis/.m2/repository/io/dockstore

@@ -331,7 +331,7 @@ public class SamPermissionsImplTest {
 
     @Test
     public void userNotInSamReturnsEmptyMap() throws ApiException {
-        // https://github.com/ga4gh/dockstore/issues/1597
+        // https://github.com/dockstore/dockstore/issues/1597
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized"));
         final Map<Role, List<String>> sharedWithUser = samPermissionsImpl.workflowsSharedWithUser(userMock);
         Assert.assertEquals(0, sharedWithUser.size());
@@ -398,7 +398,7 @@ public class SamPermissionsImplTest {
 
     @Test
     public void testUserInTwoPoliciesForSameResource() throws ApiException {
-        // https://github.com/ga4gh/dockstore/issues/1609, second item
+        // https://github.com/dockstore/dockstore/issues/1609, second item
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         ResourceAndAccessPolicy reader = new ResourceAndAccessPolicy();
         reader.setResourceId(resourceId);
@@ -553,7 +553,7 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    public void testAddingOwnerDoesNotCreateSecondOwnerPolicy() throws ApiException { //https://github.com/ga4gh/dockstore/issues/1805
+    public void testAddingOwnerDoesNotCreateSecondOwnerPolicy() throws ApiException { //https://github.com/dockstore/dockstore/issues/1805
         when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);

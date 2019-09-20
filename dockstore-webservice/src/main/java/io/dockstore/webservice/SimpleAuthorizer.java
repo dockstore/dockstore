@@ -18,14 +18,22 @@ package io.dockstore.webservice;
 
 import io.dockstore.webservice.core.User;
 import io.dropwizard.auth.Authorizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author dyuen
  */
 public class SimpleAuthorizer implements Authorizer<User> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(SimpleAuthorizer.class);
+
     @Override
     public boolean authorize(User principal, String role) {
+        if (principal.isBanned()) {
+            LOG.error("Denying access to " + principal.toString());
+            return false;
+        }
         if ("admin".equalsIgnoreCase(role)) {
             return principal.getIsAdmin();
         } else if  ("curator".equalsIgnoreCase(role)) {

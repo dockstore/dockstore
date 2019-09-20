@@ -1,18 +1,29 @@
 To cite Dockstore in a publication please refer to 
 
-https://zenodo.org/record/168593
+https://zenodo.org/record/2630727
 
-@misc{denis_yuen_2016_168593,
+@misc{denis_yuen_2019_2630727,
   author       = {Denis Yuen and
                   Andrew Duncan and
                   Victor Liu and
                   Brian O'Connor and
-                  Janice Patricia and
-                  Vincent Chung and
-                  Peter Amstutz},
-  title        = {ga4gh/dockstore: 1.1},
-  month        = nov,
-  year         = 2016,
-  doi          = {10.5281/zenodo.168593},
-  url          = {https://doi.org/10.5281/zenodo.168593}
+                  Gary Luu and
+                  Charles Overbeck and
+                  Walter Shands and
+                  oicr-vchung and
+                  Peter Amstutz and
+                  Ryan Bautista and
+                  Kitty Cao and
+                  David Steinberg and
+                  Louise Cabansay and
+                  NatalieEO and
+                  The Gitter Badger and
+                  Codacy Badger and
+                  C. Titus Brown and
+                  Abraham},
+  title        = {ga4gh/dockstore: 1.6.0},
+  month        = apr,
+  year         = 2019,
+  doi          = {10.5281/zenodo.2630727},
+  url          = {https://doi.org/10.5281/zenodo.2630727}
 }

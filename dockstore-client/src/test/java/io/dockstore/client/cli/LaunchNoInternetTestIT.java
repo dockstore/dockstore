@@ -225,7 +225,7 @@ public class LaunchNoInternetTestIT {
             add(configPath.getAbsolutePath());
         }};
         Client.main(args.toArray(new String[0]));
-        Assert.assertTrue("Final process status was not success", systemOutRule.getLog().contains("Saving copy of NextFlow stdout to: "));
+        Assert.assertTrue("Final process status was not success", systemOutRule.getLog().contains("Saving copy of Nextflow stdout to: "));
     }
 
     /**

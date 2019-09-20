@@ -16,7 +16,10 @@
 
 package io.dockstore.client.cli;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -25,11 +28,13 @@ import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.Workflow;
@@ -52,6 +57,8 @@ public class ExtendedTRSIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String AWESOME_PLATFORM = "awesome platform";
     private static final String CRUMMY_PLATFORM = "crummy platform";
+    private static final String TRS_ID = "quay.io/dockstoretestuser2/dockstore-cgpmap";
+    private static final String VERSION_NAME = "symbolic.v1";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -68,33 +75,33 @@ public class ExtendedTRSIT extends BaseIT {
 
     @Test(expected = ApiException.class)
     public void testVerificationOnSourceFileLevelForWorkflowsAsOwner() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         // need to turn off admin of USER_2_USERNAME
-        CommonTestUtilities.getTestingPostgres().runUpdateStatement("update enduser set isadmin = 'f' where username = '"+USER_2_USERNAME+"'");
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 'f' where username = '"+USER_2_USERNAME+"'");
         testVerificationWithGivenClient(webClient, webClient);
     }
 
     @Test(expected = ApiException.class)
     public void testVerificationOnSourceFileLevelForWorkflowsAsAnon() throws ApiException {
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getAnonymousWebClient());
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getAnonymousWebClient());
     }
 
     @Test(expected = ApiException.class)
     public void testVerificationOnSourceFileLevelForWorkflowsAsWrongUser() throws ApiException {
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(USER_1_USERNAME));
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(OTHER_USERNAME));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(USER_1_USERNAME, testingPostgres));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(OTHER_USERNAME, testingPostgres));
     }
 
     @Test
     public void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
         // can verify anyone's workflow as an admin
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(ADMIN_USERNAME));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(ADMIN_USERNAME, testingPostgres));
     }
 
     @Test
     public void testVerificationOnSourceFileLevelForWorkflowsAsCurator() throws ApiException {
         // or as a curator
-        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(CURATOR_USERNAME));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME, testingPostgres), getWebClient(CURATOR_USERNAME, testingPostgres));
     }
 
     private void testVerificationWithGivenClient(ApiClient registeringUser, ApiClient verifyingUser) {
@@ -106,7 +113,7 @@ public class ExtendedTRSIT extends BaseIT {
             WorkflowsApi workflowApi = new WorkflowsApi(registeringUser);
             workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
                 defaultTestParameterFilePath);
-            workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
+            workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
 
             // refresh and publish the workflow
             final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
@@ -165,16 +172,15 @@ public class ExtendedTRSIT extends BaseIT {
     }
 
     /**
-     * Tests manual registration of a tool and check that descriptors are downloaded properly.
-     * Description is pulled properly from an $include.
-     *
-     * @throws ApiException
+     * Tests verification using the extended TRS endpoint.
+     * Also tests that the tag verification endpoint can fix a potential sync issue
      */
     @Test
-    public void testVerificationOnSourceFileLevelForTools() throws ApiException {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+    public void testVerificationOnSourceFileLevelForTools() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-
+        ContainertagsApi containertagsApi = new ContainertagsApi(webClient);
+        Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
         DockstoreTool tool = new DockstoreTool();
         tool.setDefaultCwlPath("/cwls/cgpmap-bamOut.cwl");
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
@@ -201,11 +207,63 @@ public class ExtendedTRSIT extends BaseIT {
 
         // see if refresh destroys verification metadata
         registeredTool = toolApi.refresh(registeredTool.getId());
+        final Long toolId = registeredTool.getId();
+        final Long tagId = getSpecificVersion(registeredTool).getId();
         stringObjectMap = extendedGa4GhApi
-            .toolsIdVersionsVersionIdTypeTestsPost("CWL", "quay.io/dockstoretestuser2/dockstore-cgpmap", "symbolic.v1",
+            .toolsIdVersionsVersionIdTypeTestsPost("CWL", TRS_ID, VERSION_NAME,
                 "/examples/cgpmap/bamOut/bam_input.json", "crummy platform", "1.0.0","metadata", true);
         Assert.assertEquals(2, stringObjectMap.size());
         Assert.assertEquals("AWESOME_PLATFORM has the wrong version", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "2.0.0");
         Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "1.0.0");
+
+        assertNotOutOfSync(toolId, toolApi, ga4GhApi);
+
+        // Purposely mess up the verification (no longer in sync with sourcefile verification)
+        testingPostgres.runUpdateStatement("UPDATE version_metadata set verified=false");
+        testingPostgres.runUpdateStatement("UPDATE version_metadata set verifiedsource=null");
+
+        assertOutOfSync(toolId, toolApi, ga4GhApi);
+
+        // Sync tool back
+        containertagsApi.verifyToolTag(toolId, tagId);
+
+        assertNotOutOfSync(toolId, toolApi, ga4GhApi);
+
+        // Sync again
+        containertagsApi.verifyToolTag(toolId, tagId);
+
+        assertNotOutOfSync(toolId, toolApi, ga4GhApi);
+    }
+
+    private Tag getSpecificVersion(DockstoreTool dockstoreTool) {
+        Optional<Tag> first = dockstoreTool.getWorkflowVersions().stream().filter(version -> version.getName().equals(VERSION_NAME))
+                .findFirst();
+        return first.orElse(null);
+    }
+
+    private void assertNotOutOfSync(Long toolId, ContainersApi containersApi, Ga4GhApi ga4GhApi) {
+        // Get tool, tag, and TRS toolVersion
+        DockstoreTool dockstoreTool = containersApi.getContainer(toolId, null);
+        Tag tag = getSpecificVersion(dockstoreTool);
+        ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
+        // Check that it's no longer out of sync in dockstore
+        Assert.assertTrue(tag.isVerified());
+        Assert.assertEquals(Collections.singletonList("metadata"), tag.getVerifiedSources());
+        // Check that it's no longer out of sync in TRS
+        Assert.assertTrue(toolVersion.isVerified());
+        Assert.assertEquals("[\"metadata\"]", toolVersion.getVerifiedSource());
+    }
+
+    private void assertOutOfSync(Long toolId, ContainersApi containersApi, Ga4GhApi ga4GhApi) {
+        // Get tool, tag, and TRS toolVersion
+        DockstoreTool dockstoreTool = containersApi.getContainer(toolId, null);
+        Tag tag = getSpecificVersion(dockstoreTool);
+        ToolVersion toolVersion = ga4GhApi.toolsIdVersionsVersionIdGet(TRS_ID, VERSION_NAME);
+        // Check that it's out of sync in dockstore
+        Assert.assertFalse(tag.isVerified());
+        Assert.assertEquals(new ArrayList<String>(), tag.getVerifiedSources());
+        // Check that it's out of sync in TRS
+        Assert.assertFalse(toolVersion.isVerified());
+        Assert.assertEquals("[]", toolVersion.getVerifiedSource());
     }
 }

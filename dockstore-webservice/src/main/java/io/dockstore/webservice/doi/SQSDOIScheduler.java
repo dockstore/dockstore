@@ -15,17 +15,16 @@
  */
 package io.dockstore.webservice.doi;
 
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.dockstore.common.model.DOIMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 public class SQSDOIScheduler implements DOIGeneratorInterface {
 
@@ -54,7 +53,7 @@ public class SQSDOIScheduler implements DOIGeneratorInterface {
             LOG.error("Unable to send out a DOI message because the sqsURL was invalid");
             return;
         }
-        AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.US_EAST_1).build();
+        final SqsClient sqs = SqsClient.builder().region(Region.US_EAST_1).build();
         // Send a message
         LOG.info("Sending a message to MyFifoQueue.fifo");
 
@@ -62,15 +61,15 @@ public class SQSDOIScheduler implements DOIGeneratorInterface {
         message.setTargetEntry(messageType);
         message.setEntryId(id);
         message.setEntryVersionId(versionId);
-
-        SendMessageRequest sendMessageRequest = new SendMessageRequest(
-            sqsURL, gson.toJson(message));
-        sendMessageRequest.addMessageAttributesEntry("type", new MessageAttributeValue().withDataType("String").withStringValue(message.getClass().getName()));
         // You must provide a non-empty MessageGroupId when sending messages to a FIFO queue
-        sendMessageRequest.setMessageGroupId("messageGroup1");
-        SendMessageResult sendMessageResult = sqs.sendMessage(sendMessageRequest);
-        String sequenceNumber = sendMessageResult.getSequenceNumber();
-        String messageId = sendMessageResult.getMessageId();
+        final SendMessageRequest sendMessageRequest = SendMessageRequest.builder().
+            queueUrl(sqsURL).messageBody(gson.toJson(message)).messageGroupId("messageGroup1").
+            build();
+        final MessageAttributeValue attributeValue = MessageAttributeValue.builder().stringValue(message.getClass().getName()).build();
+        sendMessageRequest.messageAttributes().put("type", attributeValue);
+        final SendMessageResponse sendMessageResponse = sqs.sendMessage(sendMessageRequest);
+        String sequenceNumber = sendMessageResponse.sequenceNumber();
+        String messageId = sendMessageResponse.messageId();
         LOG.info("SendMessage succeed with messageId " + messageId + ", sequence number " + sequenceNumber);
     }
 

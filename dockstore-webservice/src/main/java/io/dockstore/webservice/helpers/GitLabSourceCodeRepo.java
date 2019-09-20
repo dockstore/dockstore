@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -106,9 +107,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Workflow initializeWorkflow(String repositoryId) {
-        Workflow workflow = new Workflow();
-
+    public Workflow initializeWorkflow(String repositoryId, Workflow workflow) {
         // Does this split not work if name has a slash?
         String[] id = repositoryId.split("/");
         String owner = id[0];
@@ -156,7 +155,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         String calculatedPath = version.getWorkflowPath();
 
         // Now grab source files
-        SourceFile.FileType identifiedType = workflow.getFileType();
+        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
         // TODO: No exceptions are caught here in the event of a failed call
         SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 
@@ -172,7 +171,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    void updateReferenceType(String repositoryId, Version version) {
+    public void updateReferenceType(String repositoryId, Version version) {
         /* no-op handled earlier since the library handles it in a more trivial way than the github library */
     }
 
@@ -227,7 +226,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
      * @return source file
      */
     @Override
-    public SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
+    public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
         try {
             GitlabProject project = gitlabAPI.getProject(id.split("/")[0], id.split("/")[1]);
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, path, branch);

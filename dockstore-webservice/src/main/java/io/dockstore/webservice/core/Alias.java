@@ -25,8 +25,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Currently stores alias information for tools, workflows, collections, workflows.
- * For now its just blank, but can be expanded with additional information on the aliases (such as if they point at dockstore mirrors)
+ * Currently stores alias information for Collections, Organizations, Tools and Workflows.
+ * For now its just blank, but can be expanded with additional information on the aliases (such as if they
+ * point at dockstore mirrors)
  */
 @Embeddable
 public class Alias implements Serializable {

@@ -20,8 +20,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
@@ -36,8 +37,8 @@ public class CWLParseTest {
     @Test
     public void testOldMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.cwl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         Assert.assertEquals("incorrect author", "Keiran Raine", entry.getAuthor());
         Assert.assertEquals("incorrect email", "keiranmraine@gmail.com", entry.getEmail());
     }
@@ -45,17 +46,60 @@ public class CWLParseTest {
     @Test
     public void testNewMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.cwl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
         Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
+    }
+
+    /**
+     * This tests a CWL 1.1 doc field that has a string value
+     * This test is probably redundant
+     * @throws IOException  If file contents could not be read
+     */
+    @Test
+    public void testcwlVersion1_1_doc1() throws IOException {
+        String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example1.cwl");
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
+        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
+        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription());
+    }
+
+    /**
+     * This tests a CWL 1.1 doc field that has a single value in an array
+     * @throws IOException If file contents could not be read
+     */
+    @Test
+    public void testcwlVersion1_1_doc2() throws IOException {
+        String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example2.cwl");
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
+        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
+        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", entry.getDescription());
+    }
+
+    /**
+     * This tests a CWL 1.1 doc field that has multiple values in an array
+     * @throws IOException If file contents could not be read
+     */
+    @Test
+    public void testcwlVersion1_1_doc3() throws IOException {
+        String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example3.cwl");
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
+        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
+        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", entry.getDescription());
     }
 
     @Test
     public void testCombinedMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example3.cwl");
-        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
         Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
     }

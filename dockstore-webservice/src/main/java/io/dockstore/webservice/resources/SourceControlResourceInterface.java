@@ -16,6 +16,8 @@
 package io.dockstore.webservice.resources;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -51,16 +53,34 @@ public interface SourceControlResourceInterface {
     default Token refreshBitbucketToken(Token token, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
         String bitbucketClientSecret) {
 
-        String url = BITBUCKET_URL + "site/oauth2/access_token";
+        String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
+        String payload = "grant_type=refresh_token&refresh_token=" + token.getRefreshToken();
+        return refreshToken(refreshUrl, token, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
+    }
+
+    /**
+     * Refreshes user's token.
+     *
+     * @param refreshUrl e.g. https://sandbox.zenodo.org/oauth/token
+     * @param token
+     * @param client
+     * @param tokenDAO
+     * @param clientID
+     * @param clientSecret
+     * @param payload e.g. "grant_type=refresh_token&refresh_token=" + token.getRefreshToken()
+     * @return the updated token
+     */
+    default Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String clientID,
+            String clientSecret, String payload) {
 
         try {
-            Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
-                    "grant_type=refresh_token&refresh_token=" + token.getRefreshToken());
+            Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, clientID, clientSecret,
+                    payload);
 
             if (asString.isPresent()) {
                 String accessToken;
                 String refreshToken;
-                LOG.info(token.getUsername() + ": RESOURCE CALL: {}", url);
+                LOG.info(token.getUsername() + ": RESOURCE CALL: {}", refreshUrl);
                 String json = asString.get();
 
                 Gson gson = new Gson();
@@ -76,7 +96,15 @@ public interface SourceControlResourceInterface {
                 long create = tokenDAO.create(token);
                 return tokenDAO.findById(create);
             } else {
-                throw new CustomWebApplicationException("Could not retrieve bitbucket.org token based on code",
+                String domain;
+                try {
+                    URI uri = new URI(refreshUrl);
+                    domain = uri.getHost();
+                } catch (URISyntaxException e) {
+                    domain = "web site";
+                    LOG.debug(e.getMessage(), e);
+                }
+                throw new CustomWebApplicationException("Could not retrieve " + domain + " token based on code",
                         HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (UnsupportedEncodingException ex) {
@@ -84,4 +112,5 @@ public interface SourceControlResourceInterface {
             throw new CustomWebApplicationException(ex.toString(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
+
 }

@@ -1,20 +1,20 @@
 {
   "arrayed_input": [
     {
-      "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
+      "path": "https://raw.githubusercontent.com/dockstore/dockstore/1.0/README.md",
       "class": "File"
     },
     {
-      "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
+      "path": "https://raw.githubusercontent.com/dockstore/dockstore/1.0/README.md",
       "class": "File"
     },
     {
-      "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
+      "path": "https://raw.githubusercontent.com/dockstore/dockstore/1.0/README.md",
       "class": "File"
     }
   ],
   "hello_input": {
-    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
+    "path": "https://raw.githubusercontent.com/dockstore/dockstore/1.0/README.md",
     "class": "File"
   },
   "hello_output": {
@@ -32,11 +32,11 @@
     }
   ],
   "ref_file_1": {
-    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
+    "path": "https://raw.githubusercontent.com/dockstore/dockstore/1.0/README.md",
     "class": "File"
   },
   "ref_file_2": {
-    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
+    "path": "https://raw.githubusercontent.com/dockstore/dockstore/1.0/README.md",
     "class": "File"
   }
 }

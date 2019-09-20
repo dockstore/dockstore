@@ -19,7 +19,9 @@ import java.io.File;
 import java.util.ArrayList;
 
 import io.dropwizard.testing.ResourceHelpers;
+import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -63,6 +65,17 @@ public class WorkflowInDirectoryTestIT {
     }
 
     /**
+     * This tests whether cwltool can execute a workflow that contains an empty array hints property
+     */
+    @Ignore("cwltool 1.0.20190621234233 does not seem able to do this anymore")
+    @Test
+    public void testWorkflowWithEmptyHints() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-empty-hints.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-job.yml"));
+        this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
+    }
+
+    /**
      * This tests secondary files that are denoted as a list of extensions (doesn't actually work, but we're at not dying horribly)
      */
     @Test
@@ -89,12 +102,15 @@ public class WorkflowInDirectoryTestIT {
      * the file id described in the parameter file is different than described in the tool descriptor even though they are the same
      * example: 1st-workflow-job.json says "reference__fasta__base", prep_samples_to_rec.cwl says "un_reference__fasta__base"
      * Tests if there are some secondary files in the workflow and some in the tool
+     * This test is obsolete because cwltool from Dockstore 1.7.0 will not run without the secondary files present
      */
     @Test
     public void testWorkflowMissingFilesToCopy() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
+        exit.expectSystemExitWithStatus(Client.IO_ERROR);
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
+        systemErrRule.getLog().contains("Missing required secondary file");
     }
 
     /**
@@ -104,7 +120,9 @@ public class WorkflowInDirectoryTestIT {
     public void testNullCase() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-no-secondary-in-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
+        exit.expectSystemExitWithStatus(3);
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
+        Assert.assertTrue(systemErrRule.getLog().contains("Missing required secondary file"));
     }
 
     @Test
@@ -135,7 +153,7 @@ public class WorkflowInDirectoryTestIT {
     }
 
     private void baseWorkflowTest(File descriptor, File testParameter, boolean script, String entryType) {
-        ArrayList<String> args = new ArrayList<String>() {{
+        ArrayList<String> args = new ArrayList<>() {{
             add("--config");
             add(configFile.getPath());
             add(entryType);
@@ -148,6 +166,6 @@ public class WorkflowInDirectoryTestIT {
                 add("--script");
             }
         }};
-        Client.main(args.toArray(new String[args.size()]));
+        Client.main(args.toArray(new String[0]));
     }
 }

@@ -3,16 +3,16 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-rc.0-SNAPSHOT
+  version: 1.7.0-rc.3-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
     name: Dockstore@ga4gh
-    url: https://github.com/ga4gh/dockstore
+    url: https://github.com/dockstore/dockstore
     email: theglobalalliance@genomicsandhealth.org
   license:
     name: Apache License Version 2.0
-    url: https://github.com/ga4gh/dockstore/blob/develop/LICENSE
+    url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
 tags:
   - name: GA4GH
     description: A curated subset of resources proposed as a common standard for tool
@@ -514,7 +514,7 @@ paths:
         - extendedGA4GH
       summary: List all organizations
       description: "This endpoint returns list of all organizations. "
-      operationId: entriesOrgGet
+      operationId: entriesOrgsGet
       responses:
         "200":
           description: An array of organizations' names.
@@ -562,8 +562,7 @@ paths:
         "200":
           description: An array of Tools of the input organization.
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/api/ga4gh/v2/extended/tools/{organization}":
     get:
       tags:
@@ -705,8 +704,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /api/ga4gh/v2/metadata:
     get:
       tags:
@@ -1250,15 +1248,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/github:
     post:
       tags:
         - tokens
       summary: Allow satellizer to post a new GitHub token to dockstore, used by login,
         can create new users.
-      description: A post method is required by saetillizer to send the GitHub token
+      description: A post method is required by satellizer to send the GitHub token
       operationId: addToken
       requestBody:
         $ref: "#/components/requestBodies/addTokenBody"
@@ -1270,8 +1267,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/github.com:
     get:
       tags:
@@ -1295,8 +1291,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/gitlab.com:
     get:
       tags:
@@ -1320,8 +1315,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/google:
     post:
       tags:
@@ -1339,8 +1333,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /auth/tokens/quay.io:
     get:
       tags:
@@ -1364,8 +1357,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
+  /auth/tokens/zenodo.org:
+    get:
+      tags:
+        - tokens
+      summary: Add a new zenodo.org token, used by accounts page.
+      description: This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI
+        which should resolve here
+      operationId: addZenodoToken
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+      security:
+        - BEARER: []
   "/auth/tokens/{tokenId}":
     get:
       tags:
@@ -1393,8 +1409,7 @@ paths:
         "404":
           description: Token not found
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - tokens
@@ -1413,8 +1428,7 @@ paths:
         "400":
           description: Invalid token value
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /containers/dockerRegistryList:
     get:
       tags:
@@ -1477,8 +1491,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/hostedEntry/{entryId}":
     delete:
       tags:
@@ -1508,8 +1521,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     patch:
       tags:
         - hosted
@@ -1534,8 +1546,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/namespace/{namespace}/published":
     get:
       tags:
@@ -1587,8 +1598,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/path/tool/{repository}/published":
     get:
       tags:
@@ -1642,8 +1652,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/path/{repository}":
     get:
       tags:
@@ -1668,8 +1677,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/path/{repository}/published":
     get:
       tags:
@@ -1801,8 +1809,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/schema/{containerId}/published":
     get:
       tags:
@@ -1829,6 +1836,30 @@ paths:
                   type: array
                   items:
                     type: object
+  "/containers/{alias}/aliases":
+    get:
+      tags:
+        - containers
+      summary: Retrieves a tool by alias.
+      description: Does not require authentication for published tools, authentication can
+        be provided for restricted tools
+      operationId: getToolByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DockstoreTool"
+      security:
+        - BEARER: []
   "/containers/{containerId}":
     get:
       tags:
@@ -1859,8 +1890,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - containers
@@ -1887,8 +1917,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - containers
@@ -1907,47 +1936,15 @@ paths:
         "400":
           description: "Invalid "
       security:
-        - BEARER:
-            []
-  "/containers/{containerId}/cwl":
+        - BEARER: []
+  "/containers/{containerId}/descriptor/{relative-path}":
     get:
       tags:
         - containers
-      summary: Get the primary CWL descriptor file on Github.
+      summary: Get the corresponding descriptor file.
       description: Does not require authentication for published tools, authentication can
         be provided for restricted tools
-      operationId: cwl
-      parameters:
-        - name: containerId
-          in: path
-          description: Tool id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
-  "/containers/{containerId}/cwl/{relative-path}":
-    get:
-      tags:
-        - containers
-      summary: Get the corresponding CWL descriptor file on Github.
-      description: Does not require authentication for published tools, authentication can
-        be provided for restricted tools
-      operationId: secondaryCwlPath
+      operationId: secondaryDescriptorPath
       parameters:
         - name: containerId
           in: path
@@ -1966,6 +1963,11 @@ paths:
           required: true
           schema:
             type: string
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: successful operation
@@ -1974,13 +1976,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/dockerfile":
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockerfile on Github.
+      summary: Get the corresponding Dockerfile.
       description: Does not require authentication for published tools, authentication can
         be provided for restricted tools
       operationId: dockerfile
@@ -2005,8 +2006,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/labels":
     put:
       tags:
@@ -2039,8 +2039,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
+  "/containers/{containerId}/primaryDescriptor":
+    get:
+      tags:
+        - containers
+      summary: Get the primary descriptor file.
+      description: Does not require authentication for published tools, authentication can
+        be provided for restricted tools
+      operationId: primaryDescriptor
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceFile"
+      security:
+        - BEARER: []
   "/containers/{containerId}/publish":
     post:
       tags:
@@ -2066,8 +2100,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/refresh":
     get:
       tags:
@@ -2091,8 +2124,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/requestDOI/{tagId}":
     post:
       tags:
@@ -2110,7 +2142,7 @@ paths:
             format: int64
         - name: tagId
           in: path
-          description: Tag to verify.
+          description: Tag to request DOI.
           required: true
           schema:
             type: integer
@@ -2125,16 +2157,15 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
-  "/containers/{containerId}/secondaryCwl":
+        - BEARER: []
+  "/containers/{containerId}/secondaryDescriptors":
     get:
       tags:
         - containers
-      summary: Get a list of secondary CWL files from Git.
+      summary: Get a list of secondary descriptor files.
       description: Does not require authentication for published tools, authentication can
         be provided for restricted tools
-      operationId: secondaryCwl
+      operationId: secondaryDescriptors
       parameters:
         - name: containerId
           in: path
@@ -2144,6 +2175,11 @@ paths:
             type: integer
             format: int64
         - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: language
           in: query
           required: false
           schema:
@@ -2158,41 +2194,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
-  "/containers/{containerId}/secondaryWdl":
-    get:
-      tags:
-        - containers
-      summary: Get a list of secondary WDL files from Git.
-      description: Does not require authentication for published tools, authentication can
-        be provided for restricted tools
-      operationId: secondaryWdl
-      parameters:
-        - name: containerId
-          in: path
-          description: Tool id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/star":
     put:
       tags:
@@ -2214,8 +2216,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/starredUsers":
     get:
       tags:
@@ -2274,8 +2275,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - containertags
@@ -2309,8 +2309,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/tags/{tagId}":
     delete:
       tags:
@@ -2337,13 +2336,12 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/testParameterFiles":
     get:
       tags:
         - containers
-      summary: Get the corresponding wdl test parameter files.
+      summary: Get the corresponding test parameter files.
       description: Does not require authentication for published tools, authentication can
         be provided for restricted tools
       operationId: getTestParameterFiles
@@ -2380,8 +2378,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - containers
@@ -2432,8 +2429,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - containers
@@ -2482,8 +2478,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/unstar":
     delete:
       tags:
@@ -2503,8 +2498,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/updateTagPaths":
     put:
       tags:
@@ -2531,8 +2525,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{containerId}/users":
     get:
       tags:
@@ -2558,54 +2551,29 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
-  "/containers/{containerId}/verifiedSources":
-    get:
-      tags:
-        - containers
-      summary: Get the sources that verified a tool.
-      description: NO authentication
-      operationId: verifiedSources
-      parameters:
-        - name: containerId
-          in: path
-          description: Tool id
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: string
+        - BEARER: []
   "/containers/{containerId}/verify/{tagId}":
-    put:
+    post:
       tags:
         - containertags
-      summary: Verify or unverify a version . ADMIN ONLY
+      summary: Updates the verification status of a version. ADMIN ONLY
       description: ""
       operationId: verifyToolTag
       parameters:
         - name: containerId
           in: path
-          description: Tool to modify.
+          description: ID of the tool to update.
           required: true
           schema:
             type: integer
             format: int64
         - name: tagId
           in: path
-          description: Tag to verify.
+          description: ID of the tag to update.
           required: true
           schema:
             type: integer
             format: int64
-      requestBody:
-        $ref: "#/components/requestBodies/VerifyRequest"
       responses:
         "200":
           description: successful operation
@@ -2616,75 +2584,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Tag"
       security:
-        - BEARER:
-            []
-  "/containers/{containerId}/wdl":
-    get:
-      tags:
-        - containers
-      summary: Get the primary WDL descriptor file on Github.
-      description: Does not require authentication for published tools, authentication can
-        be provided for restricted tools
-      operationId: wdl
-      parameters:
-        - name: containerId
-          in: path
-          description: Tool id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
-  "/containers/{containerId}/wdl/{relative-path}":
-    get:
-      tags:
-        - containers
-      summary: Get the corresponding WDL descriptor file on Github.
-      description: Does not require authentication for published tools, authentication can
-        be provided for restricted tools
-      operationId: secondaryWdlPath
-      parameters:
-        - name: containerId
-          in: path
-          description: Tool id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: relative-path
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{toolId}/defaultVersion":
     put:
       tags:
@@ -2715,8 +2615,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/containers/{toolId}/zip/{tagId}":
     get:
       tags:
@@ -2743,8 +2642,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/entries/{id}/aliases":
     put:
       tags:
@@ -2777,8 +2675,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/entries/{id}/collections":
     get:
       tags:
@@ -2803,6 +2700,44 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CollectionOrganization"
+  "/entries/{id}/topic":
+    post:
+      tags:
+        - entries
+      summary: Create a discourse topic for an entry.
+      description: ""
+      operationId: setDiscourseTopic
+      parameters:
+        - name: id
+          in: path
+          description: The id of the entry to add a topic to.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+      security:
+        - BEARER: []
+  /metadata/config.json:
+    get:
+      tags:
+        - metadata
+      summary: Configuration for UI clients of the API
+      description: NO authentication
+      operationId: getConfig
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Config"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -2858,11 +2793,9 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
+                type: object
+                additionalProperties:
                   type: object
-                  additionalProperties:
-                    type: object
   /metadata/rss:
     get:
       tags:
@@ -2931,8 +2864,10 @@ paths:
     get:
       tags:
         - metadata
-      summary: List all published workflow and tool paths.
-      description: NO authentication
+      summary: List all available workflow, tool, organization, and collection paths.
+      description: List all available workflow, tool, organization, and collection paths.
+        Available means published for tools/workflows, and approved for
+        organizations and their respective collections.
       operationId: sitemap
       responses:
         "200":
@@ -2997,8 +2932,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /organizations/all:
     get:
       tags:
@@ -3028,8 +2962,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/collections/{alias}/aliases":
     get:
       tags:
@@ -3062,7 +2995,7 @@ paths:
       parameters:
         - name: collectionId
           in: path
-          description: Entry to modify.
+          description: Collection to modify.
           required: true
           schema:
             type: integer
@@ -3083,8 +3016,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/name/{name}":
     get:
       tags:
@@ -3108,8 +3040,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{alias}/aliases":
     get:
       tags:
@@ -3155,14 +3086,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
       summary: Update an organization.
-      description: Currently only name, description, email, link, avatarUrl, and location
-        can be updated.
+      description: Currently only name, display name, description, topic, email, link,
+        avatarUrl, and location can be updated.
       operationId: updateOrganization
       parameters:
         - name: organizationId
@@ -3187,8 +3117,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/aliases":
     put:
       tags:
@@ -3221,8 +3150,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/approve":
     post:
       tags:
@@ -3246,8 +3174,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/collections":
     get:
       tags:
@@ -3266,6 +3193,7 @@ paths:
             format: int64
         - name: include
           in: query
+          description: Included fields
           required: false
           schema:
             type: string
@@ -3279,8 +3207,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     post:
       tags:
         - organizations
@@ -3310,8 +3237,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/collections/{collectionId}":
     get:
       tags:
@@ -3343,13 +3269,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
       summary: Update a collection.
-      description: Currently only name and description can be updated.
+      description: Currently only name, display name, description, and topic can be updated.
       operationId: updateCollection
       parameters:
         - name: organizationId
@@ -3381,8 +3306,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/collections/{collectionId}/description":
     get:
       tags:
@@ -3414,8 +3338,7 @@ paths:
               schema:
                 type: string
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
@@ -3452,8 +3375,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/collections/{collectionId}/entry":
     post:
       tags:
@@ -3491,8 +3413,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - organizations
@@ -3529,8 +3450,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/description":
     get:
       tags:
@@ -3555,8 +3475,7 @@ paths:
               schema:
                 type: string
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
@@ -3586,8 +3505,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/events":
     get:
       tags:
@@ -3634,8 +3552,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Event"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/invitation":
     post:
       tags:
@@ -3661,8 +3578,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/members":
     get:
       tags:
@@ -3690,8 +3606,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/reject":
     post:
       tags:
@@ -3715,8 +3630,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/request":
     post:
       tags:
@@ -3740,8 +3654,78 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
       security:
-        - BEARER:
-            []
+        - BEARER: []
+  "/organizations/{organizationId}/star":
+    put:
+      tags:
+        - organizations
+      summary: Star an organization.
+      description: ""
+      operationId: starOrganization
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization to star.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StarRequest"
+        description: StarRequest to star an organization for a user
+        required: true
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+  "/organizations/{organizationId}/starredUsers":
+    get:
+      tags:
+        - organizations
+      summary: Returns list of users who starred the given approved organization.
+      description: ""
+      operationId: getStarredUsersForApprovedOrganization
+      parameters:
+        - name: organizationId
+          in: path
+          description: Get starred users of an approved organization by id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+  "/organizations/{organizationId}/unstar":
+    delete:
+      tags:
+        - organizations
+      summary: Unstar an organization.
+      description: ""
+      operationId: unstarOrganization
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization to unstar.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   "/organizations/{organizationId}/user":
     post:
       tags:
@@ -3761,7 +3745,7 @@ paths:
               - MEMBER
         - name: userId
           in: query
-          description: User to add to org.
+          description: User ID of user to update within organization.
           required: true
           schema:
             type: integer
@@ -3781,8 +3765,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - organizations
@@ -3801,7 +3784,7 @@ paths:
               - MEMBER
         - name: userId
           in: query
-          description: User to add to org.
+          description: User ID of user to add to organization.
           required: true
           schema:
             type: integer
@@ -3823,8 +3806,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - organizations
@@ -3834,7 +3816,7 @@ paths:
       parameters:
         - name: userId
           in: query
-          description: User to add to org.
+          description: User ID of user to remove from organization.
           required: true
           schema:
             type: integer
@@ -3850,8 +3832,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationId}/users/{username}":
     put:
       tags:
@@ -3888,8 +3869,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/organizations/{organizationName}/collections/{collectionName}/name":
     get:
       tags:
@@ -3919,8 +3899,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/checkUser/{username}":
     get:
       tags:
@@ -3943,13 +3922,73 @@ paths:
               schema:
                 type: boolean
       security:
-        - BEARER:
-            []
+        - BEARER: []
+  /users/services/sync:
+    post:
+      tags:
+        - users
+      summary: Syncs service data with Git accounts.
+      description: Currently only works with GitHub
+      operationId: syncUserServices
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
+  "/users/services/{organizationName}/sync":
+    post:
+      tags:
+        - users
+      summary: Syncs services with Git accounts for a specified organization.
+      description: ""
+      operationId: syncUserServicesbyOrganization
+      parameters:
+        - name: organizationName
+          in: path
+          description: Organization name
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
+  /users/starredOrganizations:
+    get:
+      tags:
+        - users
+      summary: Get the authenticated user's starred organizations.
+      description: ""
+      operationId: getStarredOrganizations
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+      security:
+        - BEARER: []
   /users/starredTools:
     get:
       tags:
         - users
-      summary: Get the logged-in user's starred tools.
+      summary: Get the authenticated user's starred tools.
       description: ""
       operationId: getStarredTools
       responses:
@@ -3962,13 +4001,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/starredWorkflows:
     get:
       tags:
         - users
-      summary: Get the logged-in user's starred workflows.
+      summary: Get the authenticated user's starred workflows.
       description: ""
       operationId: getStarredWorkflows
       responses:
@@ -3981,8 +4019,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/updateUserMetadata:
     get:
       tags:
@@ -4000,8 +4037,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user:
     get:
       tags:
@@ -4017,8 +4053,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - users
@@ -4033,8 +4068,7 @@ paths:
               schema:
                 type: boolean
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user/changeUsername:
     post:
       tags:
@@ -4057,13 +4091,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user/extended:
     get:
       tags:
         - users
-      summary: Get additional information about the logged-in user.
+      summary: Get additional information about the authenticated user.
       description: ""
       operationId: getExtendedUserData
       responses:
@@ -4074,13 +4107,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ExtendedUserData"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user/memberships:
     get:
       tags:
         - users
-      summary: Get the logged-in users memberships.
+      summary: Get the logged-in user's memberships.
       description: ""
       operationId: getUserMemberships
       responses:
@@ -4094,8 +4126,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/OrganizationUser"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /users/user/updateUserMetadata:
     get:
       tags:
@@ -4121,8 +4152,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
+  "/users/user/{userId}":
+    delete:
+      tags:
+        - users
+      summary: Terminate user if possible.
+      description: ""
+      operationId: terminateUser
+      parameters:
+        - name: userId
+          in: path
+          description: User to terminate
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: boolean
+      security:
+        - BEARER: []
   "/users/user/{userId}/limits":
     get:
       tags:
@@ -4146,8 +4200,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Limits"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - users
@@ -4177,8 +4230,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Limits"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/username/{username}":
     get:
       tags:
@@ -4201,15 +4253,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}":
     get:
       tags:
         - users
       summary: Get user by id.
       description: ""
-      operationId: getUser
+      operationId: getSpecificUser
       parameters:
         - name: userId
           in: path
@@ -4226,13 +4277,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/containers":
     get:
       tags:
         - users
-      summary: List all tools owned by the logged-in user.
+      summary: List all tools owned by the authenticated user.
       description: ""
       operationId: userContainers
       parameters:
@@ -4253,8 +4303,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/containers/published":
     get:
       tags:
@@ -4280,13 +4329,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/containers/refresh":
     get:
       tags:
         - users
-      summary: Refresh all tools owned by the logged-in user.
+      summary: Refresh all tools owned by the authenticated user.
       description: ""
       operationId: refresh
       parameters:
@@ -4307,13 +4355,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/containers/{organization}/refresh":
     get:
       tags:
         - users
-      summary: Refresh all tools owned by the logged-in user with specified
+      summary: Refresh all tools owned by the authenticated user with specified
         organization.
       description: ""
       operationId: refreshToolsByOrganization
@@ -4341,8 +4388,33 @@ paths:
                 items:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
-        - BEARER:
-            []
+        - BEARER: []
+  "/users/{userId}/services":
+    get:
+      tags:
+        - users
+      summary: List all services owned by the authenticated user.
+      description: ""
+      operationId: userServices
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/users/{userId}/tokens":
     get:
       tags:
@@ -4368,8 +4440,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens/dockstore":
     get:
       tags:
@@ -4395,8 +4466,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens/github.com":
     get:
       tags:
@@ -4422,8 +4492,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens/gitlab.com":
     get:
       tags:
@@ -4449,8 +4518,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/tokens/quay.io":
     get:
       tags:
@@ -4476,13 +4544,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/Token"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/workflows":
     get:
       tags:
         - users
-      summary: List all workflows owned by the logged-in user.
+      summary: List all workflows owned by the authenticated user.
       description: ""
       operationId: userWorkflows
       parameters:
@@ -4503,8 +4570,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/workflows/published":
     get:
       tags:
@@ -4530,13 +4596,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/workflows/refresh":
     get:
       tags:
         - users
-      summary: Refresh all workflows owned by the logged-in user.
+      summary: Refresh all workflows owned by the authenticated user.
       description: ""
       operationId: refreshWorkflows
       parameters:
@@ -4557,13 +4622,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/users/{userId}/workflows/{organization}/refresh":
     get:
       tags:
         - users
-      summary: Refresh all workflows owned by the logged-in user with specified
+      summary: Refresh all workflows owned by the authenticated user with specified
         organization.
       description: ""
       operationId: refreshWorkflowsByOrganization
@@ -4591,8 +4655,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /workflows/hostedEntry:
     post:
       tags:
@@ -4639,8 +4702,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/hostedEntry/{entryId}":
     post:
       tags:
@@ -4673,8 +4735,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - hosted
@@ -4703,8 +4764,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     patch:
       tags:
         - hosted
@@ -4729,8 +4789,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /workflows/manualRegister:
     post:
       tags:
@@ -4783,8 +4842,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/organization/{organization}/published":
     get:
       tags:
@@ -4830,8 +4888,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/path/entry/{repository}/published":
     get:
       tags:
@@ -4853,6 +4910,83 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Entry"
+  /workflows/path/service:
+    post:
+      tags:
+        - workflows
+      summary: Create a service for the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function. Error code 418 is returned to tell
+        lambda not to retry.
+      operationId: addService
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                repository:
+                  description: Repository path
+                  type: string
+                username:
+                  description: Name of user on GitHub
+                  type: string
+                installationId:
+                  description: GitHub installation ID
+                  type: string
+              required:
+                - repository
+                - username
+                - installationId
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
+  /workflows/path/service/upsertVersion:
+    post:
+      tags:
+        - workflows
+      summary: Add or update a service version for a given GitHub tag for a service
+        with the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function. Error code 418 is returned to tell
+        lambda not to retry.
+      operationId: upsertServiceVersion
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                repository:
+                  description: Repository path
+                  type: string
+                username:
+                  description: Name of user on GitHub
+                  type: string
+                gitReference:
+                  description: Git reference for new GitHub tag
+                  type: string
+                installationId:
+                  description: GitHub installation ID
+                  type: string
+              required:
+                - repository
+                - username
+                - gitReference
+                - installationId
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/workflows/path/workflow/{repository}":
     get:
       tags:
@@ -4873,6 +5007,13 @@ paths:
           required: false
           schema:
             type: string
+        - name: services
+          in: query
+          description: services
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: successful operation
@@ -4881,8 +5022,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/path/workflow/{repository}/actions":
     get:
       tags:
@@ -4897,6 +5037,13 @@ paths:
           required: true
           schema:
             type: string
+        - name: services
+          in: query
+          description: services
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: successful operation
@@ -4912,8 +5059,7 @@ paths:
                     - DELETE
                     - SHARE
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/path/workflow/{repository}/permissions":
     get:
       tags:
@@ -4928,6 +5074,13 @@ paths:
           required: true
           schema:
             type: string
+        - name: services
+          in: query
+          description: services
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: successful operation
@@ -4938,8 +5091,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Permission"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - workflows
@@ -4969,6 +5121,13 @@ paths:
               - OWNER
               - WRITER
               - READER
+        - name: services
+          in: query
+          description: services
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: successful operation
@@ -4979,8 +5138,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Permission"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     patch:
       tags:
         - workflows
@@ -4995,6 +5153,13 @@ paths:
           required: true
           schema:
             type: string
+        - name: services
+          in: query
+          description: services
+          required: false
+          schema:
+            type: boolean
+            default: false
       requestBody:
         content:
           application/json:
@@ -5012,8 +5177,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Permission"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/path/workflow/{repository}/published":
     get:
       tags:
@@ -5034,6 +5198,13 @@ paths:
           required: false
           schema:
             type: string
+        - name: services
+          in: query
+          description: services
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: successful operation
@@ -5041,6 +5212,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Workflow"
+  "/workflows/path/workflow/{repository}/upsertVersion":
+    put:
+      tags:
+        - workflows
+      summary: Add or update a workflow version for a given GitHub tag to all workflows
+        associated with the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function.
+      operationId: upsertVersions
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+        - name: gitReference
+          in: query
+          description: Git reference for new GitHub tag
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/workflows/path/{repository}":
     get:
       tags:
@@ -5065,8 +5270,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   /workflows/published:
     get:
       tags:
@@ -5118,6 +5322,13 @@ paths:
               - asc
               - desc
             default: desc
+        - name: services
+          in: query
+          description: services
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: successful operation
@@ -5172,8 +5383,31 @@ paths:
                 items:
                   $ref: "#/components/schemas/SharedWorkflows"
       security:
-        - BEARER:
-            []
+        - BEARER: []
+  "/workflows/{alias}/aliases":
+    get:
+      tags:
+        - workflows
+      summary: Retrieves a workflow by alias.
+      description: Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
+      operationId: getWorkflowByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/workflows/{entryId}/registerCheckerWorkflow/{descriptorType}":
     post:
       tags:
@@ -5221,8 +5455,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Entry"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}":
     get:
       tags:
@@ -5253,8 +5486,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - workflows
@@ -5280,75 +5512,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/cwl":
-    get:
-      tags:
-        - workflows
-      summary: Get the primary CWL descriptor file on Github.
-      description: Does not require authentication for published workflows, authentication
-        can be provided for restricted workflows
-      operationId: cwl
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/cwl/{relative-path}":
-    get:
-      tags:
-        - workflows
-      summary: Get the corresponding CWL descriptor file on Github.
-      description: Does not require authentication for published workflows, authentication
-        can be provided for restricted workflows
-      operationId: secondaryCwlPath
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: relative-path
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/dag/{workflowVersionId}":
     get:
       tags:
@@ -5380,8 +5544,7 @@ paths:
               schema:
                 type: string
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/defaultVersion":
     put:
       tags:
@@ -5412,8 +5575,47 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
+  "/workflows/{workflowId}/descriptor/{relative-path}":
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding descriptor file from source control.
+      description: Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
+      operationId: secondaryDescriptorPath
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: relative-path
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceFile"
+      security:
+        - BEARER: []
   "/workflows/{workflowId}/labels":
     put:
       tags:
@@ -5446,16 +5648,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/nextflow":
+        - BEARER: []
+  "/workflows/{workflowId}/primaryDescriptor":
     get:
       tags:
         - workflows
-      summary: Get the nextflow.config file on Github.
+      summary: Get the primary descriptor file.
       description: Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
-      operationId: nextflow
+      operationId: primaryDescriptor
       parameters:
         - name: workflowId
           in: path
@@ -5469,42 +5670,11 @@ paths:
           required: false
           schema:
             type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/nextflow/{relative-path}":
-    get:
-      tags:
-        - workflows
-      summary: Get the corresponding nextflow documents on Github.
-      description: Does not require authentication for published workflows, authentication
-        can be provided for restricted workflows
-      operationId: secondaryNextFlowPath
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
+        - name: language
           in: query
           required: false
           schema:
             type: string
-        - name: relative-path
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         "200":
           description: successful operation
@@ -5513,8 +5683,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/publish":
     post:
       tags:
@@ -5540,8 +5709,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/refresh":
     get:
       tags:
@@ -5565,8 +5733,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/requestDOI/{workflowVersionId}":
     put:
       tags:
@@ -5589,6 +5756,8 @@ paths:
           schema:
             type: integer
             format: int64
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation
@@ -5599,8 +5768,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkflowVersion"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/resetVersionPaths":
     put:
       tags:
@@ -5627,8 +5795,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/restub":
     get:
       tags:
@@ -5652,16 +5819,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Workflow"
       security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/secondaryCwl":
+        - BEARER: []
+  "/workflows/{workflowId}/secondaryDescriptors":
     get:
       tags:
         - workflows
-      summary: Get the corresponding cwl documents on Github.
+      summary: Get the corresponding descriptor documents from source control.
       description: Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
-      operationId: secondaryCwl
+      operationId: secondaryDescriptors
       parameters:
         - name: workflowId
           in: path
@@ -5671,6 +5837,11 @@ paths:
             type: integer
             format: int64
         - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: language
           in: query
           required: false
           schema:
@@ -5685,74 +5856,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/secondaryNextflow":
-    get:
-      tags:
-        - workflows
-      summary: Get the corresponding Nextflow documents on Github.
-      description: Does not require authentication for published workflows, authentication
-        can be provided for restricted workflows
-      operationId: secondaryNextflow
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/secondaryWdl":
-    get:
-      tags:
-        - workflows
-      summary: Get the corresponding wdl documents on Github.
-      description: Does not require authentication for published workflows, authentication
-        can be provided for restricted workflows
-      operationId: secondaryWdl
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/star":
     put:
       tags:
@@ -5774,8 +5878,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/starredUsers":
     get:
       tags:
@@ -5831,8 +5934,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     put:
       tags:
         - workflows
@@ -5874,8 +5976,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
     delete:
       tags:
         - workflows
@@ -5915,8 +6016,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SourceFile"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/tools/{workflowVersionId}":
     get:
       tags:
@@ -5948,8 +6048,7 @@ paths:
               schema:
                 type: string
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/unstar":
     delete:
       tags:
@@ -5969,8 +6068,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/users":
     get:
       tags:
@@ -5996,54 +6094,29 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
       security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/verifiedSources":
-    get:
-      tags:
-        - workflows
-      summary: Get a semicolon delimited list of verified sources.
-      description: NO authentication
-      operationId: verifiedSources
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow id
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: string
+        - BEARER: []
   "/workflows/{workflowId}/verify/{workflowVersionId}":
-    put:
+    post:
       tags:
         - workflows
-      summary: Verify or unverify a workflow. ADMIN ONLY
+      summary: Updates the verification status of a version. ADMIN ONLY
       description: ""
       operationId: verifyWorkflowVersion
       parameters:
         - name: workflowId
           in: path
-          description: Workflow to modify.
+          description: ID of the workflow to update.
           required: true
           schema:
             type: integer
             format: int64
         - name: workflowVersionId
           in: path
-          description: workflowVersionId
+          description: Id of the version to update.
           required: true
           schema:
             type: integer
             format: int64
-      requestBody:
-        $ref: "#/components/requestBodies/VerifyRequest"
       responses:
         "200":
           description: successful operation
@@ -6054,75 +6127,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkflowVersion"
       security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/wdl":
-    get:
-      tags:
-        - workflows
-      summary: Get the primary WDL descriptor file on Github.
-      description: Does not require authentication for published workflows, authentication
-        can be provided for restricted workflows
-      operationId: wdl
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
-  "/workflows/{workflowId}/wdl/{relative-path}":
-    get:
-      tags:
-        - workflows
-      summary: Get the corresponding WDL descriptor file on Github.
-      description: Does not require authentication for published workflows, authentication
-        can be provided for restricted workflows
-      operationId: secondaryWdlPath
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow id
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: relative-path
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SourceFile"
-      security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/workflowVersions":
     put:
       tags:
@@ -6157,8 +6162,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkflowVersion"
       security:
-        - BEARER:
-            []
+        - BEARER: []
   "/workflows/{workflowId}/zip/{workflowVersionId}":
     get:
       tags:
@@ -6185,8 +6189,7 @@ paths:
         default:
           description: successful operation
       security:
-        - BEARER:
-            []
+        - BEARER: []
 externalDocs:
   description: Dockstore documentation
   url: https://www.dockstore.org/docs/getting-started
@@ -6245,13 +6248,6 @@ components:
             $ref: "#/components/schemas/StarRequest"
       description: StarRequest to star a repo for a user
       required: true
-    VerifyRequest:
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/VerifyRequest"
-      description: Object containing verification information.
-      required: true
   securitySchemes:
     BEARER:
       type: apiKey
@@ -6263,6 +6259,18 @@ components:
       properties:
         content:
           type: string
+    BioWorkflow:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - type: object
+          properties:
+            parent_id:
+              type: integer
+              format: int64
+              readOnly: true
+            is_checker:
+              type: boolean
+          description: This describes one workflow in the dockstore
     Collection:
       type: object
       required:
@@ -6332,6 +6340,66 @@ components:
           type: string
         organizationDisplayName:
           type: string
+    Config:
+      type: object
+      properties:
+        dnaStackImportUrl:
+          type: string
+        dnaNexusImportUrl:
+          type: string
+        terraImportUrl:
+          type: string
+        gitHubAuthUrl:
+          type: string
+        gitHubRedirectPath:
+          type: string
+        gitHubScope:
+          type: string
+        quayIoAuthUrl:
+          type: string
+        quayIoRedirectPath:
+          type: string
+        quayIoScope:
+          type: string
+        bitBucketAuthUrl:
+          type: string
+        gitlabAuthUrl:
+          type: string
+        gitlabRedirectPath:
+          type: string
+        gitlabScope:
+          type: string
+        zenodoAuthUrl:
+          type: string
+        zenodoRedirectPath:
+          type: string
+        zenodoScope:
+          type: string
+        googleScope:
+          type: string
+        cwlVisualizerUri:
+          type: string
+        tagManagerId:
+          type: string
+        gitHubAppInstallationUrl:
+          type: string
+        documentationUrl:
+          type: string
+        githubClientId:
+          type: string
+        quayIoClientId:
+          type: string
+        bitBucketClientId:
+          type: string
+        gitlabClientId:
+          type: string
+        zenodoClientId:
+          type: string
+        googleClientId:
+          type: string
+        discourseUrl:
+          type: string
+      description: Configuration information for UI clients of the Dockstore webservice.
     DescriptorLanguageBean:
       type: object
       properties:
@@ -6369,12 +6437,17 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        topicId:
+          type: integer
+          format: int64
+          description: The Id of the corresponding topic on Dockstore Discuss
+        tags:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Tag"
         custom_docker_registry_path:
           type: string
-          readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
           readOnly: true
         has_checker:
           type: boolean
@@ -6391,6 +6464,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6431,11 +6508,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified. Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created). Workflows-> For remote: When
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -6505,8 +6591,11 @@ components:
         lastBuild:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last built
-        tags:
+          description: "Implementation specific timestamp for last built. For automated
+            builds: When refresh is hit, the last time the tool was built gets
+            stored here. If tool was never built on quay.io, then last build
+            will be null. N/A for hosted/manual path tools"
+        workflowVersions:
           type: array
           description: Implementation specific tracking of valid build tags for the docker
             container
@@ -6556,10 +6645,16 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
+        topicId:
+          type: integer
+          format: int64
+          description: The Id of the corresponding topic on Dockstore Discuss
+        workflowVersions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Base_class_for_versions_of_entries_in_the_D\
+              ockstore"
         has_checker:
           type: boolean
           readOnly: true
@@ -6575,6 +6670,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6615,11 +6714,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified. Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created). Workflows-> For remote: When
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -6846,6 +6954,12 @@ components:
           type: string
           description: Logo URL
           pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
+        starredUsers:
+          type: array
+          description: This indicates the users that have starred this organization
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/User"
     OrganizationUser:
       type: object
       required:
@@ -6931,6 +7045,13 @@ components:
           type: string
         enum:
           type: string
+    Service:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - type: object
+          properties: {}
+          description: This describes one service in the dockstore as a special degenerate
+            case of a workflow
     SharedWorkflows:
       type: object
       properties:
@@ -6962,6 +7083,10 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the source file in this web service
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
         verifiedBySource:
           type: object
           description: maps from platform to whether an entry successfully ran on it using
@@ -6981,6 +7106,9 @@ components:
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
             - DOCKSTORE_YML
+            - DOCKSTORE_SERVICE_YML
+            - DOCKSTORE_SERVICE_TEST_JSON
+            - DOCKSTORE_SERVICE_OTHER
         content:
           type: string
           description: Cache for the contents of the target file
@@ -6995,7 +7123,6 @@ components:
       properties:
         star:
           type: boolean
-          readOnly: true
     Tag:
       type: object
       required:
@@ -7007,6 +7134,19 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        reference:
+          type: string
+          description: git commit/tag/branch
+        name:
+          type: string
+          description: Implementation specific, can be a quay.io or docker hub tag name
+        commitID:
+          type: string
+          description: This is the commit id for the source control that the files belong to
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
         referenceType:
           type: string
           description: This indicates the type of git (or other source control) reference
@@ -7016,19 +7156,6 @@ components:
             - BRANCH
             - NOT_APPLICABLE
             - UNSET
-        validations:
-          type: array
-          description: Cached validations for each version.
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Validation"
-        last_modified:
-          type: string
-          format: date-time
-          description: The last time this image was modified in the image registry
-        reference:
-          type: string
-          description: git commit/tag/branch
         sourceFiles:
           type: array
           description: Cached files for each version. Includes Dockerfile and Descriptor
@@ -7036,29 +7163,58 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/SourceFile"
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         valid:
           type: boolean
           description: Implementation specific, whether this tag has valid files from
             source code repo
-        name:
-          type: string
-          description: Implementation specific, can be a quay.io or docker hub tag name
         dirtyBit:
           type: boolean
           description: True if user has altered the tag
+        versionEditor:
+          $ref: "#/components/schemas/User"
+        dbUpdateDate:
+          type: string
+          format: date-time
+        input_file_formats:
+          type: array
+          description: File formats for describing the input file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        output_file_formats:
+          type: array
+          description: File formats for describing the output file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Validation"
         verified:
           type: boolean
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
           description: Verified source for the version
+        verifiedSources:
+          type: array
+          description: Verified source for the version
+          items:
+            type: string
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
         doiURL:
           type: string
           description: This is a URL for the DOI for the version of the entry
+        image_id:
+          type: string
         doiStatus:
           type: string
           description: This indicates the DOI status
@@ -7066,8 +7222,11 @@ components:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
-        versionEditor:
-          $ref: "#/components/schemas/User"
+        last_built:
+          type: string
+          format: date-time
+          description: "For automated tools: The last time the container backing this tool
+            version was built. For hosted: N/A"
         size:
           type: integer
           format: int64
@@ -7087,25 +7246,6 @@ components:
             build on quay.io
         workingDirectory:
           type: string
-        image_id:
-          type: string
-        input_file_formats:
-          type: array
-          description: File formats for describing the input file formats of versions
-            (tag/workflowVersion)
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/FileFormat"
-        output_file_formats:
-          type: array
-          description: File formats for describing the output file formats of versions
-            (tag/workflowVersion)
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/FileFormat"
-        commitID:
-          type: string
-          description: This is the commit id for the source control that the files belong to
       description: This describes one tag associated with a container.
     Token:
       type: object
@@ -7114,6 +7254,14 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the token in this web service
+          readOnly: true
+        dbCreateDate:
+          type: string
+          format: date-time
+          readOnly: true
+        dbUpdateDate:
+          type: string
+          format: date-time
           readOnly: true
         tokenSource:
           type: string
@@ -7237,6 +7385,7 @@ components:
             - CWL
             - WDL
             - NFL
+            - SERVICE
         descriptor:
           type: string
           description: The descriptor that represents this version of the tool.
@@ -7367,6 +7516,7 @@ components:
               - CWL
               - WDL
               - NFL
+              - SERVICE
         containerfile:
           type: boolean
           description: Reports if this tool has a containerfile available.
@@ -7430,6 +7580,21 @@ components:
             (GitHub, Google, etc)
           additionalProperties:
             $ref: "#/components/schemas/Profile"
+        privacyPolicyVersion:
+          type: string
+          description: Indicates which version of the privacy policy the user has accepted
+          enum:
+            - NONE
+            - PRIVACY_POLICY_VERSION_2_5
+        tosversion:
+          type: string
+          enum:
+            - NONE
+            - TOS_VERSION_1
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -7447,6 +7612,10 @@ components:
         setupComplete:
           type: boolean
           description: Indicates whether this user has accepted their username
+        privacyPolicyVersionAcceptanceDate:
+          type: string
+          format: date-time
+          description: Time privacy policy was accepted
       description: End users for the dockstore
     Validation:
       type: object
@@ -7473,6 +7642,9 @@ components:
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
             - DOCKSTORE_YML
+            - DOCKSTORE_SERVICE_YML
+            - DOCKSTORE_SERVICE_TEST_JSON
+            - DOCKSTORE_SERVICE_OTHER
         valid:
           type: boolean
           description: Is the file type valid
@@ -7488,15 +7660,6 @@ components:
           type: string
         platformVersion:
           type: string
-    VerifyRequest:
-      type: object
-      properties:
-        verify:
-          type: boolean
-          readOnly: true
-        verifiedSource:
-          type: string
-          readOnly: true
     Workflow:
       type: object
       required:
@@ -7508,6 +7671,8 @@ components:
         - repository
         - sourceControl
         - workflow_path
+      discriminator:
+        propertyName: type
       properties:
         id:
           type: integer
@@ -7524,14 +7689,14 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        parent_id:
+        topicId:
           type: integer
           format: int64
-          readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
+          description: The Id of the corresponding topic on Dockstore Discuss
+        isChecker:
+          type: boolean
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         has_checker:
           type: boolean
           readOnly: true
@@ -7547,6 +7712,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7587,11 +7756,20 @@ components:
         last_modified:
           type: integer
           format: int32
-          description: Implementation specific timestamp for last modified
+          description: "Implementation specific timestamp for last modified. Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created). Workflows-> For remote: When
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
+            a new version was made."
         lastUpdated:
           type: string
           format: date-time
-          description: Implementation specific timestamp for last updated on webservice
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
         gitUrl:
           type: string
           description: This is a link to the associated repo with a descriptor, required
@@ -7609,6 +7787,7 @@ components:
             - FULL
             - STUB
             - HOSTED
+            - SERVICE
         workflowName:
           type: string
           description: This is the name of the workflow, not needed when only one workflow
@@ -7625,12 +7804,17 @@ components:
             or n/a?, required: GA4GH"
         descriptorType:
           type: string
-          description: This is a descriptor type for the workflow, either CWL or WDL
-            (Defaults to CWL)
+          description: This is a descriptor type for the workflow, either CWL, WDL, or
+            Nextflow (Defaults to CWL)
+          enum:
+            - CWL
+            - WDL
+            - NFL
+            - service
         workflow_path:
           type: string
           description: This indicates for the associated git repository, the default path
-            to the CWL document
+            to the primary descriptor document
         defaultTestParameterFilePath:
           type: string
           description: This indicates for the associated git repository, the default path
@@ -7642,8 +7826,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/WorkflowVersion"
-        is_checker:
-          type: boolean
         full_workflow_path:
           type: string
           readOnly: true
@@ -7664,6 +7846,21 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        workingDirectory:
+          type: string
+        reference:
+          type: string
+          description: git commit/tag/branch
+        name:
+          type: string
+          description: Implementation specific, can be a quay.io or docker hub tag name
+        commitID:
+          type: string
+          description: This is the commit id for the source control that the files belong to
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
         referenceType:
           type: string
           description: This indicates the type of git (or other source control) reference
@@ -7673,21 +7870,6 @@ components:
             - BRANCH
             - NOT_APPLICABLE
             - UNSET
-        validations:
-          type: array
-          description: Cached validations for each version.
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Validation"
-        workingDirectory:
-          type: string
-        last_modified:
-          type: string
-          format: date-time
-          description: The last time this image was modified in the image registry
-        reference:
-          type: string
-          description: git commit/tag/branch
         sourceFiles:
           type: array
           description: Cached files for each version. Includes Dockerfile and Descriptor
@@ -7695,41 +7877,18 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/SourceFile"
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         valid:
           type: boolean
           description: Implementation specific, whether this tag has valid files from
             source code repo
-        name:
-          type: string
-          description: Implementation specific, can be a quay.io or docker hub tag name
         dirtyBit:
           type: boolean
           description: True if user has altered the tag
-        verified:
-          type: boolean
-          description: Whether this version has been verified or not
-        verifiedSource:
-          type: string
-          description: Verified source for the version
-        doiURL:
-          type: string
-          description: This is a URL for the DOI for the version of the entry
-        doiStatus:
-          type: string
-          description: This indicates the DOI status
-          enum:
-            - NOT_REQUESTED
-            - REQUESTED
-            - CREATED
         versionEditor:
           $ref: "#/components/schemas/User"
-        workflow_path:
+        dbUpdateDate:
           type: string
-          description: Path for the workflow
+          format: date-time
         input_file_formats:
           type: array
           description: File formats for describing the input file formats of versions
@@ -7744,7 +7903,150 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Validation"
+        verified:
+          type: boolean
+          description: Whether this version has been verified or not
+        verifiedSource:
+          type: string
+          description: Verified source for the version
+        verifiedSources:
+          type: array
+          description: Verified source for the version
+          items:
+            type: string
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
+        doiURL:
+          type: string
+          description: This is a URL for the DOI for the version of the entry
+        doiStatus:
+          type: string
+          description: This indicates the DOI status
+          enum:
+            - NOT_REQUESTED
+            - REQUESTED
+            - CREATED
+        workflow_path:
+          type: string
+          description: Path for the workflow
+        last_modified:
+          type: string
+          format: date-time
+          description: "Remote: Last time version on GitHub repo was changed. Hosted: time
+            version created."
+        subClass:
+          type: string
+          description: The subclass of this for services.
+          enum:
+            - DOCKER_COMPOSE
+            - SWARM
+            - KUBERNETES
+            - HELM
+      description: This describes one workflow version associated with a workflow.
+    Base_class_for_versions_of_entries_in_the_Dockstore:
+      type: object
+      required:
+        - name
+        - reference
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the tag in this web service
+          readOnly: true
+        workingDirectory:
+          type: string
+        reference:
+          type: string
+          description: git commit/tag/branch
+        name:
+          type: string
+          description: Implementation specific, can be a quay.io or docker hub tag name
         commitID:
           type: string
           description: This is the commit id for the source control that the files belong to
-      description: This describes one workflow version associated with a workflow.
+        frozen:
+          type: boolean
+          description: When true, this version cannot be affected by refreshes to the
+            content or updates to its metadata
+        referenceType:
+          type: string
+          description: This indicates the type of git (or other source control) reference
+          enum:
+            - COMMIT
+            - TAG
+            - BRANCH
+            - NOT_APPLICABLE
+            - UNSET
+        sourceFiles:
+          type: array
+          description: Cached files for each version. Includes Dockerfile and Descriptor
+            files
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/SourceFile"
+        valid:
+          type: boolean
+          description: Implementation specific, whether this tag has valid files from
+            source code repo
+        dirtyBit:
+          type: boolean
+          description: True if user has altered the tag
+        versionEditor:
+          $ref: "#/components/schemas/User"
+        dbUpdateDate:
+          type: string
+          format: date-time
+        input_file_formats:
+          type: array
+          description: File formats for describing the input file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        output_file_formats:
+          type: array
+          description: File formats for describing the output file formats of versions
+            (tag/workflowVersion)
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Validation"
+        verified:
+          type: boolean
+          description: Whether this version has been verified or not
+        verifiedSource:
+          type: string
+          description: Verified source for the version
+        verifiedSources:
+          type: array
+          description: Verified source for the version
+          items:
+            type: string
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
+        doiURL:
+          type: string
+          description: This is a URL for the DOI for the version of the entry
+        doiStatus:
+          type: string
+          description: This indicates the DOI status
+          enum:
+            - NOT_REQUESTED
+            - REQUESTED
+            - CREATED

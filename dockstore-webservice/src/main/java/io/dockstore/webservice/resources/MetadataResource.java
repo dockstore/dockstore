@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +28,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -48,12 +48,16 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.api.Config;
+import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.jdbi.CollectionDAO;
+import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
@@ -97,24 +101,30 @@ public class MetadataResource {
 
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
+    private final OrganizationDAO organizationDAO;
+    private final CollectionDAO collectionDAO;
     private final DockstoreWebserviceConfiguration config;
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
         this.toolDAO = new ToolDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.organizationDAO = new OrganizationDAO(sessionFactory);
+        this.collectionDAO = new CollectionDAO(sessionFactory);
         this.config = config;
     }
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("sitemap")
-    @Operation(summary = "List all published workflow and tool paths", description = "List all published workflow and tool paths, NO authentication")
-    @ApiOperation(value = "List all published workflow and tool paths.", notes = "NO authentication")
+    @Operation(summary = "List all available workflow, tool, organization, and collection paths.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
+    @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
         //TODO needs to be more efficient via JPA query
         List<Tool> tools = toolDAO.findAllPublished();
-        List<Workflow> workflows = workflowDAO.findAllPublished();
+        // #2683 avoid web crawling services for 1.7.0
+        List<Workflow> workflows = workflowDAO.findAllPublished(null, Integer.MAX_VALUE, null, null, null, (Class)BioWorkflow.class);
+        List<Organization> organizations = organizationDAO.findAllApproved();
         StringBuilder builder = new StringBuilder();
         for (Tool tool : tools) {
             builder.append(createToolURL(tool));
@@ -124,22 +134,37 @@ public class MetadataResource {
             builder.append(createWorkflowURL(workflow));
             builder.append(System.lineSeparator());
         }
+        for (Organization organization: organizations) {
+            builder.append(createOrganizationURL(organization));
+            builder.append(System.lineSeparator());
+            List<Collection> collections = collectionDAO.findAllByOrg(organization.getId());
+            for (Collection collection: collections) {
+                builder.append(createCollectionURL(collection, organization));
+                builder.append(System.lineSeparator());
+            }
+        }
         return builder.toString();
     }
 
+    private String createOrganizationURL(Organization organization) {
+        return MetadataResourceHelper.createOrganizationURL(organization);
+    }
+
+    private String createCollectionURL(Collection collection, Organization organization) {
+        return MetadataResourceHelper.createCollectionURL(collection, organization);
+    }
+
     private String createWorkflowURL(Workflow workflow) {
-        return config.getExternalConfig().getScheme() + "://" + config.getExternalConfig().getHostname() + (config.getExternalConfig().getUiPort() == null ? "" : ":" + config.getExternalConfig().getUiPort()) + "/workflows/"
-                + workflow.getWorkflowPath();
+        return MetadataResourceHelper.createWorkflowURL(workflow);
     }
 
     private String createToolURL(Tool tool) {
-        return config.getExternalConfig().getScheme() + "://" + config.getExternalConfig().getHostname() + (config.getExternalConfig().getUiPort() == null ? "" : ":" + config.getExternalConfig().getUiPort())
-            + "/containers/" + tool.getToolPath();
+        return MetadataResourceHelper.createToolURL(tool);
     }
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("rss")
     @Produces(MediaType.TEXT_XML)
     @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
@@ -148,7 +173,8 @@ public class MetadataResource {
 
         final int limit = 50;
         List<Tool> tools = toolDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
-        List<Workflow> workflows = workflowDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
+        // #2683 avoid web crawling services for 1.7.0
+        List<Workflow> workflows = workflowDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc", (Class)BioWorkflow.class);
 
         List<Entry> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
@@ -173,16 +199,12 @@ public class MetadataResource {
             RSSEntry entry = new RSSEntry();
             if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
-                Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream().filter(v -> v.getDbUpdateDate() != null)
-                    .max(Comparator.comparing(Version::getDbUpdateDate));
                 entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
             } else if (dbEntry instanceof Tool) {
                 Tool tool = (Tool)dbEntry;
-                Optional<Tag> max = tool.getTags().stream().filter(v -> v.getDbUpdateDate() != null)
-                    .max(Comparator.comparing(Version::getDbUpdateDate));
                 entry.setTitle(tool.getPath());
                 String toolURL = createToolURL(tool);
                 entry.setGuid(toolURL);
@@ -212,7 +234,7 @@ public class MetadataResource {
     @Produces({ "text/plain", "application/json" })
     @Path("/runner_dependencies")
     @Operation(summary = "Returns the file containing runner dependencies", description = "Returns the file containing runner dependencies, NO authentication")
-    @ApiResponse(content = @Content(
+    @ApiResponse(description = "The requirements.txt file", content = @Content(
         mediaType = "application/json",
         schema = @Schema(implementation = String.class)))
     @ApiOperation(value = "Returns the file containing runner dependencies.", response = String.class)
@@ -244,11 +266,10 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/sourceControlList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of source controls supported on Dockstore", description = "Get the list of source controls supported on Dockstore, NO authentication")
-    @ApiResponse(content = @Content(
+    @ApiResponse(description = "List of source control repositories", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = SourceControl.SourceControlBean.class))))
     @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "NO authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
@@ -260,11 +281,10 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/dockerRegistryList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of docker registries supported on Dockstore", description = "Get the list of docker registries supported on Dockstore, NO authentication")
-    @ApiResponse(content = @Content(
+    @ApiResponse(description = "List of Docker registries", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = Registry.RegistryBean.class))))
     @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
@@ -276,43 +296,40 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/descriptorLanguageList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of descriptor languages supported on Dockstore", description = "Get the list of descriptor languages supported on Dockstore, NO authentication")
-    @ApiResponse(content = @Content(
+    @ApiResponse(description = "List of descriptor languages", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = DescriptorLanguage.DescriptorLanguageBean.class))))
     @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "NO authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
     public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
-        Arrays.asList(DescriptorLanguage.values()).forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
+        Arrays.stream(DescriptorLanguage.values()).filter(lang ->
+            // crappy evil hack for 1.6.0 backwards compatibility after all sorts of Jackson annotations failed
+            // delete after 1.6.0 CLI users fade out https://github.com/dockstore/dockstore/issues/2860
+            lang != DescriptorLanguage.OLD_CWL && lang != DescriptorLanguage.OLD_WDL).
+            forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
     }
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/okHttpCachePerformance")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get measures of cache performance", description = "Get measures of cache performance, NO authentication")
-    @ApiResponse(content = @Content(
-        mediaType = "application/json",
-        array = @ArraySchema(schema = @Schema(implementation = String.class))))
-    @ApiOperation(value = "Get measures of cache performance.", notes = "NO authentication", response = Map.class, responseContainer = "List")
+    @ApiResponse(description = "Cache performance information", content = @Content(mediaType = "application/json"))
+    @ApiOperation(value = "Get measures of cache performance.", notes = "NO authentication", response = Map.class)
     public Map<String, String> getCachePerformance() {
-        return extractCacheStatistics();
-    }
-
-    public static Map<String, String> extractCacheStatistics() {
         Cache cache = DockstoreWebserviceApplication.getCache();
         Map<String, String> results = new HashMap<>();
         results.put("requestCount", String.valueOf(cache.requestCount()));
         results.put("networkCount", String.valueOf(cache.networkCount()));
         results.put("hitCount", String.valueOf(cache.hitCount()));
-        results.put("maxSize", String.valueOf(cache.maxSize()) + " bytes");
+        results.put("maxSize", cache.maxSize() + " bytes");
+
         try {
-            results.put("size", String.valueOf(cache.size()) + " bytes");
+            results.put("size", cache.size() + " bytes");
         } catch (IOException e) {
             /* do nothing if we cannot report size */
             LOG.warn("unable to determine cache size, may not have initialized yet");
@@ -341,6 +358,20 @@ public class MetadataResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
         }
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/config.json")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Configuration for UI clients of the API", description = "Configuration, NO authentication")
+    @ApiOperation(value = "Configuration for UI clients of the API", notes = "NO authentication")
+    public Config getConfig() {
+        try {
+            return Config.fromWebConfig(this.config);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            LOG.error("Error generating config response", e);
+            throw new CustomWebApplicationException("Error retrieving config information", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
 }

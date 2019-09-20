@@ -18,15 +18,23 @@ package io.dockstore.webservice.resources;
 import java.util.List;
 import java.util.Optional;
 
+import javax.ws.rs.container.ContainerRequestContext;
+
+import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.User;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Endpoints that use authentication by Dockstore user
  */
 public interface AuthenticatedResourceInterface {
+
+    Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
 
     /**
      * Check if tool is null
@@ -70,7 +78,7 @@ public interface AuthenticatedResourceInterface {
      * @param entry entry to check permissions for
      */
     default void checkUser(User user, Entry entry) {
-        if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
+        if (userCannotRead(user, entry)) {
             throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
                     HttpStatus.SC_FORBIDDEN);
         }
@@ -101,6 +109,10 @@ public interface AuthenticatedResourceInterface {
         if (!user.getIsAdmin() && user.getId() != id) {
             throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
         }
+    }
+
+    static boolean userCannotRead(User user, Entry entry) {
+        return !user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId());
     }
 
     /**
@@ -181,5 +193,55 @@ public interface AuthenticatedResourceInterface {
                     HttpStatus.SC_FORBIDDEN);
             }
         }
+    }
+
+    /**
+     * Check if organization is null
+     *
+     * @param organization organization to check permissions for
+     */
+    default void checkOrganization(Organization organization) {
+        if (organization == null) {
+            throw new CustomWebApplicationException("Organization not found", HttpStatus.SC_NOT_FOUND);
+        }
+
+    }
+
+    /**
+     * Only passes if entry is published or if user has correct credentials
+     * @param user Optional user
+     * @param entry Entry to check
+     */
+    default void optionalUserCheckEntry(Optional<User> user, Entry entry) {
+        if (!entry.getIsPublished()) {
+            if (user.isEmpty()) {
+                throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
+            } else {
+                checkUser(user.get(), entry);
+            }
+        }
+    }
+
+    default void mutateBasedOnUserAgent(Entry entry, ManipulateEntry m, ContainerRequestContext containerContext) {
+        try {
+            final List<String> strings = containerContext.getHeaders().getOrDefault("User-Agent", Lists.newArrayList());
+            strings.forEach(s -> {
+                final String[] split = s.split("/");
+                if (split[0].equals("Dockstore-CLI")) {
+                    com.github.zafarkhaja.semver.Version clientVersion = com.github.zafarkhaja.semver.Version.valueOf(split[1]);
+                    com.github.zafarkhaja.semver.Version v16 = com.github.zafarkhaja.semver.Version.valueOf("1.6.0");
+                    if (clientVersion.lessThanOrEqualTo(v16)) {
+                        m.manipulate(entry);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            LOG.debug("encountered a user agent that we could not parse, meh", e);
+        }
+    }
+
+    @FunctionalInterface
+    interface ManipulateEntry<T extends Entry> {
+        void manipulate(T entry);
     }
 }

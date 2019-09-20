@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.FileProvisioning;
-import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.CWLClient;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
@@ -21,7 +21,7 @@ public class CwltoolLauncher extends BaseLauncher {
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
-    public CwltoolLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+    public CwltoolLauncher(AbstractEntryClient abstractEntryClient, DescriptorLanguage language, boolean script) {
         super(abstractEntryClient, language, script);
         setLauncherName("cwltool");
     }

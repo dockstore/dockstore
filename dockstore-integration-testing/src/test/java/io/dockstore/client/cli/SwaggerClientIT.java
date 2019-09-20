@@ -17,8 +17,6 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -27,7 +25,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
@@ -38,7 +39,6 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -48,26 +48,31 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.Ga4Ghv1Api;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Config;
+import io.swagger.client.model.DescriptorLanguageBean;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.Permission;
 import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.RegistryBean;
 import io.swagger.client.model.SharedWorkflows;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
+import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
-import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
@@ -83,6 +88,7 @@ import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -181,13 +187,13 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
-        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null);
+        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null, false);
         assertTrue(workflow.isIsPublished());
 
         long containerId = workflow.getId();
 
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
-        workflow = userApi1.getWorkflowByPath("github.com/A/l", null);
+        workflow = userApi1.getWorkflowByPath("github.com/A/l", null, false);
         assertEquals(3, workflow.getLabels().size());
         thrown.expect(ApiException.class);
         userApi2.updateLabels(containerId, "foobar", "");
@@ -253,7 +259,7 @@ public class SwaggerClientIT extends BaseIT {
         tag.getSourceFiles().add(testParameterFile2);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        c.setTags(tags);
+        c.setWorkflowVersions(tags);
 
         return c;
     }
@@ -389,16 +395,18 @@ public class SwaggerClientIT extends BaseIT {
         Tag tag = tags.get(0);
 
         // verify master branch
-        assertTrue(!tag.isVerified());
-        assertNull(tag.getVerifiedSource());
-        VerifyRequest request = SwaggerUtility.createVerifyRequest(true, "test-source");
-        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(), request);
+        assertFalse(tag.isVerified());
+        assertEquals(new ArrayList<>(), tag.getVerifiedSources());
+
+        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId());
 
         // check again
         tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
         tag = tags.get(0);
-        assertTrue(tag.isVerified());
-        assertEquals("test-source", tag.getVerifiedSource());
+
+        // The tag verification endpoint does nothing unless the extended TRS endpoint was used to verify
+        assertFalse(tag.isVerified());
+        assertEquals(new ArrayList<>(), tag.getVerifiedSources());
     }
 
     @Test
@@ -444,43 +452,35 @@ public class SwaggerClientIT extends BaseIT {
         assertTrue(strings.get(1).contains("moretestparameterstuff"));
     }
 
+    /**
+     * This test should be removed once tag.setVerified is removed because verification should solely depend on the version's source files
+     * @throws ApiException
+     */
     @Test
-    public void testVerifiedToolsViaGA4GH() throws IOException, ApiException {
+    public void testVerifiedToolsViaGA4GH() throws ApiException {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
+        Ga4GhApi ga4GhApi = new Ga4GhApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         c.setIsPublished(true);
-        final Tag tag = c.getTags().get(0);
+        final Tag tag = c.getWorkflowVersions().get(0);
         tag.setVerified(true);
-        tag.setVerifiedSource("funky source");
+        tag.setVerifiedSources(Arrays.asList("funky source"));
         containersApi.registerManual(c);
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID);
-        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
-        // test root version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true") && strings.get(0).contains("\"verified_source\":\"[\\\"funky source\\\"]\""));
-
-        // TODO: really, we should be using deserialized versions, but this is not currently working
-        //        ObjectMapper mapper = new ObjectMapper();
-        //        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        //        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        //        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        //        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-        //        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
-        //        mapper.registerModule(new JodaModule());
-        //        final DockstoreTool dockstoreTool = mapper.readValue(strings.get(0), DockstoreTool.class);
+        Tool tool = ga4GhApi.toolsIdGet(encodedID);
+        // Verifying the tag does nothing because the TRS verification endpoint was not used
+        Assert.assertFalse(tool.isVerified());
+        Assert.assertEquals("[]", tool.getVerifiedSource());
 
         // hit up a specific version
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
-        strings = Resources.readLines(url, Charset.forName("UTF-8"));
-        // test nested version
-        assertEquals(1, strings.size());
-        assertTrue(strings.get(0).contains("\"verified\":true"));
-        assertTrue(strings.get(0).contains("\"verified_source\":\"funky source\""));
+        ToolVersion master = ga4GhApi.toolsIdVersionsVersionIdGet(encodedID, "master");
+        Assert.assertFalse(master.isVerified());
+        Assert.assertEquals("[]", master.getVerifiedSource());
     }
 
     // Can't test publish repos that don't exist
@@ -523,6 +523,8 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
+        final Set<String> collect = new HashSet<>(containers.get(0).getDescriptorType());
+        assertEquals(collect.size(), containers.get(0).getDescriptorType().size());
         assertEquals(containers.get(0).getPath(), QUAY_IO_TEST_ORG_TEST6);
 
         containers = containersApi.allPublishedContainers(null, null, "test52", null, null);
@@ -536,16 +538,16 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
-        c.getTags().get(0).setHidden(true);
+        c.getWorkflowVersions().get(0).setHidden(true);
         c = containersApi.registerManual(c);
 
-        assertEquals("should see one tag as an admin, saw " + c.getTags().size(), 1, c.getTags().size());
+        assertEquals("should see one tag as an admin, saw " + c.getWorkflowVersions().size(), 1, c.getWorkflowVersions().size());
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId(), null);
-        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), 0,
-            registeredContainer.getTags().size());
+        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getWorkflowVersions().size(), 0,
+            registeredContainer.getWorkflowVersions().size());
     }
 
     @Test
@@ -557,7 +559,7 @@ public class SwaggerClientIT extends BaseIT {
 
         List<Token> tokens = usersApi.getUserTokens(user.getId());
 
-        assertTrue(!tokens.isEmpty());
+        assertFalse(tokens.isEmpty());
     }
 
 
@@ -570,7 +572,7 @@ public class SwaggerClientIT extends BaseIT {
         assertEquals(1, containerId);
 
         containersApi.publish(containerId, SwaggerUtility.createPublishRequest(false));
-        final ApiClient otherWebClient = getWebClient(GITHUB_ACCOUNT_USERNAME);
+        final ApiClient otherWebClient = getWebClient(GITHUB_ACCOUNT_USERNAME, testingPostgres);
         assertNotNull(new UsersApi(otherWebClient).getUser());
         boolean expectedFailure = false;
         try {
@@ -659,7 +661,7 @@ public class SwaggerClientIT extends BaseIT {
         containersApi.starEntry(containerId, request);
         List<User> starredUsers = containersApi.getStarredUsers(container.getId());
         Assert.assertEquals(1, starredUsers.size());
-        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
+        starredUsers.forEach(user -> assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         thrown.expect(ApiException.class);
         containersApi.starEntry(containerId, request);
     }
@@ -693,14 +695,14 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarStarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null, false);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         workflowsApi.starEntry(workflowId, request);
         List<User> starredUsers = workflowsApi.getStarredUsers(workflow.getId());
         Assert.assertEquals(1, starredUsers.size());
-        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
+        starredUsers.forEach(user -> assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         thrown.expect(ApiException.class);
         workflowsApi.starEntry(workflowId, request);
     }
@@ -715,7 +717,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testUnstarUnstarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", null);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", null, false);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         thrown.expect(ApiException.class);
@@ -741,6 +743,30 @@ public class SwaggerClientIT extends BaseIT {
         starring(containerIds2, containersApi, usersApi);
         starring(containerIds3, containersApi, usersApi);
         starring(containerIds4, containersApi, usersApi);
+    }
+
+    @Test
+    public void testEnumMetadataEndpoints() throws ApiException {
+        ApiClient apiClient = getWebClient();
+        MetadataApi metadataApi = new MetadataApi(apiClient);
+        final List<RegistryBean> dockerRegistries = metadataApi.getDockerRegistries();
+        final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
+        assertNotNull(dockerRegistries);
+        assertNotNull(descriptorLanguages);
+        Set<String> names = new HashSet<>();
+        descriptorLanguages.forEach(lang -> {
+            final String val = lang.getValue().toLowerCase();
+            assertFalse(names.contains(val));
+            names.add(val);
+        });
+    }
+
+    @Test
+    public void testCacheMetadataEndpoint() throws ApiException{
+        ApiClient apiClient = getWebClient();
+        MetadataApi metadataApi = new MetadataApi(apiClient);
+        final Map<String, Object> cachePerformance = metadataApi.getCachePerformance();
+        assertNotNull(cachePerformance);
     }
 
     @Test
@@ -785,9 +811,9 @@ public class SwaggerClientIT extends BaseIT {
     public void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
     }
 
     @Test
@@ -801,6 +827,17 @@ public class SwaggerClientIT extends BaseIT {
         final Workflow updatedWorkflow = hostedApi.addZip(hostedWorkflow.getId(), new File(smartseqZip));
         // A version should now exist.
         Assert.assertEquals(1, updatedWorkflow.getWorkflowVersions().size());
+    }
+
+    /**
+     * Test that the config endpoint doesn't fail and validates one random property
+     */
+    @Test
+    public void testConfig() {
+        final ApiClient webClient = getWebClient();
+        final MetadataApi metadataApi = new MetadataApi(webClient);
+        final Config config = metadataApi.getConfig();
+        Assert.assertEquals("read:org,user:email", config.getGitHubScope());
     }
 
     /**
@@ -839,7 +876,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null);
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, false);
             Assert.fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             Assert.assertEquals(403, e.getCode());
@@ -857,7 +894,7 @@ public class SwaggerClientIT extends BaseIT {
         Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null);
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, false);
         user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId(), null);
 
         // But User 2 cannot edit the hosted workflow
@@ -919,12 +956,12 @@ public class SwaggerClientIT extends BaseIT {
         final Permission permission = new Permission();
         permission.setEmail(user);
         permission.setRole(role);
-        workflowsApi.addWorkflowPermission(path, permission);
+        workflowsApi.addWorkflowPermission(path, permission, false);
     }
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
         try {
-            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null);
+            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null, false);
             Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
         } catch (ApiException ex) {
             Assert.assertEquals(401, ex.getCode());

@@ -1,0 +1,15 @@
+info:
+  version: '1.6.0'
+  title: Dockstore
+  description: 'The Dockstore API, includes proprietary and GA4GH V1+V2 endpoints'
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Dockstore@ga4gh
+    email: theglobalalliance@genomicsandhealth.org
+    url: https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506
+  license:
+    name: Apache 2.0
+    url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
+externalDocs:
+  description: 'User documentation for dockstore'
+  url: 'https://docs.dockstore.org/'

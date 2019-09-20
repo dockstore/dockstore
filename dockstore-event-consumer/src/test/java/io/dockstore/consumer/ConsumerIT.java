@@ -15,24 +15,21 @@
  */
 package io.dockstore.consumer;
 
-import cloud.localstack.TestUtils;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
-import org.junit.Assert;
 import org.junit.Ignore;
-import org.junit.Test;
 
 @Ignore("localstack install on travis messed up, possibly due to https://github.com/localstack/localstack/issues/721")
 public class ConsumerIT {
-    @Test
-    public void testLocalstackFunctional() {
-        AmazonSQS clientSQS = TestUtils.getClientSQS();
-        CreateQueueResult funkyQueue = clientSQS.createQueue("funkyQueue");
-        Assert.assertTrue(!funkyQueue.getQueueUrl().isEmpty());
-        String funkyQueueURL = clientSQS.getQueueUrl("funkyQueue").getQueueUrl();
-        clientSQS.sendMessage(funkyQueueURL,"messageBody");
-        Assert.assertTrue(clientSQS.receiveMessage(funkyQueueURL).getMessages().size() > 0);
-    }
+
+    //FIXME: will need tests, doesn't really matter if we use openstack or not
+    //    @Test
+//    public void testLocalstackFunctional() {
+//        AmazonSQS clientSQS = TestUtils.getClientSQS();
+//        CreateQueueResult funkyQueue = clientSQS.createQueue("funkyQueue");
+//        Assert.assertTrue(!funkyQueue.getQueueUrl().isEmpty());
+//        String funkyQueueURL = clientSQS.getQueueUrl("funkyQueue").getQueueUrl();
+//        clientSQS.sendMessage(funkyQueueURL,"messageBody");
+//        Assert.assertTrue(clientSQS.receiveMessage(funkyQueueURL).getMessages().size() > 0);
+//    }
 
     //TODO: we need tests from the web service side (hit the request DOI endpoints and it sends something into localstack)
     //TODO: we need tests that start from a message on localstack

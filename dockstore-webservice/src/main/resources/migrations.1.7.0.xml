@@ -1,0 +1,321 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2019 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.7.0">
+    <changeSet author="aduncan" id="addToolTopicId">
+        <addColumn tableName="tool">
+            <column name="topicid" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="aduncan" id="addWorkflowTopicId">
+        <addColumn tableName="workflow">
+            <column name="topicid" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addStarredOrganizations">
+        <createTable tableName="starred_organizations">
+            <column name="userid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
+            </column>
+            <column name="organizationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="starred_organizations_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addUserIdStarOrgConstratint">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="starred_organizations" constraintName="fk_userIdStarredOrganizations" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstratint">
+        <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" referencedColumnNames="id" referencedTableName="organization"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="services">
+        <createTable tableName="service">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="service_pkey"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="defaultversion" type="VARCHAR(255)"/>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="topicid" type="BIGINT"/>
+            <column name="checkerid" type="BIGINT"/>
+            <column name="defaulttestparameterfilepath" type="TEXT"/>
+            <column name="defaultworkflowpath" type="TEXT"/>
+            <column name="descriptortype" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="STUB" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcecontrol" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="TEXT"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="service" constraintName="checker_workflows_for_services" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+
+        <addColumn tableName="workflowversion">
+            <column name="subclass" type="int4"/>
+        </addColumn>
+
+        <!-- workflows can be in two tables, workflow or service and unfortunately we cannot constrain across tables-->
+        <dropForeignKeyConstraint baseTableName="workflow_workflowversion" constraintName="fkl8yg13ahjhtn0notrlf3amwwi"/>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="example_default_path_general_for_tools">
+        <createTable tableName="entry_defaultpaths">
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="filetype" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="entry_id, filetype, path" constraintName="unique_paths" tableName="entry_defaultpaths"/>
+        <addPrimaryKey columnNames="entry_id, filetype" constraintName="entry_defaultpaths_pkey" tableName="entry_defaultpaths"/>
+        <sql dbms="postgresql">
+            insert into entry_defaultpaths select id as entry_id, defaultdockerfilepath as path, 'DOCKERFILE' as filetype from tool where defaultdockerfilepath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaultcwlpath as path, 'DOCKSTORE_CWL' as filetype from tool where defaultcwlpath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaultwdlpath as path, 'DOCKSTORE_WDL' as filetype from tool where defaultwdlpath is not null;
+            insert into entry_defaultpaths select id as entry_id, defaulttestcwlparameterfile as path, 'CWL_TEST_JSON' as filetype from tool where defaulttestcwlparameterfile is not null;
+            insert into entry_defaultpaths select id as entry_id, defaulttestwdlparameterfile as path, 'WDL_TEST_JSON' as filetype from tool where defaulttestwdlparameterfile is not null;
+        </sql>
+        <dropColumn tableName="tool" columnName="defaultdockerfilepath"/>
+        <dropColumn tableName="tool" columnName="defaultcwlpath"/>
+        <dropColumn tableName="tool" columnName="defaultwdlpath"/>
+        <dropColumn tableName="tool" columnName="defaulttestcwlparameterfile"/>
+        <dropColumn tableName="tool" columnName="defaulttestwdlparameterfile"/>
+
+        <sql dbms="postgresql">
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'DOCKSTORE_CWL' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'cwl';
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'DOCKSTORE_WDL' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'wdl';
+            insert into entry_defaultpaths select id as entry_id, defaultworkflowpath as path, 'NEXTFLOW_CONFIG' as filetype from workflow where defaultworkflowpath is not null and descriptortype = 'nfl';
+
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'CWL_TEST_JSON' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'cwl';
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'WDL_TEST_JSON' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'wdl';
+            insert into entry_defaultpaths select id as entry_id, defaulttestparameterfilepath as path, 'NEXTFLOW_TEST_PARAMS' as filetype from workflow where defaulttestparameterfilepath is not null and descriptortype = 'nfl';
+        </sql>
+        <dropColumn tableName="workflow" columnName="defaultworkflowpath"/>
+        <dropColumn tableName="workflow" columnName="defaulttestparameterfilepath"/>
+        <dropColumn columnName="defaulttestparameterfilepath" tableName="service"/>
+        <dropColumn columnName="defaultworkflowpath" tableName="service"/>
+
+        <!-- set constraints -->
+        <sql dbms="postgresql">
+            DELETE FROM entry_defaultpaths WHERE path IS NULL;
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE tool ADD CHECK (toolname !~~ '\_%'::text);
+        </sql>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="addCommentsForEntryTimestamps">
+        <setColumnRemarks columnName="dbcreatedate" tableName="tag" remarks="For automated builds and hosted/manual path: Time registered on Dockstore, either by refresh or manual register. Can be blank as this column was added in 2018."/>
+        <setColumnRemarks columnName="dbcreatedate" tableName="tool" remarks="For automated builds and hosted: Time registered on Dockstore, either by refresh or manual register. Can be blank as this column was added in 2018."/>
+        <setColumnRemarks columnName="dbcreatedate" tableName="workflow" remarks="Remote: When workflow is refreshed for first time. Hosted: Time created"/>
+        <setColumnRemarks columnName="dbcreatedate" tableName="workflowversion" remarks="Remote: When workflow was refreshed for first time. Hosted: time version created"/>
+        <setColumnRemarks columnName="dbupdatedate" tableName="tag" remarks="For automated builds and hosted/manual path: Time created or last time version tab was edited (under actions in version tab). Basically anytime db entry modified"/>
+        <setColumnRemarks columnName="dbupdatedate" tableName="tool" remarks="For automated builds: Last time tool/namespace was refreshed, different version is selected, checker workflow was added, or tool info updated (like path information). For hosted: Last time a file was updated (new version created), default version selected. Can be blank as this column was added in 2018. Basically anytime db entry modified"/>
+        <setColumnRemarks columnName="dbupdatedate" tableName="workflow" remarks="For remote: When refresh all is hit for first time, update workflow info (like path information), or add checker workflow. Hosted: Time created. Basically anytime db entry modified."/>
+        <setColumnRemarks columnName="dbupdatedate" tableName="workflowversion" remarks="Remote: When workflow was refreshed for the first time or last time version was edited under action column in versions tab. Hosted: time version created or last time version was edited under actions column in versions tab. Basically anytime db entry modified"/>
+        <setColumnRemarks columnName="lastbuild" tableName="tool" remarks="For automated builds: When refresh is hit, the last time the tool was built gets stored here. If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools"/>
+        <setColumnRemarks columnName="lastmodified" tableName="tag" remarks="For automated builds: Last time specific tag was built. For hosted: When version was created"/>
+        <setColumnRemarks columnName="lastmodified" tableName="tool" remarks="For automated builds: N/A. For hosted: Last time a file was updated (new version created)"/>
+        <setColumnRemarks columnName="lastmodified" tableName="workflow" remarks="For remote: When refresh is hit, the last time GitHub repo was changed is recorded. Hosted: Last time a new version was made."/>
+        <setColumnRemarks columnName="lastmodified" tableName="workflowversion" remarks="Remote: Last time version on GitHub repo was changed. Hosted: time version created"/>
+        <setColumnRemarks columnName="lastupdated" tableName="tool" remarks="For automated builds: last time tool/namespace was refreshed Dockstore, tool info updated, default version selected. For hosted tools: when you created the tool"/>
+        <setColumnRemarks columnName="lastupdated" tableName="workflow" remarks="For remote: When refresh all is hit for first time. Hosted: Time created."/>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="changeLastBuildColumnName">
+        <renameColumn tableName="tag" oldColumnName="lastmodified" newColumnName="lastbuilt"></renameColumn>
+        <setColumnRemarks tableName="tag" columnName="lastbuilt" remarks="For automated builds: The last time the container backing this tool version was built. For hosted: N/A"></setColumnRemarks>
+        <!-- Set lastbuilt to null for versions/tags of hosted tools -->
+        <sql dbms="postgresql">
+            UPDATE tag SET lastbuilt = null FROM tool_tag, tool WHERE tag.id = tool_tag.tagid AND tool.id = tool_tag.toolid AND tool.mode = 'HOSTED';
+        </sql>
+    </changeSet>
+    <changeSet id="dyuen" author="frozen">
+        <addColumn tableName="tag">
+            <column defaultValueBoolean="false" name="frozen" type="bool"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column defaultValueBoolean="false" name="frozen" type="bool"/>
+        </addColumn>
+        <addColumn tableName="sourcefile">
+            <column defaultValueBoolean="false" name="frozen" type="bool"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            /* lock down workflowversion table, even for dockstore user as table owner  */
+            alter table workflowversion enable row level security;
+            alter table workflowversion force row level security;
+            /* all users can read the table, but cannot update or delete frozen versions */
+            create policy select_frozenversions on workflowversion for select using (true);
+            create policy insert_frozenversions on workflowversion for insert with check (true);
+            create policy update_frozenversions on workflowversion for update using (not frozen) with check (true);
+            create policy delete_frozenversions on workflowversion for delete using (not frozen);
+
+            /* lock down workflowversion table, even for dockstore user as table owner  */
+            alter table tag enable row level security;
+            alter table tag force row level security;
+            /* all users can read the table, but cannot update or delete frozen versions */
+            create policy select_frozenversions on tag for select using (true);
+            create policy insert_frozenversions on tag for insert with check (true);
+            create policy update_frozenversions on tag for update using (not frozen) with check (true);
+            create policy delete_frozenversions on tag for delete using (not frozen);
+
+            /* lock down sourcefile table, even for dockstore user as table owner  */
+            alter table sourcefile enable row level security;
+            alter table sourcefile force row level security;
+            /* all users can read the table, but cannot update or delete frozen files */
+            create policy select_frozenfiles on sourcefile for select using (true);
+            create policy insert_frozenfiles on sourcefile for insert with check (true);
+            create policy update_frozenfiles on sourcefile for update using (not frozen) with check (true);
+            create policy delete_frozenfiles on sourcefile for delete using (not frozen);
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen" id="modifyable version metadata">
+        <createTable tableName="version_metadata">
+            <column defaultValue="NOT_REQUESTED" name="doistatus" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="doiurl" type="VARCHAR(255)"/>
+            <column name="hidden" type="BOOLEAN"/>
+            <column defaultValueBoolean="false" name="verified" type="BOOLEAN"/>
+            <column name="verifiedsource" type="VARCHAR(255)"/>
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_metadata_pkey"/>
+            </column>
+        </createTable>
+        <sql dbms="postgresql">
+            insert into version_metadata (doistatus, doiurl, hidden, verified, id)
+            select doistatus, doiurl, hidden, verified, id from tag;
+            insert into version_metadata (doistatus, doiurl, hidden, verified, id)
+            select doistatus, doiurl, hidden, verified, id from workflowversion;
+        </sql>
+        <dropColumn columnName="doistatus" tableName="tag"/>
+        <dropColumn columnName="doistatus" tableName="workflowversion"/>
+        <dropColumn columnName="doiurl" tableName="tag"/>
+        <dropColumn columnName="doiurl" tableName="workflowversion"/>
+        <dropColumn columnName="hidden" tableName="tag"/>
+        <dropColumn columnName="hidden" tableName="workflowversion"/>
+        <dropColumn columnName="verified" tableName="tag"/>
+        <dropColumn columnName="verified" tableName="workflowversion"/>
+        <dropColumn columnName="verifiedsource" tableName="tag"/>
+        <dropColumn columnName="verifiedsource" tableName="workflowversion"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="workflowversion" constraintName="fk_workflowVersionMetadata" deferrable="true"
+                                 initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="version_metadata"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="tag" constraintName="fk_tagVersionMetadata" deferrable="true"
+                                 initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="version_metadata"/>
+    </changeSet>
+
+    <!--  These constraints only appear in the production db, and not when generating the db from scratch. They should not be there due to services being valid workflows in the table.  -->
+    <changeSet author="aduncan" id="remove_weird_fk_constraints">
+        <sql dbms="postgresql">
+            ALTER TABLE workflow_workflowversion DROP CONSTRAINT IF EXISTS fk_esgelvnqxrv53m71tdvwkxut3;
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow_workflowversion DROP CONSTRAINT IF EXISTS fkl8yg13ahjhtn0notrlf3amwwi;
+        </sql>
+    </changeSet>
+
+    <changeSet id="add_path_constraint_to_service" author="aduncan">
+        <sql dbms="postgresql">
+            create unique index if not exists full_service_name on service (sourcecontrol, organization, repository, workflowname) where workflowname is not null
+        </sql>
+        <sql dbms="postgresql">
+            create unique index if not exists partial_service_name on service (sourcecontrol, organization, repository) where workflowname is null
+        </sql>
+    </changeSet>
+    <changeSet author="dyuen" id="bannable_users">
+        <addColumn tableName="enduser">
+            <column defaultValue='f' name="isbanned" type="bool"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="privacy policy and TOS">
+        <addColumn tableName="enduser">
+            <column defaultValue="NONE" name="privacypolicyversion" type="text"/>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column defaultValue="NONE" name="tosversion" type="text"/>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="privacypolicyversionacceptancedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="tosversionacceptancedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="createBlacklistedVersionNames">
+        <createTable tableName="entry_blacklistedversionnames">
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="blacklistedversionnames" type="text"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="fix_checker_workflow_publish_mismatch" author="aduncan">
+        <sql dbms="postgresql">
+            UPDATE workflow SET ispublished=false WHERE id IN (
+                SELECT c.id FROM tool t INNER JOIN workflow c ON t.checkerid=c.id WHERE t.ispublished != c.ispublished AND t.ispublished = false
+            )
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE workflow SET ispublished=true WHERE id IN (
+                SELECT c.id FROM tool t INNER JOIN workflow c ON t.checkerid=c.id WHERE t.ispublished != c.ispublished AND t.ispublished = true
+            )
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET ispublished=false WHERE id IN (
+                SELECT c.id FROM workflow w INNER JOIN workflow c ON w.checkerid=c.id WHERE w.ispublished != c.ispublished AND w.ispublished = false
+            )
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE workflow SET ispublished=true WHERE id IN (
+                SELECT c.id FROM workflow w INNER JOIN workflow c ON w.checkerid=c.id WHERE w.ispublished != c.ispublished AND w.ispublished = true
+            )
+        </sql>
+    </changeSet>
+    
+    <changeSet id="wdlValidationMessageAppend" author="agduncan">
+        <sql dbms="postgresql">
+            UPDATE validation SET message = REPLACE(message, 'Unknown methods were found', 'NOTE: WDL 1.0 is now supported by Dockstore. If you have access, please refresh to fix validation errors. Unknown methods were found')
+        </sql>
+    </changeSet>
+</databaseChangeLog>

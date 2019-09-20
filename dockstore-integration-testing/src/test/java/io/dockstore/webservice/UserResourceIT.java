@@ -30,6 +30,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -43,6 +44,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests operations frrom the UserResource
@@ -72,21 +74,21 @@ public class UserResourceIT extends BaseIT {
 
     @Test(expected = ApiException.class)
     public void testChangingNameFail() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("1direction"); // do not lengthen test, failure expected
     }
 
     @Test(expected = ApiException.class)
     public void testChangingNameFail2() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("foo@gmail.com"); // do not lengthen test, failure expected
     }
 
     @Test
     public void testChangingNameSuccess() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("foo");
         assertEquals("foo", userApi.getUser().getUsername());
@@ -97,13 +99,35 @@ public class UserResourceIT extends BaseIT {
         assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo", hostedWorkflow.getOrganization());
     }
 
+    @Test
+    public void testUserTermination() throws ApiException {
+        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        ApiClient userWebClient = getWebClient(USER_2_USERNAME,testingPostgres );
+
+        UsersApi userUserWebClient = new UsersApi(userWebClient);
+        final User user = userUserWebClient.getUser();
+        assertFalse(user.getUsername().isEmpty());
+
+        UsersApi adminAdminWebClient = new UsersApi(adminWebClient);
+        final Boolean aBoolean = adminAdminWebClient.terminateUser(user.getId());
+
+        assertTrue(aBoolean);
+
+        try {
+            userUserWebClient.getUser();
+            fail("should be unreachable, user must not have been banned properly");
+        } catch (ApiException e) {
+            assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
+        }
+    }
+
     /**
      * Should not be able to update username after creating an organisation
      * @throws ApiException
      */
     @Test
     public void testChangeUsernameAfterOrgCreation() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME);
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
 
@@ -142,10 +166,10 @@ public class UserResourceIT extends BaseIT {
         assertTrue(shouldFail);
 
         // use a real account
-        client = getWebClient(USER_2_USERNAME);
+        client = getWebClient(USER_2_USERNAME, testingPostgres);
         userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        final ApiClient adminWebClient = getWebClient(ADMIN_USERNAME);
+        final ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
 
         final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
 
@@ -154,13 +178,13 @@ public class UserResourceIT extends BaseIT {
         Assert.assertNotNull(user);
         // try to delete with published workflows
         userApi.refreshWorkflows(user.getId());
-        final Workflow workflowByPath = workflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
+        final Workflow workflowByPath = workflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId());
 
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
-        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
+        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), SwaggerUtility.createPublishRequest(true));
@@ -183,7 +207,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the workflow
         boolean expectedAdminAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
+            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
 
         } catch (ApiException e) {
             expectedAdminAccessToFail = true;

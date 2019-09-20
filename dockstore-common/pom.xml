@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.6.1-SNAPSHOT</version>
+        <version>1.7.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-common</artifactId>
@@ -29,21 +29,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.github.zafarkhaja</groupId>
             <artifactId>java-semver</artifactId>
-            <version>0.9.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-dbcp2</artifactId>
-            <version>2.2.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
-            <version>2.5.0</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -65,10 +56,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-dbutils</groupId>
-            <artifactId>commons-dbutils</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -102,13 +89,169 @@
             <artifactId>jackson-annotations</artifactId>
         </dependency>
         <!-- broad - cromwell stuff -->
+
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl4s-wom_2.11</artifactId>
+            <artifactId>wdl-draft3_2.12</artifactId>
+            <version>${cromwell.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-effect_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-core_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>alleycats-core_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>wdl-draft2_2.12</artifactId>
+            <version>${cromwell.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-effect_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-core_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>alleycats-core_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-text</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>wdl-biscayne_2.12</artifactId>
+            <version>${cromwell.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-effect_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-core_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>alleycats-core_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-text</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>language-factory-core_2.12</artifactId>
+            <version>${cromwell.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-effect_2.12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+            <version>1.3.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>cromwell-core_2.12</artifactId>
+            <version>${cromwell.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.circe</groupId>
+                    <artifactId>circe-core_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>cats-core_2.12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.typelevel</groupId>
+                    <artifactId>alleycats-core_2.12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>cromwell-wom_2.12</artifactId>
+            <version>${cromwell.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>cromwell-common_2.12</artifactId>
+            <version>${cromwell.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
+            <version>${cromwell.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.chuusai</groupId>
+            <artifactId>shapeless_2.12</artifactId>
+            <version>2.3.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.typelevel</groupId>
+            <artifactId>cats-core_2.12</artifactId>
+            <version>1.5.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.spray</groupId>
-            <artifactId>spray-json_2.11</artifactId>
+            <artifactId>spray-json_2.12</artifactId>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -165,6 +308,26 @@
                             <failsOnError>false</failsOnError>
                             <consoleOutput>true</consoleOutput>
                             <excludes>**/cwl/**</excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+	    <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                            <outputXML>true</outputXML>
+                            <ignoreNonCompile>true</ignoreNonCompile>
+
+                            <usedDependencies>
+				    <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
+                            </usedDependencies>
                         </configuration>
                     </execution>
                 </executions>

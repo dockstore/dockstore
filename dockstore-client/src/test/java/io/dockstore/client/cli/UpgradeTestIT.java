@@ -16,7 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
 import java.util.Objects;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,8 +82,8 @@ public class UpgradeTestIT {
 
 
         /**
-         URL latest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
-         URL all = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
+         URL latest = new URL("https://api.github.com/repos/dockstore/dockstore/releases/latest");
+         URL all = new URL("https://api.github.com/repos/dockstore/dockstore/releases");
 
          Map map = localObjectMapper.readValue(latest,Map.class);
 

@@ -17,7 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
-import java.util.Date;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -41,14 +41,17 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
+import com.google.common.base.Strings;
+import com.google.gson.Gson;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -63,6 +66,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
+    public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
+    private static final Gson GSON = new Gson();
+
     /**
      * re-use existing generator for backwards compatibility
      */
@@ -73,115 +79,107 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     protected long id;
 
     @Column
-    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 2)
+    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1)
     protected String reference;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 6)
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2)
     protected String name;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 22)
-    String commitID;
+    @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 3)
+    private String commitID;
 
-    @Column
-    @JsonProperty("last_modified")
-    @ApiModelProperty(value = "The last time this image was modified in the image registry", position = 1)
-    Date lastModified;
+    @Column(columnDefinition = "boolean default false")
+    @ApiModelProperty(value = "When true, this version cannot be affected by refreshes to the content or updates to its metadata", position = 4)
+    private boolean frozen = false;
 
     @Column(columnDefinition = "text default 'UNSET'", nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates the type of git (or other source control) reference")
+    @ApiModelProperty(value = "This indicates the type of git (or other source control) reference", position = 5)
     private ReferenceType referenceType = ReferenceType.UNSET;
 
     // watch out for https://hibernate.atlassian.net/browse/HHH-3799 if this is set to EAGER
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 3)
+    @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
     @OrderBy("path")
     private final SortedSet<SourceFile> sourceFiles;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 4)
-    private boolean hidden;
-
-    @Column
-    @ApiModelProperty(value = "Implementation specific, whether this tag has valid files from source code repo", position = 5)
+    @ApiModelProperty(value = "Implementation specific, whether this tag has valid files from source code repo", position = 7)
     private boolean valid;
 
     @Column(columnDefinition = "boolean default false")
-    @ApiModelProperty(value = "True if user has altered the tag", position = 7)
+    @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
 
-    @Column(columnDefinition =  "boolean default false")
-    @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)
-    private boolean verified;
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent")
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private VersionMetadata versionMetadata = new VersionMetadata();
 
-    @Column
-    @ApiModelProperty(value = "Verified source for the version", position = 9)
-    private String verifiedSource;
-
-    @Column
-    @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 10)
-    private String doiURL;
-
-    @Column(columnDefinition = "text default 'NOT_REQUESTED'", nullable = false)
-    @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates the DOI status", position = 11)
-    private DOIStatus doiStatus;
-
-    @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 12)
+    @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 9)
     @OneToOne
     private User versionEditor;
 
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
+    @ApiModelProperty(position = 10)
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
+    @JsonProperty("dbUpdateDate")
+    @ApiModelProperty(position = 11)
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 20)
+    @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 12)
     @OrderBy("id")
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 21)
+    @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
     @OrderBy("id")
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Cached validations for each version.")
+    @ApiModelProperty(value = "Cached validations for each version.", position = 14)
     @OrderBy("type")
     private final SortedSet<Validation> validations;
 
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
-        doiStatus = DOIStatus.NOT_REQUESTED;
+        versionMetadata.doiStatus = DOIStatus.NOT_REQUESTED;
+        versionMetadata.parent = this;
     }
 
+    @ApiModelProperty(value = "Whether this version has been verified or not", position = 15)
     public boolean isVerified() {
-        return verified;
+        return this.versionMetadata.verified;
     }
 
-    public void setVerified(boolean verified) {
-        this.verified = verified;
-    }
-
+    @ApiModelProperty(value = "Verified source for the version", position = 16)
+    @Deprecated
     public String getVerifiedSource() {
-        return verifiedSource;
+        return this.getVersionMetadata().verifiedSource;
     }
 
-    public void setVerifiedSource(String verifiedSource) {
-        this.verifiedSource = verifiedSource;
+    @ApiModelProperty(value = "Verified source for the version", position = 17)
+    public String[] getVerifiedSources() {
+        if (this.getVersionMetadata().verifiedSource == null) {
+            return new String[0];
+        } else {
+            return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedSource), String[].class);
+        }
     }
 
     public boolean isDirtyBit() {
@@ -189,41 +187,42 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setDirtyBit(boolean dirtyBit) {
-        this.dirtyBit = dirtyBit;
+        if (!this.isFrozen()) {
+            this.dirtyBit = dirtyBit;
+        }
     }
 
     void updateByUser(final Version version) {
-        reference = version.reference;
-        hidden = version.hidden;
+        this.getVersionMetadata().hidden = version.isHidden();
+        this.setDoiStatus(version.getDoiStatus());
+        this.setDoiURL(version.getDoiURL());
+        if (!this.isFrozen()) {
+            if (version.frozen && this.sourceFiles.isEmpty()) {
+                throw new CustomWebApplicationException(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES, HttpStatus.SC_BAD_REQUEST);
+            }
+            this.setFrozen(version.frozen);
+            reference = version.reference;
+        }
     }
 
     public abstract String getWorkingDirectory();
 
     public void update(T version) {
         valid = version.isValid();
-        lastModified = version.getLastModified();
         name = version.getName();
         referenceType = version.getReferenceType();
+        frozen = version.isFrozen();
     }
 
     public void clone(T version) {
         name = version.getName();
-        lastModified = version.getLastModified();
         referenceType = version.getReferenceType();
+        frozen = version.isFrozen();
     }
 
     @JsonProperty
     public long getId() {
         return id;
-    }
-
-    @JsonProperty
-    public Date getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(Date lastModified) {
-        this.lastModified = lastModified;
     }
 
     @JsonProperty
@@ -248,7 +247,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void addOrUpdateValidation(Validation versionValidation) {
-        Optional<Validation> matchingValidation = getValidations().stream().filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
+        Optional<Validation> matchingValidation = getValidations().stream()
+            .filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
         if (matchingValidation.isPresent()) {
             matchingValidation.get().setMessage(versionValidation.getMessage());
             matchingValidation.get().setValid(versionValidation.isValid());
@@ -258,12 +258,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     @JsonProperty
+    @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 18)
     public boolean isHidden() {
-        return hidden;
+        return versionMetadata.hidden;
     }
 
     public void setHidden(boolean hidden) {
-        this.hidden = hidden;
+        this.getVersionMetadata().hidden = hidden;
     }
 
     @JsonProperty
@@ -284,26 +285,55 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.name = name;
     }
 
-    public void updateVerified(boolean newVerified, String newVerifiedSource) {
-        this.verified = newVerified;
-        this.verifiedSource = newVerifiedSource;
+    public void updateVerified() {
+        this.getVersionMetadata().verified = calculateVerified(this.getSourceFiles());
+        this.getVersionMetadata().verifiedSource = calculateVerifiedSource(this.getSourceFiles());
+    }
+
+    private static boolean calculateVerified(SortedSet<SourceFile> versionSourceFiles) {
+        return versionSourceFiles.stream().anyMatch(file -> file.getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified));
+    }
+
+    private static String calculateVerifiedSource(SortedSet<SourceFile> versionSourceFiles) {
+        Set<String> verifiedSources = new TreeSet<>();
+        versionSourceFiles.forEach(sourceFile -> {
+            Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+            for (Map.Entry<String, SourceFile.VerificationInformation> thing : verifiedBySource.entrySet()) {
+                if (thing.getValue().verified) {
+                    verifiedSources.add(thing.getValue().metadata);
+                }
+            }
+        });
+        // How strange that we're returning an array-like string
+        return convertStringSetToString(verifiedSources);
+    }
+
+    private static String convertStringSetToString(Set<String> verifiedSources) {
+        Gson gson = new Gson();
+        if (verifiedSources.isEmpty()) {
+            return null;
+        } else {
+            return Strings.nullToEmpty(gson.toJson(verifiedSources));
+        }
     }
 
     @JsonProperty
+    @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 19)
     public String getDoiURL() {
-        return doiURL;
+        return versionMetadata.doiURL;
     }
 
     public void setDoiURL(String doiURL) {
-        this.doiURL = doiURL;
+        this.getVersionMetadata().doiURL = doiURL;
     }
 
+    @ApiModelProperty(value = "This indicates the DOI status", position = 20)
     public DOIStatus getDoiStatus() {
-        return doiStatus;
+        return versionMetadata.doiStatus;
     }
 
     public void setDoiStatus(DOIStatus doiStatus) {
-        this.doiStatus = doiStatus;
+        this.getVersionMetadata().doiStatus = doiStatus;
     }
 
     public ReferenceType getReferenceType() {
@@ -331,7 +361,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void setOutputFileFormats(SortedSet<FileFormat> outputFileFormats) {
         this.outputFileFormats = outputFileFormats;
     }
-  
+
     public User getVersionEditor() {
         return versionEditor;
     }
@@ -366,35 +396,32 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.dbUpdateDate = dbUpdateDate;
     }
 
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
+        // freeze sourcefiles as well, this ideally would be de-normalized but postgres doesn't do multi-table constraints and
+        // multitable row-level security is an even bigger pain
+        this.sourceFiles.forEach(s -> s.setFrozen(frozen));
+    }
+
+    public VersionMetadata getVersionMetadata() {
+        if (versionMetadata == null) {
+            versionMetadata = new VersionMetadata();
+            versionMetadata.setId(this.id);
+        }
+        return versionMetadata;
+    }
+
+    public void setVersionMetadata(VersionMetadata versionMetadata) {
+        this.versionMetadata = versionMetadata;
+    }
+
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
 
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, lastModified, reference, hidden, valid, name, commitID);
-    }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        final Version other = (Version)obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects
-            .equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid)
-            && Objects.equals(this.name, other.name) && Objects.equals(this.commitID, other.commitID);
-    }
-
-    @Override
-    public int compareTo(T that) {
-        return ComparisonChain.start().compare(this.id, that.id, Ordering.natural().nullsLast())
-            .compare(this.lastModified, that.lastModified, Ordering.natural().nullsLast())
-            .compare(this.reference, that.reference, Ordering.natural().nullsLast())
-            .compare(this.name, that.name, Ordering.natural().nullsLast())
-            .compare(this.commitID, that.commitID, Ordering.natural().nullsLast()).result();
-    }
 }

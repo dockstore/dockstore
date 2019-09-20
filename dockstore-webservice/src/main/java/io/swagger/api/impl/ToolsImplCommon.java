@@ -22,21 +22,23 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
+import java.util.TreeSet;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
@@ -45,7 +47,6 @@ import io.swagger.model.DescriptorType;
 import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
-import io.swagger.model.ToolClass;
 import io.swagger.model.ToolVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +56,10 @@ import org.slf4j.LoggerFactory;
  * Created by kcao on 01/03/17.
  */
 public final class ToolsImplCommon {
+    public static final String WORKFLOW_PREFIX = "#workflow";
+    public static final String SERVICE_PREFIX = "#service";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
+    private static final Gson GSON = new Gson();
 
     private ToolsImplCommon() { }
 
@@ -85,6 +89,7 @@ public final class ToolsImplCommon {
     public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config) {
         String url;
         String newID = getNewId(container);
+        boolean isDockstoreTool;
         url = getUrlFromId(config, newID);
         if (url == null) {
             return null;
@@ -105,6 +110,7 @@ public final class ToolsImplCommon {
         // tool specific
         io.dockstore.webservice.core.Tool castedContainer = null;
         if (container instanceof io.dockstore.webservice.core.Tool) {
+            isDockstoreTool = true;
             castedContainer = (io.dockstore.webservice.core.Tool)container;
 
             // The name is composed of the repository name and then the optional toolname split with a '/'
@@ -113,8 +119,9 @@ public final class ToolsImplCommon {
             String returnName = constructName(Arrays.asList(name, toolName));
             tool.setToolname(returnName);
             tool.setOrganization(castedContainer.getNamespace());
-            inputVersions = castedContainer.getTags();
+            inputVersions = castedContainer.getWorkflowVersions();
         } else if (container instanceof Workflow) {
+            isDockstoreTool = false;
             // workflow specific
             Workflow workflow = (Workflow)container;
 
@@ -171,9 +178,16 @@ public final class ToolsImplCommon {
                 case DOCKSTORE_WDL:
                     toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
                     break;
-                case NEXTFLOW:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
+                // DOCKSTORE-2428 - demo how to add new workflow language
+                //                case DOCKSTORE_SWL:
+                //                    toolVersion.addDescriptorTypeItem(DescriptorType.SWL);
+                //                    break;
+                // TODO not sure how to treat service languages
+                case DOCKSTORE_SERVICE_TEST_JSON:
+                case DOCKSTORE_SERVICE_YML:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.SERVICE);
                     break;
+                case NEXTFLOW:
                 case NEXTFLOW_CONFIG:
                     toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
                     break;
@@ -191,7 +205,13 @@ public final class ToolsImplCommon {
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
-                toolVersion.setMetaVersion(String.valueOf(version.getLastModified() != null ? version.getLastModified() : new Date(0)));
+                if (isDockstoreTool) {
+                    Tag castedTag = (Tag)version;
+                    toolVersion.setMetaVersion(String.valueOf(castedTag.getLastBuilt() != null ? castedTag.getLastBuilt() : new Date(0)));
+                } else {
+                    io.dockstore.webservice.core.WorkflowVersion castedWorkflowVersion = (io.dockstore.webservice.core.WorkflowVersion)version;
+                    toolVersion.setMetaVersion(String.valueOf(castedWorkflowVersion.getLastModified() != null ? castedWorkflowVersion.getLastModified() : new Date(0)));
+                }
                 final List<DescriptorType> descriptorType = toolVersion.getDescriptorType();
                 if (!descriptorType.isEmpty()) {
                     EnumSet<DescriptorType> set = EnumSet.copyOf(descriptorType);
@@ -211,7 +231,7 @@ public final class ToolsImplCommon {
      * @return The URL of the Tool
      * @throws UnsupportedEncodingException When URL encoding has failed
      */
-    private static String getUrl(String newID, String baseURL) throws UnsupportedEncodingException {
+    public static String getUrl(String newID, String baseURL) throws UnsupportedEncodingException {
         String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
         return baseURL + escapedID;
     }
@@ -223,7 +243,7 @@ public final class ToolsImplCommon {
      * @return The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
      * @throws URISyntaxException When URI building goes wrong
      */
-    private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
+    public static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
         int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
         // basePath should be "/" or "/api/"
         String basePath = MoreObjects.firstNonNull(config.getExternalConfig().getBasePath(), "/");
@@ -244,7 +264,7 @@ public final class ToolsImplCommon {
         if (entry.getCheckerWorkflow() == null) {
             return null;
         } else {
-            String newID = "#workflow/" + entry.getCheckerWorkflow().getWorkflowPath();
+            String newID = WORKFLOW_PREFIX + "/" + entry.getCheckerWorkflow().getWorkflowPath();
             return getUrlFromId(config, newID);
         }
     }
@@ -258,12 +278,15 @@ public final class ToolsImplCommon {
      */
     private static Tool setVerified(Tool tool, Set<? extends Version> versions) {
         tool.setVerified(versions.stream().anyMatch(Version::isVerified));
-        final List<String> collect = versions.stream().filter(Version::isVerified)
-            .map(e -> e.getVerifiedSource() != null ? e.getVerifiedSource() : "")
-            .collect(Collectors.toList());
-        Gson gson = new Gson();
-        Collections.sort(collect);
-        tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
+        Set<String> verifiedSources = new TreeSet<>();
+        versions.stream().filter(Version::isVerified).forEach(e -> {
+            if (e.getVerifiedSources() != null) {
+                String[] array = e.getVerifiedSources();
+                List<String> stringList = Arrays.asList(array);
+                verifiedSources.addAll(stringList);
+            }
+        });
+        tool.setVerifiedSource(Strings.nullToEmpty(GSON.toJson(verifiedSources)));
         return tool;
     }
 
@@ -277,7 +300,14 @@ public final class ToolsImplCommon {
         if (container instanceof io.dockstore.webservice.core.Tool) {
             return ((io.dockstore.webservice.core.Tool)container).getToolPath();
         } else if (container instanceof Workflow) {
-            return "#workflow/" + ((Workflow)container).getWorkflowPath();
+            Workflow workflow = (Workflow)container;
+            DescriptorLanguage descriptorType = workflow.getDescriptorType();
+            String workflowPath = workflow.getWorkflowPath();
+            if (descriptorType == DescriptorLanguage.SERVICE) {
+                return SERVICE_PREFIX + "/" + workflowPath;
+            } else {
+                return WORKFLOW_PREFIX + "/" + workflowPath;
+            }
         } else {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
             return null;
@@ -300,7 +330,9 @@ public final class ToolsImplCommon {
         toolVersion.setUrl(globalVersionId);
         toolVersion.setName(version.getName());
         toolVersion.setVerified(version.isVerified());
-        toolVersion.setVerifiedSource(Strings.nullToEmpty(version.getVerifiedSource()));
+        String[] toolVerifiedSources = version.getVerifiedSources();
+        String verifiedSource = GSON.toJson(toolVerifiedSources);
+        toolVersion.setVerifiedSource(Strings.nullToEmpty(verifiedSource));
         toolVersion.setContainerfile(false);
 
         // Set image if it's a DockstoreTool, otherwise make it empty string (for now)
@@ -333,9 +365,15 @@ public final class ToolsImplCommon {
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
 
         // Set type
-        ToolClass type = container instanceof io.dockstore.webservice.core.Tool ? ToolClassesApiServiceImpl.getCommandLineToolClass()
-            : ToolClassesApiServiceImpl.getWorkflowClass();
-        tool.setToolclass(type);
+        if (container instanceof io.dockstore.webservice.core.Tool) {
+            tool.setToolclass(ToolClassesApiServiceImpl.getCommandLineToolClass());
+        } else if (container instanceof BioWorkflow) {
+            tool.setToolclass(ToolClassesApiServiceImpl.getWorkflowClass());
+        } else if (container instanceof Service) {
+            tool.setToolclass(ToolClassesApiServiceImpl.getServiceClass());
+        } else {
+            throw new UnsupportedOperationException("encountered unknown entry type in TRS");
+        }
 
         // Set signed.  Signed is currently not supported
         tool.setSigned(false);
@@ -370,8 +408,9 @@ public final class ToolsImplCommon {
      * @return The resulting GA4GH ToolTests
      */
     static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
-        SourceFile.FileType type = sourceFile.getType();
-        if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
+        DescriptorLanguage.FileType type = sourceFile.getType();
+        if (!type.equals(DescriptorLanguage.FileType.WDL_TEST_JSON) && !type.equals(DescriptorLanguage.FileType.CWL_TEST_JSON) && !type.equals(
+            DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS)) {
             LOG.error("This source file is not a recognized test file.");
         }
         ExtendedFileWrapper toolTests = new ExtendedFileWrapper();
@@ -387,7 +426,7 @@ public final class ToolsImplCommon {
      * @param toolID    The ID of the GA4GH Tool
      * @return          The GA4GH /tools/{id} url
      */
-    private static String getUrlFromId(DockstoreWebserviceConfiguration config, String toolID) {
+    public static String getUrlFromId(DockstoreWebserviceConfiguration config, String toolID) {
         String url;
         if (toolID == null) {
             return null;

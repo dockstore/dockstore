@@ -25,8 +25,8 @@ import java.util.UUID;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -56,6 +56,7 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -68,7 +69,7 @@ import static org.junit.Assert.assertTrue;
  */
 @Category(ConfidentialTest.class)
 public class LimitedCRUDClientIT {
-
+    private static TestingPostgres testingPostgres;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
@@ -101,6 +102,7 @@ public class LimitedCRUDClientIT {
     public static void dropAndRecreateDB() throws Exception {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     @AfterClass
@@ -114,7 +116,7 @@ public class LimitedCRUDClientIT {
 
         // Tests can run in any order, and the CachingAuthenticator is not cleared between tests
         // Reset limits for user between tests so it's not set when it's not supposed to be.
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
         usersApi.setUserLimits(user.getId(), new Limits());
@@ -130,17 +132,17 @@ public class LimitedCRUDClientIT {
 
     @Test
     public void testToolCreation(){
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
         hostedTool.getUsers().forEach(user -> {
             assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles());
-            // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return user profiles
-            user.setUserProfiles(null);
         });
+        // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return user profiles
+        hostedTool.setUsers(null);
 
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
@@ -150,21 +152,20 @@ public class LimitedCRUDClientIT {
         hostedTool.setAliases(null);
         container.setAliases(null);
         assertEquals(container, hostedTool);
-        assertEquals(1, container.getUsers().size());
-        container.getUsers().forEach(user -> assertNull("getContainer() endpoint should not have user profiles", user.getUserProfiles()));
+        assertNull(container.getUsers());
 
         // test repeated workflow creation up to limit
         for(int i = 1; i < SYSTEM_LIMIT; i++) {
-            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         }
 
         thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeTool" + 10, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        api.createHostedTool("awesomeTool" + 10, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
     }
 
     @Test
     public void testOverrideEntryLimit() {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
 
         // Change limits for current user
@@ -173,25 +174,25 @@ public class LimitedCRUDClientIT {
         Limits limits = new Limits();
         limits.setHostedEntryCountLimit(NEW_LIMITS);
         usersApi.setUserLimits(user.getId(), limits);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
 
         // test repeated workflow creation up to limit
         for(int i = 1; i <= NEW_LIMITS - 1; i++) {
-            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         }
 
         thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
     }
 
     @Test
     public void testToolVersionCreation() throws IOException {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles();
 
@@ -209,7 +210,7 @@ public class LimitedCRUDClientIT {
 
     @Test
     public void testOverrideVersionLimit() throws IOException {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
 
         // Change limits for current user
         UsersApi usersApi = new UsersApi(webClient);
@@ -219,7 +220,7 @@ public class LimitedCRUDClientIT {
         usersApi.setUserLimits(user.getId(), limits);
 
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles();
         api.editHostedTool(hostedTool.getId(), sourceFiles);
@@ -241,7 +242,7 @@ public class LimitedCRUDClientIT {
 
     @Test
     public void testUploadZipHonorsVersionLimit() {
-        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
         // Created workflow, no versions

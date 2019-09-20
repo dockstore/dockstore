@@ -222,6 +222,9 @@ public abstract class GA4GHIT {
         String responseObject3 = response3.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3);
+
+        // reset DB for other tests
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
     /**
@@ -316,6 +319,6 @@ public abstract class GA4GHIT {
             return;
         }
         Response response = client.target(url).request().get();
-        assertEquals("Not ok response: " + url, response.getStatus(), HttpStatus.SC_OK);
+        assertEquals("Not ok response: " + url, HttpStatus.SC_OK, response.getStatus());
     }
 }

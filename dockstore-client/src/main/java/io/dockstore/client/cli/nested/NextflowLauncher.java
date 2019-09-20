@@ -4,22 +4,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import io.dockstore.common.LanguageType;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.Utilities;
 import org.apache.commons.configuration2.INIConfiguration;
 
 public class NextflowLauncher extends BaseLauncher {
 
-    public NextflowLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+    public NextflowLauncher(AbstractEntryClient abstractEntryClient, DescriptorLanguage language, boolean script) {
         super(abstractEntryClient, language, script);
-        setLauncherName("NextFlow");
+        setLauncherName("Nextflow");
     }
 
     @Override
     public void initialize() {
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
-        executionFile = NextflowUtilities.getNextFlowTargetFile(config);
+        executionFile = NextflowUtilities.getNextflowTargetFile(config);
     }
 
     @Override

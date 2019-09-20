@@ -36,5 +36,9 @@ public enum WorkflowMode {
     STUB, /**
      * A workflow hosted directly on dockstore itself
      */
-    HOSTED
+    HOSTED,
+    /**
+     * A degenerate workflow
+     */
+    SERVICE
 }

@@ -73,30 +73,30 @@ public final class JCommanderUtility {
     }
 
     private static void printJCommanderHelpUsage(String programName, String commandName, JCommander jc) {
-        ArgumentUtility.out("Usage: " + programName + " " + commandName + " --help");
+        out("Usage: " + programName + " " + commandName + " --help");
         if (jc.getCommands().isEmpty()) {
-            ArgumentUtility.out("       " + programName + " " + commandName + " [parameters]");
+            out("       " + programName + " " + commandName + " [parameters]");
         } else {
-            ArgumentUtility.out("       " + programName + " " + commandName + " [parameters] [command]");
+            out("       " + programName + " " + commandName + " [parameters] [command]");
         }
-        ArgumentUtility.out("");
+        out("");
     }
 
     private static void printJCommanderHelpCommand(JCommander jc) {
         Map<String, JCommander> commands = jc.getCommands();
         if (!commands.isEmpty()) {
-            ArgumentUtility.out("Commands: ");
+            out("Commands: ");
             for (Map.Entry<String, JCommander> commanderEntry : commands.entrySet()) {
-                ArgumentUtility.out("  " + commanderEntry.getKey());
-                ArgumentUtility.out("    " + jc.getCommandDescription(commanderEntry.getKey()));
+                out("  " + commanderEntry.getKey());
+                out("    " + jc.getCommandDescription(commanderEntry.getKey()));
             }
         }
     }
 
     private static void printJCommanderHelpDescription(String commandDescription) {
-        ArgumentUtility.out("Description:");
-        ArgumentUtility.out("  " + commandDescription);
-        ArgumentUtility.out("");
+        out("Description:");
+        out("  " + commandDescription);
+        out("");
     }
 
     private static void printJCommanderHelpRequiredParameters(List<ParameterDescription> sorted) {
@@ -111,13 +111,13 @@ public final class JCommanderUtility {
             WrappedParameter parameter = pd.getParameter();
             if (parameter.required() && !Objects.equals(pd.getNames(), "--help")) {
                 if (first) {
-                    ArgumentUtility.out("Required parameters:");
+                    out("Required parameters:");
                     first = false;
                 }
                 printJCommanderHelpParameter(pd, parameter, maxLength);
             }
         }
-        ArgumentUtility.out("");
+        out("");
     }
 
     private static void printJCommanderHelpOptionalParameters(List<ParameterDescription> sorted) {
@@ -135,20 +135,20 @@ public final class JCommanderUtility {
             WrappedParameter parameter = pd.getParameter();
             if (!parameter.required() && !pd.getNames().equals("--help")) {
                 if (first) {
-                    ArgumentUtility.out("Optional parameters:");
+                    out("Optional parameters:");
                     first = false;
                 }
                 printJCommanderHelpParameter(pd, parameter, maxLength);
             }
         }
-        ArgumentUtility.out("");
+        out("");
     }
 
     private static void printJCommanderHelpParameter(ParameterDescription pd, WrappedParameter parameter, int maxLength) {
         outFormatted("%-" + maxLength + "s %s", "  " + pd.getNames() + " <" + pd.getNames().replaceAll("--", "") + ">", pd.getDescription());
         Object def = pd.getDefault();
         if (pd.isDynamicParameter()) {
-            ArgumentUtility.out("Syntax: " + parameter.names()[0] + "key" + parameter.getAssignment() + "value");
+            out("Syntax: " + parameter.names()[0] + "key" + parameter.getAssignment() + "value");
         }
         if (def != null && !pd.isHelp()) {
             String displayedDef = Strings.isStringEmpty(def.toString()) ? "<empty string>" : def.toString();

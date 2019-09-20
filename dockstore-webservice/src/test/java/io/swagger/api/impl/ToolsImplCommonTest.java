@@ -15,18 +15,23 @@
  */
 package io.swagger.api.impl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.model.DescriptorType;
@@ -34,6 +39,7 @@ import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolVersion;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -44,7 +50,6 @@ import static org.junit.Assert.assertEquals;
  * @since 17/01/18
  */
 public class ToolsImplCommonTest {
-    private static final Gson gson = new Gson();
     private static final String PLACEHOLDER_CONTENT = "potato";
     private static DockstoreWebserviceConfiguration  actualConfig = new DockstoreWebserviceConfiguration();
 
@@ -58,7 +63,7 @@ public class ToolsImplCommonTest {
     @Test
     public void wdlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+        sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setAbsolutePath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
@@ -73,7 +78,7 @@ public class ToolsImplCommonTest {
     @Test
     public void cwlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(SourceFile.FileType.DOCKSTORE_CWL);
+        sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         sourceFile.setPath("/Dockstore.cwl");
         sourceFile.setAbsolutePath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
@@ -122,19 +127,20 @@ public class ToolsImplCommonTest {
         tag.setValid(true);
         SourceFile sourceFile = new SourceFile();
         sourceFile.setId(0);
-        sourceFile.setType(SourceFile.FileType.DOCKERFILE);
+        sourceFile.setType(DescriptorLanguage.FileType.DOCKERFILE);
         sourceFile.setContent("TEST DOCKERFILE");
         sourceFile.setPath("/Dockerfile");
         sourceFile.setAbsolutePath("/Dockerfile");
         SourceFile sourceFile2 = new SourceFile();
         sourceFile2.setId(1);
-        sourceFile2.setType(SourceFile.FileType.DOCKSTORE_CWL);
+        sourceFile2.setType(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         sourceFile2.setContent("TEST CWL");
         sourceFile2.setPath("/Dockstore.cwl");
         sourceFile2.setAbsolutePath("/Dockstore.cwl");
         tag.addSourceFile(sourceFile);
         tag.addSourceFile(sourceFile2);
-        tool.addTag(tag);
+        tag.updateVerified();
+        tool.addWorkflowVersion(tag);
         tool.setCheckerWorkflow(null);
         Tool expectedTool = new Tool();
         if (toolname != null) {
@@ -176,7 +182,7 @@ public class ToolsImplCommonTest {
         expectedToolVersion.setContainerfile(true);
         expectedToolVersion.setMetaVersion(null);
         expectedToolVersion.setVerified(false);
-        expectedToolVersion.setVerifiedSource("");
+        expectedToolVersion.setVerifiedSource("[]");
         expectedToolVersion.setRegistryUrl("quay.io");
         expectedToolVersion.setImageName("quay.io/test_org/test6");
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
@@ -197,26 +203,55 @@ public class ToolsImplCommonTest {
      * Those two versions are verified by separate groups
      * This tests all properties including the verified and verified sources but not meta-version.
      * Tests a workflow with/without a workflowname
-     * @throws Exception
      */
     @Test
-    public void convertDockstoreWorkflowToTool() {
-        convertDockstoreWorkflowToTool("potato");
-        convertDockstoreWorkflowToTool(null);
+    public void convertDockstoreWorkflowToTool() throws IOException {
+        convertDockstoreWorkflowToTool("potato", false);
+        convertDockstoreWorkflowToTool(null, false);
+
+        convertDockstoreWorkflowToTool("potato", true);
+        convertDockstoreWorkflowToTool(null, true);
     }
 
-    private void convertDockstoreWorkflowToTool(String toolname) {
+    /**
+     * Gets a fake source file to use for testing.  Only a few parameters
+     * @param verifiedSource    If verified, what the verified source is
+     * @param isService         Whether the entry that's going to add this file is a service or not
+     * @param path              The path of the sourcefile, must be unique if added to the same version
+     * @return
+     */
+    private SourceFile getFakeSourceFile(String verifiedSource, boolean isService, String path) {
+        SourceFile sourceFile = new SourceFile();
+        sourceFile.setId(461402);
+        sourceFile.setContent(PLACEHOLDER_CONTENT);
+        sourceFile.setPath(path);
+        sourceFile.setAbsolutePath(path);
+        if (verifiedSource != null) {
+            SourceFile.VerificationInformation verificationInformation1 = new SourceFile.VerificationInformation();
+            verificationInformation1.verified = true;
+            verificationInformation1.metadata = verifiedSource;
+            verificationInformation1.platformVersion = "1.7.0";
+            Map<String, SourceFile.VerificationInformation> verificationInformationMap = new HashMap<>();
+            verificationInformationMap.put("platform", verificationInformation1);
+            sourceFile.setVerifiedBySource(verificationInformationMap);
+        }
+        if (isService) {
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+        } else {
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        }
+        return sourceFile;
+    }
+
+    private void convertDockstoreWorkflowToTool(String toolname, boolean isService) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         final String TOOLNAME = toolname;
         final String REFERENCE1 = "aaa";
         final String REFERENCE2 = "bbb";
         final String REFERENCE3 = "ccc";
         String json;
-        SourceFile actualSourceFile1 = new SourceFile();
-        actualSourceFile1.setId(461402);
-        actualSourceFile1.setType(SourceFile.FileType.DOCKSTORE_WDL);
-        actualSourceFile1.setContent(PLACEHOLDER_CONTENT);
-        actualSourceFile1.setPath("/pcawg-cgp-somatic-workflow.wdl");
-        actualSourceFile1.setAbsolutePath("/pcawg-cgp-somatic-workflow.wdl");
+        SourceFile actualSourceFile1 = getFakeSourceFile(null, isService, "/pcawg-cgp-somatic-workflow.wdl");
         WorkflowVersion actualWorkflowVersion1 = new WorkflowVersion();
         actualWorkflowVersion1.setWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         actualWorkflowVersion1.setLastModified(null);
@@ -227,29 +262,40 @@ public class ToolsImplCommonTest {
         actualWorkflowVersion1.setName(REFERENCE1);
         actualWorkflowVersion1.setDirtyBit(false);
         actualWorkflowVersion1.setValid(false);
-        actualWorkflowVersion1.setVerifiedSource(null);
-        Workflow workflow = new Workflow();
-        json = gson.toJson(actualWorkflowVersion1);
-        WorkflowVersion actualWorkflowVersion2 = gson.fromJson(json, WorkflowVersion.class);
+        BioWorkflow workflow = new BioWorkflow();
+        json = mapper.writeValueAsString(actualWorkflowVersion1);
+        WorkflowVersion actualWorkflowVersion2 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion2.setName(REFERENCE2);
         actualWorkflowVersion2.setReference(REFERENCE2);
         actualWorkflowVersion2.setHidden(false);
-        actualWorkflowVersion2.setVerifiedSource("potatoTesterSource");
-        actualWorkflowVersion2.setVerified(true);
-        json = gson.toJson(actualWorkflowVersion2);
-        WorkflowVersion actualWorkflowVersion3 = gson.fromJson(json, WorkflowVersion.class);
+        SourceFile sourceFile2 = getFakeSourceFile("chickenTesterSource", isService, "/pcawg-cgp-somatic-workflow2.wdl");
+        actualWorkflowVersion2.addSourceFile(sourceFile2);
+        json = mapper.writeValueAsString(actualWorkflowVersion2);
+        WorkflowVersion actualWorkflowVersion3 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion3.setName(REFERENCE3);
         actualWorkflowVersion3.setReference(REFERENCE3);
-        actualWorkflowVersion3.setVerifiedSource("chickenTesterSource");
+        SourceFile sourceFile3 = getFakeSourceFile("potatoTesterSource", isService, "/pcawg-cgp-somatic-workflow.wdl3");
+        actualWorkflowVersion3.addSourceFile(sourceFile3);
+        actualWorkflowVersion1.updateVerified();
+        actualWorkflowVersion2.updateVerified();
+        actualWorkflowVersion3.updateVerified();
+        // Check that Dockstore version is actually has the right verified source
+        String[] expectedVerifiedSource = { "chickenTesterSource", "potatoTesterSource" };
+        String[] actualVerifiedSource = actualWorkflowVersion3.getVerifiedSources();
+        Assert.assertEquals(expectedVerifiedSource, actualVerifiedSource);
         workflow.addWorkflowVersion(actualWorkflowVersion1);
         workflow.addWorkflowVersion(actualWorkflowVersion2);
         workflow.addWorkflowVersion(actualWorkflowVersion3);
         workflow.setMode(WorkflowMode.FULL);
-        workflow.setWorkflowName(TOOLNAME);
+        workflow.setWorkflowName(toolname);
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
         workflow.setSourceControl(SourceControl.GITHUB);
-        workflow.setDescriptorType("wdl");
+        if (isService) {
+            workflow.setDescriptorType(DescriptorLanguage.SERVICE);
+        } else {
+            workflow.setDescriptorType(DescriptorLanguage.WDL);
+        }
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);
         workflow.setId(950);
@@ -268,39 +314,68 @@ public class ToolsImplCommonTest {
         ToolVersion expectedToolVersion1 = new ToolVersion();
         expectedToolVersion1.setName(REFERENCE2);
         if (toolname != null) {
-            expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                    + TOOLNAME + "/versions/" + REFERENCE2);
-            expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME + ":" + REFERENCE2);
+
+            if (isService) {
+                expectedToolVersion1.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME + ":" + REFERENCE2);
+                expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                        + TOOLNAME + "/versions/" + REFERENCE2);
+            } else {
+                expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME + ":" + REFERENCE2);
+                expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                        + TOOLNAME + "/versions/" + REFERENCE2);
+            }
         } else {
-            expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE2);
-            expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
+
+            if (isService) {
+                expectedToolVersion1.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
+                expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE2);
+            } else {
+                expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE2);
+                expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
+            }
         }
 
         List<DescriptorType> descriptorTypeList = new ArrayList<>();
-        descriptorTypeList.add(DescriptorType.WDL);
+        if (isService) {
+            descriptorTypeList.add(DescriptorType.SERVICE);
+        } else {
+            descriptorTypeList.add(DescriptorType.WDL);
+        }
         expectedToolVersion1.setImage("");
         expectedToolVersion1.setDescriptorType(descriptorTypeList);
         expectedToolVersion1.setContainerfile(false);
         // Meta-version dates are currently dependant on the environment, disabling for now
         expectedToolVersion1.setMetaVersion(null);
         expectedToolVersion1.setVerified(true);
-        expectedToolVersion1.setVerifiedSource("potatoTesterSource");
+        expectedToolVersion1.setVerifiedSource("[\"chickenTesterSource\"]");
         expectedToolVersion1.setImageName("");
         expectedToolVersion1.setRegistryUrl("");
-        json = gson.toJson(expectedToolVersion1);
-        ToolVersion expectedToolVersion2 = gson.fromJson(json, ToolVersion.class);
+        json = mapper.writeValueAsString(expectedToolVersion1);
+        ToolVersion expectedToolVersion2 = mapper.readValue(json, ToolVersion.class);
         expectedToolVersion2.setName(REFERENCE3);
-        expectedToolVersion2.setVerifiedSource("chickenTesterSource");
+        expectedToolVersion2.setVerifiedSource("[\"chickenTesterSource\",\"potatoTesterSource\"]");
         expectedToolVersion2.setImageName("");
         expectedToolVersion2.setRegistryUrl("");
 
         if (toolname != null) {
-            expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                    + TOOLNAME + "/versions/" + REFERENCE3);
-            expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME + ":" + REFERENCE3);
+            if (isService) {
+                expectedToolVersion2.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME + ":" + REFERENCE3);
+                expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                        + TOOLNAME + "/versions/" + REFERENCE3);
+            } else {
+                expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME + ":" + REFERENCE3);
+                expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                        + TOOLNAME + "/versions/" + REFERENCE3);
+            }
         } else {
-            expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE3);
-            expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE3);
+
+            if (isService) {
+                expectedToolVersion2.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE3);
+                expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE3);
+            } else {
+                expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE3);
+                expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE3);
+            }
         }
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion1);
@@ -309,15 +384,29 @@ public class ToolsImplCommonTest {
 
         expectedTool.setOrganization("ICGC-TCGA-PanCancer");
         if (toolname != null) {
-            expectedTool
-                    .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
-            expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME);
+
+            if (isService) {
+                expectedTool.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME);
+                expectedTool
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
+            } else {
+                expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME);
+                expectedTool
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
+            }
             expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME);
             expectedTool.setCheckerUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
         } else {
-            expectedTool
-                    .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
-            expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
+
+            if (isService) {
+                expectedTool
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
+                expectedTool.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
+            } else {
+                expectedTool
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
+                expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
+            }
             expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow");
             expectedTool.setCheckerUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
         }
@@ -345,7 +434,7 @@ public class ToolsImplCommonTest {
     @Test
     public void sourceFileToToolTests() {
         SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(SourceFile.FileType.CWL_TEST_JSON);
+        sourceFile.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
         sourceFile.setPath("/test.cwl.json");
         sourceFile.setAbsolutePath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
