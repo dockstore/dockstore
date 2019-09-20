@@ -25,8 +25,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
@@ -394,7 +396,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // verify master branch
         assertFalse(tag.isVerified());
-        assertNull(tag.getVerifiedSource());
+        assertEquals(new ArrayList<>(), tag.getVerifiedSources());
 
         containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId());
 
@@ -404,7 +406,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // The tag verification endpoint does nothing unless the extended TRS endpoint was used to verify
         assertFalse(tag.isVerified());
-        assertNull(tag.getVerifiedSource());
+        assertEquals(new ArrayList<>(), tag.getVerifiedSources());
     }
 
     @Test
@@ -464,7 +466,7 @@ public class SwaggerClientIT extends BaseIT {
         c.setIsPublished(true);
         final Tag tag = c.getWorkflowVersions().get(0);
         tag.setVerified(true);
-        tag.setVerifiedSource("funky source");
+        tag.setVerifiedSources(Arrays.asList("funky source"));
         containersApi.registerManual(c);
 
         // hit up the plain text versions
@@ -521,6 +523,8 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
+        final Set<String> collect = new HashSet<>(containers.get(0).getDescriptorType());
+        assertEquals(collect.size(), containers.get(0).getDescriptorType().size());
         assertEquals(containers.get(0).getPath(), QUAY_IO_TEST_ORG_TEST6);
 
         containers = containersApi.allPublishedContainers(null, null, "test52", null, null);
@@ -749,6 +753,12 @@ public class SwaggerClientIT extends BaseIT {
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         assertNotNull(dockerRegistries);
         assertNotNull(descriptorLanguages);
+        Set<String> names = new HashSet<>();
+        descriptorLanguages.forEach(lang -> {
+            final String val = lang.getValue().toLowerCase();
+            assertFalse(names.contains(val));
+            names.add(val);
+        });
     }
 
     @Test

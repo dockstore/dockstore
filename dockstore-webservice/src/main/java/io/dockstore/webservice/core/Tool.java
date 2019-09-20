@@ -227,7 +227,7 @@ public class Tool extends Entry<Tool, Tag> {
     public List<String> getDescriptorType() {
         Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
         return Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
-            .map(lang -> lang.toString().toUpperCase()).collect(Collectors.toList());
+            .map(lang -> lang.toString().toUpperCase()).distinct().collect(Collectors.toList());
     }
 
     @JsonProperty

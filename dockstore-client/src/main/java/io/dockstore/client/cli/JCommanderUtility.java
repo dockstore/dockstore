@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.beust.jcommander.DefaultUsageFormatter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.Strings;
@@ -41,7 +42,8 @@ public final class JCommanderUtility {
     // Have to override printJCommanderHelp because launch has --entry OR --local-entry as required parameters.
     // It's probably better to just have them as two separate commands.
     public static void printJCommanderHelpLaunch(JCommander jc, String programName, String commandName) {
-        String description = jc.getCommandDescription(commandName);
+        DefaultUsageFormatter formatter = new DefaultUsageFormatter(jc);
+        String description = formatter.getCommandDescription(commandName);
         printHelpHeader();
         printJCommanderHelpUsage(programName, commandName, jc);
         printJCommanderHelpDescription(description);
@@ -60,7 +62,8 @@ public final class JCommanderUtility {
 
     public static void printJCommanderHelp(JCommander jc, String programName, String commandName) {
         JCommander commander = jc.getCommands().get(commandName);
-        String description = jc.getCommandDescription(commandName);
+        DefaultUsageFormatter formatter = new DefaultUsageFormatter(jc);
+        String description = formatter.getCommandDescription(commandName);
         List<ParameterDescription> sorted = commander.getParameters();
 
         printHelpHeader();
@@ -83,12 +86,13 @@ public final class JCommanderUtility {
     }
 
     private static void printJCommanderHelpCommand(JCommander jc) {
+        DefaultUsageFormatter formatter = new DefaultUsageFormatter(jc);
         Map<String, JCommander> commands = jc.getCommands();
         if (!commands.isEmpty()) {
             out("Commands: ");
             for (Map.Entry<String, JCommander> commanderEntry : commands.entrySet()) {
                 out("  " + commanderEntry.getKey());
-                out("    " + jc.getCommandDescription(commanderEntry.getKey()));
+                out("    " + formatter.getCommandDescription(commanderEntry.getKey()));
             }
         }
     }
@@ -103,7 +107,7 @@ public final class JCommanderUtility {
         int maxLength = 0;
         for (ParameterDescription pd : sorted) {
             int length = pd.getNames().length();
-            maxLength = length > maxLength ? length : maxLength;
+            maxLength = Math.max(length, maxLength);
         }
         maxLength = ((maxLength + 2) * 2);
         boolean first = true;

@@ -45,36 +45,36 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Column
     @JsonProperty("last_built")
-    @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 19)
+    @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 101)
     Date lastBuilt;
 
     @Column
     @JsonProperty("image_id")
-    @ApiModelProperty(value = "Tag for this image in quay.io/docker hub", required = true, position = 12)
+    @ApiModelProperty(value = "Tag for this image in quay.io/docker hub", required = true, position = 102)
     private String imageId;
 
     @Column
-    @ApiModelProperty(value = "Size of the image", position = 13)
+    @ApiModelProperty(value = "Size of the image", position = 103)
     private long size;
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("dockerfile_path")
-    @ApiModelProperty(value = "Path for the Dockerfile", position = 14)
+    @ApiModelProperty(value = "Path for the Dockerfile", position = 104)
     private String dockerfilePath = "/Dockerfile";
 
     // Add for new descriptor types
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("cwl_path")
-    @ApiModelProperty(value = "Path for the CWL document", position = 15)
+    @ApiModelProperty(value = "Path for the CWL document", position = 105)
     private String cwlPath = "/Dockstore.cwl";
 
     @Column(columnDefinition = "text default '/Dockstore.wdl'", nullable = false)
     @JsonProperty("wdl_path")
-    @ApiModelProperty(value = "Path for the WDL document", position = 16)
+    @ApiModelProperty(value = "Path for the WDL document", position = 106)
     private String wdlPath = "/Dockstore.wdl";
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io", position = 17)
+    @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io", position = 107)
     private boolean automated;
 
     public Tag() {
@@ -82,7 +82,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     @Override
-    @ApiModelProperty(position = 18)
+    @ApiModelProperty(position = 108)
     public String getWorkingDirectory() {
         if (!cwlPath.isEmpty()) {
             return FilenameUtils.getPathNoEndSeparator(cwlPath);

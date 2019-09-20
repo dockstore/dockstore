@@ -42,19 +42,19 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "Path for the workflow", position = 12)
+    @ApiModelProperty(value = "Path for the workflow", position = 101)
     private String workflowPath;
 
     @Column
     @JsonProperty("last_modified")
-    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.")
+    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102)
     private Date lastModified;
 
     /**
      * In theory, this should be in a ServiceVersion.
      * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
      */
-    @ApiModelProperty(value = "The subclass of this for services.")
+    @ApiModelProperty(value = "The subclass of this for services.", position = 103)
     private Service.SubClass subClass = null;
 
     public WorkflowVersion() {
