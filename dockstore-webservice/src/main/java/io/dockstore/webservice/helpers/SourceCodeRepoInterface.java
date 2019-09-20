@@ -238,9 +238,9 @@ public abstract class SourceCodeRepoInterface {
     /**
      * Update an entry with the contents of the descriptor file from a source code repo
      *
-     * @param entry@Override
-     * @param type
-     * @return
+     * @param entry entry to update
+     * @param type the type of language to look for
+     * @return the entry again
      */
     Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
         // Determine which branch to use

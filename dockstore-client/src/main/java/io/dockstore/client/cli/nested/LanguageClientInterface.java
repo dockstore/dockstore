@@ -38,9 +38,9 @@ public interface LanguageClientInterface {
      * @param entry the path to the downloaded primary file
      * @param json return in json? retained from before refactoring, but this parameter seems pointless. Might be removeable without
      *             csvRuns below
-     * @return
      * @throws ApiException
      * @throws IOException
+     * @return
      */
     String generateInputJson(String entry, boolean json) throws ApiException, IOException;
 

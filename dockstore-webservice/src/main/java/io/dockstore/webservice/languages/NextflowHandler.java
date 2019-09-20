@@ -414,7 +414,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
      *
      * @param mainDescriptor content
      * @param keyword        keyword to lookup
-     * @return
+     * @return nodes with the suspectec content
      * @throws RecognitionException
      * @throws TokenStreamException
      * @throws IOException
