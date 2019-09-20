@@ -305,7 +305,11 @@ public class MetadataResource {
     @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "NO authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
     public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
-        Arrays.asList(DescriptorLanguage.values()).forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
+        Arrays.stream(DescriptorLanguage.values()).filter(lang ->
+            // crappy evil hack for 1.6.0 backwards compatibility after all sorts of Jackson annotations failed
+            // delete after 1.6.0 CLI users fade out https://github.com/dockstore/dockstore/issues/2860
+            lang != DescriptorLanguage.OLD_CWL && lang != DescriptorLanguage.OLD_WDL).
+            forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
     }
 

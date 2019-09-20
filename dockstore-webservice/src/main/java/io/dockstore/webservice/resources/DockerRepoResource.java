@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -93,8 +92,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -557,7 +554,6 @@ public class DockerRepoResource
 
         tool.getWorkflowVersions().clear();
         toolDAO.delete(tool);
-
         tool = toolDAO.findById(containerId);
         if (tool == null) {
             elasticManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
@@ -756,31 +752,6 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
         return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{containerId}/verifiedSources")
-    @ApiOperation(value = "Get the sources that verified a tool.", tags = {
-        "containers" }, notes = "NO authentication", response = String.class)
-    public String verifiedSources(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId) {
-        Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
-
-        Set<String> verifiedSourcesArray = tool.getWorkflowVersions().stream()
-                .filter(Version::isVerified)
-                .map(Version::getVerifiedSource).collect(Collectors.toSet());
-
-        JSONArray jsonArray;
-        try {
-            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
-        } catch (JSONException ex) {
-            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.",
-                HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-
-        return jsonArray.toString();
     }
 
     // Add for new descriptor types

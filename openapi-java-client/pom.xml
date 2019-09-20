@@ -60,11 +60,11 @@
                     <replacements>
                         <replacement>
                             <token>- cwl$</token>
-                            <value></value>
+                            <value />
                         </replacement>
                         <replacement>
                             <token>- wdl$</token>
-                            <value></value>
+                            <value />
                         </replacement>
                     </replacements>
                 </configuration>
