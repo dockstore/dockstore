@@ -313,7 +313,7 @@ public class Client {
 
     /**
      * This method returns the url to upgrade to desired version
-     * However, this will only work for all releases json (List<Map<String, Object>> instead of Map<String,Object>)
+     * However, this will only work for all releases json (List&lt;Map&lt;String, Object&gt;&gt; instead of Map&lt;String,Object&gt;)
      *
      * @param version
      * @return

@@ -108,7 +108,7 @@ import static io.dockstore.common.DescriptorLanguage.WDL;
  * Handles the commands for a particular type of entry. (e.g. Workflows, Tools) Not a great abstraction, but enforces some structure for
  * now.
  * <p>
- * The goal here should be to gradually work toward an interface that removes those pesky command line arguments (List<String> args) from
+ * The goal here should be to gradually work toward an interface that removes those pesky command line arguments (List&lt;String&gt; args) from
  * implementing classes that do not need to reference to the command line arguments directly.
  * <p>
  * Note that many of these methods depend on a unique identifier for an entry called a path for workflows and tools.
@@ -683,7 +683,7 @@ public abstract class AbstractEntryClient<T> {
 
     /**
      * this function will validate CWL file
-     * using this command: cwltool --non-strict --validate <file_path>
+     * using this command: cwltool --non-strict --validate &lt;file_path&gt;
      *
      * @param cwlFilePath a path to the cwl file to be validated
      */
@@ -757,7 +757,7 @@ public abstract class AbstractEntryClient<T> {
     /**
      * this function will check the content of the entry file if it's a valid cwl/wdl file
      *
-     * @param content: the file content, Type File
+     * @param content the file content, Type File
      * @return Type -> Type.CWL if file content is CWL
      * Type.WDL if file content is WDL
      * Type.NONE if file content is neither WDL nor CWL
@@ -778,7 +778,7 @@ public abstract class AbstractEntryClient<T> {
     /**
      * this function will check the extension of the entry file (cwl/wdl)
      *
-     * @param path: the file path, Type String
+     * @param path the file path, Type String
      * @return Type -> Type.CWL if file extension is CWL
      * Type.WDL if file extension is WDL
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
@@ -1648,10 +1648,10 @@ public abstract class AbstractEntryClient<T> {
 
     /**
      * Reads a file whose format is either YAML or JSON and makes a JSON string out of the contents
-     * @param yamlRun
-     * @return
+     * @param yamlRun string representation of the yaml content
      * @throws ParserException if the JSON or YAML is not syntactically valid
      * @throws IOException
+     * @return json string representation of the yaml content
      */
     public String fileToJSON(String yamlRun) throws IOException {
         Yaml yaml = new Yaml();
