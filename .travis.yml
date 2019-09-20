@@ -12,7 +12,7 @@ cache:
   - $HOME/.m2/repository
   - $HOME/apache-maven-3.6.2
 
-dist: xenial
+dist: bionic
 language: java
 jdk: openjdk11
 
