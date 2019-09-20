@@ -318,14 +318,14 @@ class WdlBridge {
         throw new WdlParser.SyntaxError(bundle.left.get.head)
       }
     } catch {
-      case ex: WdlParser.SyntaxError => throw new WdlParser.SyntaxError(ex.getMessage())
-      case ex: Exception => throw new WdlParser.SyntaxError("There was an error creating a Wom Bundle for the workflow.\n" + ex.getMessage())
+      case ex: WdlParser.SyntaxError => throw ex
+      case ex: Exception => throw new WdlParser.SyntaxError("There was an error creating a Wom Bundle for the workflow.")
     }
   }
 
   /**
     * Retrieve the language factory for the given primary descriptor file
-    * @param fileContent Content of the primary workflow file
+    * @param fileContent Content of the primary workfflow file
     * @return Correct language factory based on the version of WDL
     */
   def getLanguageFactory(fileContent: String) : LanguageFactory = {
