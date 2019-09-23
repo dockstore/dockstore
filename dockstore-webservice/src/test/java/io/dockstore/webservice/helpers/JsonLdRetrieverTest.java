@@ -62,12 +62,12 @@ public class JsonLdRetrieverTest {
     }
 
     @Test
-    public void getSchema_hasSchema() throws Exception {
+    public void getSchemaHasSchema() throws Exception {
         getSchema("schema.cwl", "schema.json");
     }
 
     @Test
-    public void getSchema_noSchema() throws Exception {
+    public void getSchemaNoSchema() throws Exception {
         getSchema("noSchema.cwl", "noSchema.json");
     }
 }

@@ -67,32 +67,21 @@ import static junit.framework.TestCase.assertTrue;
  *
  * @author gluu
  */
-@Category({BenchmarkTest.class, ToolTest.class})
+@Category({ BenchmarkTest.class, ToolTest.class })
 @Ignore("more like benchmarking than a test per say")
 public class AdvancedIndexingBenchmarkIT extends BaseIT {
-
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Before
-    @Override
-    public void resetDBBetweenTests() {
-        /** do nothing, do not load sample data */
-    }
 
     private static final int TOOL_COUNT = 10;
     private static final int MAX_LABELS_PER_TOOL = 5;
     private static final int MAX_AUTHORS = 10;
     private static final Logger LOGGER = LoggerFactory.getLogger(AdvancedIndexingBenchmarkIT.class);
-
-
-
     private static final String LEXICON = "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345674890";
     private static final java.util.Random RAND = new java.util.Random();
     private static final Set<String> IDENTIFIERS = new HashSet<>();
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
     private DockstoreWebserviceApplication application;
     private Session session;
     private ArrayList<String> fixedStringLabels;
@@ -101,6 +90,12 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     private List<Long> indexTimes;
     private SessionFactory sessionFactory;
     private javax.ws.rs.client.Client client;
+
+    @Before
+    @Override
+    public void resetDBBetweenTests() {
+        /** do nothing, do not load sample data */
+    }
 
     private String randomIdentifier() {
         StringBuilder builder = new StringBuilder();
@@ -118,7 +113,8 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     @Before
     public void setUp() {
-        com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         client = ClientBuilder.newClient();
         client.register(jacksonJsonProvider);
         application = SUPPORT.getApplication();
@@ -177,7 +173,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         });
         int actualToolCount = tools.size();
         assertEquals("Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.", actualToolCount, TOOL_COUNT);
-                LOGGER.error("Amount of tools created: " + String.valueOf(actualToolCount));
+        LOGGER.error("Amount of tools created: " + String.valueOf(actualToolCount));
         for (Long indexTime : indexTimes) {
             LOGGER.error(String.valueOf(indexTime));
         }
@@ -185,7 +181,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private void refresh(long id) {
         Response registerManualResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/" + id + "/refresh")
-                .request().header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken").get();
+            .request().header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken").get();
         Tool tool = registerManualResponse.readEntity(Tool.class);
     }
 
@@ -196,9 +192,8 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private void addLabels(long id) {
         Response registerPutLabelResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/" + id + "/labels")
-                .queryParam("labels", randomlyGeneratedQueryLabels()).request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
-                .put(Entity.entity("asdf", MediaType.APPLICATION_JSON_TYPE));
+            .queryParam("labels", randomlyGeneratedQueryLabels()).request()
+            .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken").put(Entity.entity("asdf", MediaType.APPLICATION_JSON_TYPE));
         Tool registeredTool = registerPutLabelResponse.readEntity(Tool.class);
         assertEquals(id, registeredTool.getId());
     }
@@ -206,9 +201,9 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     // Directly injecting into database to avoid authentication issues
     private void createTool() {
         Tool tool = randomlyGenerateTool();
-        Response registerManualResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/registerManual").request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
-                .post(Entity.entity(tool, MediaType.APPLICATION_JSON_TYPE));
+        Response registerManualResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/registerManual")
+            .request().header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
+            .post(Entity.entity(tool, MediaType.APPLICATION_JSON_TYPE));
 
         Tool registeredTool = registerManualResponse.readEntity(Tool.class);
         assertEquals(registeredTool.getName(), tool.getName());

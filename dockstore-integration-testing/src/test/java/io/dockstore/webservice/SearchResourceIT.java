@@ -16,6 +16,7 @@
 package io.dockstore.webservice;
 
 import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -24,7 +25,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,6 +36,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author dyuen
@@ -61,7 +62,7 @@ public class SearchResourceIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
-    public void waitForRefresh(Integer t) {
+    private void waitForRefresh(Integer t) {
         // Elasticsearch needs time to refresh the index after update and deletion events.
         try {
             Thread.sleep(t);
@@ -81,19 +82,16 @@ public class SearchResourceIT extends BaseIT {
         waitForRefresh(5000);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
 
-        workflowApi.publish(workflow.getId(), new PublishRequest() {
-            public Boolean isPublish() { return false;}
-        });
+        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
         waitForRefresh(1500);
         String exampleESQuery = "{\"size\":201,\"_source\":{\"excludes\":[\"*.content\",\"*.sourceFiles\",\"description\",\"users\",\"workflowVersions.dirtyBit\",\"workflowVersions.hidden\",\"workflowVersions.last_modified\",\"workflowVersions.name\",\"workflowVersions.valid\",\"workflowVersions.workflow_path\",\"workflowVersions.workingDirectory\",\"workflowVersions.reference\"]},\"query\":{\"match_all\":{}}}";
-        workflowApi.publish(workflow.getId(), new PublishRequest() {
-            public Boolean isPublish() { return true;}
-        });
+        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
         waitForRefresh(1500);
         // after publication index should include workflow
@@ -131,13 +129,12 @@ public class SearchResourceIT extends BaseIT {
         // Register and publish workflow
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
 
-        workflowApi.publish(workflow.getId(), new PublishRequest() {
-            public Boolean isPublish() { return true;}
-        });
+        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         waitForRefresh(1500);
 
@@ -145,7 +142,7 @@ public class SearchResourceIT extends BaseIT {
         try {
             metadataApi.checkElasticSearch();
         } catch (ApiException ex) {
-            assertTrue("Should not fail", false);
+            fail("Should not fail");
         }
     }
 }

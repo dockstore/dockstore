@@ -1,0 +1,7 @@
+extraction:
+# Define settings for Java analysis
+####################################
+  java:
+    index:
+    # Specify the Java version required to build the project.
+      java_version: 12

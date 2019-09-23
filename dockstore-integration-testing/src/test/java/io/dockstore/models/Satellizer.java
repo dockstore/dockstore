@@ -20,9 +20,11 @@ package io.dockstore.models;
  * This is the model that the UI currently uses.
  * When the UI changes the satellizer object, this class should be regenerated.
  * https://www.site24x7.com/tools/json-to-java.html and some small modifications was used to generate this class from a sample JSON
+ *
  * @author gluu
  * @since 28/06/19
  */
+@SuppressWarnings({"checkstyle:MemberName", "checkstyle:ParameterName", "checkstyle:MethodName"})
 public class Satellizer {
     private AuthorizationData authorizationData;
     private OauthData oauthData;
@@ -34,22 +36,22 @@ public class Satellizer {
         return authorizationData;
     }
 
-    public OauthData getOauthData() {
-        return oauthData;
-    }
-
-    public UserData getUserData() {
-        return userData;
-    }
-
-    // Setter Methods
-
     public void setAuthorizationData(AuthorizationData authorizationDataObject) {
         this.authorizationData = authorizationDataObject;
     }
 
+    public OauthData getOauthData() {
+        return oauthData;
+    }
+
+    // Setter Methods
+
     public void setOauthData(OauthData oauthDataObject) {
         this.oauthData = oauthDataObject;
+    }
+
+    public UserData getUserData() {
+        return userData;
     }
 
     public void setUserData(UserData userDataObject) {
@@ -83,22 +85,22 @@ public class Satellizer {
             return state;
         }
 
-        public String getCode() {
-            return code;
-        }
-
-        public String getScope() {
-            return scope;
-        }
-
-        // Setter Methods
-
         public void setState(String state) {
             this.state = state;
         }
 
+        public String getCode() {
+            return code;
+        }
+
+        // Setter Methods
+
         public void setCode(String code) {
             this.code = code;
+        }
+
+        public String getScope() {
+            return scope;
         }
 
         public void setScope(String scope) {
@@ -120,46 +122,46 @@ public class Satellizer {
             return response_type;
         }
 
-        public String getClient_id() {
-            return client_id;
-        }
-
-        public String getRedirect_uri() {
-            return redirect_uri;
-        }
-
-        public String getState() {
-            return state;
-        }
-
-        public String getScope() {
-            return scope;
-        }
-
-        public String getDisplay() {
-            return display;
-        }
-
-        // Setter Methods
-
         public void setResponse_type(String response_type) {
             this.response_type = response_type;
+        }
+
+        public String getClient_id() {
+            return client_id;
         }
 
         public void setClient_id(String client_id) {
             this.client_id = client_id;
         }
 
+        public String getRedirect_uri() {
+            return redirect_uri;
+        }
+
         public void setRedirect_uri(String redirect_uri) {
             this.redirect_uri = redirect_uri;
+        }
+
+        // Setter Methods
+
+        public String getState() {
+            return state;
         }
 
         public void setState(String state) {
             this.state = state;
         }
 
+        public String getScope() {
+            return scope;
+        }
+
         public void setScope(String scope) {
             this.scope = scope;
+        }
+
+        public String getDisplay() {
+            return display;
         }
 
         public void setDisplay(String display) {

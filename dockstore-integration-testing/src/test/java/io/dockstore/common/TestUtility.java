@@ -36,7 +36,7 @@ public final class TestUtility {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestUtility.class);
     @Rule
-    public TemporaryFolder folder= new TemporaryFolder();
+    public TemporaryFolder folder = new TemporaryFolder();
 
     private TestUtility() {
         // utility class
@@ -72,12 +72,13 @@ public final class TestUtility {
     /**
      * Currently in production, the basePath is "/api/" and Nginx removes first /api it finds and redirects it to "http://webservice:8080/$uri"
      * This mimics the nginx functionality
-     * @param originalUrl   The original URL that the UI2 and the Swagger UI displays
-     * @param basePath      The basePath set in the Dropwizard configuration file
-     * @return              The URL modified by nginx
+     *
+     * @param originalUrl The original URL that the UI2 and the Swagger UI displays
+     * @param basePath    The basePath set in the Dropwizard configuration file
+     * @return The URL modified by nginx
      */
     public static String mimicNginxRewrite(String originalUrl, String basePath) {
-        return basePath.equals("/api/") ? originalUrl.replaceFirst("/api/", "/") : originalUrl;
+        return "/api/".equals(basePath) ? originalUrl.replaceFirst("/api/", "/") : originalUrl;
     }
 
     /**

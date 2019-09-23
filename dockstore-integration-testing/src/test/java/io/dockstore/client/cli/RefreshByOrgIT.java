@@ -57,19 +57,13 @@ public class RefreshByOrgIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
-
-    @AfterClass
-    public static void afterClass(){
-        SUPPORT.after();
-    }
-
-    private static final List<String> newDockstoreTestUser2Tools = Collections.singletonList("dockstore-tool-imports");
-    private static final List<String> newDockstoreTestUser2Workflows = Arrays
-            .asList("dockerhubandgithub", "dockstore_empty_repo", "dockstore-whalesay-imports", "parameter_test_workflow",
-                    "quayandgithubalternate", "OxoG-Dockstore-Tools", "test_workflow_cwl", "hello-dockstore-workflow", "quayandgithub",
-                    "dockstore_workflow_cnv", "test_workflow_wdl", "quayandgithubwdl", "test_lastmodified", "dockstore-tool-imports");
-    private static final List<String> newDockstoreDotTestDotUser2Workflows = Collections.singletonList("dockstore-workflow-example");
-    private static final List<String> newDockstore_TestUser2Workflows = Collections.singletonList("dockstore-workflow");
+    private static final List<String> NEW_DOCKSTORE_TEST_USER_2_TOOLS = Collections.singletonList("dockstore-tool-imports");
+    private static final List<String> NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS_ARRAY = Arrays
+        .asList("dockerhubandgithub", "dockstore_empty_repo", "dockstore-whalesay-imports", "parameter_test_workflow",
+            "quayandgithubalternate", "OxoG-Dockstore-Tools", "test_workflow_cwl", "hello-dockstore-workflow", "quayandgithub",
+            "dockstore_workflow_cnv", "test_workflow_wdl", "quayandgithubwdl", "test_lastmodified", "dockstore-tool-imports");
+    private static final List<String> NEW_DOCKSTORE_DOT_TEST_DOT_USER_2_WORKFLOWS = Collections.singletonList("dockstore-workflow-example");
+    private static final List<String> NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS = Collections.singletonList("dockstore-workflow");
     private static Client client;
     private static String token;
     private static String usersURLPrefix;
@@ -78,6 +72,11 @@ public class RefreshByOrgIT {
     private static List<Tool> previousTools;
     private static List<Workflow> previousWorkflows;
     private static TestingPostgres testingPostgres;
+
+    @AfterClass
+    public static void afterClass() {
+        SUPPORT.after();
+    }
 
     @BeforeClass
     public static void clearDBandSetup() throws Exception {
@@ -100,9 +99,9 @@ public class RefreshByOrgIT {
         // The DB initially has 4 tools, 1 from dockstore2 and 3 from dockstoretestuser2
         List<Tool> currentTools = getTools();
         List<Tool> dockstore2Tools = currentTools.parallelStream().filter(tool -> tool.getNamespace().equals("dockstore2"))
-                .collect(Collectors.toList());
+            .collect(Collectors.toList());
         List<Tool> dockstoretestuser2Tools = currentTools.parallelStream().filter(tool -> tool.getNamespace().equals("dockstoretestuser2"))
-                .collect(Collectors.toList());
+            .collect(Collectors.toList());
 
         assertThat(dockstore2Tools.size()).isGreaterThanOrEqualTo(1);
         assertThat(dockstoretestuser2Tools.size()).isGreaterThanOrEqualTo(3);
@@ -117,14 +116,13 @@ public class RefreshByOrgIT {
         usersURLPrefix = "http://localhost:%d/users/" + id;
         checkInitialDB();
         // insert a non-existent tool to be deleted during refresh
-        testingPostgres.runUpdateStatement("insert into tool (id, giturl, mode, name, namespace, registry, ispublished) select 100, giturl, mode, 'newtool', namespace, registry, ispublished from tool where id = 2;");
+        testingPostgres.runUpdateStatement(
+            "insert into tool (id, giturl, mode, name, namespace, registry, ispublished) select 100, giturl, mode, 'newtool', namespace, registry, ispublished from tool where id = 2;");
         testingPostgres.runUpdateStatement("insert into user_entry (userid, entryid) values (1, 100)");
-        Long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where id = 100;", long.class);
+        Long count = testingPostgres.runSelectStatement("select count(*) from tool where id = 100;", long.class);
         assertEquals(1, (long)count);
         testRefreshToolsByOrg2();
-        count = testingPostgres
-            .runSelectStatement("select count(*) from tool where id = 100;", long.class);
+        count = testingPostgres.runSelectStatement("select count(*) from tool where id = 100;", long.class);
         // tool should have been deleted
         assertEquals(0, (long)count);
     }
@@ -139,7 +137,7 @@ public class RefreshByOrgIT {
         previousTools = currentTools;
         testRefreshToolsByOrg2();
         currentTools = getTools();
-        assertThat(currentTools.size() - previousTools.size()).isGreaterThanOrEqualTo(newDockstoreTestUser2Tools.size());
+        assertThat(currentTools.size() - previousTools.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_TEST_USER_2_TOOLS.size());
         previousTools = currentTools;
         testRefreshToolsByOrg3();
         currentTools = getTools();
@@ -165,12 +163,12 @@ public class RefreshByOrgIT {
     private void testRefreshToolsByOrg2() throws IOException {
         String url = usersURLPrefix + "/containers/dockstoretestuser2/refresh";
         List<Tool> tools = clientHelperTool(url);
-        assertThat(tools.size() - previousTools.size()).isGreaterThanOrEqualTo(newDockstoreTestUser2Tools.size());
+        assertThat(tools.size() - previousTools.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_TEST_USER_2_TOOLS.size());
         // Remove all the tools that have the same name as the previous ones
         tools.removeIf(tool -> previousToolsHaveName(tool.getName()));
         // Ensure that one of the new tools added is "dockstore-tool-imports"
-        newDockstoreTestUser2Tools
-                .forEach(newTool -> assertThat(tools.parallelStream().anyMatch(tool -> tool.getName().equals(newTool))).isTrue());
+        NEW_DOCKSTORE_TEST_USER_2_TOOLS
+            .forEach(newTool -> assertThat(tools.parallelStream().anyMatch(tool -> tool.getName().equals(newTool))).isTrue());
 
     }
 
@@ -189,7 +187,7 @@ public class RefreshByOrgIT {
 
     private List<Tool> clientHelperTool(String url) throws IOException {
         Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
         return objectMapper.readValue(entity, new TypeReference<List<Tool>>() {
         });
@@ -202,7 +200,7 @@ public class RefreshByOrgIT {
 
         testRefreshWorkflowsByOrg1();
         List<Workflow> currentWorkflows = getWorkflows();
-        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstoreTestUser2Workflows.size());
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS_ARRAY.size());
         previousWorkflows = currentWorkflows;
 
         testRefreshWorkflowsByOrg2();
@@ -217,12 +215,12 @@ public class RefreshByOrgIT {
 
         testRefreshWorkflowsByOrg4();
         currentWorkflows = getWorkflows();
-        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstore_TestUser2Workflows.size());
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS.size());
         previousWorkflows = currentWorkflows;
 
         testRefreshWorkflowsByOrg5();
         currentWorkflows = getWorkflows();
-        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstoreDotTestDotUser2Workflows.size());
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_DOT_TEST_DOT_USER_2_WORKFLOWS.size());
     }
 
     /**
@@ -234,9 +232,9 @@ public class RefreshByOrgIT {
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
-        assertThat(workflows.size()).isGreaterThanOrEqualTo(newDockstoreTestUser2Workflows.size());
-        newDockstoreTestUser2Workflows.forEach(
-                newTool -> assertThat(workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(newTool))).isTrue());
+        assertThat(workflows.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS_ARRAY.size());
+        NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS_ARRAY.forEach(
+            newTool -> assertThat(workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(newTool))).isTrue());
     }
 
     /**
@@ -274,9 +272,9 @@ public class RefreshByOrgIT {
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
-        assertThat(workflows.size()).isGreaterThanOrEqualTo(newDockstore_TestUser2Workflows.size());
-        newDockstore_TestUser2Workflows.forEach(workflowRepository -> assertThat(
-                workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(workflowRepository))).isTrue());
+        assertThat(workflows.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS.size());
+        NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS.forEach(workflowRepository -> assertThat(
+            workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(workflowRepository))).isTrue());
     }
 
     /**
@@ -288,14 +286,14 @@ public class RefreshByOrgIT {
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
-        assertThat(workflows.size()).isGreaterThanOrEqualTo(newDockstoreDotTestDotUser2Workflows.size());
-        newDockstoreDotTestDotUser2Workflows.forEach(workflowRepository -> assertThat(
-                workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(workflowRepository))).isTrue());
+        assertThat(workflows.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_DOT_TEST_DOT_USER_2_WORKFLOWS.size());
+        NEW_DOCKSTORE_DOT_TEST_DOT_USER_2_WORKFLOWS.forEach(workflowRepository -> assertThat(
+            workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(workflowRepository))).isTrue());
     }
 
     private List<Workflow> clientHelperWorkflow(String url) throws IOException {
         Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
         return objectMapper.readValue(entity, new TypeReference<List<BioWorkflow>>() {
         });

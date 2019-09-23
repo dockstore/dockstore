@@ -56,7 +56,7 @@ import static org.junit.Assert.fail;
  * This test suite will have tests for the workflow mode of the Dockstore Client.
  * Created by aduncan on 05/04/16.
  */
-@Category({ConfidentialTest.class, WorkflowTest.class})
+@Category({ ConfidentialTest.class, WorkflowTest.class })
 public class GeneralWorkflowIT extends BaseIT {
 
     @Rule
@@ -81,13 +81,12 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testRefreshAndPublish() {
         // Set up DB
 
-
         // refresh all
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
 
         // refresh individual that is valid
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // refresh all
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
@@ -95,8 +94,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // check that valid is valid and full
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 0 published entries, there are " + count, 0, count);
-        final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
         assertEquals("there should be 2 valid versions, there are " + count2, 2, count2);
         final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", long.class);
         assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
@@ -105,18 +103,16 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // attempt to publish it
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
-        final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
+        final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 1 published entry, there are " + count5, 1, count5);
 
         // unpublish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
 
-        final long count6 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
+        final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
 
         testPublishList();
@@ -128,8 +124,10 @@ public class GeneralWorkflowIT extends BaseIT {
     private void testPublishList() {
         systemOutRule.clearLog();
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--script" });
-        assertTrue("Should contain a FULL workflow belonging to the user", systemOutRule.getLog().contains("github.com/DockstoreTestUser2/hello-dockstore-workflow"));
-        assertFalse("Should not contain a STUB workflow belonging to the user", systemOutRule.getLog().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified "));
+        assertTrue("Should contain a FULL workflow belonging to the user",
+            systemOutRule.getLog().contains("github.com/DockstoreTestUser2/hello-dockstore-workflow"));
+        assertFalse("Should not contain a STUB workflow belonging to the user",
+            systemOutRule.getLog().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified "));
     }
 
     /**
@@ -138,22 +136,23 @@ public class GeneralWorkflowIT extends BaseIT {
     @Test
     public void testInfo() {
         // manual publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-name",
+                "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
 
         // info
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "info", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--script" });
 
         // unpublish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--unpub", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--unpub", "--script" });
 
         // info
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "info", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--script" });
     }
 
     /**
@@ -161,11 +160,12 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     public void testManualPublishAndGrabWDL() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-name",
+                "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
     }
 
     /**
@@ -175,23 +175,21 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testRefreshAndPublishInvalid() {
         // Set up DB
 
-
         // refresh all
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
 
         // refresh individual
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_empty_repo", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_empty_repo", "--script" });
 
         // check that no valid versions
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
         assertEquals("there should be 0 valid versions, there are " + count, 0, count);
 
         // try and publish
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_empty_repo", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_empty_repo", "--script" });
     }
 
     /**
@@ -200,9 +198,10 @@ public class GeneralWorkflowIT extends BaseIT {
     @Test
     public void testManualPublishInvalid() {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "dockstore_empty_repo", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "dockstore_empty_repo", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-name",
+                "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
     }
 
     /**
@@ -212,22 +211,24 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testLabelEditing() {
         // Set up DB
 
-
         // Set up workflow
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-path",
+                "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
 
         // add labels
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "label", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--add", "test1", "--add", "test2", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--add", "test1", "--add", "test2",
+            "--script" });
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label", long.class);
         assertEquals("there should be 2 labels, there are " + count, 2, count);
 
         // remove labels
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "label", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--remove", "test1", "--add", "test3", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--remove", "test1", "--add", "test3",
+            "--script" });
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from entry_label", long.class);
         assertEquals("there should be 2 labels, there are " + count2, 2, count2);
@@ -238,13 +239,14 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     public void testGetInvalidDescriptor() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-name",
+                "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
 
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "cwl", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
     }
 
     /**
@@ -252,15 +254,17 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     public void testManualPublishDuplicate() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-name",
+                "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
 
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
 
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-name",
+                "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
     }
 
     /**
@@ -270,18 +274,18 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testUpdateWorkflowVersion() {
         // Set up DB
 
-
         // Update workflow
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--workflow-name",
+                "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--name", "master", "--workflow-path", "/Dockstore2.wdl",
-                "--hidden", "true", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--name", "master",
+            "--workflow-path", "/Dockstore2.wdl", "--hidden", "true", "--script" });
 
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'master' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
-                long.class);
+            "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'master' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
+            long.class);
         assertEquals("there should be 1 matching workflow version, there is " + count, 1, count);
     }
 
@@ -292,13 +296,12 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testRestub() {
         // Set up DB
 
-
         // Refresh and then restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
         assertEquals("there should be 0 workflow versions, there are " + count, 0, count);
@@ -312,13 +315,13 @@ public class GeneralWorkflowIT extends BaseIT {
         // Refresh and then restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
     }
 
     /**
@@ -328,22 +331,20 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testDescriptorTypes() {
         // Set up DB
 
-
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--descriptor-type", "wdl", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--descriptor-type", "wdl", "--script" });
 
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflow where descriptortype = 'wdl'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype = 'wdl'", long.class);
         assertEquals("there should be 1 wdl workflow, there are " + count, 1, count);
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--descriptor-type", "cwl", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--descriptor-type", "cwl", "--script" });
     }
 
     /**
@@ -353,21 +354,22 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testWorkflowVersionIncorrectPath() {
         // Set up DB
 
-
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--name", "master", "--workflow-path", "/newdescriptor.cwl", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--name", "master", "--workflow-path",
+            "/newdescriptor.cwl", "--script" });
 
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where name = 'master' and workflowpath = '/newdescriptor.cwl'",
-                        long.class);
+            .runSelectStatement("select count(*) from workflowversion where name = 'master' and workflowpath = '/newdescriptor.cwl'",
+                long.class);
         assertEquals("the workflow version should now have a new descriptor path", 1, count);
 
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--name", "master", "--workflow-path", "/Dockstore.wdl", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--name", "master", "--workflow-path",
+            "/Dockstore.wdl", "--script" });
 
     }
 
@@ -379,15 +381,17 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testRefreshAndConvertWithImportsCWL() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
-                "--entry", SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow:testBoth", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow:testBoth", "--script" });
 
         systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
-                "--entry", SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow:testCWL", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow:testCWL", "--script" });
 
     }
 
@@ -399,17 +403,18 @@ public class GeneralWorkflowIT extends BaseIT {
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--descriptor-type", "wdl", "--workflow-path", "/Dockstore.wdl",
-                        "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--descriptor-type", "wdl",
+                "--workflow-path", "/Dockstore.wdl", "--script" });
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
+            SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
+            SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
 
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
-                "--entry", SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow:wdl_import","--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry",
+                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow:wdl_import", "--script" });
         assertTrue(systemOutRule.getLog().contains("\"three_step.cgrep.pattern\": \"String\""));
 
     }
@@ -430,7 +435,8 @@ public class GeneralWorkflowIT extends BaseIT {
         usersApi.refreshWorkflows(userId);
 
         Workflow githubWorkflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl", "/test.json");
+            .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl",
+                "/test.json");
 
         // Publish github workflow
         Workflow workflow = workflowApi.refresh(githubWorkflow.getId());
@@ -442,19 +448,17 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Set up DB
 
-
         //check if the workflow versions have the same workflow path or not in the database
         final String masterpath = testingPostgres
-                .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
+            .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
         final String testpath = testingPostgres
-                .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
-        assertEquals("master workflow path should be the same as default workflow path, it is " + masterpath, "/Dockstore.cwl",
-            masterpath);
+            .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
+        assertEquals("master workflow path should be the same as default workflow path, it is " + masterpath, "/Dockstore.cwl", masterpath);
         assertEquals("test workflow path should be the same as default workflow path, it is " + testpath, "/Dockstore.cwl", testpath);
     }
 
     @Test
-    public void testWorkflowFreezingWithNoFiles(){
+    public void testWorkflowFreezingWithNoFiles() {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -465,13 +469,16 @@ public class GeneralWorkflowIT extends BaseIT {
         usersApi.refreshWorkflows(userId);
 
         Workflow githubWorkflow = workflowApi
-            .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/wrongpath.wdl", "test-update-workflow", "wdl", "/wrong-test.json");
+            .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/wrongpath.wdl", "test-update-workflow", "wdl",
+                "/wrong-test.json");
 
         Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
-        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst()
+            .get();
         master.setFrozen(true);
         try {
-            List<WorkflowVersion> workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+            List<WorkflowVersion> workflowVersions = workflowApi
+                .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         } catch (ApiException e) {
             // should exception
             assertTrue("missing error message", e.getMessage().contains(CANNOT_FREEZE_VERSIONS_WITH_NO_FILES));
@@ -497,7 +504,8 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Publish github workflow
         Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
-        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst()
+            .get();
         master.setFrozen(true);
         final List<WorkflowVersion> workflowVersions1 = workflowApi
             .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
@@ -510,7 +518,8 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
         master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
         master.setFrozen(false);
-        List<WorkflowVersion> workflowVersions = workflowApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        List<WorkflowVersion> workflowVersions = workflowApi
+            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
         assertTrue(master.isFrozen());
 
@@ -526,7 +535,6 @@ public class GeneralWorkflowIT extends BaseIT {
         // refresh should skip over the frozen version
         final Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
         master = refresh.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
-
 
         // cannot modify sourcefiles for a frozen version
         assertFalse(master.getSourceFiles().isEmpty());
@@ -548,7 +556,7 @@ public class GeneralWorkflowIT extends BaseIT {
         try {
             workflowApi.addTestParameterFiles(githubWorkflow.getId(), Lists.newArrayList("foo"), "", "master");
             fail("could add test parameter file");
-        } catch(ApiException e) {
+        } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
         }
     }
@@ -560,48 +568,48 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testUpdateWorkflowDefaultVersion() {
         // Set up DB
 
-
         // Setup workflow
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github", "--script" });
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // Update workflow with version with no metadata
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--default-version", "testWDL", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--default-version", "testWDL",
+                "--script" });
 
         // Assert default version is updated and no author or email is found
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL'", long.class);
         assertEquals("there should be 1 matching workflow, there is " + count, 1, count);
 
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL' and author is null and email is null",
-                        long.class);
+            .runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL' and author is null and email is null",
+                long.class);
         assertEquals("The given workflow shouldn't have any contact info", 1, count2);
 
         // Update workflow with version with metadata
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--default-version", "testBoth", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--default-version", "testBoth",
+                "--script" });
 
         // Assert default version is updated and author and email are set
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where defaultversion = 'testBoth'", long.class);
+            .runSelectStatement("select count(*) from workflow where defaultversion = 'testBoth'", long.class);
         assertEquals("there should be 1 matching workflow, there is " + count3, 1, count3);
 
         final long count4 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where defaultversion = 'testBoth' and author = 'testAuthor' and email = 'testEmail'",
-                long.class);
+            "select count(*) from workflow where defaultversion = 'testBoth' and author = 'testAuthor' and email = 'testEmail'",
+            long.class);
         assertEquals("The given workflow should have contact info", 1, count4);
 
         // Unpublish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
 
         // Alter workflow so that it has no valid tags
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET valid='f'");
@@ -609,7 +617,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Now you shouldn't be able to publish the workflow
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
     }
 
     /**
@@ -619,17 +627,15 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testRefreshRelatedConcepts() {
         // Set up DB
 
-
         // refresh all
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
 
         // refresh individual that is valid
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // check that workflow is valid and full
-        final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
         assertEquals("there should be 2 valid versions, there are " + count2, 2, count2);
         final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", long.class);
         assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
@@ -637,47 +643,45 @@ public class GeneralWorkflowIT extends BaseIT {
         // Change path for each version so that it is invalid
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.cwl', dirtybit=true");
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // Workflow has no valid versions so you cannot publish
 
         // check that invalid
-        final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
+        final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
         assertEquals("there should be 4 invalid versions, there are " + count4, 4, count4);
 
         // Restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // Update workflow to WDL
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--workflow-path", "Dockstore.wdl", "--descriptor-type", "wdl",
-                        "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--workflow-path", "Dockstore.wdl",
+                "--descriptor-type", "wdl", "--script" });
 
         // Can now publish workflow
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // unpublish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
 
         // Set paths to invalid
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.wdl', dirtybit=true");
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // Check that versions are invalid
-        final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
+        final long count5 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
         assertEquals("there should be 4 invalid versions, there are " + count5, 4, count5);
 
         // should now not be able to publish
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
     }
 
     /**
@@ -687,37 +691,35 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testGithubDirtyBit() {
         // Setup DB
 
-
         // refresh all
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
 
         // refresh individual that is valid
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
         // Check that no versions have a true dirty bit
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
         assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
 
         // Edit workflow path for a version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--name", "master", "--workflow-path", "/Dockstoredirty.cwl", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--name", "master", "--workflow-path",
+            "/Dockstoredirty.cwl", "--script" });
 
         // There should be on dirty bit
-        final long count1 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
+        final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
         assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
 
         // Update default cwl
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--workflow-path", "/Dockstoreclean.cwl", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow", "--workflow-path", "/Dockstoreclean.cwl",
+                "--script" });
 
         // There should be 3 versions with new cwl
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'",
-                        long.class);
+            .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", long.class);
         assertEquals("there should be 3 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 3, count2);
 
     }
@@ -729,38 +731,38 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testBitbucketDirtyBit() {
         // Setup DB
 
-
         // refresh all
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
 
         // refresh individual that is valid
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
-        final long nullLastModifiedWorkflowVersions = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
-        assertEquals("All Bitbucket workflow versions should have last modified populated after refreshing", 0, nullLastModifiedWorkflowVersions);
+            SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
+        final long nullLastModifiedWorkflowVersions = testingPostgres
+            .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
+        assertEquals("All Bitbucket workflow versions should have last modified populated after refreshing", 0,
+            nullLastModifiedWorkflowVersions);
         // Check that no versions have a true dirty bit
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
         assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
 
         // Edit workflow path for a version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--name", "master", "--workflow-path", "/Dockstoredirty.cwl", "--script" });
+            SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--name", "master", "--workflow-path",
+            "/Dockstoredirty.cwl", "--script" });
 
         // There should be on dirty bit
-        final long count1 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
+        final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
         assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
 
         // Update default cwl
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--workflow-path", "/Dockstoreclean.cwl", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--workflow-path", "/Dockstoreclean.cwl",
+                "--script" });
 
         // There should be 3 versions with new cwl
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'",
-                        long.class);
+            .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", long.class);
         assertEquals("there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 4, count2);
 
     }
@@ -772,84 +774,88 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testGitlab() {
         // Setup DB
 
-
         // Refresh workflow
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
-        final long nullLastModifiedWorkflowVersions = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
-        assertEquals("All GitLab workflow versions should have last modified populated after refreshing", 0, nullLastModifiedWorkflowVersions);
+            SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
+        final long nullLastModifiedWorkflowVersions = testingPostgres
+            .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
+        assertEquals("All GitLab workflow versions should have last modified populated after refreshing", 0,
+            nullLastModifiedWorkflowVersions);
 
         // Check a few things
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
-                long.class);
+            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
         assertEquals("there should be 1 workflow, there are " + count, 1, count);
 
-        final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
         assertEquals("there should be 2 valid version, there are " + count2, 2, count2);
 
         final long count3 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
-                long.class);
+            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
         assertEquals("there should be 1 workflow, there are " + count3, 1, count3);
 
         // publish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
+            SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
         final long count4 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
-                long.class);
+            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
+            long.class);
         assertEquals("there should be 1 published workflow, there are " + count4, 1, count4);
 
         // Should be able to get info since it is published
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "info", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
+            SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
 
         // Should be able to grab descriptor
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "cwl", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example:master", "--script" });
+            SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example:master", "--script" });
 
         // unpublish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--unpub", "--script" });
+            SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--unpub", "--script" });
         final long count5 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
-                long.class);
+            "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
+            long.class);
         assertEquals("there should be 0 published workflows, there are " + count5, 0, count5);
 
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and author is null and email is null and description is null",
-                long.class);
+            "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString()
+                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and author is null and email is null and description is null",
+            long.class);
         assertEquals("The given workflow shouldn't have any contact info", 1, count6);
 
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--default-version", "test", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--default-version", "test",
+                "--script" });
 
         final long count7 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null",
-                long.class);
+            "select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null",
+            long.class);
         assertEquals("The given workflow should now have contact info and description", 0, count7);
 
         // restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
+            SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
         final long count8 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
-                long.class);
+            "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.toString()
+                + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
         assertEquals("The workflow should now be a stub", 1, count8);
 
         // Convert to WDL workflow
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--descriptor-type", "wdl", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--descriptor-type", "wdl",
+                "--script" });
 
         // Should now be a WDL workflow
-        final long count9 = testingPostgres
-                .runSelectStatement("select count(*) from workflow where descriptortype='wdl'", long.class);
+        final long count9 = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype='wdl'", long.class);
         assertEquals("there should be no 1 wdl workflow" + count9, 1, count9);
 
     }
@@ -861,25 +867,26 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testManualPublishBitbucket() {
         // Setup DB
 
-
         // manual publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "dockstore-workflow", "--organization", "dockstore_testuser2", "--git-version-control", "bitbucket",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "dockstore-workflow", "--organization", "dockstore_testuser2", "--git-version-control", "bitbucket", "--workflow-name",
+                "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
 
         // Check for two valid versions (wdl_import and surprisingly, cwl_import)
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='t' and (name='wdl_import' OR name='cwl_import')", long.class);
+            .runSelectStatement("select count(*) from workflowversion where valid='t' and (name='wdl_import' OR name='cwl_import')",
+                long.class);
         assertEquals("There should be a valid 'wdl_import' version and a valid 'cwl_import' version", 2, count);
 
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
+        final long count2 = testingPostgres
+            .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
         assertEquals("All Bitbucket workflow versions should have last modified populated when manual published", 0, count2);
 
         // grab wdl file
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
-                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow/testname:wdl_import", "--script" });
+            SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow/testname:wdl_import", "--script" });
     }
-
 
     /**
      * This tests manually publishing a gitlab workflow
@@ -888,23 +895,23 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testManualPublishGitlab() {
         // Setup DB
 
-
         // manual publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "dockstore-workflow-example", "--organization", "dockstore.test.user2", "--git-version-control", "gitlab",
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "dockstore-workflow-example", "--organization", "dockstore.test.user2", "--git-version-control", "gitlab",
                 "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
 
         // Check for one valid version
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", long.class);
         assertEquals("there should be 1 valid version, there are " + count, 1, count);
 
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
+        final long count2 = testingPostgres
+            .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
         assertEquals("All GitLab workflow versions should have last modified populated when manual published", 0, count2);
 
         // grab wdl file
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/testname:master", "--script" });
+            SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/testname:master", "--script" });
     }
 
     /**
@@ -915,14 +922,13 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testGitLabTagAndBranchTracking() {
         // Setup DB
 
-
         // manual publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-            "--repository", "dockstore-workflow-md5sum-unified", "--organization", "dockstore.test.user2", "--git-version-control", "gitlab",
-            "--workflow-name", "testname", "--workflow-path", "/checker.wdl", "--descriptor-type", "wdl", "--script" });
+        Client.main(
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository",
+                "dockstore-workflow-md5sum-unified", "--organization", "dockstore.test.user2", "--git-version-control", "gitlab",
+                "--workflow-name", "testname", "--workflow-path", "/checker.wdl", "--descriptor-type", "wdl", "--script" });
 
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from workflowversion", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
         assertTrue("there should be at least 5 versions, there are " + count, count >= 5);
         final long branchCount = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where referencetype = 'BRANCH'", long.class);
@@ -939,18 +945,17 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testWDLWithImports() {
         // Setup DB
 
-
         // Refresh all
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
 
         // Update workflow to be WDL with correct path
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/test_workflow_wdl", "--descriptor-type", "wdl", "--workflow-path", "/hello.wdl", "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/test_workflow_wdl", "--descriptor-type", "wdl", "--workflow-path",
+                "/hello.wdl", "--script" });
 
         // Check for WDL files
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile where path='helper.wdl'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where path='helper.wdl'", long.class);
         assertEquals("there should be 1 secondary file named helper.wdl, there are " + count, 1, count);
 
     }
@@ -962,66 +967,61 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testTestParameterFile() {
         // Setup DB
 
-
         // Refresh all
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
 
         // Refresh specific
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--script" });
 
         // There should be no sourcefiles
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals("there should be no source files that are test parameter files, there are " + count, 0, count);
 
         // Update version master with test parameters
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "master", "--add", "test.cwl.json", "--add",
-                        "test2.cwl.json", "--add", "fake.cwl.json", "--remove", "notreal.cwl.json", "--script" });
-        final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "master", "--add",
+                "test.cwl.json", "--add", "test2.cwl.json", "--add", "fake.cwl.json", "--remove", "notreal.cwl.json", "--script" });
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals("there should be two sourcefiles that are test parameter files, there are " + count2, 2, count2);
 
         // Update version with test parameters
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "master", "--add", "test.cwl.json", "--remove",
-                        "test2.cwl.json", "--script" });
-        final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "master", "--add",
+                "test.cwl.json", "--remove", "test2.cwl.json", "--script" });
+        final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 1, count3);
 
         // Update other version with test parameters
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "wdltest", "--add", "test.wdl.json", "--script" });
-        final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "wdltest", "--add",
+                "test.wdl.json", "--script" });
+        final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
         assertEquals("there should be two sourcefiles that are cwl test parameter files, there are " + count4, 2, count4);
 
         // Restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--script" });
 
         // Change to WDL
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--descriptor-type", "wdl", "--workflow-path", "Dockstore.wdl",
-                        "--script" });
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--descriptor-type", "wdl",
+                "--workflow-path", "Dockstore.wdl", "--script" });
 
         // Should be no sourcefiles
-        final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
+        final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals("there should be no source files that are test parameter files, there are " + count5, 0, count5);
 
         // Update version wdltest with test parameters
         Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "wdltest", "--add", "test.wdl.json", "--script" });
-        final long count6 = testingPostgres
-                .runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
+            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--version", "wdltest", "--add",
+                "test.wdl.json", "--script" });
+        final long count6 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
         assertEquals("there should be one sourcefile that is a wdl test parameter file, there are " + count6, 1, count6);
     }
 
@@ -1033,10 +1033,10 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testVerify() {
         // Setup DB
 
-
         // Versions should be unverified
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id",
+                long.class);
 
         assertEquals("there should be no verified workflowversions, there are " + count, 0, count);
 
@@ -1045,47 +1045,50 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Refresh workflow
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--script" });
 
         // Verify workflowversion
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group", "--version", "master",
-                "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group",
+            "--version", "master", "--script" });
 
         // Version should be verified
-        final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group' and wv.id = vm.id",
-                        long.class);
+        final long count2 = testingPostgres.runSelectStatement(
+            "select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group' and wv.id = vm.id",
+            long.class);
         assertEquals("there should be one verified workflowversion, there are " + count2, 1, count2);
 
         // Update workflowversion to have new verified source
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group2", "--version", "master",
-                "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group2",
+            "--version", "master", "--script" });
 
         // Version should have new verified source
-        final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group2' and wv.id = vm.id",
-                        long.class);
+        final long count3 = testingPostgres.runSelectStatement(
+            "select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group2' and wv.id = vm.id",
+            long.class);
         assertEquals("there should be one verified workflowversion, there are " + count3, 1, count3);
 
         // Verify another version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group", "--version", "wdltest",
-                "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group",
+            "--version", "wdltest", "--script" });
 
         // Version should be verified
         final long count4 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id",
+                long.class);
         assertEquals("there should be two verified workflowversions, there are " + count4, 2, count4);
 
         // Unverify workflowversion
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--unverify", "--version", "master", "--script" });
+            SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--unverify", "--version", "master",
+            "--script" });
 
         // Workflowversion should be unverified
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from workflowversion wv, version_metadata vm where vm.verified='true' and wv.id = vm.id",
+                long.class);
         assertEquals("there should be one verified workflowversion, there are " + count5, 1, count5);
     }
 
@@ -1098,9 +1101,8 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testRefreshingUserMetadata() {
         // Setup database
 
-
         // Refresh all workflows
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh",  "--script" });
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
 
         // Check that user has been updated
         // TODO: bizarrely, the new GitHub Java API library doesn't seem to handle bio
@@ -1108,6 +1110,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement("select count(*) from user_profile where location='Toronto'", long.class);
         assertEquals("One user should have this info now, there are  " + count, 1, count);
     }
+
     @Test
     public void testGenerateDOIFrozenVersion() throws ApiException {
         // Set up webservice
@@ -1116,10 +1119,11 @@ public class GeneralWorkflowIT extends BaseIT {
 
         //register workflow
         Workflow githubWorkflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
+            .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
 
         Workflow workflowBeforeFreezing = workflowApi.refresh(githubWorkflow.getId());
-        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst()
+            .get();
 
         //try issuing DOI for workflow version that is not frozen.
         try {
@@ -1132,7 +1136,7 @@ public class GeneralWorkflowIT extends BaseIT {
         //freeze version 'master'
         master.setFrozen(true);
         final List<WorkflowVersion> workflowVersions1 = workflowApi
-                .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         master = workflowVersions1.stream().filter(v -> v.getName().equals("master")).findFirst().get();
         assertTrue(master.isFrozen());
 
