@@ -17,9 +17,12 @@
 package io.dockstore.webservice.resources;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -56,6 +59,8 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -71,6 +76,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -97,9 +103,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final ToolDAO toolDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
+    private final HttpClient client;
 
-    public UserResource(SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
-            DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+    public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
+                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -110,6 +117,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.authorizer = authorizer;
         elasticManager = new ElasticManager();
         this.cachingAuthenticator = cachingAuthenticator;
+        this.client = client;
     }
 
     @GET
@@ -718,6 +726,34 @@ public class UserResource implements AuthenticatedResourceInterface {
         userDAO.clearCache();
         return getStrippedServices(userDAO.findById(user.getId()));
     }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/user/repositories")
+    @Operation(operationId = "getUserRepositories")
+    @ApiOperation(nickname = "getUserRepositories", value = "Get the all of the repositories accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    public Map<String, List> getUserRepositories(@ApiParam(hidden = true) @Auth User user) {
+        User foundUser = userDAO.findById(user.getId());
+
+        // Get all of the users source control tokens
+        List<Token> scTokens = tokenDAO.findByUserId(foundUser.getId())
+                .stream()
+                .filter(token -> token.getTokenSource().isSourceControlToken())
+                .collect(Collectors.toList());
+
+        // For each token, grab all repositories
+        Map<String, List> registryToRepositoryList = new HashMap<>();
+        for (Token token : scTokens) {
+            SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+            final Map<String, String> workflowGitUrl2Name = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+            LOG.info(workflowGitUrl2Name.toString());
+            registryToRepositoryList.put(token.getTokenSource().toString(), new ArrayList(workflowGitUrl2Name.values()));
+        }
+
+        return registryToRepositoryList;
+    }
+
 
     /**
      * Updates the user's google access token in the DB
