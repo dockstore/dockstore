@@ -143,11 +143,13 @@ public class ServiceIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
         final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true);
         final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false);
-        assertTrue(workflows.size() >= 2 && workflows.stream().noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
+        assertTrue(workflows.size() >= 2 && workflows.stream()
+            .noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
         testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published", SUPPORT.getLocalPort()));
         testXTotalCount(jerseyClient, String.format("http://localhost:%d/workflows/published?services=true", SUPPORT.getLocalPort()));
-        assertTrue(services.size() >= 1 && services.stream().allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
+        assertTrue(services.size() >= 1 && services.stream()
+            .allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
         // try some standard things we would like services to be able to do
         client.starEntry(invoke.getServiceID(), new StarRequest().star(true));
@@ -161,12 +163,12 @@ public class ServiceIT extends BaseIT {
 
     /**
      * Test X-total-count.  It so happens there's two services and two bioworkflows
-     * @param jerseyClient  Jersey Client to test endpoint
-     * @param path          Path of endpoint
+     *
+     * @param jerseyClient Jersey Client to test endpoint
+     * @param path         Path of endpoint
      */
     private void testXTotalCount(Client jerseyClient, String path) {
-        Response response = jerseyClient.target(path).request()
-                .get();
+        Response response = jerseyClient.target(path).request().get();
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         MultivaluedMap<String, Object> headers = response.getHeaders();
         Object xTotalCount = headers.getFirst("X-total-count");
@@ -189,7 +191,6 @@ public class ServiceIT extends BaseIT {
     @Test
     public void testGitHubAppEndpoints() throws Exception {
 
-
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -209,15 +210,16 @@ public class ServiceIT extends BaseIT {
         assertEquals("Should have 3 source files", 3, service.getWorkflowVersions().get(0).getSourceFiles().size());
         assertEquals("Should have 2 users", 2, service.getUsers().size());
 
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
+        final long count = testingPostgres.runSelectStatement(
+            "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
+            long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
 
         // Test user endpoints
         UsersApi usersApi = new UsersApi(webClient);
         List<io.swagger.client.model.Workflow> services = usersApi.userServices(service.getUsers().get(0).getId());
         List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(service.getUsers().get(0).getId());
-        assertEquals("There should be one service", 1,  services.size());
+        assertEquals("There should be one service", 1, services.size());
         assertEquals("There should be no workflows", 0, workflows.size());
     }
 
@@ -226,7 +228,6 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceNoUser() throws Exception {
-
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
@@ -242,8 +243,9 @@ public class ServiceIT extends BaseIT {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
+        final long count = testingPostgres.runSelectStatement(
+            "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
+            long.class);
         Assert.assertEquals("there should be no matching service", 0, count);
     }
 
@@ -252,7 +254,6 @@ public class ServiceIT extends BaseIT {
      */
     @Test
     public void createServiceDuplicate() throws Exception {
-
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
@@ -270,13 +271,15 @@ public class ServiceIT extends BaseIT {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
+        final long count = testingPostgres.runSelectStatement(
+            "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
+            long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
     }
 
     /**
      * Ensures that a service and workflow can have the same path
+     *
      * @throws Exception
      */
     @Test
@@ -320,7 +323,6 @@ public class ServiceIT extends BaseIT {
     @Test
     public void updateServiceIncorrectTag() throws Exception {
 
-
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
@@ -339,12 +341,12 @@ public class ServiceIT extends BaseIT {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'", long.class);
+        final long count = testingPostgres.runSelectStatement(
+            "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
+            long.class);
         Assert.assertEquals("there should be one matching service", 1, count);
 
-        final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", long.class);
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", long.class);
         Assert.assertEquals("there should be no matching tag", 0, count2);
     }
 
@@ -372,7 +374,8 @@ public class ServiceIT extends BaseIT {
         }
 
         // Add version that has invalid dockstore.yml
-        io.swagger.client.model.Workflow updatedService = client.upsertServiceVersion(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
+        io.swagger.client.model.Workflow updatedService = client
+            .upsertServiceVersion(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
         assertNotNull(updatedService);
         assertEquals("Should have a new version", 1, updatedService.getWorkflowVersions().size());
         assertEquals("Should have 1 source file", 1, updatedService.getWorkflowVersions().get(0).getSourceFiles().size());
@@ -460,7 +463,6 @@ public class ServiceIT extends BaseIT {
             testWorkflow.setOrganization("shield");
             testWorkflow.setRepository("shield_repo");
 
-
             Service testService = new Service();
             testService.setDescription("test service");
             testService.setIsPublished(true);
@@ -482,13 +484,13 @@ public class ServiceIT extends BaseIT {
             test2Service.setDefaultWorkflowPath(".dockstore.yml");
 
             final Map<DescriptorLanguage.FileType, String> defaultPaths = test2Service.getDefaultPaths();
-            for(DescriptorLanguage.FileType val : DescriptorLanguage.FileType.values()){
+            for (DescriptorLanguage.FileType val : DescriptorLanguage.FileType.values()) {
                 defaultPaths.put(val, "path for " + val);
             }
             test2Service.setDefaultPaths(defaultPaths);
 
             // add all users to all things for now
-            for(User user : userDAO.findAll()){
+            for (User user : userDAO.findAll()) {
                 testWorkflow.addUser(user);
                 testService.addUser(user);
                 test2Service.addUser(user);

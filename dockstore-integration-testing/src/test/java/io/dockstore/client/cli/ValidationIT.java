@@ -27,9 +27,10 @@ import org.junit.experimental.categories.Category;
 
 /**
  * A collection of tests for the version validation system
+ *
  * @author aduncan
  */
-@Category({ ConfidentialTest.class})
+@Category({ ConfidentialTest.class })
 public class ValidationIT extends BaseIT {
 
     @Rule
@@ -98,15 +99,14 @@ public class ValidationIT extends BaseIT {
 
     /**
      * Returns whether a version with the given name for a workflow is valid or not
+     *
      * @param workflow
      * @param name
      * @return is workflow version valid
      */
     protected boolean isWorkflowVersionValid(Workflow workflow, String name) {
-        Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions()
-                .stream()
-                .filter(version -> Objects.equals(name, version.getName()))
-                .findFirst();
+        Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
+            .filter(version -> Objects.equals(name, version.getName())).findFirst();
 
         if (workflowVersion.isPresent()) {
             return workflowVersion.get().isValid();
@@ -116,15 +116,13 @@ public class ValidationIT extends BaseIT {
 
     /**
      * Returns whether a tag with the given name for a tool is valid or not
+     *
      * @param tool
      * @param name
      * @return is tag valid
      */
     protected boolean isTagValid(DockstoreTool tool, String name) {
-        Optional<Tag> tag = tool.getWorkflowVersions()
-                .stream()
-                .filter(version -> Objects.equals(name, version.getName()))
-                .findFirst();
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(version -> Objects.equals(name, version.getName())).findFirst();
 
         if (tag.isPresent()) {
             return tag.get().isValid();
@@ -142,7 +140,8 @@ public class ValidationIT extends BaseIT {
         WorkflowsApi workflowsApi = setupWorkflowWebService();
 
         // Register a workflow
-        Workflow workflow = workflowsApi.manualRegister("GitHub", "DockstoreTestUser2/TestEntryValidation", "/validWorkflow.wdl", "testname", "wdl", "/test.json");
+        Workflow workflow = workflowsApi
+            .manualRegister("GitHub", "DockstoreTestUser2/TestEntryValidation", "/validWorkflow.wdl", "testname", "wdl", "/test.json");
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 
@@ -209,7 +208,8 @@ public class ValidationIT extends BaseIT {
 
         // Register a workflow
         workflowsApi.getApiClient().setDebugging(true);
-        Workflow workflow = workflowsApi.manualRegister("GitHub", "DockstoreTestUser2/TestEntryValidation", "/validWorkflow.cwl", "testname", "cwl", "/test.json");
+        Workflow workflow = workflowsApi
+            .manualRegister("GitHub", "DockstoreTestUser2/TestEntryValidation", "/validWorkflow.cwl", "testname", "cwl", "/test.json");
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 

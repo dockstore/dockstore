@@ -31,6 +31,7 @@ import org.jdbi.v3.core.statement.Query;
  */
 public class TestingPostgres {
     private Jdbi jdbi;
+
     public TestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         DataSourceFactory dataSourceFactory = support.getConfiguration().getDataSourceFactory();
         Environment environment = support.getEnvironment();
@@ -38,6 +39,7 @@ public class TestingPostgres {
         jdbi = jdbiFactory.build(environment, dataSourceFactory, "postgresql");
 
     }
+
     public int runUpdateStatement(String query) {
         return jdbi.withHandle(handle -> handle.createUpdate(query).execute());
     }

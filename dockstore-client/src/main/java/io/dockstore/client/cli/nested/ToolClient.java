@@ -536,20 +536,18 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
             }
 
             // If registration is successful then attempt to publish it
-            if (tool != null) {
-                PublishRequest pub = SwaggerUtility.createPublishRequest(true);
-                DockstoreTool publishedTool;
-                try {
-                    publishedTool = containersApi.publish(tool.getId(), pub);
-                    if (publishedTool.isIsPublished()) {
-                        out("Successfully published " + fullName);
-                    } else {
-                        out("Successfully registered " + fullName + ", however it is not valid to publish."); // Should this throw an
-                        // error?
-                    }
-                } catch (ApiException ex) {
-                    exceptionMessage(ex, "Successfully registered " + fullName + ", however it is not valid to publish.", Client.API_ERROR);
+            PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+            DockstoreTool publishedTool;
+            try {
+                publishedTool = containersApi.publish(tool.getId(), pub);
+                if (publishedTool.isIsPublished()) {
+                    out("Successfully published " + fullName);
+                } else {
+                    out("Successfully registered " + fullName + ", however it is not valid to publish."); // Should this throw an
+                    // error?
                 }
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Successfully registered " + fullName + ", however it is not valid to publish.", Client.API_ERROR);
             }
         }
     }

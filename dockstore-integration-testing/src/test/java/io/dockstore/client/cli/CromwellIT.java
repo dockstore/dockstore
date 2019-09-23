@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -147,15 +146,16 @@ public class CromwellIT {
         // If resolver works, this should throw no errors
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl-sanger-workflow.wdl"));
         WdlBridge wdlBridge = new WdlBridge();
+        @SuppressWarnings("checkstyle:IllegalType")
         HashMap<String, String> secondaryFiles = new HashMap<>();
         secondaryFiles.put("wdl.wdl",
-                "task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n" + "  }\n" + "}\n"
-                        + "\n" + "task cgrep {\n" + "  String pattern\n" + "  File in_file\n" + "  command {\n"
-                        + "    grep '${pattern}' ${in_file} | wc -l\n" + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n"
-                        + "  }\n" + "}\n" + "\n" + "task wc {\n" + "  File in_file\n" + "  command {\n" + "    cat ${in_file} | wc -l\n"
-                        + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n" + "}\n" + "\n"
-                        + "workflow three_step {\n" + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n"
-                        + "  call wc {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
+            "task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n" + "  }\n" + "}\n" + "\n"
+                + "task cgrep {\n" + "  String pattern\n" + "  File in_file\n" + "  command {\n"
+                + "    grep '${pattern}' ${in_file} | wc -l\n" + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n"
+                + "}\n" + "\n" + "task wc {\n" + "  File in_file\n" + "  command {\n" + "    cat ${in_file} | wc -l\n" + "  }\n"
+                + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n" + "}\n" + "\n" + "workflow three_step {\n"
+                + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "  call wc {\n"
+                + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
         wdlBridge.setSecondaryFiles(secondaryFiles);
         try {
             wdlBridge.validateWorkflow(sourceFile.getAbsolutePath());
@@ -173,7 +173,7 @@ public class CromwellIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
         LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, DescriptorLanguage.WDL)
-                .orElseThrow(RuntimeException::new);
+            .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("hello_world.json"));
         // run a workflow
@@ -203,7 +203,7 @@ public class CromwellIT {
     public void testSnapAtacDag() {
         final File file = new File(ResourceHelpers.resourceFilePath("snap_atac.wdl"));
         final WdlBridge wdlBridge = new WdlBridge();
-        final LinkedHashMap<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(file.getAbsolutePath());
+        final Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(file.getAbsolutePath());
         Assert.assertEquals(5, callsToDependencies.size());
     }
 }

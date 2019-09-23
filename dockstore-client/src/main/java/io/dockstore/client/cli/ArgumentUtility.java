@@ -99,8 +99,7 @@ public final class ArgumentUtility {
     public static List<String> optVals(List<String> args, String key) {
         List<String> vals = new ArrayList<>();
 
-        for (int i = 0; i < args.size(); /* do nothing */
-             i = i) {
+        for (int i = 0; i < args.size(); /* do nothing */) {
             String s = args.get(i);
             if (key.equals(s)) {
                 args.remove(i);

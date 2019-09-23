@@ -82,7 +82,8 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     @Override
     public String selectParameterFile() {
         // Decide on which parameter file to use (JSON takes precedence)
-        boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)));
+        boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile == null) == (
+            jsonParameterFile != null)));
         if (!hasRequiredFlags) {
             errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
         }
@@ -186,7 +187,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         Pattern callPattern = Pattern.compile("(.*)(call)(.*)");
         Pattern outputPattern = Pattern.compile("(.*)(output)(.*)");
         boolean wfFound = false, commandFound = false, outputFound = false, callFound = false;
-        Integer counter = 0;
+        int counter = 0;
         String missing = "Required fields that are missing from WDL file :";
         Path p = Paths.get(content.getPath());
         //go through each line of the file content and find the word patterns as described above
@@ -255,8 +256,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         if (json) {
             WdlBridge wdlBridge = new WdlBridge();
             try {
-                String parameterFile = wdlBridge.getParameterFile(primaryFile.getAbsolutePath());
-                return parameterFile;
+                return wdlBridge.getParameterFile(primaryFile.getAbsolutePath());
             } catch (WdlParser.SyntaxError ex) {
                 throw new IOException(ex.getMessage());
             }

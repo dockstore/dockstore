@@ -155,6 +155,13 @@ public class Validation implements Comparable<Validation> {
 
     @Override
     public boolean equals(Object obj) {
-        return Objects.equals(((Validation)obj).getType(), getType());
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof Validation)) {
+            return false;
+        }
+        Validation validation = (Validation)obj;
+        return Objects.equals(validation.getType(), getType());
     }
 }

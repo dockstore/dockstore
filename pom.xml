@@ -888,6 +888,9 @@
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
                         <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <includeTestResources>true</includeTestResources>
+                        <includeResources>true</includeResources>
                     </configuration>
                 </plugin>
                 <plugin>

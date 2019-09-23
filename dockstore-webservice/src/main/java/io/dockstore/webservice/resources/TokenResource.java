@@ -172,9 +172,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/quay.io")
-    @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
-            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
-                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access token.", HttpStatus.SC_BAD_REQUEST);
@@ -238,9 +236,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/gitlab.com")
-    @ApiOperation(value = "Add a new gitlab.com token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
-            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
-                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new gitlab.com token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGitlabToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                 JSON_FACTORY, new GenericUrl(GITLAB_URL + "oauth/token"),

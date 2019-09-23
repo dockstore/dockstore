@@ -46,7 +46,7 @@ import static io.dockstore.common.CommonTestUtilities.checkToolList;
 @Category({ ToolTest.class })
 public class ClientIT extends BaseIT {
 
-    private final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
+    private static final String FIRST_TOOL = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -166,8 +166,7 @@ public class ClientIT extends BaseIT {
             "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
 
         // verify DB
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from container where name = 'bd2k-python-lib'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from container where name = 'bd2k-python-lib'", long.class);
         Assert.assertEquals("should see three entries", 5, count);
     }
 
@@ -190,16 +189,16 @@ public class ClientIT extends BaseIT {
     public void launchingCWLWorkflow() throws IOException {
         final String firstWorkflowCWL = ResourceHelpers.resourceFilePath("1st-workflow.cwl");
         final String firstWorkflowJSON = ResourceHelpers.resourceFilePath("1st-workflow-job.json");
-        Client.main(
-            new String[] { "--script", "--config", TestUtility.getConfigFileLocation(true), "workflow", "launch", "--local-entry", firstWorkflowCWL,
-                "--json", firstWorkflowJSON });
+        Client.main(new String[] { "--script", "--config", TestUtility.getConfigFileLocation(true), "workflow", "launch", "--local-entry",
+            firstWorkflowCWL, "--json", firstWorkflowJSON });
     }
 
     @Test
     @Category(ToilCompatibleTest.class)
     public void launchingCWLToolWithRemoteParameters() throws IOException {
         Client.main(
-            new String[] { "--script", "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
+            new String[] { "--script", "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", FIRST_TOOL,
+                "--json",
                 "https://raw.githubusercontent.com/dockstore/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
     }
 
@@ -227,11 +226,14 @@ public class ClientIT extends BaseIT {
     /**
      * Tests the 'dockstore deps' command with a client version and python 3 version
      * Passes if the returned result contains 'avro-cwl' as its dependency and the other common dependencies
+     *
      * @throws IOException
      */
     @Test
     public void testDepsCommandWithVersionAndPython3() throws IOException {
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.7.0", "--python-version", "3"});
+        Client.main(
+            new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.7.0", "--python-version",
+                "3" });
         Assert.assertFalse(systemOutRule.getLog().contains("monotonic=="));
         assertDepsCommandOutput();
     }
@@ -239,19 +241,21 @@ public class ClientIT extends BaseIT {
     /**
      * Tests the 'dockstore deps' command with an unrecognized runner
      * Passes if there was an error and log message
+     *
      * @throws IOException
      */
     @Test
     @Ignore("Ignored until there are more than one runner.")
     public void testDepsCommandWithUnknownRunners() throws IOException {
         systemExit.expectSystemExitWithStatus(API_ERROR);
-        systemExit.checkAssertionAfterwards(()->Assert.assertTrue(systemOutRule.getLog().contains("Could not get runner dependencies")));
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--runner", "cromwell"});
+        systemExit.checkAssertionAfterwards(() -> Assert.assertTrue(systemOutRule.getLog().contains("Could not get runner dependencies")));
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--runner", "cromwell" });
     }
 
     /**
      * Tests the 'dockstore deps' command with default and no additional flag
      * Passes if the returned result contains 'avro' as its dependency and the other common dependencies
+     *
      * @throws IOException
      */
     @Test
@@ -264,6 +268,7 @@ public class ClientIT extends BaseIT {
     /**
      * Tests the 'dockstore deps --help' command.
      * Passes if it contains the right title
+     *
      * @throws IOException
      */
     @Test

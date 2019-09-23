@@ -360,6 +360,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <!-- disable to expand checkstyle to integration-testing -->
+                    <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>

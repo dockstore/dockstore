@@ -549,10 +549,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     author = "";
                 }
 
-                String date = "";
-                if (lastUpdated != null) {
-                    date = lastUpdated.toString();
-                }
+                String date = lastUpdated.toString();
 
                 out(workflow.getPath());
                 out("");
@@ -648,10 +645,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     publish(true, entryPath);
                 }
             } else {
-                if (newName != null) {
-                    //for workflows method currently doesn't work with --entryname flag
-                    errorMessage("Parameter '--entryname' not valid for workflows. See `workflow publish --help` for more information.", CLIENT_ERROR);
-                }
+                //for workflows method currently doesn't work with --entryname flag
+                errorMessage("Parameter '--entryname' not valid for workflows. See `workflow publish --help` for more information.", CLIENT_ERROR);
             }
         }
     }

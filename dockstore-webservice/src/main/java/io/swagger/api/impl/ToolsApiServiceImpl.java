@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -529,22 +528,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
                 }
             default:
-                Set<String> primaryDescriptors = new HashSet<>();
                 String path;
                 // figure out primary descriptors and use them if no relative path is specified
                 if (entry instanceof Tool) {
                     if (type == DOCKSTORE_WDL) {
                         path = ((Tag)entryVersion.get()).getWdlPath();
-                        primaryDescriptors.add(path);
                     } else if (type == DOCKSTORE_CWL) {
                         path = ((Tag)entryVersion.get()).getCwlPath();
-                        primaryDescriptors.add(path);
                     } else {
                         return Response.status(Status.NOT_FOUND).build();
                     }
                 } else {
                     path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
-                    primaryDescriptors.add(path);
                 }
                 String searchPath;
                 if (relativePath != null) {
@@ -567,9 +562,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
                             .prependIfMissing(relativize.toString(), "/");
                     ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
-                    if (toolDescriptor == null) {
-                        return Response.status(Status.NOT_FOUND).build();
-                    }
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }
