@@ -30,7 +30,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
+
         <dropwizard.version>1.3.14</dropwizard.version>
+        <dockstore-client.version>1.7.0-rc.1</dockstore-client.version>
+
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
         <swagger-annotations-version>1.5.23</swagger-annotations-version>
         <openapi-annotations-version>2.0.9</openapi-annotations-version>
@@ -58,7 +61,6 @@
         <cromwell.version>41</cromwell.version>
 
         <skipTests>false</skipTests>
-        <skipClientITs>true</skipClientITs>
         <skipITs>true</skipITs>
     </properties>
 
@@ -150,19 +152,16 @@
 
     <modules>
         <module>dockstore-common</module>
-        <module>dockstore-file-plugin-parent</module>
         <module>dockstore-language-plugin-parent</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
         <module>openapi-java-client</module>
         <module>swagger-java-quay-client</module>
         <module>swagger-java-bitbucket-client</module>
-        <module>dockstore-client</module>
         <module>swagger-java-sam-client</module>
         <module>dockstore-integration-testing</module>
         <module>dockstore-event-consumer</module>
         <module>reports</module>
-        <module>openapi-java-wes-client</module>
         <module>swagger-java-discourse-client</module>
         <module>swagger-java-zenodo-client</module>
     </modules>
@@ -971,6 +970,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire.version}</version>
                     <configuration>
+                        <reportFormat>plain</reportFormat>
                         <excludedGroups>${excludeGroups}</excludedGroups>
                         <skipTests>${skipTests}</skipTests>
                         <!-- enforce that tests should be independent -->
@@ -984,6 +984,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-failsafe.version}</version>
                     <configuration>
+                        <reportFormat>plain</reportFormat>
                         <excludedGroups>${excludeGroups}</excludedGroups>
                         <!-- enforce that tests should be independent -->
                         <runOrder>random</runOrder>
@@ -1262,7 +1263,7 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest
+                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest
                 </excludeGroups>
             </properties>
 
@@ -1286,21 +1287,11 @@
             </build>
         </profile>
         <profile>
-            <id>toil-integration-tests</id>
-            <!-- run only tests that are relevant for toil (tests that use cwltool, cwlrunner, toil -->
-            <properties>
-                <skipTests>true</skipTests>
-                <skipITs>false</skipITs>
-                <groups>io.dockstore.common.ToilCompatibleTest,io.dockstore.common.ToilOnlyTest</groups>
-            </properties>
-        </profile>
-        <profile>
             <id>regression-integration-tests</id>
             <!-- run only regression tests-->
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <skipClientITs>true</skipClientITs>
                 <groups>io.dockstore.common.RegressionTest</groups>
             </properties>
         </profile>
@@ -1311,7 +1302,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.WorkflowTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1321,16 +1312,16 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.ToolTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
-            <id>other-integration-tests</id>
+            <id>integration-tests</id>
             <!-- Only run integration tests not related to only tools or workflows. This is a catch all. -->
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1348,7 +1339,6 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <skipClientITs>true</skipClientITs>
             </properties>
             <build>
                 <plugins>
@@ -1368,16 +1358,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
-            <id>integration-tests</id>
-            <!-- run all integration tests -->
-            <properties>
-                <skipTests>true</skipTests>
-                <skipITs>false</skipITs>
-                <skipClientITs>false</skipClientITs>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest,io.dockstore.common.NonConfidentialTest</excludeGroups>
-            </properties>
         </profile>
         <profile>
             <id>coverage</id>

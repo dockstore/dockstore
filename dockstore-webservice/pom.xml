@@ -1043,6 +1043,7 @@
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
                     <outputFormat>YAML</outputFormat>
                     <openapiFilePath>${project.basedir}/src/main/resources/configurationFilePath.yaml</openapiFilePath>
+                    <prettyPrint>true</prettyPrint>
                     <resourcePackages>
                         <package>io.swagger.api</package>
                         <package>io.swagger.model</package>
