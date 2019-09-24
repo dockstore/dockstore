@@ -3923,6 +3923,22 @@ paths:
                 type: boolean
       security:
         - BEARER: []
+  /users/repositories:
+    get:
+      tags:
+        - users
+      summary: Get the all of the repositories accessible to the logged in user.
+      description: ""
+      operationId: getUserRepositories
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      security:
+        - BEARER: []
   /users/services/sync:
     post:
       tags:
@@ -4252,6 +4268,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+      security:
+        - BEARER: []
+  /users/workflows/sync:
+    post:
+      tags:
+        - users
+      summary: Adds and deletes workflows based on selected repositories.
+      description: ""
+      operationId: syncUserWorkflows
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+        description: New listing of repositories
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
       security:
         - BEARER: []
   "/users/{userId}":

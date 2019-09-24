@@ -43,6 +43,7 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -56,7 +57,9 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -548,6 +551,16 @@ public class UserResource implements AuthenticatedResourceInterface {
         return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).collect(Collectors.toList());
     }
 
+    /**
+     * Retrieve a list of all existing BioWorkflows the user owns that are from the given token source registry
+     * @param user
+     * @param tokenSource
+     * @return List of bioworkflows
+     */
+    private List<Workflow> getWorkflowsFromRegistry(User user, String tokenSource) {
+        return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).filter(workflow -> Objects.equals(workflow.getSourceControl().toString(), tokenSource)).collect(Collectors.toList());
+    }
+
     @GET
     @Path("/{userId}/services")
     @Timed
@@ -727,14 +740,74 @@ public class UserResource implements AuthenticatedResourceInterface {
         return getStrippedServices(userDAO.findById(user.getId()));
     }
 
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/workflows/sync")
+    @Operation(operationId = "syncUserWorkflows")
+    @ApiOperation(value = "Adds and deletes workflows based on selected repositories.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> syncUserWorkflows(@ApiParam(hidden = true) @Auth User authUser,
+                                            @ApiParam(value = "New listing of repositories", required = true) Map<String, List<String>> registryToRepositories) {
+        User foundUser = userDAO.findById(authUser.getId());
+
+        // Get all of the users source control tokens
+        List<Token> scTokens = workflowResource.checkOnBitbucketToken(foundUser)
+                .stream()
+                .filter(token -> token.getTokenSource().isSourceControlToken())
+                .collect(Collectors.toList());
+
+        // For each registry, update the repositories as workflows
+        for (Token token : scTokens) {
+            SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+            final String tokenSource = token.getTokenSource().toString();
+            if (registryToRepositories.containsKey(tokenSource)) {
+                List<String> repos = registryToRepositories.get(tokenSource);
+
+                // Get all workflows for the given token that are not listed in body
+                List<Workflow> existingWorkflowsForRegistryToDelete =  getWorkflowsFromRegistry(foundUser, tokenSource).stream()
+                        .filter(workflow -> !repos.contains(workflow.getOrganization() + "/" + workflow.getRepository())).collect(Collectors.toList());
+
+                for (Workflow workflowToDelete : existingWorkflowsForRegistryToDelete) {
+                    // Only delete stub workflows for now
+                    if (Objects.equals(workflowToDelete.getMode(), WorkflowMode.STUB)) {
+                        elasticManager.handleIndexUpdate(workflowToDelete, ElasticMode.DELETE);
+                        workflowDAO.delete(workflowToDelete);
+                    }
+                }
+
+                // Add repositories as workflows if they do not already exist
+                LOG.info("Adding workflows for registry " + tokenSource);
+                for (String repository : repos) {
+                    String gitUrl = "git@" + token.getTokenSource().toString() + ":" + repository + ".git";
+                    LOG.info("Adding " + gitUrl);
+
+                    // Create a workflow stub object if necessary
+                    final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
+                    if (existingWorkflow.isEmpty()) {
+                        final Workflow createdWorkflow = sourceCodeRepo.createStubBioworkflow(repository);
+                        if (createdWorkflow != null) {
+                            final long workflowID = workflowDAO.create(createdWorkflow);
+                            final Workflow workflowFromDB = workflowDAO.findById(workflowID);
+                            workflowFromDB.getUsers().add(foundUser);
+                        }
+                    }
+                }
+            }
+        }
+
+        List<Workflow> finalWorkflows = getWorkflows(foundUser);
+        bulkUpsertWorkflows(foundUser);
+        return finalWorkflows;
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/user/repositories")
+    @Path("/repositories")
     @Operation(operationId = "getUserRepositories")
     @ApiOperation(nickname = "getUserRepositories", value = "Get the all of the repositories accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public Map<String, List> getUserRepositories(@ApiParam(hidden = true) @Auth User user) {
-        User foundUser = userDAO.findById(user.getId());
+    public Map<String, List> getUserRepositories(@ApiParam(hidden = true) @Auth User authUser) {
+        User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
         List<Token> scTokens = tokenDAO.findByUserId(foundUser.getId())
@@ -746,9 +819,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         Map<String, List> registryToRepositoryList = new HashMap<>();
         for (Token token : scTokens) {
             SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token, client);
-            final Map<String, String> workflowGitUrl2Name = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-            LOG.info(workflowGitUrl2Name.toString());
-            registryToRepositoryList.put(token.getTokenSource().toString(), new ArrayList(workflowGitUrl2Name.values()));
+            final Map<String, String> repositoryUrlToName = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+            registryToRepositoryList.put(token.getTokenSource().toString(), new ArrayList(repositoryUrlToName.values()));
         }
 
         return registryToRepositoryList;
