@@ -43,7 +43,6 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
-import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -64,6 +63,7 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.WorkflowWizardEntry;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -743,10 +743,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/workflows/sync")
-    @Operation(operationId = "syncUserWorkflows")
+    @Path("/workflows/bulkUpdate")
+    @Operation(operationId = "bulkWorkflowUpdate")
     @ApiOperation(value = "Adds and deletes workflows based on selected repositories.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> syncUserWorkflows(@ApiParam(hidden = true) @Auth User authUser,
+    public List<Workflow> bulkWorkflowUpdate(@ApiParam(hidden = true) @Auth User authUser,
                                             @ApiParam(value = "New listing of repositories", required = true) Map<String, List<String>> registryToRepositories) {
         User foundUser = userDAO.findById(authUser.getId());
 
@@ -765,13 +765,16 @@ public class UserResource implements AuthenticatedResourceInterface {
 
                 // Get all workflows for the given token that are not listed in body
                 List<Workflow> existingWorkflowsForRegistryToDelete =  getWorkflowsFromRegistry(foundUser, tokenSource).stream()
-                        .filter(workflow -> !repos.contains(workflow.getOrganization() + "/" + workflow.getRepository())).collect(Collectors.toList());
+                        .filter(workflow -> !repos.contains(workflow.getOrganization() + "/" + workflow.getRepository()) && workflow.getWorkflowName() == null).collect(Collectors.toList());
 
                 for (Workflow workflowToDelete : existingWorkflowsForRegistryToDelete) {
                     // Only delete stub workflows for now
                     if (Objects.equals(workflowToDelete.getMode(), WorkflowMode.STUB)) {
+                        LOG.info("Deleting " + workflowToDelete.getWorkflowPath());
                         elasticManager.handleIndexUpdate(workflowToDelete, ElasticMode.DELETE);
                         workflowDAO.delete(workflowToDelete);
+                    } else {
+                        LOG.info("Leaving " + workflowToDelete.getWorkflowPath() + " since it cannot be deleted.");
                     }
                 }
 
@@ -805,8 +808,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork(readOnly = true)
     @Path("/repositories")
     @Operation(operationId = "getUserRepositories")
-    @ApiOperation(nickname = "getUserRepositories", value = "Get the all of the repositories accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public Map<String, List> getUserRepositories(@ApiParam(hidden = true) @Auth User authUser) {
+    @ApiOperation(nickname = "getUserRepositories", value = "Get the all of the repositories accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowWizardEntry.class, responseContainer = "Map[String, List]")
+    public Map<String, List<WorkflowWizardEntry>> getUserRepositories(@ApiParam(hidden = true) @Auth User authUser) {
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
@@ -816,11 +819,35 @@ public class UserResource implements AuthenticatedResourceInterface {
                 .collect(Collectors.toList());
 
         // For each token, grab all repositories
-        Map<String, List> registryToRepositoryList = new HashMap<>();
+        Map<String, List<WorkflowWizardEntry>> registryToRepositoryList = new HashMap<>();
         for (Token token : scTokens) {
+            final String tokenSource = token.getTokenSource().toString();
             SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+
+            // Find all repositories the user has access to
             final Map<String, String> repositoryUrlToName = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-            registryToRepositoryList.put(token.getTokenSource().toString(), new ArrayList(repositoryUrlToName.values()));
+            final List<String> repositories = new ArrayList(repositoryUrlToName.values());
+
+            // Find all repositories a user has access to that have a corresponding workflow in Dockstore
+            List<Workflow> existingWorkflowsInList =  getWorkflowsFromRegistry(foundUser, tokenSource).stream()
+                    .filter(workflow -> repositories.contains(workflow.getOrganization() + "/" + workflow.getRepository()) && workflow.getWorkflowName() == null).collect(Collectors.toList());
+
+            // Create list with triples of repository, exists on Dockstore, can remove from Dockstore
+            List<WorkflowWizardEntry> workflowList = new ArrayList<>();
+            for (String wf : repositories) {
+                Optional<Workflow> existingWorkflow = existingWorkflowsInList.stream().filter(workflow -> Objects.equals(wf, workflow.getOrganization() + "/" + workflow.getRepository())).findFirst();
+                Boolean exists = existingWorkflow.isPresent();
+                Boolean canRemove = true;
+                if (existingWorkflow.isPresent()) {
+                    if (existingWorkflow.get().getIsPublished()) {
+                        canRemove = false;
+                    }
+                }
+                workflowList.add(new WorkflowWizardEntry(wf, exists, canRemove));
+            }
+
+
+            registryToRepositoryList.put(token.getTokenSource().toString(), workflowList);
         }
 
         return registryToRepositoryList;

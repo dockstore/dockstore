@@ -2559,6 +2559,27 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+  /users/username/{username}:
+    get:
+      operationId: listUser
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
   /users/user/memberships:
     get:
       operationId: getUserMemberships
@@ -3142,9 +3163,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-  /users/workflows/sync:
+  /users/workflows/bulkUpdate:
     post:
-      operationId: syncUserWorkflows
+      operationId: bulkWorkflowUpdate
       requestBody:
         content:
           '*/*':
@@ -3177,28 +3198,7 @@ paths:
                 additionalProperties:
                   type: array
                   items:
-                    type: object
-  /users/username/{username}:
-    get:
-      operationId: listUser
-      parameters:
-      - name: username
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
+                    $ref: '#/components/schemas/WorkflowWizardEntry'
   /workflows/{workflowId}/publish:
     post:
       operationId: publish_1
@@ -4552,6 +4552,31 @@ paths:
           content:
             application/json: {}
             text/plain: {}
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile:
+    get:
+      operationId: toolsIdVersionsVersionIdContainerfileGet
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files:
     get:
       operationId: toolsIdVersionsVersionIdTypeFilesGet
@@ -4721,31 +4746,6 @@ paths:
         required: true
         schema:
           type: string
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
-  /api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile:
-    get:
-      operationId: toolsIdVersionsVersionIdContainerfileGet
-      parameters:
       - name: id
         in: path
         required: true
@@ -5496,6 +5496,8 @@ components:
         registry:
           type: integer
           format: int32
+        custom_docker_registry_path:
+          type: string
         tool_path:
           type: string
         default_cwl_path:
@@ -5507,8 +5509,6 @@ components:
         defaultCWLTestParameterFile:
           type: string
         defaultWDLTestParameterFile:
-          type: string
-        custom_docker_registry_path:
           type: string
         checker_id:
           type: integer
@@ -6058,6 +6058,15 @@ components:
         hostedEntryVersionLimit:
           type: integer
           format: int32
+    WorkflowWizardEntry:
+      type: object
+      properties:
+        repository:
+          type: string
+        exists:
+          type: boolean
+        canDelete:
+          type: boolean
     Permission:
       type: object
       properties:

@@ -3936,7 +3936,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/WorkflowWizardEntry"
       security:
         - BEARER: []
   /users/services/sync:
@@ -4270,13 +4270,13 @@ paths:
                 $ref: "#/components/schemas/User"
       security:
         - BEARER: []
-  /users/workflows/sync:
+  /users/workflows/bulkUpdate:
     post:
       tags:
         - users
       summary: Adds and deletes workflows based on selected repositories.
       description: ""
-      operationId: syncUserWorkflows
+      operationId: bulkWorkflowUpdate
       requestBody:
         content:
           application/json:
@@ -8095,3 +8095,12 @@ components:
             - KUBERNETES
             - HELM
       description: This describes one workflow version associated with a workflow.
+    WorkflowWizardEntry:
+      type: object
+      properties:
+        repository:
+          type: string
+        exists:
+          type: boolean
+        canDelete:
+          type: boolean
