@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -155,6 +157,22 @@ public final class ZenodoHelper {
         putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
+
+        Object links = publishedDeposit.getLinks();
+        String conceptDoiUrl = (String)((LinkedHashMap)links).get("conceptdoi");
+        String conceptDoi = conceptDoiUrl;
+
+        // Remove the 'https://doi.org/' etc. prefix from the concept DOI
+        // e.g. https://doi.org/10.5072/zenodo.372767
+        try {
+            URI uri = new URI(conceptDoiUrl);
+            String[] segments = uri.getPath().split("/");
+            conceptDoi = segments[segments.length - 2] + "/" + segments[segments.length - 1];
+        } catch (URISyntaxException e) {
+            LOG.error("Could not extract workflow DOI. Error is " + e.getMessage(), e);
+        }
+
+        workflow.setConceptDoi(conceptDoi);
 
         workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
     }
