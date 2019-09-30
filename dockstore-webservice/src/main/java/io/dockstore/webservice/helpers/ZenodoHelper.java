@@ -200,8 +200,8 @@ public final class ZenodoHelper {
         String doi = doiUrl;
         try {
             URI uri = new URI(doiUrl);
-            String[] segments = uri.getPath().split("/");
-            doi = segments[segments.length - 2] + "/" + segments[segments.length - 1];
+            doi = StringUtils.stripStart(uri.getPath(), "/");
+
         } catch (URISyntaxException e) {
             LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);
         }
