@@ -160,17 +160,8 @@ public final class ZenodoHelper {
 
         Object links = publishedDeposit.getLinks();
         String conceptDoiUrl = (String)((LinkedHashMap)links).get("conceptdoi");
-        String conceptDoi = conceptDoiUrl;
 
-        // Remove the 'https://doi.org/' etc. prefix from the concept DOI
-        // e.g. https://doi.org/10.5072/zenodo.372767
-        try {
-            URI uri = new URI(conceptDoiUrl);
-            String[] segments = uri.getPath().split("/");
-            conceptDoi = segments[segments.length - 2] + "/" + segments[segments.length - 1];
-        } catch (URISyntaxException e) {
-            LOG.error("Could not extract workflow DOI. Error is " + e.getMessage(), e);
-        }
+        String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
 
         workflow.setConceptDoi(conceptDoi);
 
@@ -200,6 +191,25 @@ public final class ZenodoHelper {
                 workflowUrl, workflow, workflowVersion, doiAlias);
     }
 
+
+    /**
+     * extract a digital object identifier (DOI) from a DOI target URL
+     * @param doiUrl digital object identifier
+     * @return the DOI as a string
+     */
+    private static String extractDoiFromDoiUrl(String doiUrl) {
+        // Remove the 'https://doi.org/' etc. prefix from the DOI
+        // e.g. https://doi.org/10.5072/zenodo.372767
+        String doi = doiUrl;
+        try {
+            URI uri = new URI(doiUrl);
+            String[] segments = uri.getPath().split("/");
+            doi = segments[segments.length - 2] + "/" + segments[segments.length - 1];
+        } catch (URISyntaxException e) {
+            LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);
+        }
+        return doi;
+    }
 
     /**
      * Create a workflow alias that uses a digital object identifier
