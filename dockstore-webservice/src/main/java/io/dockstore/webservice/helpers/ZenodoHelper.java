@@ -13,7 +13,6 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -195,7 +194,7 @@ public final class ZenodoHelper {
      * @param doiUrl digital object identifier
      * @return the DOI as a string
      */
-    private static String extractDoiFromDoiUrl(String doiUrl) {
+    protected static String extractDoiFromDoiUrl(String doiUrl) {
         // Remove the 'https://doi.org/' etc. prefix from the DOI
         // e.g. https://doi.org/10.5072/zenodo.372767
         String doi = doiUrl;
