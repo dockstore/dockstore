@@ -562,6 +562,10 @@ definitions:
         type: integer
       links:
         type: object
+        additionalProperties:
+          type: string
+        example:
+          conceptdoi: https://doi.org/10.5281/zenodo.705645
       metadata:
         $ref: '#/definitions/DepositMetadata'
       modified:

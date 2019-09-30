@@ -128,8 +128,7 @@ public final class ZenodoHelper {
                 // The response body of this action is NOT the new version deposit,
                 // but the original resource. The new version deposition can be
                 // accessed through the "latest_draft" under "links" in the response body.
-                Object links = returnDeposit.getLinks();
-                String depositURL = (String)((LinkedHashMap)links).get("latest_draft");
+                String depositURL = returnDeposit.getLinks().get("latest_draft");
                 String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
                 // Get the deposit object for the new workflow version DOI
                 depositionID = Integer.parseInt(depositionIDStr);
@@ -158,8 +157,7 @@ public final class ZenodoHelper {
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
-        Object links = publishedDeposit.getLinks();
-        String conceptDoiUrl = (String)((LinkedHashMap)links).get("conceptdoi");
+        String conceptDoiUrl = publishedDeposit.getLinks().get("conceptdoi");
 
         String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
 
