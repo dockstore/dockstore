@@ -20,13 +20,13 @@
                    context="1.8.0">
     <changeSet author="waltershands (generated)" id="supportconceptDOI">
         <addColumn tableName="service">
-            <column name="conceptdoi" type="varchar(255 BYTE)"/>
+            <column name="conceptdoi" type="varchar(255)"/>
         </addColumn>
         <addColumn tableName="tool">
-            <column name="conceptdoi" type="varchar(255 BYTE)"/>
+            <column name="conceptdoi" type="varchar(255)"/>
         </addColumn>
         <addColumn tableName="workflow">
-            <column name="conceptdoi" type="varchar(255 BYTE)"/>
+            <column name="conceptdoi" type="varchar(255)"/>
         </addColumn>
     </changeSet>
    </databaseChangeLog>
