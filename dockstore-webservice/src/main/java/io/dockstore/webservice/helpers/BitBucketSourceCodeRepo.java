@@ -240,7 +240,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    String getCommitID(String repositoryId, Version version) {
+    protected String getCommitID(String repositoryId, Version version) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             Branch branch = refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(repositoryId.split("/")[0], version.getReference(),

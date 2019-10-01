@@ -295,7 +295,8 @@ public class WDLHandler implements LanguageHandlerInterface {
         }
 
         for (String importPath : currentFileImports) {
-            if (!imports.containsKey(importPath)) {
+            final String path = path(currentFilePath, importPath);
+            if (!imports.containsKey(path)) {
                 SourceFile importFile = new SourceFile();
                 String absoluteImportPath = convertRelativePathToAbsolutePath(currentFilePath, importPath);
 
@@ -305,14 +306,23 @@ public class WDLHandler implements LanguageHandlerInterface {
                     continue;
                 }
                 importFile.setContent(fileResponse);
-                importFile.setPath(importPath);
+                importFile.setPath(path);
                 importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
                 importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(importFile.getPath(), importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
             }
+
         }
         return imports;
+    }
+
+    private String path(String importingFile, String importedFile) {
+        final int index = importingFile.lastIndexOf('/');
+        if (index <= 1) {
+            return importedFile;
+        }
+        return importingFile.substring(1, index + 1) + importedFile;
     }
 
     /**

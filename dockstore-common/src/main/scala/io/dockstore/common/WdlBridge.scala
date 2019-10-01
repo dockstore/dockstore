@@ -306,7 +306,7 @@ class WdlBridge {
     val factory = getLanguageFactory(content)
     val filePathObj = DefaultPathBuilder.build(filePath).get
     // Resolve from mapping, local filesystem, or http import
-    val mapResolver = MapResolver()
+    val mapResolver = MapResolver("")
     mapResolver.setSecondaryFiles(secondaryWdlFiles)
     lazy val importResolvers: List[ImportResolver] =
       DirectoryResolver.localFilesystemResolvers(Some(filePathObj)) :+ HttpResolver(relativeTo = None) :+ mapResolver
@@ -350,7 +350,7 @@ class WdlBridge {
 /**
   * Class for resolving imports defined in memory (mapping of path to content)
   */
-case class MapResolver() extends ImportResolver {
+case class MapResolver(filePath: String) extends ImportResolver {
   var secondaryWdlFiles = new util.HashMap[String, String]()
 
   def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]): Unit = {
@@ -360,10 +360,36 @@ case class MapResolver() extends ImportResolver {
   override def name: String = "Map importer"
 
   override protected def innerResolver(path: String, currentResolvers: List[ImportResolver]): Checked[ImportResolver.ResolvedImportBundle] = {
+
+    /**
+      * Let's say /main.wdl imports /sub1/sub1.wdl, which in turn imports /sub1/sub2.wdl. sub1.wdl's import statement will be
+      * `import sub2.wdl`, i.e., the import will be relative to sub1.wdl.
+      *
+      * At the top level, secondaryFiles map will have these keys:
+      *
+      * sub1/sub1.wdl
+      * sub1/sub2.wdl
+      *
+      * When looking up sub2.wdl, calculate it relative to sub1.wdl
+      * @param importPath
+      * @return
+      */
+    def calcImportRelativeToFilePath(importPath: String): String = {
+      if (!this.filePath.isEmpty && !importPath.startsWith("/")) {
+        val index = this.filePath.lastIndexOf('/')
+        if (index > 0) this.filePath.substring(0, index + 1) + importPath else importPath
+      }
+      else importPath
+    }
     val importPath = path.replaceFirst("file://", "")
-    val content = secondaryWdlFiles.get(importPath)
+    val relativeImportPath = calcImportRelativeToFilePath(importPath)
+    val content = secondaryWdlFiles.get(relativeImportPath)
     val updatedResolvers = currentResolvers map {
-      case d if d == this => MapResolver()
+      case resolver if resolver == this => {
+        val mapResolver = MapResolver(relativeImportPath)
+        mapResolver.setSecondaryFiles(secondaryWdlFiles)
+        mapResolver
+      }
       case other => other
     }
     ResolvedImportBundle(content, updatedResolvers).validNelCheck

@@ -176,7 +176,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    String getCommitID(String repositoryId, Version version) {
+    protected String getCommitID(String repositoryId, Version version) {
         //TODO: optimize here for gitlab by returning actual sha1
         return null;
     }
