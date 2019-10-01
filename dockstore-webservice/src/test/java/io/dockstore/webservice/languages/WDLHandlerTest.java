@@ -116,7 +116,7 @@ public class WDLHandlerTest {
         Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
 
         final BioWorkflow entry = new BioWorkflow();
-        wdlHandler.parseWorkflowContent(entry, "/", content, new HashSet<>(map.values()), null);
+        wdlHandler.parseWorkflowContent(entry, "/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), null);
         Assert.assertEquals("Christopher Whelan", entry.getAuthor());
     }
 

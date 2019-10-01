@@ -30,6 +30,7 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.LanguageClientFactory;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.AbsolutePathResolver;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.WDLFileProvisioning;
@@ -67,7 +68,7 @@ public class CromwellIT {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         WdlBridge wdlBridge = new WdlBridge();
         try {
-            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath());
+            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath(), "wdl.wdl");
             Assert.assertTrue(inputs.contains("three_step.cgrep.pattern"));
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("There should not be any parsing errors");
@@ -116,7 +117,7 @@ public class CromwellIT {
         WdlBridge wdlBridge = new WdlBridge();
         Map<String, String> wdlInputs = null;
         try {
-            wdlInputs = wdlBridge.getInputFiles(workflowFile.getAbsolutePath());
+            wdlInputs = wdlBridge.getInputFiles(workflowFile.getAbsolutePath(), "wdlfileprov.wdl");
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("Should not have any issue parsing file");
         }
@@ -158,7 +159,7 @@ public class CromwellIT {
                 + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
         wdlBridge.setSecondaryFiles(secondaryFiles);
         try {
-            wdlBridge.validateWorkflow(sourceFile.getAbsolutePath());
+            wdlBridge.validateWorkflow(sourceFile.getAbsolutePath(), "wdl-sanger-workflow.wdl");
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("Should not fail parsing file");
         }
@@ -189,7 +190,7 @@ public class CromwellIT {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
         WdlBridge wdlBridge = new WdlBridge();
         try {
-            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath());
+            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath(), "hello_world.wdl");
             Assert.assertTrue(inputs.contains("wf.hello_world.hello_input"));
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("Should properly parse document");
@@ -203,7 +204,15 @@ public class CromwellIT {
     public void testSnapAtacDag() {
         final File file = new File(ResourceHelpers.resourceFilePath("snap_atac.wdl"));
         final WdlBridge wdlBridge = new WdlBridge();
-        final Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(file.getAbsolutePath());
+        final Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(file.getAbsolutePath(), "snap_atac.wdl");
         Assert.assertEquals(5, callsToDependencies.size());
+    }
+
+    @Test
+    public void testPathResolver() {
+        Assert.assertEquals("/module00a/Module00a.wdl", AbsolutePathResolver
+                .convertRelativePathToAbsolutePath("/GATKSVPipelineClinical.wdl", "module00a/Module00a.wdl"));
+        Assert.assertEquals("/a/importA.wdl", AbsolutePathResolver
+                .convertRelativePathToAbsolutePath("/parent/parent.wdl", "../a/importA.wdl"));
     }
 }
