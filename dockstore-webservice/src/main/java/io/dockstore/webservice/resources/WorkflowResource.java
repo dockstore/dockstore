@@ -120,6 +120,7 @@ import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
+import static io.dockstore.webservice.helpers.DAGHelper.cleanDAG;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -139,7 +140,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
-
 
     private final ElasticManager elasticManager;
     private final ToolDAO toolDAO;
@@ -1337,8 +1337,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
-                LanguageHandlerInterface.Type.DAG, toolDAO);
+            return cleanDAG(lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+                    LanguageHandlerInterface.Type.DAG, toolDAO));
         }
         return null;
     }
