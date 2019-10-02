@@ -25,19 +25,24 @@ import io.dockstore.webservice.core.dag.ElementsDefinition;
  * @author gluu
  * @since 2019-10-02
  */
-public class DAGHelper {
+public final class DAGHelper {
     private static final Gson GSON = new Gson();
+
+    private DAGHelper() {
+
+    }
 
     /**
      * This removes edges which have undefined nodes
-     * @param dag   The unclean DAG with edges that may have undefined nodes
-     * @return      The clean DAG without edges that have undefined nodes
+     *
+     * @param dag The unclean DAG with edges that may have undefined nodes
+     * @return The clean DAG without edges that have undefined nodes
      */
     public static String cleanDAG(String dag) {
         ElementsDefinition elementsDefinition = GSON.fromJson(dag, ElementsDefinition.class);
         Set<String> nodeIDs = elementsDefinition.nodes.stream().map(nodeDefinition -> nodeDefinition.data.id).collect(Collectors.toSet());
-        elementsDefinition.edges = elementsDefinition.edges.stream().filter(edgeDefinition -> nodeIDs.contains(edgeDefinition.data.source)).collect(
-                Collectors.toList());
+        elementsDefinition.edges = elementsDefinition.edges.stream().filter(edgeDefinition -> nodeIDs.contains(edgeDefinition.data.source))
+                .collect(Collectors.toList());
         return GSON.toJson(elementsDefinition);
     }
 }
