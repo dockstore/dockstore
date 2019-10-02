@@ -214,7 +214,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             InlineResponse2005 response;
             try {
                 response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
-                entry.setTopicId(response.getId().longValue());
+                entry.setTopicId(response.getTopicId().longValue());
             } catch (ApiException ex) {
                 String message = "Could not add a topic to the given entry.";
                 LOG.error(message, ex);
