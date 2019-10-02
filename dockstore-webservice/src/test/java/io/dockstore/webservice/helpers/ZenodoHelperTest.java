@@ -36,4 +36,12 @@ public class ZenodoHelperTest {
         String doi = ZenodoHelper.extractDoiFromDoiUrl(doiUrl);
         Assert.assertEquals("10.5072/zenodo.372767", doi);
     }
+
+    @Test
+    public void extractDoiFromBadDoiUrl() {
+        String doiUrl = "https://doi.org/blah/10.5072/zenodo.372767";
+        String doi = ZenodoHelper.extractDoiFromDoiUrl(doiUrl);
+        Assert.assertNotEquals("10.5072/zenodo.372767", doi);
+    }
+
 }
