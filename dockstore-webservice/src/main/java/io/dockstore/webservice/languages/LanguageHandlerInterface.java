@@ -106,12 +106,12 @@ public interface LanguageHandlerInterface {
      *
      * @param mainDescriptorPath   the path of the main descriptor
      * @param mainDescriptor       the content of the main descriptor
-     * @param secondaryDescContent the content of the secondary descriptors in a map, looks like file paths -> content
+     * @param secondarySourceFiles the content of the secondary descriptors in a map, looks like file paths -> content
      * @param type                 tools or DAG
      * @param dao                  used to retrieve information on tools
      * @return either a DAG or some form of a list of tools for a workflow
      */
-    String getContent(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
+    String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao);
 
     /**
      * Checks that the test parameter files are valid JSON or YAML

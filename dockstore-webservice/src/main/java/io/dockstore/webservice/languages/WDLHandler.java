@@ -305,7 +305,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     continue;
                 }
                 importFile.setContent(fileResponse);
-                importFile.setPath(path(currentFilePath, importPath));
+                importFile.setPath(relativePath(currentFilePath, importPath));
                 importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
                 importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(absoluteImportPath, importFile);
@@ -316,7 +316,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         return imports;
     }
 
-    private String path(String importingFile, String importedFile) {
+    private String relativePath(String importingFile, String importedFile) {
         final int index = importingFile.lastIndexOf('/');
         if (index <= 1) {
             return importedFile;
@@ -330,13 +330,13 @@ public class WDLHandler implements LanguageHandlerInterface {
      *
      * @param mainDescName         the name of the main descriptor
      * @param mainDescriptor       the content of the main descriptor
-     * @param secondaryDescContent the content of the secondary descriptors in a map, looks like file paths -> content
+     * @param secondarySourceFiles the content of the secondary descriptors in a map, looks like file paths -> content
      * @param type                 tools or DAG
      * @param dao                  used to retrieve information on tools
      * @return either a list of tools or a json map
      */
     @Override
-    public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent,
+    public String getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles,
             LanguageHandlerInterface.Type type, ToolDAO dao) {
         // Initialize general variables
         String callType = "call"; // This may change later (ex. tool, workflow)
@@ -352,7 +352,9 @@ public class WDLHandler implements LanguageHandlerInterface {
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
 
             WdlBridge wdlBridge = new WdlBridge();
-            wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+            final Map<String, String> pathToContentMap = secondarySourceFiles.stream()
+                    .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
+            wdlBridge.setSecondaryFiles(new HashMap<>(pathToContentMap));
 
             // Iterate over each call, grab docker containers
             // TODO -- mainDescName is probably not right!!!

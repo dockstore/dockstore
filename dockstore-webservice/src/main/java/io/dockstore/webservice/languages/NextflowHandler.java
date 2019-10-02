@@ -322,7 +322,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao) {
+    public String getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
 
@@ -337,7 +337,8 @@ public class NextflowHandler implements LanguageHandlerInterface {
         if (configuration.containsKey("manifest.mainScript")) {
             mainScriptPath = configuration.getString("manifest.mainScript");
         }
-        mainDescriptor = secondaryDescContent.get(mainScriptPath);
+        final String finalMainScriptPath = mainScriptPath;
+        mainDescriptor = secondarySourceFiles.stream().filter(sf -> sf.getPath().equals(finalMainScriptPath)).findFirst().map(sf -> sf.getContent()).orElseGet(() -> null);
 
         // Get default container (process.container takes precedence over params.container)
         String defaultContainer = null;
