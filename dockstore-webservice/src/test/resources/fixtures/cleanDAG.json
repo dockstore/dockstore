@@ -1,0 +1,94 @@
+{
+  "nodes": [
+    {
+      "data": {
+        "name": "PreAlign",
+        "run": "/aligner/u_of_michigan_aligner-checker/u_of_michigan_aligner_checker.wdl",
+        "id": "dockstore_PreAlign",
+        "type": "tool",
+        "tool": "https://hub.docker.com/_/docker_image",
+        "docker": "docker_image"
+      }
+    },
+    {
+      "data": {
+        "name": "checkerTask",
+        "run": "/aligner/u_of_michigan_aligner-checker/u_of_michigan_aligner_checker.wdl",
+        "id": "dockstore_checkerTask",
+        "type": "tool",
+        "tool": "https://hub.docker.com/_/docker_image",
+        "docker": "docker_image"
+      }
+    },
+    {
+      "data": {
+        "name": "Align",
+        "run": "/aligner/u_of_michigan_aligner-checker/u_of_michigan_aligner_checker.wdl",
+        "id": "dockstore_Align",
+        "type": "tool",
+        "tool": "https://hub.docker.com/_/docker_image",
+        "docker": "docker_image"
+      }
+    },
+    {
+      "data": {
+        "name": "PostAlign",
+        "run": "/aligner/u_of_michigan_aligner-checker/u_of_michigan_aligner_checker.wdl",
+        "id": "dockstore_PostAlign",
+        "type": "tool",
+        "tool": "https://hub.docker.com/_/docker_image",
+        "docker": "docker_image"
+      }
+    },
+    {
+      "data": {
+        "name": "UniqueBeginKey",
+        "id": "UniqueBeginKey"
+      }
+    },
+    {
+      "data": {
+        "name": "UniqueEndKey",
+        "id": "UniqueEndKey"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "data": {
+        "source": "UniqueBeginKey",
+        "target": "dockstore_PreAlign"
+      }
+    },
+    {
+      "data": {
+        "source": "dockstore_PreAlign",
+        "target": "dockstore_Align"
+      }
+    },
+    {
+      "data": {
+        "source": "dockstore_PreAlign",
+        "target": "dockstore_Align"
+      }
+    },
+    {
+      "data": {
+        "source": "dockstore_Align",
+        "target": "dockstore_PostAlign"
+      }
+    },
+    {
+      "data": {
+        "source": "dockstore_checkerTask",
+        "target": "UniqueEndKey"
+      }
+    },
+    {
+      "data": {
+        "source": "dockstore_PostAlign",
+        "target": "UniqueEndKey"
+      }
+    }
+  ]
+}
