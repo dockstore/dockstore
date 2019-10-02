@@ -166,6 +166,10 @@ class WdlBridge {
     outputList
   }
 
+  @throws(classOf[WdlParser.SyntaxError])
+  def getOutputFiles(filePath: String): util.List[String] = {
+    getOutputFiles(filePath, "/")
+  }
   /**
     * Create a mapping of import namespace to uri
     * Does not work with new parsing code, may be phased out
