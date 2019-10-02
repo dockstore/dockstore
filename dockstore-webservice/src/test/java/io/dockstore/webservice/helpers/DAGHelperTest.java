@@ -26,10 +26,16 @@ import static io.dropwizard.testing.FixtureHelpers.fixture;
  */
 public class DAGHelperTest {
 
+    /**
+     * Tests that a unclean DAG is converted to a clean one.
+     * Also tests that a clean DAG is unaffected.
+     */
     @Test
     public void cleanDAGTest() {
         String uncleanDAG = fixture("fixtures/uncleanDAG.json");
         String cleanDAG = DAGHelper.cleanDAG(uncleanDAG);
         Assert.assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanDAG.trim());
+        String cleanerDAG = DAGHelper.cleanDAG(cleanDAG);
+        Assert.assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanerDAG.trim());
     }
 }
