@@ -68,7 +68,7 @@ public class CromwellIT {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         WdlBridge wdlBridge = new WdlBridge();
         try {
-            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath(), "wdl.wdl");
+            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath(), "/wdl.wdl");
             Assert.assertTrue(inputs.contains("three_step.cgrep.pattern"));
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("There should not be any parsing errors");
@@ -117,7 +117,7 @@ public class CromwellIT {
         WdlBridge wdlBridge = new WdlBridge();
         Map<String, String> wdlInputs = null;
         try {
-            wdlInputs = wdlBridge.getInputFiles(workflowFile.getAbsolutePath(), "wdlfileprov.wdl");
+            wdlInputs = wdlBridge.getInputFiles(workflowFile.getAbsolutePath(), "/wdlfileprov.wdl");
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("Should not have any issue parsing file");
         }
@@ -159,7 +159,7 @@ public class CromwellIT {
                 + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
         wdlBridge.setSecondaryFiles(secondaryFiles);
         try {
-            wdlBridge.validateWorkflow(sourceFile.getAbsolutePath(), "wdl-sanger-workflow.wdl");
+            wdlBridge.validateWorkflow(sourceFile.getAbsolutePath(), "/wdl-sanger-workflow.wdl");
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("Should not fail parsing file");
         }
@@ -190,7 +190,7 @@ public class CromwellIT {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
         WdlBridge wdlBridge = new WdlBridge();
         try {
-            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath(), "hello_world.wdl");
+            String inputs = wdlBridge.getParameterFile(sourceFile.getAbsolutePath(), "/hello_world.wdl");
             Assert.assertTrue(inputs.contains("wf.hello_world.hello_input"));
         } catch (WdlParser.SyntaxError ex) {
             Assert.fail("Should properly parse document");

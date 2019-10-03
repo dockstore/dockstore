@@ -338,7 +338,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
             mainScriptPath = configuration.getString("manifest.mainScript");
         }
         final String finalMainScriptPath = mainScriptPath;
-        mainDescriptor = secondarySourceFiles.stream().filter(sf -> sf.getPath().equals(finalMainScriptPath)).findFirst().map(sf -> sf.getContent()).orElseGet(() -> null);
+        mainDescriptor = secondarySourceFiles.stream().filter(sf -> sf.getPath().equals(finalMainScriptPath)).findFirst().map(sf -> sf.getContent()).orElse(null);
 
         // Get default container (process.container takes precedence over params.container)
         String defaultContainer = null;
