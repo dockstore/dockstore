@@ -308,6 +308,7 @@ public class DAGWorkflowTestIT extends BaseIT {
      *
      * @throws ApiException
      */
+    @SuppressWarnings("checkstyle:EmptyCatchBlock")
     @Test
     public void testComplexImportWdlWorkflow() throws ApiException {
         // Input: /parent/parent.wdl
@@ -316,14 +317,14 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Return: DAG with 7 nodes
 
         try {
-            final List<String> strings = getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl", "test");
+            getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl", "test");
             fail("Invalid WDL somehow came back good");
         } catch (Exception ex) {
-
+            // Expect an exception to thrown
         }
-//        int countNode = countNodeInJSON(strings);
-//
-//        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-//        Assert.assertEquals("JSON should have 7 nodes", countNode, 7);
+        //        int countNode = countNodeInJSON(strings);
+        //
+        //        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        //        Assert.assertEquals("JSON should have 7 nodes", countNode, 7);
     }
 }
