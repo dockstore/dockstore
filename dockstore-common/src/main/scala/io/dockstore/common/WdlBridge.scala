@@ -140,6 +140,7 @@ class WdlBridge {
     inputList
   }
 
+  // TODO: Remove this method after Dockstore CLI no longer calls it
   @throws(classOf[WdlParser.SyntaxError])
   def getInputFiles(filePath: String):  util.HashMap[String, String] = {
     getInputFiles(filePath, "/") // Not ideal, need for CLI
@@ -166,6 +167,7 @@ class WdlBridge {
     outputList
   }
 
+  // TODO: Remove this method after Dockstore CLI no longer calls it
   @throws(classOf[WdlParser.SyntaxError])
   def getOutputFiles(filePath: String): util.List[String] = {
     getOutputFiles(filePath, "/")
@@ -265,6 +267,7 @@ class WdlBridge {
     executableCallable.graph.externalInputNodes.toJson(inputNodeWriter(true)).prettyPrint
   }
 
+  // TODO: Remove this method after Dockstore CLI no longer calls it
   @throws(classOf[WdlParser.SyntaxError])
   def getParameterFile(filePath: String): String = {
     getParameterFile(filePath, "/") // Not ideal, doing this for now because of dependencies with CLI
