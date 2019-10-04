@@ -15,8 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +30,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -332,16 +331,7 @@ public interface LanguageHandlerInterface {
      * @return Absolute version of relative path
      */
     default String convertRelativePathToAbsolutePath(String parentPath, String relativePath) {
-        if (relativePath.startsWith("/")) {
-            return relativePath;
-        }
-
-        Path workDir = Paths.get(parentPath);
-
-        // If the workDir is the root, leave it. If it is not the root, set workDir to the parent of parentPath
-        workDir = !Objects.equals(parentPath, workDir.getRoot().toString()) ? workDir.getParent() : workDir;
-
-        return workDir.resolve(relativePath).normalize().toString();
+        return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, relativePath);
     }
 
     /**

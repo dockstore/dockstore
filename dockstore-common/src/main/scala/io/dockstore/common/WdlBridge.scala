@@ -3,7 +3,6 @@ package io.dockstore.common
 
 import java.nio.file.{Files, Paths}
 import java.util
-import java.util.Objects
 
 import cats.syntax.validated._
 import com.typesafe.config.ConfigFactory
@@ -366,38 +365,6 @@ class WdlBridge {
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get
 }
 
-object AbsolutePathResolver {
-  /**
-    * Let's say /main.wdl imports /sub1/sub1.wdl, which in turn imports /sub1/sub2.wdl. sub1.wdl's import statement will be
-    * `import sub2.wdl`, i.e., the import will be relative to sub1.wdl.
-    *
-    * At the top level, secondaryFiles map will have these keys:
-    *
-    * /sub1/sub1.wdl
-    * /sub1/sub2.wdl
-    *
-    * Convert sub2.wdl into /sub1/sub2.wdl
-    *
-    * Note: This copied then Scalified from
-    * io.dockstore.webservice.languages.LanguageHandlerInterface#convertRelativePathToAbsolutePath(java.lang.String, java.lang.String),
-    * because that code is not accesible here.
-    *
-    * @param importingFile
-    * @param importedFile
-    * @return
-    */
-  def convertRelativePathToAbsolutePath(importingFile: String, importedFile: String): String = {
-    if (importedFile.startsWith("/")) importedFile else {
-      val workDir = Paths.get(importingFile)
-
-      // If the workDir is the root, leave it. If it is not the root, set workDir to the parent of parentPath
-      val parent = if (!Objects.equals(importingFile, workDir.getRoot.toString)) workDir.getParent else workDir
-
-      parent.resolve(importedFile).normalize.toString
-    }
-  }
-}
-
 /**
   * Class for resolving imports defined in memory (mapping of path to content)
   */
@@ -412,7 +379,7 @@ case class MapResolver(filePath: String) extends ImportResolver {
 
   override protected def innerResolver(path: String, currentResolvers: List[ImportResolver]): Checked[ImportResolver.ResolvedImportBundle] = {
     val importPath = path.replaceFirst("file://", "")
-    val absolutePath = AbsolutePathResolver.convertRelativePathToAbsolutePath(this.filePath, importPath)
+    val absolutePath = LanguageHandlerHelper.convertRelativePathToAbsolutePath(this.filePath, importPath)
     val content = secondaryWdlFiles.get(absolutePath)
     val mapResolver = MapResolver(absolutePath)
     mapResolver.setSecondaryFiles(this.secondaryWdlFiles)
