@@ -41,13 +41,15 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests operations frrom the UserResource
+ * Tests operations from the UserResource
  *
  * @author dyuen
  */
@@ -231,4 +233,42 @@ public class UserResourceIT extends BaseIT {
         }
         assertTrue(expectedFailToGetInfo);
     }
+
+    /**
+     * Tests that the endpoints for the wizard registration work
+     * @throws ApiException
+     */
+    @Test
+    public void testWizardEndpoints() throws ApiException {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        List<String> registries = userApi.getUserRegistries();
+        assertTrue(registries.size() > 0);
+        assertTrue(registries.contains("github.com"));
+        assertTrue(registries.contains("gitlab.com"));
+        assertTrue(registries.contains("bitbucket.org"));
+
+        // Test GitHub
+        List<String> orgs = userApi.getUserOrganizations("GITHUB_COM");
+        assertTrue(orgs.size() > 0);
+        assertTrue(orgs.contains("dockstoretesting"));
+        assertTrue(orgs.contains("DockstoreTestUser"));
+        assertTrue(orgs.contains("DockstoreTestUser2"));
+
+        List<String> repositories = userApi.getUserOrganizationRepositories("GITHUB_COM", "dockstoretesting");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.contains("dockstoretesting/basic-tool"));
+        assertTrue(repositories.contains("dockstoretesting/basic-workflow"));
+
+        // Test Gitlab
+        orgs = userApi.getUserOrganizations("GITLAB_COM");
+        assertTrue(orgs.size() > 0);
+        assertTrue(orgs.contains("dockstore.test.user2"));
+
+        repositories = userApi.getUserOrganizationRepositories("GITLAB_COM", "dockstore.test.user2");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-md5sum-unified"));
+        assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-example"));
+    }
+
 }
