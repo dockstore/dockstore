@@ -1,5 +1,11 @@
 # gatk-sv-clinical  
 
+## Note
+
+Except for this note which has been added to this README.md, this workflow is a snaphsot at commit
+db89e89508bd562cd36e9c316ac968ab0a136c0e of https://github.com/wshands/gatk-sv-clinical, which is in turn a
+fork of https://github.com/broadinstitute/gatk-sv-clinical.
+
 This repository contains WDL scripts to run the GATK-SV Clinical WGS Structural Variation detection pipeline.
   
 Clinical WGS SV Pipeline Overview  
