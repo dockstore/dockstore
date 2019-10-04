@@ -30,9 +30,9 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.LanguageClientFactory;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.ToolClient;
-import io.dockstore.common.AbsolutePathResolver;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dockstore.common.WdlBridge;
 import io.dropwizard.testing.ResourceHelpers;
@@ -210,9 +210,9 @@ public class CromwellIT {
 
     @Test
     public void testPathResolver() {
-        Assert.assertEquals("/module00a/Module00a.wdl", AbsolutePathResolver
+        Assert.assertEquals("/module00a/Module00a.wdl", LanguageHandlerHelper
                 .convertRelativePathToAbsolutePath("/GATKSVPipelineClinical.wdl", "module00a/Module00a.wdl"));
-        Assert.assertEquals("/a/importA.wdl", AbsolutePathResolver
+        Assert.assertEquals("/a/importA.wdl", LanguageHandlerHelper
                 .convertRelativePathToAbsolutePath("/parent/parent.wdl", "../a/importA.wdl"));
     }
 }
