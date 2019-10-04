@@ -78,7 +78,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     /**
      * TODO: Path looks a bit weird
      */
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @Override

@@ -808,7 +808,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         return new ImmutablePair<>(organization, userToAdd);
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @Override

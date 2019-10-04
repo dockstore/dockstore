@@ -2418,7 +2418,7 @@ paths:
       security:
       - BEARER: []
   /entries/{id}/aliases:
-    put:
+    post:
       tags:
       - "entries"
       summary: "Update the aliases linked to a entry in Dockstore."
@@ -2762,7 +2762,7 @@ paths:
           schema:
             $ref: "#/definitions/Collection"
   /organizations/collections/{collectionId}/aliases:
-    put:
+    post:
       tags:
       - "organizations"
       summary: "Update the aliases linked to a Collection in Dockstore."
@@ -2894,7 +2894,7 @@ paths:
       security:
       - BEARER: []
   /organizations/{organizationId}/aliases:
-    put:
+    post:
       tags:
       - "organizations"
       summary: "Update the aliases linked to a listing in Dockstore."
@@ -6070,6 +6070,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6085,10 +6089,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6301,6 +6301,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6316,10 +6320,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7313,15 +7313,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7553,10 +7553,14 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      isChecker:
-        type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      isChecker:
+        type: "boolean"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7572,10 +7576,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1

@@ -18,7 +18,6 @@ package io.dockstore.webservice.resources;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -52,8 +51,6 @@ public interface AliasableResourceInterface<T extends Aliasable> {
 
     default T updateAliases(User user, Long id, String aliases, String emptyBody) {
         T c = getAndCheckResource(user, id);
-        // compute differences
-        Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
         // reserve some prefixes for our own use
@@ -68,11 +65,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
             }
         }
 
-        Set<String> aliasesToAdd = Sets.difference(newAliases, oldAliases);
-        Set<String> aliasesToRemove = new TreeSet<>(Sets.difference(oldAliases, newAliases));
-        // add new ones and remove old ones while retaining the old entries and their order
-        aliasesToAdd.forEach(alias -> c.getAliases().put(alias, new Alias()));
-        aliasesToRemove.forEach(alias -> c.getAliases().remove(alias));
+        newAliases.forEach(alias -> c.getAliases().put(alias, new Alias()));
 
         if (c instanceof Entry) {
             getElasticManager().ifPresent(consumer -> consumer.handleIndexUpdate((Entry)c, ElasticMode.UPDATE));

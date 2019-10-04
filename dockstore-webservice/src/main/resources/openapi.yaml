@@ -2644,7 +2644,7 @@ paths:
       security:
         - BEARER: []
   "/entries/{id}/aliases":
-    put:
+    post:
       tags:
         - entries
       summary: Update the aliases linked to a entry in Dockstore.
@@ -2985,7 +2985,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Collection"
   "/organizations/collections/{collectionId}/aliases":
-    put:
+    post:
       tags:
         - organizations
       summary: Update the aliases linked to a Collection in Dockstore.
@@ -3119,7 +3119,7 @@ paths:
       security:
         - BEARER: []
   "/organizations/{organizationId}/aliases":
-    put:
+    post:
       tags:
         - organizations
       summary: Update the aliases linked to a listing in Dockstore.
@@ -6449,6 +6449,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6464,10 +6468,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6654,6 +6654,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6669,10 +6673,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7585,15 +7585,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -7792,10 +7792,14 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        isChecker:
+          type: boolean
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7811,10 +7815,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
