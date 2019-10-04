@@ -37,6 +37,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -134,6 +135,10 @@ public interface LanguageHandlerInterface {
             }
         }
         return new VersionTypeValidation(isValid, validationMessageObject);
+    }
+
+    default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao) {
+        return DAGHelper.cleanDAG(getContent(mainDescriptorPath, mainDescriptor, secondaryDescContent, type, dao));
     }
 
     /**

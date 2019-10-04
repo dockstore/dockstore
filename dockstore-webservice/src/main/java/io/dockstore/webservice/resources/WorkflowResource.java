@@ -120,7 +120,6 @@ import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
-import static io.dockstore.webservice.helpers.DAGHelper.cleanDAG;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -1337,8 +1336,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return cleanDAG(lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
-                    LanguageHandlerInterface.Type.DAG, toolDAO));
+            return lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+                    LanguageHandlerInterface.Type.DAG, toolDAO);
         }
         return null;
     }
