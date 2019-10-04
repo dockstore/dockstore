@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -19,6 +20,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -26,10 +28,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.mockito.Mockito;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+import static org.mockito.Mockito.when;
 
 public class WDLHandlerTest {
+
+    public static final String MAIN_WDL = "/GATKSVPipelineClinical.wdl";
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -105,12 +111,10 @@ public class WDLHandlerTest {
 
     @Test
     public void testRepeatedFilename() throws IOException {
-        final String mainWdl = "/GATKSVPipelineClinical.wdl";
-        final File wdlFile = new File(ResourceHelpers.resourceFilePath("gatk-sv-clinical" + mainWdl));
+        final String content = getGatkSvMainDescriptorContent();
         final WDLHandler wdlHandler = new WDLHandler();
-        final String content = FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8);
         final Map<String, SourceFile> map = wdlHandler
-                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), mainWdl);
+                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
         // There are 9 Structs.wdl files, in gatk-sv-clinical, but the one in gncv is not imported
         final long structsWdlCount = map.keySet().stream().filter(key -> key.contains("Structs.wdl")).count();
         Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
@@ -118,6 +122,55 @@ public class WDLHandlerTest {
         final BioWorkflow entry = new BioWorkflow();
         wdlHandler.parseWorkflowContent(entry, "/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), null);
         Assert.assertEquals("Christopher Whelan", entry.getAuthor());
+    }
+
+    @Test
+    public void testDagForComplexWorkflow() throws IOException {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final String content = getGatkSvMainDescriptorContent();
+        final Map<String, SourceFile> sourceFileMap = wdlHandler
+                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
+
+        // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
+        // up; just have it return null
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
+
+        final String dagStr = wdlHandler
+                .getContent(MAIN_WDL, content, new HashSet<SourceFile>(sourceFileMap.values()), LanguageHandlerInterface.Type.DAG, toolDAO);
+        final Gson gson = new Gson();
+        final Dag dag = gson.fromJson(dagStr, Dag.class);
+        Assert.assertEquals("Dag should have 229 nodes", 229, dag.nodes.length);
+        Assert.assertEquals("Dag should have 439 edges", 439, dag.edges.length);
+    }
+
+    @Test
+    public void testGetToolsForComplexWorkflow() throws IOException {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final String content = getGatkSvMainDescriptorContent();
+        final Map<String, SourceFile> sourceFileMap = wdlHandler
+                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
+
+        // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
+        // up; just have it return null
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
+
+        final String toolsStr = wdlHandler
+                .getContent(MAIN_WDL, content, new HashSet<SourceFile>(sourceFileMap.values()), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+        final Gson gson = new Gson();
+        final Object[] tools = gson.fromJson(toolsStr, Object[].class);
+        Assert.assertEquals("There should be 227 tools", 227, tools.length);
+    }
+
+    private String getGatkSvMainDescriptorContent() throws IOException {
+        final File wdlFile = new File(ResourceHelpers.resourceFilePath("gatk-sv-clinical" + MAIN_WDL));
+        return FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8);
+    }
+
+    private static class Dag {
+        public Object[] nodes;
+        public Object[] edges;
     }
 
     /**

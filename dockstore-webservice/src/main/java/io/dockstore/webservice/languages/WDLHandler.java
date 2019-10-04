@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -305,7 +304,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     continue;
                 }
                 importFile.setContent(fileResponse);
-                importFile.setPath(relativePath(currentFilePath, importPath));
+                importFile.setPath(importPath);
                 importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
                 importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(absoluteImportPath, importFile);
@@ -314,14 +313,6 @@ public class WDLHandler implements LanguageHandlerInterface {
 
         }
         return imports;
-    }
-
-    private String relativePath(String importingFile, String importedFile) {
-        final int index = importingFile.lastIndexOf('/');
-        if (index <= 1) {
-            return importedFile;
-        }
-        return Paths.get(importingFile.substring(1, index + 1) + importedFile).normalize().toString();
     }
 
     /**
@@ -357,7 +348,6 @@ public class WDLHandler implements LanguageHandlerInterface {
             wdlBridge.setSecondaryFiles(new HashMap<>(pathToContentMap));
 
             // Iterate over each call, grab docker containers
-            // TODO -- mainDescName is probably not right!!!
             Map<String, String> callsToDockerMap = wdlBridge.getCallsToDockerMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
 
             // Iterate over each call, determine dependencies
