@@ -201,6 +201,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
+    @Column
+    @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 13)
+    private String conceptDoi;
+
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
@@ -220,6 +224,16 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         } else {
             return checkerWorkflow.getId();
         }
+    }
+
+
+    public void setConceptDoi(String conceptDoi) {
+        this.conceptDoi = conceptDoi;
+    }
+
+    @JsonProperty
+    public String getConceptDoi() {
+        return conceptDoi;
     }
 
     public Map<String, Alias> getAliases() {

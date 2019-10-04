@@ -5,13 +5,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -126,8 +127,7 @@ public final class ZenodoHelper {
                 // The response body of this action is NOT the new version deposit,
                 // but the original resource. The new version deposition can be
                 // accessed through the "latest_draft" under "links" in the response body.
-                Object links = returnDeposit.getLinks();
-                String depositURL = (String)((LinkedHashMap)links).get("latest_draft");
+                String depositURL = returnDeposit.getLinks().get("latest_draft");
                 String depositionIDStr = depositURL.substring(depositURL.lastIndexOf("/") + 1).trim();
                 // Get the deposit object for the new workflow version DOI
                 depositionID = Integer.parseInt(depositionIDStr);
@@ -156,6 +156,12 @@ public final class ZenodoHelper {
 
         Deposit publishedDeposit = publishDepositOnZenodo(actionsApi, depositionID);
 
+        String conceptDoiUrl = publishedDeposit.getLinks().get("conceptdoi");
+
+        String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
+
+        workflow.setConceptDoi(conceptDoi);
+
         workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
     }
 
@@ -182,6 +188,25 @@ public final class ZenodoHelper {
                 workflowUrl, workflow, workflowVersion, doiAlias);
     }
 
+
+    /**
+     * extract a digital object identifier (DOI) from a DOI target URL
+     * @param doiUrl digital object identifier
+     * @return the DOI as a string
+     */
+    protected static String extractDoiFromDoiUrl(String doiUrl) {
+        // Remove the 'https://doi.org/' etc. prefix from the DOI
+        // e.g. https://doi.org/10.5072/zenodo.372767
+        String doi = doiUrl;
+        try {
+            URI uri = new URI(doiUrl);
+            doi = StringUtils.stripStart(uri.getPath(), "/");
+
+        } catch (URISyntaxException e) {
+            LOG.error("Could not extract DOI. Error is " + e.getMessage(), e);
+        }
+        return doi;
+    }
 
     /**
      * Create a workflow alias that uses a digital object identifier
