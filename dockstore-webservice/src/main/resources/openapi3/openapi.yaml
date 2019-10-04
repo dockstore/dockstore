@@ -2214,46 +2214,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
-  /auth/tokens/bitbucket.org:
-    get:
-      operationId: addBitbucketToken
-      parameters:
-      - name: code
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Token'
-  /auth/tokens/zenodo.org:
-    get:
-      operationId: addZenodoToken
-      parameters:
-      - name: code
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Token'
   /auth/tokens/{tokenId}:
     get:
       operationId: listToken
@@ -2353,6 +2313,46 @@ paths:
   /auth/tokens/github.com:
     get:
       operationId: addGithubToken
+      parameters:
+      - name: code
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+  /auth/tokens/bitbucket.org:
+    get:
+      operationId: addBitbucketToken
+      parameters:
+      - name: code
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+  /auth/tokens/zenodo.org:
+    get:
+      operationId: addZenodoToken
       parameters:
       - name: code
         in: query
@@ -3163,9 +3163,41 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-  /users/workflows/bulkUpdate:
+  /users/workflows:
     post:
-      operationId: bulkWorkflowUpdate
+      operationId: addWorkflow
+      parameters:
+      - name: gitRegistry
+        in: query
+        schema:
+          type: string
+          enum:
+          - quay.io
+          - github.com
+          - dockstore
+          - bitbucket.org
+          - gitlab.com
+          - zenodo.org
+          - google.com
+      - name: repository
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BioWorkflow'
+  /users/registries:
+    get:
+      operationId: getUserRegistries
       requestBody:
         content:
           '*/*':
@@ -3179,10 +3211,32 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Workflow'
-  /users/repositories:
+                  type: string
+                  enum:
+                  - quay.io
+                  - github.com
+                  - dockstore
+                  - bitbucket.org
+                  - gitlab.com
+                  - zenodo.org
+                  - google.com
+  /users/registries/{gitRegistry}/organizations:
     get:
-      operationId: getUserRepositories
+      operationId: getUserOrganizations
+      parameters:
+      - name: gitRegistry
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - quay.io
+          - github.com
+          - dockstore
+          - bitbucket.org
+          - gitlab.com
+          - zenodo.org
+          - google.com
       requestBody:
         content:
           '*/*':
@@ -3194,11 +3248,47 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/WorkflowWizardEntry'
+                uniqueItems: true
+                type: array
+                items:
+                  type: string
+  /users/registries/{gitRegistry}/organizations/{organization}:
+    get:
+      operationId: getUserOrganizationRepositories
+      parameters:
+      - name: gitRegistry
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - quay.io
+          - github.com
+          - dockstore
+          - bitbucket.org
+          - gitlab.com
+          - zenodo.org
+          - google.com
+      - name: organization
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  type: string
   /workflows/{workflowId}/publish:
     post:
       operationId: publish_1
@@ -4020,117 +4110,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
-  /workflows/{workflowId}/restub:
-    get:
-      operationId: restub
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-  /workflows/path/workflow/{repository}/upsertVersion:
-    put:
-      operationId: upsertVersions
-      parameters:
-      - name: repository
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: gitReference
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workflow'
-  /workflows/{workflowId}/verify/{workflowVersionId}:
-    post:
-      operationId: verifyWorkflowVersion
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: workflowVersionId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/WorkflowVersion'
-  /workflows/{workflowId}/requestDOI/{workflowVersionId}:
-    put:
-      operationId: requestDOIForWorkflowVersion
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: workflowVersionId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/WorkflowVersion'
   /workflows/{workflowId}/resetVersionPaths:
     put:
       operationId: updateWorkflowPath
@@ -4315,6 +4294,117 @@ paths:
                   - read
                   - delete
                   - share
+  /workflows/{workflowId}/restub:
+    get:
+      operationId: restub
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+  /workflows/path/workflow/{repository}/upsertVersion:
+    put:
+      operationId: upsertVersions
+      parameters:
+      - name: repository
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: gitReference
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+  /workflows/{workflowId}/verify/{workflowVersionId}:
+    post:
+      operationId: verifyWorkflowVersion
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: workflowVersionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+  /workflows/{workflowId}/requestDOI/{workflowVersionId}:
+    put:
+      operationId: requestDOIForWorkflowVersion
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: workflowVersionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
   /api/ga4gh/v2/extended/tools/{organization}:
     get:
       operationId: toolsOrgGet
@@ -4485,92 +4575,6 @@ paths:
   /api/ga4gh/v1/tool-classes:
     get:
       operationId: toolClassesGet_1
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
-  /api/ga4gh/v2/tools:
-    get:
-      operationId: toolsGet
-      parameters:
-      - name: id
-        in: query
-        schema:
-          type: string
-      - name: alias
-        in: query
-        schema:
-          type: string
-      - name: registry
-        in: query
-        schema:
-          type: string
-      - name: organization
-        in: query
-        schema:
-          type: string
-      - name: name
-        in: query
-        schema:
-          type: string
-      - name: toolname
-        in: query
-        schema:
-          type: string
-      - name: description
-        in: query
-        schema:
-          type: string
-      - name: author
-        in: query
-        schema:
-          type: string
-      - name: checker
-        in: query
-        schema:
-          type: boolean
-      - name: offset
-        in: query
-        schema:
-          type: string
-      - name: limit
-        in: query
-        schema:
-          type: integer
-          format: int32
-          default: 1000
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
-  /api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile:
-    get:
-      operationId: toolsIdVersionsVersionIdContainerfileGet
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
@@ -4767,11 +4771,40 @@ paths:
           content:
             application/json: {}
             text/plain: {}
-  /api/ga4gh/v1/tools:
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile:
     get:
-      operationId: toolsGet_1
+      operationId: toolsIdVersionsVersionIdContainerfileGet
       parameters:
       - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
+  /api/ga4gh/v2/tools:
+    get:
+      operationId: toolsGet
+      parameters:
+      - name: id
+        in: query
+        schema:
+          type: string
+      - name: alias
         in: query
         schema:
           type: string
@@ -4799,6 +4832,10 @@ paths:
         in: query
         schema:
           type: string
+      - name: checker
+        in: query
+        schema:
+          type: boolean
       - name: offset
         in: query
         schema:
@@ -4808,6 +4845,12 @@ paths:
         schema:
           type: integer
           format: int32
+          default: 1000
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
@@ -4958,6 +5001,53 @@ paths:
         required: true
         schema:
           type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
+  /api/ga4gh/v1/tools:
+    get:
+      operationId: toolsGet_1
+      parameters:
+      - name: id
+        in: query
+        schema:
+          type: string
+      - name: registry
+        in: query
+        schema:
+          type: string
+      - name: organization
+        in: query
+        schema:
+          type: string
+      - name: name
+        in: query
+        schema:
+          type: string
+      - name: toolname
+        in: query
+        schema:
+          type: string
+      - name: description
+        in: query
+        schema:
+          type: string
+      - name: author
+        in: query
+        schema:
+          type: string
+      - name: offset
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
       responses:
         default:
           description: default response
@@ -6058,15 +6148,6 @@ components:
         hostedEntryVersionLimit:
           type: integer
           format: int32
-    WorkflowWizardEntry:
-      type: object
-      properties:
-        repository:
-          type: string
-        exists:
-          type: boolean
-        canDelete:
-          type: boolean
     Permission:
       type: object
       properties:

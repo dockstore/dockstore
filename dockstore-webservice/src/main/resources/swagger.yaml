@@ -3666,13 +3666,13 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
-  /users/repositories:
+  /users/registries:
     get:
       tags:
       - "users"
-      summary: "Get the all of the repositories accessible to the logged in user."
+      summary: "Get all of the git registries accessible to the logged in user."
       description: ""
-      operationId: "getUserRepositories"
+      operationId: "getUserRegistries"
       produces:
       - "application/json"
       parameters: []
@@ -3680,7 +3680,82 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/WorkflowWizardEntry"
+            type: "array"
+            items:
+              type: "string"
+              enum:
+              - "quay.io"
+              - "github.com"
+              - "dockstore"
+              - "bitbucket.org"
+              - "gitlab.com"
+              - "zenodo.org"
+              - "google.com"
+      security:
+      - BEARER: []
+  /users/registries/{gitRegistry}/organizations:
+    get:
+      tags:
+      - "users"
+      summary: "Get all of the organizations for a given git registry accessible to\
+        \ the logged in user."
+      description: ""
+      operationId: "getUserOrganizations"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "gitRegistry"
+        in: "path"
+        description: "Git registry"
+        required: true
+        type: "string"
+        enum:
+        - "GITHUB_COM"
+        - "GITLAB_COM"
+        - "BITBUCKET_ORG"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+            uniqueItems: true
+      security:
+      - BEARER: []
+  /users/registries/{gitRegistry}/organizations/{organization}:
+    get:
+      tags:
+      - "users"
+      summary: "Get all of the repositories for an organization for a given git registry\
+        \ accessible to the logged in user."
+      description: ""
+      operationId: "getUserOrganizationRepositories"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "gitRegistry"
+        in: "path"
+        description: "Git registry"
+        required: true
+        type: "string"
+        enum:
+        - "GITHUB_COM"
+        - "GITLAB_COM"
+        - "BITBUCKET_ORG"
+      - name: "organization"
+        in: "path"
+        description: "Git organization"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+            uniqueItems: true
       security:
       - BEARER: []
   /users/services/sync:
@@ -4015,33 +4090,35 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
-  /users/workflows/bulkUpdate:
+  /users/workflows:
     post:
       tags:
       - "users"
       summary: "Adds and deletes workflows based on selected repositories."
       description: ""
-      operationId: "bulkWorkflowUpdate"
+      operationId: "addWorkflow"
       produces:
       - "application/json"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "New listing of repositories"
+      - name: "gitRegistry"
+        in: "query"
+        description: "Git registry"
         required: true
-        schema:
-          type: "object"
-          additionalProperties:
-            type: "array"
-            items:
-              type: "string"
+        type: "string"
+        enum:
+        - "GITHUB_COM"
+        - "GITLAB_COM"
+        - "BITBUCKET_ORG"
+      - name: "repository"
+        in: "query"
+        description: "Git repository path"
+        required: true
+        type: "string"
       responses:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
+            $ref: "#/definitions/BioWorkflow"
       security:
       - BEARER: []
   /users/{userId}:
@@ -7906,15 +7983,6 @@ definitions:
         - "KUBERNETES"
         - "HELM"
     description: "This describes one workflow version associated with a workflow."
-  WorkflowWizardEntry:
-    type: "object"
-    properties:
-      repository:
-        type: "string"
-      exists:
-        type: "boolean"
-      canDelete:
-        type: "boolean"
 externalDocs:
   description: "Dockstore documentation"
   url: "https://www.dockstore.org/docs/getting-started"
