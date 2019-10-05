@@ -125,26 +125,6 @@ public class WDLHandlerTest {
     }
 
     @Test
-    public void testDagForComplexWorkflow() throws IOException {
-        final WDLHandler wdlHandler = new WDLHandler();
-        final String content = getGatkSvMainDescriptorContent();
-        final Map<String, SourceFile> sourceFileMap = wdlHandler
-                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
-
-        // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
-        // up; just have it return null
-        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
-        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
-
-        final String dagStr = wdlHandler
-                .getContent(MAIN_WDL, content, new HashSet<SourceFile>(sourceFileMap.values()), LanguageHandlerInterface.Type.DAG, toolDAO);
-        final Gson gson = new Gson();
-        final Dag dag = gson.fromJson(dagStr, Dag.class);
-        Assert.assertEquals("Dag should have 229 nodes", 229, dag.nodes.length);
-        Assert.assertEquals("Dag should have 439 edges", 439, dag.edges.length);
-    }
-
-    @Test
     public void testGetToolsForComplexWorkflow() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final String content = getGatkSvMainDescriptorContent();
@@ -166,11 +146,6 @@ public class WDLHandlerTest {
     private String getGatkSvMainDescriptorContent() throws IOException {
         final File wdlFile = new File(ResourceHelpers.resourceFilePath("gatk-sv-clinical" + MAIN_WDL));
         return FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8);
-    }
-
-    private static class Dag {
-        public Object[] nodes;
-        public Object[] edges;
     }
 
     /**

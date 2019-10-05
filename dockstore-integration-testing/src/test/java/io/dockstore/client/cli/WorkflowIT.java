@@ -17,18 +17,21 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -45,6 +48,10 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -70,6 +77,9 @@ import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -131,6 +141,20 @@ public class WorkflowIT extends BaseIT {
     private final String clientConfig = ResourceHelpers.resourceFilePath("clientConfig");
     private final String jsonFilePath = ResourceHelpers.resourceFilePath("wc-job.json");
 
+    private WorkflowDAO workflowDAO;
+    private Session session;
+
+    @Before
+    public void setup() {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+
+        this.workflowDAO = new WorkflowDAO(sessionFactory);
+
+        // used to allow us to use workflowDAO outside of the web service
+        this.session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+    }
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
@@ -450,6 +474,63 @@ public class WorkflowIT extends BaseIT {
         anonWorkflowApi.getWorkflowZip(workflowId, versionId);
         // Other user: Should pass
         otherUserWorkflowApi.getWorkflowZip(workflowId, versionId);
+    }
+
+    /**
+     * Downloads and verifies dockstore-testing/gatk-sv-clinical, a complex WDL workflow with lots
+     * of imports
+     */
+    @Test
+    public void downloadZipComplex() throws IOException {
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
+
+        // Register and refresh workflow
+        Workflow workflow = ownerWorkflowApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl",
+                        "test", "wdl", "/test.json");
+        Workflow refresh = ownerWorkflowApi.refresh(workflow.getId());
+        Long workflowId = refresh.getId();
+        Long versionId = refresh.getWorkflowVersions().get(0).getId();
+
+        // Try downloading unpublished
+        // Owner: Should pass
+        ownerWorkflowApi.getWorkflowZip(workflowId, versionId);
+
+        // Unfortunately, the generated Swagger client for getWorkflowZip returns void.
+        // Verify the zip contents by making the server side calls
+        final io.dockstore.webservice.core.Workflow dockstoreWorkflow = workflowDAO.findById(workflowId);
+        final Optional<io.dockstore.webservice.core.WorkflowVersion> version = dockstoreWorkflow.getWorkflowVersions().stream()
+                .filter(wv -> wv.getId() == versionId).findFirst();
+        Assert.assertTrue(version.isPresent());
+        final File tempFile = File.createTempFile("dockstore-test", ".zip");
+        try {
+            final FileOutputStream fos = new FileOutputStream(tempFile);
+            final Set<io.dockstore.webservice.core.SourceFile> sourceFiles = version.get().getSourceFiles();
+            new EntryVersionHelperImpl().writeStreamAsZip(sourceFiles, fos, Paths.get("/GATKSVPipelineClinical.wdl"));
+            final ZipFile zipFile = new ZipFile(tempFile);
+            final long wdlCount = zipFile.stream().filter(e -> e.getName().endsWith(".wdl")).count();
+            Assert.assertEquals(sourceFiles.size(), wdlCount);
+            zipFile.stream().filter(e -> e.getName().endsWith(".wdl"))
+                    .forEach(e -> {
+                        final String name = "/" + e.getName();
+                        Assert.assertTrue("expected " + name, sourceFiles.stream().anyMatch(sf -> sf.getAbsolutePath().equals(name)));
+                    });
+            zipFile.close();
+        } finally {
+            FileUtils.deleteQuietly(tempFile);
+        }
+
+    }
+    /**
+     * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
+     */
+    private static class EntryVersionHelperImpl implements EntryVersionHelper {
+
+        @Override
+        public EntryDAO getDAO() {
+            return null;
+        }
     }
 
     @Test

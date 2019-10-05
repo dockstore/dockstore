@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WorkflowTest;
@@ -327,4 +328,20 @@ public class DAGWorkflowTestIT extends BaseIT {
         //        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         //        Assert.assertEquals("JSON should have 7 nodes", countNode, 7);
     }
+
+    @Test
+    public void testReallyComplexImportedWdlWorkflow() throws ApiException {
+        final List<String> strings = getJSON("dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl", "wdl", "dockstore-test");
+        Assert.assertEquals(1, strings.size());
+        final Gson gson = new Gson();
+        final Dag dag = gson.fromJson(strings.get(0), Dag.class);
+        Assert.assertEquals("Dag should have 229 nodes", 229, dag.nodes.length);
+        Assert.assertEquals("Dag should have 439 edges", 439, dag.edges.length);
+    }
+
+    private static class Dag {
+        public Object[] nodes;
+        public Object[] edges;
+    }
+
 }
