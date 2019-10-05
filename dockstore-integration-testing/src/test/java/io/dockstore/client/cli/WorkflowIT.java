@@ -511,25 +511,13 @@ public class WorkflowIT extends BaseIT {
             final ZipFile zipFile = new ZipFile(tempFile);
             final long wdlCount = zipFile.stream().filter(e -> e.getName().endsWith(".wdl")).count();
             Assert.assertEquals(sourceFiles.size(), wdlCount);
-            zipFile.stream().filter(e -> e.getName().endsWith(".wdl"))
-                    .forEach(e -> {
-                        final String name = "/" + e.getName();
-                        Assert.assertTrue("expected " + name, sourceFiles.stream().anyMatch(sf -> sf.getAbsolutePath().equals(name)));
-                    });
+            zipFile.stream().filter(e -> e.getName().endsWith(".wdl")).forEach(e -> {
+                final String name = "/" + e.getName();
+                Assert.assertTrue("expected " + name, sourceFiles.stream().anyMatch(sf -> sf.getAbsolutePath().equals(name)));
+            });
             zipFile.close();
         } finally {
             FileUtils.deleteQuietly(tempFile);
-        }
-
-    }
-    /**
-     * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
-     */
-    private static class EntryVersionHelperImpl implements EntryVersionHelper {
-
-        @Override
-        public EntryDAO getDAO() {
-            return null;
         }
     }
 
@@ -1592,4 +1580,16 @@ public class WorkflowIT extends BaseIT {
         Client.main(args.toArray(new String[0]));
         Assert.assertTrue(systemOutRule.getLog().contains("Final process status is success"));
     }
+    /**
+     * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
+     */
+    private static class EntryVersionHelperImpl implements EntryVersionHelper {
+
+        @Override
+        public EntryDAO getDAO() {
+            return null;
+        }
+    }
 }
+
+
