@@ -43,10 +43,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Tests operations from the UserResource
@@ -261,6 +258,11 @@ public class UserResourceIT extends BaseIT {
         assertTrue(repositories.contains("dockstoretesting/basic-tool"));
         assertTrue(repositories.contains("dockstoretesting/basic-workflow"));
 
+        // Register a workflow
+        Workflow ghWorkflow = userApi.addWorkflow("GITHUB_COM", "dockstoretesting/basic-workflow");
+        assertNotNull("GitHub workflow should be added", ghWorkflow);
+        assertEquals(ghWorkflow.getFullWorkflowPath(), "github.com/dockstoretesting/basic-workflow");
+
         // Test Gitlab
         orgs = userApi.getUserOrganizations("GITLAB_COM");
         assertTrue(orgs.size() > 0);
@@ -270,6 +272,9 @@ public class UserResourceIT extends BaseIT {
         assertTrue(repositories.size() > 0);
         assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-md5sum-unified"));
         assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-example"));
+
+        Workflow glWorkflow = userApi.addWorkflow("GITLAB_COM", "dockstore.test.user2/dockstore-workflow-example");
+        assertEquals(glWorkflow.getFullWorkflowPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-example");
     }
 
 }
