@@ -807,7 +807,7 @@ public class UserResource implements AuthenticatedResourceInterface {
                 .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
                 .collect(Collectors.toList());
 
-        // Add repository as workflow
+        // Delete workflow for a given repository
         if (scTokens.size() > 0) {
             final Token gitToken = scTokens.get(0);
             SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
@@ -823,8 +823,8 @@ public class UserResource implements AuthenticatedResourceInterface {
                 LOG.error(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
             } else {
-                // Delete workflow
                 BioWorkflow workflow = existingWorkflow.get();
+                checkUser(foundUser, workflow);
                 if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
                     elasticManager.handleIndexUpdate(existingWorkflow.get(), ElasticMode.DELETE);
                     workflowDAO.delete(workflow);

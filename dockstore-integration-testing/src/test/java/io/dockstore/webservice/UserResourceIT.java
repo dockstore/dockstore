@@ -45,6 +45,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -270,10 +271,12 @@ public class UserResourceIT extends BaseIT {
 
         // Try deleting a workflow
         userApi.deleteWorkflow("GITHUB_COM", "dockstoretesting/basic-workflow");
+        Workflow deletedWorkflow = null;
         try {
-            Workflow deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
+            deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
             assertFalse("Should not reach here as entry should not exist", false);
         } catch (ApiException ex) {
+            assertNull("Workflow should be null", deletedWorkflow);
         }
 
         // Test Gitlab
