@@ -740,7 +740,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork
     @Path("/workflows")
     @Operation(operationId = "addWorkflow")
-    @ApiOperation(value = "Adds and deletes workflows based on selected repositories.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = BioWorkflow.class)
+    @ApiOperation(value = "Adds a workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = BioWorkflow.class)
     public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Auth User authUser,
                                       @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
                                       @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
@@ -758,7 +758,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
             final String tokenSource = gitToken.getTokenSource().toString();
 
-            String gitUrl = "git@" + gitToken.getTokenSource().toString() + ":" + repository + ".git";
+            String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
             LOG.info("Adding " + gitUrl);
 
             // Create a workflow stub object if necessary
@@ -769,13 +769,21 @@ public class UserResource implements AuthenticatedResourceInterface {
                     final long workflowID = workflowDAO.create(createdWorkflow);
                     final Workflow workflowFromDB = workflowDAO.findById(workflowID);
                     workflowFromDB.getUsers().add(foundUser);
+                } else {
+                    String msg = "There was an error adding workflow with the path " + tokenSource + "/" + repository;
+                    LOG.error(msg);
+                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
                 }
             } else {
-                throw new CustomWebApplicationException("A workflow with path " + tokenSource + "/" + repository + " already exists.", HttpStatus.SC_BAD_REQUEST);
+                String msg = "A workflow with path " + tokenSource + "/" + repository + " already exists.";
+                LOG.error(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
             }
             Optional<BioWorkflow> finalWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
             bulkUpsertWorkflows(foundUser);
-            return finalWorkflow.get();
+            if (finalWorkflow.isPresent()) {
+                return finalWorkflow.get();
+            }
         }
         return null;
     }

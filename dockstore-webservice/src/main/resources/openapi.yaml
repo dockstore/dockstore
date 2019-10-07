@@ -4352,7 +4352,7 @@ paths:
     post:
       tags:
         - users
-      summary: Adds and deletes workflows based on selected repositories.
+      summary: Adds a workflow for a registry and repository path.
       description: ""
       operationId: addWorkflow
       parameters:

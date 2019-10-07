@@ -276,8 +276,18 @@ public class UserResourceIT extends BaseIT {
         assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-md5sum-unified"));
         assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-example"));
 
+        // Register a workflow
         Workflow glWorkflow = userApi.addWorkflow("GITLAB_COM", "dockstore.test.user2/dockstore-workflow-example");
         assertEquals(glWorkflow.getFullWorkflowPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-example");
+
+        // Try registering the workflow again (duplicate) should fail
+        try {
+            userApi.addWorkflow("GITLAB_COM", "dockstore.test.user2/dockstore-workflow-example");
+            assertFalse("Should not reach this, should fail", false);
+        } catch (ApiException ex) {
+            assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));
+        }
+
     }
 
 }
