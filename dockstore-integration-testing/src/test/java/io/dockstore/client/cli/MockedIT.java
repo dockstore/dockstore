@@ -60,7 +60,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
  *
  * @author dyuen
  */
-@PowerMockIgnore({ "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*", "com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "org.w3c.*", "org.apache.http.*" })
+@PowerMockIgnore({ "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*",
+    "com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "org.w3c.*", "org.apache.http.*" })
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Client.class, ToolClient.class, UsersApi.class })
 @Category(ConfidentialTest.class)
@@ -76,7 +77,6 @@ public class MockedIT {
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
     private Client client;
-
 
     @Before
     public void clearDB() throws Exception {
@@ -98,8 +98,9 @@ public class MockedIT {
         when(file.getPath()).thenReturn(sourceFile.getAbsolutePath());
 
         // change getDescriptorFromServer to downloadTargetEntry
-        doReturn(sourceFile).when(toolClient).downloadTargetEntry(eq("quay.io/collaboratory/dockstore-tool-linux-sort"),
-            eq(ToolDescriptor.TypeEnum.CWL), eq(true), any(File.class));
+        doReturn(sourceFile).when(toolClient)
+            .downloadTargetEntry(eq("quay.io/collaboratory/dockstore-tool-linux-sort"), eq(ToolDescriptor.TypeEnum.CWL), eq(true),
+                any(File.class));
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
@@ -110,8 +111,8 @@ public class MockedIT {
         doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", DescriptorLanguage.CWL);
 
         // change getDescriptorFromServer to downloadTargetEntry
-        doReturn(sourceFileArrays).when(toolClient).downloadTargetEntry(eq("quay.io/collaboratory/arrays"),
-            eq(ToolDescriptor.TypeEnum.CWL), eq(true), any(File.class));
+        doReturn(sourceFileArrays).when(toolClient)
+            .downloadTargetEntry(eq("quay.io/collaboratory/arrays"), eq(ToolDescriptor.TypeEnum.CWL), eq(true), any(File.class));
 
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
         FileUtils.deleteQuietly(new File("/tmp/wc2.out"));
@@ -134,8 +135,7 @@ public class MockedIT {
     @Test
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-                "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"),
-                "--script" });
+            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"), "--script" });
 
         Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
     }
@@ -144,8 +144,8 @@ public class MockedIT {
     @Ignore
     public void runLaunchNJson() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-                "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json"),
-                "--script" });
+            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json"),
+            "--script" });
     }
 
     /**
@@ -156,9 +156,9 @@ public class MockedIT {
      */
     @Test
     public void runLaunchOneLocalArrayedJson() throws IOException, ApiException {
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"),
-                "--script" });
+        Client.main(
+            new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry", "quay.io/collaboratory/arrays",
+                "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"), "--script" });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
         Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
@@ -178,8 +178,7 @@ public class MockedIT {
         Client.main(new String[] { "--clean-cache", "--config", configFileLocation, "--script" });
         // this is kind of redundant, it looks like we take the mocked config file no matter what
         Client.main(new String[] { "--config", configFileLocation, "tool", "launch", "--entry", "quay.io/collaboratory/arrays", "--json",
-                ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"),
-                "--script" });
+            ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"), "--script" });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
         Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
@@ -187,8 +186,7 @@ public class MockedIT {
 
         // try again, things should be cached now
         Client.main(new String[] { "--config", configFileLocation, "tool", "launch", "--entry", "quay.io/collaboratory/arrays", "--json",
-                ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"),
-                "--script" });
+            ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json"), "--script" });
         Assert.assertEquals("output should contain only hard linking", 6, StringUtils.countMatches(systemOutRule.getLog(), "hard-linking"));
         Assert.assertTrue("output should not contain warnings about skipping files", !systemOutRule.getLog().contains("skipping"));
     }
@@ -201,9 +199,9 @@ public class MockedIT {
      */
     @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"),
-                "--script" });
+        Client.main(
+            new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry", "quay.io/collaboratory/arrays",
+                "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script" });
 
         Assert.assertTrue(new File("/tmp/wc1.out").exists());
         Assert.assertTrue(new File("/tmp/wc2.out").exists());

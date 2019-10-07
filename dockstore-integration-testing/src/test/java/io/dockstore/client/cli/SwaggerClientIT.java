@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -105,11 +104,10 @@ import static org.junit.Assert.fail;
 @Category(ConfidentialTest.class)
 public class SwaggerClientIT extends BaseIT {
 
-    private static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
-    private static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
-
+    private static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
+    private static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -282,11 +280,11 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         final String basePath = client.getBasePath();
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools");
-        final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        final List<String> strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
 
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata");
-        final List<String> metadataStrings = Resources.readLines(url, Charset.forName("UTF-8"));
+        final List<String> metadataStrings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
         assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly_name")));
     }
@@ -419,7 +417,7 @@ public class SwaggerClientIT extends BaseIT {
         containersApi.registerManual(c);
 
         final ToolDockerfile toolDockerfile = toolApi
-                .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
+            .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
         ToolDescriptor cwl = toolApi
             .toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
@@ -429,31 +427,32 @@ public class SwaggerClientIT extends BaseIT {
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
         URL url = UriBuilder.fromPath(basePath)
-                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor")
-                .build().toURL();
+            .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor").build()
+            .toURL();
 
-        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        List<String> strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
-        url = UriBuilder.fromPath(basePath)
-                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor/" + encodedPath)
-                .build().toURL();
-        strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        url = UriBuilder.fromPath(basePath).path(
+            DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor/" + encodedPath)
+            .build().toURL();
+        strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         // Get test files
         url = UriBuilder.fromPath(basePath)
-                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/tests")
-                .build().toURL();
-        strings = Resources.readLines(url, Charset.forName("UTF-8"));
+            .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/tests").build()
+            .toURL();
+        strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.get(0).contains("testparameterstuff"));
         assertTrue(strings.get(1).contains("moretestparameterstuff"));
     }
 
     /**
      * This test should be removed once tag.setVerified is removed because verification should solely depend on the version's source files
+     *
      * @throws ApiException
      */
     @Test
@@ -562,7 +561,6 @@ public class SwaggerClientIT extends BaseIT {
         assertFalse(tokens.isEmpty());
     }
 
-
     @Test
     public void testStarUnpublishedTool() throws ApiException {
         ApiClient client = getWebClient(true, true);
@@ -624,16 +622,16 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminApiClient);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         PublishRequest publishRequest = SwaggerUtility.createPublishRequest(false);
-        adminWorkflowsApi.publish(11l, publishRequest);
+        adminWorkflowsApi.publish(11L, publishRequest);
         try {
-            workflowsApi.starEntry(11l, request);
+            workflowsApi.starEntry(11L, request);
             Assert.fail("Should've encountered problems for trying to star an unpublished workflow");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("Forbidden"));
             Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
         }
         try {
-            workflowsApi.unstarEntry(11l);
+            workflowsApi.unstarEntry(11L);
             Assert.fail("Should've encountered problems for trying to unstar an unpublished workflow");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("cannot unstar"));
@@ -665,7 +663,6 @@ public class SwaggerClientIT extends BaseIT {
         thrown.expect(ApiException.class);
         containersApi.starEntry(containerId, request);
     }
-
 
     /**
      * This tests if an already unstarred tool can be unstarred again.
@@ -762,7 +759,7 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testCacheMetadataEndpoint() throws ApiException{
+    public void testCacheMetadataEndpoint() throws ApiException {
         ApiClient apiClient = getWebClient();
         MetadataApi metadataApi = new MetadataApi(apiClient);
         final Map<String, Object> cachePerformance = metadataApi.getCachePerformance();
@@ -775,7 +772,9 @@ public class SwaggerClientIT extends BaseIT {
         MetadataApi metadataApi = new MetadataApi(apiClient);
         String rssFeed = metadataApi.rssFeed();
         String sitemap = metadataApi.sitemap();
-        assertTrue("rss feed should be valid xml with at least 2 entries", rssFeed.contains("http://localhost/containers/quay.io/test_org/test6") && rssFeed.contains("http://localhost/workflows/github.com/A/l"));
+        assertTrue("rss feed should be valid xml with at least 2 entries",
+            rssFeed.contains("http://localhost/containers/quay.io/test_org/test6") && rssFeed
+                .contains("http://localhost/workflows/github.com/A/l"));
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setValidating(true);
@@ -786,7 +785,9 @@ public class SwaggerClientIT extends BaseIT {
             assertTrue("XML is not valid", doc.getStrictErrorChecking());
         }
 
-        assertTrue("sitemap with testing data should have at least 2 entries", sitemap.split("\n").length >= 2 && sitemap.contains("http://localhost/containers/quay.io/test_org/test6") && sitemap.contains("http://localhost/workflows/github.com/A/l"));
+        assertTrue("sitemap with testing data should have at least 2 entries",
+            sitemap.split("\n").length >= 2 && sitemap.contains("http://localhost/containers/quay.io/test_org/test6") && sitemap
+                .contains("http://localhost/workflows/github.com/A/l"));
     }
 
     @Test
@@ -811,9 +812,11 @@ public class SwaggerClientIT extends BaseIT {
     public void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+        userHostedApi
+            .createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+        userHostedApi
+            .createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
     }
 
     @Test
@@ -842,13 +845,13 @@ public class SwaggerClientIT extends BaseIT {
 
     /**
      * Tests workflow sharing/permissions.
-     *
+     * <p>
      * A longish method, but since we need to set up hosted workflows
      * to do the sharing, but don't want to do that with the other tests,
      * it seemed better to do the setup and variations all in this one method.
      */
     @Test
-    public void testSharing()  {
+    public void testSharing() {
         // Setup for sharing
         final ApiClient user1WebClient = getWebClient(true, true); // Admin user
         final ApiClient user2WebClient = getWebClient(true, false);
@@ -908,7 +911,8 @@ public class SwaggerClientIT extends BaseIT {
         // Now give write permission to user 2
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.WRITER);
         // Edit should now work!
-        final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
+        final Workflow workflow = user2HostedApi
+            .editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
 
         // Deleting the version should not fail
         user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
@@ -936,14 +940,10 @@ public class SwaggerClientIT extends BaseIT {
         // User 2 should now have one workflow shared from user 1 and one from user 3
         Assert.assertEquals(2, sharedWorkflows.size());
 
-        firstShared = sharedWorkflows
-                        .stream()
-                        .filter(shared -> shared.getRole() == SharedWorkflows.RoleEnum.OWNER)
-                        .findFirst().orElse(null);
-        secondShared = sharedWorkflows
-                        .stream()
-                        .filter(shared -> shared.getRole() == SharedWorkflows.RoleEnum.READER)
-                        .findFirst().orElse(null);
+        firstShared = sharedWorkflows.stream().filter(shared -> shared.getRole() == SharedWorkflows.RoleEnum.OWNER).findFirst()
+            .orElse(null);
+        secondShared = sharedWorkflows.stream().filter(shared -> shared.getRole() == SharedWorkflows.RoleEnum.READER).findFirst()
+            .orElse(null);
 
         Assert.assertEquals(SharedWorkflows.RoleEnum.OWNER, firstShared.getRole());
         Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
@@ -977,8 +977,7 @@ public class SwaggerClientIT extends BaseIT {
         return fileCWL;
     }
 
-    private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi)
-            throws ApiException {
+    private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi) throws ApiException {
         StarRequest request = SwaggerUtility.createStarRequest(true);
         containerIds.forEach(containerId -> {
             try {

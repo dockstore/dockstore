@@ -1,6 +1,6 @@
 package io.dockstore.webservice.permissions;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,18 +20,17 @@ import static org.mockito.Mockito.when;
 
 public class InMemoryPermissionsImplTest {
 
-    public static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";
-    public static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
-    public static final String DOCKSTORE_ORG_JOHN_MYWORKFLOW = "dockstore.org/john/myworkflow";
+    private static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";
+    private static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
+    private static final String DOCKSTORE_ORG_JOHN_MYWORKFLOW = "dockstore.org/john/myworkflow";
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
     private InMemoryPermissionsImpl inMemoryPermissions;
     private User johnDoeUser = new User();
     private User janeDoeUser = new User();
     private Workflow fooWorkflow;
     private Workflow gooWorkflow;
     private Workflow dockstoreOrgWorkflow;
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void setup() {
@@ -47,11 +46,11 @@ public class InMemoryPermissionsImplTest {
         johnDoeUser.setUsername(JOHN_DOE_EXAMPLE_COM);
         johnDoeUser.getEntries().add(fooWorkflow);
 
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(johnDoeUser)));
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(johnDoeUser)));
         when(gooWorkflow.getWorkflowPath()).thenReturn("goo");
-        when(gooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(johnDoeUser)));
+        when(gooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(johnDoeUser)));
         when(dockstoreOrgWorkflow.getWorkflowPath()).thenReturn(DOCKSTORE_ORG_JOHN_MYWORKFLOW);
-        when(dockstoreOrgWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(johnDoeUser)));
+        when(dockstoreOrgWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(johnDoeUser)));
 
         janeDoeUser.setUsername("jane");
     }
@@ -105,7 +104,7 @@ public class InMemoryPermissionsImplTest {
 
     @Test
     public void setPermissionsUnauthorized() {
-        final Permission permission = new Permission("whatever",Role.READER);
+        final Permission permission = new Permission("whatever", Role.READER);
         thrown.expect(CustomWebApplicationException.class);
         inMemoryPermissions.setPermission(janeDoeUser, fooWorkflow, permission);
     }

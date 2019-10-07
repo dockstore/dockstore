@@ -14,11 +14,11 @@ import static org.junit.Assert.fail;
 
 public class ZipSourceFileHelperTest {
 
-    private final static String SMART_SEQ_ZIP_PATH = ResourceHelpers.resourceFilePath("smartseq.zip");
+    private static final String SMART_SEQ_ZIP_PATH = ResourceHelpers.resourceFilePath("smartseq.zip");
     /**
      * Contains workflow in folder
      */
-    private final static String WHALESAY_ZIP_PATH = ResourceHelpers.resourceFilePath("whalesayinsubdir.zip");
+    private static final String WHALESAY_ZIP_PATH = ResourceHelpers.resourceFilePath("whalesayinsubdir.zip");
 
     @Test
     public void validateZip() throws IOException {
@@ -26,13 +26,13 @@ public class ZipSourceFileHelperTest {
         try {
             ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 1);
             fail("Exepcted validate to throw error");
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             // This is expected
         }
         try {
             ZipSourceFileHelper.validateZip(smartSeqZipFile, 1, 100);
             fail("Exepcted validate to throw error");
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             // This is expected
         }
         ZipSourceFileHelper.validateZip(smartSeqZipFile, 100, 100_000);

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Set;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
@@ -59,7 +60,7 @@ public class EntryVersionHelperTest {
             sourceFile4.setPath("/directory/actualSourcefile");
             sourceFile4.setAbsolutePath("/directory/actualSourcefile");
             sourceFile4.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
-            HashSet<SourceFile> sourceFiles = new HashSet<>();
+            Set<SourceFile> sourceFiles = new HashSet<>();
             sourceFiles.add(sourceFile1);
             sourceFiles.add(sourceFile2);
             sourceFiles.add(sourceFile3);

@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice;
 
+import java.util.List;
+
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
@@ -40,8 +42,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -98,13 +98,14 @@ public class UserResourceIT extends BaseIT {
         // Add hosted workflow, should use new username
         HostedApi userHostedApi = new HostedApi(client);
         Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
-        assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo", hostedWorkflow.getOrganization());
+        assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo",
+            hostedWorkflow.getOrganization());
     }
 
     @Test
     public void testUserTermination() throws ApiException {
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
-        ApiClient userWebClient = getWebClient(USER_2_USERNAME,testingPostgres );
+        ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
 
         UsersApi userUserWebClient = new UsersApi(userWebClient);
         final User user = userUserWebClient.getUser();
@@ -125,6 +126,7 @@ public class UserResourceIT extends BaseIT {
 
     /**
      * Should not be able to update username after creating an organisation
+     *
      * @throws ApiException
      */
     @Test
@@ -153,7 +155,6 @@ public class UserResourceIT extends BaseIT {
         assertFalse(userApi.getExtendedUserData().isCanChangeUsername());
     }
 
-
     @Test
     public void testSelfDestruct() throws ApiException {
         ApiClient client = getAnonymousWebClient();
@@ -175,12 +176,12 @@ public class UserResourceIT extends BaseIT {
 
         final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
 
-
         User user = userApi.getUser();
         Assert.assertNotNull(user);
         // try to delete with published workflows
         userApi.refreshWorkflows(user.getId());
-        final Workflow workflowByPath = workflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+        final Workflow workflowByPath = workflowsApi
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId());
 

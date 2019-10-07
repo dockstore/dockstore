@@ -28,19 +28,17 @@ hs_err_pid*
 dependency-reduced-pom.xml
 hello-world.yml
 dockstore-webservice/target/
-dockstore-client/target/
 swagger-java-client/target/
 swagger-java-quay-client/target/
 swagger-java-sam-client/target/
 swagger-java-bitbucket-client/target/
 swagger-java-discourse-client/target/
+swagger-java-zenodo-client/target/
 dockstore-language-plugin-parent/target/
 openapi-java-client/target/
-openapi-java-wes-client/target/
 dockstore-event-consumer/target/
 dockstore-webservice/nbactions.xml
 dockstore-common/target/
-dockstore-file-plugin-parent/target/
 dockstore-integration-testing/target/
 dockstore-integration-testing/cromwell-executions/
 dockstore-integration-testing/cromwell-input/
@@ -62,7 +60,3 @@ dockstore-integration-testing/src/test/resources/dockstoreTest.yml
 
 # The tarball of the above three confidential files
 dockstore-integration-testing/src/test/resources/secrets.tar
-dockstore-client/Cromwell.stderr.txt
-dockstore-client/Cromwell.stdout.txt
-dockstore-client/datastore
-dockstore-client/cromwell-executions

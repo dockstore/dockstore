@@ -10,12 +10,11 @@ cache:
   - /tmp/localstack_install_dir
   - $HOME/.cache/pip
   - $HOME/.m2/repository
-  - $HOME/apache-maven-3.5.4
-  - $HOME/apache-maven-3.6.0
+  - $HOME/apache-maven-3.6.2
 
-dist: xenial
+dist: bionic
 language: java
-jdk: openjdk11
+jdk: openjdk12
 
 env:
   - TESTING_PROFILE=integration-tests
@@ -47,19 +46,15 @@ jobs:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=true
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=false
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
       env:
         - TESTING_PROFILE=tool-integration-tests
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
       env:
         - TESTING_PROFILE=workflow-integration-tests
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=other-integration-tests
         
 # not feeling the bang-for-the-buck for these, running only in release branch         
 #    - stage: coverage
@@ -67,8 +62,9 @@ jobs:
 #      if: branch = master OR branch =~ /^release.*$/
 #      env:
 #        - TESTING_PROFILE=toil-integration-tests
+
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
       env:
         - TESTING_PROFILE=regression-integration-tests
       if: branch = master OR branch =~ /^release.*$/
@@ -76,8 +72,8 @@ jobs:
 # build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
 before_install:
-- export M2_HOME=$HOME/apache-maven-3.6.0
-- if [ ! -d $M2_HOME/bin ]; then curl https://archive.apache.org/dist/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz | tar zxf - -C $HOME; fi
+- export M2_HOME=$HOME/apache-maven-3.6.2
+- if [ ! -d $M2_HOME/bin ]; then curl https://archive.apache.org/dist/maven/maven-3/3.6.2/binaries/apache-maven-3.6.2-bin.tar.gz | tar zxf - -C $HOME; fi
 - export PATH=$M2_HOME/bin:$PATH
 # see https://www.deps.co/guides/travis-ci-latest-java/
 - if [ -e $JAVA_HOME/lib/security/cacerts ]; then sudo rm $JAVA_HOME/lib/security/cacerts && sudo ln -s /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts; fi

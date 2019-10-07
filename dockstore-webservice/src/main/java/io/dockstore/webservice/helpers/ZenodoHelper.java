@@ -1,7 +1,6 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -249,9 +248,8 @@ public final class ZenodoHelper {
         Path p = Paths.get(workflowDescriptorName);
         final String descriptorFile = p.getFileName().toString();
         final String versionOfWorkflow = workflowVersion.getName();
-        final String workflowVersionTrsUrl = workflowVersionPrimaryDescriptorPathPlainText + "/versions/" + versionOfWorkflow
+        return workflowVersionPrimaryDescriptorPathPlainText + "/versions/" + versionOfWorkflow
                 + "/PLAIN-" + workflowVersionType + "/descriptor/" + descriptorFile;
-        return workflowVersionTrsUrl;
     }
 
     /**
@@ -384,7 +382,6 @@ public final class ZenodoHelper {
                     + " upload when creating DOI. Zenodo requires at lease one file"
                     + " to be uploaded in order to create a DOI.", HttpStatus.SC_BAD_REQUEST);
         } else {
-            OutputStream outputStream;
             // Replace forward slashes so we can use the version in a file name
             String versionOfWorkflow = workflowVersion.getName().replaceAll("/", "-");
             // Replace forward slashes so we can use the workflow path in a file name
@@ -402,19 +399,18 @@ public final class ZenodoHelper {
 
             String zipFilePathName = tempDirPath.toString() + "/" + fileName;
 
-            try {
-                outputStream = new FileOutputStream(zipFilePathName);
-            } catch (FileNotFoundException fne) {
+            try (OutputStream outputStream = new FileOutputStream(zipFilePathName)) {
+                entryVersionHelper.writeStreamAsZip(sourceFiles, outputStream, Paths.get(zipFilePathName));
+            } catch (IOException fne) {
                 // Delete the temporary directory
                 FileUtils.deleteQuietly(tempDirPath.toFile());
-                LOG.error("Could not create file " + zipFilePathName
-                        + " outputstream for DOI zip file for upload to Zenodo."
-                        + " Error is " + fne.getMessage(), fne);
+                LOG.error(
+                    "Could not create file " + zipFilePathName + " outputstream for DOI zip file for upload to Zenodo." + " Error is " + fne
+                        .getMessage(), fne);
                 throw new CustomWebApplicationException("Internal server error creating Zenodo upload temp directory",
                     HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
-            entryVersionHelper.writeStreamAsZip(sourceFiles, outputStream, Paths.get(zipFilePathName));
             File zipFile = new File(zipFilePathName);
 
             try {

@@ -6,7 +6,11 @@
   {
     "path": "Dockstore.wdl",
     "file_type": "PRIMARY_DESCRIPTOR"
-  },{"file_type":"TEST_FILE","path":"nested/test.wdl.json"},
+  },
+  {
+    "file_type": "TEST_FILE",
+    "path": "nested/test.wdl.json"
+  },
   {
     "path": "test.wdl.json",
     "file_type": "TEST_FILE"

@@ -39,8 +39,13 @@ import org.junit.experimental.categories.Category;
 /**
  * Created by jpatricia on 24/06/16.
  */
-@Category( { ConfidentialTest.class, WorkflowTest.class })
+@Category({ ConfidentialTest.class, WorkflowTest.class })
 public class DAGWorkflowTestIT extends BaseIT {
+
+    @Rule
+    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
     @Before
     @Override
@@ -48,25 +53,19 @@ public class DAGWorkflowTestIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
-
     private List<String> getJSON(String repo, String fileName, String descType, String branch) throws ApiException {
-        final String TEST_WORKFLOW_NAME = "test-workflow";
+        final String testWorkflowName = "test-workflow";
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_1_USERNAME, testingPostgres));
-        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
+        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, testWorkflowName, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
-        Assert.assertEquals(githubWorkflow.getWorkflowName(), TEST_WORKFLOW_NAME);
+        Assert.assertEquals(githubWorkflow.getWorkflowName(), testWorkflowName);
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
-        Assert.assertEquals(refresh.getWorkflowName(), TEST_WORKFLOW_NAME);
+        Assert.assertEquals(refresh.getWorkflowName(), testWorkflowName);
 
         Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch))
             .findFirst();
@@ -261,6 +260,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     /**
      * This tests the NCI-GDC DNASeq workflow. This workflow has a huge dag and about 30+ files. It also has secondary, tertiary, etc imports.\
      * This also tests that absolute paths are correctly used for imported files.
+     *
      * @throws ApiException
      */
     @Test
@@ -270,8 +270,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Branch: master
         // Return: DAG with 110 nodes
 
-        final List<String> strings = getJSON("DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "cwl",
-                "test");
+        final List<String> strings = getJSON("DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "cwl", "test");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -281,6 +280,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     /**
      * This tests the CWL Gene Prioritization workflow. The getSteps function returns an array instead of the previously assumed object. This has been fixed,
      * and this is testing that it is fixed.
+     *
      * @throws ApiException
      */
     @Test
@@ -290,8 +290,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Branch: master
         // Return: DAG with 5 nodes
 
-        final List<String> strings = getJSON("DockstoreTestUser2/cwl-gene-prioritization", "/gp_workflow.cwl", "cwl",
-                "test");
+        final List<String> strings = getJSON("DockstoreTestUser2/cwl-gene-prioritization", "/gp_workflow.cwl", "cwl", "test");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -300,6 +299,7 @@ public class DAGWorkflowTestIT extends BaseIT {
 
     /**
      * This tests that a WDL workflow with complex imports is properly imported (also tests absolute paths)
+     *
      * @throws ApiException
      */
     @Test
@@ -309,8 +309,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Branch: master
         // Return: DAG with 7 nodes
 
-        final List<String> strings = getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl",
-                "test");
+        final List<String> strings = getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl", "test");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);

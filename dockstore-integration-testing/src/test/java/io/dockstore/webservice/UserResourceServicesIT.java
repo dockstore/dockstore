@@ -56,45 +56,40 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * Tests services endpoints from UserResource
- *
+ * <p>
  * Separated from UserResourceIT because this one is not confidential.
  * Not confidential because mocking calls to GitHub API.
  * Mocking calls to GitHub API because the API requires GitHub app to be installed,
  * and there's a fair amount of overhead: creating a new app (instead of using
  * staging or production app) private key file,
  * installation id, installing it for one org, installing it for a repo but not an org.
- *
+ * <p>
  * That said, we probably should have non-mocked tests as well.
  */
 @Category(NonConfidentialTest.class)
 public class UserResourceServicesIT {
+    @ClassRule
+    public static final HoverflyRule HOVERFLY_RULE = HoverflyRule.inSimulationMode(SERVICES_SIMULATION_SOURCE);
+    private static final long GITHUB_USER1_ID = 1L;
+    private static final long GITHUB_USER2_ID = 2L;
+    // These are not from Hoverfly, it's actually in the starting database
+    private static final String GITHUB_ACCOUNT_USERNAME_1 = "tuber";
+    private static final String GITHUB_ACCOUNT_USERNAME_2 = "potato";
     // This should match GITHUB_APP_ID somewhere
     private static final String GITHUB_APP_ID = "11111";
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-            DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, ConfigOverride.config("gitHubAppId", GITHUB_APP_ID),
+        DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, ConfigOverride.config("gitHubAppId", GITHUB_APP_ID),
         ConfigOverride.config("gitHubAppPrivateKeyFile", "./src/test/resources/integrationtest.pem"));
-    public static final long GITHUB_USER1_ID = 1L;
-    public static final long GITHUB_USER2_ID = 2L;
     private static TestingPostgres testingPostgres;
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
-    // These are not from Hoverfly, it's actually in the starting database
-    public final static String GITHUB_ACCOUNT_USERNAME_1 = "tuber";
-    public final static String GITHUB_ACCOUNT_USERNAME_2 = "potato";
-
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @ClassRule
-    public static final HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(SERVICES_SIMULATION_SOURCE);
-
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
@@ -104,7 +99,7 @@ public class UserResourceServicesIT {
     }
 
     @AfterClass
-    public static void afterClass(){
+    public static void afterClass() {
         SUPPORT.after();
     }
 
@@ -155,7 +150,7 @@ public class UserResourceServicesIT {
     }
 
     @Test
-    public void refreshWithAppInstalledOnRepo(){
+    public void refreshWithAppInstalledOnRepo() {
         final UsersApi userApi = new UsersApi(getWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres));
         assertEquals(0, userApi.userServices(GITHUB_USER1_ID).size());
         userApi.syncUserServices();
@@ -164,6 +159,5 @@ public class UserResourceServicesIT {
         final Optional<Workflow> xenahubService = services.stream().filter(w -> w.getRepository().equals("xenahub")).findFirst();
         assertEquals(1, xenahubService.get().getWorkflowVersions().size());
     }
-
 
 }
