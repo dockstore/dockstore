@@ -129,6 +129,7 @@ public class WorkflowIT extends BaseIT {
         Registry.QUAY_IO.toString() + "/dockstoretestuser2/dockstore-cgpmap";
     private static final String DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
+    private static final String GATK_SV_TAG = "dockstore-test";
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
     @Rule
@@ -484,12 +485,8 @@ public class WorkflowIT extends BaseIT {
     public void downloadZipComplex() throws IOException {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
+        Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
 
-        // Register and refresh workflow
-        Workflow workflow = ownerWorkflowApi
-                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl",
-                        "test", "wdl", "/test.json");
-        Workflow refresh = ownerWorkflowApi.refresh(workflow.getId());
         Long workflowId = refresh.getId();
         Long versionId = refresh.getWorkflowVersions().get(0).getId();
 
@@ -519,6 +516,30 @@ public class WorkflowIT extends BaseIT {
         } finally {
             FileUtils.deleteQuietly(tempFile);
         }
+    }
+
+    /**
+     * Tests GA4GH endpoint. Ideally this would be in GA4GH*IT, but because we're manually registering
+     * the workflow, putting it here
+     */
+    @Test
+    public void testGa4ghEndpointForComplexWdlWorkflow() {
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
+        Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
+        ownerWorkflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(true));
+        final List<SourceFile> sourceFiles = refresh.getWorkflowVersions().stream()
+                .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getSourceFiles();
+        final Ga4GhApi ga4GhApi = new Ga4GhApi(ownerWebClient);
+        final List<ToolFile> files = ga4GhApi
+                .toolsIdVersionsVersionIdTypeFilesGet("WDL", "#workflow/" + refresh.getFullWorkflowPath(), GATK_SV_TAG);
+        Assert.assertEquals(1, files.stream().filter(f -> f.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR).count());
+        Assert.assertEquals(sourceFiles.size() - 1, files.stream().filter(f -> f.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR).count());
+        files.stream().forEach(file -> {
+            final String path = file.getPath();
+            // TRS paths are relative
+            Assert.assertTrue(sourceFiles.stream().anyMatch(sf -> sf.getAbsolutePath().equals("/" + path)));
+        });
     }
 
     @Test
@@ -1580,6 +1601,14 @@ public class WorkflowIT extends BaseIT {
         Client.main(args.toArray(new String[0]));
         Assert.assertTrue(systemOutRule.getLog().contains("Final process status is success"));
     }
+
+    private Workflow registerGatkSvWorkflow(WorkflowsApi ownerWorkflowApi) {
+        // Register and refresh workflow
+        Workflow workflow = ownerWorkflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl",
+                "test", "wdl", "/test.json");
+        return ownerWorkflowApi.refresh(workflow.getId());
+    }
+
     /**
      * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
      */
