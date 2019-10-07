@@ -1311,20 +1311,29 @@ public class OrganizationIT extends BaseIT {
         assertEquals(2, collectionWithAlias.getAliases().size());
         assertEquals(2, organizationWithAlias.getAliases().size());
 
-        // try to add duplicates
+        // try to add duplicates; this is not allowed
         // set aliases
-        collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
-        organizationWithAlias = organizationsApi.updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+        boolean throwsError = false;
+        try {
+            organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
 
-        assertEquals(2, collectionWithAlias.getAliases().size());
-        assertEquals(2, organizationWithAlias.getAliases().size());
+        if (!throwsError) {
+            fail("Was able to add a duplicate Collection alias.");
+        }
 
-        // delete an alias
-        collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "spam", "");
-        organizationWithAlias = organizationsApi.updateOrganizationAliases(organization.getId(), "spam", "");
+        throwsError = false;
+        try {
+            organizationsApi.updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
 
-        assertEquals(1, collectionWithAlias.getAliases().size());
-        assertEquals(1, organizationWithAlias.getAliases().size());
+        if (!throwsError) {
+            fail("Was able to add a duplicate Organization alias.");
+        }
     }
 
     /**

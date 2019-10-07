@@ -1359,10 +1359,23 @@ public class WorkflowIT extends BaseIT {
         List<Tool> awesomeWorkflow = ga4GhApi.toolsGet(null, "awesome workflow", null, null, null, null, null, null, null, null, 100);
         Assert.assertTrue("workflow was not found or didn't have expected aliases",
             awesomeWorkflow.size() == 1 && awesomeWorkflow.get(0).getAliases().size() == 3);
-        // remove a few aliases
-        entry = genericApi.updateAliases(workflow.getId(), "foobar, test workflow", "");
+        // add a few new aliases
+        entry = genericApi.updateAliases(workflow.getId(), "foobar, another workflow", "");
         Assert.assertTrue("entry is missing expected aliases",
-            entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 2);
+            entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 5);
+
+        // try to add duplicates; this is not allowed
+        boolean throwsError = false;
+        try {
+            // add a few new aliases
+            entry = genericApi.updateAliases(workflow.getId(), "another workflow", "");
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to add a duplicate Workflow alias.");
+        }
 
         // Get workflow by alias
         Workflow aliasWorkflow = workflowApi.getWorkflowByAlias("foobar");
