@@ -49,8 +49,9 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     T getAndCheckResourceByAlias(String alias);
 
-    default T updateAliases(User user, Long id, String aliases, String emptyBody) {
+    default T addAliases(User user, Long id, String aliases, String emptyBody) {
         T c = getAndCheckResource(user, id);
+        Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
         // reserve some prefixes for our own use
@@ -63,6 +64,12 @@ public interface AliasableResourceInterface<T extends Aliasable> {
                         HttpStatus.SC_BAD_REQUEST);
                 }
             }
+        }
+
+        Set<String> duplicateAliasesToAdd = Sets.intersection(newAliases, oldAliases);
+        if (!duplicateAliasesToAdd.isEmpty()) {
+            String dupAliasesString = String.join(", ", duplicateAliasesToAdd);
+            throw new CustomWebApplicationException("Aliases " + dupAliasesString + " already exist; please use unique aliases", HttpStatus.SC_BAD_REQUEST);
         }
 
         newAliases.forEach(alias -> c.getAliases().put(alias, new Alias()));
