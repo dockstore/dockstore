@@ -548,16 +548,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).collect(Collectors.toList());
     }
 
-    /**
-     * Retrieve a list of all existing BioWorkflows the user owns that are from the given token source registry
-     * @param user
-     * @param tokenSource
-     * @return List of bioworkflows
-     */
-    private List<Workflow> getWorkflowsFromRegistry(User user, String tokenSource) {
-        return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).filter(workflow -> Objects.equals(workflow.getSourceControl().toString(), tokenSource)).collect(Collectors.toList());
-    }
-
     @GET
     @Path("/{userId}/services")
     @Timed
@@ -810,7 +800,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         // Delete workflow for a given repository
         if (scTokens.size() > 0) {
             final Token gitToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
             final String tokenSource = gitToken.getTokenSource().toString();
 
             String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
