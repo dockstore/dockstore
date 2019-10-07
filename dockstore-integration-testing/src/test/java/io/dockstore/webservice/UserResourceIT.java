@@ -243,6 +243,8 @@ public class UserResourceIT extends BaseIT {
     public void testWizardEndpoints() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
         List<String> registries = userApi.getUserRegistries();
         assertTrue(registries.size() > 0);
         assertTrue(registries.contains("github.com"));
@@ -266,6 +268,14 @@ public class UserResourceIT extends BaseIT {
         assertNotNull("GitHub workflow should be added", ghWorkflow);
         assertEquals(ghWorkflow.getFullWorkflowPath(), "github.com/dockstoretesting/basic-workflow");
 
+        // Try deleting a workflow
+        userApi.deleteWorkflow("GITHUB_COM", "dockstoretesting/basic-workflow");
+        try {
+            Workflow deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
+            assertFalse("Should not reach here as entry should not exist", false);
+        } catch (ApiException ex) {
+        }
+
         // Test Gitlab
         orgs = userApi.getUserOrganizations("GITLAB_COM");
         assertTrue(orgs.size() > 0);
@@ -287,7 +297,6 @@ public class UserResourceIT extends BaseIT {
         } catch (ApiException ex) {
             assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));
         }
-
     }
 
 }

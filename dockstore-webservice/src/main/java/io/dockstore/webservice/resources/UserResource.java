@@ -54,7 +54,9 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -786,6 +788,53 @@ public class UserResource implements AuthenticatedResourceInterface {
             }
         }
         return null;
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/workflows")
+    @Operation(operationId = "deleteWorkflow")
+    @ApiOperation(value = "Delete a workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void deleteWorkflow(@ApiParam(hidden = true) @Auth User authUser,
+                                   @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
+                                   @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
+        User foundUser = userDAO.findById(authUser.getId());
+
+        // Get all of the users source control tokens
+        List<Token> scTokens = workflowResource.checkOnBitbucketToken(foundUser)
+                .stream()
+                .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
+                .collect(Collectors.toList());
+
+        // Add repository as workflow
+        if (scTokens.size() > 0) {
+            final Token gitToken = scTokens.get(0);
+            SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
+            final String tokenSource = gitToken.getTokenSource().toString();
+
+            String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
+            LOG.info("Deleting " + gitUrl);
+
+            // Create a workflow stub object if necessary
+            final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
+            if (existingWorkflow.isEmpty()) {
+                String msg = "No workflow with path " + tokenSource + "/" + repository + " exists.";
+                LOG.error(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            } else {
+                // Delete workflow
+                BioWorkflow workflow = existingWorkflow.get();
+                if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
+                    elasticManager.handleIndexUpdate(existingWorkflow.get(), ElasticMode.DELETE);
+                    workflowDAO.delete(workflow);
+                } else {
+                    String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
+                    LOG.error(msg);
+                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                }
+            }
+        }
     }
 
     @GET
