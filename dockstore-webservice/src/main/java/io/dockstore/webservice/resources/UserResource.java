@@ -54,9 +54,7 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -727,121 +725,20 @@ public class UserResource implements AuthenticatedResourceInterface {
         return getStrippedServices(userDAO.findById(user.getId()));
     }
 
-    @POST
-    @Timed
-    @UnitOfWork
-    @Path("/workflows")
-    @Operation(operationId = "addWorkflow")
-    @ApiOperation(value = "Adds a workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = BioWorkflow.class)
-    public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Auth User authUser,
-                                      @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
-                                      @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
-        User foundUser = userDAO.findById(authUser.getId());
-
-        // Get all of the users source control tokens
-        List<Token> scTokens = workflowResource.checkOnBitbucketToken(foundUser)
-                .stream()
-                .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
-                .collect(Collectors.toList());
-
-        // Add repository as workflow
-        if (scTokens.size() > 0) {
-            final Token gitToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
-            final String tokenSource = gitToken.getTokenSource().toString();
-
-            String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-            LOG.info("Adding " + gitUrl);
-
-            // Create a workflow stub object if necessary
-            final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
-            if (existingWorkflow.isEmpty()) {
-                final Workflow createdWorkflow = sourceCodeRepo.createStubBioworkflow(repository);
-                if (createdWorkflow != null) {
-                    final long workflowID = workflowDAO.create(createdWorkflow);
-                    final Workflow workflowFromDB = workflowDAO.findById(workflowID);
-                    workflowFromDB.getUsers().add(foundUser);
-                } else {
-                    String msg = "There was an error adding workflow with the path " + tokenSource + "/" + repository;
-                    LOG.error(msg);
-                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-                }
-            } else {
-                String msg = "A workflow with path " + tokenSource + "/" + repository + " already exists.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            }
-            Optional<BioWorkflow> finalWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
-            bulkUpsertWorkflows(foundUser);
-            if (finalWorkflow.isPresent()) {
-                return finalWorkflow.get();
-            }
-        }
-        return null;
-    }
-
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/workflows")
-    @Operation(operationId = "deleteWorkflow")
-    @ApiOperation(value = "Delete a workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public void deleteWorkflow(@ApiParam(hidden = true) @Auth User authUser,
-                                   @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
-                                   @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
-        User foundUser = userDAO.findById(authUser.getId());
-
-        // Get all of the users source control tokens
-        List<Token> scTokens = workflowResource.checkOnBitbucketToken(foundUser)
-                .stream()
-                .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
-                .collect(Collectors.toList());
-
-        // Delete workflow for a given repository
-        if (scTokens.size() > 0) {
-            final Token gitToken = scTokens.get(0);
-            final String tokenSource = gitToken.getTokenSource().toString();
-
-            String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-            LOG.info("Deleting " + gitUrl);
-
-            // Create a workflow stub object if necessary
-            final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
-            if (existingWorkflow.isEmpty()) {
-                String msg = "No workflow with path " + tokenSource + "/" + repository + " exists.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            } else {
-                BioWorkflow workflow = existingWorkflow.get();
-                checkUser(foundUser, workflow);
-                if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
-                    elasticManager.handleIndexUpdate(existingWorkflow.get(), ElasticMode.DELETE);
-                    workflowDAO.delete(workflow);
-                } else {
-                    String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
-                    LOG.error(msg);
-                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-                }
-            }
-        }
-    }
-
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/registries")
     @Operation(operationId = "getUserRegistries")
-    @ApiOperation(nickname = "getUserRegistries", value = "Get all of the git registries accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = TokenType.class, responseContainer = "List")
-    public List<TokenType> getUserRegistries(@ApiParam(hidden = true) @Auth User authUser) {
+    @ApiOperation(nickname = "getUserRegistries", value = "Get all of the git registries accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class, responseContainer = "List")
+    public List<String> getUserRegistries(@ApiParam(hidden = true) @Auth User authUser) {
         User foundUser = userDAO.findById(authUser.getId());
 
-        List<TokenType> scTokens = tokenDAO.findByUserId(foundUser.getId())
+        return tokenDAO.findByUserId(foundUser.getId())
                 .stream()
                 .filter(token -> token.getTokenSource().isSourceControlToken())
-                .map(token -> token.getTokenSource())
+                .map(token -> token.getTokenSource().toString())
                 .collect(Collectors.toList());
-
-        return scTokens;
     }
 
     @GET
@@ -852,20 +749,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(nickname = "getUserOrganizations", value = "Get all of the organizations for a given git registry accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class, responseContainer = "Set")
     public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Auth User authUser,
                                              @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry) {
-        User foundUser = userDAO.findById(authUser.getId());
-
-        List<Token> scTokens = tokenDAO.findByUserId(foundUser.getId())
-                .stream()
-                .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
-                .collect(Collectors.toList());
-
-        if (scTokens.size() > 0) {
-            Token scToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(scToken, client);
-
-            final Map<String, String> repositoryUrlToName = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-            Set<String> organizations = repositoryUrlToName.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
-            return organizations;
+        Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
+        if (repositoryUrlToName != null) {
+            return repositoryUrlToName.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
         }
         return new HashSet<>();
     }
@@ -879,7 +765,21 @@ public class UserResource implements AuthenticatedResourceInterface {
     public Set<String> getUserOrganizationRepositories(@ApiParam(hidden = true) @Auth User authUser,
                                             @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry,
                                             @ApiParam(value = "Git organization", required = true) @PathParam("organization") String organization) {
-        User foundUser = userDAO.findById(authUser.getId());
+        Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
+        if (repositoryUrlToName != null) {
+            return repositoryUrlToName.values().stream().filter(repository -> repository.startsWith(organization + "/")).collect(Collectors.toSet());
+        }
+        return new HashSet<>();
+    }
+
+    /**
+     * For a given user and git registry, retrieve a map of git url to repository path
+     * @param user
+     * @param gitRegistry
+     * @return mapping of git url to repository path
+     */
+    private Map<String, String> getGitRepositoryMap(User user, TokenType gitRegistry) {
+        User foundUser = userDAO.findById(user.getId());
 
         List<Token> scTokens = tokenDAO.findByUserId(foundUser.getId())
                 .stream()
@@ -888,13 +788,11 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         if (scTokens.size() > 0) {
             Token scToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(scToken, client);
-
-            final Map<String, String> repositoryUrlToName = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-            Set<String> repositories = repositoryUrlToName.values().stream().filter(repository -> repository.startsWith(organization + "/")).collect(Collectors.toSet());
-            return repositories;
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken, client);
+            return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+        } else {
+            return null;
         }
-        return new HashSet<>();
     }
 
     /**

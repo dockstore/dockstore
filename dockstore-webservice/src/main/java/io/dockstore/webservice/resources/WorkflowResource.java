@@ -105,6 +105,7 @@ import io.swagger.annotations.Authorization;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.zenodo.client.ApiClient;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
@@ -1213,68 +1214,47 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
         @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
-        // Set up source code interface and ensure token is set up
-        // construct git url like git@github.com:dockstore/dockstore-ui.git
-        String registryURLPrefix;
-        SourceControl sourceControlEnum;
-        if (workflowRegistry.equalsIgnoreCase(SourceControl.BITBUCKET.getFriendlyName().toLowerCase())) {
-            sourceControlEnum = SourceControl.BITBUCKET;
-            registryURLPrefix = sourceControlEnum.toString();
-        } else if (workflowRegistry.equalsIgnoreCase(SourceControl.GITHUB.getFriendlyName().toLowerCase())) {
-            sourceControlEnum = SourceControl.GITHUB;
-            registryURLPrefix = sourceControlEnum.toString();
-        } else if (workflowRegistry.equalsIgnoreCase(SourceControl.GITLAB.getFriendlyName().toLowerCase())) {
-            sourceControlEnum = SourceControl.GITLAB;
-            registryURLPrefix = sourceControlEnum.toString();
-        } else {
+        // Validate descriptor path based on type
+        if ("nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith("nextflow.config")) {
+            throw new CustomWebApplicationException(
+                    "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+                            + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
+        } else if (!"nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith(descriptorType)) {
+            throw new CustomWebApplicationException(
+                    "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+                            + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Validate source control registry
+        Optional<SourceControl> sourceControlEnum = Arrays.stream(SourceControl.values()).filter(value -> workflowRegistry.equalsIgnoreCase(value.getFriendlyName().toLowerCase())).findFirst();
+        if (sourceControlEnum.isEmpty()) {
             throw new CustomWebApplicationException("The given git registry is not supported.", HttpStatus.SC_BAD_REQUEST);
         }
-        String completeWorkflowPath = workflowPath;
-        // Check that no duplicate workflow (same WorkflowPath) exists
-        if (workflowName != null && !"".equals(workflowName)) {
-            completeWorkflowPath += "/" + workflowName;
+
+        String registryURLPrefix = sourceControlEnum.get().toString();
+        String gitURL = "git@" + registryURLPrefix + ":" + workflowPath + ".git";
+        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
+
+        // Create workflow
+        Workflow newWorkflow = sourceCodeRepo.createStubBioworkflow(workflowPath);
+
+        if (newWorkflow == null) {
+            throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
         }
 
         if (Strings.isNullOrEmpty(workflowName)) {
             workflowName = null;
         }
 
-        if ("nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith("nextflow.config")) {
-            throw new CustomWebApplicationException(
-                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
-                    + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
-        } else if (!"nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith(descriptorType)) {
-            throw new CustomWebApplicationException(
-                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
-                    + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false, BioWorkflow.class).orElse(null);
-        if (duplicate != null) {
-            throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        String gitURL = "git@" + registryURLPrefix + ":" + workflowPath + ".git";
-        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
-
-        // Create workflow
-        Workflow newWorkflow = sourceCodeRepo.getWorkflow(completeWorkflowPath, Optional.empty());
-
-        if (newWorkflow == null) {
-            throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
-        }
-        // hmmm, will need to set the descriptor type now before the default path, lest the wrong language be recorded till we get multiple language workflows
         newWorkflow.setDescriptorType(DescriptorLanguage.convertShortStringToEnum(descriptorType));
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
-        final long workflowID = workflowDAO.create(newWorkflow);
-        // need to create nested data models
-        final Workflow workflowFromDB = workflowDAO.findById(workflowID);
-        workflowFromDB.getUsers().add(user);
+        // Save into database and then pull versions
+        Workflow workflowFromDB = saveNewWorkflow(newWorkflow, user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
-        return workflowDAO.findById(workflowID);
+        return workflowDAO.findById(workflowFromDB.getId());
 
     }
 
@@ -1688,6 +1668,127 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         optionalUserCheckEntry(user, workflow);
         return workflow;
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/workflows")
+    @Operation(operationId = "addWorkflow")
+    @ApiOperation(value = "Adds a workflow for a registry and repository path with defaults set.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = BioWorkflow.class)
+    public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Auth User authUser,
+                                   @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
+                                   @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
+        User foundUser = userDAO.findById(authUser.getId());
+
+        // Find matching source control
+        List<Token> scTokens = checkOnBitbucketToken(foundUser)
+                .stream()
+                .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
+                .collect(Collectors.toList());
+
+        // Add repository as workflow
+        if (scTokens.size() == 0) {
+            String msg = "User does not have access to the given source control registry.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        final Token gitToken = scTokens.get(0);
+        SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
+        final String tokenSource = gitToken.getTokenSource().toString();
+
+        String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
+        LOG.info("Adding " + gitUrl);
+
+        // Create a workflow
+        final Workflow createdWorkflow = sourceCodeRepo.createStubBioworkflow(repository);
+        if (createdWorkflow == null) {
+            String msg = "There was an error adding workflow with the path " + tokenSource + "/" + repository;
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        saveNewWorkflow(createdWorkflow, foundUser);
+        Optional<BioWorkflow> finalWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
+        bulkUpsertWorkflows(foundUser);
+        if (finalWorkflow.isPresent()) {
+            return finalWorkflow.get();
+        }
+        return null;
+    }
+
+    /**
+     * Saves a new workflow to the database
+     * @param workflow
+     * @param user
+     * @return New workflow
+     */
+    private Workflow saveNewWorkflow(Workflow workflow, User user) {
+        // Check for duplicate
+        Optional<BioWorkflow> duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class);
+        if (duplicate.isPresent()) {
+            throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+        final long workflowID = workflowDAO.create(workflow);
+        final Workflow workflowFromDB = workflowDAO.findById(workflowID);
+        workflowFromDB.getUsers().add(user);
+        return workflowFromDB;
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/workflows")
+    @Operation(operationId = "deleteWorkflow")
+    @ApiOperation(value = "Delete a workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void deleteWorkflow(@ApiParam(hidden = true) @Auth User authUser,
+                               @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
+                               @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
+        User foundUser = userDAO.findById(authUser.getId());
+
+        // Get all of the users source control tokens
+        List<Token> scTokens = checkOnBitbucketToken(foundUser)
+                .stream()
+                .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
+                .collect(Collectors.toList());
+
+        // Delete workflow for a given repository
+        if (scTokens.size() > 0) {
+            final Token gitToken = scTokens.get(0);
+            final String tokenSource = gitToken.getTokenSource().toString();
+
+            String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
+            LOG.info("Deleting " + gitUrl);
+
+            // Create a workflow stub object if necessary
+            final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
+            if (existingWorkflow.isEmpty()) {
+                String msg = "No workflow with path " + tokenSource + "/" + repository + " exists.";
+                LOG.error(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            } else {
+                BioWorkflow workflow = existingWorkflow.get();
+                checkUser(foundUser, workflow);
+                if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
+                    elasticManager.handleIndexUpdate(existingWorkflow.get(), ElasticMode.DELETE);
+                    workflowDAO.delete(workflow);
+                } else {
+                    String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
+                    LOG.error(msg);
+                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                }
+            }
+        }
+    }
+
+    private void bulkUpsertWorkflows(User authUser) {
+        Set<Entry> allEntries = authUser.getEntries();
+        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
+                .collect(Collectors.toList());
+        if (!toolEntries.isEmpty()) {
+            elasticManager.bulkUpsert(toolEntries);
+        }
     }
 
     /**

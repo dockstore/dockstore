@@ -328,67 +328,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/workflows:
-    post:
-      operationId: addWorkflow
-      parameters:
-      - name: gitRegistry
-        in: query
-        schema:
-          type: string
-          enum:
-          - quay.io
-          - github.com
-          - dockstore
-          - bitbucket.org
-          - gitlab.com
-          - zenodo.org
-          - google.com
-      - name: repository
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BioWorkflow'
-    delete:
-      operationId: deleteWorkflow
-      parameters:
-      - name: gitRegistry
-        in: query
-        schema:
-          type: string
-          enum:
-          - quay.io
-          - github.com
-          - dockstore
-          - bitbucket.org
-          - gitlab.com
-          - zenodo.org
-          - google.com
-      - name: repository
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
   /users/registries:
     get:
       operationId: getUserRegistries
@@ -406,14 +345,6 @@ paths:
                 type: array
                 items:
                   type: string
-                  enum:
-                  - quay.io
-                  - github.com
-                  - dockstore
-                  - bitbucket.org
-                  - gitlab.com
-                  - zenodo.org
-                  - google.com
   /users/registries/{gitRegistry}/organizations:
     get:
       operationId: getUserOrganizations
@@ -483,6 +414,67 @@ paths:
                 type: array
                 items:
                   type: string
+  /workflows/workflows:
+    post:
+      operationId: addWorkflow
+      parameters:
+      - name: gitRegistry
+        in: query
+        schema:
+          type: string
+          enum:
+          - quay.io
+          - github.com
+          - dockstore
+          - bitbucket.org
+          - gitlab.com
+          - zenodo.org
+          - google.com
+      - name: repository
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BioWorkflow'
+    delete:
+      operationId: deleteWorkflow
+      parameters:
+      - name: gitRegistry
+        in: query
+        schema:
+          type: string
+          enum:
+          - quay.io
+          - github.com
+          - dockstore
+          - bitbucket.org
+          - gitlab.com
+          - zenodo.org
+          - google.com
+      - name: repository
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
 components:
   schemas:
     Alias:
@@ -744,6 +736,8 @@ components:
             $ref: '#/components/schemas/Validation'
         hidden:
           type: boolean
+        verified:
+          type: boolean
         verifiedSource:
           type: string
         verifiedSources:
@@ -758,8 +752,6 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
-        verified:
-          type: boolean
         workingDirectory:
           type: string
         dbUpdateDate:
@@ -974,13 +966,13 @@ components:
         parent_id:
           type: integer
           format: int64
+        source_control_provider:
+          type: string
         full_workflow_path:
           type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
-          type: string
-        source_control_provider:
           type: string
         checker_id:
           type: integer
@@ -1049,6 +1041,8 @@ components:
           type: string
         hidden:
           type: boolean
+        verified:
+          type: boolean
         verifiedSource:
           type: string
         verifiedSources:
@@ -1063,8 +1057,6 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
-        verified:
-          type: boolean
         dbUpdateDate:
           type: string
           format: date-time

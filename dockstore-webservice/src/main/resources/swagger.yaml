@@ -3683,14 +3683,6 @@ paths:
             type: "array"
             items:
               type: "string"
-              enum:
-              - "quay.io"
-              - "github.com"
-              - "dockstore"
-              - "bitbucket.org"
-              - "gitlab.com"
-              - "zenodo.org"
-              - "google.com"
       security:
       - BEARER: []
   /users/registries/{gitRegistry}/organizations:
@@ -4088,65 +4080,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/User"
-      security:
-      - BEARER: []
-  /users/workflows:
-    post:
-      tags:
-      - "users"
-      summary: "Adds a workflow for a registry and repository path."
-      description: ""
-      operationId: "addWorkflow"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "gitRegistry"
-        in: "query"
-        description: "Git registry"
-        required: true
-        type: "string"
-        enum:
-        - "GITHUB_COM"
-        - "GITLAB_COM"
-        - "BITBUCKET_ORG"
-      - name: "repository"
-        in: "query"
-        description: "Git repository path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/BioWorkflow"
-      security:
-      - BEARER: []
-    delete:
-      tags:
-      - "users"
-      summary: "Delete a workflow for a registry and repository path."
-      description: ""
-      operationId: "deleteWorkflow"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "gitRegistry"
-        in: "query"
-        description: "Git registry"
-        required: true
-        type: "string"
-        enum:
-        - "GITHUB_COM"
-        - "GITLAB_COM"
-        - "BITBUCKET_ORG"
-      - name: "repository"
-        in: "query"
-        description: "Git repository path"
-        required: true
-        type: "string"
-      responses:
-        default:
-          description: "successful operation"
       security:
       - BEARER: []
   /users/{userId}:
@@ -5221,6 +5154,65 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SharedWorkflows"
+      security:
+      - BEARER: []
+  /workflows/workflows:
+    post:
+      tags:
+      - "workflows"
+      summary: "Adds a workflow for a registry and repository path with defaults set."
+      description: ""
+      operationId: "addWorkflow"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "gitRegistry"
+        in: "query"
+        description: "Git registry"
+        required: true
+        type: "string"
+        enum:
+        - "GITHUB_COM"
+        - "GITLAB_COM"
+        - "BITBUCKET_ORG"
+      - name: "repository"
+        in: "query"
+        description: "Git repository path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/BioWorkflow"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "workflows"
+      summary: "Delete a workflow for a registry and repository path."
+      description: ""
+      operationId: "deleteWorkflow"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "gitRegistry"
+        in: "query"
+        description: "Git registry"
+        required: true
+        type: "string"
+        enum:
+        - "GITHUB_COM"
+        - "GITLAB_COM"
+        - "BITBUCKET_ORG"
+      - name: "repository"
+        in: "query"
+        description: "Git repository path"
+        required: true
+        type: "string"
+      responses:
+        default:
+          description: "successful operation"
       security:
       - BEARER: []
   /workflows/{alias}/aliases:
@@ -7704,10 +7696,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      isChecker:
-        type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      isChecker:
+        type: "boolean"
       has_checker:
         type: "boolean"
         readOnly: true
