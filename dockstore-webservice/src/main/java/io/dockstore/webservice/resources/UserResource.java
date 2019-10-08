@@ -777,9 +777,7 @@ public class UserResource implements AuthenticatedResourceInterface {
      * @return mapping of git url to repository path
      */
     private Map<String, String> getGitRepositoryMap(User user, TokenType gitRegistry) {
-        User foundUser = userDAO.findById(user.getId());
-
-        List<Token> scTokens = tokenDAO.findByUserId(foundUser.getId())
+        List<Token> scTokens = tokenDAO.findByUserId(user.getId())
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
                 .collect(Collectors.toList());
