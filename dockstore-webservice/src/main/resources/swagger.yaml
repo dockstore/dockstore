@@ -2421,10 +2421,10 @@ paths:
     post:
       tags:
       - "entries"
-      summary: "Update the aliases linked to a entry in Dockstore."
+      summary: "Add aliases linked to a entry in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
-      operationId: "updateAliases"
+      operationId: "addAliases"
       produces:
       - "application/json"
       parameters:
@@ -2765,10 +2765,10 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Update the aliases linked to a Collection in Dockstore."
+      summary: "Add aliases linked to a Collection in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
-      operationId: "updateCollectionAliases"
+      operationId: "addCollectionAliases"
       produces:
       - "application/json"
       parameters:
@@ -2897,10 +2897,10 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Update the aliases linked to a listing in Dockstore."
+      summary: "Add aliases linked to an Organization in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
-      operationId: "updateOrganizationAliases"
+      operationId: "addOrganizationAliases"
       produces:
       - "application/json"
       parameters:

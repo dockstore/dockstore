@@ -1247,9 +1247,9 @@ public class OrganizationIT extends BaseIT {
             "update organization set status = '" + io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() + "'");
 
         // set aliases
-        final Collection collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
+        final Collection collectionWithAlias = organizationsApi.addCollectionAliases(collectionId, "test collection, spam");
         final Organization organizationWithAlias = organizationsApi
-            .updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+            .addOrganizationAliases(organization.getId(), "test organization, spam");
 
         assertEquals(2, collectionWithAlias.getAliases().size());
         assertEquals(2, organizationWithAlias.getAliases().size());
@@ -1270,7 +1270,7 @@ public class OrganizationIT extends BaseIT {
 
         boolean throwsError = false;
         try {
-            organizationsApi.updateCollectionAliases(collectionId, "test collection, doi: foo", "");
+            organizationsApi.addCollectionAliases(collectionId, "test collection, doi: foo");
         } catch (ApiException ex) {
             throwsError = true;
         }
@@ -1304,9 +1304,9 @@ public class OrganizationIT extends BaseIT {
             "update organization set status = '" + io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() + "'");
 
         // set aliases
-        Collection collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
+        Collection collectionWithAlias = organizationsApi.addCollectionAliases(collectionId, "test collection, spam");
         Organization organizationWithAlias = organizationsApi
-            .updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+            .addOrganizationAliases(organization.getId(), "test organization, spam");
 
         assertEquals(2, collectionWithAlias.getAliases().size());
         assertEquals(2, organizationWithAlias.getAliases().size());
@@ -1315,7 +1315,7 @@ public class OrganizationIT extends BaseIT {
         // set aliases
         boolean throwsError = false;
         try {
-            organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
+            organizationsApi.addCollectionAliases(collectionId, "test collection, spam");
         } catch (ApiException ex) {
             throwsError = true;
         }
@@ -1326,7 +1326,7 @@ public class OrganizationIT extends BaseIT {
 
         throwsError = false;
         try {
-            organizationsApi.updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+            organizationsApi.addOrganizationAliases(organization.getId(), "test organization, spam");
         } catch (ApiException ex) {
             throwsError = true;
         }

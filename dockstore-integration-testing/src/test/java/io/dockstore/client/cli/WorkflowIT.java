@@ -1347,7 +1347,7 @@ public class WorkflowIT extends BaseIT {
 
         // give the workflow a few aliases
         EntriesApi genericApi = new EntriesApi(webClient);
-        Entry entry = genericApi.updateAliases(workflow.getId(), "awesome workflow, spam, test workflow", "");
+        Entry entry = genericApi.addAliases(workflow.getId(), "awesome workflow, spam, test workflow");
         Assert.assertTrue("entry is missing expected aliases",
             entry.getAliases().containsKey("awesome workflow") && entry.getAliases().containsKey("spam") && entry.getAliases()
                 .containsKey("test workflow"));
@@ -1360,7 +1360,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue("workflow was not found or didn't have expected aliases",
             awesomeWorkflow.size() == 1 && awesomeWorkflow.get(0).getAliases().size() == 3);
         // add a few new aliases
-        entry = genericApi.updateAliases(workflow.getId(), "foobar, another workflow", "");
+        entry = genericApi.addAliases(workflow.getId(), "foobar, another workflow");
         Assert.assertTrue("entry is missing expected aliases",
             entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 5);
 
@@ -1368,7 +1368,7 @@ public class WorkflowIT extends BaseIT {
         boolean throwsError = false;
         try {
             // add a few new aliases
-            entry = genericApi.updateAliases(workflow.getId(), "another workflow", "");
+            entry = genericApi.addAliases(workflow.getId(), "another workflow");
         } catch (ApiException ex) {
             throwsError = true;
         }

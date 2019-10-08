@@ -49,7 +49,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     T getAndCheckResourceByAlias(String alias);
 
-    default T addAliases(User user, Long id, String aliases, String emptyBody) {
+    default T addAliases(User user, Long id, String aliases) {
         T c = getAndCheckResource(user, id);
         Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));

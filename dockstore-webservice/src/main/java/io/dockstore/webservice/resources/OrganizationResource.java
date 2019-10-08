@@ -813,13 +813,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Override
     @Path("{organizationId}/aliases")
-    @ApiOperation(nickname = "updateOrganizationAliases", value = "Update the aliases linked to a listing in Dockstore.", authorizations = {
+    @ApiOperation(nickname = "addOrganizationAliases", value = "Add aliases linked to a listing in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Organization.class)
     public Organization addAliases(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("organizationId") Long id,
-        @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
-        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return AliasableResourceInterface.super.addAliases(user, id, aliases, emptyBody);
+        @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {
+        return AliasableResourceInterface.super.addAliases(user, id, aliases);
     }
 
     @GET

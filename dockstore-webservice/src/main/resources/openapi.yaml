@@ -2647,10 +2647,10 @@ paths:
     post:
       tags:
         - entries
-      summary: Update the aliases linked to a entry in Dockstore.
+      summary: Add aliases linked to a entry in Dockstore.
       description: Aliases are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
-      operationId: updateAliases
+      operationId: addAliases
       parameters:
         - name: id
           in: path
@@ -2988,10 +2988,10 @@ paths:
     post:
       tags:
         - organizations
-      summary: Update the aliases linked to a Collection in Dockstore.
+      summary: Add aliases linked to a Collection in Dockstore.
       description: Aliases are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
-      operationId: updateCollectionAliases
+      operationId: addCollectionAliases
       parameters:
         - name: collectionId
           in: path
@@ -3122,10 +3122,10 @@ paths:
     post:
       tags:
         - organizations
-      summary: Update the aliases linked to a listing in Dockstore.
+      summary: Add aliases linked to an Organization in Dockstore.
       description: Aliases are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
-      operationId: updateOrganizationAliases
+      operationId: addOrganizationAliases
       parameters:
         - name: organizationId
           in: path
