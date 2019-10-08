@@ -735,7 +735,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         return tokenDAO.findByUserId(authUser.getId())
                 .stream()
                 .filter(token -> token.getTokenSource().isSourceControlToken())
-                .map(token -> token.getTokenSource().toString())
+                .map(token -> token.getTokenSource().name())
                 .collect(Collectors.toList());
     }
 
