@@ -732,9 +732,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Operation(operationId = "getUserRegistries")
     @ApiOperation(nickname = "getUserRegistries", value = "Get all of the git registries accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class, responseContainer = "List")
     public List<String> getUserRegistries(@ApiParam(hidden = true) @Auth User authUser) {
-        User foundUser = userDAO.findById(authUser.getId());
-
-        return tokenDAO.findByUserId(foundUser.getId())
+        return tokenDAO.findByUserId(authUser.getId())
                 .stream()
                 .filter(token -> token.getTokenSource().isSourceControlToken())
                 .map(token -> token.getTokenSource().toString())

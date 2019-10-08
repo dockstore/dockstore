@@ -1709,13 +1709,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        saveNewWorkflow(createdWorkflow, foundUser);
-        Optional<BioWorkflow> finalWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
-        bulkUpsertWorkflows(foundUser);
-        if (finalWorkflow.isPresent()) {
-            return finalWorkflow.get();
-        }
-        return null;
+        return saveNewWorkflow(createdWorkflow, foundUser);
     }
 
     /**
@@ -1724,7 +1718,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param user
      * @return New workflow
      */
-    private Workflow saveNewWorkflow(Workflow workflow, User user) {
+    private BioWorkflow saveNewWorkflow(Workflow workflow, User user) {
         // Check for duplicate
         Optional<BioWorkflow> duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false, BioWorkflow.class);
         if (duplicate.isPresent()) {
@@ -1733,7 +1727,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final long workflowID = workflowDAO.create(workflow);
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
         workflowFromDB.getUsers().add(user);
-        return workflowFromDB;
+        return (BioWorkflow)workflowFromDB;
     }
 
     @DELETE
@@ -1779,15 +1773,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
                 }
             }
-        }
-    }
-
-    private void bulkUpsertWorkflows(User authUser) {
-        Set<Entry> allEntries = authUser.getEntries();
-        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
-                .collect(Collectors.toList());
-        if (!toolEntries.isEmpty()) {
-            elasticManager.bulkUpsert(toolEntries);
         }
     }
 
