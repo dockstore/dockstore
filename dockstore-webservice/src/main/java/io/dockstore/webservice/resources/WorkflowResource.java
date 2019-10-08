@@ -140,7 +140,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String PAGINATION_LIMIT = "100";
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
 
-
     private final ElasticManager elasticManager;
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -1337,8 +1336,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
-                LanguageHandlerInterface.Type.DAG, toolDAO);
+            return lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+                    LanguageHandlerInterface.Type.DAG, toolDAO);
         }
         return null;
     }
