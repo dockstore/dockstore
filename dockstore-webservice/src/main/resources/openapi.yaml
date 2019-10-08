@@ -4340,67 +4340,6 @@ paths:
                 $ref: "#/components/schemas/User"
       security:
         - BEARER: []
-  /users/workflows:
-    post:
-      tags:
-        - users
-      summary: Adds a workflow for a registry and repository path.
-      description: ""
-      operationId: addWorkflow
-      parameters:
-        - name: gitRegistry
-          in: query
-          description: Git registry
-          required: true
-          schema:
-            type: string
-            enum:
-              - GITHUB_COM
-              - GITLAB_COM
-              - BITBUCKET_ORG
-        - name: repository
-          in: query
-          description: Git repository path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BioWorkflow"
-      security:
-        - BEARER: []
-    delete:
-      tags:
-        - users
-      summary: Delete a workflow for a registry and repository path.
-      description: ""
-      operationId: deleteWorkflow
-      parameters:
-        - name: gitRegistry
-          in: query
-          description: Git registry
-          required: true
-          schema:
-            type: string
-            enum:
-              - GITHUB_COM
-              - GITLAB_COM
-              - BITBUCKET_ORG
-        - name: repository
-          in: query
-          description: Git repository path
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
   "/users/{userId}":
     get:
       tags:
@@ -5529,6 +5468,67 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SharedWorkflows"
+      security:
+        - BEARER: []
+  /workflows/workflows:
+    post:
+      tags:
+        - workflows
+      summary: Adds a workflow for a registry and repository path with defaults set.
+      description: ""
+      operationId: addWorkflow
+      parameters:
+        - name: gitRegistry
+          in: query
+          description: Git registry
+          required: true
+          schema:
+            type: string
+            enum:
+              - GITHUB_COM
+              - GITLAB_COM
+              - BITBUCKET_ORG
+        - name: repository
+          in: query
+          description: Git repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BioWorkflow"
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - workflows
+      summary: Delete a stubbed workflow for a registry and repository path.
+      description: ""
+      operationId: deleteWorkflow
+      parameters:
+        - name: gitRegistry
+          in: query
+          description: Git registry
+          required: true
+          schema:
+            type: string
+            enum:
+              - GITHUB_COM
+              - GITLAB_COM
+              - BITBUCKET_ORG
+        - name: repository
+          in: query
+          description: Git repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: successful operation
       security:
         - BEARER: []
   "/workflows/{alias}/aliases":
@@ -7732,15 +7732,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -7939,10 +7939,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parentEntry:
-          $ref: "#/components/schemas/Entry"
         isChecker:
           type: boolean
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         last_modified_date:
           type: string
           format: date-time

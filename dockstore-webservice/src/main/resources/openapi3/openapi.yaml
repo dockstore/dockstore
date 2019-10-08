@@ -57,6 +57,20 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
+  /metadata/config.json:
+    get:
+      tags:
+      - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
   /metadata/sitemap:
     get:
       tags:
@@ -195,20 +209,6 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/config.json:
-    get:
-      tags:
-      - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Config'
   /toolTester/logs/search:
     get:
       tags:
@@ -291,16 +291,9 @@ paths:
             text/plain:
               schema:
                 type: string
-  /users/{userId}:
+  /users/user:
     get:
-      operationId: getSpecificUser
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -313,9 +306,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/user:
+  /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getSpecificUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
       requestBody:
         content:
           '*/*':
@@ -539,6 +539,9 @@ components:
         last_modified:
           type: integer
           format: int32
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -554,9 +557,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     FileFormat:
       type: object
       properties:
@@ -736,6 +736,8 @@ components:
             $ref: '#/components/schemas/Validation'
         hidden:
           type: boolean
+        workingDirectory:
+          type: string
         verified:
           type: boolean
         verifiedSource:
@@ -752,8 +754,6 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
-        workingDirectory:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -781,20 +781,6 @@ components:
         customDockerPath:
           type: string
         enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
           type: string
     Config:
       type: object
@@ -854,6 +840,20 @@ components:
         googleClientId:
           type: string
         discourseUrl:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
           type: string
     ToolTesterLog:
       type: object
@@ -966,14 +966,17 @@ components:
         parent_id:
           type: integer
           format: int64
-        source_control_provider:
-          type: string
         full_workflow_path:
           type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
+        source_control_provider:
+          type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -989,9 +992,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     WorkflowVersion:
       type: object
       properties:

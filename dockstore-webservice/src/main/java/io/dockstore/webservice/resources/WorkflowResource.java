@@ -1735,7 +1735,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/workflows")
     @Operation(operationId = "deleteWorkflow")
-    @ApiOperation(value = "Delete a workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "Delete a stubbed workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void deleteWorkflow(@ApiParam(hidden = true) @Auth User authUser,
                                @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
                                @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
@@ -1747,32 +1747,35 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
                 .collect(Collectors.toList());
 
+        if (scTokens.size() == 0) {
+            String msg = "User does not have access to the given source control registry.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Delete workflow for a given repository
-        if (scTokens.size() > 0) {
-            final Token gitToken = scTokens.get(0);
-            final String tokenSource = gitToken.getTokenSource().toString();
+        final Token gitToken = scTokens.get(0);
+        final String tokenSource = gitToken.getTokenSource().toString();
 
-            String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-            LOG.info("Deleting " + gitUrl);
+        String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
+        LOG.info("Deleting " + gitUrl);
 
-            // Create a workflow stub object if necessary
-            final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
-            if (existingWorkflow.isEmpty()) {
-                String msg = "No workflow with path " + tokenSource + "/" + repository + " exists.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            } else {
-                BioWorkflow workflow = existingWorkflow.get();
-                checkUser(foundUser, workflow);
-                if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
-                    elasticManager.handleIndexUpdate(existingWorkflow.get(), ElasticMode.DELETE);
-                    workflowDAO.delete(workflow);
-                } else {
-                    String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
-                    LOG.error(msg);
-                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-                }
-            }
+        final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
+        if (existingWorkflow.isEmpty()) {
+            String msg = "No workflow with path " + tokenSource + "/" + repository + " exists.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        BioWorkflow workflow = existingWorkflow.get();
+        checkUser(foundUser, workflow);
+        if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
+            elasticManager.handleIndexUpdate(existingWorkflow.get(), ElasticMode.DELETE);
+            workflowDAO.delete(workflow);
+        } else {
+            String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
     }
 

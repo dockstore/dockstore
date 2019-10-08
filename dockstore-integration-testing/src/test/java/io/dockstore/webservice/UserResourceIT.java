@@ -248,9 +248,9 @@ public class UserResourceIT extends BaseIT {
 
         List<String> registries = userApi.getUserRegistries();
         assertTrue(registries.size() > 0);
-        assertTrue(registries.contains("github.com"));
-        assertTrue(registries.contains("gitlab.com"));
-        assertTrue(registries.contains("bitbucket.org"));
+        assertTrue(registries.contains("GITHUB_COM"));
+        assertTrue(registries.contains("GITLAB_COM"));
+        assertTrue(registries.contains("BITBUCKET_ORG"));
 
         // Test GitHub
         List<String> orgs = userApi.getUserOrganizations("GITHUB_COM");
