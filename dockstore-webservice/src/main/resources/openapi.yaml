@@ -5452,25 +5452,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Workflow"
-  /workflows/shared:
-    get:
-      tags:
-        - workflows
-      summary: Retrieve all workflows shared with user.
-      description: ""
-      operationId: sharedWorkflows
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SharedWorkflows"
-      security:
-        - BEARER: []
-  /workflows/workflows:
+  "/workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}":
     post:
       tags:
         - workflows
@@ -5479,7 +5461,7 @@ paths:
       operationId: addWorkflow
       parameters:
         - name: gitRegistry
-          in: query
+          in: path
           description: Git registry
           required: true
           schema:
@@ -5488,9 +5470,15 @@ paths:
               - GITHUB_COM
               - GITLAB_COM
               - BITBUCKET_ORG
-        - name: repository
-          in: query
-          description: Git repository path
+        - name: organization
+          in: path
+          description: Git repository organization
+          required: true
+          schema:
+            type: string
+        - name: repositoryName
+          in: path
+          description: Git repository name
           required: true
           schema:
             type: string
@@ -5511,7 +5499,7 @@ paths:
       operationId: deleteWorkflow
       parameters:
         - name: gitRegistry
-          in: query
+          in: path
           description: Git registry
           required: true
           schema:
@@ -5520,15 +5508,39 @@ paths:
               - GITHUB_COM
               - GITLAB_COM
               - BITBUCKET_ORG
-        - name: repository
-          in: query
-          description: Git repository path
+        - name: organization
+          in: path
+          description: Git repository organization
+          required: true
+          schema:
+            type: string
+        - name: repositoryName
+          in: path
+          description: Git repository name
           required: true
           schema:
             type: string
       responses:
         default:
           description: successful operation
+      security:
+        - BEARER: []
+  /workflows/shared:
+    get:
+      tags:
+        - workflows
+      summary: Retrieve all workflows shared with user.
+      description: ""
+      operationId: sharedWorkflows
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SharedWorkflows"
       security:
         - BEARER: []
   "/workflows/{alias}/aliases":
@@ -6596,10 +6608,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6615,6 +6623,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6801,10 +6813,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6820,6 +6828,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7943,10 +7955,6 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7962,6 +7970,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

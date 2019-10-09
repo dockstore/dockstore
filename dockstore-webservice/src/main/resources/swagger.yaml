@@ -5137,26 +5137,7 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
-  /workflows/shared:
-    get:
-      tags:
-      - "workflows"
-      summary: "Retrieve all workflows shared with user."
-      description: ""
-      operationId: "sharedWorkflows"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SharedWorkflows"
-      security:
-      - BEARER: []
-  /workflows/workflows:
+  /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     post:
       tags:
       - "workflows"
@@ -5167,7 +5148,7 @@ paths:
       - "application/json"
       parameters:
       - name: "gitRegistry"
-        in: "query"
+        in: "path"
         description: "Git registry"
         required: true
         type: "string"
@@ -5175,9 +5156,14 @@ paths:
         - "GITHUB_COM"
         - "GITLAB_COM"
         - "BITBUCKET_ORG"
-      - name: "repository"
-        in: "query"
-        description: "Git repository path"
+      - name: "organization"
+        in: "path"
+        description: "Git repository organization"
+        required: true
+        type: "string"
+      - name: "repositoryName"
+        in: "path"
+        description: "Git repository name"
         required: true
         type: "string"
       responses:
@@ -5197,7 +5183,7 @@ paths:
       - "application/json"
       parameters:
       - name: "gitRegistry"
-        in: "query"
+        in: "path"
         description: "Git registry"
         required: true
         type: "string"
@@ -5205,14 +5191,38 @@ paths:
         - "GITHUB_COM"
         - "GITLAB_COM"
         - "BITBUCKET_ORG"
-      - name: "repository"
-        in: "query"
-        description: "Git repository path"
+      - name: "organization"
+        in: "path"
+        description: "Git repository organization"
+        required: true
+        type: "string"
+      - name: "repositoryName"
+        in: "path"
+        description: "Git repository name"
         required: true
         type: "string"
       responses:
         default:
           description: "successful operation"
+      security:
+      - BEARER: []
+  /workflows/shared:
+    get:
+      tags:
+      - "workflows"
+      summary: "Retrieve all workflows shared with user."
+      description: ""
+      operationId: "sharedWorkflows"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SharedWorkflows"
       security:
       - BEARER: []
   /workflows/{alias}/aliases:
@@ -6213,10 +6223,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6232,6 +6238,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6444,10 +6454,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6463,6 +6469,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7700,10 +7710,6 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7719,6 +7725,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

@@ -265,12 +265,12 @@ public class UserResourceIT extends BaseIT {
         assertTrue(repositories.contains("dockstoretesting/basic-workflow"));
 
         // Register a workflow
-        Workflow ghWorkflow = workflowsApi.addWorkflow("GITHUB_COM", "dockstoretesting/basic-workflow");
+        Workflow ghWorkflow = workflowsApi.addWorkflow("GITHUB_COM", "dockstoretesting", "basic-workflow");
         assertNotNull("GitHub workflow should be added", ghWorkflow);
         assertEquals(ghWorkflow.getFullWorkflowPath(), "github.com/dockstoretesting/basic-workflow");
 
         // Try deleting a workflow
-        workflowsApi.deleteWorkflow("GITHUB_COM", "dockstoretesting/basic-workflow");
+        workflowsApi.deleteWorkflow("GITHUB_COM", "dockstoretesting", "basic-workflow");
         Workflow deletedWorkflow = null;
         try {
             deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
@@ -290,12 +290,12 @@ public class UserResourceIT extends BaseIT {
         assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-example"));
 
         // Register a workflow
-        Workflow glWorkflow = workflowsApi.addWorkflow("GITLAB_COM", "dockstore.test.user2/dockstore-workflow-example");
+        Workflow glWorkflow = workflowsApi.addWorkflow("GITLAB_COM", "dockstore.test.user2", "dockstore-workflow-example");
         assertEquals(glWorkflow.getFullWorkflowPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-example");
 
         // Try registering the workflow again (duplicate) should fail
         try {
-            workflowsApi.addWorkflow("GITLAB_COM", "dockstore.test.user2/dockstore-workflow-example");
+            workflowsApi.addWorkflow("GITLAB_COM", "dockstore.test.user2", "dockstore-workflow-example");
             assertFalse("Should not reach this, should fail", false);
         } catch (ApiException ex) {
             assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));

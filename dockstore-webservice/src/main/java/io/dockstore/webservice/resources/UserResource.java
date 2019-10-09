@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -748,10 +749,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Auth User authUser,
                                              @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry) {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
-        if (repositoryUrlToName != null) {
-            return repositoryUrlToName.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
-        }
-        return new HashSet<>();
+        return repositoryUrlToName.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
     }
 
     @GET
@@ -764,10 +762,7 @@ public class UserResource implements AuthenticatedResourceInterface {
                                             @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry,
                                             @ApiParam(value = "Git organization", required = true) @PathParam("organization") String organization) {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
-        if (repositoryUrlToName != null) {
-            return repositoryUrlToName.values().stream().filter(repository -> repository.startsWith(organization + "/")).collect(Collectors.toSet());
-        }
-        return new HashSet<>();
+        return repositoryUrlToName.values().stream().filter(repository -> repository.startsWith(organization + "/")).collect(Collectors.toSet());
     }
 
     /**
@@ -787,7 +782,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken, client);
             return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
         } else {
-            return null;
+            return new HashMap<>();
         }
     }
 

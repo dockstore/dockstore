@@ -1235,20 +1235,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         String gitURL = "git@" + registryURLPrefix + ":" + workflowPath + ".git";
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
 
-        // Create workflow
+        // Create workflow and override defaults
         Workflow newWorkflow = sourceCodeRepo.createStubBioworkflow(workflowPath);
-
-        if (newWorkflow == null) {
-            throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        if (Strings.isNullOrEmpty(workflowName)) {
-            workflowName = null;
-        }
-
         newWorkflow.setDescriptorType(DescriptorLanguage.convertShortStringToEnum(descriptorType));
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
-        newWorkflow.setWorkflowName(workflowName);
+        newWorkflow.setWorkflowName(Strings.isNullOrEmpty(workflowName) ? null : workflowName);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
         // Save into database and then pull versions
@@ -1673,12 +1664,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @POST
     @Timed
     @UnitOfWork
-    @Path("/workflows")
+    @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
     @Operation(operationId = "addWorkflow")
     @ApiOperation(value = "Adds a workflow for a registry and repository path with defaults set.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = BioWorkflow.class)
     public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Auth User authUser,
-                                   @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
-                                   @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
+                                   @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry,
+                                   @ApiParam(value = "Git repository organization", required = true) @PathParam("organization") String organization,
+                                   @ApiParam(value = "Git repository name", required = true) @PathParam("repositoryName") String repositoryName) {
         User foundUser = userDAO.findById(authUser.getId());
 
         // Find matching source control
@@ -1697,18 +1689,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final Token gitToken = scTokens.get(0);
         SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
         final String tokenSource = gitToken.getTokenSource().toString();
+        final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
         LOG.info("Adding " + gitUrl);
 
         // Create a workflow
         final Workflow createdWorkflow = sourceCodeRepo.createStubBioworkflow(repository);
-        if (createdWorkflow == null) {
-            String msg = "There was an error adding workflow with the path " + tokenSource + "/" + repository;
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
         return saveNewWorkflow(createdWorkflow, foundUser);
     }
 
@@ -1733,12 +1720,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @DELETE
     @Timed
     @UnitOfWork
-    @Path("/workflows")
+    @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
     @Operation(operationId = "deleteWorkflow")
     @ApiOperation(value = "Delete a stubbed workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void deleteWorkflow(@ApiParam(hidden = true) @Auth User authUser,
-                               @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @QueryParam("gitRegistry") TokenType gitRegistry,
-                               @ApiParam(value = "Git repository path", required = true) @QueryParam("repository") String repository) {
+                               @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry,
+                               @ApiParam(value = "Git repository organization", required = true) @PathParam("organization") String organization,
+                               @ApiParam(value = "Git repository name", required = true) @PathParam("repositoryName") String repositoryName) {
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
@@ -1756,6 +1744,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Delete workflow for a given repository
         final Token gitToken = scTokens.get(0);
         final String tokenSource = gitToken.getTokenSource().toString();
+        final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
         LOG.info("Deleting " + gitUrl);
