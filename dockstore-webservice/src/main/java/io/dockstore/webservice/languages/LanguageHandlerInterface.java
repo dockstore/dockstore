@@ -136,8 +136,8 @@ public interface LanguageHandlerInterface {
         return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
-    default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao) {
-        return DAGHelper.cleanDAG(getContent(mainDescriptorPath, mainDescriptor, secondaryDescContent, type, dao));
+    default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
+        return DAGHelper.cleanDAG(getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao));
     }
 
     /**
