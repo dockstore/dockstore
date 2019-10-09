@@ -24,6 +24,7 @@ import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.webservice.core.dag.ElementsDefinition;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
@@ -330,14 +331,9 @@ public class DAGWorkflowTestIT extends BaseIT {
         final List<String> strings = getJSON("dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl", "wdl", "dockstore-test");
         Assert.assertEquals(1, strings.size());
         final Gson gson = new Gson();
-        final Dag dag = gson.fromJson(strings.get(0), Dag.class);
-        Assert.assertEquals("Dag should have 229 nodes", 229, dag.nodes.length);
-        Assert.assertEquals("Dag should have 439 edges", 439, dag.edges.length);
-    }
-
-    private static class Dag {
-        public Object[] nodes;
-        public Object[] edges;
+        final ElementsDefinition dag = gson.fromJson(strings.get(0), ElementsDefinition.class);
+        Assert.assertEquals("Dag should have 229 nodes", 229, dag.nodes.size());
+        Assert.assertEquals("Dag should have 390 edges", 390, dag.edges.size());
     }
 
 }
