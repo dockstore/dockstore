@@ -3927,27 +3927,21 @@ paths:
     get:
       tags:
         - users
-      summary: Get all of the git registries accessible to the logged in user.
-      description: ""
       operationId: getUserRegistries
       responses:
         "200":
           description: successful operation
+          headers: {}
           content:
             application/json:
               schema:
                 type: array
                 items:
                   type: string
-      security:
-        - BEARER: []
   "/users/registries/{gitRegistry}/organizations":
     get:
       tags:
         - users
-      summary: Get all of the organizations for a given git registry accessible to the
-        logged in user.
-      description: ""
       operationId: getUserOrganizations
       parameters:
         - name: gitRegistry
@@ -3963,6 +3957,7 @@ paths:
       responses:
         "200":
           description: successful operation
+          headers: {}
           content:
             application/json:
               schema:
@@ -3970,15 +3965,10 @@ paths:
                 items:
                   type: string
                 uniqueItems: true
-      security:
-        - BEARER: []
   "/users/registries/{gitRegistry}/organizations/{organization}":
     get:
       tags:
         - users
-      summary: Get all of the repositories for an organization for a given git registry
-        accessible to the logged in user.
-      description: ""
       operationId: getUserOrganizationRepositories
       parameters:
         - name: gitRegistry
@@ -4000,6 +3990,7 @@ paths:
       responses:
         "200":
           description: successful operation
+          headers: {}
           content:
             application/json:
               schema:
@@ -4007,8 +3998,6 @@ paths:
                 items:
                   type: string
                 uniqueItems: true
-      security:
-        - BEARER: []
   /users/services/sync:
     post:
       tags:
@@ -5456,8 +5445,6 @@ paths:
     post:
       tags:
         - workflows
-      summary: Adds a workflow for a registry and repository path with defaults set.
-      description: ""
       operationId: addWorkflow
       parameters:
         - name: gitRegistry
@@ -5485,17 +5472,14 @@ paths:
       responses:
         "200":
           description: successful operation
+          headers: {}
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/BioWorkflow"
-      security:
-        - BEARER: []
     delete:
       tags:
         - workflows
-      summary: Delete a stubbed workflow for a registry and repository path.
-      description: ""
       operationId: deleteWorkflow
       parameters:
         - name: gitRegistry
@@ -5523,8 +5507,6 @@ paths:
       responses:
         default:
           description: successful operation
-      security:
-        - BEARER: []
   /workflows/shared:
     get:
       tags:
@@ -6608,6 +6590,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6623,10 +6609,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6813,6 +6795,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6828,10 +6814,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7955,6 +7937,10 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7970,10 +7956,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

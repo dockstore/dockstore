@@ -74,6 +74,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
@@ -730,8 +731,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/registries")
-    @Operation(operationId = "getUserRegistries")
-    @ApiOperation(nickname = "getUserRegistries", value = "Get all of the git registries accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class, responseContainer = "List")
+    @Operation(operationId = "getUserRegistries", description = "Get all of the git registries accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
     public List<String> getUserRegistries(@ApiParam(hidden = true) @Auth User authUser) {
         return tokenDAO.findByUserId(authUser.getId())
                 .stream()
@@ -744,8 +744,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/registries/{gitRegistry}/organizations")
-    @Operation(operationId = "getUserOrganizations")
-    @ApiOperation(nickname = "getUserOrganizations", value = "Get all of the organizations for a given git registry accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class, responseContainer = "Set")
+    @Operation(operationId = "getUserOrganizations", description = "Get all of the organizations for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
     public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Auth User authUser,
                                              @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry) {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
@@ -756,8 +755,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/registries/{gitRegistry}/organizations/{organization}")
-    @Operation(operationId = "getUserOrganizationRepositories")
-    @ApiOperation(nickname = "getUserOrganizationRepositories", value = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class, responseContainer = "Set")
+    @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
     public Set<String> getUserOrganizationRepositories(@ApiParam(hidden = true) @Auth User authUser,
                                             @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry,
                                             @ApiParam(value = "Git organization", required = true) @PathParam("organization") String organization) {

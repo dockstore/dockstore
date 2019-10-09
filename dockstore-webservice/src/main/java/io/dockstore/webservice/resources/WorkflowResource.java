@@ -106,6 +106,7 @@ import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.zenodo.client.ApiClient;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
@@ -1665,8 +1666,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
-    @Operation(operationId = "addWorkflow")
-    @ApiOperation(value = "Adds a workflow for a registry and repository path with defaults set.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = BioWorkflow.class)
+    @Operation(operationId = "addWorkflow", description = "Adds a workflow for a registry and repository path with defaults set.", security = @SecurityRequirement(name = "bearer"))
     public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Auth User authUser,
                                    @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry,
                                    @ApiParam(value = "Git repository organization", required = true) @PathParam("organization") String organization,
@@ -1721,8 +1721,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
-    @Operation(operationId = "deleteWorkflow")
-    @ApiOperation(value = "Delete a stubbed workflow for a registry and repository path.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Operation(operationId = "deleteWorkflow", description = "Delete a stubbed workflow for a registry and repository path.", security = @SecurityRequirement(name = "bearer"))
     public void deleteWorkflow(@ApiParam(hidden = true) @Auth User authUser,
                                @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry,
                                @ApiParam(value = "Git repository organization", required = true) @PathParam("organization") String organization,

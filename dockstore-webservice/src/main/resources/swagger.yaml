@@ -3670,8 +3670,6 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get all of the git registries accessible to the logged in user."
-      description: ""
       operationId: "getUserRegistries"
       produces:
       - "application/json"
@@ -3679,19 +3677,15 @@ paths:
       responses:
         200:
           description: "successful operation"
+          headers: {}
           schema:
             type: "array"
             items:
               type: "string"
-      security:
-      - BEARER: []
   /users/registries/{gitRegistry}/organizations:
     get:
       tags:
       - "users"
-      summary: "Get all of the organizations for a given git registry accessible to\
-        \ the logged in user."
-      description: ""
       operationId: "getUserOrganizations"
       produces:
       - "application/json"
@@ -3708,20 +3702,16 @@ paths:
       responses:
         200:
           description: "successful operation"
+          headers: {}
           schema:
             type: "array"
             items:
               type: "string"
             uniqueItems: true
-      security:
-      - BEARER: []
   /users/registries/{gitRegistry}/organizations/{organization}:
     get:
       tags:
       - "users"
-      summary: "Get all of the repositories for an organization for a given git registry\
-        \ accessible to the logged in user."
-      description: ""
       operationId: "getUserOrganizationRepositories"
       produces:
       - "application/json"
@@ -3743,13 +3733,12 @@ paths:
       responses:
         200:
           description: "successful operation"
+          headers: {}
           schema:
             type: "array"
             items:
               type: "string"
             uniqueItems: true
-      security:
-      - BEARER: []
   /users/services/sync:
     post:
       tags:
@@ -5141,8 +5130,6 @@ paths:
     post:
       tags:
       - "workflows"
-      summary: "Adds a workflow for a registry and repository path with defaults set."
-      description: ""
       operationId: "addWorkflow"
       produces:
       - "application/json"
@@ -5169,15 +5156,12 @@ paths:
       responses:
         200:
           description: "successful operation"
+          headers: {}
           schema:
             $ref: "#/definitions/BioWorkflow"
-      security:
-      - BEARER: []
     delete:
       tags:
       - "workflows"
-      summary: "Delete a stubbed workflow for a registry and repository path."
-      description: ""
       operationId: "deleteWorkflow"
       produces:
       - "application/json"
@@ -5204,8 +5188,6 @@ paths:
       responses:
         default:
           description: "successful operation"
-      security:
-      - BEARER: []
   /workflows/shared:
     get:
       tags:
@@ -6223,6 +6205,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6238,10 +6224,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6454,6 +6436,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6469,10 +6455,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7710,6 +7692,10 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7725,10 +7711,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
