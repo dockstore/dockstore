@@ -321,12 +321,8 @@ public class DAGWorkflowTestIT extends BaseIT {
             getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl", "test");
             fail("Invalid WDL somehow came back good");
         } catch (Exception ex) {
-            // Expect an exception to thrown
+            Assert.assertTrue(ex.getMessage().contains("could not process wdl into DAG: Failed to import workflow importC.wdl."));
         }
-        //        int countNode = countNodeInJSON(strings);
-        //
-        //        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        //        Assert.assertEquals("JSON should have 7 nodes", countNode, 7);
     }
 
     @Test

@@ -501,8 +501,7 @@ public class WorkflowIT extends BaseIT {
                 .filter(wv -> wv.getId() == versionId).findFirst();
         Assert.assertTrue(version.isPresent());
         final File tempFile = File.createTempFile("dockstore-test", ".zip");
-        try {
-            final FileOutputStream fos = new FileOutputStream(tempFile);
+        try (final FileOutputStream fos = new FileOutputStream(tempFile)) {
             final Set<io.dockstore.webservice.core.SourceFile> sourceFiles = version.get().getSourceFiles();
             new EntryVersionHelperImpl().writeStreamAsZip(sourceFiles, fos, Paths.get("/GATKSVPipelineClinical.wdl"));
             final ZipFile zipFile = new ZipFile(tempFile);
