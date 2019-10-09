@@ -926,7 +926,7 @@ public class GeneralIT extends BaseIT {
         DockstoreTool refresh = containersApi.refresh(tool.getId());
 
         // Add alias
-        Entry entry = entryApi.updateAliases(refresh.getId(), "foobar", "");
+        Entry entry = entryApi.addAliases(refresh.getId(), "foobar");
         Assert.assertTrue("Should have alias foobar", entry.getAliases().containsKey("foobar"));
 
         // Get unpublished tool by alias as owner

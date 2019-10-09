@@ -78,18 +78,17 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     /**
      * TODO: Path looks a bit weird
      */
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @Override
     @Path("/collections/{collectionId}/aliases")
-    @ApiOperation(nickname = "updateCollectionAliases", value = "Update the aliases linked to a Collection in Dockstore.", authorizations = {
+    @ApiOperation(nickname = "addCollectionAliases", value = "Add aliases linked to a Collection in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Collection.class)
-    public Collection updateAliases(@ApiParam(hidden = true) @Auth User user,
+    public Collection addAliases(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Collection to modify.", required = true) @PathParam("collectionId") Long id,
-        @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
-        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return AliasableResourceInterface.super.updateAliases(user, id, aliases, emptyBody);
+        @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {
+        return AliasableResourceInterface.super.addAliases(user, id, aliases);
     }
 
     @GET

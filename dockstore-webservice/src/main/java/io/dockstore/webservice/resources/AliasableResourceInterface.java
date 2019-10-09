@@ -18,7 +18,6 @@ package io.dockstore.webservice.resources;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -50,9 +49,8 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     T getAndCheckResourceByAlias(String alias);
 
-    default T updateAliases(User user, Long id, String aliases, String emptyBody) {
+    default T addAliases(User user, Long id, String aliases) {
         T c = getAndCheckResource(user, id);
-        // compute differences
         Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
@@ -68,11 +66,13 @@ public interface AliasableResourceInterface<T extends Aliasable> {
             }
         }
 
-        Set<String> aliasesToAdd = Sets.difference(newAliases, oldAliases);
-        Set<String> aliasesToRemove = new TreeSet<>(Sets.difference(oldAliases, newAliases));
-        // add new ones and remove old ones while retaining the old entries and their order
-        aliasesToAdd.forEach(alias -> c.getAliases().put(alias, new Alias()));
-        aliasesToRemove.forEach(alias -> c.getAliases().remove(alias));
+        Set<String> duplicateAliasesToAdd = Sets.intersection(newAliases, oldAliases);
+        if (!duplicateAliasesToAdd.isEmpty()) {
+            String dupAliasesString = String.join(", ", duplicateAliasesToAdd);
+            throw new CustomWebApplicationException("Aliases " + dupAliasesString + " already exist; please use unique aliases", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        newAliases.forEach(alias -> c.getAliases().put(alias, new Alias()));
 
         if (c instanceof Entry) {
             getElasticManager().ifPresent(consumer -> consumer.handleIndexUpdate((Entry)c, ElasticMode.UPDATE));
