@@ -41,20 +41,6 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
       - bearer: []
-  /metadata/config.json:
-    get:
-      tags:
-      - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Config'
   /metadata/dockerRegistryList:
     get:
       tags:
@@ -209,6 +195,20 @@ paths:
           content:
             text/html: {}
             text/xml: {}
+  /metadata/config.json:
+    get:
+      tags:
+      - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
   /toolTester/logs/search:
     get:
       tags:
@@ -332,11 +332,6 @@ paths:
     get:
       description: Get all of the git registries accessible to the logged in user.
       operationId: getUserRegistries
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
@@ -346,6 +341,11 @@ paths:
                 type: array
                 items:
                   type: string
+                  enum:
+                  - dockstore.org
+                  - github.com
+                  - bitbucket.org
+                  - gitlab.com
       security:
       - bearer: []
   /users/registries/{gitRegistry}/organizations:
@@ -356,22 +356,15 @@ paths:
       parameters:
       - name: gitRegistry
         in: path
+        description: Git registry
         required: true
         schema:
           type: string
           enum:
-          - quay.io
+          - dockstore.org
           - github.com
-          - dockstore
           - bitbucket.org
           - gitlab.com
-          - zenodo.org
-          - google.com
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
@@ -392,27 +385,21 @@ paths:
       parameters:
       - name: gitRegistry
         in: path
+        description: Git registry
         required: true
         schema:
           type: string
           enum:
-          - quay.io
+          - dockstore.org
           - github.com
-          - dockstore
           - bitbucket.org
           - gitlab.com
-          - zenodo.org
-          - google.com
       - name: organization
         in: path
+        description: Git organization
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
@@ -433,32 +420,27 @@ paths:
       parameters:
       - name: gitRegistry
         in: path
+        description: Git registry
         required: true
         schema:
           type: string
           enum:
-          - quay.io
+          - dockstore.org
           - github.com
-          - dockstore
           - bitbucket.org
           - gitlab.com
-          - zenodo.org
-          - google.com
       - name: organization
         in: path
+        description: Git repository organization
         required: true
         schema:
           type: string
       - name: repositoryName
         in: path
+        description: Git repository name
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
@@ -474,32 +456,27 @@ paths:
       parameters:
       - name: gitRegistry
         in: path
+        description: Git registry
         required: true
         schema:
           type: string
           enum:
-          - quay.io
+          - dockstore.org
           - github.com
-          - dockstore
           - bitbucket.org
           - gitlab.com
-          - zenodo.org
-          - google.com
       - name: organization
         in: path
+        description: Git repository organization
         required: true
         schema:
           type: string
       - name: repositoryName
         in: path
+        description: Git repository name
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
@@ -571,9 +548,6 @@ components:
         last_modified:
           type: integer
           format: int32
-        last_modified_date:
-          type: string
-          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -589,6 +563,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
     FileFormat:
       type: object
       properties:
@@ -768,8 +745,6 @@ components:
             $ref: '#/components/schemas/Validation'
         hidden:
           type: boolean
-        workingDirectory:
-          type: string
         verified:
           type: boolean
         verifiedSource:
@@ -786,6 +761,8 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
+        workingDirectory:
+          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -799,6 +776,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+    RegistryBean:
+      type: object
+      properties:
+        dockerPath:
+          type: string
+        friendlyName:
+          type: string
+        url:
+          type: string
+        privateOnly:
+          type: string
+        customDockerPath:
+          type: string
+        enum:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
     Config:
       type: object
       properties:
@@ -857,35 +863,6 @@ components:
         googleClientId:
           type: string
         discourseUrl:
-          type: string
-    RegistryBean:
-      type: object
-      properties:
-        dockerPath:
-          type: string
-        friendlyName:
-          type: string
-        url:
-          type: string
-        privateOnly:
-          type: string
-        customDockerPath:
-          type: string
-        enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
           type: string
     ToolTesterLog:
       type: object
@@ -998,17 +975,14 @@ components:
         parent_id:
           type: integer
           format: int64
-        workflow_path:
-          type: string
         full_workflow_path:
+          type: string
+        workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
         source_control_provider:
           type: string
-        last_modified_date:
-          type: string
-          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1024,6 +998,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
     WorkflowVersion:
       type: object
       properties:

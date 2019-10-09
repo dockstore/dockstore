@@ -23,12 +23,14 @@ import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.BioWorkflow;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
@@ -248,29 +250,29 @@ public class UserResourceIT extends BaseIT {
 
         List<String> registries = userApi.getUserRegistries();
         assertTrue(registries.size() > 0);
-        assertTrue(registries.contains("GITHUB_COM"));
-        assertTrue(registries.contains("GITLAB_COM"));
-        assertTrue(registries.contains("BITBUCKET_ORG"));
+        assertTrue(registries.contains(SourceControl.GITHUB.toString()));
+        assertTrue(registries.contains(SourceControl.GITLAB.toString()));
+        assertTrue(registries.contains(SourceControl.BITBUCKET.toString()));
 
         // Test GitHub
-        List<String> orgs = userApi.getUserOrganizations("GITHUB_COM");
+        List<String> orgs = userApi.getUserOrganizations(SourceControl.GITHUB.name());
         assertTrue(orgs.size() > 0);
         assertTrue(orgs.contains("dockstoretesting"));
         assertTrue(orgs.contains("DockstoreTestUser"));
         assertTrue(orgs.contains("DockstoreTestUser2"));
 
-        List<String> repositories = userApi.getUserOrganizationRepositories("GITHUB_COM", "dockstoretesting");
+        List<String> repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
         assertTrue(repositories.contains("dockstoretesting/basic-tool"));
         assertTrue(repositories.contains("dockstoretesting/basic-workflow"));
 
         // Register a workflow
-        Workflow ghWorkflow = workflowsApi.addWorkflow("GITHUB_COM", "dockstoretesting", "basic-workflow");
+        BioWorkflow ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
         assertNotNull("GitHub workflow should be added", ghWorkflow);
         assertEquals(ghWorkflow.getFullWorkflowPath(), "github.com/dockstoretesting/basic-workflow");
 
         // Try deleting a workflow
-        workflowsApi.deleteWorkflow("GITHUB_COM", "dockstoretesting", "basic-workflow");
+        workflowsApi.deleteWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
         Workflow deletedWorkflow = null;
         try {
             deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
@@ -280,22 +282,22 @@ public class UserResourceIT extends BaseIT {
         }
 
         // Test Gitlab
-        orgs = userApi.getUserOrganizations("GITLAB_COM");
+        orgs = userApi.getUserOrganizations(SourceControl.GITLAB.name());
         assertTrue(orgs.size() > 0);
         assertTrue(orgs.contains("dockstore.test.user2"));
 
-        repositories = userApi.getUserOrganizationRepositories("GITLAB_COM", "dockstore.test.user2");
+        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
         assertTrue(repositories.size() > 0);
         assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-md5sum-unified"));
         assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-example"));
 
         // Register a workflow
-        Workflow glWorkflow = workflowsApi.addWorkflow("GITLAB_COM", "dockstore.test.user2", "dockstore-workflow-example");
+        BioWorkflow glWorkflow = workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
         assertEquals(glWorkflow.getFullWorkflowPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-example");
 
         // Try registering the workflow again (duplicate) should fail
         try {
-            workflowsApi.addWorkflow("GITLAB_COM", "dockstore.test.user2", "dockstore-workflow-example");
+            workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
             assertFalse("Should not reach this, should fail", false);
         } catch (ApiException ex) {
             assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));

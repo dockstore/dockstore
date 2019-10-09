@@ -3670,6 +3670,8 @@ paths:
     get:
       tags:
       - "users"
+      summary: "See OpenApi for details"
+      description: ""
       operationId: "getUserRegistries"
       produces:
       - "application/json"
@@ -3677,32 +3679,37 @@ paths:
       responses:
         200:
           description: "successful operation"
-          headers: {}
           schema:
             type: "array"
             items:
               type: "string"
+              enum:
+              - "dockstore.org"
+              - "github.com"
+              - "bitbucket.org"
+              - "gitlab.com"
   /users/registries/{gitRegistry}/organizations:
     get:
       tags:
       - "users"
+      summary: "See OpenApi for details"
+      description: ""
       operationId: "getUserOrganizations"
       produces:
       - "application/json"
       parameters:
       - name: "gitRegistry"
         in: "path"
-        description: "Git registry"
         required: true
         type: "string"
         enum:
-        - "GITHUB_COM"
-        - "GITLAB_COM"
-        - "BITBUCKET_ORG"
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
       responses:
         200:
           description: "successful operation"
-          headers: {}
           schema:
             type: "array"
             items:
@@ -3712,28 +3719,28 @@ paths:
     get:
       tags:
       - "users"
+      summary: "See OpenApi for details"
+      description: ""
       operationId: "getUserOrganizationRepositories"
       produces:
       - "application/json"
       parameters:
       - name: "gitRegistry"
         in: "path"
-        description: "Git registry"
         required: true
         type: "string"
         enum:
-        - "GITHUB_COM"
-        - "GITLAB_COM"
-        - "BITBUCKET_ORG"
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
       - name: "organization"
         in: "path"
-        description: "Git organization"
         required: true
         type: "string"
       responses:
         200:
           description: "successful operation"
-          headers: {}
           schema:
             type: "array"
             items:
@@ -5130,59 +5137,58 @@ paths:
     post:
       tags:
       - "workflows"
+      summary: "See OpenApi for details"
+      description: ""
       operationId: "addWorkflow"
       produces:
       - "application/json"
       parameters:
       - name: "gitRegistry"
         in: "path"
-        description: "Git registry"
         required: true
         type: "string"
         enum:
-        - "GITHUB_COM"
-        - "GITLAB_COM"
-        - "BITBUCKET_ORG"
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
       - name: "organization"
         in: "path"
-        description: "Git repository organization"
         required: true
         type: "string"
       - name: "repositoryName"
         in: "path"
-        description: "Git repository name"
         required: true
         type: "string"
       responses:
         200:
           description: "successful operation"
-          headers: {}
           schema:
             $ref: "#/definitions/BioWorkflow"
     delete:
       tags:
       - "workflows"
+      summary: "See OpenApi for details"
+      description: ""
       operationId: "deleteWorkflow"
       produces:
       - "application/json"
       parameters:
       - name: "gitRegistry"
         in: "path"
-        description: "Git registry"
         required: true
         type: "string"
         enum:
-        - "GITHUB_COM"
-        - "GITLAB_COM"
-        - "BITBUCKET_ORG"
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
       - name: "organization"
         in: "path"
-        description: "Git repository organization"
         required: true
         type: "string"
       - name: "repositoryName"
         in: "path"
-        description: "Git repository name"
         required: true
         type: "string"
       responses:
@@ -6205,10 +6211,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6224,6 +6226,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6436,10 +6442,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6455,6 +6457,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7692,10 +7698,6 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7711,6 +7713,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

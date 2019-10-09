@@ -42,6 +42,7 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -74,6 +75,8 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -732,11 +735,12 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork(readOnly = true)
     @Path("/registries")
     @Operation(operationId = "getUserRegistries", description = "Get all of the git registries accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
-    public List<String> getUserRegistries(@ApiParam(hidden = true) @Auth User authUser) {
+    @ApiOperation(value = "See OpenApi for details")
+    public List<SourceControl> getUserRegistries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
         return tokenDAO.findByUserId(authUser.getId())
                 .stream()
-                .filter(token -> token.getTokenSource().isSourceControlToken())
-                .map(token -> token.getTokenSource().name())
+                .filter(token -> token.getTokenSource().isSourceControlToken() && !Objects.equals(token.getTokenSource().getSourceControl(), SourceControl.DOCKSTORE))
+                .map(token -> token.getTokenSource().getSourceControl())
                 .collect(Collectors.toList());
     }
 
@@ -745,8 +749,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork(readOnly = true)
     @Path("/registries/{gitRegistry}/organizations")
     @Operation(operationId = "getUserOrganizations", description = "Get all of the organizations for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
-    public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Auth User authUser,
-                                             @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry) {
+    @ApiOperation(value = "See OpenApi for details")
+    public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+                                            @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry) {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
         return repositoryUrlToName.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
     }
@@ -756,9 +761,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork(readOnly = true)
     @Path("/registries/{gitRegistry}/organizations/{organization}")
     @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
-    public Set<String> getUserOrganizationRepositories(@ApiParam(hidden = true) @Auth User authUser,
-                                            @ApiParam(value = "Git registry", required = true, allowableValues = "GITHUB_COM, GITLAB_COM, BITBUCKET_ORG") @PathParam("gitRegistry") TokenType gitRegistry,
-                                            @ApiParam(value = "Git organization", required = true) @PathParam("organization") String organization) {
+    @ApiOperation(value = "See OpenApi for details")
+    public Set<String> getUserOrganizationRepositories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+                                            @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
+                                            @Parameter(name = "organization", description = "Git organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization) {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
         return repositoryUrlToName.values().stream().filter(repository -> repository.startsWith(organization + "/")).collect(Collectors.toSet());
     }
@@ -769,10 +775,10 @@ public class UserResource implements AuthenticatedResourceInterface {
      * @param gitRegistry
      * @return mapping of git url to repository path
      */
-    private Map<String, String> getGitRepositoryMap(User user, TokenType gitRegistry) {
+    private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
         List<Token> scTokens = tokenDAO.findByUserId(user.getId())
                 .stream()
-                .filter(token -> Objects.equals(token.getTokenSource(), gitRegistry))
+                .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
 
         if (scTokens.size() > 0) {

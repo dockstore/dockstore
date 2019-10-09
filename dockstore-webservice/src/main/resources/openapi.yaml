@@ -3927,37 +3927,44 @@ paths:
     get:
       tags:
         - users
+      summary: See OpenApi for details
+      description: ""
       operationId: getUserRegistries
       responses:
         "200":
           description: successful operation
-          headers: {}
           content:
             application/json:
               schema:
                 type: array
                 items:
                   type: string
+                  enum:
+                    - dockstore.org
+                    - github.com
+                    - bitbucket.org
+                    - gitlab.com
   "/users/registries/{gitRegistry}/organizations":
     get:
       tags:
         - users
+      summary: See OpenApi for details
+      description: ""
       operationId: getUserOrganizations
       parameters:
         - name: gitRegistry
           in: path
-          description: Git registry
           required: true
           schema:
             type: string
             enum:
-              - GITHUB_COM
-              - GITLAB_COM
-              - BITBUCKET_ORG
+              - dockstore.org
+              - github.com
+              - bitbucket.org
+              - gitlab.com
       responses:
         "200":
           description: successful operation
-          headers: {}
           content:
             application/json:
               schema:
@@ -3969,28 +3976,28 @@ paths:
     get:
       tags:
         - users
+      summary: See OpenApi for details
+      description: ""
       operationId: getUserOrganizationRepositories
       parameters:
         - name: gitRegistry
           in: path
-          description: Git registry
           required: true
           schema:
             type: string
             enum:
-              - GITHUB_COM
-              - GITLAB_COM
-              - BITBUCKET_ORG
+              - dockstore.org
+              - github.com
+              - bitbucket.org
+              - gitlab.com
         - name: organization
           in: path
-          description: Git organization
           required: true
           schema:
             type: string
       responses:
         "200":
           description: successful operation
-          headers: {}
           content:
             application/json:
               schema:
@@ -5445,34 +5452,33 @@ paths:
     post:
       tags:
         - workflows
+      summary: See OpenApi for details
+      description: ""
       operationId: addWorkflow
       parameters:
         - name: gitRegistry
           in: path
-          description: Git registry
           required: true
           schema:
             type: string
             enum:
-              - GITHUB_COM
-              - GITLAB_COM
-              - BITBUCKET_ORG
+              - dockstore.org
+              - github.com
+              - bitbucket.org
+              - gitlab.com
         - name: organization
           in: path
-          description: Git repository organization
           required: true
           schema:
             type: string
         - name: repositoryName
           in: path
-          description: Git repository name
           required: true
           schema:
             type: string
       responses:
         "200":
           description: successful operation
-          headers: {}
           content:
             application/json:
               schema:
@@ -5480,27 +5486,27 @@ paths:
     delete:
       tags:
         - workflows
+      summary: See OpenApi for details
+      description: ""
       operationId: deleteWorkflow
       parameters:
         - name: gitRegistry
           in: path
-          description: Git registry
           required: true
           schema:
             type: string
             enum:
-              - GITHUB_COM
-              - GITLAB_COM
-              - BITBUCKET_ORG
+              - dockstore.org
+              - github.com
+              - bitbucket.org
+              - gitlab.com
         - name: organization
           in: path
-          description: Git repository organization
           required: true
           schema:
             type: string
         - name: repositoryName
           in: path
-          description: Git repository name
           required: true
           schema:
             type: string
@@ -6590,10 +6596,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6609,6 +6611,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6795,10 +6801,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6814,6 +6816,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7937,10 +7943,6 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7956,6 +7958,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
