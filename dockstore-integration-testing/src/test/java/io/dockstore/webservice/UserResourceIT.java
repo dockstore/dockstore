@@ -302,6 +302,15 @@ public class UserResourceIT extends BaseIT {
         } catch (ApiException ex) {
             assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));
         }
+
+        // Try registering a hosted workflow
+        try {
+            BioWorkflow dsWorkflow = workflowsApi.addWorkflow(SourceControl.DOCKSTORE.name(), "foo", "bar");
+            assertFalse("Should not reach this, should fail", false);
+        } catch (ApiException ex) {
+            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains("hosted workflows"));
+        }
+
     }
 
 }
