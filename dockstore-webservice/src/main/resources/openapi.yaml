@@ -3923,6 +3923,88 @@ paths:
                 type: boolean
       security:
         - BEARER: []
+  /users/registries:
+    get:
+      tags:
+        - users
+      summary: See OpenApi for details
+      description: ""
+      operationId: getUserRegistries
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum:
+                    - dockstore.org
+                    - github.com
+                    - bitbucket.org
+                    - gitlab.com
+  "/users/registries/{gitRegistry}/organizations":
+    get:
+      tags:
+        - users
+      summary: See OpenApi for details
+      description: ""
+      operationId: getUserOrganizations
+      parameters:
+        - name: gitRegistry
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - dockstore.org
+              - github.com
+              - bitbucket.org
+              - gitlab.com
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                uniqueItems: true
+  "/users/registries/{gitRegistry}/organizations/{organization}":
+    get:
+      tags:
+        - users
+      summary: See OpenApi for details
+      description: ""
+      operationId: getUserOrganizationRepositories
+      parameters:
+        - name: gitRegistry
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - dockstore.org
+              - github.com
+              - bitbucket.org
+              - gitlab.com
+        - name: organization
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                uniqueItems: true
   /users/services/sync:
     post:
       tags:
@@ -5366,6 +5448,71 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Workflow"
+  "/workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}":
+    post:
+      tags:
+        - workflows
+      summary: See OpenApi for details
+      description: ""
+      operationId: addWorkflow
+      parameters:
+        - name: gitRegistry
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - dockstore.org
+              - github.com
+              - bitbucket.org
+              - gitlab.com
+        - name: organization
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repositoryName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BioWorkflow"
+    delete:
+      tags:
+        - workflows
+      summary: See OpenApi for details
+      description: ""
+      operationId: deleteWorkflow
+      parameters:
+        - name: gitRegistry
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - dockstore.org
+              - github.com
+              - bitbucket.org
+              - gitlab.com
+        - name: organization
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repositoryName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: successful operation
   /workflows/shared:
     get:
       tags:

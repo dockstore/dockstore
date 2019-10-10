@@ -17,9 +17,11 @@
 package io.dockstore.webservice.resources;
 
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +42,7 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -56,6 +59,8 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -70,7 +75,11 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -97,9 +106,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final ToolDAO toolDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
+    private final HttpClient client;
 
-    public UserResource(SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
-            DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+    public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
+                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -110,6 +120,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.authorizer = authorizer;
         elasticManager = new ElasticManager();
         this.cachingAuthenticator = cachingAuthenticator;
+        this.client = client;
     }
 
     @GET
@@ -717,6 +728,66 @@ public class UserResource implements AuthenticatedResourceInterface {
         serviceResource.syncEntitiesForUser(user, organization2);
         userDAO.clearCache();
         return getStrippedServices(userDAO.findById(user.getId()));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/registries")
+    @Operation(operationId = "getUserRegistries", description = "Get all of the git registries accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<SourceControl> getUserRegistries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
+        return tokenDAO.findByUserId(authUser.getId())
+                .stream()
+                .filter(token -> token.getTokenSource().isSourceControlToken())
+                .map(token -> token.getTokenSource().getSourceControl())
+                .collect(Collectors.toList());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/registries/{gitRegistry}/organizations")
+    @Operation(operationId = "getUserOrganizations", description = "Get all of the organizations for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+                                            @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry) {
+        Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
+        return repositoryUrlToName.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/registries/{gitRegistry}/organizations/{organization}")
+    @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public Set<String> getUserOrganizationRepositories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+                                            @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
+                                            @Parameter(name = "organization", description = "Git organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization) {
+        Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
+        return repositoryUrlToName.values().stream().filter(repository -> repository.startsWith(organization + "/")).collect(Collectors.toSet());
+    }
+
+    /**
+     * For a given user and git registry, retrieve a map of git url to repository path
+     * @param user
+     * @param gitRegistry
+     * @return mapping of git url to repository path
+     */
+    private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
+        List<Token> scTokens = tokenDAO.findByUserId(user.getId())
+                .stream()
+                .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
+                .collect(Collectors.toList());
+
+        if (scTokens.size() > 0) {
+            Token scToken = scTokens.get(0);
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken, client);
+            return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+        } else {
+            return new HashMap<>();
+        }
     }
 
     /**

@@ -174,6 +174,17 @@ public abstract class SourceCodeRepoInterface {
             Map<String, WorkflowVersion> existingDefaults);
 
     /**
+     * Creates a basic workflow object with default values
+     * @param repository repository organization and name (ex. dockstore/dockstore-ui2)
+     * @return basic workflow object
+     */
+    public Workflow createStubBioworkflow(String repository) {
+        Workflow workflow = initializeWorkflow(repository, new BioWorkflow());
+        workflow.setDescriptorType(DescriptorLanguage.CWL);
+        return workflow;
+    }
+
+    /**
      * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
      *
      * @param repositoryId

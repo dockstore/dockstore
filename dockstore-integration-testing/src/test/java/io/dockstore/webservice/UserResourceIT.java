@@ -16,22 +16,26 @@
 
 package io.dockstore.webservice;
 
+import java.util.List;
+
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.BioWorkflow;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,11 +47,13 @@ import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests operations frrom the UserResource
+ * Tests operations from the UserResource
  *
  * @author dyuen
  */
@@ -175,7 +181,7 @@ public class UserResourceIT extends BaseIT {
         final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
 
         User user = userApi.getUser();
-        Assert.assertNotNull(user);
+        assertNotNull(user);
         // try to delete with published workflows
         userApi.refreshWorkflows(user.getId());
         final Workflow workflowByPath = workflowsApi
@@ -232,4 +238,80 @@ public class UserResourceIT extends BaseIT {
         }
         assertTrue(expectedFailToGetInfo);
     }
+
+    /**
+     * Tests that the endpoints for the wizard registration work
+     * @throws ApiException
+     */
+    @Test
+    public void testWizardEndpoints() throws ApiException {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        List<String> registries = userApi.getUserRegistries();
+        assertTrue(registries.size() > 0);
+        assertTrue(registries.contains(SourceControl.GITHUB.toString()));
+        assertTrue(registries.contains(SourceControl.GITLAB.toString()));
+        assertTrue(registries.contains(SourceControl.BITBUCKET.toString()));
+
+        // Test GitHub
+        List<String> orgs = userApi.getUserOrganizations(SourceControl.GITHUB.name());
+        assertTrue(orgs.size() > 0);
+        assertTrue(orgs.contains("dockstoretesting"));
+        assertTrue(orgs.contains("DockstoreTestUser"));
+        assertTrue(orgs.contains("DockstoreTestUser2"));
+
+        List<String> repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.contains("dockstoretesting/basic-tool"));
+        assertTrue(repositories.contains("dockstoretesting/basic-workflow"));
+
+        // Register a workflow
+        BioWorkflow ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
+        assertNotNull("GitHub workflow should be added", ghWorkflow);
+        assertEquals(ghWorkflow.getFullWorkflowPath(), "github.com/dockstoretesting/basic-workflow");
+
+        // Try deleting a workflow
+        workflowsApi.deleteWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
+        Workflow deletedWorkflow = null;
+        try {
+            deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
+            assertFalse("Should not reach here as entry should not exist", false);
+        } catch (ApiException ex) {
+            assertNull("Workflow should be null", deletedWorkflow);
+        }
+
+        // Test Gitlab
+        orgs = userApi.getUserOrganizations(SourceControl.GITLAB.name());
+        assertTrue(orgs.size() > 0);
+        assertTrue(orgs.contains("dockstore.test.user2"));
+
+        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-md5sum-unified"));
+        assertTrue(repositories.contains("dockstore.test.user2/dockstore-workflow-example"));
+
+        // Register a workflow
+        BioWorkflow glWorkflow = workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
+        assertEquals(glWorkflow.getFullWorkflowPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-example");
+
+        // Try registering the workflow again (duplicate) should fail
+        try {
+            workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
+            assertFalse("Should not reach this, should fail", false);
+        } catch (ApiException ex) {
+            assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));
+        }
+
+        // Try registering a hosted workflow
+        try {
+            BioWorkflow dsWorkflow = workflowsApi.addWorkflow(SourceControl.DOCKSTORE.name(), "foo", "bar");
+            assertFalse("Should not reach this, should fail", false);
+        } catch (ApiException ex) {
+            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains(WorkflowResource.SC_REGISTRY_ACCESS_MESSAGE));
+        }
+
+    }
+
 }
