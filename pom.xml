@@ -1362,12 +1362,13 @@
         </profile>
         <profile>
             <id>memory-intensive-unit-tests</id>
-            <!-- run all non-integration tests -->
+            <!-- run all memory intensive non-integration tests -->
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
                 <groups>io.dockstore.common.MemoryIntensiveTest</groups>
-                <argLine>-Xmx3072m -Xms3072m</argLine>
+                <!-- https://github.com/jasongilman/proto-repl/issues/282 -->
+                <argLine>-XX:+UseContainerSupport</argLine>
             </properties>
         </profile>
         <profile>
