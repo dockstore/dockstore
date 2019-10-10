@@ -1329,7 +1329,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <argLine>-Xmx2560m -Xms1536m</argLine>
+                <argLine>-Xmx3072m -Xms2048m</argLine>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
             </properties>
         </profile>
