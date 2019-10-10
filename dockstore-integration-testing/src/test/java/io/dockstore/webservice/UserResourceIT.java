@@ -24,6 +24,7 @@ import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
@@ -308,7 +309,7 @@ public class UserResourceIT extends BaseIT {
             BioWorkflow dsWorkflow = workflowsApi.addWorkflow(SourceControl.DOCKSTORE.name(), "foo", "bar");
             assertFalse("Should not reach this, should fail", false);
         } catch (ApiException ex) {
-            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains("User does not have access to the given source control registry"));
+            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains(WorkflowResource.SC_REGISTRY_ACCESS_MESSAGE));
         }
 
     }

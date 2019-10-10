@@ -138,6 +138,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     SourceControlResourceInterface {
     public static final String FROZEN_VERSION_REQUIRED = "Frozen version required to generate DOI";
     public static final String NO_ZENDO_USER_TOKEN = "Could not get Zenodo token for user";
+    public static final String SC_REGISTRY_ACCESS_MESSAGE = "User does not have access to the given source control registry.";
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
@@ -1741,9 +1742,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 .collect(Collectors.toList());
 
         if (scTokens.size() == 0) {
-            String msg = "User does not have access to the given source control registry.";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            LOG.error(SC_REGISTRY_ACCESS_MESSAGE);
+            throw new CustomWebApplicationException(SC_REGISTRY_ACCESS_MESSAGE, HttpStatus.SC_BAD_REQUEST);
         }
 
         // Delete workflow for a given repository
