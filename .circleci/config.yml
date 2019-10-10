@@ -38,7 +38,7 @@ jobs:
           name: run the actual tests
           command: |
             mvn --batch-mode clean install -Punit-tests
-      -run:
+      - run:
           name: run memory intensive unit tests
           command: |
               mvn --batch-mode clean install -Pmemory-intensive-unit-tests
