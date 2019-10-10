@@ -1367,8 +1367,7 @@
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
                 <groups>io.dockstore.common.MemoryIntensiveTest</groups>
-                <!-- -https://blogs.oracle.com/java-platform-group/java-se-support-for-docker-cpu-and-memory-limits -->
-                <argLine>-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap</argLine>
+                <argLine>-Xmx3072m -Xms3072m</argLine>
             </properties>
         </profile>
         <profile>
