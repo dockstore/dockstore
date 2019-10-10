@@ -382,6 +382,8 @@ components:
         topicId:
           type: integer
           format: int64
+        conceptDoi:
+          type: string
         workflowVersions:
           uniqueItems: true
           type: array

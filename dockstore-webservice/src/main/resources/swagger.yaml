@@ -6163,6 +6163,11 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       mode:
         type: "string"
         position: 13
@@ -6394,6 +6399,11 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
   Error:
     type: "object"
     required:
@@ -7650,6 +7660,11 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       mode:
         type: "string"
         position: 13
