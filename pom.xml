@@ -1367,6 +1367,7 @@
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
                 <groups>io.dockstore.common.MemoryIntensiveTest</groups>
+                <argLine>-Xms2560m</argLine>
             </properties>
         </profile>
         <profile>
