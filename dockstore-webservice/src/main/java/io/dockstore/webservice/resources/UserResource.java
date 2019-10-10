@@ -739,7 +739,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<SourceControl> getUserRegistries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
         return tokenDAO.findByUserId(authUser.getId())
                 .stream()
-                .filter(token -> token.getTokenSource().isSourceControlToken() && !Objects.equals(token.getTokenSource().getSourceControl(), SourceControl.DOCKSTORE))
+                .filter(token -> token.getTokenSource().isSourceControlToken())
                 .map(token -> token.getTokenSource().getSourceControl())
                 .collect(Collectors.toList());
     }

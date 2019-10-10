@@ -32,7 +32,7 @@ public enum TokenType {
     @JsonProperty("github.com")
     GITHUB_COM("github.com", SourceControl.GITHUB),
     @JsonProperty("dockstore")
-    DOCKSTORE("dockstore", SourceControl.DOCKSTORE),
+    DOCKSTORE("dockstore", null),
     @JsonProperty("bitbucket.org")
     BITBUCKET_ORG("bitbucket.org", SourceControl.BITBUCKET),
     @JsonProperty("gitlab.com")
