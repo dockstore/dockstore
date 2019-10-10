@@ -1692,12 +1692,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         final Token gitToken = scTokens.get(0);
 
-        if (Objects.equals(gitToken.getTokenSource().getSourceControl(), SourceControl.DOCKSTORE)) {
-            String msg = "This action cannot be performed on hosted workflows.";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
         SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
         final String tokenSource = gitToken.getTokenSource().toString();
         final String repository = organization + "/" + repositoryName;

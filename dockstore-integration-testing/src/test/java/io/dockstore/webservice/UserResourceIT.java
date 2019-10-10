@@ -308,7 +308,7 @@ public class UserResourceIT extends BaseIT {
             BioWorkflow dsWorkflow = workflowsApi.addWorkflow(SourceControl.DOCKSTORE.name(), "foo", "bar");
             assertFalse("Should not reach this, should fail", false);
         } catch (ApiException ex) {
-            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains("hosted workflows"));
+            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains("User does not have access to the given source control registry"));
         }
 
     }
