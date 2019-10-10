@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.MemoryIntensiveTest;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -29,11 +30,13 @@ import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+@Category(MemoryIntensiveTest.class)
 public class NFLParseTest {
 
     @Test

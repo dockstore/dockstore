@@ -1337,9 +1337,9 @@
             <id>unit-tests</id>
             <!-- run all non-integration tests -->
             <properties>
-                <argLine>-Xmx2048m -Xms2048m</argLine>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
+                <excludeGroups>io.dockstore.common.MemoryIntensiveTest</excludeGroups>
             </properties>
             <build>
                 <plugins>
@@ -1359,6 +1359,15 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>memory-intensive-unit-tests</id>
+            <!-- run all non-integration tests -->
+            <properties>
+                <skipTests>false</skipTests>
+                <skipITs>true</skipITs>
+                <groups>io.dockstore.common.MemoryIntensiveTest</groups>
+            </properties>
         </profile>
         <profile>
             <id>coverage</id>
