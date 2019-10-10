@@ -1329,7 +1329,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <argLine>-Xmx3072m -Xms2048m</argLine>
+                <argLine>-Xmx2048m -Xms2048m</argLine>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
             </properties>
         </profile>
@@ -1337,6 +1337,7 @@
             <id>unit-tests</id>
             <!-- run all non-integration tests -->
             <properties>
+                <argLine>-Xmx2048m -Xms2048m</argLine>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
             </properties>
