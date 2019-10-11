@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.helpers.stateListeners.StateListenerInterface;
+import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
 
 /**
  * @author gluu

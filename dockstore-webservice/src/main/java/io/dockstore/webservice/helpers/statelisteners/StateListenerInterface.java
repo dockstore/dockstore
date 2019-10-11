@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.webservice.helpers.stateListeners;
+package io.dockstore.webservice.helpers.statelisteners;
 
 import java.util.List;
 
@@ -45,6 +45,6 @@ public interface StateListenerInterface {
     void bulkUpsert(List<Entry> entries);
 
     default void setConfig(DockstoreWebserviceConfiguration config) {
-
+        // by default, this doesn't really do anything. Not all listeners need access to config
     }
 }

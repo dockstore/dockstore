@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.webservice.helpers.stateListeners;
+package io.dockstore.webservice.helpers.statelisteners;
 
 import java.io.File;
 import java.io.IOException;

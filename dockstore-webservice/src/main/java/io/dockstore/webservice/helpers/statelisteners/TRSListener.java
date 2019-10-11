@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.webservice.helpers.stateListeners;
+package io.dockstore.webservice.helpers.statelisteners;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,8 +24,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.ElasticMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Future home of code for managing cached TRS entries
@@ -35,7 +33,6 @@ public class TRSListener implements StateListenerInterface {
     // TODO: implementor should tune this https://github.com/google/guava/wiki/CachesExplained
     // arbitrarily picked 20
     private static final int MAXIMUM_SIZE = 20;
-    private static final Logger LOGGER = LoggerFactory.getLogger(TRSListener.class);
     private Cache<Integer, Response.ResponseBuilder> trsResponses = CacheBuilder.newBuilder()
         // TODO: implementor should try to weight larger responses (like getting all tools without limits)
         .maximumSize(MAXIMUM_SIZE)

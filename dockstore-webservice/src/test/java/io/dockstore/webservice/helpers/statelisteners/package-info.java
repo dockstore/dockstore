@@ -17,5 +17,5 @@
 /**
  * @since 1.8
  */
-package io.dockstore.webservice.helpers.stateListeners;
+package io.dockstore.webservice.helpers.statelisteners;
 
