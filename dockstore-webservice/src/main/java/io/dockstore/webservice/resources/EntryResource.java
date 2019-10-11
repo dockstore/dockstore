@@ -88,9 +88,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
 
-    public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration) {
+    public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration, PublicStateManager manager) {
         this.toolDAO = toolDAO;
-        publicStateManager = new PublicStateManager(configuration);
+        publicStateManager = manager;
 
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();

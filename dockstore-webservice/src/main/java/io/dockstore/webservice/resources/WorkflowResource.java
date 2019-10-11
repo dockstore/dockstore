@@ -161,8 +161,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String dockstoreUrl;
     private final String dockstoreGA4GHBaseUrl;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
-            EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
+            EntryResource entryResource, DockstoreWebserviceConfiguration configuration, PublicStateManager manager) {
         super(client, sessionFactory, configuration, Workflow.class);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
@@ -174,7 +175,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         this.entryResource = entryResource;
 
-        publicStateManager = new PublicStateManager(configuration);
+        publicStateManager = manager;
 
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();

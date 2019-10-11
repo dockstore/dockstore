@@ -273,10 +273,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.getAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(toolDAO, configuration);
+        final EntryResource entryResource = new EntryResource(toolDAO, configuration, manager);
         environment.jersey().register(entryResource);
 
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration, manager);
         environment.jersey().register(workflowResource);
         final ServiceResource serviceResource = new ServiceResource(httpClient, hibernate.getSessionFactory(), configuration);
         environment.jersey().register(serviceResource);

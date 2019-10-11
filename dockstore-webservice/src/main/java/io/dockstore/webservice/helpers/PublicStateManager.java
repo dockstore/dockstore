@@ -25,6 +25,7 @@ import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
 /**
  * @author gluu
  * @since 26/07/17
+ * // TODO should be a singleton
  */
 public class PublicStateManager {
     private DockstoreWebserviceConfiguration config;
