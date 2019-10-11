@@ -161,6 +161,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String dockstoreUrl;
     private final String dockstoreGA4GHBaseUrl;
 
+
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
         super(client, sessionFactory, configuration, Workflow.class);
@@ -190,6 +191,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("Could create Dockstore base URL. "
                     + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+
+    public EntryResource getEntryResource() {
+        return this.entryResource;
+    }
+
+    public String getDockstoreUrl() {
+        return this.dockstoreUrl;
+    }
+
+    public String getDockstoreGA4GHBaseUrl() {
+        return this.dockstoreGA4GHBaseUrl;
     }
 
     @Override
@@ -632,8 +646,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoClient.setApiKey(zenodoAccessToken);
 
         String workflowUrl = MetadataResourceHelper.createWorkflowURL(workflow);
-        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoClient, dockstoreGA4GHBaseUrl, dockstoreUrl,
-                workflowUrl, workflow, workflowVersion, this);
+        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoClient, workflowUrl, workflow, workflowVersion, this, user);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);

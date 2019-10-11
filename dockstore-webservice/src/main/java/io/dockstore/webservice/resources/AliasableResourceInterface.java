@@ -15,9 +15,12 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -49,27 +52,38 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     T getAndCheckResourceByAlias(String alias);
 
+    default void checkAliases(Set<String>  aliases, User user) {
+        // reserve some prefixes for our own use
+        String[] invalidPrefixes = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
+
+        // Gather up any aliases that contain invalid prefixes
+        List<String> invalidAliases = new ArrayList<>();
+        if (!user.isCurator() && !user.getIsAdmin()) {
+            invalidAliases = aliases.stream().filter(alias -> StringUtils.startsWithAny(alias, invalidPrefixes)).collect(Collectors.toList());
+        }
+
+        // If there are any aliases with invalid prefixes then report it to the user
+        if (invalidAliases.size() > 0) {
+            String invalidAliasesString = String.join(", ", invalidAliases);
+            String invalidPrefixesString = String.join(", ", invalidPrefixes);
+            throw new CustomWebApplicationException("These aliases: " + invalidAliasesString + " start with a reserved string,"
+                    + " They cannot be used. Please create aliases without these prefixes: " + invalidPrefixesString,
+                    HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     default T addAliases(User user, Long id, String aliases) {
         T c = getAndCheckResource(user, id);
         Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
-        // reserve some prefixes for our own use
-        String[] invalidPrefixes = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
-
-        if (!user.isCurator() && !user.getIsAdmin()) {
-            for (String newAlias : newAliases) {
-                if (StringUtils.startsWithAny(newAlias, invalidPrefixes)) {
-                    throw new CustomWebApplicationException(newAlias + " starts with a reserved string, please try another alias",
-                        HttpStatus.SC_BAD_REQUEST);
-                }
-            }
-        }
+        checkAliases(newAliases, user);
 
         Set<String> duplicateAliasesToAdd = Sets.intersection(newAliases, oldAliases);
         if (!duplicateAliasesToAdd.isEmpty()) {
             String dupAliasesString = String.join(", ", duplicateAliasesToAdd);
-            throw new CustomWebApplicationException("Aliases " + dupAliasesString + " already exist; please use unique aliases", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Aliases " + dupAliasesString + " already exist; please use unique aliases",
+                    HttpStatus.SC_BAD_REQUEST);
         }
 
         newAliases.forEach(alias -> c.getAliases().put(alias, new Alias()));
