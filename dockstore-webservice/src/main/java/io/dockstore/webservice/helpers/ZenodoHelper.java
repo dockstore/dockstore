@@ -162,7 +162,7 @@ public final class ZenodoHelper {
         }
 
         provisionWorkflowVersionUploadFiles(zenodoClient, returnDeposit, depositionID,
-                workflow, workflowVersion, workflowResource); //entryVersionHelper);
+                workflow, workflowVersion, workflowResource);
 
         putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
 
