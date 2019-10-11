@@ -40,7 +40,7 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -80,7 +80,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
     private final ToolDAO toolDAO;
-    private final ElasticManager elasticManager;
+    private final PublicStateManager publicStateManager;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
@@ -90,7 +90,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
-        elasticManager = new ElasticManager();
+        publicStateManager = new PublicStateManager(configuration);
 
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -224,8 +224,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @Override
-    public Optional<ElasticManager> getElasticManager() {
-        return Optional.of(elasticManager);
+    public Optional<PublicStateManager> getPublicStateManager() {
+        return Optional.of(publicStateManager);
     }
 
     @Override

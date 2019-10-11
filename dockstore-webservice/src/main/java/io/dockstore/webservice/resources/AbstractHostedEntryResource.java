@@ -50,9 +50,9 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -82,7 +82,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         implements AuthenticatedResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
-    final ElasticManager elasticManager;
+    final PublicStateManager publicStateManager;
     private final FileDAO fileDAO;
     private final UserDAO userDAO;
     private final PermissionsInterface permissionsInterface;
@@ -90,10 +90,10 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private final int calculatedEntryLimit;
     private final int calculatedEntryVersionLimit;
 
-    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
+    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig, PublicStateManager manager) {
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
-        this.elasticManager = new ElasticManager();
+        this.publicStateManager = manager;
         this.userDAO = new UserDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
         this.calculatedEntryLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowLimit(), Integer.MAX_VALUE);
@@ -139,7 +139,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
-        elasticManager.handleIndexUpdate(byId, ElasticMode.UPDATE);
+        publicStateManager.handleIndexUpdate(byId, ElasticMode.UPDATE);
         return byId;
     }
 
@@ -245,7 +245,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         updateBlacklistedVersionNames(entry, version);
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
-        elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
+        publicStateManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
     }
 
@@ -355,7 +355,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
         entry.getWorkflowVersions().removeIf(v -> Objects.equals(v.getName(), version));
-        elasticManager.handleIndexUpdate(entry, ElasticMode.UPDATE);
+        publicStateManager.handleIndexUpdate(entry, ElasticMode.UPDATE);
         return entry;
     }
 

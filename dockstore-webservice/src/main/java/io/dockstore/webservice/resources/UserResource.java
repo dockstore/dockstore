@@ -56,9 +56,9 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -95,7 +95,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
-    private final ElasticManager elasticManager;
+    private final PublicStateManager publicStateManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
@@ -108,8 +108,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
-                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, PublicStateManager manager) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -118,7 +119,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
-        elasticManager = new ElasticManager();
+        publicStateManager = manager;
         this.cachingAuthenticator = cachingAuthenticator;
         this.client = client;
     }
@@ -425,7 +426,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished())
                 .collect(Collectors.toList());
         if (!toolEntries.isEmpty()) {
-            elasticManager.bulkUpsert(toolEntries);
+            publicStateManager.bulkUpsert(toolEntries);
         }
     }
 
@@ -435,7 +436,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
                 .collect(Collectors.toList());
         if (!toolEntries.isEmpty()) {
-            elasticManager.bulkUpsert(toolEntries);
+            publicStateManager.bulkUpsert(toolEntries);
         }
     }
 

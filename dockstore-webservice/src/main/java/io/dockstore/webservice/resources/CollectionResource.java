@@ -27,7 +27,7 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
@@ -530,7 +530,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     }
 
     @Override
-    public Optional<ElasticManager> getElasticManager() {
+    public Optional<PublicStateManager> getPublicStateManager() {
         return Optional.empty();
     }
 

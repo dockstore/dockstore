@@ -39,6 +39,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -64,8 +65,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
 
-    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
-        super(sessionFactory, permissionsInterface, limitConfig);
+    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig, PublicStateManager manager) {
+        super(sessionFactory, permissionsInterface, limitConfig, manager);
         this.tagDAO = new TagDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
     }
@@ -142,7 +143,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool deleteHostedVersion(User user, Long entryId, String version) {
         Tool tool = super.deleteHostedVersion(user, entryId, version);
-        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        publicStateManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
     }
 

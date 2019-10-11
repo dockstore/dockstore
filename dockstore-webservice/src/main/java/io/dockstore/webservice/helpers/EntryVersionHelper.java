@@ -76,9 +76,9 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param version Name of the version to set
      * @param id Id of entry
      * @param user User
-     * @param elasticManager notify on updates
+     * @param publicStateManager notify on updates
      */
-    default Entry updateDefaultVersionHelper(String version, long id, User user, ElasticManager elasticManager) {
+    default Entry updateDefaultVersionHelper(String version, long id, User user, PublicStateManager publicStateManager) {
         Entry entry = getDAO().findById(id);
         checkEntry(entry);
         checkUser(user, entry);
@@ -89,7 +89,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
         Entry result = getDAO().findById(id);
         checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        publicStateManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
     }
 
@@ -140,7 +140,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
-    default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO, ElasticManager manager) {
+    default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO, PublicStateManager manager) {
         T c = getDAO().findById(containerId);
         checkEntry(c);
         checkUserCanUpdate(user, c);

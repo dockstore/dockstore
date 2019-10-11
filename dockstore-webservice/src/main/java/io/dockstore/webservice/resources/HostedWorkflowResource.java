@@ -45,6 +45,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -79,8 +80,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final PermissionsInterface permissionsInterface;
     private Map<String, String> descriptorTypeToDefaultDescriptorPath;
 
-    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
-        super(sessionFactory, permissionsInterface, limitConfig);
+    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig, PublicStateManager manager) {
+        super(sessionFactory, permissionsInterface, limitConfig, manager);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
