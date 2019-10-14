@@ -61,7 +61,7 @@ public class ZenodoHelperTest {
         }
 
         if (!throwsError) {
-            fail("Non admin or curator was able to add an alias with an invalid prefix.");
+            fail("Non admin or curator was able to create an alias with an invalid prefix.");
         }
     }
 
@@ -79,7 +79,7 @@ public class ZenodoHelperTest {
         }
 
         if (throwsError) {
-            fail("Admin was not able to add an alias with an invalid prefix.");
+            fail("Admin was not able to create an alias with an invalid prefix.");
         }
     }
 
@@ -97,7 +97,7 @@ public class ZenodoHelperTest {
         }
 
         if (throwsError) {
-            fail("Was not able to add an alias with a valid prefix.");
+            fail("Was not able to create an alias with a valid prefix.");
         }
     }
 
