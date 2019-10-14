@@ -152,7 +152,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public String getContent(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, Type type,
+    public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
         ToolDAO dao) {
         return "";
     }
