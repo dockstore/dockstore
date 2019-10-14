@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.resources.AliasableResourceInterface;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.zenodo.client.ApiClient;
@@ -111,7 +112,7 @@ public final class ZenodoHelper {
                 // If it is not acceptable then an exception is generated
                 // in which case a deposition resource may be left on Zenodo
                 // that the user will have to clean up manually
-                doiAlias = createAliasUsingDoi(doi, workflowResource, user);
+                doiAlias = createAliasUsingDoi(doi, user);
 
                 setMetadataRelatedIdentifiers(depositMetadata, workflowResource.getDockstoreGA4GHBaseUrl(),
                         workflowResource.getDockstoreUrl(), workflowUrl, workflow, workflowVersion, doiAlias);
@@ -147,7 +148,7 @@ public final class ZenodoHelper {
                 // If it is not acceptable then an exception is generated
                 // in which case a deposition resource may be left on Zenodo
                 // that the user will have to clean up manually
-                doiAlias = createAliasUsingDoi(doi, workflowResource, user);
+                doiAlias = createAliasUsingDoi(doi, user);
 
                 setMetadataRelatedIdentifiers(depositMetadata, workflowResource.getDockstoreGA4GHBaseUrl(),
                         workflowResource.getDockstoreUrl(), workflowUrl, workflow, workflowVersion, doiAlias);
@@ -206,18 +207,17 @@ public final class ZenodoHelper {
     /**
      * Create a workflow alias that uses a digital object identifier
      * @param doi digital object identifier
-     * @param workflowResource code for interacting with the files of versions(we use zip file creation methods) and aliases
      * @param user user authenticated to issue a DOI for the workflow
      * @return the alias as a string
      */
-    protected static String createAliasUsingDoi(String doi, WorkflowResource workflowResource, User user) {
+    protected static String createAliasUsingDoi(String doi, User user) {
         // Replace forward slashes so we can use the DOI in an alias
         String doiReformattedAlias = doi.replaceAll("/", "-");
         // Make sure the alias is valid
         // If it is not acceptable then an exception is generated
         Set<String> aliasSet = new HashSet<>();
         aliasSet.add(doiReformattedAlias);
-        workflowResource.getEntryResource().checkAliases(aliasSet, user);
+        AliasableResourceInterface.checkAliases(aliasSet, user);
         return doiReformattedAlias;
     }
 

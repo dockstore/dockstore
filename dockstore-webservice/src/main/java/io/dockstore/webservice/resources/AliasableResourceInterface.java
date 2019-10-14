@@ -52,7 +52,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     T getAndCheckResourceByAlias(String alias);
 
-    default void checkAliases(Set<String>  aliases, User user) {
+    static void checkAliases(Set<String>  aliases, User user) {
         // reserve some prefixes for our own use
         String[] invalidPrefixes = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
 
