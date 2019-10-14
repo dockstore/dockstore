@@ -34,6 +34,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
 public interface AliasableResourceInterface<T extends Aliasable> {
+    // reserve some prefixes for our own use
+    String[] INVALID_PREFIXES = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
 
     Optional<ElasticManager> getElasticManager();
 
@@ -52,20 +54,18 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     T getAndCheckResourceByAlias(String alias);
 
-    static void checkAliases(Set<String>  aliases, User user) {
-        // reserve some prefixes for our own use
-        String[] invalidPrefixes = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
 
+    static void checkAliases(Set<String>  aliases, User user) {
         // Gather up any aliases that contain invalid prefixes
         List<String> invalidAliases = new ArrayList<>();
         if (!user.isCurator() && !user.getIsAdmin()) {
-            invalidAliases = aliases.stream().filter(alias -> StringUtils.startsWithAny(alias, invalidPrefixes)).collect(Collectors.toList());
+            invalidAliases = aliases.stream().filter(alias -> StringUtils.startsWithAny(alias, INVALID_PREFIXES)).collect(Collectors.toList());
         }
 
         // If there are any aliases with invalid prefixes then report it to the user
         if (invalidAliases.size() > 0) {
             String invalidAliasesString = String.join(", ", invalidAliases);
-            String invalidPrefixesString = String.join(", ", invalidPrefixes);
+            String invalidPrefixesString = String.join(", ", INVALID_PREFIXES);
             throw new CustomWebApplicationException("These aliases: " + invalidAliasesString + " start with a reserved string,"
                     + " They cannot be used. Please create aliases without these prefixes: " + invalidPrefixesString,
                     HttpStatus.SC_BAD_REQUEST);
