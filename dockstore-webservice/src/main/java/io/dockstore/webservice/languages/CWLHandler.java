@@ -236,7 +236,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     @SuppressWarnings("checkstyle:methodlength")
-    public String getContent(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, LanguageHandlerInterface.Type type,
+    public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
         ToolDAO dao) {
         Yaml yaml = new Yaml();
         if (isValidCwl(mainDescriptor, yaml)) {
@@ -363,13 +363,16 @@ public class CWLHandler implements LanguageHandlerInterface {
 
                     // Check secondary file for docker pull
                     if (secondaryFile != null) {
-                        stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, secondaryDescContent.get(secondaryFile), gson,
-                            yaml);
-                        if (isExpressionTool(secondaryDescContent.get(secondaryFile), yaml)) {
+                        String finalSecondaryFile = secondaryFile;
+                        final Optional<SourceFile> sourceFileOptional = secondarySourceFiles.stream()
+                                .filter(sf -> sf.getPath().equals(finalSecondaryFile)).findFirst();
+                        final String content = sourceFileOptional.map(SourceFile::getContent).orElse(null);
+                        stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, content, gson, yaml);
+                        if (isExpressionTool(content, yaml)) {
                             stepToType.put(workflowStepId, expressionToolType);
-                        } else if (isTool(secondaryDescContent.get(secondaryFile), yaml)) {
+                        } else if (isTool(content, yaml)) {
                             stepToType.put(workflowStepId, toolType);
-                        } else if (isWorkflow(secondaryDescContent.get(secondaryFile), yaml)) {
+                        } else if (isWorkflow(content, yaml)) {
                             stepToType.put(workflowStepId, workflowType);
                         } else {
                             stepToType.put(workflowStepId, "n/a");

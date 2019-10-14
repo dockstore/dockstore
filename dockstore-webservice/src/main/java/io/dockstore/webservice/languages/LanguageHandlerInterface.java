@@ -15,8 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +30,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -105,12 +104,12 @@ public interface LanguageHandlerInterface {
      *
      * @param mainDescriptorPath   the path of the main descriptor
      * @param mainDescriptor       the content of the main descriptor
-     * @param secondaryDescContent the content of the secondary descriptors in a map, looks like file paths -> content
+     * @param secondarySourceFiles the content of the secondary descriptors in a map, looks like file paths -> content
      * @param type                 tools or DAG
      * @param dao                  used to retrieve information on tools
      * @return either a DAG or some form of a list of tools for a workflow
      */
-    String getContent(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
+    String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao);
 
     /**
      * Checks that the test parameter files are valid JSON or YAML
@@ -327,16 +326,7 @@ public interface LanguageHandlerInterface {
      * @return Absolute version of relative path
      */
     default String convertRelativePathToAbsolutePath(String parentPath, String relativePath) {
-        if (relativePath.startsWith("/")) {
-            return relativePath;
-        }
-
-        Path workDir = Paths.get(parentPath);
-
-        // If the workDir is the root, leave it. If it is not the root, set workDir to the parent of parentPath
-        workDir = !Objects.equals(parentPath, workDir.getRoot().toString()) ? workDir.getParent() : workDir;
-
-        return workDir.resolve(relativePath).normalize().toString();
+        return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, relativePath);
     }
 
     /**
