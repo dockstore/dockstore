@@ -658,7 +658,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    String getCommitID(String repositoryId, Version version) {
+    protected String getCommitID(String repositoryId, Version version) {
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);

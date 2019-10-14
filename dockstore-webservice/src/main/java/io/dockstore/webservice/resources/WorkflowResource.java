@@ -1332,7 +1332,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
         if (mainDescriptor != null) {
-            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
+            Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
@@ -1368,7 +1368,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
-            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
+            Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
@@ -1383,15 +1383,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param workflowVersion source control version to consider
      * @return secondary file map (string path -> string content)
      */
-    private Map<String, String> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion) {
-        Map<String, String> secondaryDescContent = new HashMap<>();
-        // get secondary files
-        for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
-            if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
-            }
-        }
-        return secondaryDescContent;
+    private Set<SourceFile> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion) {
+        return workflowVersion.getSourceFiles().stream()
+                .filter(sf -> !sf.getPath().equals(workflowVersion.getWorkflowPath()))
+                .collect(Collectors.toSet());
     }
 
     /**
