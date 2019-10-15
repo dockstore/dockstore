@@ -55,6 +55,13 @@ public interface AliasableResourceInterface<T extends Aliasable> {
     T getAndCheckResourceByAlias(String alias);
 
 
+    /**
+     * Check that aliases do not contain invalid prefixes
+     * if the user adding them is not an admin or curator
+     * @param aliases a Set of alias strings
+     * @param user user authenticated to issue a DOI for the workflow
+     * @return the alias as a string
+     */
     static void checkAliases(Set<String>  aliases, User user) {
         // Gather up any aliases that contain invalid prefixes
         List<String> invalidAliases = new ArrayList<>();
@@ -72,6 +79,14 @@ public interface AliasableResourceInterface<T extends Aliasable> {
         }
     }
 
+    /**
+     * Add aliases to an Entry (e.g. Workflow or Tool)
+     * and check that they are valid before adding them
+     * @param user user authenticated to issue a DOI for the workflow
+     * @param id the id of the Entry
+     * @param aliases a comma separated string of aliases
+     * @return the alias as a string
+     */
     default T addAliases(User user, Long id, String aliases) {
         T c = getAndCheckResource(user, id);
         Set<String> oldAliases = c.getAliases().keySet();

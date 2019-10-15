@@ -13,7 +13,6 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -215,9 +214,7 @@ public final class ZenodoHelper {
         String doiReformattedAlias = doi.replaceAll("/", "-");
         // Make sure the alias is valid
         // If it is not acceptable then an exception is generated
-        Set<String> aliasSet = new HashSet<>();
-        aliasSet.add(doiReformattedAlias);
-        AliasableResourceInterface.checkAliases(aliasSet, user);
+        AliasableResourceInterface.checkAliases(Collections.singleton(doiReformattedAlias), user);
         return doiReformattedAlias;
     }
 
@@ -279,6 +276,7 @@ public final class ZenodoHelper {
      * @param dockstoreUrl URL for Dockstore (e.g. https://dockstore.org)
      * @param workflowUrl Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
      * @param workflow workflow for which DOI is registered
+     * @param workflowVersion workflow version for which DOI is registered
      * @param doiAlias workflow alias constructed using a DOI
      */
     private static void setMetadataRelatedIdentifiers(DepositMetadata depositMetadata,
