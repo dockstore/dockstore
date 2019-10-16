@@ -134,7 +134,7 @@ public class MetadataResource {
         addToolPaths(urls);
         addBioWorkflowPaths(urls);
         // Do not append services yet
-        addServicePaths(urls);
+        // addServicePaths(urls);
         addOrganizationAndCollectionPaths(urls);
         Collections.sort(urls);
         return String.join(System.lineSeparator(), urls);
