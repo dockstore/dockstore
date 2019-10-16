@@ -18,7 +18,7 @@ package io.dockstore.webservice.helpers.statelisteners;
 import java.util.List;
 
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +30,7 @@ public class SitemapListener implements StateListenerInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(SitemapListener.class);
 
     @Override
-    public void handleIndexUpdate(Entry entry, ElasticMode command) {
+    public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         LOGGER.error("this should update the sitemap for the one new entry");
     }
 

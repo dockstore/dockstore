@@ -38,8 +38,8 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
@@ -63,14 +63,12 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
-    private final PublicStateManager publicStateManager;
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
 
-    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, PublicStateManager manager) {
+    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO) {
         this.tagDAO = tagDAO;
         this.toolDAO = toolDAO;
-        publicStateManager = manager;
     }
 
     @GET
@@ -119,7 +117,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         }
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
-        publicStateManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
 
@@ -150,7 +148,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
 
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
-        publicStateManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
 
@@ -176,7 +174,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             tag.getSourceFiles().clear();
 
             if (tool.getWorkflowVersions().remove(tag)) {
-                publicStateManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+                PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
                 return Response.noContent().build();
             } else {
                 return Response.serverError().build();
@@ -206,7 +204,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         tag.updateVerified();
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
-        publicStateManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
 

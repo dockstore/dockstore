@@ -38,7 +38,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -67,7 +67,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     @Override
-    public void handleIndexUpdate(Entry entry, ElasticMode command) {
+    public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         entry = filterCheckerWorkflows(entry);
         // #2771 will need to disable this and properly create objects to get services into the index
         entry = entry instanceof Service ? null : entry;
@@ -118,7 +118,7 @@ public class ElasticListener implements StateListenerInterface {
      * @param command The command that will be used
      * @return Whether or not the entry is valid
      */
-    private boolean checkValid(Entry entry, ElasticMode command) {
+    private boolean checkValid(Entry entry, StateManagerMode command) {
         boolean published = entry.getIsPublished();
         switch (command) {
         case UPDATE:

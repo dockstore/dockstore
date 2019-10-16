@@ -95,7 +95,6 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
-    private final PublicStateManager publicStateManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
@@ -108,9 +107,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
-                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, PublicStateManager manager) {
+                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -119,7 +117,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
-        publicStateManager = manager;
         this.cachingAuthenticator = cachingAuthenticator;
         this.client = client;
     }
@@ -426,7 +423,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished())
                 .collect(Collectors.toList());
         if (!toolEntries.isEmpty()) {
-            publicStateManager.bulkUpsert(toolEntries);
+            PublicStateManager.getInstance().bulkUpsert(toolEntries);
         }
     }
 
@@ -436,7 +433,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
                 .collect(Collectors.toList());
         if (!toolEntries.isEmpty()) {
-            publicStateManager.bulkUpsert(toolEntries);
+            PublicStateManager.getInstance().bulkUpsert(toolEntries);
         }
     }
 

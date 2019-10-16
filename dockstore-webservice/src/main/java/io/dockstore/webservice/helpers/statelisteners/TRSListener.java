@@ -23,7 +23,7 @@ import javax.ws.rs.core.Response;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.StateManagerMode;
 
 /**
  * Future home of code for managing cached TRS entries
@@ -40,7 +40,7 @@ public class TRSListener implements StateListenerInterface {
         .build();
 
     @Override
-    public void handleIndexUpdate(Entry entry, ElasticMode command) {
+    public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         //TODO: this should update TRS for the one new entry rather than wipe everything out
         trsResponses.invalidateAll();
     }

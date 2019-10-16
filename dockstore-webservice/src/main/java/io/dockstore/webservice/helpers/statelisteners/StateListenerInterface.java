@@ -19,7 +19,7 @@ import java.util.List;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.StateManagerMode;
 
 /**
  * Defines the interface for things like elastic search, caches that might want to be informed
@@ -35,7 +35,7 @@ public interface StateListenerInterface {
      * @param entry   The entry to be converted into a document
      * @param command The command to perform for the document, either "update" or "delete" document
      */
-    void handleIndexUpdate(Entry entry, ElasticMode command);
+    void handleIndexUpdate(Entry entry, StateManagerMode command);
 
     /**
      * This handles a bulk update of everything in Dockstore

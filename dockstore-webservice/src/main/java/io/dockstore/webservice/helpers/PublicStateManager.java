@@ -23,17 +23,20 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
 
 /**
- * @author gluu
- * @since 26/07/17
- * // TODO should be a singleton
+ * @author dyuen
+ * @version 1.8.0
  */
-public class PublicStateManager {
+public final class PublicStateManager {
+    private static final PublicStateManager SINGLETON = new PublicStateManager();
     private DockstoreWebserviceConfiguration config;
     private List<StateListenerInterface> listeners = new ArrayList<>();
 
+    private PublicStateManager() {
+        // inaccessible on purpose
+    }
 
-    public PublicStateManager(DockstoreWebserviceConfiguration configuration) {
-        this.config = configuration;
+    public static PublicStateManager getInstance() {
+        return SINGLETON;
     }
 
     public void addListener(StateListenerInterface listener) {
@@ -41,7 +44,7 @@ public class PublicStateManager {
         listener.setConfig(config);
     }
 
-    public void handleIndexUpdate(Entry entry, ElasticMode command) {
+    public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         for (StateListenerInterface listener : listeners) {
             listener.handleIndexUpdate(entry, command);
         }
@@ -54,4 +57,7 @@ public class PublicStateManager {
         }
     }
 
+    public void setConfig(DockstoreWebserviceConfiguration config) {
+        this.config = config;
+    }
 }

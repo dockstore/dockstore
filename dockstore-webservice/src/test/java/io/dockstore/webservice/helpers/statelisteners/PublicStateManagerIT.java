@@ -33,8 +33,8 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -59,7 +59,8 @@ public class PublicStateManagerIT {
         DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
         config.getEsConfiguration().setHostname("localhost");
         config.getEsConfiguration().setPort(9200);
-        PublicStateManagerIT.manager = new PublicStateManager(config);
+        PublicStateManagerIT.manager = PublicStateManager.getInstance();
+        manager.setConfig(config);
     }
 
     @Test
@@ -106,7 +107,7 @@ public class PublicStateManagerIT {
     @Test
     public void addAnEntry() throws IOException {
         Tool tool = getFakeTool(false);
-        manager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        manager.handleIndexUpdate(tool, StateManagerMode.UPDATE);
 
         manager.bulkUpsert(Collections.singletonList(tool));
 
@@ -116,7 +117,7 @@ public class PublicStateManagerIT {
 
     @Test
     public void addAService() {
-        manager.handleIndexUpdate(new Service(), ElasticMode.UPDATE);
+        manager.handleIndexUpdate(new Service(), StateManagerMode.UPDATE);
         Assert.assertFalse(systemOutRule.getLog().contains("Performing index update"));
     }
 

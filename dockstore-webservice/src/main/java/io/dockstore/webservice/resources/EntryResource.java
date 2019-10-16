@@ -80,7 +80,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
     private final ToolDAO toolDAO;
-    private final PublicStateManager publicStateManager;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
@@ -88,9 +87,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
 
-    public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration, PublicStateManager manager) {
+    public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
-        publicStateManager = manager;
 
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -225,7 +223,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     @Override
     public Optional<PublicStateManager> getPublicStateManager() {
-        return Optional.of(publicStateManager);
+        return Optional.of(PublicStateManager.getInstance());
     }
 
     @Override

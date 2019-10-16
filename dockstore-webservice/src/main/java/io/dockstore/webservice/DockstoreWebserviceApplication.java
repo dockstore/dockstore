@@ -138,7 +138,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
     private static final int CACHE_IN_MB = 100;
     private static Cache cache = null;
-    private static PublicStateManager manager = null;
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
@@ -234,12 +233,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
 
-        manager = new PublicStateManager(configuration);
-        manager.addListener(new ElasticListener());
-        manager.addListener(new RSSListener());
-        manager.addListener(new SitemapListener());
+        final PublicStateManager publicStateManager = PublicStateManager.getInstance();
+        publicStateManager.setConfig(configuration);
+        publicStateManager.addListener(new ElasticListener());
+        publicStateManager.addListener(new RSSListener());
+        publicStateManager.addListener(new SitemapListener());
         final TRSListener trsListener = new TRSListener();
-        manager.addListener(trsListener);
+        publicStateManager.addListener(trsListener);
 
         environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, true);
         environment.jersey().register(new JsonProcessingExceptionMapper(true));
@@ -273,27 +273,27 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.getAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(toolDAO, configuration, manager);
+        final EntryResource entryResource = new EntryResource(toolDAO, configuration);
         environment.jersey().register(entryResource);
 
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration, manager);
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
         environment.jersey().register(workflowResource);
         final ServiceResource serviceResource = new ServiceResource(httpClient, hibernate.getSessionFactory(), configuration);
         environment.jersey().register(serviceResource);
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
-        final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource, entryResource, manager);
+        final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource, entryResource);
         environment.jersey().register(dockerRepoResource);
-        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, manager));
+        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer, manager));
+        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer));
 
         MetadataResourceHelper.init(configuration);
 
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
-        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig(), manager));
-        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig(), manager));
+        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
+        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new ToolTesterResource(configuration));
@@ -306,7 +306,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setConfig(configuration);
         ToolsApiServiceImpl.setTrsListener(trsListener);
 
-        ToolsApiExtendedServiceImpl.setStateManager(manager);
+        ToolsApiExtendedServiceImpl.setStateManager(publicStateManager);
         ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);

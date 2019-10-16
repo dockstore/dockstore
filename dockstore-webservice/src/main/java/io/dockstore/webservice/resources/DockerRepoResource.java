@@ -65,13 +65,13 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -126,13 +126,11 @@ public class DockerRepoResource
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final ObjectMapper objectMapper;
-    private final PublicStateManager publicStateManager;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
-        String bitbucketClientSecret, WorkflowResource workflowResource, EntryResource entryResource, PublicStateManager manager) {
+        String bitbucketClientSecret, WorkflowResource workflowResource, EntryResource entryResource) {
         objectMapper = mapper;
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
@@ -149,7 +147,6 @@ public class DockerRepoResource
         this.entryResource = entryResource;
 
         this.toolDAO = new ToolDAO(sessionFactory);
-        publicStateManager = manager;
     }
 
     List<Tool> refreshToolsForUser(Long userId, String organization) {
@@ -232,7 +229,7 @@ public class DockerRepoResource
             workflowResource.refresh(user, refreshedTool.getCheckerWorkflow().getId());
         }
         refreshedTool.getWorkflowVersions().forEach(Version::updateVerified);
-        publicStateManager.handleIndexUpdate(refreshedTool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(refreshedTool, StateManagerMode.UPDATE);
         return refreshedTool;
     }
 
@@ -303,7 +300,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return this.updateLabels(user, containerId, labelStrings, labelDAO, publicStateManager);
+        return this.updateLabels(user, containerId, labelStrings, labelDAO);
     }
 
     @PUT
@@ -333,7 +330,7 @@ public class DockerRepoResource
 
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
-        publicStateManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
 
     }
@@ -347,7 +344,7 @@ public class DockerRepoResource
     public Tool updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("toolId") Long toolId,
         @ApiParam(value = "Tag name to set as default.", required = true) String version) {
-        return (Tool)updateDefaultVersionHelper(version, toolId, user, publicStateManager);
+        return (Tool)updateDefaultVersionHelper(version, toolId, user);
     }
 
     /**
@@ -406,7 +403,7 @@ public class DockerRepoResource
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
             }
         }
-        publicStateManager.handleIndexUpdate(foundTool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(foundTool, StateManagerMode.UPDATE);
         return toolDAO.findById(containerId);
     }
 
@@ -557,7 +554,7 @@ public class DockerRepoResource
         toolDAO.delete(tool);
         tool = toolDAO.findById(containerId);
         if (tool == null) {
-            publicStateManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
+            PublicStateManager.getInstance().handleIndexUpdate(deleteTool, StateManagerMode.DELETE);
             return Response.noContent().build();
         } else {
             return Response.serverError().build();
@@ -618,7 +615,7 @@ public class DockerRepoResource
         long id = toolDAO.create(tool);
         tool = toolDAO.findById(id);
         if (request.getPublish()) {
-            publicStateManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+            PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
             if (tool.getTopicId() == null) {
                 try {
                     entryResource.createAndSetDiscourseTopic(id);
@@ -627,7 +624,7 @@ public class DockerRepoResource
                 }
             }
         } else {
-            publicStateManager.handleIndexUpdate(tool, ElasticMode.DELETE);
+            PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.DELETE);
         }
         return tool;
     }
@@ -875,7 +872,7 @@ public class DockerRepoResource
         FileType fileType =
             (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
         createTestParameters(testParameterPaths, tag, sourceFiles, fileType, fileDAO);
-        publicStateManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
         return tag.getSourceFiles();
     }
 
@@ -926,7 +923,7 @@ public class DockerRepoResource
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
         starEntryHelper(tool, user, "tool", tool.getToolPath());
-        publicStateManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
     }
 
     @DELETE
@@ -938,7 +935,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         unstarEntryHelper(tool, user, "tool", tool.getToolPath());
-        publicStateManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
     }
 
     @GET
