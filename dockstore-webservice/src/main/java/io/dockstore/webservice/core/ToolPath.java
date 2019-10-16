@@ -15,6 +15,9 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This class is only used to get data from the database in a more type-safe way
  * @author gluu
@@ -47,6 +50,17 @@ public class ToolPath {
 
     public String getToolname() {
         return toolname;
+    }
+
+    public String getEntryPath() {
+        List<String> segments = new ArrayList<>();
+        segments.add(registry);
+        segments.add(namespace);
+        segments.add(name);
+        if (toolname != null && !toolname.isEmpty()) {
+            segments.add(toolname);
+        }
+        return String.join("/", segments);
     }
 
 }

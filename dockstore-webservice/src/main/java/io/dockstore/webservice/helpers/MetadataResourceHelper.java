@@ -31,14 +31,11 @@ public final class MetadataResourceHelper {
     }
 
     public static String createWorkflowURL(WorkflowPath workflow, String entryType) {
-        return String.format("%s/%ss/%s/%s/%s%s", baseUrl, entryType, workflow.getSourceControl(), workflow.getOrganization(),
-                workflow.getRepository(),
-                workflow.getWorkflowName() == null || workflow.getWorkflowName().isEmpty() ? "" : '/' + workflow.getWorkflowName());
+        return String.format("%s/%ss/%s", baseUrl, entryType, workflow.getEntryPath());
     }
 
     public static String createToolURL2(ToolPath toolPath) {
-        return String.format("%s/containers/%s/%s/%s%s", baseUrl, toolPath.getRegistry(), toolPath.getNamespace(), toolPath.getName(),
-                toolPath.getToolname() == null || toolPath.getToolname().isEmpty() ? "" : '/' + toolPath.getToolname());
+        return String.format("%s/containers/%s", baseUrl, toolPath.getEntryPath());
     }
 
     public static String createOrganizationURL(Organization organization) {

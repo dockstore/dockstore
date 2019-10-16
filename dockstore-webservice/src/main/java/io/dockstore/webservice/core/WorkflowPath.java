@@ -15,6 +15,9 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.dockstore.common.SourceControl;
 
 /**
@@ -51,4 +54,14 @@ public class WorkflowPath {
         return workflowName;
     }
 
+    public String getEntryPath() {
+        List<String> segments = new ArrayList<>();
+        segments.add(sourceControl.toString());
+        segments.add(organization);
+        segments.add(repository);
+        if (workflowName != null && !workflowName.isEmpty()) {
+            segments.add(workflowName);
+        }
+        return String.join("/", segments);
+    }
 }
