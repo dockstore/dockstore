@@ -10,6 +10,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ZenodoHelperTest {
@@ -53,15 +54,11 @@ public class ZenodoHelperTest {
         user.setIsAdmin(false);
         user.setCurator(false);
         String doi = "drs:10.5072/zenodo.372767";
-        boolean throwsError = false;
         try {
-            String formattedDoi = ZenodoHelper.createAliasUsingDoi(doi, user);
-        } catch (CustomWebApplicationException ex) {
-            throwsError = true;
-        }
-
-        if (!throwsError) {
+            ZenodoHelper.createAliasUsingDoi(doi, user);
             fail("Non admin or curator was able to create an alias with an invalid prefix.");
+        } catch (CustomWebApplicationException ex) {
+            assertTrue(ex.getErrorMessage().contains("Please create aliases without these prefixes"));
         }
     }
 
@@ -72,15 +69,7 @@ public class ZenodoHelperTest {
         user.setCurator(false);
         String doi = "drs:10.5072/zenodo.372767";
         boolean throwsError = false;
-        try {
-            String formattedDoi = ZenodoHelper.createAliasUsingDoi(doi, user);
-        } catch (CustomWebApplicationException ex) {
-            throwsError = true;
-        }
-
-        if (throwsError) {
-            fail("Admin was not able to create an alias with an invalid prefix.");
-        }
+        ZenodoHelper.createAliasUsingDoi(doi, user);
     }
 
     @Test
@@ -90,15 +79,7 @@ public class ZenodoHelperTest {
         user.setCurator(false);
         String doi = "10.5072/zenodo.372767";
         boolean throwsError = false;
-        try {
-            String formattedDoi = ZenodoHelper.createAliasUsingDoi(doi, user);
-        } catch (CustomWebApplicationException ex) {
-            throwsError = true;
-        }
-
-        if (throwsError) {
-            fail("Was not able to create an alias with a valid prefix.");
-        }
+        ZenodoHelper.createAliasUsingDoi(doi, user);
     }
 
 }

@@ -9,6 +9,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.User;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class AliasableResourceInterfaceTest {
@@ -26,16 +27,12 @@ public class AliasableResourceInterfaceTest {
             String invalidAlias = invalidPrefix + "_some_random_alias_suffix";
             // Make sure the alias is valid
             // If it is not acceptable then an exception is generated
-            boolean throwsError = false;
             try {
                 AliasableResourceInterface.checkAliases(Collections.singleton(invalidPrefix + "_some_random_alias_suffix"),
                         user, true);
-            } catch (CustomWebApplicationException ex) {
-                throwsError = true;
-            }
-
-            if (!throwsError) {
                 fail("An alias with an invalid prefix " + invalidPrefix + " was reported to be OK.");
+            } catch (CustomWebApplicationException ex) {
+                assertTrue(ex.getErrorMessage().contains("Please create aliases without these prefixes"));
             }
         });
     }
@@ -67,16 +64,11 @@ public class AliasableResourceInterfaceTest {
         Arrays.stream(ZENODO_DOI_ALIASES).forEach(zenodoDOI -> {
             // Make sure the alias is valid
             // If it is not acceptable then an exception is generated
-            boolean throwsError = false;
             try {
 
                 AliasableResourceInterface.checkAliases(Collections.singleton(zenodoDOI), user, true);
             } catch (CustomWebApplicationException ex) {
-                throwsError = true;
-            }
-
-            if (!throwsError) {
-                fail("The alias " + zenodoDOI + " has a forbidden format but was reported to be OK.");
+                assertTrue(ex.getErrorMessage().contains("Please create aliases without this format"));
             }
         });
     }
