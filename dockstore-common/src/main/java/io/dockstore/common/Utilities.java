@@ -118,7 +118,7 @@ public final class Utilities {
      * Execute a command and return stdout and stderr
      *
      * @param command the command to execute
-     * @param additionalEnvironment, additional environment variables that are added to the system environment; can be null
+     * @param additionalEnvironment additional environment variables that are added to the system environment; can be null
      * @return the stdout and stderr
      */
     private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
@@ -154,7 +154,7 @@ public final class Utilities {
                 }
                 final Map<String, String> procEnvironment = EnvironmentUtils.getProcEnvironment();
                 if (additionalEnvironment != null) {
-                  procEnvironment.putAll(additionalEnvironment);
+                    procEnvironment.putAll(additionalEnvironment);
                 }
                 // get stdout and stderr
                 executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
