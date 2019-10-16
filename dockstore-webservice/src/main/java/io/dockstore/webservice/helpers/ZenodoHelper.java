@@ -180,7 +180,7 @@ public final class ZenodoHelper {
         // This code also checks that the alias does not start with an invalid prefix
         // If it does, this will generate an exception, the alias will not be added
         // to the workflow, but there may be an invalid Related Identifier URL on the Zenodo entry
-        workflowResource.getEntryResource().addAliases(user, workflow.getId(), doiAlias);
+        workflowResource.getEntryResource().addAliasesAndCheck(user, workflow.getId(), doiAlias, false);
         workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
     }
 
@@ -214,7 +214,7 @@ public final class ZenodoHelper {
         String doiReformattedAlias = doi.replaceAll("/", "-");
         // Make sure the alias is valid
         // If it is not acceptable then an exception is generated
-        AliasableResourceInterface.checkAliases(Collections.singleton(doiReformattedAlias), user);
+        AliasableResourceInterface.checkAliases(Collections.singleton(doiReformattedAlias), user, false);
         return doiReformattedAlias;
     }
 

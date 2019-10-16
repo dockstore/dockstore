@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -36,6 +37,7 @@ import org.apache.http.HttpStatus;
 public interface AliasableResourceInterface<T extends Aliasable> {
     // reserve some prefixes for our own use
     String[] INVALID_PREFIXES = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
+    String ZENDO_DOI_REGEX = "\\d\\d\\.\\d\\d\\d\\d[\\/-]zenodo\\.\\d*";
 
     Optional<ElasticManager> getElasticManager();
 
@@ -54,15 +56,15 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      */
     T getAndCheckResourceByAlias(String alias);
 
-
     /**
      * Check that aliases do not contain invalid prefixes
      * if the user adding them is not an admin or curator
      * @param aliases a Set of alias strings
      * @param user user authenticated to issue a DOI for the workflow
+     * @param blockAliasesWithParticualarFormat block creation of an alias with a particular format
      * @return the alias as a string
      */
-    static void checkAliases(Set<String>  aliases, User user) {
+    static void checkAliases(Set<String>  aliases, User user, boolean blockAliasesWithParticualarFormat) {
         // Gather up any aliases that contain invalid prefixes
         List<String> invalidAliases = new ArrayList<>();
         if (!user.isCurator() && !user.getIsAdmin()) {
@@ -73,9 +75,21 @@ public interface AliasableResourceInterface<T extends Aliasable> {
         if (invalidAliases.size() > 0) {
             String invalidAliasesString = String.join(", ", invalidAliases);
             String invalidPrefixesString = String.join(", ", INVALID_PREFIXES);
-            throw new CustomWebApplicationException("These aliases: " + invalidAliasesString + " start with a reserved string,"
+            throw new CustomWebApplicationException("These aliases: " + invalidAliasesString + " start with a reserved string."
                     + " They cannot be used. Please create aliases without these prefixes: " + invalidPrefixesString,
                     HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (blockAliasesWithParticualarFormat && !user.isCurator() && !user.getIsAdmin()) {
+            Pattern pattern = Pattern.compile(ZENDO_DOI_REGEX);
+            List<String> aliasesWithForbiddenFormat = aliases.stream().filter(alias -> pattern.matcher(alias).matches()).collect(Collectors.toList());
+            // If there are any aliases with invalid formats then report it to the user
+            if (aliasesWithForbiddenFormat.size() > 0) {
+                String invalidAliasesString = String.join(", ", invalidAliases);
+                throw new CustomWebApplicationException("These aliases : " + invalidAliasesString + " have a format that is forbidden."
+                        + " They cannot be used. Please create aliases without this format: " + ZENDO_DOI_REGEX,
+                        HttpStatus.SC_BAD_REQUEST);
+            }
         }
     }
 
@@ -88,11 +102,23 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      * @return the alias as a string
      */
     default T addAliases(User user, Long id, String aliases) {
+        return addAliasesAndCheck(user, id, aliases, true);
+    }
+
+    /**
+     * Add aliases to an Entry (e.g. Workflow or Tool)
+     * and check that they are valid before adding them
+     * @param user user authenticated to issue a DOI for the workflow
+     * @param id the id of the Entry
+     * @param aliases a comma separated string of aliases
+     * @return the alias as a string
+     */
+    default T addAliasesAndCheck(User user, Long id, String aliases, boolean blockFormat) {
         T c = getAndCheckResource(user, id);
         Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
-        checkAliases(newAliases, user);
+        checkAliases(newAliases, user, blockFormat);
 
         Set<String> duplicateAliasesToAdd = Sets.intersection(newAliases, oldAliases);
         if (!duplicateAliasesToAdd.isEmpty()) {
