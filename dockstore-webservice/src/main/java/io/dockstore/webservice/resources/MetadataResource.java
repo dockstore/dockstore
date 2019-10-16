@@ -24,10 +24,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -54,10 +56,14 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
+import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
@@ -103,6 +109,8 @@ public class MetadataResource {
     private final WorkflowDAO workflowDAO;
     private final OrganizationDAO organizationDAO;
     private final CollectionDAO collectionDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
+    private final ServiceDAO serviceDAO;
     private final DockstoreWebserviceConfiguration config;
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
@@ -111,6 +119,8 @@ public class MetadataResource {
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.config = config;
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
+        this.serviceDAO = new ServiceDAO(sessionFactory);
     }
 
     @GET
@@ -120,30 +130,48 @@ public class MetadataResource {
     @Operation(summary = "List all available workflow, tool, organization, and collection paths.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
-        //TODO needs to be more efficient via JPA query
-        List<Tool> tools = toolDAO.findAllPublished();
-        // #2683 avoid web crawling services for 1.7.0
-        List<Workflow> workflows = workflowDAO.findAllPublished(null, Integer.MAX_VALUE, null, null, null, (Class)BioWorkflow.class);
+        List<String> urls = new ArrayList<>();
+        addToolPaths(urls);
+        addBioWorkflowPaths(urls);
+        // Do not append services yet
+        addServicePaths(urls);
+        addOrganizationAndCollectionPaths(urls);
+        Collections.sort(urls);
+        return String.join(System.lineSeparator(), urls);
+    }
+
+    /**
+     * Adds organization and collection URLs
+     * //TODO needs to be more efficient via JPA query
+     * @param urls  Current list of all URLs for sitemap
+     */
+    private void addOrganizationAndCollectionPaths(List<String> urls) {
         List<Organization> organizations = organizationDAO.findAllApproved();
-        StringBuilder builder = new StringBuilder();
-        for (Tool tool : tools) {
-            builder.append(createToolURL(tool));
-            builder.append(System.lineSeparator());
-        }
-        for (Workflow workflow : workflows) {
-            builder.append(createWorkflowURL(workflow));
-            builder.append(System.lineSeparator());
-        }
-        for (Organization organization: organizations) {
-            builder.append(createOrganizationURL(organization));
-            builder.append(System.lineSeparator());
+        organizations.forEach(organization -> {
+            urls.add(createOrganizationURL(organization));
             List<Collection> collections = collectionDAO.findAllByOrg(organization.getId());
-            for (Collection collection: collections) {
-                builder.append(createCollectionURL(collection, organization));
-                builder.append(System.lineSeparator());
-            }
-        }
-        return builder.toString();
+            collections.stream().map(collection -> createCollectionURL(collection, organization)).forEach(urls::add);
+        });
+    }
+
+    private void addToolPaths(List<String> urls) {
+        List<ToolPath> toolPaths = toolDAO.findAllPublishedPaths();
+        List<String> entryURLs = toolPaths.stream().map(MetadataResourceHelper::createToolURL2).collect(Collectors.toList());
+        urls.addAll(entryURLs);
+    }
+
+    private void addBioWorkflowPaths(List<String> urls) {
+        List<WorkflowPath> workflowPaths = bioWorkflowDAO.findAllPublishedPaths();
+        List<String> entryURLs = workflowPaths.stream().map(
+            (WorkflowPath workflow) -> MetadataResourceHelper.createWorkflowURL(workflow, "workflow")).collect(Collectors.toList());
+        urls.addAll(entryURLs);
+    }
+
+    private void addServicePaths(List<String> urls) {
+        List<WorkflowPath> workflowPaths = serviceDAO.findAllPublishedPaths();
+        List<String> entryURLs = workflowPaths.stream().map(
+            (WorkflowPath workflow) -> MetadataResourceHelper.createWorkflowURL(workflow, "service")).collect(Collectors.toList());
+        urls.addAll(entryURLs);
     }
 
     private String createOrganizationURL(Organization organization) {

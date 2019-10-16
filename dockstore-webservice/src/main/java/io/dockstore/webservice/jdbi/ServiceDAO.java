@@ -16,7 +16,10 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
+
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.WorkflowPath;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
@@ -34,5 +37,9 @@ public class ServiceDAO extends AbstractDAO<Service> {
 
     public long create(Service file) {
         return persist(file).getId();
+    }
+
+    public List<WorkflowPath> findAllPublishedPaths() {
+        return list(namedQuery("io.dockstore.webservice.core.Service.findAllPublishedPaths"));
     }
 }
