@@ -12,8 +12,8 @@ import org.junit.Test;
 import static org.junit.Assert.fail;
 
 public class AliasableResourceInterfaceTest {
-    String[] ZENODO_DOI_ALIASES = {"10.5281/zenodo.6094", "10.5281/zenodo.60943", "10.5281/zenodo.6094355",
-            "10.5281-zenodo.6094", "10.5281-zenodo.60943", "10.5281-zenodo.6094355"};
+    private static final String[] ZENODO_DOI_ALIASES = {"10.5281/zenodo.6094", "10.5281/zenodo.60943", "10.5281/zenodo.6094355",
+        "10.5281-zenodo.6094", "10.5281-zenodo.60943", "10.5281-zenodo.6094355"};
 
 
     @Test
