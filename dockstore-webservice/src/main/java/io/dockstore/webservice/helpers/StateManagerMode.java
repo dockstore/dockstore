@@ -17,9 +17,9 @@ package io.dockstore.webservice.helpers;
 
 /**
  * @author gluu
- * @since 21/08/17
+ * @version 1.8.0
  */
-public enum ElasticMode {
+public enum StateManagerMode {
         // Add new registries here
         UPDATE, DELETE
 }
