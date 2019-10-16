@@ -41,6 +41,20 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
       - bearer: []
+  /metadata/config.json:
+    get:
+      tags:
+      - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
   /metadata/dockerRegistryList:
     get:
       tags:
@@ -57,20 +71,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
-  /metadata/config.json:
-    get:
-      tags:
-      - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Config'
   /metadata/sitemap:
     get:
       tags:
@@ -291,6 +291,43 @@ paths:
             text/plain:
               schema:
                 type: string
+  /users/{userId}:
+    get:
+      operationId: getSpecificUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/user:
+    get:
+      operationId: getUser
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -375,43 +412,6 @@ paths:
                   type: string
       security:
       - bearer: []
-  /users/{userId}:
-    get:
-      operationId: getSpecificUser
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  /users/user:
-    get:
-      operationId: getUser
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     post:
       description: Adds a workflow for a registry and repository path with defaults
@@ -661,9 +661,6 @@ components:
           format: date-time
         name:
           type: string
-        tosacceptanceDate:
-          type: string
-          format: date-time
         tosversion:
           type: string
           enum:
@@ -673,6 +670,9 @@ components:
           type: string
           format: date-time
           writeOnly: true
+        tosacceptanceDate:
+          type: string
+          format: date-time
     Validation:
       type: object
       properties:
@@ -778,21 +778,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-    RegistryBean:
-      type: object
-      properties:
-        dockerPath:
-          type: string
-        friendlyName:
-          type: string
-        url:
-          type: string
-        privateOnly:
-          type: string
-        customDockerPath:
-          type: string
-        enum:
-          type: string
     Config:
       type: object
       properties:
@@ -852,6 +837,21 @@ components:
           type: string
         discourseUrl:
           type: string
+    RegistryBean:
+      type: object
+      properties:
+        dockerPath:
+          type: string
+        friendlyName:
+          type: string
+        url:
+          type: string
+        privateOnly:
+          type: string
+        customDockerPath:
+          type: string
+        enum:
+          type: string
     SourceControlBean:
       type: object
       properties:
@@ -894,8 +894,8 @@ components:
           - WDL
           - NFL
           - service
-          
-          
+
+
         id:
           type: integer
           format: int64
@@ -940,8 +940,6 @@ components:
         topicId:
           type: integer
           format: int64
-        conceptDoi:
-          type: string
         mode:
           type: string
           enum:
@@ -981,15 +979,12 @@ components:
           format: int64
         full_workflow_path:
           type: string
-        source_control_provider:
-          type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
-        last_modified_date:
+        source_control_provider:
           type: string
-          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1005,6 +1000,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
     WorkflowVersion:
       type: object
       properties:
