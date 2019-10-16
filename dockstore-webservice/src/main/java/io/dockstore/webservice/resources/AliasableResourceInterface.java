@@ -85,7 +85,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
             List<String> aliasesWithForbiddenFormat = aliases.stream().filter(alias -> pattern.matcher(alias).matches()).collect(Collectors.toList());
             // If there are any aliases with invalid formats then report it to the user
             if (aliasesWithForbiddenFormat.size() > 0) {
-                String invalidAliasesString = String.join(", ", invalidAliases);
+                String invalidAliasesString = String.join(", ", aliasesWithForbiddenFormat);
                 throw new CustomWebApplicationException("These aliases : " + invalidAliasesString + " have a format that is forbidden."
                         + " They cannot be used. Please create aliases without this format: " + ZENDO_DOI_REGEX,
                         HttpStatus.SC_BAD_REQUEST);
