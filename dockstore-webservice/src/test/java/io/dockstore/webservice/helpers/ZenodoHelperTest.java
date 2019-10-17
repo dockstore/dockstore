@@ -4,7 +4,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import org.junit.Assert;
@@ -50,36 +49,19 @@ public class ZenodoHelperTest {
 
     @Test
     public void checkAliasCreationFromDoiWithInvalidPrefix() {
-        User user = new User();
-        user.setIsAdmin(false);
-        user.setCurator(false);
         String doi = "drs:10.5072/zenodo.372767";
         try {
-            ZenodoHelper.createAliasUsingDoi(doi, user);
-            fail("Non admin or curator was able to create an alias with an invalid prefix.");
+            ZenodoHelper.createAliasUsingDoi(doi);
+            fail("Was able to create an alias with an invalid prefix.");
         } catch (CustomWebApplicationException ex) {
             assertTrue(ex.getErrorMessage().contains("Please create aliases without these prefixes"));
         }
     }
 
     @Test
-    public void checkAdminAliasCreationFromDoiWithInvalidPrefix() {
-        User user = new User();
-        user.setIsAdmin(true);
-        user.setCurator(false);
-        String doi = "drs:10.5072/zenodo.372767";
-        boolean throwsError = false;
-        ZenodoHelper.createAliasUsingDoi(doi, user);
-    }
-
-    @Test
-    public void checkNonAdminAliasCreationFromValidDoi() {
-        User user = new User();
-        user.setIsAdmin(false);
-        user.setCurator(false);
+    public void checkCreationFromValidDoi() {
         String doi = "10.5072/zenodo.372767";
-        boolean throwsError = false;
-        ZenodoHelper.createAliasUsingDoi(doi, user);
+        ZenodoHelper.createAliasUsingDoi(doi);
     }
 
 }

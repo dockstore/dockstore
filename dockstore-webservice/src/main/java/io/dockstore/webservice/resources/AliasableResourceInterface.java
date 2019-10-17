@@ -61,15 +61,30 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      * if the user adding them is not an admin or curator
      * @param aliases a Set of alias strings
      * @param user user authenticated to issue a DOI for the workflow
-     * @param blockAliasesWithParticualarFormat block creation of an alias with a particular format
+     * @param blockAliasesWithZenodoFormat block creation of an alias with a particular format
      * @return the alias as a string
      */
-    static void checkAliases(Set<String>  aliases, User user, boolean blockAliasesWithParticualarFormat) {
+    static void checkAliases(Set<String>  aliases, User user, boolean blockAliasesWithZenodoFormat) {
+        // Admins and curators do not have restrictions on alias format
+        if (user.isCurator() || user.getIsAdmin()) {
+            return;
+        }
+
+        checkAliasFormat(aliases, blockAliasesWithZenodoFormat);
+    }
+
+
+    /**
+     * Check that aliases do not contain invalid prefixes
+     * if the user adding them is not an admin or curator
+     * @param aliases a Set of alias strings
+     * @param blockAliasesWithZenodoFormat block creation of an alias with a particular format
+     * @return the alias as a string
+     */
+    static void checkAliasFormat(Set<String>  aliases, boolean blockAliasesWithZenodoFormat) {
         // Gather up any aliases that contain invalid prefixes
         List<String> invalidAliases = new ArrayList<>();
-        if (!user.isCurator() && !user.getIsAdmin()) {
-            invalidAliases = aliases.stream().filter(alias -> StringUtils.startsWithAny(alias, INVALID_PREFIXES)).collect(Collectors.toList());
-        }
+        invalidAliases = aliases.stream().filter(alias -> StringUtils.startsWithAny(alias, INVALID_PREFIXES)).collect(Collectors.toList());
 
         // If there are any aliases with invalid prefixes then report it to the user
         if (invalidAliases.size() > 0) {
@@ -80,7 +95,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
                     HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (blockAliasesWithParticualarFormat && !user.isCurator() && !user.getIsAdmin()) {
+        if (blockAliasesWithZenodoFormat) {
             Pattern pattern = Pattern.compile(ZENDO_DOI_REGEX);
             List<String> aliasesWithForbiddenFormat = aliases.stream().filter(alias -> pattern.matcher(alias).matches()).collect(Collectors.toList());
             // If there are any aliases with invalid formats then report it to the user

@@ -111,7 +111,7 @@ public final class ZenodoHelper {
                 // If it is not acceptable then an exception is generated
                 // in which case a deposition resource may be left on Zenodo
                 // that the user will have to clean up manually
-                doiAlias = createAliasUsingDoi(doi, user);
+                doiAlias = createAliasUsingDoi(doi);
 
                 setMetadataRelatedIdentifiers(depositMetadata, workflowResource.getDockstoreGA4GHBaseUrl(),
                         workflowResource.getDockstoreUrl(), workflowUrl, workflow, workflowVersion, doiAlias);
@@ -147,7 +147,7 @@ public final class ZenodoHelper {
                 // If it is not acceptable then an exception is generated
                 // in which case a deposition resource may be left on Zenodo
                 // that the user will have to clean up manually
-                doiAlias = createAliasUsingDoi(doi, user);
+                doiAlias = createAliasUsingDoi(doi);
 
                 setMetadataRelatedIdentifiers(depositMetadata, workflowResource.getDockstoreGA4GHBaseUrl(),
                         workflowResource.getDockstoreUrl(), workflowUrl, workflow, workflowVersion, doiAlias);
@@ -206,15 +206,14 @@ public final class ZenodoHelper {
     /**
      * Create a workflow alias that uses a digital object identifier
      * @param doi digital object identifier
-     * @param user user authenticated to issue a DOI for the workflow
      * @return the alias as a string
      */
-    protected static String createAliasUsingDoi(String doi, User user) {
+    protected static String createAliasUsingDoi(String doi) {
         // Replace forward slashes so we can use the DOI in an alias
         String doiReformattedAlias = doi.replaceAll("/", "-");
         // Make sure the alias is valid
         // If it is not acceptable then an exception is generated
-        AliasableResourceInterface.checkAliases(Collections.singleton(doiReformattedAlias), user, false);
+        AliasableResourceInterface.checkAliasFormat(Collections.singleton(doiReformattedAlias), false);
         return doiReformattedAlias;
     }
 

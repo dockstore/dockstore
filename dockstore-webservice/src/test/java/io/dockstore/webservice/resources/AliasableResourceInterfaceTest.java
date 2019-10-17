@@ -18,7 +18,7 @@ public class AliasableResourceInterfaceTest {
 
 
     @Test
-    public void testAddAliasWithBadPrefix() {
+    public void testCheckAliasWithBadPrefix() {
         User user = new User();
         user.setIsAdmin(false);
         user.setCurator(false);
@@ -38,13 +38,13 @@ public class AliasableResourceInterfaceTest {
     }
 
     @Test
-    public void testAdminCuratorAddAliasWithBadPrefix() {
+    public void testAdminCuratorCheckAliasWithBadPrefix() {
         // An alias with an invalid prefix can be created by an admin or curator.
-        testAdminCuratorAddAliasWithBadPrefix(true, false);
-        testAdminCuratorAddAliasWithBadPrefix(false, true);
+        testAdminCuratorCheckAliasWithBadPrefix(true, false);
+        testAdminCuratorCheckAliasWithBadPrefix(false, true);
     }
 
-    public void testAdminCuratorAddAliasWithBadPrefix(boolean isAdmin, boolean isCurator) {
+    private void testAdminCuratorCheckAliasWithBadPrefix(boolean isAdmin, boolean isCurator) {
         User user = new User();
         user.setIsAdmin(isAdmin);
         user.setCurator(isCurator);
@@ -56,7 +56,7 @@ public class AliasableResourceInterfaceTest {
     }
 
     @Test
-    public void testAddAliasWithForbiddenFormat() {
+    public void testCheckAliasWithForbiddenFormat() {
         User user = new User();
         user.setIsAdmin(false);
         user.setCurator(false);
@@ -74,13 +74,13 @@ public class AliasableResourceInterfaceTest {
     }
 
     @Test
-    public void testAdminCuratorAddAliasWithForbiddenFormat() {
+    public void testAdminCuratorCheckAliasWithForbiddenFormat() {
         // An alias with an invalid prefix can be created by an admin or curator.
-        testAdminCuratorAddAliasWithBadPrefix(true, false);
-        testAdminCuratorAddAliasWithBadPrefix(false, true);
+        testAdminCuratorCheckAliasWithForbiddenFormat(true, false);
+        testAdminCuratorCheckAliasWithForbiddenFormat(false, true);
     }
 
-    public void testAdminCuratorAddAliasWithForbiddenFormat(boolean isAdmin, boolean isCurator) {
+    private void testAdminCuratorCheckAliasWithForbiddenFormat(boolean isAdmin, boolean isCurator) {
         User user = new User();
         user.setIsAdmin(isAdmin);
         user.setCurator(isCurator);
