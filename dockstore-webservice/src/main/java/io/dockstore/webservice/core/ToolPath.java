@@ -24,10 +24,10 @@ import java.util.List;
  * @since 1.8.0
  */
 public class ToolPath {
-    private String registry;
-    private String namespace;
-    private String name;
-    private String toolname;
+    private final String registry;
+    private final String namespace;
+    private final String name;
+    private final String toolname;
 
     public ToolPath(String registry, String namespace, String name, String toolname) {
         this.registry = registry;

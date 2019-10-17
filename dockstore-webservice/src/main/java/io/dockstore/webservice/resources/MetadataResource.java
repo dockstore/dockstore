@@ -131,11 +131,11 @@ public class MetadataResource {
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
         List<String> urls = new ArrayList<>();
-        addToolPaths(urls);
-        addBioWorkflowPaths(urls);
+        urls.addAll(getToolPaths());
+        urls.addAll(getBioWorkflowPaths());
         // Do not append services yet
-        // addServicePaths(urls);
-        addOrganizationAndCollectionPaths(urls);
+        // urls.addAll(getServicePaths());
+        urls.addAll(getOrganizationAndCollectionPaths());
         Collections.sort(urls);
         return String.join(System.lineSeparator(), urls);
     }
@@ -143,35 +143,33 @@ public class MetadataResource {
     /**
      * Adds organization and collection URLs
      * //TODO needs to be more efficient via JPA query
-     * @param urls  Current list of all URLs for sitemap
      */
-    private void addOrganizationAndCollectionPaths(List<String> urls) {
+    private List<String> getOrganizationAndCollectionPaths() {
+        List<String> urls = new ArrayList<>();
         List<Organization> organizations = organizationDAO.findAllApproved();
         organizations.forEach(organization -> {
             urls.add(createOrganizationURL(organization));
             List<Collection> collections = collectionDAO.findAllByOrg(organization.getId());
             collections.stream().map(collection -> createCollectionURL(collection, organization)).forEach(urls::add);
         });
+        return urls;
     }
 
-    private void addToolPaths(List<String> urls) {
+    private List<String> getToolPaths() {
         List<ToolPath> toolPaths = toolDAO.findAllPublishedPaths();
-        List<String> entryURLs = toolPaths.stream().map(MetadataResourceHelper::createToolURL2).collect(Collectors.toList());
-        urls.addAll(entryURLs);
+        return toolPaths.stream().map(MetadataResourceHelper::createToolURL2).collect(Collectors.toList());
     }
 
-    private void addBioWorkflowPaths(List<String> urls) {
+    private List<String> getBioWorkflowPaths() {
         List<WorkflowPath> workflowPaths = bioWorkflowDAO.findAllPublishedPaths();
-        List<String> entryURLs = workflowPaths.stream().map(
+        return workflowPaths.stream().map(
             (WorkflowPath workflow) -> MetadataResourceHelper.createWorkflowURL(workflow, "workflow")).collect(Collectors.toList());
-        urls.addAll(entryURLs);
     }
 
-    private void addServicePaths(List<String> urls) {
+    private List<String> getServicePaths() {
         List<WorkflowPath> workflowPaths = serviceDAO.findAllPublishedPaths();
-        List<String> entryURLs = workflowPaths.stream().map(
+        return workflowPaths.stream().map(
             (WorkflowPath workflow) -> MetadataResourceHelper.createWorkflowURL(workflow, "service")).collect(Collectors.toList());
-        urls.addAll(entryURLs);
     }
 
     private String createOrganizationURL(Organization organization) {

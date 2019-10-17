@@ -26,10 +26,10 @@ import io.dockstore.common.SourceControl;
  * @since 1.8.0
  */
 public class WorkflowPath {
-    private SourceControl sourceControl;
-    private String organization;
-    private String repository;
-    private String workflowName;
+    private final SourceControl sourceControl;
+    private final String organization;
+    private final String repository;
+    private final String workflowName;
 
     public WorkflowPath(SourceControl sourceControl, String organization, String repository, String workflowName) {
         this.sourceControl = sourceControl;
