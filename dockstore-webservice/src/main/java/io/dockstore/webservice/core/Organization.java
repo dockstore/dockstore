@@ -118,7 +118,7 @@ public class Organization implements Serializable, Aliasable {
     @OneToMany(mappedBy = "organization")
     private Set<Collection> collections = new HashSet<>();
 
-    @ElementCollection(targetClass = Alias.class)
+    @ElementCollection(targetClass = Alias.class, fetch = FetchType.EAGER)
     @JoinTable(name = "organization_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for organizations")
