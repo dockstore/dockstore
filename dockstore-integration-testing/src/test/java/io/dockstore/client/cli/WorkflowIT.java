@@ -1442,7 +1442,7 @@ public class WorkflowIT extends BaseIT {
                 .containsKey("test workflow"));
 
         Workflow workflowById = workflowApi.getWorkflow(entry.getId(), null);
-        Assert.assertNotNull(workflowById.getAliases());
+        Assert.assertNotNull("Getting workflow by ID has null alias", workflowById.getAliases());
 
         // check that the aliases work in TRS search
         Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
