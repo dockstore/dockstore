@@ -6864,7 +6864,7 @@ definitions:
     properties:
       organization:
         type: "string"
-      repository:
+      repositoryName:
         type: "string"
       gitRegistry:
         type: "string"
@@ -6873,6 +6873,8 @@ definitions:
         - "github.com"
         - "bitbucket.org"
         - "gitlab.com"
+      canDelete:
+        type: "boolean"
       present:
         type: "boolean"
       path:

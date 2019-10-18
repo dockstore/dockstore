@@ -770,7 +770,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         return repositoryUrlToName.values().stream()
                 .filter(repository -> repository.startsWith(organization + "/"))
                 .map(repository -> new Repository(repository.split("/")[0], repository.split("/")[1], gitRegistry, workflowDAO.findByPath(gitRegistry + "/" + repository, false, BioWorkflow.class).isPresent(), canDeleteWorkflow(gitRegistry + "/" + repository)))
-                .sorted(Comparator.comparing(Repository::getRepository))
+                .sorted(Comparator.comparing(Repository::getRepositoryName))
                 .collect(Collectors.toList());
     }
 

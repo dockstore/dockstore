@@ -7,14 +7,14 @@ package io.dockstore.common;
  */
 public class Repository {
     private String organization;
-    private String repository;
+    private String repositoryName;
     private SourceControl gitRegistry;
     private boolean isPresent;
     private boolean canDelete;
 
-    public Repository(String organization, String repository, SourceControl gitRegistry, boolean isPresent, boolean canDelete) {
+    public Repository(String organization, String repositoryName, SourceControl gitRegistry, boolean isPresent, boolean canDelete) {
         this.organization = organization;
-        this.repository = repository;
+        this.repositoryName = repositoryName;
         this.gitRegistry = gitRegistry;
         this.isPresent = isPresent;
         this.canDelete = canDelete;
@@ -28,12 +28,12 @@ public class Repository {
         this.organization = organization;
     }
 
-    public String getRepository() {
-        return repository;
+    public String getRepositoryName() {
+        return repositoryName;
     }
 
-    public void setRepository(String repository) {
-        this.repository = repository;
+    public void setRepositoryName(String repositoryName) {
+        this.repositoryName = repositoryName;
     }
 
     public SourceControl getGitRegistry() {
@@ -53,7 +53,7 @@ public class Repository {
     }
 
     public String getPath() {
-        return organization + "/" + repository;
+        return String.format("%s/%s", organization, repositoryName);
     }
 
     public boolean isCanDelete() {
