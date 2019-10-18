@@ -6,11 +6,11 @@ package io.dockstore.common;
  * @since 1.8.0
  */
 public class Repository {
-    String organization;
-    String repository;
-    SourceControl gitRegistry;
-    boolean isPresent;
-    boolean canDelete;
+    private String organization;
+    private String repository;
+    private SourceControl gitRegistry;
+    private boolean isPresent;
+    private boolean canDelete;
 
     public Repository(String organization, String repository, SourceControl gitRegistry, boolean isPresent, boolean canDelete) {
         this.organization = organization;
