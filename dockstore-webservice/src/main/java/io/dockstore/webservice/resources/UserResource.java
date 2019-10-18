@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.text.MessageFormat;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -42,6 +43,7 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
+import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.Limits;
@@ -760,11 +762,15 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/registries/{gitRegistry}/organizations/{organization}")
     @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
-    public Set<String> getUserOrganizationRepositories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
-                                            @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
-                                            @Parameter(name = "organization", description = "Git organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization) {
+    public List<Repository> getUserOrganizationRepositories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+                                                           @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
+                                                           @Parameter(name = "organization", description = "Git organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization) {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
-        return repositoryUrlToName.values().stream().filter(repository -> repository.startsWith(organization + "/")).collect(Collectors.toSet());
+        return repositoryUrlToName.values().stream()
+                .filter(repository -> repository.startsWith(organization + "/"))
+                .map(repository -> new Repository(repository.split("/")[0], repository.split("/")[1], gitRegistry, workflowDAO.findByPath(gitRegistry + "/" + repository, false, BioWorkflow.class).isPresent()))
+                .sorted(Comparator.comparing(Repository::getRepository))
+                .collect(Collectors.toList());
     }
 
     /**
