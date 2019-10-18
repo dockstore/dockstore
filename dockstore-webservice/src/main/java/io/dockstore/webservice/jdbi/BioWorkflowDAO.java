@@ -15,6 +15,9 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
+
+import io.dockstore.webservice.core.WorkflowPath;
 import io.dockstore.webservice.core.BioWorkflow;
 import org.hibernate.SessionFactory;
 
@@ -25,5 +28,9 @@ import org.hibernate.SessionFactory;
 public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
     public BioWorkflowDAO(SessionFactory factory) {
         super(factory);
+    }
+
+    public List<WorkflowPath> findAllPublishedPaths() {
+        return list(namedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths"));
     }
 }
