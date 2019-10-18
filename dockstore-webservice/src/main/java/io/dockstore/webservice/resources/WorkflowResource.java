@@ -74,14 +74,14 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
@@ -145,7 +145,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String PAGINATION_LIMIT = "100";
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
 
-    private final ElasticManager elasticManager;
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
     private final FileFormatDAO fileFormatDAO;
@@ -161,7 +160,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String dockstoreUrl;
     private final String dockstoreGA4GHBaseUrl;
 
-
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
         super(client, sessionFactory, configuration, Workflow.class);
@@ -175,7 +173,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         this.entryResource = entryResource;
 
-        elasticManager = new ElasticManager();
 
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
@@ -247,7 +244,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Do we maintain the checker workflow association? For now we won't
         workflow.setCheckerWorkflow(null);
 
-        elasticManager.handleIndexUpdate(workflow, ElasticMode.DELETE);
+        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
         return workflow;
 
     }
@@ -425,7 +422,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         workflow.getWorkflowVersions().forEach(Version::updateVerified);
         // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
-        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
         return workflow;
     }
 
@@ -474,7 +471,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return this.updateLabels(user, workflowId, labelStrings, labelDAO, elasticManager);
+        return this.updateLabels(user, workflowId, labelStrings, labelDAO);
     }
 
     @PUT
@@ -503,7 +500,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         updateInfo(wf, workflow);
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
 
     }
@@ -517,7 +514,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Version name to set as default", required = true) String version) {
-        return (Workflow)updateDefaultVersionHelper(version, workflowId, user, elasticManager);
+        return (Workflow)updateDefaultVersionHelper(version, workflowId, user);
     }
 
     // Used to update workflow manually (not refresh)
@@ -561,7 +558,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         workflowVersion.updateVerified();
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
 
@@ -650,7 +647,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
 
     }
@@ -683,7 +680,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
             }
         }
-        elasticManager.handleIndexUpdate(wf, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(wf, StateManagerMode.UPDATE);
         return wf;
     }
 
@@ -777,7 +774,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         long id = workflowDAO.create(workflow);
         workflow = workflowDAO.findById(id);
         if (request.getPublish()) {
-            elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
             if (workflow.getTopicId() == null) {
                 try {
                     entryResource.createAndSetDiscourseTopic(id);
@@ -786,7 +783,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 }
             }
         } else {
-            elasticManager.handleIndexUpdate(workflow, ElasticMode.DELETE);
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
         }
         return workflow;
     }
@@ -1173,7 +1170,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Add new test parameter files
         FileType testParameterType = workflow.getTestParameterType();
         createTestParameters(testParameterPaths, workflowVersion, sourceFiles, testParameterType, fileDAO);
-        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
 
@@ -1211,7 +1208,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         FileType testParameterType = workflow.getTestParameterType();
         testParameterPaths
             .forEach(path -> sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType));
-        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
 
@@ -1300,7 +1297,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
 
@@ -1321,7 +1318,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
         if (mainDescriptor != null) {
-            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
+            Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             return lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
@@ -1357,7 +1354,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
-            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
+            Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
@@ -1372,15 +1369,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param workflowVersion source control version to consider
      * @return secondary file map (string path -> string content)
      */
-    private Map<String, String> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion) {
-        Map<String, String> secondaryDescContent = new HashMap<>();
-        // get secondary files
-        for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
-            if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
-            }
-        }
-        return secondaryDescContent;
+    private Set<SourceFile> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion) {
+        return workflowVersion.getSourceFiles().stream()
+                .filter(sf -> !sf.getPath().equals(workflowVersion.getWorkflowPath()))
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -1434,7 +1426,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findById(workflowId);
 
         starEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
-        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 
     @DELETE
@@ -1446,7 +1438,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
-        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 
     @GET
@@ -1605,7 +1597,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         long id = workflowDAO.create(checkerWorkflow);
         checkerWorkflow.addUser(user);
         checkerWorkflow = (BioWorkflow)workflowDAO.findById(id);
-        elasticManager.handleIndexUpdate(checkerWorkflow, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(checkerWorkflow, StateManagerMode.UPDATE);
 
         // Update original entry with checker id
         entry.setCheckerWorkflow(checkerWorkflow);
@@ -1776,7 +1768,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         BioWorkflow workflow = existingWorkflow.get();
         checkUser(foundUser, workflow);
         if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
-            elasticManager.handleIndexUpdate(existingWorkflow.get(), ElasticMode.DELETE);
+            PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow.get(), StateManagerMode.DELETE);
             workflowDAO.delete(workflow);
         } else {
             String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";

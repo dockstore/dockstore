@@ -29,4 +29,17 @@
             <column name="conceptdoi" type="varchar(255)"/>
         </addColumn>
     </changeSet>
+    <changeSet id="frozen join table" author="coverbeck">
+        <sql dbms="postgresql">
+            alter table version_sourcefile enable row level security;
+            alter table version_sourcefile force row level security;
+            /* All users can read the table, but cannot update or delete if frozen */
+            create policy select_frozenfiles on version_sourcefile for select using(true);
+            /* Don't allow new source files to be added to an a frozen version */
+            create policy insert_frozenfiles on version_sourcefile for insert with check( not(select v.frozen from workflowversion v where id = versionid union select t.frozen from tag t where t.id = versionid));
+            /* Don't allow a new file to be added to the version in the join table if any of the source files are already frozen (easier to query this way instead of querying two tables like above) */
+            create policy update_frozenfiles on version_sourcefile for update using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
+            create policy delete_frozenfiles on version_sourcefile for delete using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
+        </sql>
+    </changeSet>
    </databaseChangeLog>

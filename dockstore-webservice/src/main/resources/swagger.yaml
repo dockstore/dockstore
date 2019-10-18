@@ -6211,6 +6211,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6226,10 +6230,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6304,6 +6304,11 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       mode:
         type: "string"
         position: 13
@@ -6442,6 +6447,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6457,10 +6466,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6535,6 +6540,11 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
   Error:
     type: "object"
     required:
@@ -7698,6 +7708,10 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7713,10 +7727,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7791,6 +7801,11 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       mode:
         type: "string"
         position: 13

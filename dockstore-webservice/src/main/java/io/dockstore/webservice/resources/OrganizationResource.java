@@ -26,7 +26,7 @@ import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -831,7 +831,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     @Override
-    public Optional<ElasticManager> getElasticManager() {
+    public Optional<PublicStateManager> getPublicStateManager() {
         return Optional.empty();
     }
 

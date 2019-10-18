@@ -29,8 +29,8 @@ import io.dockstore.webservice.core.Alias;
 import io.dockstore.webservice.core.Aliasable;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
@@ -39,7 +39,11 @@ public interface AliasableResourceInterface<T extends Aliasable> {
     String[] INVALID_PREFIXES = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
     String ZENDO_DOI_REGEX = "\\d\\d\\.\\d\\d\\d\\d[\\/-]zenodo\\.\\d*";
 
-    Optional<ElasticManager> getElasticManager();
+    /**
+     * TODO: evaluate whether this makes sense after I converted elastic manager to a singleton
+     * @return
+     */
+    Optional<PublicStateManager> getPublicStateManager();
 
     /**
      * Get a resource with id and only return it if user has rights to see/change it
@@ -145,7 +149,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
         newAliases.forEach(alias -> c.getAliases().put(alias, new Alias()));
 
         if (c instanceof Entry) {
-            getElasticManager().ifPresent(consumer -> consumer.handleIndexUpdate((Entry)c, ElasticMode.UPDATE));
+            getPublicStateManager().ifPresent(consumer -> consumer.handleIndexUpdate((Entry)c, StateManagerMode.UPDATE));
         }
         return c;
     }

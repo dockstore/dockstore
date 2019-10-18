@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2019 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.webservice.helpers;
+package io.dockstore.webservice.helpers.statelisteners;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -38,6 +38,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -49,70 +50,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author gluu
- * @since 26/07/17
+ * Formerly the ElasticManager, this listens for changes that might affect elastic search
  */
-public class ElasticManager {
+public class ElasticListener implements StateListenerInterface {
     public static DockstoreWebserviceConfiguration config;
-    private static String hostname;
-    private static int port;
-    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
-    public ElasticManager() {
+    private String hostname;
+    private int port;
 
-    }
-    public static DockstoreWebserviceConfiguration getConfig() {
-        return config;
-    }
-
-    public static void setConfig(DockstoreWebserviceConfiguration config) {
-        ElasticManager.config = config;
-        ElasticManager.hostname = config.getEsConfiguration().getHostname();
-        ElasticManager.port = config.getEsConfiguration().getPort();
+    @Override
+    public void setConfig(DockstoreWebserviceConfiguration config) {
+        hostname = config.getEsConfiguration().getHostname();
+        port = config.getEsConfiguration().getPort();
     }
 
-    private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
-        Set<String> platforms = new TreeSet<>();
-        workflowVersions.forEach(workflowVersion -> {
-            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-            sourceFiles.forEach(sourceFile -> {
-                Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
-                platforms.addAll(verifiedBySource.keySet());
-            });
-        });
-        return platforms;
-    }
-
-    /**
-     * This converts the entry into a document for elastic search to use
-     *
-     * @param entry The entry that needs updating
-     * @return The entry converted into a json string
-     */
-    private String getDocumentValueFromEntry(Entry entry) {
-        ObjectMapper mapper = Jackson.newObjectMapper();
-        StringBuilder builder = new StringBuilder();
-        Map<String, Object> doc = new HashMap<>();
-        try {
-            JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
-            doc.put("doc", jsonNode);
-            doc.put("doc_as_upsert", true);
-            builder.append(mapper.writeValueAsString(doc));
-        } catch (IOException e) {
-            throw new CustomWebApplicationException(MAPPER_ERROR,
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        return builder.toString();
-    }
-
-    /**
-     * This handles the index for elastic search
-     *
-     * @param entry   The entry to be converted into a document
-     * @param command The command to perform for the document, either "update" or "delete" document
-     */
-    public void handleIndexUpdate(Entry entry, ElasticMode command) {
+    @Override
+    public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         entry = filterCheckerWorkflows(entry);
         // #2771 will need to disable this and properly create objects to get services into the index
         entry = entry instanceof Service ? null : entry;
@@ -120,7 +75,7 @@ public class ElasticManager {
             return;
         }
         LOGGER.info("Performing index update with " + command + ".");
-        if (ElasticManager.hostname == null || ElasticManager.hostname.isEmpty()) {
+        if (hostname == null || hostname.isEmpty()) {
             LOGGER.error("No elastic search host found.");
             return;
         }
@@ -130,14 +85,14 @@ public class ElasticManager {
         }
         String json;
         json = getDocumentValueFromEntry(entry);
-        try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
+        try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
             String entryType = entry instanceof Tool ? "tool" : "workflow";
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
             org.elasticsearch.client.Response post;
             switch (command) {
             case UPDATE:
                 post = restClient
-                        .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
+                    .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
                 break;
             case DELETE:
                 post = restClient.performRequest("DELETE", "/entry/" + entryType + "/" + entry.getId(), Collections.emptyMap(), entity);
@@ -163,7 +118,7 @@ public class ElasticManager {
      * @param command The command that will be used
      * @return Whether or not the entry is valid
      */
-    private boolean checkValid(Entry entry, ElasticMode command) {
+    private boolean checkValid(Entry entry, StateManagerMode command) {
         boolean published = entry.getIsPublished();
         switch (command) {
         case UPDATE:
@@ -181,6 +136,7 @@ public class ElasticManager {
         return false;
     }
 
+    @Override
     public void bulkUpsert(List<Entry> entries) {
         entries = filterCheckerWorkflows(entries);
         // #2771 will need to disable this and properly create objects to get services into the index
@@ -188,7 +144,7 @@ public class ElasticManager {
         if (entries.isEmpty()) {
             return;
         }
-        try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
+        try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
             String newlineDJSON = getNDJSON(entries);
             HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
             org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
@@ -201,21 +157,25 @@ public class ElasticManager {
     }
 
     /**
-     * If entry is a checker workflow, return null.  Otherwise, return entry
-     * @param entry     The entry to check
-     * @return          null if checker, entry otherwise
+     * This converts the entry into a document for elastic search to use
+     *
+     * @param entry The entry that needs updating
+     * @return The entry converted into a json string
      */
-    private static Entry filterCheckerWorkflows(Entry entry) {
-        return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
-    }
-
-    /**
-     * Remove checker workflow from list of entries
-     * @param entries   List of all entries
-     * @return          List of entries without checker workflows
-     */
-    public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
-        return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow && !((Workflow)entry).isIsChecker())).collect(Collectors.toList());
+    private String getDocumentValueFromEntry(Entry entry) {
+        ObjectMapper mapper = Jackson.newObjectMapper();
+        StringBuilder builder = new StringBuilder();
+        Map<String, Object> doc = new HashMap<>();
+        try {
+            JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
+            doc.put("doc", jsonNode);
+            doc.put("doc_as_upsert", true);
+            builder.append(mapper.writeValueAsString(doc));
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(MAPPER_ERROR,
+                HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        return builder.toString();
     }
 
     /**
@@ -255,7 +215,7 @@ public class ElasticManager {
      * @return The Elasticsearch object string to be placed into the index
      * @throws IOException  Mapper problems
      */
-    public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
+    protected static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
@@ -263,5 +223,35 @@ public class ElasticManager {
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         return jsonNode;
+    }
+
+    private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
+        Set<String> platforms = new TreeSet<>();
+        workflowVersions.forEach(workflowVersion -> {
+            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+            sourceFiles.forEach(sourceFile -> {
+                Map<String, SourceFile.VerificationInformation> verifiedBySource = sourceFile.getVerifiedBySource();
+                platforms.addAll(verifiedBySource.keySet());
+            });
+        });
+        return platforms;
+    }
+
+    /**
+     * If entry is a checker workflow, return null.  Otherwise, return entry
+     * @param entry     The entry to check
+     * @return          null if checker, entry otherwise
+     */
+    private static Entry filterCheckerWorkflows(Entry entry) {
+        return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
+    }
+
+    /**
+     * Remove checker workflow from list of entries
+     * @param entries   List of all entries
+     * @return          List of entries without checker workflows
+     */
+    protected static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
+        return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow && !((Workflow)entry).isIsChecker())).collect(Collectors.toList());
     }
 }

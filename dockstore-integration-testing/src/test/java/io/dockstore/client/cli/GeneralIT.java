@@ -741,6 +741,30 @@ public class GeneralIT extends BaseIT {
             assertNotEquals("foo", content);
         });
 
+        // try deleting a row join table
+        master.getSourceFiles().forEach(s -> {
+            final int affected = testingPostgres.runUpdateStatement("delete from version_sourcefile vs where vs.sourcefileid = " + s.getId());
+            assertEquals(0, affected);
+        });
+
+        // try updating a row in the join table
+        master.getSourceFiles().forEach(s -> {
+            final int affected = testingPostgres.runUpdateStatement("update version_sourcefile set sourcefileid=123456 where sourcefileid = " + s.getId());
+            assertEquals(0, affected);
+        });
+
+        final Long versionId = master.getId();
+        // try creating a row in the join table
+        master.getSourceFiles().forEach(s -> {
+            try {
+                testingPostgres.runUpdateStatement("insert into version_sourcefile (versionid, sourcefileid) values (" + versionId
+                        + ", " + 1234567890 + ")");
+                fail("Insert should have failed to do row-level security");
+            } catch (Exception ex) {
+                Assert.assertTrue(ex.getMessage().contains("new row violates row-level"));
+            }
+        });
+
         // cannot add or delete test files for frozen versions
         try {
             toolsApi.deleteTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "1.0");
