@@ -10,12 +10,14 @@ public class Repository {
     String repository;
     SourceControl gitRegistry;
     boolean isPresent;
+    boolean canDelete;
 
-    public Repository(String organization, String repository, SourceControl gitRegistry, boolean isPresent) {
+    public Repository(String organization, String repository, SourceControl gitRegistry, boolean isPresent, boolean canDelete) {
         this.organization = organization;
         this.repository = repository;
         this.gitRegistry = gitRegistry;
         this.isPresent = isPresent;
+        this.canDelete = canDelete;
     }
 
     public String getOrganization() {
@@ -52,5 +54,13 @@ public class Repository {
 
     public String getPath() {
         return organization + "/" + repository;
+    }
+
+    public boolean isCanDelete() {
+        return canDelete;
+    }
+
+    public void setCanDelete(boolean canDelete) {
+        this.canDelete = canDelete;
     }
 }

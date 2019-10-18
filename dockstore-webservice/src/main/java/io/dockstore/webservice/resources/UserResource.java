@@ -58,6 +58,7 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -768,9 +769,24 @@ public class UserResource implements AuthenticatedResourceInterface {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
         return repositoryUrlToName.values().stream()
                 .filter(repository -> repository.startsWith(organization + "/"))
-                .map(repository -> new Repository(repository.split("/")[0], repository.split("/")[1], gitRegistry, workflowDAO.findByPath(gitRegistry + "/" + repository, false, BioWorkflow.class).isPresent()))
+                .map(repository -> new Repository(repository.split("/")[0], repository.split("/")[1], gitRegistry, workflowDAO.findByPath(gitRegistry + "/" + repository, false, BioWorkflow.class).isPresent(), canDeleteWorkflow(gitRegistry + "/" + repository)))
                 .sorted(Comparator.comparing(Repository::getRepository))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Check if a workflow can be deleted.
+     * For now this is simply if a workflow is a stub or not
+     * @param path full path to workflow
+     * @return can delete workflow
+     */
+    private boolean canDeleteWorkflow(String path) {
+        Optional<BioWorkflow> workflow = workflowDAO.findByPath(path, false, BioWorkflow.class);
+        if (workflow.isPresent()) {
+            return Objects.equals(workflow.get().getMode(), WorkflowMode.STUB);
+        } else {
+            return false;
+        }
     }
 
     /**
