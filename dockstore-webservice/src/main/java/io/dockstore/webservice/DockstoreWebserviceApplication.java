@@ -50,12 +50,16 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
-import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.ObsoleteUrlFactory;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
+import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
+import io.dockstore.webservice.helpers.statelisteners.RSSListener;
+import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
+import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -228,7 +232,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setBasePath(MoreObjects.firstNonNull(configuration.getExternalConfig().getBasePath(), "/"));
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
-        ElasticManager.setConfig(configuration);
+
+        final PublicStateManager publicStateManager = PublicStateManager.getInstance();
+        publicStateManager.setConfig(configuration);
+        publicStateManager.addListener(new ElasticListener());
+        publicStateManager.addListener(new RSSListener());
+        publicStateManager.addListener(new SitemapListener());
+        final TRSListener trsListener = new TRSListener();
+        publicStateManager.addListener(trsListener);
+
         environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, true);
         environment.jersey().register(new JsonProcessingExceptionMapper(true));
 
@@ -292,7 +304,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiServiceImpl.setConfig(configuration);
+        ToolsApiServiceImpl.setTrsListener(trsListener);
 
+        ToolsApiExtendedServiceImpl.setStateManager(publicStateManager);
         ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);

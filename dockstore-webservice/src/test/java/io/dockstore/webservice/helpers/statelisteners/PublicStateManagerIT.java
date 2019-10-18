@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2019 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package core;
+package io.dockstore.webservice.helpers.statelisteners;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,8 +33,8 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -45,8 +45,8 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 
-public class ElasticManagerIT {
-    private static ElasticManager manager;
+public class PublicStateManagerIT {
+    private static PublicStateManager manager;
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -59,18 +59,18 @@ public class ElasticManagerIT {
         DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
         config.getEsConfiguration().setHostname("localhost");
         config.getEsConfiguration().setPort(9200);
-        ElasticManagerIT.manager = new ElasticManager();
-        ElasticManager.setConfig(config);
+        PublicStateManagerIT.manager = PublicStateManager.getInstance();
+        manager.setConfig(config);
     }
 
     @Test
     public void dockstoreEntryToElasticSearchObject() throws IOException {
         Tool tool = getFakeTool(false);
-        JsonNode jsonNode = ElasticManager.dockstoreEntryToElasticSearchObject(tool);
+        JsonNode jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
         boolean verified = jsonNode.get("verified").booleanValue();
         Assert.assertFalse(verified);
         tool = getFakeTool(true);
-        jsonNode = ElasticManager.dockstoreEntryToElasticSearchObject(tool);
+        jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
         verified = jsonNode.get("verified").booleanValue();
         Assert.assertTrue(verified);
     }
@@ -107,7 +107,7 @@ public class ElasticManagerIT {
     @Test
     public void addAnEntry() throws IOException {
         Tool tool = getFakeTool(false);
-        manager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        manager.handleIndexUpdate(tool, StateManagerMode.UPDATE);
 
         manager.bulkUpsert(Collections.singletonList(tool));
 
@@ -117,7 +117,7 @@ public class ElasticManagerIT {
 
     @Test
     public void addAService() {
-        manager.handleIndexUpdate(new Service(), ElasticMode.UPDATE);
+        manager.handleIndexUpdate(new Service(), StateManagerMode.UPDATE);
         Assert.assertFalse(systemOutRule.getLog().contains("Performing index update"));
     }
 
@@ -128,7 +128,7 @@ public class ElasticManagerIT {
         Workflow workflow = new BioWorkflow();
         workflow.setIsChecker(false);
         Tool tool = new Tool();
-        List<Entry> entries = ElasticManager.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
+        List<Entry> entries = ElasticListener.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
         Assert.assertEquals("There should've been 2 entries without the checker workflow", 2, entries.size());
         entries.forEach(entry -> Assert.assertFalse("There should be no checker workflows", entry instanceof Workflow && ((Workflow)entry).isIsChecker()));
     }

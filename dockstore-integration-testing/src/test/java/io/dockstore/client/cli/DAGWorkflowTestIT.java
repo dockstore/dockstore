@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.Optional;
 
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.webservice.core.dag.ElementsDefinition;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
@@ -35,6 +37,8 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+
+import static org.junit.Assert.fail;
 
 /**
  * Created by jpatricia on 24/06/16.
@@ -300,8 +304,13 @@ public class DAGWorkflowTestIT extends BaseIT {
     /**
      * This tests that a WDL workflow with complex imports is properly imported (also tests absolute paths)
      *
+     * Note: With fix for https://github.com/dockstore/dockstore/issues/2931, this WDL now fails. Adjusting test accordingly. If you run
+     * womtool validate from the command line, this workflow fails to validate, so our code was correctly validating this WDL before,
+     * that seems to have been incorrect.
+     *
      * @throws ApiException
      */
+    @SuppressWarnings("checkstyle:EmptyCatchBlock")
     @Test
     public void testComplexImportWdlWorkflow() throws ApiException {
         // Input: /parent/parent.wdl
@@ -309,10 +318,22 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Branch: master
         // Return: DAG with 7 nodes
 
-        final List<String> strings = getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl", "test");
-        int countNode = countNodeInJSON(strings);
-
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 7 nodes", countNode, 7);
+        try {
+            getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl", "test");
+            fail("Invalid WDL somehow came back good");
+        } catch (Exception ex) {
+            Assert.assertTrue(ex.getMessage().contains("could not process wdl into DAG: Failed to import workflow importC.wdl."));
+        }
     }
+
+    @Test
+    public void testReallyComplexImportedWdlWorkflow() throws ApiException {
+        final List<String> strings = getJSON("dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl", "wdl", "dockstore-test");
+        Assert.assertEquals(1, strings.size());
+        final Gson gson = new Gson();
+        final ElementsDefinition dag = gson.fromJson(strings.get(0), ElementsDefinition.class);
+        Assert.assertEquals("Dag should have 229 nodes", 229, dag.nodes.size());
+        Assert.assertEquals("Dag should have 390 edges", 390, dag.edges.size());
+    }
+
 }

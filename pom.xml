@@ -1339,6 +1339,7 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
+                <excludeGroups>io.dockstore.common.MemoryIntensiveTest</excludeGroups>
             </properties>
             <build>
                 <plugins>
@@ -1358,6 +1359,17 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>memory-intensive-unit-tests</id>
+            <!-- run all memory intensive non-integration tests -->
+            <properties>
+                <skipTests>false</skipTests>
+                <skipITs>true</skipITs>
+                <groups>io.dockstore.common.MemoryIntensiveTest</groups>
+                <!-- https://github.com/jasongilman/proto-repl/issues/282 -->
+                <argLine>-XX:+UseContainerSupport</argLine>
+            </properties>
         </profile>
         <profile>
             <id>coverage</id>

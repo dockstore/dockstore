@@ -6596,6 +6596,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6611,10 +6615,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6678,6 +6678,10 @@ components:
           format: int64
           description: The id of the associated checker workflow
           readOnly: true
+        conceptDoi:
+          type: string
+          description: The Digital Object Identifier (DOI) representing all of the versions
+            of your workflow
         mode:
           type: string
           description: This indicates what mode this is in which informs how we do things
@@ -6801,6 +6805,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6816,10 +6824,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6883,6 +6887,10 @@ components:
           format: int64
           description: The id of the associated checker workflow
           readOnly: true
+        conceptDoi:
+          type: string
+          description: The Digital Object Identifier (DOI) representing all of the versions
+            of your workflow
     Error:
       type: object
       required:
@@ -7943,6 +7951,10 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7958,10 +7970,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -8025,6 +8033,10 @@ components:
           format: int64
           description: The id of the associated checker workflow
           readOnly: true
+        conceptDoi:
+          type: string
+          description: The Digital Object Identifier (DOI) representing all of the versions
+            of your workflow
         mode:
           type: string
           description: This indicates what mode this is in which informs how we do things

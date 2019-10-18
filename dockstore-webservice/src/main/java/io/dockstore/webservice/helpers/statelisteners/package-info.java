@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2019 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,13 +13,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.webservice.helpers;
 
 /**
- * @author gluu
- * @since 21/08/17
+ * @since 1.8
  */
-public enum ElasticMode {
-        // Add new registries here
-        UPDATE, DELETE
-}
+package io.dockstore.webservice.helpers.statelisteners;
+

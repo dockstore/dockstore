@@ -33,6 +33,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -545,6 +546,31 @@ public class GeneralWorkflowIT extends BaseIT {
                 .runSelectStatement("select content from sourcefile where id = " + s.getId(), String.class);
             assertNotEquals("foo", content);
         });
+
+        // try deleting a row join table
+        master.getSourceFiles().forEach(s -> {
+            final int affected = testingPostgres.runUpdateStatement("delete from version_sourcefile vs where vs.sourcefileid = " + s.getId());
+            assertEquals(0, affected);
+        });
+
+        // try updating a row in the join table
+        master.getSourceFiles().forEach(s -> {
+            final int affected = testingPostgres.runUpdateStatement("update version_sourcefile set sourcefileid=123456 where sourcefileid = " + s.getId());
+            assertEquals(0, affected);
+        });
+
+        final Long versionId = master.getId();
+        // try creating a row in the join table
+        master.getSourceFiles().forEach(s -> {
+            try {
+                testingPostgres.runUpdateStatement("insert into version_sourcefile (versionid, sourcefileid) values (" + versionId
+                        + ", " + 1234567890 + ")");
+                fail("Insert should have failed to do row-level security");
+            } catch (Exception ex) {
+                Assert.assertTrue(ex.getMessage().contains("new row violates row-level"));
+            }
+        });
+
 
         // cannot add or delete test files for frozen versions
         try {
