@@ -15,7 +15,6 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +36,8 @@ import org.apache.http.HttpStatus;
 public interface AliasableResourceInterface<T extends Aliasable> {
     // reserve some prefixes for our own use
     String[] INVALID_PREFIXES = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
-    String ZENDO_DOI_REGEX = "\\d\\d\\.\\d\\d\\d\\d[\\/-]zenodo\\.\\d*";
+    String ZENDO_DOI_REGEX = "^\\d\\d\\.\\d\\d\\d\\d[/-]zenodo\\.\\d+$";
+    Pattern ZENODO_DOI_PATTERN = Pattern.compile(ZENDO_DOI_REGEX);
 
     Optional<ElasticManager> getElasticManager();
 
@@ -62,14 +62,12 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      * @param aliases a Set of alias strings
      * @param user user authenticated to issue a DOI for the workflow
      * @param blockAliasesWithZenodoFormat block creation of an alias with a particular format
-     * @return the alias as a string
      */
     static void checkAliases(Set<String>  aliases, User user, boolean blockAliasesWithZenodoFormat) {
         // Admins and curators do not have restrictions on alias format
         if (user.isCurator() || user.getIsAdmin()) {
             return;
         }
-
         checkAliasFormat(aliases, blockAliasesWithZenodoFormat);
     }
 
@@ -79,12 +77,11 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      * if the user adding them is not an admin or curator
      * @param aliases a Set of alias strings
      * @param blockAliasesWithZenodoFormat block creation of an alias with a particular format
-     * @return the alias as a string
      */
     static void checkAliasFormat(Set<String>  aliases, boolean blockAliasesWithZenodoFormat) {
         // Gather up any aliases that contain invalid prefixes
-        List<String> invalidAliases = new ArrayList<>();
-        invalidAliases = aliases.stream().filter(alias -> StringUtils.startsWithAny(alias, INVALID_PREFIXES)).collect(Collectors.toList());
+        List<String> invalidAliases = aliases.stream().filter(alias -> StringUtils.startsWithAny(alias, INVALID_PREFIXES))
+                .collect(Collectors.toList());
 
         // If there are any aliases with invalid prefixes then report it to the user
         if (invalidAliases.size() > 0) {
@@ -96,8 +93,8 @@ public interface AliasableResourceInterface<T extends Aliasable> {
         }
 
         if (blockAliasesWithZenodoFormat) {
-            Pattern pattern = Pattern.compile(ZENDO_DOI_REGEX);
-            List<String> aliasesWithForbiddenFormat = aliases.stream().filter(alias -> pattern.matcher(alias).matches()).collect(Collectors.toList());
+            List<String> aliasesWithForbiddenFormat = aliases.stream().filter(alias -> ZENODO_DOI_PATTERN.matcher(alias).matches())
+                    .collect(Collectors.toList());
             // If there are any aliases with invalid formats then report it to the user
             if (aliasesWithForbiddenFormat.size() > 0) {
                 String invalidAliasesString = String.join(", ", aliasesWithForbiddenFormat);
