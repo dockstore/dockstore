@@ -1254,6 +1254,11 @@ public class OrganizationIT extends BaseIT {
         assertEquals(2, collectionWithAlias.getAliases().size());
         assertEquals(2, organizationWithAlias.getAliases().size());
 
+        Organization organizationById = organizationsApi.getOrganizationById(organization.getId());
+        Assert.assertNotNull("Getting organization by ID has null alias", organizationById.getAliases());
+        Collection collectionById = organizationsApi.getCollectionById(organization.getId(), collectionId);
+        Assert.assertNotNull("Getting collection by ID has null alias", collectionById.getAliases());
+
         // note that namespaces for organizations and collections are separate (therefore a collection can have the same alias as an organization)
         final Collection spam1 = organizationsApi.getCollectionByAlias("spam");
         assertNotNull(spam1);

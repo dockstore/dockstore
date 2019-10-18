@@ -1440,6 +1440,10 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue("entry is missing expected aliases",
             entry.getAliases().containsKey("awesome workflow") && entry.getAliases().containsKey("spam") && entry.getAliases()
                 .containsKey("test workflow"));
+
+        Workflow workflowById = workflowApi.getWorkflow(entry.getId(), null);
+        Assert.assertNotNull(workflowById.getAliases());
+
         // check that the aliases work in TRS search
         Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
         // this generated code is mucho silly
