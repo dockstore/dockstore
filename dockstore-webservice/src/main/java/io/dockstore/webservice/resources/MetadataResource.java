@@ -24,12 +24,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.DefaultValue;
@@ -139,7 +140,7 @@ public class MetadataResource {
     @Operation(summary = "List all available workflow, tool, organization, and collection paths.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
-        List<String> cachedSitemap = sitemapListener.getSitemap();
+        SortedSet<String> cachedSitemap = sitemapListener.getSitemap();
         if (cachedSitemap == null) {
             cachedSitemap = getSitemap();
             sitemapListener.setSitemap(cachedSitemap);
@@ -147,14 +148,13 @@ public class MetadataResource {
         return String.join(System.lineSeparator(), cachedSitemap);
     }
 
-    public List<String> getSitemap() {
-        List<String> urls = new ArrayList<>();
+    public SortedSet<String> getSitemap() {
+        SortedSet<String> urls = new TreeSet<String>();
         urls.addAll(getToolPaths());
         urls.addAll(getBioWorkflowPaths());
         // Do not append services yet
         // urls.addAll(getServicePaths());
         urls.addAll(getOrganizationAndCollectionPaths());
-        Collections.sort(urls);
         return urls;
     }
 

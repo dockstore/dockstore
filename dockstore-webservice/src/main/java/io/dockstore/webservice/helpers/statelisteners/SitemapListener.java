@@ -16,6 +16,7 @@
 package io.dockstore.webservice.helpers.statelisteners;
 
 import java.util.List;
+import java.util.SortedSet;
 
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -28,13 +29,13 @@ import org.slf4j.LoggerFactory;
 public class SitemapListener implements StateListenerInterface {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SitemapListener.class);
-    private List<String> cachedSitemap = null;
+    private SortedSet<String> cachedSitemap = null;
 
     /**
      * Custom getter
      * @return
      */
-    public List<String> getSitemap() {
+    public SortedSet<String> getSitemap() {
         return cachedSitemap;
     }
 
@@ -42,7 +43,7 @@ public class SitemapListener implements StateListenerInterface {
      * Custom setter
      * @param sitemap
      */
-    public void setSitemap(List<String> sitemap) {
+    public void setSitemap(SortedSet<String> sitemap) {
         cachedSitemap = sitemap;
     }
 
