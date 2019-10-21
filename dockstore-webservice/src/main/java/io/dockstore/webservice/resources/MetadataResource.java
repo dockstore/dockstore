@@ -149,7 +149,7 @@ public class MetadataResource {
     }
 
     public SortedSet<String> getSitemap() {
-        SortedSet<String> urls = new TreeSet<String>();
+        SortedSet<String> urls = new TreeSet<>();
         urls.addAll(getToolPaths());
         urls.addAll(getBioWorkflowPaths());
         // Do not append services yet

@@ -53,12 +53,16 @@ public class SitemapListener implements StateListenerInterface {
         if (command == StateManagerMode.UPDATE) {
             return;
         }
+        invalidateCache();
+    }
+
+    public void invalidateCache() {
         cachedSitemap = null;
     }
 
     @Override
     public void bulkUpsert(List<Entry> entries) {
         //TODO ideally, the listener should know how to generate a whole new sitemap, probably not worth it right now
-        cachedSitemap = null;
+        invalidateCache();
     }
 }
