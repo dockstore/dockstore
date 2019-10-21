@@ -2439,13 +2439,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2783,13 +2776,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2897,7 +2883,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Add aliases linked to an Organization in Dockstore."
+      summary: "Add aliases linked to a listing in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "addOrganizationAliases"
@@ -2915,13 +2901,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -3744,8 +3723,7 @@ paths:
           schema:
             type: "array"
             items:
-              type: "string"
-            uniqueItems: true
+              $ref: "#/definitions/Repository"
   /users/services/sync:
     post:
       tags:
@@ -6211,10 +6189,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6230,6 +6204,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6447,10 +6425,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6466,6 +6440,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6880,6 +6858,26 @@ definitions:
       customDockerPath:
         type: "string"
       enum:
+        type: "string"
+  Repository:
+    type: "object"
+    properties:
+      organization:
+        type: "string"
+      repositoryName:
+        type: "string"
+      gitRegistry:
+        type: "string"
+        enum:
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
+      canDelete:
+        type: "boolean"
+      present:
+        type: "boolean"
+      path:
         type: "string"
   Service:
     allOf:
@@ -7708,10 +7706,6 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7727,6 +7721,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

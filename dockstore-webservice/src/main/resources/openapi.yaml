@@ -2665,8 +2665,6 @@ paths:
           required: true
           schema:
             type: string
-      requestBody:
-        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation
@@ -3006,8 +3004,6 @@ paths:
           required: true
           schema:
             type: string
-      requestBody:
-        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation
@@ -3122,7 +3118,7 @@ paths:
     post:
       tags:
         - organizations
-      summary: Add aliases linked to an Organization in Dockstore.
+      summary: Add aliases linked to a listing in Dockstore.
       description: Aliases are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
       operationId: addOrganizationAliases
@@ -3140,8 +3136,6 @@ paths:
           required: true
           schema:
             type: string
-      requestBody:
-        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation
@@ -4003,8 +3997,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: string
-                uniqueItems: true
+                  $ref: "#/components/schemas/Repository"
   /users/services/sync:
     post:
       tags:
@@ -6596,10 +6589,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6615,6 +6604,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6805,10 +6798,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6824,6 +6813,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7198,6 +7191,26 @@ components:
         customDockerPath:
           type: string
         enum:
+          type: string
+    Repository:
+      type: object
+      properties:
+        organization:
+          type: string
+        repositoryName:
+          type: string
+        gitRegistry:
+          type: string
+          enum:
+            - dockstore.org
+            - github.com
+            - bitbucket.org
+            - gitlab.com
+        canDelete:
+          type: boolean
+        present:
+          type: boolean
+        path:
           type: string
     Service:
       allOf:
@@ -7951,10 +7964,6 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7970,6 +7979,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
