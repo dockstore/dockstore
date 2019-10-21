@@ -29,7 +29,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.DefaultValue;
@@ -43,9 +43,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.io.Resources;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.PipHelper;
@@ -64,6 +61,9 @@ import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
+import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
@@ -107,14 +107,7 @@ import org.slf4j.LoggerFactory;
 public class MetadataResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
-    private final LoadingCache<String, String> cache = CacheBuilder.newBuilder()
-            .maximumSize(1)
-            .build(new CacheLoader<>() {
-                public String load(String key) {
-                    LOG.error("Cache miss");
-                    return getSitemap();
-                }
-            });
+
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
@@ -123,6 +116,7 @@ public class MetadataResource {
     private final BioWorkflowDAO bioWorkflowDAO;
     private final ServiceDAO serviceDAO;
     private final DockstoreWebserviceConfiguration config;
+    private final SitemapListener sitemapListener;
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
         this.toolDAO = new ToolDAO(sessionFactory);
@@ -132,6 +126,10 @@ public class MetadataResource {
         this.config = config;
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
+
+        Optional<StateListenerInterface> first = PublicStateManager.getInstance().getListeners().stream()
+                .filter(l -> l instanceof SitemapListener).findFirst();
+        sitemapListener = (SitemapListener)first.orElse(null);
     }
 
     @GET
@@ -141,16 +139,15 @@ public class MetadataResource {
     @Operation(summary = "List all available workflow, tool, organization, and collection paths.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
-
-        try {
-            return cache.get("potato");
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-            return null;
+        List<String> cachedSitemap = sitemapListener.getSitemap();
+        if (cachedSitemap == null) {
+            cachedSitemap = getSitemap();
+            sitemapListener.setSitemap(cachedSitemap);
         }
+        return String.join(System.lineSeparator(), cachedSitemap);
     }
 
-    public String getSitemap() {
+    public List<String> getSitemap() {
         List<String> urls = new ArrayList<>();
         urls.addAll(getToolPaths());
         urls.addAll(getBioWorkflowPaths());
@@ -158,7 +155,7 @@ public class MetadataResource {
         // urls.addAll(getServicePaths());
         urls.addAll(getOrganizationAndCollectionPaths());
         Collections.sort(urls);
-        return String.join(System.lineSeparator(), urls);
+        return urls;
     }
 
     /**

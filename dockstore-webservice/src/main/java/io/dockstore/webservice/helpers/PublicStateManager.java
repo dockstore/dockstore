@@ -40,24 +40,27 @@ public final class PublicStateManager {
     }
 
     public void addListener(StateListenerInterface listener) {
-        listeners.add(listener);
+        getListeners().add(listener);
         listener.setConfig(config);
     }
 
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
-        for (StateListenerInterface listener : listeners) {
+        for (StateListenerInterface listener : getListeners()) {
             listener.handleIndexUpdate(entry, command);
         }
-
     }
 
     public void bulkUpsert(List<Entry> entries) {
-        for (StateListenerInterface listenerInterface : listeners) {
+        for (StateListenerInterface listenerInterface : getListeners()) {
             listenerInterface.bulkUpsert(entries);
         }
     }
 
     public void setConfig(DockstoreWebserviceConfiguration config) {
         this.config = config;
+    }
+
+    public List<StateListenerInterface> getListeners() {
+        return listeners;
     }
 }

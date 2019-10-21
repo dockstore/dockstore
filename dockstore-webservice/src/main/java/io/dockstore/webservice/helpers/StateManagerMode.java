@@ -21,5 +21,5 @@ package io.dockstore.webservice.helpers;
  */
 public enum StateManagerMode {
         // Add new registries here
-        UPDATE, DELETE
+        UPDATE, DELETE, PUBLISH
 }

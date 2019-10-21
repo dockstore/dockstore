@@ -615,7 +615,7 @@ public class DockerRepoResource
         long id = toolDAO.create(tool);
         tool = toolDAO.findById(id);
         if (request.getPublish()) {
-            PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
+            PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.PUBLISH);
             if (tool.getTopicId() == null) {
                 try {
                     entryResource.createAndSetDiscourseTopic(id);

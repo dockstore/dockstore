@@ -28,14 +28,36 @@ import org.slf4j.LoggerFactory;
 public class SitemapListener implements StateListenerInterface {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SitemapListener.class);
+    private List<String> cachedSitemap = null;
+
+    /**
+     * Custom getter
+     * @return
+     */
+    public List<String> getSitemap() {
+        return cachedSitemap;
+    }
+
+    /**
+     * Custom setter
+     * @param sitemap
+     */
+    public void setSitemap(List<String> sitemap) {
+        cachedSitemap = sitemap;
+    }
 
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
-        LOGGER.error("this should update the sitemap for the one new entry");
+        //TODO ideally, we could should update the sitemap for the one new entry
+        if (command == StateManagerMode.UPDATE) {
+            return;
+        }
+        cachedSitemap = null;
     }
 
     @Override
     public void bulkUpsert(List<Entry> entries) {
-        LOGGER.error("this should generate a whole new sitemap");
+        //TODO ideally, the listener should know how to generate a whole new sitemap, probably not worth it right now
+        cachedSitemap = null;
     }
 }
