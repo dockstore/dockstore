@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -155,6 +156,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OrderBy("type")
     private final SortedSet<Validation> validations;
 
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "The images that belong to this version", position = 18)
+    private Set<Image> images = new HashSet<>();
+
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
@@ -283,6 +289,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Set<Image> getImages() {
+        return images;
+    }
+
+    public void setImages(Set<Image> images) {
+        this.images = images;
     }
 
     public void updateVerified() {

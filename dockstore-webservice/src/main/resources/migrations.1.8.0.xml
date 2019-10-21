@@ -42,4 +42,47 @@
             create policy delete_frozenfiles on version_sourcefile for delete using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
         </sql>
     </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="docker_checksums">
+        <createTable tableName="checksum">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="checksum_pkey"/>
+            </column>
+            <column name="checksum" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="type" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="entry_version_image">
+            <column name="versionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="entry_version_image_pkey"/>
+            </column>
+            <column name="imageid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="entry_version_image_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="image">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="image_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="image_id" type="VARCHAR(255)"/>
+            <column name="repository" type="VARCHAR(255)"/>
+            <column name="tag" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="image_checksum">
+            <column name="imageid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="image_checksum_pkey"/>
+            </column>
+            <column name="checksumid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="image_checksum_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="checksumid" constraintName="uk_50hkrhbqjyuii0fi956l8p2u4" tableName="image_checksum"/>
+        <addUniqueConstraint columnNames="imageid" constraintName="uk_f4es6vge9tpr3v836n62konau" tableName="entry_version_image"/>
+        <addForeignKeyConstraint baseColumnNames="checksumid" baseTableName="image_checksum" constraintName="fka82x35xk6214q5vbm28egejwq" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="checksum"/>
+        <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fkfiy442cs8k24x8f3wnyxakh3w" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
+        <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="image_checksum" constraintName="fkh4c51njjqk2noy5v1n14pyklj" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
+    </changeSet>
    </databaseChangeLog>
