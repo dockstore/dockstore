@@ -213,6 +213,9 @@ public final class ZenodoHelper {
         String doiReformattedAlias = doi.replaceAll("/", "-");
         // Make sure the alias is valid
         // If it is not acceptable then an exception is generated
+        // We allow aliases with Zenodo format to be created because
+        // we are going use that alias format in a Related Identifier which will
+        // be part of a DOI entry that we create on the Zenodo site
         AliasableResourceInterface.checkAliasFormat(Collections.singleton(doiReformattedAlias), false);
         return doiReformattedAlias;
     }

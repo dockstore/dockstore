@@ -88,4 +88,15 @@ public class AliasableResourceInterfaceTest {
         Set<String> zendodoDOIs = Set.of(ZENODO_DOI_ALIASES);
         AliasableResourceInterface.checkAliases(zendodoDOIs, user, true);
     }
+
+    @Test
+    public void testNonAdminCuratorCheckAliasAllowingForbiddenFormat() {
+        User user = new User();
+        user.setIsAdmin(false);
+        user.setCurator(false);
+
+        Set<String> zendodoDOIs = Set.of(ZENODO_DOI_ALIASES);
+        AliasableResourceInterface.checkAliases(zendodoDOIs, user, false);
+    }
+
 }
