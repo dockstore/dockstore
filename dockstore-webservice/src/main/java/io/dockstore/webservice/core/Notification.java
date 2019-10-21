@@ -6,7 +6,11 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModel;
@@ -21,13 +25,15 @@ import io.swagger.annotations.ApiModel;
 @ApiModel("Notification")
 @Entity
 @Table(name = "notification")
-//@NamedQueries({
-//        @NamedQuery(name = "io.dockstore.webservice.core.Notification.getActiveNotifications", query = ""),
-//        @NamedQuery(name = "io.dockstore.webservice.core.Notification.getNotification", query = "")
-//})
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Notification.getActiveNotifications",
+                query = "SELECT n FROM Notification n WHERE n.expiration > CURRENT_TIMESTAMP"),
+})
 public class Notification {
 
     @Id
+    @Column
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // id is auto incremented by the database
     private long id;
 
     @Column
@@ -38,9 +44,9 @@ public class Notification {
 
     @Column
     @Enumerated(EnumType.STRING)
-    private Priority priority;
+    private Priority priority;  // LOW, MEDIUM, HIGH, or CRITICAL
 
-    public Notification() { }
+    public Notification() { }  // blank constructor called by POST request
 
     public Notification(long id, String message, LocalDateTime expiration, Priority priority) {
         this.id = id;

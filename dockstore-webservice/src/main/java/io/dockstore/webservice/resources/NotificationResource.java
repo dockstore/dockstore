@@ -1,5 +1,7 @@
 package io.dockstore.webservice.resources;
 
+import java.util.List;
+
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -51,6 +53,15 @@ public class NotificationResource {
         return notification;
     }
 
+    // get all active notifications
+    @GET
+    @Path("/notifications")
+    @UnitOfWork
+    @ApiOperation(value = "Return all active notifications", notes = "NO Authentication", responseContainer = "List", response = Notification.class)
+    public List<Notification> getActiveNotifications() {
+        return notificationDAO.getActiveNotifications();
+    }
+
     // post a new notification
     @POST
     @Path("/notifications")
@@ -82,8 +93,8 @@ public class NotificationResource {
     //@RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Update a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
-    public Notification updateNotification(@ApiParam(value = "Updated notification fields", required = true) Notification notification) {
-
+    public Notification updateNotification(@ApiParam(value = "Updated version of notification", required = true) Notification notification) {
+        return notificationDAO.update(notification);
     }
 
     private void throwErrorIfNull(Notification notification) {

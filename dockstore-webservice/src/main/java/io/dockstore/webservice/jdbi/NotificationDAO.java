@@ -1,6 +1,5 @@
 package io.dockstore.webservice.jdbi;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.dockstore.webservice.core.Notification;
@@ -17,10 +16,11 @@ public class NotificationDAO extends AbstractDAO<Notification> {
         return persist(notification).getId();
     }
 
-    public long update(Notification notification) {
+    public Notification update(Notification notification) {
         Session session = currentSession();
         session.update(notification);
         session.flush();
+        return notification;
     }
 
     public void delete(Notification notification) {
@@ -34,7 +34,6 @@ public class NotificationDAO extends AbstractDAO<Notification> {
     }
 
     public List<Notification> getActiveNotifications() {
-        //return list(namedQuery("io.dockstore.webservice.core.Organization.getActiveNotifications"));
-        return new ArrayList<>();
+        return list(namedQuery("io.dockstore.webservice.core.Notification.getActiveNotifications"));
     }
 }

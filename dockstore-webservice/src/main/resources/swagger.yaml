@@ -2442,6 +2442,22 @@ paths:
       security:
       - BEARER: []
   /curation/notifications:
+    get:
+      tags:
+      - "curation"
+      summary: "Return all active notifications"
+      description: "NO Authentication"
+      operationId: "getActiveNotifications"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Notification"
     post:
       tags:
       - "curation"
@@ -2486,6 +2502,28 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Notification"
+    put:
+      tags:
+      - "curation"
+      summary: "Update a notification"
+      description: "Curator/admin only"
+      operationId: "updateNotification"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Updated version of notification"
+        required: true
+        schema:
+          $ref: "#/definitions/Notification"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Notification"
+      security:
+      - BEARER: []
     delete:
       tags:
       - "curation"
