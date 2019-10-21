@@ -292,7 +292,7 @@ public class UserResourceIT extends BaseIT {
 
         // Try making a repo undeletable
         ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
-        ghWorkflow = (BioWorkflow)workflowsApi.refresh(ghWorkflow.getId());
+        workflowsApi.refresh(ghWorkflow.getId());
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
         assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()).findAny().isPresent());
