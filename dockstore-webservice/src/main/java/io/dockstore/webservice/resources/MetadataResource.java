@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.DefaultValue;
@@ -140,12 +141,12 @@ public class MetadataResource {
     @Operation(summary = "List all available workflow, tool, organization, and collection paths.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
-        SortedSet<String> cachedSitemap = sitemapListener.getSitemap();
-        if (cachedSitemap == null) {
-            cachedSitemap = getSitemap();
-            sitemapListener.setSitemap(cachedSitemap);
+        try {
+            SortedSet<String> sitemap = sitemapListener.getCache().get("sitemap", this::getSitemap);
+            return String.join(System.lineSeparator(), sitemap);
+        } catch (ExecutionException e) {
+            throw new CustomWebApplicationException("Sitemap cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        return String.join(System.lineSeparator(), cachedSitemap);
     }
 
     public SortedSet<String> getSitemap() {

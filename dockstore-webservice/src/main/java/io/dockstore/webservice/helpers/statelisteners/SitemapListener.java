@@ -18,6 +18,8 @@ package io.dockstore.webservice.helpers.statelisteners;
 import java.util.List;
 import java.util.SortedSet;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import org.slf4j.Logger;
@@ -29,22 +31,14 @@ import org.slf4j.LoggerFactory;
 public class SitemapListener implements StateListenerInterface {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SitemapListener.class);
-    private SortedSet<String> cachedSitemap = null;
+    private Cache<String, SortedSet<String>> cache = CacheBuilder.newBuilder().build();
 
     /**
      * Custom getter
      * @return
      */
-    public SortedSet<String> getSitemap() {
-        return cachedSitemap;
-    }
-
-    /**
-     * Custom setter
-     * @param sitemap
-     */
-    public void setSitemap(SortedSet<String> sitemap) {
-        cachedSitemap = sitemap;
+    public Cache<String, SortedSet<String>> getCache() {
+        return cache;
     }
 
     @Override
@@ -57,7 +51,7 @@ public class SitemapListener implements StateListenerInterface {
     }
 
     public void invalidateCache() {
-        cachedSitemap = null;
+        this.cache.invalidateAll();
     }
 
     @Override
