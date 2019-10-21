@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -32,6 +33,7 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(value = "BioWorkflow", description = "This describes one workflow in the dockstore")
 @Entity
 @Table(name = "workflow")
+@NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from BioWorkflow c where c.isPublished = true")
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {
 
