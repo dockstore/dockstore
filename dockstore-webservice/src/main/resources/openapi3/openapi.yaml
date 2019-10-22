@@ -675,6 +675,9 @@ components:
           format: date-time
         name:
           type: string
+        tosacceptanceDate:
+          type: string
+          format: date-time
         tosversion:
           type: string
           enum:
@@ -684,9 +687,6 @@ components:
           type: string
           format: date-time
           writeOnly: true
-        tosacceptanceDate:
-          type: string
-          format: date-time
     Validation:
       type: object
       properties:
@@ -1018,13 +1018,13 @@ components:
         parent_id:
           type: integer
           format: int64
-        workflow_path:
-          type: string
-        defaultTestParameterFilePath:
-          type: string
         full_workflow_path:
           type: string
         source_control_provider:
+          type: string
+        workflow_path:
+          type: string
+        defaultTestParameterFilePath:
           type: string
         last_modified_date:
           type: string

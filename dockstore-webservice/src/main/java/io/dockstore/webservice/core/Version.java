@@ -156,6 +156,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OrderBy("type")
     private final SortedSet<Validation> validations;
 
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "The images that belong to this version", position = 15)
+    private Set<Image> images = new HashSet<>();
+
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
@@ -163,18 +168,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         versionMetadata.parent = this;
     }
 
-    @ApiModelProperty(value = "Whether this version has been verified or not", position = 15)
+    @ApiModelProperty(value = "Whether this version has been verified or not", position = 16)
     public boolean isVerified() {
         return this.versionMetadata.verified;
     }
 
-    @ApiModelProperty(value = "Verified source for the version", position = 16)
+    @ApiModelProperty(value = "Verified source for the version", position = 17)
     @Deprecated
     public String getVerifiedSource() {
         return this.getVersionMetadata().verifiedSource;
     }
 
-    @ApiModelProperty(value = "Verified source for the version", position = 17)
+    @ApiModelProperty(value = "Verified source for the version", position = 18)
     public String[] getVerifiedSources() {
         if (this.getVersionMetadata().verifiedSource == null) {
             return new String[0];
@@ -182,11 +187,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
             return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedSource), String[].class);
         }
     }
-
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "The images that belong to this version", position = 18)
-    private Set<Image> images = new HashSet<>();
 
     public boolean isDirtyBit() {
         return dirtyBit;
