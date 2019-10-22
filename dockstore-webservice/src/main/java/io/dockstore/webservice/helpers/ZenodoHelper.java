@@ -22,12 +22,10 @@ import java.util.stream.Collectors;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.AliasableResourceInterface;
-import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.zenodo.client.ApiClient;
 import io.swagger.zenodo.client.ApiException;
@@ -57,14 +55,16 @@ public final class ZenodoHelper {
     /**
      * Register a Zenodo DOI for the workflow version
      * @param zenodoClient Client for interacting with Zenodo server
-     * @param workflowUrl Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
      * @param workflow    workflow for which DOI is registered
      * @param workflowVersion workflow version for which DOI is registered
-     * @param workflowResource code for interacting with the files of versions(we use zip file creation methods) and aliases
-     * @param user user authenticated to issue a DOI for the workflow
+     * @param workflowUrl Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
+     * @param dockstoreGA4GHBaseUrl The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
+     * @param dockstoreUrl URL for Dockstore (e.g. https://dockstore.org)
+     * @param entryVersionHelper provides interface for retrieving the files of versions
      */
-    public static void registerZenodoDOIForWorkflow(ApiClient zenodoClient, String workflowUrl, Workflow workflow,
-            WorkflowVersion workflowVersion, WorkflowResource workflowResource, User user) {
+    public static ZenodoDoiResult registerZenodoDOI(ApiClient zenodoClient, Workflow workflow,
+            WorkflowVersion workflowVersion, String workflowUrl, String dockstoreGA4GHBaseUrl,
+            String dockstoreUrl, EntryVersionHelper entryVersionHelper) {
 
         DepositsApi depositApi = new DepositsApi(zenodoClient);
         ActionsApi actionsApi = new ActionsApi(zenodoClient);
@@ -113,8 +113,8 @@ public final class ZenodoHelper {
                 // that the user will have to clean up manually
                 doiAlias = createAliasUsingDoi(doi);
 
-                setMetadataRelatedIdentifiers(depositMetadata, workflowResource.getDockstoreGA4GHBaseUrl(),
-                        workflowResource.getDockstoreUrl(), workflowUrl, workflow, workflowVersion, doiAlias);
+                setMetadataRelatedIdentifiers(depositMetadata, dockstoreGA4GHBaseUrl,
+                        dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
 
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
@@ -149,8 +149,8 @@ public final class ZenodoHelper {
                 // that the user will have to clean up manually
                 doiAlias = createAliasUsingDoi(doi);
 
-                setMetadataRelatedIdentifiers(depositMetadata, workflowResource.getDockstoreGA4GHBaseUrl(),
-                        workflowResource.getDockstoreUrl(), workflowUrl, workflow, workflowVersion, doiAlias);
+                setMetadataRelatedIdentifiers(depositMetadata,  dockstoreGA4GHBaseUrl,
+                        dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
 
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
 
@@ -162,7 +162,7 @@ public final class ZenodoHelper {
         }
 
         provisionWorkflowVersionUploadFiles(zenodoClient, returnDeposit, depositionID,
-                workflow, workflowVersion, workflowResource);
+                workflow, workflowVersion, entryVersionHelper);
 
         putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
 
@@ -172,16 +172,7 @@ public final class ZenodoHelper {
 
         String conceptDoi = extractDoiFromDoiUrl(conceptDoiUrl);
 
-        workflow.setConceptDoi(conceptDoi);
-
-        // Only add the alias to the workflow after publishing the DOI succeeds
-        // Otherwise if the publish call fails we will have added an alias
-        // that will not be used and cannot be deleted
-        // This code also checks that the alias does not start with an invalid prefix
-        // If it does, this will generate an exception, the alias will not be added
-        // to the workflow, but there may be an invalid Related Identifier URL on the Zenodo entry
-        workflowResource.getEntryResource().addAliasesAndCheck(user, workflow.getId(), doiAlias, false);
-        workflowVersion.setDoiURL(publishedDeposit.getMetadata().getDoi());
+        return new ZenodoDoiResult(doiAlias, publishedDeposit.getMetadata().getDoi(), conceptDoi);
     }
 
     /**
@@ -521,6 +512,30 @@ public final class ZenodoHelper {
                     + " Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return publishedDeposit;
+    }
+
+    public static final class ZenodoDoiResult {
+        private final String doiAlias;
+        private final String doiUrl;
+        private final String conceptDoi;
+
+        public ZenodoDoiResult(String doiAlias, String doiUrl, String conceptDoi) {
+            this.doiAlias = doiAlias;
+            this.doiUrl = doiUrl;
+            this.conceptDoi = conceptDoi;
+        }
+
+        public String getDoiAlias() {
+            return doiAlias;
+        }
+
+        public String getDoiUrl() {
+            return doiUrl;
+        }
+
+        public String getConceptDoi() {
+            return conceptDoi;
+        }
     }
 
 }
