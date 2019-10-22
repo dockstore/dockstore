@@ -81,7 +81,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all available organizations.", notes = "NO Authentication", responseContainer = "List", response = Organization.class)
     public List<Organization> getApprovedOrganizations() {
-        return organizationDAO.findApprovedSortedByStar();
+        List<Organization> organizations = organizationDAO.findApprovedSortedByStar();
+        organizations.forEach(organization -> Hibernate.initialize(organization.getAliases()));
+        return organizations;
     }
 
     @POST
@@ -218,7 +220,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     public Organization getOrganizationById(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id) {
-        return getOrganizationByIdOptionalAuth(user, id);
+        Organization organization = getOrganizationByIdOptionalAuth(user, id);
+        Hibernate.initialize(organization.getAliases());
+        return organization;
     }
 
     @GET

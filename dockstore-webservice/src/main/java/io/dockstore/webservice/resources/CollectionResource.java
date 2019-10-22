@@ -117,6 +117,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 collection = null;
             }
             throwExceptionForNullCollection(collection);
+            assert collection != null;
+            Hibernate.initialize(collection.getEntries());
+            Hibernate.initialize(collection.getAliases());
             return getApprovalForCollection(collection);
         } else {
             // User is given, check if the collections organization is either approved or the user has access
@@ -127,7 +130,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 collection = null;
                 throwExceptionForNullCollection(collection);
             }
+            assert collection != null;
             Hibernate.initialize(collection.getEntries());
+            Hibernate.initialize(collection.getAliases());
             return collection;
         }
     }

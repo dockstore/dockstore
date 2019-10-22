@@ -92,7 +92,7 @@ public class Collection implements Serializable, Aliasable {
     @Column(name = "organizationid", insertable = false, updatable = false)
     private long organizationID;
 
-    @ElementCollection(targetClass = Alias.class, fetch = FetchType.EAGER)
+    @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "collection_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_col_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for collections")

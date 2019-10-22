@@ -248,6 +248,7 @@ public class OrganizationIT extends BaseIT {
         // Should now appear in approved list
         organizationList = organizationsApiUser2.getApprovedOrganizations();
         assertEquals("Should have one approved Organizations.", organizationList.size(), 1);
+        organizationList.forEach(approvedOrganization -> Assert.assertNotNull(approvedOrganization.getAliases()));
 
         // Should not be able to request re-review
         canRequestReview = true;
@@ -513,6 +514,7 @@ public class OrganizationIT extends BaseIT {
         // Should appear in the pending
         List<Organization> organizationList = organizationsApiAdmin.getAllOrganizations("pending");
         assertEquals("Should have one pending Organization, there are " + organizationList.size(), 1, organizationList.size());
+        organizationList.forEach(organization -> Assert.assertNull(organization.getAliases()));
 
         // Should not appear in rejected
         organizationList = organizationsApiAdmin.getAllOrganizations("rejected");
@@ -532,6 +534,7 @@ public class OrganizationIT extends BaseIT {
         // Should appear in rejected
         organizationList = organizationsApiAdmin.getAllOrganizations("rejected");
         assertEquals("Should have one rejected Organization, there are " + organizationList.size(), 1, organizationList.size());
+        organizationList.forEach(organization -> Assert.assertNull(organization.getAliases()));
 
         // Should not appear in approved
         organizationList = organizationsApiAdmin.getAllOrganizations("approved");
@@ -543,6 +546,8 @@ public class OrganizationIT extends BaseIT {
         // Should appear in pending
         organizationList = organizationsApiAdmin.getAllOrganizations("pending");
         assertEquals("Should have one pending Organization, there are " + organizationList.size(), 1, organizationList.size());
+        organizationList.forEach(organization -> Assert.assertNull(organization.getAliases()));
+
     }
 
     /**
