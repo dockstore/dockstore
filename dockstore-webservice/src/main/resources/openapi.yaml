@@ -6578,16 +6578,6 @@ components:
           type: string
           readOnly: true
       description: This describes one workflow in the dockstore
-    Checksum:
-      type: object
-      properties:
-        type:
-          type: string
-          description: Type of hash algorithm
-        checksum:
-          type: string
-          description: checksum value
-      description: Checksum(s) associated with images in workflows and tools
     Collection:
       type: object
       required:
@@ -7160,15 +7150,16 @@ components:
         checksums:
           type: array
           description: Checksum(s) associated with this image
-          uniqueItems: true
           items:
-            $ref: "#/components/schemas/Checksum"
+            type: array
+            items:
+              type: string
         repository:
           type: string
           description: Repository image belongs to
         tag:
           type: string
-          description: Tag
+          description: Git tag
         imageID:
           type: string
           description: Docker ID of the image
