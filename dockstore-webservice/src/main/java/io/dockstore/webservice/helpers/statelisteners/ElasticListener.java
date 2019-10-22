@@ -46,6 +46,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.client.RestClient;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +67,17 @@ public class ElasticListener implements StateListenerInterface {
         port = config.getEsConfiguration().getPort();
     }
 
+    /**
+     * Manually eager load certain fields
+     * @param entry
+     */
+    private void eagerLoadEntry(Entry entry) {
+        Hibernate.initialize(entry.getAliases());
+    }
+
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
+        eagerLoadEntry(entry);
         entry = filterCheckerWorkflows(entry);
         // #2771 will need to disable this and properly create objects to get services into the index
         entry = entry instanceof Service ? null : entry;
@@ -138,6 +148,7 @@ public class ElasticListener implements StateListenerInterface {
 
     @Override
     public void bulkUpsert(List<Entry> entries) {
+        entries.forEach(this::eagerLoadEntry);
         entries = filterCheckerWorkflows(entries);
         // #2771 will need to disable this and properly create objects to get services into the index
         entries = entries.stream().filter(entry -> !(entry instanceof Service)).collect(Collectors.toList());

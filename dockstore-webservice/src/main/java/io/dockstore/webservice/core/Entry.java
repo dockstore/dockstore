@@ -166,7 +166,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The id of the associated checker workflow")
     private BioWorkflow checkerWorkflow;
 
-    @ElementCollection(targetClass = Alias.class, fetch = FetchType.EAGER)
+    @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")

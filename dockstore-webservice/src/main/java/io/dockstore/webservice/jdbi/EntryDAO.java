@@ -39,6 +39,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -68,7 +69,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public T findById(Long id) {
-        return get(id);
+        T t = get(id);
+        Hibernate.initialize(t.getAliases());
+        return t;
     }
 
     public MutablePair<String, Entry> findEntryByPath(String path, boolean isPublished) {

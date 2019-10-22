@@ -900,6 +900,7 @@ public class WorkflowIT extends BaseIT {
         // test filter
         List<Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale", "stars", null, false);
         assertEquals(1, filteredLowercase.size());
+        filteredLowercase.forEach(workflow -> assertNull(workflow.getAliases()));
         List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE", "stars", null, false);
         assertEquals(1, filteredUppercase.size());
         assertEquals(filteredLowercase, filteredUppercase);
