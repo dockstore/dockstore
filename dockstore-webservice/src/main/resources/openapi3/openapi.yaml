@@ -406,10 +406,9 @@ paths:
           content:
             application/json:
               schema:
-                uniqueItems: true
                 type: array
                 items:
-                  type: string
+                  $ref: '#/components/schemas/Repository'
       security:
       - bearer: []
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
@@ -661,6 +660,9 @@ components:
           format: date-time
         name:
           type: string
+        tosacceptanceDate:
+          type: string
+          format: date-time
         tosversion:
           type: string
           enum:
@@ -670,9 +672,6 @@ components:
           type: string
           format: date-time
           writeOnly: true
-        tosacceptanceDate:
-          type: string
-          format: date-time
     Validation:
       type: object
       properties:
@@ -745,13 +744,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Validation'
-        workingDirectory:
-          type: string
         hidden:
           type: boolean
-        verified:
-          type: boolean
-        verifiedSource:
+        workingDirectory:
           type: string
         verifiedSources:
           type: array
@@ -765,6 +760,10 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -884,6 +883,26 @@ components:
           - SUMMARY
         filename:
           type: string
+    Repository:
+      type: object
+      properties:
+        organization:
+          type: string
+        repositoryName:
+          type: string
+        gitRegistry:
+          type: string
+          enum:
+          - dockstore.org
+          - github.com
+          - bitbucket.org
+          - gitlab.com
+        canDelete:
+          type: boolean
+        present:
+          type: boolean
+        path:
+          type: string
     BioWorkflow:
       type: object
       properties:
@@ -940,6 +959,8 @@ components:
         topicId:
           type: integer
           format: int64
+        conceptDoi:
+          type: string
         mode:
           type: string
           enum:
@@ -977,14 +998,17 @@ components:
         parent_id:
           type: integer
           format: int64
+        source_control_provider:
+          type: string
         full_workflow_path:
           type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
-        source_control_provider:
+        last_modified_date:
           type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1000,9 +1024,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     WorkflowVersion:
       type: object
       properties:
@@ -1052,10 +1073,6 @@ components:
           type: string
         hidden:
           type: boolean
-        verified:
-          type: boolean
-        verifiedSource:
-          type: string
         verifiedSources:
           type: array
           items:
@@ -1068,6 +1085,10 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
         dbUpdateDate:
           type: string
           format: date-time

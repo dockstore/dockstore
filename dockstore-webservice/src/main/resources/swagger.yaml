@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.8.0-alpha.0-SNAPSHOT"
+  version: "1.8.0-alpha.0"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2439,13 +2439,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2783,13 +2776,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2897,7 +2883,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Add aliases linked to an Organization in Dockstore."
+      summary: "Add aliases linked to a listing in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "addOrganizationAliases"
@@ -2915,13 +2901,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -3744,8 +3723,7 @@ paths:
           schema:
             type: "array"
             items:
-              type: "string"
-            uniqueItems: true
+              $ref: "#/definitions/Repository"
   /users/services/sync:
     post:
       tags:
@@ -6881,6 +6859,26 @@ definitions:
         type: "string"
       enum:
         type: "string"
+  Repository:
+    type: "object"
+    properties:
+      organization:
+        type: "string"
+      repositoryName:
+        type: "string"
+      gitRegistry:
+        type: "string"
+        enum:
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
+      canDelete:
+        type: "boolean"
+      present:
+        type: "boolean"
+      path:
+        type: "string"
   Service:
     allOf:
     - $ref: "#/definitions/Workflow"
@@ -7464,15 +7462,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       username:
         type: "string"
         position: 1

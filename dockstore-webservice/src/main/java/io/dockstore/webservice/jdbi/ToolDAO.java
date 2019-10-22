@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
+import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -34,6 +35,10 @@ public class ToolDAO extends EntryDAO<Tool> {
 
     public List<Tool> findByMode(final ToolMode mode) {
         return list(namedQuery("io.dockstore.webservice.core.Tool.findByMode").setParameter("mode", mode));
+    }
+
+    public List<ToolPath> findAllPublishedPaths() {
+        return list(namedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPaths"));
     }
 
     /**
