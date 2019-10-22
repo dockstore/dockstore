@@ -156,11 +156,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OrderBy("type")
     private final SortedSet<Validation> validations;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "The images that belong to this version", position = 18)
-    private Set<Image> images = new HashSet<>();
-
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
@@ -187,6 +182,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
             return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedSource), String[].class);
         }
     }
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "The images that belong to this version", position = 18)
+    private Set<Image> images = new HashSet<>();
 
     public boolean isDirtyBit() {
         return dirtyBit;
