@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.8.0-alpha.0"
+  version: "1.8.0-alpha.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -6630,6 +6630,30 @@ definitions:
       \ that describes how to build a particular container image. Examples include\
       \ Dockerfiles for creating Docker images and Singularity recipes for Singularity\
       \ images "
+  Image:
+    type: "object"
+    properties:
+      checksums:
+        type: "array"
+        position: 1
+        description: "Checksum(s) associated with this image"
+        items:
+          type: "array"
+          items:
+            type: "string"
+      repository:
+        type: "string"
+        position: 2
+        description: "Repository image belongs to"
+      tag:
+        type: "string"
+        position: 3
+        description: "Git tag"
+      imageID:
+        type: "string"
+        position: 4
+        description: "Docker ID of the image"
+    description: "Image(s) associated with tags and workflow versions"
   Label:
     type: "object"
     required:
@@ -7064,6 +7088,13 @@ definitions:
         description: "Verified source for the version"
         items:
           type: "string"
+      images:
+        type: "array"
+        position: 18
+        description: "The images that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Image"
       hidden:
         type: "boolean"
         position: 18
@@ -7462,15 +7493,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7652,6 +7683,13 @@ definitions:
         description: "Verified source for the version"
         items:
           type: "string"
+      images:
+        type: "array"
+        position: 18
+        description: "The images that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Image"
       hidden:
         type: "boolean"
         position: 18
@@ -7977,6 +8015,13 @@ definitions:
         description: "Verified source for the version"
         items:
           type: "string"
+      images:
+        type: "array"
+        position: 18
+        description: "The images that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Image"
       hidden:
         type: "boolean"
         position: 18

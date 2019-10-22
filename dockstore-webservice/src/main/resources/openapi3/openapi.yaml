@@ -572,6 +572,21 @@ components:
       properties:
         value:
           type: string
+    Image:
+      type: object
+      properties:
+        checksums:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        repository:
+          type: string
+        tag:
+          type: string
+        imageID:
+          type: string
     Label:
       type: object
       properties:
@@ -660,9 +675,6 @@ components:
           format: date-time
         name:
           type: string
-        tosacceptanceDate:
-          type: string
-          format: date-time
         tosversion:
           type: string
           enum:
@@ -672,6 +684,9 @@ components:
           type: string
           format: date-time
           writeOnly: true
+        tosacceptanceDate:
+          type: string
+          format: date-time
     Validation:
       type: object
       properties:
@@ -744,9 +759,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Validation'
+        images:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        workingDirectory:
+          type: string
         hidden:
           type: boolean
-        workingDirectory:
+        verified:
+          type: boolean
+        verifiedSource:
           type: string
         verifiedSources:
           type: array
@@ -760,10 +784,6 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
-        verified:
-          type: boolean
-        verifiedSource:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -998,13 +1018,13 @@ components:
         parent_id:
           type: integer
           format: int64
-        source_control_provider:
-          type: string
-        full_workflow_path:
-          type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
+          type: string
+        full_workflow_path:
+          type: string
+        source_control_provider:
           type: string
         last_modified_date:
           type: string
@@ -1062,6 +1082,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Validation'
+        images:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
         subClass:
           type: string
           enum:
@@ -1073,6 +1098,10 @@ components:
           type: string
         hidden:
           type: boolean
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
         verifiedSources:
           type: array
           items:
@@ -1085,10 +1114,6 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
-        verified:
-          type: boolean
-        verifiedSource:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time
