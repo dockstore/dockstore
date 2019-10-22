@@ -129,6 +129,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
      * @param user user authenticated to issue a DOI for the workflow
      * @param id the id of the Entry
      * @param aliases a comma separated string of aliases
+     * @param blockFormat if true don't allow specific formats
      * @return the resource
      */
     default T addAliasesAndCheck(User user, Long id, String aliases, boolean blockFormat) {
