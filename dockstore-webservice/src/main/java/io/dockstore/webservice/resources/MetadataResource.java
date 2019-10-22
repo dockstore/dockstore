@@ -53,10 +53,11 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Config;
-import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.RSSEntryPath;
+import io.dockstore.webservice.core.RSSToolPath;
+import io.dockstore.webservice.core.RSSWorkflowPath;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.core.Workflow;
@@ -108,6 +109,7 @@ import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SIT
 @io.swagger.v3.oas.annotations.tags.Tag(name = "metadata", description = "description of the webservice itself")
 public class MetadataResource {
 
+    public static final int RSS_ENTRY_LIMIT = 50;
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
 
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
@@ -212,18 +214,12 @@ public class MetadataResource {
     @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
     @ApiOperation(value = "List all published tools and workflows in creation order.", notes = "NO authentication")
     public String rssFeed() {
-
-        final int limit = 50;
-        List<Tool> tools = toolDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
-        // #2683 avoid web crawling services for 1.7.0
-        List<Workflow> workflows = workflowDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc", (Class)BioWorkflow.class);
-
-        List<Entry> dbEntries =  new ArrayList<>();
-        dbEntries.addAll(tools);
-        dbEntries.addAll(workflows);
-        dbEntries.sort(Comparator.comparingLong(entry -> entry.getLastUpdated().getTime()));
-
-        // TODO: after seeing if this works, make this more efficient than just returning everything
+        List<RSSWorkflowPath> workflowPaths = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate();
+        List<RSSToolPath> toolPaths = toolDAO.findAllPublishedPathsOrderByDbupdatedate();
+        List<RSSEntryPath> dbEntries =  new ArrayList<>();
+        dbEntries.addAll(toolPaths);
+        dbEntries.addAll(workflowPaths);
+        dbEntries.sort(Comparator.comparing(RSSEntryPath::getLastUpdated));
         RSSFeed feed = new RSSFeed();
 
         RSSHeader header = new RSSHeader();
@@ -237,23 +233,22 @@ public class MetadataResource {
         feed.setHeader(header);
 
         List<RSSEntry> entries = new ArrayList<>();
-        for (Entry dbEntry : dbEntries) {
+        for (RSSEntryPath dbEntry : dbEntries) {
             RSSEntry entry = new RSSEntry();
-            if (dbEntry instanceof Workflow) {
-                Workflow workflow = (Workflow)dbEntry;
-                entry.setTitle(workflow.getWorkflowPath());
-                String workflowURL = createWorkflowURL(workflow);
-                entry.setGuid(workflowURL);
-                entry.setLink(workflowURL);
-            } else if (dbEntry instanceof Tool) {
-                Tool tool = (Tool)dbEntry;
-                entry.setTitle(tool.getPath());
-                String toolURL = createToolURL(tool);
-                entry.setGuid(toolURL);
-                entry.setLink(toolURL);
+            entry.setTitle(dbEntry.getEntryPath());
+            String url;
+            if (dbEntry instanceof RSSWorkflowPath) {
+                RSSWorkflowPath workflow = (RSSWorkflowPath)dbEntry;
+                url = MetadataResourceHelper.createWorkflowURL(workflow, "workflow");
+            } else if (dbEntry instanceof RSSToolPath) {
+                RSSToolPath tool = (RSSToolPath)dbEntry;
+                entry.setTitle(tool.getEntryPath());
+                url = MetadataResourceHelper.createToolURL2(tool);
             } else {
                 throw new CustomWebApplicationException("Unknown data type unsupported for RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
+            entry.setGuid(url);
+            entry.setLink(url);
             final int arbitraryDescriptionLimit = 200;
             entry.setDescription(StringUtils.truncate(dbEntry.getDescription(), arbitraryDescriptionLimit));
             Calendar instance = Calendar.getInstance();

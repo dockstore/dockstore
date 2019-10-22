@@ -18,12 +18,15 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
+import io.dockstore.webservice.core.RSSToolPath;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+
+import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 /**
  * @author xliu
@@ -39,6 +42,10 @@ public class ToolDAO extends EntryDAO<Tool> {
 
     public List<ToolPath> findAllPublishedPaths() {
         return list(namedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPaths"));
+    }
+
+    public List<RSSToolPath> findAllPublishedPathsOrderByDbupdatedate() {
+        return list(namedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(RSS_ENTRY_LIMIT));
     }
 
     /**

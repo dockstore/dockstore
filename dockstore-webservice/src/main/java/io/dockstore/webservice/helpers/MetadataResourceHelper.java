@@ -4,6 +4,8 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.RSSToolPath;
+import io.dockstore.webservice.core.RSSWorkflowPath;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolPath;
@@ -34,7 +36,15 @@ public final class MetadataResourceHelper {
         return String.format("%s/%ss/%s", baseUrl, entryType, workflow.getEntryPath());
     }
 
+    public static String createWorkflowURL(RSSWorkflowPath workflow, String entryType) {
+        return String.format("%s/%ss/%s", baseUrl, entryType, workflow.getEntryPath());
+    }
+
     public static String createToolURL2(ToolPath toolPath) {
+        return String.format("%s/containers/%s", baseUrl, toolPath.getEntryPath());
+    }
+
+    public static String createToolURL2(RSSToolPath toolPath) {
         return String.format("%s/containers/%s", baseUrl, toolPath.getEntryPath());
     }
 
