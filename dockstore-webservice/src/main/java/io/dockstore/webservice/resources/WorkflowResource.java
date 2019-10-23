@@ -190,19 +190,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
-
-    public EntryResource getEntryResource() {
-        return this.entryResource;
-    }
-
-    public String getDockstoreUrl() {
-        return this.dockstoreUrl;
-    }
-
-    public String getDockstoreGA4GHBaseUrl() {
-        return this.dockstoreGA4GHBaseUrl;
-    }
-
     @Override
     protected Workflow initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo) {
         return sourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
@@ -676,7 +663,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // This code also checks that the alias does not start with an invalid prefix
         // If it does, this will generate an exception, the alias will not be added
         // to the workflow, but there may be an invalid Related Identifier URL on the Zenodo entry
-        getEntryResource().addAliasesAndCheck(user, workflow.getId(), zenodoDoiResult.getDoiAlias(), false);
+        entryResource.addAliasesAndCheck(user, workflow.getId(), zenodoDoiResult.getDoiAlias(), false);
         workflowVersion.setDoiURL(zenodoDoiResult.getDoiUrl());
         workflow.setConceptDoi(zenodoDoiResult.getConceptDoi());
     }

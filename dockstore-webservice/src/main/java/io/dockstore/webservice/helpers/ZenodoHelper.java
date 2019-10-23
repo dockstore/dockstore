@@ -65,21 +65,16 @@ public final class ZenodoHelper {
     public static ZenodoDoiResult registerZenodoDOI(ApiClient zenodoClient, Workflow workflow,
             WorkflowVersion workflowVersion, String workflowUrl, String dockstoreGA4GHBaseUrl,
             String dockstoreUrl, EntryVersionHelper entryVersionHelper) {
-
         DepositsApi depositApi = new DepositsApi(zenodoClient);
         ActionsApi actionsApi = new ActionsApi(zenodoClient);
-
         Deposit deposit = new Deposit();
         Deposit returnDeposit;
-
         checkForExistingDOIForWorkflowVersion(workflowVersion);
-
         Optional<String> existingWorkflowVersionDOIURL = getAnExistingDOIForWorkflow(workflow);
 
         int depositionID;
         DepositMetadata depositMetadata;
         String doiAlias;
-
         if (existingWorkflowVersionDOIURL.isEmpty()) {
             try {
                 // No DOI has been assigned to any version of the workflow yet
@@ -88,11 +83,9 @@ public final class ZenodoHelper {
                 returnDeposit = depositApi.createDeposit(deposit);
                 depositionID = returnDeposit.getId();
                 depositMetadata = returnDeposit.getMetadata();
-
                 // Set the attribute that will reserve a DOI before publishing
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
                 depositMetadata.prereserveDoi(true);
-
                 // Put the deposit on Zenodo; the returned deposit will contain
                 // the reserved DOI which we can use to create a workflow alias
                 // Later on we will update the Zenodo deposit (put the deposit on
@@ -100,22 +93,14 @@ public final class ZenodoHelper {
                 // constructed with the DOI
                 Deposit newDeposit = putDepositionOnZenodo(depositApi, depositMetadata, depositionID);
                 depositMetadata.prereserveDoi(false);
-
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
                 Map<String, String> doiMap = (Map<String, String>)newDeposit.getMetadata().getPrereserveDoi();
                 Map.Entry<String, String> doiEntry = doiMap.entrySet().iterator().next();
                 String doi = doiEntry.getValue();
-
-                // Create the alias and make sure the alias is valid
-                // If it is not acceptable then an exception is generated
-                // in which case a deposition resource may be left on Zenodo
-                // that the user will have to clean up manually
                 doiAlias = createAliasUsingDoi(doi);
-
                 setMetadataRelatedIdentifiers(depositMetadata, dockstoreGA4GHBaseUrl,
                         dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
-
             } catch (ApiException e) {
                 LOG.error("Could not create deposition on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create deposition on Zenodo. "
@@ -142,18 +127,10 @@ public final class ZenodoHelper {
                 // Retrieve the DOI so we can use it to create a Dockstore alias
                 // to the workflow; we will add that alias as a Zenodo related identifier
                 String doi = depositMetadata.getDoi();
-
-                // Create the alias and make sure the alias is valid
-                // If it is not acceptable then an exception is generated
-                // in which case a deposition resource may be left on Zenodo
-                // that the user will have to clean up manually
                 doiAlias = createAliasUsingDoi(doi);
-
                 setMetadataRelatedIdentifiers(depositMetadata,  dockstoreGA4GHBaseUrl,
                         dockstoreUrl, workflowUrl, workflow, workflowVersion, doiAlias);
-
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
-
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
@@ -196,6 +173,10 @@ public final class ZenodoHelper {
 
     /**
      * Create a workflow alias that uses a digital object identifier
+     * and make sure the alias is valid
+     * If it is not acceptable then an exception is generated
+     * in which case a deposition resource may be left on Zenodo
+     * that the user will have to clean up manually
      * @param doi digital object identifier
      * @return the alias as a string
      */
