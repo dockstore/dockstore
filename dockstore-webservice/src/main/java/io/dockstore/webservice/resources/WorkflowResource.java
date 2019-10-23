@@ -555,7 +555,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param user Dockstore with Zenodo account
      */
     private List<Token> checkOnZenodoToken(User user) {
-        // TODO Implement refresh for Zenodo token
         List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
         if (!tokens.isEmpty()) {
             Token zenodoToken = tokens.get(0);
@@ -628,7 +627,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoClient.setBasePath(zenodoUrlApi);
         zenodoClient.setApiKey(zenodoAccessToken);
 
-        registerZenodoDOIForWorkflow(zenodoClient, workflow, workflowVersion, dockstoreGA4GHBaseUrl, dockstoreUrl, user, this);
+        registerZenodoDOIForWorkflow(zenodoClient, workflow, workflowVersion, user);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
@@ -638,25 +637,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Register a Zenodo DOI for the workflow version
+     * Register a Zenodo DOI for the workflow and workflow version
      * @param zenodoClient Client for interacting with Zenodo server
      * @param workflow    workflow for which DOI is registered
      * @param workflowVersion workflow version for which DOI is registered
-     * @param dockstoreGA4GHBaseUrlParam The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
-     * @param dockstoreUrlParam URL for Dockstore (e.g. https://dockstore.org)
      * @param user user authenticated to issue a DOI for the workflow
-     * @param entryVersionHelper provides interface for retrieving the files of versions
      */
-    private void registerZenodoDOIForWorkflow(ApiClient zenodoClient, Workflow workflow,
-            WorkflowVersion workflowVersion, String dockstoreGA4GHBaseUrlParam, String dockstoreUrlParam,
-            User user, EntryVersionHelper entryVersionHelper) {
+    private void registerZenodoDOIForWorkflow(ApiClient zenodoClient, Workflow workflow, WorkflowVersion workflowVersion, User user) {
 
         // Create Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
         String workflowUrl = MetadataResourceHelper.createWorkflowURL(workflow);
 
         ZenodoHelper.ZenodoDoiResult zenodoDoiResult = ZenodoHelper.registerZenodoDOI(zenodoClient, workflow,
-                workflowVersion, workflowUrl, dockstoreGA4GHBaseUrlParam, dockstoreUrlParam, entryVersionHelper);
+                workflowVersion, workflowUrl, dockstoreGA4GHBaseUrl, dockstoreUrl, this);
 
+        workflowVersion.setDoiURL(zenodoDoiResult.getDoiUrl());
+        workflow.setConceptDoi(zenodoDoiResult.getConceptDoi());
         // Only add the alias to the workflow after publishing the DOI succeeds
         // Otherwise if the publish call fails we will have added an alias
         // that will not be used and cannot be deleted
@@ -664,8 +660,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // If it does, this will generate an exception, the alias will not be added
         // to the workflow, but there may be an invalid Related Identifier URL on the Zenodo entry
         entryResource.addAliasesAndCheck(user, workflow.getId(), zenodoDoiResult.getDoiAlias(), false);
-        workflowVersion.setDoiURL(zenodoDoiResult.getDoiUrl());
-        workflow.setConceptDoi(zenodoDoiResult.getConceptDoi());
     }
 
 
