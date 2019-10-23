@@ -18,10 +18,10 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
-import io.dockstore.webservice.core.RSSToolPath;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.core.ToolPath;
+import io.dockstore.webservice.core.database.RSSToolPath;
+import io.dockstore.webservice.core.database.ToolPath;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;

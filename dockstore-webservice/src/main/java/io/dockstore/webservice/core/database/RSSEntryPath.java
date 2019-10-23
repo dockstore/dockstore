@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-package io.dockstore.webservice.core;
+package io.dockstore.webservice.core.database;
 
 import java.util.Date;
 
 /**
+ * This class is only used to get data from the database in a more type-safe way
  * @author gluu
- * @since 2019-10-22
+ * @since 1.8.0
  */
 public abstract class RSSEntryPath {
     protected Date lastUpdated;

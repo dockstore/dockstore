@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-package io.dockstore.webservice.core;
+package io.dockstore.webservice.core.database;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import io.dockstore.common.SourceControl;
@@ -26,18 +25,17 @@ import io.dockstore.common.SourceControl;
  * @author gluu
  * @since 1.8.0
  */
-public class RSSWorkflowPath extends RSSEntryPath {
+public class WorkflowPath {
     private final SourceControl sourceControl;
     private final String organization;
     private final String repository;
+    private final String workflowName;
 
-    public RSSWorkflowPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
+    public WorkflowPath(SourceControl sourceControl, String organization, String repository, String workflowName) {
         this.sourceControl = sourceControl;
         this.organization = organization;
         this.repository = repository;
-        this.entryName = entryName;
-        this.lastUpdated = lastUpdated;
-        this.description = description;
+        this.workflowName = workflowName;
     }
 
     public SourceControl getSourceControl() {
@@ -52,8 +50,8 @@ public class RSSWorkflowPath extends RSSEntryPath {
         return repository;
     }
 
-    public String getEntryName() {
-        return entryName;
+    public String getWorkflowName() {
+        return workflowName;
     }
 
     public String getEntryPath() {
@@ -61,8 +59,8 @@ public class RSSWorkflowPath extends RSSEntryPath {
         segments.add(sourceControl.toString());
         segments.add(organization);
         segments.add(repository);
-        if (entryName != null && !entryName.isEmpty()) {
-            segments.add(entryName);
+        if (workflowName != null && !workflowName.isEmpty()) {
+            segments.add(workflowName);
         }
         return String.join("/", segments);
     }

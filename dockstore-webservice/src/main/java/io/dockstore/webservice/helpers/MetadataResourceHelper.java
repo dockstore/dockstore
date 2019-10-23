@@ -6,9 +6,9 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowPath;
+import io.dockstore.webservice.core.database.ToolPath;
+import io.dockstore.webservice.core.database.WorkflowPath;
 
 public final class MetadataResourceHelper {
 

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package io.dockstore.webservice.core;
+package io.dockstore.webservice.core.database;
 
 import java.util.ArrayList;
 import java.util.List;
