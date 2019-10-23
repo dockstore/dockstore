@@ -70,7 +70,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public T findById(Long id) {
         T t = get(id);
-        Hibernate.initialize(t.getAliases());
+        if (t != null) {
+            Hibernate.initialize(t.getAliases());
+        }
         return t;
     }
 
