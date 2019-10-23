@@ -286,7 +286,7 @@ public class DockerRepoResource
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
-
+        Hibernate.initialize(tool.getAliases());
         return tool;
     }
 
@@ -434,6 +434,7 @@ public class DockerRepoResource
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
+        Hibernate.initialize(tool.getAliases());
         return filterContainersForHiddenTags(tool);
     }
 
@@ -694,6 +695,7 @@ public class DockerRepoResource
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
+        Hibernate.initialize(tool.getAliases());
         return tool;
     }
 
@@ -711,6 +713,7 @@ public class DockerRepoResource
             if (checkIncludes(include, "validations")) {
                 tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
             }
+            Hibernate.initialize(tool.getAliases());
             filterContainersForHiddenTags(tool);
 
             // for backwards compatibility for 1.6.0 clients, return versions as tags

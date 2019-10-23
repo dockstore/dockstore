@@ -446,6 +446,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         initializeValidations(include, workflow);
+        Hibernate.initialize(workflow.getAliases());
         return workflow;
     }
 
@@ -698,6 +699,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
         initializeValidations(include, workflow);
+        Hibernate.initialize(workflow.getAliases());
         return filterContainersForHiddenTags(workflow);
     }
 
@@ -848,6 +850,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkCanRead(user, workflow);
 
         initializeValidations(include, workflow);
+        Hibernate.initialize(workflow.getAliases());
         return workflow;
     }
 
@@ -1033,6 +1036,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
 
         initializeValidations(include, workflow);
+        Hibernate.initialize(workflow.getAliases());
         filterContainersForHiddenTags(workflow);
 
         // evil hack for backwards compatibility with 1.6.0 CLI, sorry
