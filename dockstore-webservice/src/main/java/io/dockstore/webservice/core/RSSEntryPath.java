@@ -17,8 +17,6 @@ package io.dockstore.webservice.core;
 
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * @author gluu
  * @since 2019-10-22
@@ -26,12 +24,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public abstract class RSSEntryPath {
     protected Date lastUpdated;
     protected String description;
+    protected String entryName;
     public abstract String getEntryPath();
+
+    public String getURLPath(String entryType) {
+        return String.format("/%ss/%s", entryType, getEntryPath());
+    }
+
     public String getDescription() {
         return description;
     }
 
-    @JsonProperty
     public Date getLastUpdated() {
         if (lastUpdated == null) {
             return new Date(0L);

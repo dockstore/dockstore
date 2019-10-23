@@ -30,13 +30,12 @@ public class RSSWorkflowPath extends RSSEntryPath {
     private final SourceControl sourceControl;
     private final String organization;
     private final String repository;
-    private final String workflowName;
 
-    public RSSWorkflowPath(SourceControl sourceControl, String organization, String repository, String workflowName, Date lastUpdated, String description) {
+    public RSSWorkflowPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
         this.sourceControl = sourceControl;
         this.organization = organization;
         this.repository = repository;
-        this.workflowName = workflowName;
+        this.entryName = entryName;
         this.lastUpdated = lastUpdated;
         this.description = description;
     }
@@ -53,8 +52,8 @@ public class RSSWorkflowPath extends RSSEntryPath {
         return repository;
     }
 
-    public String getWorkflowName() {
-        return workflowName;
+    public String getEntryName() {
+        return entryName;
     }
 
     public String getEntryPath() {
@@ -62,8 +61,8 @@ public class RSSWorkflowPath extends RSSEntryPath {
         segments.add(sourceControl.toString());
         segments.add(organization);
         segments.add(repository);
-        if (workflowName != null && !workflowName.isEmpty()) {
-            segments.add(workflowName);
+        if (entryName != null && !entryName.isEmpty()) {
+            segments.add(entryName);
         }
         return String.join("/", segments);
     }

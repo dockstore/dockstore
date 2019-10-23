@@ -214,11 +214,9 @@ public class MetadataResource {
     @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
     @ApiOperation(value = "List all published tools and workflows in creation order.", notes = "NO authentication")
     public String rssFeed() {
-        List<RSSWorkflowPath> workflowPaths = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate();
-        List<RSSToolPath> toolPaths = toolDAO.findAllPublishedPathsOrderByDbupdatedate();
         List<RSSEntryPath> dbEntries =  new ArrayList<>();
-        dbEntries.addAll(toolPaths);
-        dbEntries.addAll(workflowPaths);
+        dbEntries.addAll(toolDAO.findAllPublishedPathsOrderByDbupdatedate());
+        dbEntries.addAll(bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate());
         dbEntries.sort(Comparator.comparing(RSSEntryPath::getLastUpdated));
         RSSFeed feed = new RSSFeed();
 
@@ -239,11 +237,11 @@ public class MetadataResource {
             String url;
             if (dbEntry instanceof RSSWorkflowPath) {
                 RSSWorkflowPath workflow = (RSSWorkflowPath)dbEntry;
-                url = MetadataResourceHelper.createWorkflowURL(workflow, "workflow");
+                url = MetadataResourceHelper.createURL(workflow.getURLPath("workflow"));
             } else if (dbEntry instanceof RSSToolPath) {
                 RSSToolPath tool = (RSSToolPath)dbEntry;
                 entry.setTitle(tool.getEntryPath());
-                url = MetadataResourceHelper.createToolURL2(tool);
+                url = MetadataResourceHelper.createURL(tool.getURLPath("container"));
             } else {
                 throw new CustomWebApplicationException("Unknown data type unsupported for RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }

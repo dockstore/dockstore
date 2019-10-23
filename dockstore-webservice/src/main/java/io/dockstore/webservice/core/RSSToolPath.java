@@ -28,13 +28,12 @@ public class RSSToolPath extends RSSEntryPath {
     private final String registry;
     private final String namespace;
     private final String name;
-    private final String toolname;
 
-    public RSSToolPath(String registry, String namespace, String name, String toolname, Date lastUpdated, String description) {
+    public RSSToolPath(String registry, String namespace, String name, String entryName, Date lastUpdated, String description) {
         this.registry = registry;
         this.namespace = namespace;
         this.name = name;
-        this.toolname = toolname;
+        this.entryName = entryName;
         this.lastUpdated = lastUpdated;
         this.description = description;
     }
@@ -51,8 +50,8 @@ public class RSSToolPath extends RSSEntryPath {
         return name;
     }
 
-    public String getToolname() {
-        return toolname;
+    public String getEntryName() {
+        return entryName;
     }
 
     public String getEntryPath() {
@@ -60,10 +59,9 @@ public class RSSToolPath extends RSSEntryPath {
         segments.add(registry);
         segments.add(namespace);
         segments.add(name);
-        if (toolname != null && !toolname.isEmpty()) {
-            segments.add(toolname);
+        if (entryName != null && !entryName.isEmpty()) {
+            segments.add(entryName);
         }
         return String.join("/", segments);
     }
-
 }
