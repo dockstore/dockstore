@@ -38,10 +38,6 @@ public final class MetadataResourceHelper {
         return String.format("%s/containers/%s", baseUrl, toolPath.getEntryPath());
     }
 
-    public static String createURL(String entryPath) {
-        return String.format("%s%s", baseUrl, entryPath);
-    }
-
     public static String createOrganizationURL(Organization organization) {
         return baseUrl + "/organizations/" + organization.getName();
     }

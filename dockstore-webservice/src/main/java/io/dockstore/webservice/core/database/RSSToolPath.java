@@ -15,53 +15,27 @@
 
 package io.dockstore.webservice.core.database;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+
+import io.dockstore.webservice.core.Tool;
 
 /**
  * This class is only used to get data from the database in a more type-safe way
  * @author gluu
  * @since 1.8.0
  */
-public class RSSToolPath extends RSSEntryPath {
-    private final String registry;
-    private final String namespace;
-    private final String name;
-
+public class RSSToolPath {
+    private final Tool tool = new Tool();
     public RSSToolPath(String registry, String namespace, String name, String entryName, Date lastUpdated, String description) {
-        this.registry = registry;
-        this.namespace = namespace;
-        this.name = name;
-        this.entryName = entryName;
-        this.lastUpdated = lastUpdated;
-        this.description = description;
+        this.tool.setRegistry(registry);
+        this.tool.setNamespace(namespace);
+        this.tool.setName(name);
+        this.tool.setToolname(entryName);
+        this.tool.setLastUpdated(lastUpdated);
+        this.tool.setDescription(description);
     }
 
-    public String getRegistry() {
-        return registry;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getEntryName() {
-        return entryName;
-    }
-
-    public String getEntryPath() {
-        List<String> segments = new ArrayList<>();
-        segments.add(registry);
-        segments.add(namespace);
-        segments.add(name);
-        if (entryName != null && !entryName.isEmpty()) {
-            segments.add(entryName);
-        }
-        return String.join("/", segments);
+    public Tool getTool() {
+        return tool;
     }
 }

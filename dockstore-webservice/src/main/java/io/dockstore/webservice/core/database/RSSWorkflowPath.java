@@ -15,55 +15,29 @@
 
 package io.dockstore.webservice.core.database;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.core.BioWorkflow;
 
 /**
  * This class is only used to get data from the database in a more type-safe way
  * @author gluu
  * @since 1.8.0
  */
-public class RSSWorkflowPath extends RSSEntryPath {
-    private final SourceControl sourceControl;
-    private final String organization;
-    private final String repository;
+public class RSSWorkflowPath {
+    private final BioWorkflow bioWorkflow = new BioWorkflow();
 
     public RSSWorkflowPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
-        this.sourceControl = sourceControl;
-        this.organization = organization;
-        this.repository = repository;
-        this.entryName = entryName;
-        this.lastUpdated = lastUpdated;
-        this.description = description;
+        this.bioWorkflow.setSourceControl(sourceControl);
+        this.bioWorkflow.setOrganization(organization);
+        this.bioWorkflow.setRepository(repository);
+        this.bioWorkflow.setWorkflowName(entryName);
+        this.bioWorkflow.setLastUpdated(lastUpdated);
+        this.bioWorkflow.setDescription(description);
     }
 
-    public SourceControl getSourceControl() {
-        return sourceControl;
-    }
-
-    public String getOrganization() {
-        return organization;
-    }
-
-    public String getRepository() {
-        return repository;
-    }
-
-    public String getEntryName() {
-        return entryName;
-    }
-
-    public String getEntryPath() {
-        List<String> segments = new ArrayList<>();
-        segments.add(sourceControl.toString());
-        segments.add(organization);
-        segments.add(repository);
-        if (entryName != null && !entryName.isEmpty()) {
-            segments.add(entryName);
-        }
-        return String.join("/", segments);
+    public BioWorkflow getBioWorkflow() {
+        return bioWorkflow;
     }
 }
