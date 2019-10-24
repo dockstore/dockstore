@@ -160,7 +160,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String dockstoreUrl;
     private final String dockstoreGA4GHBaseUrl;
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
         super(client, sessionFactory, configuration, Workflow.class);
@@ -556,7 +555,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param user Dockstore with Zenodo account
      */
     private List<Token> checkOnZenodoToken(User user) {
-        // TODO Implement refresh for Zenodo token
         List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
         if (!tokens.isEmpty()) {
             Token zenodoToken = tokens.get(0);
@@ -623,16 +621,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         //TODO: Determine whether workflow DOIStatus is needed; we don't use it
         //E.g. Version.DOIStatus.CREATED
 
-
         ApiClient zenodoClient = new ApiClient();
         // for testing, either 'https://sandbox.zenodo.org/api' or 'https://zenodo.org/api' is the first parameter
         String zenodoUrlApi = zenodoUrl + "/api";
         zenodoClient.setBasePath(zenodoUrlApi);
         zenodoClient.setApiKey(zenodoAccessToken);
 
-        String workflowUrl = MetadataResourceHelper.createWorkflowURL(workflow);
-        ZenodoHelper.registerZenodoDOIForWorkflow(zenodoClient, dockstoreGA4GHBaseUrl, dockstoreUrl,
-                workflowUrl, workflow, workflowVersion, this);
+        registerZenodoDOIForWorkflow(zenodoClient, workflow, workflowVersion, user);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
@@ -640,6 +635,33 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return result.getWorkflowVersions();
 
     }
+
+    /**
+     * Register a Zenodo DOI for the workflow and workflow version
+     * @param zenodoClient Client for interacting with Zenodo server
+     * @param workflow    workflow for which DOI is registered
+     * @param workflowVersion workflow version for which DOI is registered
+     * @param user user authenticated to issue a DOI for the workflow
+     */
+    private void registerZenodoDOIForWorkflow(ApiClient zenodoClient, Workflow workflow, WorkflowVersion workflowVersion, User user) {
+
+        // Create Dockstore workflow URL (e.g. https://dockstore.org/workflows/github.com/DataBiosphere/topmed-workflows/UM_variant_caller_wdl)
+        String workflowUrl = MetadataResourceHelper.createWorkflowURL(workflow);
+
+        ZenodoHelper.ZenodoDoiResult zenodoDoiResult = ZenodoHelper.registerZenodoDOI(zenodoClient, workflow,
+                workflowVersion, workflowUrl, dockstoreGA4GHBaseUrl, dockstoreUrl, this);
+
+        workflowVersion.setDoiURL(zenodoDoiResult.getDoiUrl());
+        workflow.setConceptDoi(zenodoDoiResult.getConceptDoi());
+        // Only add the alias to the workflow after publishing the DOI succeeds
+        // Otherwise if the publish call fails we will have added an alias
+        // that will not be used and cannot be deleted
+        // This code also checks that the alias does not start with an invalid prefix
+        // If it does, this will generate an exception, the alias will not be added
+        // to the workflow, but there may be an invalid Related Identifier URL on the Zenodo entry
+        entryResource.addAliasesAndCheck(user, workflow.getId(), zenodoDoiResult.getDoiAlias(), false);
+    }
+
 
     private String workflowNameAndVersion(Workflow workflow, WorkflowVersion workflowVersion) {
         return workflow.getWorkflowPath() + ":" + workflowVersion.getName();
