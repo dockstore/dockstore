@@ -29,7 +29,8 @@ import org.slf4j.LoggerFactory;
  * Future home of code for managing the sitemap
  */
 public class SitemapListener implements StateListenerInterface {
-
+    // The cache only has one key, arbitrarily choosing it to be this
+    public static final String SITEMAP_KEY = "sitemap";
     private static final Logger LOGGER = LoggerFactory.getLogger(SitemapListener.class);
     private Cache<String, SortedSet<String>> cache = CacheBuilder.newBuilder().build();
 

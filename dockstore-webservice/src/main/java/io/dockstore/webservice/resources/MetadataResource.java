@@ -97,6 +97,8 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
+
 /**
  * @author dyuen
  */
@@ -137,7 +139,7 @@ public class MetadataResource {
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
         try {
-            SortedSet<String> sitemap = sitemapListener.getCache().get("sitemap", this::getSitemap);
+            SortedSet<String> sitemap = sitemapListener.getCache().get(SITEMAP_KEY, this::getSitemap);
             return String.join(System.lineSeparator(), sitemap);
         } catch (ExecutionException e) {
             throw new CustomWebApplicationException("Sitemap cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
