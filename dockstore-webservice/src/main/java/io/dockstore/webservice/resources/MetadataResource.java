@@ -28,7 +28,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -65,7 +64,6 @@ import io.dockstore.webservice.core.WorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
-import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
@@ -128,10 +126,7 @@ public class MetadataResource {
         this.config = config;
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
-
-        Optional<StateListenerInterface> first = PublicStateManager.getInstance().getListeners().stream()
-                .filter(l -> l instanceof SitemapListener).findFirst();
-        sitemapListener = (SitemapListener)first.orElse(null);
+        this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
     }
 
     @GET

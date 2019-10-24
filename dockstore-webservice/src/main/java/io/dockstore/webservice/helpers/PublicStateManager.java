@@ -16,10 +16,14 @@
 package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
+import io.dockstore.webservice.helpers.statelisteners.RSSListener;
+import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
 
 /**
@@ -28,11 +32,19 @@ import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
  */
 public final class PublicStateManager {
     private static final PublicStateManager SINGLETON = new PublicStateManager();
+
+    private final SitemapListener sitemapListener = new SitemapListener();
+    private final RSSListener rssListener = new RSSListener();
+    private final ElasticListener elasticListener = new ElasticListener();
+    private final List<StateListenerInterface> listeners = new ArrayList<>(Arrays.asList(sitemapListener, rssListener, elasticListener));
     private DockstoreWebserviceConfiguration config;
-    private List<StateListenerInterface> listeners = new ArrayList<>();
 
     private PublicStateManager() {
         // inaccessible on purpose
+    }
+
+    public SitemapListener getSitemapListener() {
+        return sitemapListener;
     }
 
     public static PublicStateManager getInstance() {
@@ -58,9 +70,12 @@ public final class PublicStateManager {
 
     public void setConfig(DockstoreWebserviceConfiguration config) {
         this.config = config;
+        for (StateListenerInterface listener : listeners) {
+            listener.setConfig(config);
+        }
     }
 
-    public List<StateListenerInterface> getListeners() {
+    private List<StateListenerInterface> getListeners() {
         return listeners;
     }
 }

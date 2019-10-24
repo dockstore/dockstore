@@ -56,9 +56,6 @@ import io.dockstore.webservice.helpers.ObsoleteUrlFactory;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
-import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
-import io.dockstore.webservice.helpers.statelisteners.RSSListener;
-import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -235,9 +232,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PublicStateManager publicStateManager = PublicStateManager.getInstance();
         publicStateManager.setConfig(configuration);
-        publicStateManager.addListener(new ElasticListener());
-        publicStateManager.addListener(new RSSListener());
-        publicStateManager.addListener(new SitemapListener());
         final TRSListener trsListener = new TRSListener();
         publicStateManager.addListener(trsListener);
 
