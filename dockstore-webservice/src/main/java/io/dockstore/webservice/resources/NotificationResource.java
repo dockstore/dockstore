@@ -2,6 +2,7 @@ package io.dockstore.webservice.resources;
 
 import java.util.List;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -26,8 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
-@Path("/curation")
-@Api("/curation")
+@Path("curation")
+@Api("curation")
 @Produces(MediaType.APPLICATION_JSON)
 public class NotificationResource {
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
@@ -66,7 +67,7 @@ public class NotificationResource {
     @POST
     @Path("/notifications")
     @UnitOfWork
-    //@RolesAllowed({"curator", "admin"})
+    @RolesAllowed({"curator", "admin"})
     @ApiOperation(value = "Create a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
     public Notification createNotification(@ApiParam(value = "Notification to create", required = true) Notification notification) {
@@ -78,9 +79,9 @@ public class NotificationResource {
     @DELETE
     @Path("/notifications/{id}")
     @UnitOfWork
-    //@RolesAllowed({ "curator", "admin" })
+    @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Delete a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Curator/admin only")
-    public void deleteNotification(@PathParam("id") Long id) {
+    public void deleteNotification(@ApiParam(value = "Notification to delete", required = true) @PathParam("id") Long id) {
         Notification notification = notificationDAO.findById(id);
         throwErrorIfNull(notification);
         notificationDAO.delete(notification);
@@ -90,10 +91,11 @@ public class NotificationResource {
     @PUT
     @Path("/notifications/{id}")
     @UnitOfWork
-    //@RolesAllowed({ "curator", "admin" })
+    @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Update a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
-    public Notification updateNotification(@ApiParam(value = "Updated version of notification", required = true) Notification notification) {
+    public Notification updateNotification(@ApiParam(value = "Notification to update", required = true) @PathParam("id") long id,
+                                           @ApiParam(value = "Updated version of notification", required = true) Notification notification) {
         return notificationDAO.update(notification);
     }
 

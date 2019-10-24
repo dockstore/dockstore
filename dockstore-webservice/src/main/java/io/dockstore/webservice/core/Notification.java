@@ -1,6 +1,6 @@
 package io.dockstore.webservice.core;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -40,7 +40,7 @@ public class Notification {
     private String message;
 
     @Column
-    private LocalDateTime expiration;
+    private Timestamp expiration;
 
     @Column
     @Enumerated(EnumType.STRING)
@@ -48,7 +48,7 @@ public class Notification {
 
     public Notification() { }  // blank constructor called by POST request
 
-    public Notification(long id, String message, LocalDateTime expiration, Priority priority) {
+    public Notification(long id, String message, Timestamp expiration, Priority priority) {
         this.id = id;
         this.message = message;
         this.expiration = expiration;
@@ -60,6 +60,7 @@ public class Notification {
     }
 
     public void setId(long id) {
+        System.out.println(id);
         this.id = id;
     }
 
@@ -71,11 +72,11 @@ public class Notification {
         this.message = message;
     }
 
-    public LocalDateTime getExpiration() {
+    public Timestamp getExpiration() {
         return expiration;
     }
 
-    public void setExpiration(LocalDateTime expiration) {
+    public void setExpiration(Timestamp expiration) {
         this.expiration = expiration;
     }
 
