@@ -35,6 +35,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -96,6 +97,8 @@ public class SearchResourceIT extends BaseIT {
         waitForRefresh(1500);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
+        assertTrue(s.contains("\"aliases\":{}"));
+        assertFalse(s.contains("\"aliases\":null"));
         assertTrue(s.contains(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW));
     }
 
