@@ -81,9 +81,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all available organizations.", notes = "NO Authentication", responseContainer = "List", response = Organization.class)
     public List<Organization> getApprovedOrganizations() {
-        List<Organization> organizations = organizationDAO.findApprovedSortedByStar();
-        organizations.forEach(organization -> Hibernate.initialize(organization.getAliases()));
-        return organizations;
+        return organizationDAO.findApprovedSortedByStar();
     }
 
     @POST
