@@ -43,7 +43,7 @@
         </sql>
     </changeSet>
 
-    <changeSet author="natalieperez (generated)" id="docker_checksums">
+    <changeSet author="natalieperez (generated)" id="create_images_checksums">
         <createTable tableName="entry_version_image">
             <column name="versionid" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="entry_version_image_pkey"/>
@@ -56,7 +56,7 @@
             <column autoIncrement="true" name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" primaryKeyName="image_pkey"/>
             </column>
-            <column name="checksums" type="BYTEA"/>
+            <column name="checksums" type="VARCHAR(255)"/>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="image_id" type="VARCHAR(255)"/>
@@ -66,4 +66,4 @@
         <addUniqueConstraint columnNames="imageid" constraintName="uk_f4es6vge9tpr3v836n62konau" tableName="entry_version_image"/>
         <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fkfiy442cs8k24x8f3wnyxakh3w" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
     </changeSet>
-   </databaseChangeLog>
+</databaseChangeLog>

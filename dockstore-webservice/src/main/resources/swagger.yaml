@@ -6198,6 +6198,13 @@ definitions:
         position: 26
         readOnly: true
     description: "This describes one workflow in the dockstore"
+  Checksum:
+    type: "object"
+    properties:
+      type:
+        type: "string"
+      checksum:
+        type: "string"
   Collection:
     type: "object"
     required:
@@ -6829,9 +6836,7 @@ definitions:
         position: 1
         description: "Checksum(s) associated with this image"
         items:
-          type: "array"
-          items:
-            type: "string"
+          $ref: "#/definitions/Checksum"
       repository:
         type: "string"
         position: 2

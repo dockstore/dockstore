@@ -18,8 +18,10 @@ package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -43,8 +45,9 @@ public class Image {
     private long id;
 
     @Column(name = "checksums")
+    @Convert(converter = ChecksumConverter.class)
     @ApiModelProperty(value = "Checksum(s) associated with this image", position = 1)
-    private ArrayList<String[]> checksums = new ArrayList<>();
+    private List<Checksum> checksums = new ArrayList<>();
 
     @Column(name = "repository")
     @ApiModelProperty(value = "Repository image belongs to", position = 2)
@@ -70,7 +73,7 @@ public class Image {
 
     }
 
-    public Image(ArrayList<String[]> checksums, String repository, String tag, String imageID) {
+    public Image(ArrayList<Checksum> checksums, String repository, String tag, String imageID) {
         this.checksums = checksums;
         this.repository = repository;
         this.tag = tag;
@@ -101,11 +104,37 @@ public class Image {
         return this.repository;
     }
 
-    public ArrayList<String[]> getChecksums() {
-        return checksums;
-    }
+    //    public void setChecksums(String checksums) {
+    //        this.checksums = checksums;
+    //    }
+    //
+    //    public String getChecksums() {
+    //        return this.checksums;
+    //    }
 
-    public void setChecksums(ArrayList<String[]> checksums) {
+    public void setChecksums(List<Checksum> checksums) {
         this.checksums = checksums;
     }
+
+    public List<Checksum> getChecksums() {
+        return this.checksums;
+    }
+    //    @JsonProperty("checksums")
+    //    public List<Checksum> getChecksums() {
+    //        List<Checksum> cs = new ArrayList<>();
+    //        if (!this.checksums.isEmpty()) {
+    //            for (Checksum c : cs) {
+    //                cs.add(new Checksum(c.toString().split(":")[0], c.toString().split(":")[1]));
+    //            }
+    //        }
+    //        return cs;
+    //    }
+    //
+    //    public void setChecksums(List<Checksum> checksums) {
+    //        if (!checksums.isEmpty()) {
+    //            for (Checksum c : checksums) {
+    //                this.checksums.add(c.getType() + ":" + c.getChecksum());
+    //            }
+    //        }
+    //    }
 }

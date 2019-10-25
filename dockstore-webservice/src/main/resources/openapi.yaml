@@ -6578,6 +6578,13 @@ components:
           type: string
           readOnly: true
       description: This describes one workflow in the dockstore
+    Checksum:
+      type: object
+      properties:
+        type:
+          type: string
+        checksum:
+          type: string
     Collection:
       type: object
       required:
@@ -7151,9 +7158,7 @@ components:
           type: array
           description: Checksum(s) associated with this image
           items:
-            type: array
-            items:
-              type: string
+            $ref: "#/components/schemas/Checksum"
         repository:
           type: string
           description: Repository image belongs to
