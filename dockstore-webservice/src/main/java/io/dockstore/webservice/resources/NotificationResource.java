@@ -27,27 +27,25 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
-@Path("curation")
-@Api("curation")
+@Path("/curation")
+@Api("/curation")
 @Produces(MediaType.APPLICATION_JSON)
 public class NotificationResource {
-    private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NotificationResource.class);
 
     // interface between the endpoint and the database
     private final NotificationDAO notificationDAO;
-    private final SessionFactory sessionFactory;
 
     // constructor
     public NotificationResource(SessionFactory sessionFactory) {
         this.notificationDAO = new NotificationDAO(sessionFactory);
-        this.sessionFactory = sessionFactory;
     }
 
     // get a notification by its id
     @GET
     @Path("/notifications/{id}")
     @UnitOfWork
-    @ApiOperation(value = "Return the notification with given id.", notes = "NO Authentication", responseContainer = "List", response = Notification.class)
+    @ApiOperation(value = "Return the notification with given id", notes = "NO Authentication", responseContainer = "List", response = Notification.class)
     public Notification getNotification(@PathParam("id") Long id) {
         Notification notification = notificationDAO.findById(id);
         throwErrorIfNull(notification);
@@ -96,6 +94,11 @@ public class NotificationResource {
             notes = "Curator/admin only", response = Notification.class)
     public Notification updateNotification(@ApiParam(value = "Notification to update", required = true) @PathParam("id") long id,
                                            @ApiParam(value = "Updated version of notification", required = true) Notification notification) {
+        if (id != notification.getId()) {
+            String msg = "ID in path and notification param must match";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
         return notificationDAO.update(notification);
     }
 

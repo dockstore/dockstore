@@ -14,6 +14,9 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Represents a site-wide notification that will be displayed in a notification bar at the top of every page
@@ -29,22 +32,43 @@ import io.swagger.annotations.ApiModel;
         @NamedQuery(name = "io.dockstore.webservice.core.Notification.getActiveNotifications",
                 query = "SELECT n FROM Notification n WHERE n.expiration > CURRENT_TIMESTAMP"),
 })
+@SuppressWarnings("checkstyle:magicnumber")
 public class Notification {
 
     @Id
     @Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // id is auto incremented by the database
+    @ApiModelProperty(value = "ID for the notification", position = 0)
     private long id;
 
     @Column
+    @ApiModelProperty(value = "Text content of the notification to be displayed", position = 1)
     private String message;
 
     @Column
+    @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2)
     private Timestamp expiration;
 
     @Column
     @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Type of notification, sitewide or newsbody", position = 3)
+    private Type type;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Priority level of the notification", position = 4)
     private Priority priority;  // LOW, MEDIUM, HIGH, or CRITICAL
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    @ApiModelProperty(value = "Timestamp at which the notification was created", position = 5)
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    @ApiModelProperty(value = "Timestamp at which the notification was last updated", position = 6)
+    private Timestamp dbUpdateDate;
 
     public Notification() { }  // blank constructor called by POST request
 
@@ -60,7 +84,6 @@ public class Notification {
     }
 
     public void setId(long id) {
-        System.out.println(id);
         this.id = id;
     }
 
@@ -88,7 +111,20 @@ public class Notification {
         this.priority = priority;
     }
 
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+
     public enum Priority {
         LOW, MEDIUM, HIGH, CRITICAL
+    }
+
+    public enum Type {
+        SITEWIDE, NEWSBODY
     }
 }

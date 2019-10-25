@@ -12,9 +12,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
 
 @Category(ConfidentialTest.class)
 public class NotificationIT extends BaseIT {
@@ -26,6 +26,8 @@ public class NotificationIT extends BaseIT {
     private final ApiClient webClientUser = getWebClient(USER_1_USERNAME, testingPostgres);
     private CurationApi curationApiUser = new CurationApi(webClientUser);
 
+    private String currentMsg = "ayy";
+
     private Notification testNotification() {
         Notification notification = new Notification();
         notification.setMessage("holla");
@@ -36,7 +38,7 @@ public class NotificationIT extends BaseIT {
 
     private Notification anotherTestNotification() {
         Notification notification = new Notification();
-        notification.setMessage("ayy");
+        notification.setMessage(currentMsg);
         notification.setExpiration(new Timestamp(System.currentTimeMillis() + 100000));  // a future timestamp
         notification.setPriority(Notification.PriorityEnum.HIGH);
         return notification;
@@ -53,8 +55,8 @@ public class NotificationIT extends BaseIT {
 
         // get notifications and confirm that only the non-expired one is returned
         List<Notification> activeNotifications = curationApiUser.getActiveNotifications();
-        assertEquals(activeNotifications.size(), 1);
-        assertEquals(activeNotifications.get(0).getMessage(), "ayy");
+        assertEquals(1, activeNotifications.size());
+        assertEquals("ayy", activeNotifications.get(0).getMessage());
     }
 
     @Test
@@ -73,7 +75,7 @@ public class NotificationIT extends BaseIT {
         try {
             curationApiUser.createNotification(notification);  // try to create as non-admin
         } catch (ApiException e) {
-            userCanCreate = false;  // this should return a 400 error
+            userCanCreate = false;  // this should return a 401 error
         }
         assertFalse(userCanCreate);  // only admin/curators should be able to create notifications
     }
@@ -90,7 +92,7 @@ public class NotificationIT extends BaseIT {
         try {
             curationApiUser.deleteNotification(id);
         } catch (ApiException e) {
-            userCanDelete = false;  // this should return a 400 error
+            userCanDelete = false;  // this should return a 401 error
         }
         assertFalse(userCanDelete);
 
@@ -106,28 +108,23 @@ public class NotificationIT extends BaseIT {
         // create a test notification and add it to the database
         Notification notification = curationApiAdmin.createNotification(testNotification());
         long id = notification.getId();
-        System.out.println(id);
 
         Notification update = anotherTestNotification();  // make another notification to use as the update
-        System.out.println("here");
         update.setId(id);  // set to the same id so the update will overwrite existing entry
 
         // try to update as non-admin
         boolean userCanUpdate = true;
         try {
-            System.out.println(update.getId());
             curationApiUser.updateNotification(id, update);
         } catch (ApiException e) {
-            userCanUpdate = false;  // this should return a 400 error
+            userCanUpdate = false;  // this should return a 401 error
         }
         assertFalse(userCanUpdate);
-        System.out.println(id);
 
         // try to update as admin
         curationApiAdmin.updateNotification(id, update);
-        System.out.println(id);
         String message = testingPostgres.runSelectStatement(String.format("select message from notification where id = '%s'", id), String.class);
-        assertEquals(message, "ayy");  // confirm that the database entry was updated
+        assertEquals(currentMsg, message);  // confirm that the database entry was updated
 
     }
 }

@@ -2484,7 +2484,7 @@ paths:
     get:
       tags:
       - "curation"
-      summary: "Return the notification with given id."
+      summary: "Return the notification with given id"
       description: "NO Authentication"
       operationId: "getNotification"
       produces:
@@ -6893,13 +6893,27 @@ definitions:
       id:
         type: "integer"
         format: "int64"
+        description: "ID for the notification"
       message:
         type: "string"
+        position: 1
+        description: "Text content of the notification to be displayed"
       expiration:
         type: "string"
         format: "date-time"
+        position: 2
+        description: "Timestamp at which the notification is expired"
+      type:
+        type: "string"
+        position: 3
+        description: "Type of notification, sitewide or newsbody"
+        enum:
+        - "SITEWIDE"
+        - "NEWSBODY"
       priority:
         type: "string"
+        position: 4
+        description: "Priority level of the notification"
         enum:
         - "LOW"
         - "MEDIUM"
