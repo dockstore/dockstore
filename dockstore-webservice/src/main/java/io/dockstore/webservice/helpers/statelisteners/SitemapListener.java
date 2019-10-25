@@ -16,7 +16,10 @@
 package io.dockstore.webservice.helpers.statelisteners;
 
 import java.util.List;
+import java.util.SortedSet;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import org.slf4j.Logger;
@@ -26,16 +29,35 @@ import org.slf4j.LoggerFactory;
  * Future home of code for managing the sitemap
  */
 public class SitemapListener implements StateListenerInterface {
-
+    // The cache only has one key, arbitrarily choosing it to be this
+    public static final String SITEMAP_KEY = "sitemap";
     private static final Logger LOGGER = LoggerFactory.getLogger(SitemapListener.class);
+    private Cache<String, SortedSet<String>> cache = CacheBuilder.newBuilder().build();
+
+    /**
+     * Custom getter
+     * @return
+     */
+    public Cache<String, SortedSet<String>> getCache() {
+        return cache;
+    }
 
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
-        LOGGER.error("this should update the sitemap for the one new entry");
+        //TODO ideally, we could should update the sitemap for the one new entry
+        if (command == StateManagerMode.UPDATE) {
+            return;
+        }
+        invalidateCache();
+    }
+
+    public void invalidateCache() {
+        this.cache.invalidateAll();
     }
 
     @Override
     public void bulkUpsert(List<Entry> entries) {
-        LOGGER.error("this should generate a whole new sitemap");
+        //TODO ideally, the listener should know how to generate a whole new sitemap, probably not worth it right now
+        invalidateCache();
     }
 }

@@ -90,6 +90,7 @@ public class ElasticListener implements StateListenerInterface {
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
             org.elasticsearch.client.Response post;
             switch (command) {
+            case PUBLISH:
             case UPDATE:
                 post = restClient
                     .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);

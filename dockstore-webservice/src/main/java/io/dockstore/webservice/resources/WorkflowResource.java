@@ -785,7 +785,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         long id = workflowDAO.create(workflow);
         workflow = workflowDAO.findById(id);
         if (request.getPublish()) {
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
             if (workflow.getTopicId() == null) {
                 try {
                     entryResource.createAndSetDiscourseTopic(id);

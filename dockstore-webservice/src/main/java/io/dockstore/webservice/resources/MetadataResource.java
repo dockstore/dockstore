@@ -24,11 +24,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.DefaultValue;
@@ -60,6 +62,8 @@ import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
@@ -93,6 +97,8 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
+
 /**
  * @author dyuen
  */
@@ -103,8 +109,8 @@ import org.slf4j.LoggerFactory;
 public class MetadataResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
-    private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
+    private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
     private final OrganizationDAO organizationDAO;
@@ -112,6 +118,7 @@ public class MetadataResource {
     private final BioWorkflowDAO bioWorkflowDAO;
     private final ServiceDAO serviceDAO;
     private final DockstoreWebserviceConfiguration config;
+    private final SitemapListener sitemapListener;
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
         this.toolDAO = new ToolDAO(sessionFactory);
@@ -121,6 +128,7 @@ public class MetadataResource {
         this.config = config;
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
+        this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
     }
 
     @GET
@@ -130,14 +138,22 @@ public class MetadataResource {
     @Operation(summary = "List all available workflow, tool, organization, and collection paths.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
-        List<String> urls = new ArrayList<>();
+        try {
+            SortedSet<String> sitemap = sitemapListener.getCache().get(SITEMAP_KEY, this::getSitemap);
+            return String.join(System.lineSeparator(), sitemap);
+        } catch (ExecutionException e) {
+            throw new CustomWebApplicationException("Sitemap cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public SortedSet<String> getSitemap() {
+        SortedSet<String> urls = new TreeSet<>();
         urls.addAll(getToolPaths());
         urls.addAll(getBioWorkflowPaths());
         // Do not append services yet
         // urls.addAll(getServicePaths());
         urls.addAll(getOrganizationAndCollectionPaths());
-        Collections.sort(urls);
-        return String.join(System.lineSeparator(), urls);
+        return urls;
     }
 
     /**
