@@ -15,8 +15,7 @@
 
 package io.dockstore.webservice.core.database;
 
-import java.util.ArrayList;
-import java.util.List;
+import io.dockstore.webservice.core.Tool;
 
 /**
  * This class is only used to get data from the database in a more type-safe way
@@ -24,43 +23,17 @@ import java.util.List;
  * @since 1.8.0
  */
 public class ToolPath {
-    private final String registry;
-    private final String namespace;
-    private final String name;
-    private final String toolname;
+    private final Tool tool = new Tool();
 
     public ToolPath(String registry, String namespace, String name, String toolname) {
-        this.registry = registry;
-        this.namespace = namespace;
-        this.name = name;
-        this.toolname = toolname;
+        this.tool.setRegistry(registry);
+        this.tool.setNamespace(namespace);
+        this.tool.setName(name);
+        this.tool.setToolname(toolname);
     }
 
-    public String getRegistry() {
-        return registry;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getToolname() {
-        return toolname;
-    }
-
-    public String getEntryPath() {
-        List<String> segments = new ArrayList<>();
-        segments.add(registry);
-        segments.add(namespace);
-        segments.add(name);
-        if (toolname != null && !toolname.isEmpty()) {
-            segments.add(toolname);
-        }
-        return String.join("/", segments);
+    public Tool getTool() {
+        return tool;
     }
 
 }

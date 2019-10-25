@@ -60,8 +60,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
-import io.dockstore.webservice.core.database.ToolPath;
-import io.dockstore.webservice.core.database.WorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
@@ -152,8 +150,6 @@ public class MetadataResource {
         SortedSet<String> urls = new TreeSet<>();
         urls.addAll(getToolPaths());
         urls.addAll(getBioWorkflowPaths());
-        // Do not append services yet
-        // urls.addAll(getServicePaths());
         urls.addAll(getOrganizationAndCollectionPaths());
         return urls;
     }
@@ -174,20 +170,12 @@ public class MetadataResource {
     }
 
     private List<String> getToolPaths() {
-        List<ToolPath> toolPaths = toolDAO.findAllPublishedPaths();
-        return toolPaths.stream().map(MetadataResourceHelper::createToolURL2).collect(Collectors.toList());
+        return toolDAO.findAllPublishedPaths().stream().map(toolPath -> createToolURL(toolPath.getTool())).collect(Collectors.toList());
     }
 
     private List<String> getBioWorkflowPaths() {
-        List<WorkflowPath> workflowPaths = bioWorkflowDAO.findAllPublishedPaths();
-        return workflowPaths.stream().map(
-            (WorkflowPath workflow) -> MetadataResourceHelper.createWorkflowURL(workflow, "workflow")).collect(Collectors.toList());
-    }
-
-    private List<String> getServicePaths() {
-        List<WorkflowPath> workflowPaths = serviceDAO.findAllPublishedPaths();
-        return workflowPaths.stream().map(
-            (WorkflowPath workflow) -> MetadataResourceHelper.createWorkflowURL(workflow, "service")).collect(Collectors.toList());
+        return bioWorkflowDAO.findAllPublishedPaths().stream().map(workflowPath -> createWorkflowURL(workflowPath.getBioWorkflow())).collect(
+                Collectors.toList());
     }
 
     private String createOrganizationURL(Organization organization) {

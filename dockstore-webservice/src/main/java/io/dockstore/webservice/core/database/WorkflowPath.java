@@ -15,10 +15,8 @@
 
 package io.dockstore.webservice.core.database;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.core.BioWorkflow;
 
 /**
  * This class is only used to get data from the database in a more type-safe way
@@ -26,42 +24,17 @@ import io.dockstore.common.SourceControl;
  * @since 1.8.0
  */
 public class WorkflowPath {
-    private final SourceControl sourceControl;
-    private final String organization;
-    private final String repository;
-    private final String workflowName;
+    private final BioWorkflow bioWorkflow = new BioWorkflow();
 
     public WorkflowPath(SourceControl sourceControl, String organization, String repository, String workflowName) {
-        this.sourceControl = sourceControl;
-        this.organization = organization;
-        this.repository = repository;
-        this.workflowName = workflowName;
+        this.bioWorkflow.setSourceControl(sourceControl);
+        this.bioWorkflow.setOrganization(organization);
+        this.bioWorkflow.setRepository(repository);
+        this.bioWorkflow.setWorkflowName(workflowName);
     }
 
-    public SourceControl getSourceControl() {
-        return sourceControl;
+    public BioWorkflow getBioWorkflow() {
+        return bioWorkflow;
     }
 
-    public String getOrganization() {
-        return organization;
-    }
-
-    public String getRepository() {
-        return repository;
-    }
-
-    public String getWorkflowName() {
-        return workflowName;
-    }
-
-    public String getEntryPath() {
-        List<String> segments = new ArrayList<>();
-        segments.add(sourceControl.toString());
-        segments.add(organization);
-        segments.add(repository);
-        if (workflowName != null && !workflowName.isEmpty()) {
-            segments.add(workflowName);
-        }
-        return String.join("/", segments);
-    }
 }
