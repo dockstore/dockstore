@@ -218,7 +218,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     public Organization getOrganizationById(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id) {
-        return getOrganizationByIdOptionalAuth(user, id);
+        Organization organization = getOrganizationByIdOptionalAuth(user, id);
+        Hibernate.initialize(organization.getAliases());
+        return organization;
     }
 
     @GET

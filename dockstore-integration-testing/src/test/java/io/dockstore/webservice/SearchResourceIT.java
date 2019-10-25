@@ -22,6 +22,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.ExtendedGa4GhApi;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -35,6 +36,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -76,6 +78,7 @@ public class SearchResourceIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
 
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        EntriesApi entriesApi = new EntriesApi(webClient);
         // update the search index
         extendedGa4GhApi.toolsIndexGet();
         waitForRefresh(5000);
@@ -86,16 +89,19 @@ public class SearchResourceIT extends BaseIT {
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-
+        entriesApi.addAliases(workflow.getId(), "potatoAlias");
         workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
         waitForRefresh(1500);
         String exampleESQuery = "{\"size\":201,\"_source\":{\"excludes\":[\"*.content\",\"*.sourceFiles\",\"description\",\"users\",\"workflowVersions.dirtyBit\",\"workflowVersions.hidden\",\"workflowVersions.last_modified\",\"workflowVersions.name\",\"workflowVersions.valid\",\"workflowVersions.workflow_path\",\"workflowVersions.workingDirectory\",\"workflowVersions.reference\"]},\"query\":{\"match_all\":{}}}";
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         waitForRefresh(1500);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
+        assertTrue(s.contains("\"aliases\":{\"potatoAlias\":{}}"));
+        assertTrue(s.contains("\"aliases\":{}"));
+        assertFalse(s.contains("\"aliases\":null"));
         assertTrue(s.contains(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW));
     }
 
