@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.8.0-alpha.0-SNAPSHOT
+  version: 1.8.0-alpha.1-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -4464,6 +4464,74 @@ paths:
                   $ref: "#/components/schemas/DockstoreTool"
       security:
         - BEARER: []
+  "/users/{userId}/entries":
+    get:
+      tags:
+        - users
+      summary: See OpenApi for details
+      description: ""
+      operationId: getUserEntries
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EntryUpdateTime"
+  "/users/{userId}/organizations":
+    get:
+      tags:
+        - users
+      summary: See OpenApi for details
+      description: ""
+      operationId: getUserDockstoreOrganizations
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationUpdateTime"
   "/users/{userId}/services":
     get:
       tags:
@@ -6884,6 +6952,20 @@ components:
           type: string
           description: The Digital Object Identifier (DOI) representing all of the versions
             of your workflow
+    EntryUpdateTime:
+      type: object
+      properties:
+        path:
+          type: string
+        entryType:
+          type: string
+          enum:
+            - TOOL
+            - WORKFLOW
+            - SERVICE
+        lastUpdateDate:
+          type: string
+          format: date-time
     Error:
       type: object
       required:
@@ -7107,6 +7189,16 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/User"
+    OrganizationUpdateTime:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        lastUpdateDate:
+          type: string
+          format: date-time
     OrganizationUser:
       type: object
       required:

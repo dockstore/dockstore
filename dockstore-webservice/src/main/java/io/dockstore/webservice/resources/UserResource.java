@@ -16,7 +16,9 @@
 
 package io.dockstore.webservice.resources;
 
+import java.sql.Timestamp;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,23 +44,29 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
+import io.dockstore.common.EntryType;
+import io.dockstore.common.EntryUpdateTime;
+import io.dockstore.common.OrganizationUpdateTime;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -594,6 +602,110 @@ public class UserResource implements AuthenticatedResourceInterface {
         EntryVersionHelper.stripContent(tools, this.userDAO);
         return tools;
     }
+    @GET
+    @Path("/{userId}/organizations")
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Operation(operationId = "getUserDockstoreOrganizations", description = "Get all of the Dockstore organizations for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<OrganizationUpdateTime> getUserDockstoreOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+                                                            @Parameter(name = "User ID", description = "ID of user", required = true, in = ParameterIn.PATH) @PathParam("userId") long userId,
+                                                            @Parameter(name = "count", description = "Maximum number of organizations to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
+                                                            @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
+        checkUser(authUser, userId);
+        final User fetchedUser = this.userDAO.findById(userId);
+
+        final List<OrganizationUpdateTime> organizations = new ArrayList<>();
+
+        Set<OrganizationUser> organizationUsers = fetchedUser.getOrganizations();
+        organizationUsers.forEach((OrganizationUser organizationUser) -> {
+            Organization organization = organizationUser.getOrganization();
+            Optional<Collection> mostRecentCollection = organization.getCollections().stream().max(Comparator.comparing(Collection::getDbUpdateDate));
+            Timestamp timestamp = organization.getDbUpdateDate();
+            if (mostRecentCollection.isPresent()) {
+                if (timestamp.before(mostRecentCollection.get().getDbUpdateDate())) {
+                    timestamp = mostRecentCollection.get().getDbUpdateDate();
+                }
+            }
+            organizations.add(new OrganizationUpdateTime(organization.getName(), organization.getDisplayName(), timestamp));
+        });
+
+        List<OrganizationUpdateTime> sortedOrganizations = organizations.stream().sorted(Comparator.comparing(OrganizationUpdateTime::getLastUpdateDate).reversed()).collect(Collectors.toList());
+
+        if (filter != null && !filter.isBlank()) {
+            sortedOrganizations = sortedOrganizations.stream().filter((OrganizationUpdateTime organization) -> organization.getName().contains(filter) || organization.getDisplayName().contains(filter)).collect(Collectors.toList());
+        }
+
+        if (count != null) {
+            return sortedOrganizations.subList(0, count < sortedOrganizations.size() ? count : sortedOrganizations.size());
+        }
+        return sortedOrganizations;
+    }
+
+    @GET
+    @Path("/{userId}/entries")
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Operation(operationId = "getUserEntries", description = "Get all of the entries for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+                                                @Parameter(name = "User ID", description = "ID of user", required = true, in = ParameterIn.PATH) @PathParam("userId") long userId,
+                                                @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
+                                                @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
+        checkUser(authUser, userId);
+        final User fetchedUser = this.userDAO.findById(userId);
+
+        final List<EntryUpdateTime> entries = new ArrayList<>();
+
+        List<Tool> tools = getTools(fetchedUser);
+        tools.stream().forEach((Tool tool) -> {
+            Optional<Tag> mostRecentTag = tool.getWorkflowVersions().stream().max(Comparator.comparing(Tag::getDbUpdateDate));
+            Timestamp timestamp = tool.getDbUpdateDate();
+            if (mostRecentTag.isPresent()) {
+                if (timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
+                    timestamp = mostRecentTag.get().getDbUpdateDate();
+                }
+            }
+            entries.add(new EntryUpdateTime(tool.getToolPath(), EntryType.TOOL, timestamp));
+        });
+
+        List<Workflow> workflows = getWorkflows(fetchedUser);
+        workflows.stream().forEach((Workflow workflow) -> {
+            Optional<WorkflowVersion> mostRecentTag = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
+            Timestamp timestamp = workflow.getDbUpdateDate();
+            if (mostRecentTag.isPresent()) {
+                if (timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
+                    timestamp = mostRecentTag.get().getDbUpdateDate();
+                }
+            }
+            entries.add(new EntryUpdateTime(workflow.getWorkflowPath(), EntryType.WORKFLOW, timestamp));
+        });
+
+        List<Workflow> services = getServices(fetchedUser);
+        services.stream().forEach((Workflow service) -> {
+            Optional<WorkflowVersion> mostRecentTag = service.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
+            Timestamp timestamp = service.getDbUpdateDate();
+            if (mostRecentTag.isPresent()) {
+                if (timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
+                    timestamp = mostRecentTag.get().getDbUpdateDate();
+                }
+            }
+            entries.add(new EntryUpdateTime(service.getWorkflowPath(), EntryType.SERVICE, timestamp));
+        });
+
+        List<EntryUpdateTime> sortedEntries = entries.stream().sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate).reversed()).collect(Collectors.toList());
+
+        if (filter != null && !filter.isBlank()) {
+            sortedEntries = sortedEntries.stream().filter((EntryUpdateTime entry) -> entry.getPath().contains(filter)).collect(Collectors.toList());
+        }
+
+        if (count != null) {
+            return sortedEntries.subList(0, count < sortedEntries.size() ? count : sortedEntries.size());
+        }
+        return sortedEntries;
+    }
+
+
 
     @GET
     @Timed
