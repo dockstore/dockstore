@@ -94,7 +94,7 @@ public class SearchResourceIT extends BaseIT {
         String exampleESQuery = "{\"size\":201,\"_source\":{\"excludes\":[\"*.content\",\"*.sourceFiles\",\"description\",\"users\",\"workflowVersions.dirtyBit\",\"workflowVersions.hidden\",\"workflowVersions.last_modified\",\"workflowVersions.name\",\"workflowVersions.valid\",\"workflowVersions.workflow_path\",\"workflowVersions.workingDirectory\",\"workflowVersions.reference\"]},\"query\":{\"match_all\":{}}}";
         workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
-        waitForRefresh(5000);
+        waitForRefresh(50000);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
         assertTrue(s.contains("\"aliases\":{\"potatoAlias\":{}}"));
