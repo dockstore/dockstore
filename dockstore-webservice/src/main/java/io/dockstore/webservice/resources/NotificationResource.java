@@ -36,12 +36,10 @@ public class NotificationResource {
 
     // interface between the endpoint and the database
     private final NotificationDAO notificationDAO;
-    private final SessionFactory sessionFactory;
 
     // constructor
     public NotificationResource(SessionFactory sessionFactory) {
         this.notificationDAO = new NotificationDAO(sessionFactory);
-        this.sessionFactory = sessionFactory;
     }
 
     // get a notification by its id
@@ -88,7 +86,6 @@ public class NotificationResource {
         notificationDAO.delete(notification);
     }
 
-    // update an existing notification by its id
     @PUT
     @Path("/notifications/{id}")
     @UnitOfWork
@@ -97,10 +94,6 @@ public class NotificationResource {
             notes = "Curator/admin only", response = Notification.class)
     public Notification updateNotification(@ApiParam(value = "Notification to update", required = true) @PathParam("id") long id,
                                            @ApiParam(value = "Updated version of notification", required = true) Notification notification) {
-        Session session = currentSession();
-        session.flush();
-        notificationDAO.findById(notification.getId());
-        //throwErrorIfNull(notificationDAO.findById(notification.getId()));
         if (id != notification.getId()) {
             String msg = "ID in path and notification param must match";
             LOG.info(msg);
