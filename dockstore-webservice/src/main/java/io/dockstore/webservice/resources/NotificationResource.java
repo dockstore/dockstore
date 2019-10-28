@@ -21,6 +21,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,10 +36,12 @@ public class NotificationResource {
 
     // interface between the endpoint and the database
     private final NotificationDAO notificationDAO;
+    private final SessionFactory sessionFactory;
 
     // constructor
     public NotificationResource(SessionFactory sessionFactory) {
         this.notificationDAO = new NotificationDAO(sessionFactory);
+        this.sessionFactory = sessionFactory;
     }
 
     // get a notification by its id
@@ -94,6 +97,10 @@ public class NotificationResource {
             notes = "Curator/admin only", response = Notification.class)
     public Notification updateNotification(@ApiParam(value = "Notification to update", required = true) @PathParam("id") long id,
                                            @ApiParam(value = "Updated version of notification", required = true) Notification notification) {
+        Session session = currentSession();
+        session.flush();
+        notificationDAO.findById(notification.getId());
+        //throwErrorIfNull(notificationDAO.findById(notification.getId()));
         if (id != notification.getId()) {
             String msg = "ID in path and notification param must match";
             LOG.info(msg);
