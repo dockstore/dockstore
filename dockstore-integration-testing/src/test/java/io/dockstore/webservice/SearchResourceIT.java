@@ -91,16 +91,13 @@ public class SearchResourceIT extends BaseIT {
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
         entriesApi.addAliases(workflow.getId(), "potatoAlias");
         workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
-
-        waitForRefresh(1500);
         String exampleESQuery = "{\"size\":201,\"_source\":{\"excludes\":[\"*.content\",\"*.sourceFiles\",\"description\",\"users\",\"workflowVersions.dirtyBit\",\"workflowVersions.hidden\",\"workflowVersions.last_modified\",\"workflowVersions.name\",\"workflowVersions.valid\",\"workflowVersions.workflow_path\",\"workflowVersions.workingDirectory\",\"workflowVersions.reference\"]},\"query\":{\"match_all\":{}}}";
         workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
-        waitForRefresh(1500);
+        waitForRefresh(5000);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
         assertTrue(s.contains("\"aliases\":{\"potatoAlias\":{}}"));
-        assertTrue(s.contains("\"aliases\":{}"));
         assertFalse(s.contains("\"aliases\":null"));
         assertTrue(s.contains(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW));
     }
