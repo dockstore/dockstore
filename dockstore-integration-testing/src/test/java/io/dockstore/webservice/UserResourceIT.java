@@ -33,7 +33,11 @@ import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.BioWorkflow;
+import io.swagger.client.model.Collection;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.EntryUpdateTime;
 import io.swagger.client.model.Organization;
+import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
@@ -130,6 +134,22 @@ public class UserResourceIT extends BaseIT {
         }
     }
 
+    private Organization createOrganization(ApiClient client, String name, String displayName) {
+        OrganizationsApi organizationsApi = new OrganizationsApi(client);
+
+        Organization organization = new Organization();
+        organization.setName(name);
+        organization.setDisplayName(displayName);
+        organization.setLocation("testlocation");
+        organization.setLink("https://www.google.com");
+        organization.setEmail("test@email.com");
+        organization.setDescription("hello");
+        organization.setTopic("This is a short topic");
+        organization.setAvatarUrl("https://www.lifehardin.net/images/employees/default-logo.png");
+
+        return organizationsApi.createOrganization(organization);
+    }
+
     /**
      * Should not be able to update username after creating an organisation
      *
@@ -139,23 +159,12 @@ public class UserResourceIT extends BaseIT {
     public void testChangeUsernameAfterOrgCreation() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
-        OrganizationsApi organizationsApi = new OrganizationsApi(client);
 
         // Can change username when not a member of any organisations
         assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
 
-        // Create organisation
-        Organization organization = new Organization();
-        organization.setName("testname");
-        organization.setDisplayName("test name");
-        organization.setLocation("testlocation");
-        organization.setLink("https://www.google.com");
-        organization.setEmail("test@email.com");
-        organization.setDescription("hello");
-        organization.setTopic("This is a short topic");
-        organization.setAvatarUrl("https://www.lifehardin.net/images/employees/default-logo.png");
-
-        organizationsApi.createOrganization(organization);
+        // Create organization
+        createOrganization(client, "testname", "test name");
 
         // Cannot change username now that user is part of an organisation
         assertFalse(userApi.getExtendedUserData().isCanChangeUsername());
@@ -332,6 +341,62 @@ public class UserResourceIT extends BaseIT {
             assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains(WorkflowResource.SC_REGISTRY_ACCESS_MESSAGE));
         }
 
+    }
+
+    /**
+     * Tests the endpoints used for logged in homepage to retrieve recent entries and organizations
+     */
+    @Test
+    public void testLoggedInHomepageEndpoints() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        User user = userApi.getUser();
+
+        List<Workflow> workflows = userApi.refreshWorkflows(user.getId());
+        List<DockstoreTool> tools = userApi.refresh(user.getId());
+        List<EntryUpdateTime> entries = userApi.getUserEntries(user.getId(), 10, null);
+        assertTrue(entries.size() > 0);
+        assertTrue(Objects.equals(entries.get(0).getPath(), "quay.io/dockstoretestuser2/quayandgithub"));
+        assertTrue(Objects.equals(entries.get(entries.size() - 1).getPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified"));
+
+        // Update an entry
+        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
+        workflowsApi.refresh(workflow.getId());
+
+        // Entry should now be at the top
+        entries = userApi.getUserEntries(user.getId(), 10, null);
+        assertTrue(Objects.equals(entries.get(0).getPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified"));
+        assertTrue(Objects.equals(entries.get(1).getPath(), "quay.io/dockstoretestuser2/quayandgithub"));
+
+        // Create organizations
+        Organization foobarOrg = createOrganization(client, "Foobar", "Foo Bar");
+        Organization foobarOrgTwo = createOrganization(client, "Foobar2", "Foo Bar the second");
+        Organization tacoOrg = createOrganization(client, "taco", "taco place");
+
+        // taco should be most recent
+        List<OrganizationUpdateTime> organizations = userApi.getUserDockstoreOrganizations(user.getId(), 10, null);
+        assertTrue(organizations.size() > 0);
+        assertTrue(Objects.equals(organizations.get(0).getName(), "taco"));
+
+        // Add collection to foobar2
+        OrganizationsApi organizationsApi = new OrganizationsApi(client);
+        organizationsApi.createCollection(foobarOrgTwo.getId(), createCollection());
+
+        // foobar2 should be the most recent
+        organizations = userApi.getUserDockstoreOrganizations(user.getId(), 10, null);
+        assertTrue(organizations.size() > 0);
+        assertTrue(Objects.equals(organizations.get(0).getName(), "Foobar2"));
+    }
+
+    private Collection createCollection() {
+        Collection collection = new Collection();
+        collection.setDisplayName("cool name");
+        collection.setName("coolname");
+        collection.setTopic("this is the topic");
+        collection.setDescription("this is the description");
+
+        return collection;
     }
 
 }
