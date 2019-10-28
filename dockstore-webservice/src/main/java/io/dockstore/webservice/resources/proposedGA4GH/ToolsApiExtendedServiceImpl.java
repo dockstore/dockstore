@@ -158,9 +158,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response toolsIndexGet(SecurityContext securityContext) {
-        List<Entry> published = getPublished();
-        if (!config.getEsConfiguration().getHostname().isEmpty() && !published.isEmpty()) {
-
+        if (!config.getEsConfiguration().getHostname().isEmpty()) {
+            List<Entry> published = getPublished();
             try (RestClient restClient = RestClient
                     .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
                     .build()) {
@@ -181,8 +180,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 restClient.performRequest("PUT", "/entry", Collections.emptyMap(), mappingEntity);
 
                 // Populate index
-
-                publicStateManager.bulkUpsert(published);
+                if (!published.isEmpty()) {
+                    publicStateManager.bulkUpsert(published);
+                }
             } catch (IOException e) {
                 LOG.error("Could not create elastic search index", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);

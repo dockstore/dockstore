@@ -132,6 +132,7 @@ public class ElasticListener implements StateListenerInterface {
     private boolean checkValid(Entry entry, StateManagerMode command) {
         boolean published = entry.getIsPublished();
         switch (command) {
+        case PUBLISH:
         case UPDATE:
             if (published) {
                 return true;
