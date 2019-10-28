@@ -617,6 +617,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         final List<OrganizationUpdateTime> organizations = new ArrayList<>();
 
+        // Retrieve all organizations and get timestamps
         Set<OrganizationUser> organizationUsers = fetchedUser.getOrganizations();
         organizationUsers.forEach((OrganizationUser organizationUser) -> {
             Organization organization = organizationUser.getOrganization();
@@ -630,12 +631,15 @@ public class UserResource implements AuthenticatedResourceInterface {
             organizations.add(new OrganizationUpdateTime(organization.getName(), organization.getDisplayName(), timestamp));
         });
 
+        // Sort all organizations by timestamp
         List<OrganizationUpdateTime> sortedOrganizations = organizations.stream().sorted(Comparator.comparing(OrganizationUpdateTime::getLastUpdateDate).reversed()).collect(Collectors.toList());
 
+        // Apply filter if necessary
         if (filter != null && !filter.isBlank()) {
             sortedOrganizations = sortedOrganizations.stream().filter((OrganizationUpdateTime organization) -> organization.getName().contains(filter) || organization.getDisplayName().contains(filter)).collect(Collectors.toList());
         }
 
+        // Grab subset if necessary
         if (count != null) {
             return sortedOrganizations.subList(0, count < sortedOrganizations.size() ? count : sortedOrganizations.size());
         }
@@ -657,6 +661,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         final List<EntryUpdateTime> entries = new ArrayList<>();
 
+        // Retrieve all tools and get timestamp information
         List<Tool> tools = getTools(fetchedUser);
         tools.stream().forEach((Tool tool) -> {
             Optional<Tag> mostRecentTag = tool.getWorkflowVersions().stream().max(Comparator.comparing(Tag::getDbUpdateDate));
@@ -669,6 +674,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             entries.add(new EntryUpdateTime(tool.getToolPath(), EntryType.TOOL, timestamp));
         });
 
+        // Retrieve all workflows and get timestamp information
         List<Workflow> workflows = getWorkflows(fetchedUser);
         workflows.stream().forEach((Workflow workflow) -> {
             Optional<WorkflowVersion> mostRecentTag = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
@@ -681,6 +687,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             entries.add(new EntryUpdateTime(workflow.getWorkflowPath(), EntryType.WORKFLOW, timestamp));
         });
 
+        // Retrieve all services and get timestamp information
         List<Workflow> services = getServices(fetchedUser);
         services.stream().forEach((Workflow service) -> {
             Optional<WorkflowVersion> mostRecentTag = service.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
@@ -693,19 +700,20 @@ public class UserResource implements AuthenticatedResourceInterface {
             entries.add(new EntryUpdateTime(service.getWorkflowPath(), EntryType.SERVICE, timestamp));
         });
 
+        // Sort all entries by timestamp
         List<EntryUpdateTime> sortedEntries = entries.stream().sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate).reversed()).collect(Collectors.toList());
 
+        // Apply filter if necessary
         if (filter != null && !filter.isBlank()) {
             sortedEntries = sortedEntries.stream().filter((EntryUpdateTime entry) -> entry.getPath().contains(filter)).collect(Collectors.toList());
         }
 
+        // Grab subset if necessary
         if (count != null) {
             return sortedEntries.subList(0, count < sortedEntries.size() ? count : sortedEntries.size());
         }
         return sortedEntries;
     }
-
-
 
     @GET
     @Timed
