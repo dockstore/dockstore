@@ -1023,9 +1023,9 @@ components:
         parent_id:
           type: integer
           format: int64
-        source_control_provider:
-          type: string
         full_workflow_path:
+          type: string
+        source_control_provider:
           type: string
         workflow_path:
           type: string

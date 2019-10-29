@@ -44,16 +44,16 @@ public class Image {
     @ApiModelProperty(value = "Implementation specific ID for the image in this webservice", position = 0)
     private long id;
 
-    @Column(name = "checksums", columnDefinition = "varchar")
+    @Column(columnDefinition = "varchar")
     @Convert(converter = ChecksumConverter.class)
     @ApiModelProperty(value = "Checksum(s) associated with this image", position = 1)
     private List<Checksum> checksums = new ArrayList<>();
 
-    @Column(name = "repository")
+    @Column()
     @ApiModelProperty(value = "Repository image belongs to", position = 2)
     private String repository;
 
-    @Column(name = "tag")
+    @Column()
     @ApiModelProperty(value = "Git tag", position = 3)
     private String tag;
 
