@@ -623,10 +623,8 @@ public class UserResource implements AuthenticatedResourceInterface {
             Organization organization = organizationUser.getOrganization();
             Optional<Collection> mostRecentCollection = organization.getCollections().stream().max(Comparator.comparing(Collection::getDbUpdateDate));
             Timestamp timestamp = organization.getDbUpdateDate();
-            if (mostRecentCollection.isPresent()) {
-                if (timestamp.before(mostRecentCollection.get().getDbUpdateDate())) {
-                    timestamp = mostRecentCollection.get().getDbUpdateDate();
-                }
+            if (mostRecentCollection.isPresent() && timestamp.before(mostRecentCollection.get().getDbUpdateDate())) {
+                timestamp = mostRecentCollection.get().getDbUpdateDate();
             }
             organizations.add(new OrganizationUpdateTime(organization.getName(), organization.getDisplayName(), timestamp));
         });
@@ -666,10 +664,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         tools.stream().forEach((Tool tool) -> {
             Optional<Tag> mostRecentTag = tool.getWorkflowVersions().stream().max(Comparator.comparing(Tag::getDbUpdateDate));
             Timestamp timestamp = tool.getDbUpdateDate();
-            if (mostRecentTag.isPresent()) {
-                if (timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
-                    timestamp = mostRecentTag.get().getDbUpdateDate();
-                }
+            if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
+                timestamp = mostRecentTag.get().getDbUpdateDate();
             }
             entries.add(new EntryUpdateTime(tool.getToolPath(), EntryType.TOOL, timestamp));
         });
@@ -679,10 +675,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         workflows.stream().forEach((Workflow workflow) -> {
             Optional<WorkflowVersion> mostRecentTag = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
             Timestamp timestamp = workflow.getDbUpdateDate();
-            if (mostRecentTag.isPresent()) {
-                if (timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
-                    timestamp = mostRecentTag.get().getDbUpdateDate();
-                }
+            if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
+                timestamp = mostRecentTag.get().getDbUpdateDate();
             }
             entries.add(new EntryUpdateTime(workflow.getWorkflowPath(), EntryType.WORKFLOW, timestamp));
         });
@@ -692,10 +686,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         services.stream().forEach((Workflow service) -> {
             Optional<WorkflowVersion> mostRecentTag = service.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
             Timestamp timestamp = service.getDbUpdateDate();
-            if (mostRecentTag.isPresent()) {
-                if (timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
-                    timestamp = mostRecentTag.get().getDbUpdateDate();
-                }
+            if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
+                timestamp = mostRecentTag.get().getDbUpdateDate();
             }
             entries.add(new EntryUpdateTime(service.getWorkflowPath(), EntryType.SERVICE, timestamp));
         });
