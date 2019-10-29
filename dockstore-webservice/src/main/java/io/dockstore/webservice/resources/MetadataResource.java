@@ -53,14 +53,13 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Config;
-import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowPath;
+import io.dockstore.webservice.core.database.RSSToolPath;
+import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
@@ -108,6 +107,7 @@ import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SIT
 @io.swagger.v3.oas.annotations.tags.Tag(name = "metadata", description = "description of the webservice itself")
 public class MetadataResource {
 
+    public static final int RSS_ENTRY_LIMIT = 50;
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
 
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
@@ -150,8 +150,6 @@ public class MetadataResource {
         SortedSet<String> urls = new TreeSet<>();
         urls.addAll(getToolPaths());
         urls.addAll(getBioWorkflowPaths());
-        // Do not append services yet
-        // urls.addAll(getServicePaths());
         urls.addAll(getOrganizationAndCollectionPaths());
         return urls;
     }
@@ -172,20 +170,12 @@ public class MetadataResource {
     }
 
     private List<String> getToolPaths() {
-        List<ToolPath> toolPaths = toolDAO.findAllPublishedPaths();
-        return toolPaths.stream().map(MetadataResourceHelper::createToolURL2).collect(Collectors.toList());
+        return toolDAO.findAllPublishedPaths().stream().map(toolPath -> createToolURL(toolPath.getTool())).collect(Collectors.toList());
     }
 
     private List<String> getBioWorkflowPaths() {
-        List<WorkflowPath> workflowPaths = bioWorkflowDAO.findAllPublishedPaths();
-        return workflowPaths.stream().map(
-            (WorkflowPath workflow) -> MetadataResourceHelper.createWorkflowURL(workflow, "workflow")).collect(Collectors.toList());
-    }
-
-    private List<String> getServicePaths() {
-        List<WorkflowPath> workflowPaths = serviceDAO.findAllPublishedPaths();
-        return workflowPaths.stream().map(
-            (WorkflowPath workflow) -> MetadataResourceHelper.createWorkflowURL(workflow, "service")).collect(Collectors.toList());
+        return bioWorkflowDAO.findAllPublishedPaths().stream().map(workflowPath -> createWorkflowURL(workflowPath.getBioWorkflow())).collect(
+                Collectors.toList());
     }
 
     private String createOrganizationURL(Organization organization) {
@@ -212,11 +202,9 @@ public class MetadataResource {
     @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
     @ApiOperation(value = "List all published tools and workflows in creation order.", notes = "NO authentication")
     public String rssFeed() {
-
-        final int limit = 50;
-        List<Tool> tools = toolDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
-        // #2683 avoid web crawling services for 1.7.0
-        List<Workflow> workflows = workflowDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc", (Class)BioWorkflow.class);
+        List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).collect(Collectors.toList());
+        List<Workflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).collect(
+                Collectors.toList());
 
         List<Entry> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
