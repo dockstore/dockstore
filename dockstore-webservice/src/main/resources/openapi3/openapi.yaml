@@ -71,39 +71,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
-  /metadata/rss:
-    get:
-      tags:
-      - metadata
-      summary: List all published tools and workflows in creation order
-      description: List all published tools and workflows in creation order, NO authentication
-      operationId: rssFeed
-      responses:
-        default:
-          description: default response
-          content:
-            text/xml:
-              schema:
-                type: string
-  /metadata/sitemap:
-    get:
-      tags:
-      - metadata
-      summary: List all available workflow, tool, organization, and collection paths.
-      description: List all available workflow, tool, organization, and collection
-        paths. Available means published for tools/workflows, and approved for organizations
-        and their respective collections. NO authentication
-      operationId: sitemap
-      responses:
-        default:
-          description: default response
-          content:
-            text/html:
-              schema:
-                type: string
-            text/xml:
-              schema:
-                type: string
   /metadata/runner_dependencies:
     get:
       tags:
@@ -147,22 +114,6 @@ paths:
             application/json:
               schema:
                 type: string
-  /metadata/sourceControlList:
-    get:
-      tags:
-      - metadata
-      summary: Get the list of source controls supported on Dockstore
-      description: Get the list of source controls supported on Dockstore, NO authentication
-      operationId: getSourceControlList
-      responses:
-        default:
-          description: List of source control repositories
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SourceControlBean'
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -196,6 +147,22 @@ paths:
                 type: object
                 additionalProperties:
                   type: string
+  /metadata/sourceControlList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of source controls supported on Dockstore
+      description: Get the list of source controls supported on Dockstore, NO authentication
+      operationId: getSourceControlList
+      responses:
+        default:
+          description: List of source control repositories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceControlBean'
   /metadata/elasticSearch:
     get:
       tags:
@@ -209,6 +176,39 @@ paths:
           content:
             text/html: {}
             text/xml: {}
+  /metadata/sitemap:
+    get:
+      tags:
+      - metadata
+      summary: List all available workflow, tool, organization, and collection paths.
+      description: List all available workflow, tool, organization, and collection
+        paths. Available means published for tools/workflows, and approved for organizations
+        and their respective collections. NO authentication
+      operationId: sitemap
+      responses:
+        default:
+          description: default response
+          content:
+            text/html:
+              schema:
+                type: string
+            text/xml:
+              schema:
+                type: string
+  /metadata/rss:
+    get:
+      tags:
+      - metadata
+      summary: List all published tools and workflows in creation order
+      description: List all published tools and workflows in creation order, NO authentication
+      operationId: rssFeed
+      responses:
+        default:
+          description: default response
+          content:
+            text/xml:
+              schema:
+                type: string
   /toolTester/logs/search:
     get:
       tags:
@@ -680,9 +680,6 @@ components:
           format: date-time
         name:
           type: string
-        tosacceptanceDate:
-          type: string
-          format: date-time
         tosversion:
           type: string
           enum:
@@ -692,6 +689,9 @@ components:
           type: string
           format: date-time
           writeOnly: true
+        tosacceptanceDate:
+          type: string
+          format: date-time
     Validation:
       type: object
       properties:
@@ -876,14 +876,14 @@ components:
           type: string
         enum:
           type: string
-    SourceControlBean:
+    DescriptorLanguageBean:
       type: object
       properties:
         value:
           type: string
         friendlyName:
           type: string
-    DescriptorLanguageBean:
+    SourceControlBean:
       type: object
       properties:
         value:
@@ -1023,13 +1023,13 @@ components:
         parent_id:
           type: integer
           format: int64
-        full_workflow_path:
-          type: string
-        source_control_provider:
-          type: string
         workflow_path:
           type: string
+        full_workflow_path:
+          type: string
         defaultTestParameterFilePath:
+          type: string
+        source_control_provider:
           type: string
         last_modified_date:
           type: string

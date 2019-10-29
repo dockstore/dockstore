@@ -16,10 +16,16 @@
 
 package io.dockstore.webservice.core;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(value = "Checksum", description = "This describes a checksum that is a associated with a tag or workflow version's image.")
 public class Checksum {
 
+    @ApiModelProperty(value = "The type of hash algorithm. E.g. SHA256")
     private String type;
-
+    @ApiModelProperty(value = "String representation of the checksum value."
+            + "")
     private String checksum;
 
     public Checksum() {
@@ -45,5 +51,9 @@ public class Checksum {
 
     public void setChecksum(String checksum) {
         this.checksum = checksum;
+    }
+
+    public String toString() {
+        return this.getType() + ":" + this.getChecksum();
     }
 }

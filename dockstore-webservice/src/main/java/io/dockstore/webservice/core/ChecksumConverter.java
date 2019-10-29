@@ -2,6 +2,7 @@ package io.dockstore.webservice.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
@@ -15,19 +16,15 @@ public class ChecksumConverter implements AttributeConverter<List<Checksum>, Str
     private static final Logger LOG = LoggerFactory.getLogger(ChecksumConverter.class);
     @Override
     public String convertToDatabaseColumn(List<Checksum> checksums) {
-        StringBuilder sb = new StringBuilder();
-        if (!checksums.isEmpty() && checksums != null) {
+        String stringChecksums;
+        if (checksums != null && !checksums.isEmpty()) {
             try {
-                for (Checksum c : checksums) {
-                    sb.append(c.getType().trim() + ":" + c.getChecksum().trim());
-                    sb.append(",");
-                }
+                stringChecksums = checksums.stream().map(checksum -> checksum.getType().trim() + ":" + checksum.getChecksum().trim()).collect(Collectors.joining(","));
             } catch (NullPointerException ex) {
                 LOG.error("Could not convert checksum(s) to string for database", ex);
                 return null;
             }
-
-            return sb.toString().replaceAll(",$", "");
+            return stringChecksums;
         }
         return null;
     }
@@ -35,7 +32,7 @@ public class ChecksumConverter implements AttributeConverter<List<Checksum>, Str
     @Override
     public List<Checksum> convertToEntityAttribute(String checksumString) {
         List<Checksum> cs = new ArrayList<>();
-        if (!checksumString.isEmpty() && checksumString != null) {
+        if (checksumString != null && !checksumString.isEmpty()) {
 
             String[] checksumsArray = checksumString.split(",");
             try {

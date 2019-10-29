@@ -56,14 +56,14 @@
             <column autoIncrement="true" name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" primaryKeyName="image_pkey"/>
             </column>
-            <column name="checksums" type="VARCHAR(255)"/>
+            <column name="checksums" type="VARCHAR"/>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="image_id" type="VARCHAR(255)"/>
             <column name="repository" type="VARCHAR(255)"/>
             <column name="tag" type="VARCHAR(255)"/>
         </createTable>
-        <addUniqueConstraint columnNames="imageid" constraintName="uk_f4es6vge9tpr3v836n62konau" tableName="entry_version_image"/>
-        <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fkfiy442cs8k24x8f3wnyxakh3w" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
+        <addUniqueConstraint columnNames="imageid" constraintName="uk_imageid" tableName="entry_version_image"/>
+        <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fk_entryVersionImage" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
     </changeSet>
 </databaseChangeLog>
