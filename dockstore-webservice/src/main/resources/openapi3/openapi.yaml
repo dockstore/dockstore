@@ -55,22 +55,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
-  /metadata/dockerRegistryList:
-    get:
-      tags:
-      - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
-      responses:
-        default:
-          description: List of Docker registries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
   /metadata/sitemap:
     get:
       tags:
@@ -209,6 +193,22 @@ paths:
           content:
             text/html: {}
             text/xml: {}
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
+      responses:
+        default:
+          description: List of Docker registries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
   /toolTester/logs/search:
     get:
       tags:
@@ -291,43 +291,6 @@ paths:
             text/plain:
               schema:
                 type: string
-  /users/{userId}:
-    get:
-      operationId: getSpecificUser
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  /users/user:
-    get:
-      operationId: getUser
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -411,6 +374,43 @@ paths:
                   $ref: '#/components/schemas/Repository'
       security:
       - bearer: []
+  /users/{userId}:
+    get:
+      operationId: getSpecificUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/user:
+    get:
+      operationId: getUser
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     post:
       description: Adds a workflow for a registry and repository path with defaults
@@ -861,6 +861,20 @@ components:
           type: string
         discourseUrl:
           type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
     RegistryBean:
       type: object
       properties:
@@ -875,20 +889,6 @@ components:
         customDockerPath:
           type: string
         enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
           type: string
     ToolTesterLog:
       type: object
@@ -1023,11 +1023,11 @@ components:
         parent_id:
           type: integer
           format: int64
-        full_workflow_path:
-          type: string
         source_control_provider:
           type: string
         workflow_path:
+          type: string
+        full_workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
