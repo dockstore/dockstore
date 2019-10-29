@@ -1330,6 +1330,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
+                <argLine>-XX:MaxRAM=3g</argLine>
             </properties>
         </profile>
         <profile>
@@ -1338,7 +1339,7 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <excludeGroups>io.dockstore.common.MemoryIntensiveTest</excludeGroups>
+                <argLine>-XX:MaxRAM=3g</argLine>
             </properties>
             <build>
                 <plugins>
@@ -1358,15 +1359,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
-            <id>memory-intensive-unit-tests</id>
-            <!-- run all memory intensive non-integration tests -->
-            <properties>
-                <skipTests>false</skipTests>
-                <skipITs>true</skipITs>
-                <groups>io.dockstore.common.MemoryIntensiveTest</groups>
-            </properties>
         </profile>
         <profile>
             <id>coverage</id>
