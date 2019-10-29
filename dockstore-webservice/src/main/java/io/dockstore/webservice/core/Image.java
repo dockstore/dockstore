@@ -104,13 +104,6 @@ public class Image {
         return this.repository;
     }
 
-    //    public void setChecksums(String checksums) {
-    //        this.checksums = checksums;
-    //    }
-    //
-    //    public String getChecksums() {
-    //        return this.checksums;
-    //    }
 
     public void setChecksums(List<Checksum> checksums) {
         this.checksums = checksums;
@@ -119,22 +112,5 @@ public class Image {
     public List<Checksum> getChecksums() {
         return this.checksums;
     }
-    //    @JsonProperty("checksums")
-    //    public List<Checksum> getChecksums() {
-    //        List<Checksum> cs = new ArrayList<>();
-    //        if (!this.checksums.isEmpty()) {
-    //            for (Checksum c : cs) {
-    //                cs.add(new Checksum(c.toString().split(":")[0], c.toString().split(":")[1]));
-    //            }
-    //        }
-    //        return cs;
-    //    }
-    //
-    //    public void setChecksums(List<Checksum> checksums) {
-    //        if (!checksums.isEmpty()) {
-    //            for (Checksum c : checksums) {
-    //                this.checksums.add(c.getType() + ":" + c.getChecksum());
-    //            }
-    //        }
-    //    }
+
 }
