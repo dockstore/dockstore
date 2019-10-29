@@ -7,9 +7,9 @@ public class OrganizationUpdateTime {
     private String displayName;
     private Date lastUpdateDate;
 
-    public OrganizationUpdateTime(String name, String prettyName, Date lastUpdateDate) {
+    public OrganizationUpdateTime(String name, String displayName, Date lastUpdateDate) {
         this.name = name;
-        this.displayName = prettyName;
+        this.displayName = displayName;
         this.lastUpdateDate = lastUpdateDate;
     }
 

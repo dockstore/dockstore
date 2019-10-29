@@ -134,6 +134,13 @@ public class UserResourceIT extends BaseIT {
         }
     }
 
+    /**
+     * Creates an organization using the given names
+     * @param client
+     * @param name
+     * @param displayName
+     * @return new organization
+     */
     private Organization createOrganization(ApiClient client, String name, String displayName) {
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
 
@@ -369,6 +376,10 @@ public class UserResourceIT extends BaseIT {
         assertTrue(Objects.equals(entries.get(0).getPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified"));
         assertTrue(Objects.equals(entries.get(1).getPath(), "quay.io/dockstoretestuser2/quayandgithub"));
 
+        // Search for quay.io
+        entries = userApi.getUserEntries(user.getId(), 10, "quay.io");
+        assertTrue(Objects.equals(entries.get(0).getPath(), "quay.io/dockstoretestuser2/quayandgithub"));
+
         // Create organizations
         Organization foobarOrg = createOrganization(client, "Foobar", "Foo Bar");
         Organization foobarOrgTwo = createOrganization(client, "Foobar2", "Foo Bar the second");
@@ -387,8 +398,17 @@ public class UserResourceIT extends BaseIT {
         organizations = userApi.getUserDockstoreOrganizations(user.getId(), 10, null);
         assertTrue(organizations.size() > 0);
         assertTrue(Objects.equals(organizations.get(0).getName(), "Foobar2"));
+
+        // Search for taco organization
+        organizations = userApi.getUserDockstoreOrganizations(user.getId(), 10, "tac");
+        assertTrue(organizations.size() > 0);
+        assertTrue(Objects.equals(organizations.get(0).getName(), "taco"));
     }
 
+    /**
+     * Creates a collection (does not save to database)
+     * @return new collection
+     */
     private Collection createCollection() {
         Collection collection = new Collection();
         collection.setDisplayName("cool name");
