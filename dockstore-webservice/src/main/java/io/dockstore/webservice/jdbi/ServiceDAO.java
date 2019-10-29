@@ -19,7 +19,7 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.WorkflowPath;
+import io.dockstore.webservice.core.database.WorkflowPath;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
