@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.8.0-alpha.0-SNAPSHOT
+  version: 1.8.0-alpha.1-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -6400,17 +6400,195 @@ components:
         content:
           type: string
     BioWorkflow:
-      allOf:
-        - $ref: "#/components/schemas/Workflow"
-        - type: object
-          properties:
-            parent_id:
-              type: integer
-              format: int64
-              readOnly: true
-            is_checker:
-              type: boolean
-          description: This describes one workflow in the dockstore
+      type: object
+      required:
+        - defaultTestParameterFilePath
+        - descriptorType
+        - gitUrl
+        - mode
+        - organization
+        - repository
+        - sourceControl
+        - workflow_path
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for entries
+          additionalProperties:
+            $ref: "#/components/schemas/Alias"
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        topicId:
+          type: integer
+          format: int64
+          description: The Id of the corresponding topic on Dockstore Discuss
+        parent_id:
+          type: integer
+          format: int64
+          readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
+          type: array
+          readOnly: true
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        output_file_formats:
+          type: array
+          readOnly: true
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        author:
+          type: string
+          description: This is the name of the author stated in the Dockstore.cwl
+        description:
+          type: string
+          description: This is a human-readable description of this container and what it
+            is trying to accomplish, required GA4GH
+        labels:
+          type: array
+          description: Labels (i.e. meta tags) for describing the purpose and contents of
+            containers
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Label"
+        users:
+          type: array
+          description: This indicates the users that have control over this entry,
+            dockstore specific
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/User"
+        starredUsers:
+          type: array
+          description: This indicates the users that have starred this entry, dockstore
+            specific
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/User"
+        email:
+          type: string
+          description: This is the email of the git organization
+        defaultVersion:
+          type: string
+          description: This is the default version of the entry
+        is_published:
+          type: boolean
+          description: Implementation specific visibility in this web service
+        last_modified:
+          type: integer
+          format: int32
+          description: "Implementation specific timestamp for last modified. Tools-> For
+            automated/manual builds: N/A. For hosted: Last time a file was
+            updated/created (new version created). Workflows-> For remote: When
+            refresh is hit, last time GitHub repo was changed. Hosted: Last time
+            a new version was made."
+        lastUpdated:
+          type: string
+          format: date-time
+          description: "Implementation specific timestamp for last updated on webservice.
+            Tools-> For automated builds: last time tool/namespace was refreshed
+            Dockstore, tool info (like changing dockerfile path) updated, or
+            default version selected. For hosted tools: when you created the
+            tool. Workflows-> For remote: When refresh all is hit for first
+            time. Hosted: Seems to be time created."
+        gitUrl:
+          type: string
+          description: This is a link to the associated repo with a descriptor, required
+            GA4GH
+        checker_id:
+          type: integer
+          format: int64
+          description: The id of the associated checker workflow
+          readOnly: true
+        conceptDoi:
+          type: string
+          description: The Digital Object Identifier (DOI) representing all of the versions
+            of your workflow
+        mode:
+          type: string
+          description: This indicates what mode this is in which informs how we do things
+            like refresh, dockstore specific
+          enum:
+            - FULL
+            - STUB
+            - HOSTED
+            - SERVICE
+        workflowName:
+          type: string
+          description: This is the name of the workflow, not needed when only one workflow
+            in a repo
+        organization:
+          type: string
+          description: This is a git organization for the workflow
+        repository:
+          type: string
+          description: This is a git repository name
+        sourceControl:
+          type: string
+          description: "This is a specific source control provider like github or bitbucket
+            or n/a?, required: GA4GH"
+        descriptorType:
+          type: string
+          description: This is a descriptor type for the workflow, either CWL, WDL, or
+            Nextflow (Defaults to CWL)
+          enum:
+            - CWL
+            - WDL
+            - NFL
+            - service
+        workflow_path:
+          type: string
+          description: This indicates for the associated git repository, the default path
+            to the primary descriptor document
+        defaultTestParameterFilePath:
+          type: string
+          description: This indicates for the associated git repository, the default path
+            to the test parameter file
+        workflowVersions:
+          type: array
+          description: Implementation specific tracking of valid build workflowVersions for
+            the docker container
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/WorkflowVersion"
+        is_checker:
+          type: boolean
+        full_workflow_path:
+          type: string
+          readOnly: true
+        path:
+          type: string
+        source_control_provider:
+          type: string
+          readOnly: true
+      description: This describes one workflow in the dockstore
+    Checksum:
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of hash algorithm, e.g., SHA256
+        checksum:
+          type: string
+          description: String representation of the checksum value.
+      description: This describes a checksum that is a associated with a tag or workflow
+        version's image.
     Collection:
       type: object
       required:
@@ -6589,6 +6767,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6604,10 +6786,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6798,6 +6976,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6813,10 +6995,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6977,6 +7155,24 @@ components:
         containerfile is a document that describes how to build a particular
         container image. Examples include Dockerfiles for creating Docker images
         and Singularity recipes for Singularity images "
+    Image:
+      type: object
+      properties:
+        checksums:
+          type: array
+          description: Checksum(s) associated with this image
+          items:
+            $ref: "#/components/schemas/Checksum"
+        repository:
+          type: string
+          description: Repository image belongs to
+        tag:
+          type: string
+          description: Git tag
+        imageID:
+          type: string
+          description: Docker ID of the image
+      description: Image(s) associated with tags and workflow versions
     Label:
       type: object
       required:
@@ -7362,21 +7558,27 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
+        images:
+          type: array
+          description: The images that belong to this version
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Image"
         verified:
           type: boolean
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
           description: Verified source for the version
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
         verifiedSources:
           type: array
           description: Verified source for the version
           items:
             type: string
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         doiURL:
           type: string
           description: This is a URL for the DOI for the version of the entry
@@ -7753,15 +7955,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -7901,21 +8103,27 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
+        images:
+          type: array
+          description: The images that belong to this version
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Image"
         verified:
           type: boolean
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
           description: Verified source for the version
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
         verifiedSources:
           type: array
           description: Verified source for the version
           items:
             type: string
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         doiURL:
           type: string
           description: This is a URL for the DOI for the version of the entry
@@ -7960,10 +8168,14 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        isChecker:
+          type: boolean
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7979,10 +8191,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -8180,21 +8388,27 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
+        images:
+          type: array
+          description: The images that belong to this version
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Image"
         verified:
           type: boolean
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
           description: Verified source for the version
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
         verifiedSources:
           type: array
           description: Verified source for the version
           items:
             type: string
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         doiURL:
           type: string
           description: This is a URL for the DOI for the version of the entry
