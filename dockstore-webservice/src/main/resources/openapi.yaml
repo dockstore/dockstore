@@ -6479,6 +6479,17 @@ components:
             is_checker:
               type: boolean
           description: This describes one workflow in the dockstore
+    Checksum:
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of hash algorithm, e.g., SHA256
+        checksum:
+          type: string
+          description: String representation of the checksum value.
+      description: This describes a checksum that is a associated with a tag or workflow
+        version's image.
     Collection:
       type: object
       required:
@@ -7059,6 +7070,24 @@ components:
         containerfile is a document that describes how to build a particular
         container image. Examples include Dockerfiles for creating Docker images
         and Singularity recipes for Singularity images "
+    Image:
+      type: object
+      properties:
+        checksums:
+          type: array
+          description: Checksum(s) associated with this image
+          items:
+            $ref: "#/components/schemas/Checksum"
+        repository:
+          type: string
+          description: Repository image belongs to
+        tag:
+          type: string
+          description: Git tag
+        imageID:
+          type: string
+          description: Docker ID of the image
+      description: Image(s) associated with tags and workflow versions
     Label:
       type: object
       required:
@@ -7454,21 +7483,27 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
+        images:
+          type: array
+          description: The images that belong to this version
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Image"
         verified:
           type: boolean
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
           description: Verified source for the version
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
         verifiedSources:
           type: array
           description: Verified source for the version
           items:
             type: string
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         doiURL:
           type: string
           description: This is a URL for the DOI for the version of the entry
@@ -7993,21 +8028,27 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
+        images:
+          type: array
+          description: The images that belong to this version
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Image"
         verified:
           type: boolean
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
           description: Verified source for the version
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
         verifiedSources:
           type: array
           description: Verified source for the version
           items:
             type: string
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         doiURL:
           type: string
           description: This is a URL for the DOI for the version of the entry
@@ -8272,21 +8313,27 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Validation"
+        images:
+          type: array
+          description: The images that belong to this version
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Image"
         verified:
           type: boolean
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
           description: Verified source for the version
+        hidden:
+          type: boolean
+          description: Implementation specific, whether this row is visible to other users
+            aside from the owner
         verifiedSources:
           type: array
           description: Verified source for the version
           items:
             type: string
-        hidden:
-          type: boolean
-          description: Implementation specific, whether this row is visible to other users
-            aside from the owner
         doiURL:
           type: string
           description: This is a URL for the DOI for the version of the entry
