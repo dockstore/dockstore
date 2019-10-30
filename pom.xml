@@ -31,15 +31,15 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
-        <dropwizard.version>1.3.14</dropwizard.version>
+        <dropwizard.version>1.3.16</dropwizard.version>
         <dockstore-client.version>1.7.0-rc.1</dockstore-client.version>
 
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
         <swagger-annotations-version>1.5.23</swagger-annotations-version>
         <openapi-annotations-version>2.0.9</openapi-annotations-version>
         <assertj.version>3.9.1</assertj.version>
-        <jackson.version>2.9.9.20190807</jackson.version>
-        <jackson.major.version>2.9.9</jackson.major.version>
+        <jackson.version>2.9.10.20191020</jackson.version>
+        <jackson.major.version>2.9.10</jackson.major.version>
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
