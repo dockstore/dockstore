@@ -44,7 +44,6 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
-import io.dockstore.common.EntryType;
 import io.dockstore.common.EntryUpdateTime;
 import io.dockstore.common.OrganizationUpdateTime;
 import io.dockstore.common.Registry;
@@ -59,7 +58,6 @@ import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -657,43 +655,20 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(authUser, userId);
         final User fetchedUser = this.userDAO.findById(userId);
 
-        final List<EntryUpdateTime> entries = new ArrayList<>();
+        final List<EntryUpdateTime> entryUpdateTimes = new ArrayList<>();
 
-        // Retrieve all tools and get timestamp information
-        List<Tool> tools = getTools(fetchedUser);
-        tools.stream().forEach((Tool tool) -> {
-            Optional<Tag> mostRecentTag = tool.getWorkflowVersions().stream().max(Comparator.comparing(Tag::getDbUpdateDate));
-            Timestamp timestamp = tool.getDbUpdateDate();
+        Set<Entry> entries = fetchedUser.getEntries();
+        entries.forEach(entry -> {
+            Optional<WorkflowVersion> mostRecentTag = entry.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
+            Timestamp timestamp = entry.getDbUpdateDate();
             if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
                 timestamp = mostRecentTag.get().getDbUpdateDate();
             }
-            entries.add(new EntryUpdateTime(tool.getToolPath(), EntryType.TOOL, timestamp));
+            entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), entry.getEntryType(), timestamp));
         });
 
-        // Retrieve all workflows and get timestamp information
-        List<Workflow> workflows = getWorkflows(fetchedUser);
-        workflows.stream().forEach((Workflow workflow) -> {
-            Optional<WorkflowVersion> mostRecentTag = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
-            Timestamp timestamp = workflow.getDbUpdateDate();
-            if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
-                timestamp = mostRecentTag.get().getDbUpdateDate();
-            }
-            entries.add(new EntryUpdateTime(workflow.getWorkflowPath(), EntryType.WORKFLOW, timestamp));
-        });
-
-        // Retrieve all services and get timestamp information
-        List<Workflow> services = getServices(fetchedUser);
-        services.stream().forEach((Workflow service) -> {
-            Optional<WorkflowVersion> mostRecentTag = service.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
-            Timestamp timestamp = service.getDbUpdateDate();
-            if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
-                timestamp = mostRecentTag.get().getDbUpdateDate();
-            }
-            entries.add(new EntryUpdateTime(service.getWorkflowPath(), EntryType.SERVICE, timestamp));
-        });
-
-        // Sort all entries by timestamp
-        List<EntryUpdateTime> sortedEntries = entries.stream().sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate).reversed()).collect(Collectors.toList());
+        // Sort all entryUpdateTimes by timestamp
+        List<EntryUpdateTime> sortedEntries = entryUpdateTimes.stream().sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate).reversed()).collect(Collectors.toList());
 
         // Apply filter if necessary
         if (filter != null && !filter.isBlank()) {

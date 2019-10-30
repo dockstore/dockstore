@@ -19,6 +19,7 @@ import javax.persistence.Entity;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 
 @ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow")
@@ -32,6 +33,10 @@ public class Service extends Workflow {
     @Override
     public Entry getParentEntry() {
         return null;
+    }
+
+    public EntryType getEntryType() {
+        return EntryType.SERVICE;
     }
 
     @Override
