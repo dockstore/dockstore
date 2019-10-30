@@ -42,8 +42,7 @@ jobs:
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests) 
             keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit           
-            # Out of memory to do `mvn -B clean install -Pnon-confidential-tests -Djavax.net.ssl.trustStore=LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit` instead
-            mvn -B -pl dockstore-integration-testing clean install -Pnon-confidential-tests -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
+            mvn -B clean install -Pnon-confidential-tests -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
