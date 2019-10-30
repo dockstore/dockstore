@@ -2,6 +2,11 @@ package io.dockstore.common;
 
 import java.util.Date;
 
+/**
+ * Class used to display organizations on the Dockstore homepage
+ * @author aduncan
+ * @since 1.8.0
+ */
 public class OrganizationUpdateTime {
     private String name;
     private String displayName;

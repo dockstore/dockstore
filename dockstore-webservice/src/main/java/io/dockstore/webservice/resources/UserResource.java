@@ -639,7 +639,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // Grab subset if necessary
         if (count != null) {
-            return sortedOrganizations.subList(0, count < sortedOrganizations.size() ? count : sortedOrganizations.size());
+            return sortedOrganizations.subList(0, Math.min(count, sortedOrganizations.size()));
         }
         return sortedOrganizations;
     }
@@ -702,7 +702,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // Grab subset if necessary
         if (count != null) {
-            return sortedEntries.subList(0, count < sortedEntries.size() ? count : sortedEntries.size());
+            return sortedEntries.subList(0, Math.min(count, sortedEntries.size()));
         }
         return sortedEntries;
     }

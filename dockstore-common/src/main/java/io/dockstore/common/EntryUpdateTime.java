@@ -3,6 +3,11 @@ package io.dockstore.common;
 import java.sql.Timestamp;
 import java.util.Date;
 
+/**
+ * Class used to display entries on the Dockstore homepage
+ * @author aduncan
+ * @since 1.8.0
+ */
 public class EntryUpdateTime {
     private String path;
     private EntryType entryType;
