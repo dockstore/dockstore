@@ -64,6 +64,7 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.resources.AliasResource;
 import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
@@ -79,6 +80,7 @@ import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.WorkflowResource;
+import io.dockstore.webservice.resources.WorkflowVersionResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
 import io.dropwizard.Application;
@@ -293,6 +295,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(OpenApiResource.class);
 
+        final WorkflowVersionResource workflowVersionResource = new WorkflowVersionResource(httpClient, hibernate.getSessionFactory(), workflowResource, configuration);
+        environment.jersey().register(workflowVersionResource);
+
+        final AliasResource aliasResource = new AliasResource(httpClient, hibernate.getSessionFactory(), workflowResource, workflowVersionResource, configuration);
+        environment.jersey().register(aliasResource);
 
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);
