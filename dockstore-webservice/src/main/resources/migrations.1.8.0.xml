@@ -42,4 +42,18 @@
             create policy delete_frozenfiles on version_sourcefile for delete using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
         </sql>
     </changeSet>
+    <changeSet author="waltershands (generated)" id="supportworkflowalias">
+        <createTable tableName="workflowversion_alias">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="workflowversion_alias_pkey"/>
+            </column>
+            <column name="content" type="TEXT"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="alias" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="workflowversion_alias_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="workflowversion_alias" constraintName="fk_workflowversion_alias" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+    </changeSet>
    </databaseChangeLog>

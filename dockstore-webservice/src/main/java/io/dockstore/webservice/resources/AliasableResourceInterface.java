@@ -47,6 +47,7 @@ public interface AliasableResourceInterface<T extends Aliasable> {
 
     /**
      * Get a resource with id and only return it if user has rights to see/change it
+     *
      * @param user
      * @param id
      * @return
