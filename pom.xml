@@ -1330,7 +1330,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
-                <argLine>-XX:MaxRAM=3g</argLine>
+                <argLine>-Xmx512m</argLine>
             </properties>
         </profile>
         <profile>
@@ -1339,7 +1339,7 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <argLine>-XX:MaxRAM=3g</argLine>
+                <argLine>-Xmx512m</argLine>
             </properties>
             <build>
                 <plugins>
