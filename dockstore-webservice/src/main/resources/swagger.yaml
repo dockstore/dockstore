@@ -4056,6 +4056,58 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/users/entries:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getUserEntries"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "count"
+        in: "query"
+        required: false
+        type: "integer"
+        format: "int32"
+      - name: "filter"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/EntryUpdateTime"
+  /users/users/organizations:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getUserDockstoreOrganizations"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "count"
+        in: "query"
+        required: false
+        type: "integer"
+        format: "int32"
+      - name: "filter"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/OrganizationUpdateTime"
   /users/{userId}:
     get:
       tags:
@@ -6029,10 +6081,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6048,6 +6096,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6391,10 +6443,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6410,6 +6458,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6627,10 +6679,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6646,6 +6694,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6725,6 +6777,20 @@ definitions:
         position: 13
         description: "The Digital Object Identifier (DOI) representing all of the\
           \ versions of your workflow"
+  EntryUpdateTime:
+    type: "object"
+    properties:
+      path:
+        type: "string"
+      entryType:
+        type: "string"
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+      lastUpdateDate:
+        type: "string"
+        format: "date-time"
   Error:
     type: "object"
     required:
@@ -6998,6 +7064,16 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
+  OrganizationUpdateTime:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      displayName:
+        type: "string"
+      lastUpdateDate:
+        type: "string"
+        format: "date-time"
   OrganizationUser:
     type: "object"
     required:
@@ -7693,15 +7769,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7940,14 +8016,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parentEntry:
-        $ref: "#/definitions/Entry"
       isChecker:
         type: "boolean"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      parentEntry:
+        $ref: "#/definitions/Entry"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7963,6 +8035,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

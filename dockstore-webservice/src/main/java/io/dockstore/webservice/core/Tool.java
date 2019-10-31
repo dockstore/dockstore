@@ -42,6 +42,7 @@ import javax.persistence.UniqueConstraint;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -147,6 +148,15 @@ public class Tool extends Entry<Tool, Tag> {
         // this.userId = userId;
         this.name = name;
         workflowVersions = new TreeSet<>();
+    }
+
+    @Override
+    public String getEntryPath() {
+        return this.getToolPath();
+    }
+
+    public EntryType getEntryType() {
+        return EntryType.TOOL;
     }
 
     // compromise: this sucks, but setting the json property to tags allows for backwards compatibility of existing clients

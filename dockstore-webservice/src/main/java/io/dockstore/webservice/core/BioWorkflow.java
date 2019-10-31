@@ -25,6 +25,7 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -50,6 +51,10 @@ public class BioWorkflow extends Workflow {
     @JsonProperty("is_checker")
     @ApiModelProperty(position = 23)
     private boolean isChecker = false;
+
+    public EntryType getEntryType() {
+        return EntryType.WORKFLOW;
+    }
 
     @Override
     public Entry getParentEntry() {

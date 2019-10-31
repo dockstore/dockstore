@@ -60,6 +60,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -215,6 +216,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
     }
+
+    @JsonIgnore
+    public abstract String getEntryPath();
+
+    @JsonIgnore
+    public abstract EntryType getEntryType();
 
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
@@ -383,7 +390,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
-    
+
     public Set<User> getStarredUsers() {
         return starredUsers;
     }

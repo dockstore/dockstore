@@ -4329,6 +4329,62 @@ paths:
                 $ref: "#/components/schemas/User"
       security:
         - BEARER: []
+  /users/users/entries:
+    get:
+      tags:
+        - users
+      summary: See OpenApi for details
+      description: ""
+      operationId: getUserEntries
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EntryUpdateTime"
+  /users/users/organizations:
+    get:
+      tags:
+        - users
+      summary: See OpenApi for details
+      description: ""
+      operationId: getUserDockstoreOrganizations
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationUpdateTime"
   "/users/{userId}":
     get:
       tags:
@@ -6434,10 +6490,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6453,6 +6505,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6767,10 +6823,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6786,6 +6838,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6976,10 +7032,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6995,6 +7047,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7062,6 +7118,20 @@ components:
           type: string
           description: The Digital Object Identifier (DOI) representing all of the versions
             of your workflow
+    EntryUpdateTime:
+      type: object
+      properties:
+        path:
+          type: string
+        entryType:
+          type: string
+          enum:
+            - TOOL
+            - WORKFLOW
+            - SERVICE
+        lastUpdateDate:
+          type: string
+          format: date-time
     Error:
       type: object
       required:
@@ -7303,6 +7373,16 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/User"
+    OrganizationUpdateTime:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        lastUpdateDate:
+          type: string
+          format: date-time
     OrganizationUser:
       type: object
       required:
@@ -7955,15 +8035,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -8168,14 +8248,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parentEntry:
-          $ref: "#/components/schemas/Entry"
         isChecker:
           type: boolean
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         has_checker:
           type: boolean
           readOnly: true
@@ -8191,6 +8267,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
