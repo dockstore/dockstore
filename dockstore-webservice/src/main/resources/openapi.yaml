@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.8.0-alpha.0-SNAPSHOT
+  version: 1.8.0-alpha.1-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -14,6 +14,7 @@ info:
     name: Apache License Version 2.0
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
 tags:
+  - name: aliases
   - name: containers
     description: List and register entries in the dockstore (pairs of images + metadata
       (CWL and Dockerfile))
@@ -48,6 +49,61 @@ tags:
   - name: workflows
     description: List and register workflows in the dockstore (CWL or WDL)
 paths:
+  "/aliases/workflow-versions/{alias}":
+    get:
+      tags:
+        - aliases
+      summary: Retrieves a workflow version by alias.
+      description: Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
+      operationId: getWorkflowVersionByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/WorkflowVersion"
+      security:
+        - BEARER: []
+  "/aliases/workflow-versions/{workflowVersionId}":
+    post:
+      tags:
+        - aliases
+      summary: Add aliases linked to a workflow version in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: addAliases
+      parameters:
+        - name: workflowVersionId
+          in: path
+          description: workflow version to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/WorkflowVersion"
+      security:
+        - BEARER: []
   /api/ga4gh/v1/metadata:
     get:
       tags:
@@ -6589,6 +6645,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6604,10 +6664,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6798,6 +6854,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6813,10 +6873,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7964,6 +8020,10 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7979,10 +8039,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -8117,6 +8173,11 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for workflow versions
+          additionalProperties:
+            $ref: "#/components/schemas/Alias"
         workingDirectory:
           type: string
         reference:
