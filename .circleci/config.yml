@@ -4,7 +4,7 @@ jobs:
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
         environment:
-          JAVA_TOOL_OPTIONS: -Xms2g -Xmx2g
+          JAVA_TOOL_OPTIONS: -Xmx2g
           PGHOST: 127.0.0.1
       - image: circleci/postgres:9.6.5-alpine-ram
         environment:
