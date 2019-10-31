@@ -28,6 +28,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
@@ -358,27 +359,29 @@ public class UserResourceIT extends BaseIT {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        ContainersApi toolsApi = new ContainersApi(client);
         User user = userApi.getUser();
 
-        List<Workflow> workflows = userApi.refreshWorkflows(user.getId());
+        Workflow addedWorkflow = workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
+
         List<DockstoreTool> tools = userApi.refresh(user.getId());
-        List<EntryUpdateTime> entries = userApi.getUserEntries(user.getId(), 10, null);
-        assertTrue(entries.size() > 0);
-        assertEquals(entries.get(0).getPath(), "quay.io/dockstoretestuser2/quayandgithub");
-        assertEquals(entries.get(entries.size() - 1).getPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified");
+        List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
+        assertFalse(entries.isEmpty());
+        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(0).getPath());
+        assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPath());
 
         // Update an entry
         Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
         workflowsApi.refresh(workflow.getId());
 
         // Entry should now be at the top
-        entries = userApi.getUserEntries(user.getId(), 10, null);
-        assertEquals(entries.get(0).getPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified");
-        assertEquals(entries.get(1).getPath(), "quay.io/dockstoretestuser2/quayandgithub");
+        entries = userApi.getUserEntries(10, null);
+        assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(0).getPath());
+        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(1).getPath());
 
         // Search for quay.io
-        entries = userApi.getUserEntries(user.getId(), 10, "quay.io");
-        assertEquals(entries.get(0).getPath(), "quay.io/dockstoretestuser2/quayandgithub");
+        entries = userApi.getUserEntries(10, "quay.io");
+        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(0).getPath());
 
         // Create organizations
         Organization foobarOrg = createOrganization(client, "Foobar", "Foo Bar");
@@ -386,23 +389,23 @@ public class UserResourceIT extends BaseIT {
         Organization tacoOrg = createOrganization(client, "taco", "taco place");
 
         // taco should be most recent
-        List<OrganizationUpdateTime> organizations = userApi.getUserDockstoreOrganizations(user.getId(), 10, null);
-        assertTrue(organizations.size() > 0);
-        assertEquals(organizations.get(0).getName(), "taco");
+        List<OrganizationUpdateTime> organizations = userApi.getUserDockstoreOrganizations(10, null);
+        assertFalse(organizations.isEmpty());
+        assertEquals("taco", organizations.get(0).getName());
 
         // Add collection to foobar2
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
         organizationsApi.createCollection(foobarOrgTwo.getId(), createCollection());
 
         // foobar2 should be the most recent
-        organizations = userApi.getUserDockstoreOrganizations(user.getId(), 10, null);
-        assertTrue(organizations.size() > 0);
-        assertEquals(organizations.get(0).getName(), "Foobar2");
+        organizations = userApi.getUserDockstoreOrganizations(10, null);
+        assertFalse(organizations.isEmpty());
+        assertEquals("Foobar2", organizations.get(0).getName());
 
         // Search for taco organization
-        organizations = userApi.getUserDockstoreOrganizations(user.getId(), 10, "tac");
-        assertTrue(organizations.size() > 0);
-        assertEquals(organizations.get(0).getName(), "taco");
+        organizations = userApi.getUserDockstoreOrganizations(10, "tac");
+        assertFalse(organizations.isEmpty());
+        assertEquals("taco", organizations.get(0).getName());
     }
 
     /**

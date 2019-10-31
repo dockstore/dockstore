@@ -328,19 +328,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/{userId}/organizations:
+  /users/users/organizations:
     get:
       description: Get all of the Dockstore organizations for a user, sorted by most
         recently updated.
       operationId: getUserDockstoreOrganizations
       parameters:
-      - name: userId
-        in: path
-        description: ID of user
-        required: true
-        schema:
-          type: integer
-          format: int64
       - name: count
         in: query
         description: Maximum number of organizations to return
@@ -363,18 +356,11 @@ paths:
                   $ref: '#/components/schemas/OrganizationUpdateTime'
       security:
       - bearer: []
-  /users/{userId}/entries:
+  /users/users/entries:
     get:
       description: Get all of the entries for a user, sorted by most recently updated.
       operationId: getUserEntries
       parameters:
-      - name: userId
-        in: path
-        description: ID of user
-        required: true
-        schema:
-          type: integer
-          format: int64
       - name: count
         in: query
         description: Maximum number of entries to return

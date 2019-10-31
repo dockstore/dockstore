@@ -62,9 +62,9 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
-import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -601,22 +601,20 @@ public class UserResource implements AuthenticatedResourceInterface {
         return tools;
     }
     @GET
-    @Path("/{userId}/organizations")
+    @Path("/users/organizations")
     @Timed
     @UnitOfWork(readOnly = true)
     @Operation(operationId = "getUserDockstoreOrganizations", description = "Get all of the Dockstore organizations for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
     public List<OrganizationUpdateTime> getUserDockstoreOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
-                                                            @Parameter(name = "User ID", description = "ID of user", required = true, in = ParameterIn.PATH) @PathParam("userId") long userId,
                                                             @Parameter(name = "count", description = "Maximum number of organizations to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                             @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
-        checkUser(authUser, userId);
-        final User fetchedUser = this.userDAO.findById(userId);
-
         final List<OrganizationUpdateTime> organizations = new ArrayList<>();
+        final User fetchedUser = this.userDAO.findById(authUser.getId());
 
         // Retrieve all organizations and get timestamps
         Set<OrganizationUser> organizationUsers = fetchedUser.getOrganizations();
+
         organizationUsers.forEach((OrganizationUser organizationUser) -> {
             Organization organization = organizationUser.getOrganization();
             Optional<Collection> mostRecentCollection = organization.getCollections().stream().max(Comparator.comparing(Collection::getDbUpdateDate));
@@ -628,12 +626,11 @@ public class UserResource implements AuthenticatedResourceInterface {
         });
 
         // Sort all organizations by timestamp
-        List<OrganizationUpdateTime> sortedOrganizations = organizations.stream().sorted(Comparator.comparing(OrganizationUpdateTime::getLastUpdateDate).reversed()).collect(Collectors.toList());
-
-        // Apply filter if necessary
-        if (filter != null && !filter.isBlank()) {
-            sortedOrganizations = sortedOrganizations.stream().filter((OrganizationUpdateTime organization) -> organization.getName().contains(filter) || organization.getDisplayName().contains(filter)).collect(Collectors.toList());
-        }
+        List<OrganizationUpdateTime> sortedOrganizations = organizations
+                .stream()
+                .filter((OrganizationUpdateTime organizationUpdateTime) -> filter == null || filter.isBlank() || organizationUpdateTime.getName().contains(filter) || organizationUpdateTime.getDisplayName().contains(filter))
+                .sorted(Comparator.comparing(OrganizationUpdateTime::getLastUpdateDate).reversed())
+                .collect(Collectors.toList());
 
         // Grab subset if necessary
         if (count != null) {
@@ -643,24 +640,22 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @GET
-    @Path("/{userId}/entries")
+    @Path("/users/entries")
     @Timed
     @UnitOfWork(readOnly = true)
     @Operation(operationId = "getUserEntries", description = "Get all of the entries for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
     public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
-                                                @Parameter(name = "User ID", description = "ID of user", required = true, in = ParameterIn.PATH) @PathParam("userId") long userId,
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
-        checkUser(authUser, userId);
-        final User fetchedUser = this.userDAO.findById(userId);
-
         final List<EntryUpdateTime> entryUpdateTimes = new ArrayList<>();
+        final User fetchedUser = this.userDAO.findById(authUser.getId());
 
         Set<Entry> entries = fetchedUser.getEntries();
         entries.forEach(entry -> {
-            Optional<WorkflowVersion> mostRecentTag = entry.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getDbUpdateDate));
             Timestamp timestamp = entry.getDbUpdateDate();
+            Set<Version> versions = entry.getWorkflowVersions();
+            Optional<Version> mostRecentTag = versions.stream().max(Comparator.comparing(Version::getDbUpdateDate));
             if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
                 timestamp = mostRecentTag.get().getDbUpdateDate();
             }
@@ -668,12 +663,11 @@ public class UserResource implements AuthenticatedResourceInterface {
         });
 
         // Sort all entryUpdateTimes by timestamp
-        List<EntryUpdateTime> sortedEntries = entryUpdateTimes.stream().sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate).reversed()).collect(Collectors.toList());
-
-        // Apply filter if necessary
-        if (filter != null && !filter.isBlank()) {
-            sortedEntries = sortedEntries.stream().filter((EntryUpdateTime entry) -> entry.getPath().contains(filter)).collect(Collectors.toList());
-        }
+        List<EntryUpdateTime> sortedEntries = entryUpdateTimes
+                .stream()
+                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().contains(filter))
+                .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate).reversed())
+                .collect(Collectors.toList());
 
         // Grab subset if necessary
         if (count != null) {
