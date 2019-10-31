@@ -1330,7 +1330,6 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
-                <argLine>-Xmx512m</argLine>
             </properties>
         </profile>
         <profile>
@@ -1339,7 +1338,6 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <argLine>-Xmx512m</argLine>
             </properties>
             <build>
                 <plugins>
