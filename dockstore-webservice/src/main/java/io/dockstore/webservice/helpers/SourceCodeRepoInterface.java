@@ -254,6 +254,7 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Update an entry with the contents of the descriptor file from a source code repo
+     * If no description from the descriptor file, fall back to README from default branch
      *
      * @param entry entry to update
      * @param type the type of language to look for
@@ -324,6 +325,10 @@ public abstract class SourceCodeRepoInterface {
 
         if (sourceFiles == null || sourceFiles.isEmpty()) {
             LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
+            String readmeContent = getREADMEContent(repositoryId, version.getReference());
+            if (readmeContent != null && !readmeContent.isBlank()) {
+                entry.setDescription(readmeContent);
+            }
             return entry;
         }
 
@@ -340,7 +345,10 @@ public abstract class SourceCodeRepoInterface {
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
         Entry newEntry = anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles, version);
         if (newEntry.getDescription() == null || newEntry.getDescription().isEmpty()) {
-            newEntry.setDescription(getREADMEContent(repositoryId, newEntry.getDefaultVersion()));
+            String readmeContent = getREADMEContent(repositoryId, version.getReference());
+            if (readmeContent != null && !readmeContent.isBlank()) {
+                entry.setDescription(readmeContent);
+            }
         }
         return newEntry;
     }

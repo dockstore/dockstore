@@ -28,7 +28,6 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
@@ -43,6 +42,7 @@ import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import org.apache.http.HttpStatus;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -359,7 +359,6 @@ public class UserResourceIT extends BaseIT {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        ContainersApi toolsApi = new ContainersApi(client);
         User user = userApi.getUser();
 
         Workflow addedWorkflow = workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
@@ -372,7 +371,8 @@ public class UserResourceIT extends BaseIT {
 
         // Update an entry
         Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
-        workflowsApi.refresh(workflow.getId());
+        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId());
+        Assert.assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
 
         // Entry should now be at the top
         entries = userApi.getUserEntries(10, null);
