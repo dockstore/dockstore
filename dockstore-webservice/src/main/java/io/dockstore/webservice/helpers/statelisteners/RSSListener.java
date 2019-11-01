@@ -43,10 +43,7 @@ public class RSSListener implements StateListenerInterface {
 
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
-        //TODO ideally, we could should update the sitemap for the one new entry
-        if (command == StateManagerMode.UPDATE) {
-            return;
-        }
+        //TODO ideally, we could should update the rss for the one new entry
         invalidateCache();
     }
 
