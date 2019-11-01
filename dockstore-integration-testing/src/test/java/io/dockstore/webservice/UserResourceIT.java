@@ -366,7 +366,6 @@ public class UserResourceIT extends BaseIT {
         List<DockstoreTool> tools = userApi.refresh(user.getId());
         List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
         assertFalse(entries.isEmpty());
-        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(0).getPath());
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPath());
 
         // Update an entry
@@ -377,11 +376,6 @@ public class UserResourceIT extends BaseIT {
         // Entry should now be at the top
         entries = userApi.getUserEntries(10, null);
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(0).getPath());
-        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(1).getPath());
-
-        // Search for quay.io
-        entries = userApi.getUserEntries(10, "quay.io");
-        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(0).getPath());
 
         // Create organizations
         Organization foobarOrg = createOrganization(client, "Foobar", "Foo Bar");
