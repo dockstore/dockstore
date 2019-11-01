@@ -169,6 +169,11 @@ public class WDLHandlerTest {
             }
         }
 
+        @Override
+        public String getREADMEContent(String repositoryId, String branch) {
+            return null;
+        }
+
         // From here on down these methods are not invoked in our tests
         @Override
         public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {

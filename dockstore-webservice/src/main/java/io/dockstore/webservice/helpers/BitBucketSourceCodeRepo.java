@@ -321,6 +321,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    public String getREADMEContent(String repositoryId, String branch) {
+        return this.readFile(repositoryId, "README.md", branch);
+    }
+
     @Override
     public String getRepositoryId(Entry entry) {
         String repositoryId;
