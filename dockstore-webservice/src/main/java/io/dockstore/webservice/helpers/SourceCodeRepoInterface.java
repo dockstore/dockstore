@@ -66,6 +66,10 @@ public abstract class SourceCodeRepoInterface {
     protected static final List<String> README_PATHS = new ArrayList<>(Arrays.asList("README.md", "readme.md", "/README.md", "/readme.md", "README", "readme", "/README", "/readme"));
     String gitUsername;
 
+    public String getREADMEContent(String repositoryId, String branch) {
+        return README_PATHS.stream().map(path -> this.readFile(repositoryId, path, branch)).filter(Objects::nonNull).findFirst().orElse(null);
+    }
+
     /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
@@ -87,10 +91,6 @@ public abstract class SourceCodeRepoInterface {
     void readFile(String repositoryId, Version tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
         Optional<SourceFile> sourceFile = this.readFile(repositoryId, tag, fileType, path);
         sourceFile.ifPresent(files::add);
-    }
-
-    public String getREADMEContent(String repositoryId, String branch) {
-        return README_PATHS.stream().map(path -> this.readFile(repositoryId, path, branch)).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     /**
