@@ -113,6 +113,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
     private String description;
 
+    private DescriptionSource descriptionSource;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
@@ -238,6 +240,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.conceptDoi = conceptDoi;
     }
 
+
+    public DescriptionSource getDescriptionSource() {
+        return descriptionSource;
+    }
+
     @JsonProperty
     public String getConceptDoi() {
         return conceptDoi;
@@ -278,11 +285,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return description;
     }
 
-    /**
-     * @param description the repo description to set
-     */
-    public void setDescription(String description) {
-        this.description = description;
+    public void setDescriptionAndDescriptionSource(String newDescription, DescriptionSource newDescriptionSource) {
+        this.description = newDescription;
+        this.descriptionSource = newDescriptionSource;
     }
 
     public String getDefaultVersion() {
@@ -417,7 +422,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
-        this.setDescription(entry.getDescription());
+        this.setDescriptionAndDescriptionSource(entry.getDescription(), entry.getDescriptionSource());
         lastModified = entry.getLastModifiedDate();
         this.setAuthor(entry.getAuthor());
         this.setEmail(entry.getEmail());

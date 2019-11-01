@@ -185,7 +185,7 @@ public class Tool extends Entry<Tool, Tag> {
      */
     public void update(Tool tool) {
         super.update(tool);
-        this.setDescription(tool.getDescription());
+        this.setDescriptionAndDescriptionSource(tool.getDescription(), tool.getDescriptionSource());
         lastBuild = tool.getLastBuild();
         this.toolMaintainerEmail = tool.getToolMaintainerEmail();
         this.privateAccess = tool.isPrivateAccess();

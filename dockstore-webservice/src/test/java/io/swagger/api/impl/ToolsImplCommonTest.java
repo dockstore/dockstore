@@ -299,7 +299,7 @@ public class ToolsImplCommonTest {
         workflow.setDefaultTestParameterFilePath(null);
         workflow.setId(950);
         workflow.setAuthor(null);
-        workflow.setDescription(null);
+        workflow.setDescriptionAndDescriptionSource(null, null);
         workflow.setLabels(Collections.emptySortedSet());
         workflow.setUsers(Collections.emptySortedSet());
         workflow.setEmail(null);

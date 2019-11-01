@@ -41,6 +41,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
@@ -112,7 +113,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     entry.setEmail(Joiner.on(", ").join(emails));
                 }
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {
-                    entry.setDescription(mainDescription[0]);
+                    entry.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
                 }
             } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
@@ -134,7 +135,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         if (entry instanceof Workflow) {
             entry.setAuthor(null);
             entry.setEmail(null);
-            entry.setDescription(null);
+            entry.setDescriptionAndDescriptionSource(null, null);
         }
     }
 

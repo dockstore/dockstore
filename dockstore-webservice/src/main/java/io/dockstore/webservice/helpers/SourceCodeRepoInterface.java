@@ -38,6 +38,7 @@ import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -327,7 +328,7 @@ public abstract class SourceCodeRepoInterface {
             LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
-                entry.setDescription(readmeContent);
+                entry.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
             }
             return entry;
         }
@@ -347,7 +348,7 @@ public abstract class SourceCodeRepoInterface {
         if (newEntry.getDescription() == null || newEntry.getDescription().isEmpty()) {
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
-                entry.setDescription(readmeContent);
+                entry.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
             }
         }
         return newEntry;

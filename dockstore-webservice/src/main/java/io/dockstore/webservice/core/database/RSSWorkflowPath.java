@@ -34,7 +34,7 @@ public class RSSWorkflowPath {
         this.bioWorkflow.setRepository(repository);
         this.bioWorkflow.setWorkflowName(entryName);
         this.bioWorkflow.setLastUpdated(lastUpdated);
-        this.bioWorkflow.setDescription(description);
+        this.bioWorkflow.setDescriptionAndDescriptionSource(description, null);
     }
 
     public BioWorkflow getBioWorkflow() {

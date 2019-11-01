@@ -48,7 +48,7 @@ public class WDLHandlerTest {
         final WDLHandler wdlHandler = new WDLHandler();
         final Workflow workflow = new BioWorkflow();
         workflow.setAuthor("Jane Doe");
-        workflow.setDescription("A good description");
+        workflow.setDescriptionAndDescriptionSource("A good description", null);
         workflow.setEmail("janedoe@example.org");
 
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
@@ -73,7 +73,7 @@ public class WDLHandlerTest {
         final WDLHandler wdlHandler = new WDLHandler();
         final Tool tool = new Tool();
         tool.setAuthor("Jane Doe");
-        tool.setDescription("A good description");
+        tool.setDescriptionAndDescriptionSource("A good description", null);
         tool.setEmail("janedoe@example.org");
 
         Assert.assertEquals("Jane Doe", tool.getAuthor());

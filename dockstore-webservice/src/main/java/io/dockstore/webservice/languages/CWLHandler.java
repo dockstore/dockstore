@@ -39,6 +39,7 @@ import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
@@ -109,7 +110,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 final String finalChoiceForDescription = ObjectUtils.firstNonNull(doc, description, label);
 
                 if (finalChoiceForDescription != null) {
-                    entry.setDescription(finalChoiceForDescription);
+                    entry.setDescriptionAndDescriptionSource(finalChoiceForDescription, DescriptionSource.DESCRIPTOR);
                 } else {
                     LOG.info("Description not found!");
                 }
