@@ -1334,7 +1334,6 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <argLine>-Xmx2048m -Xms2048m</argLine>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
             </properties>
         </profile>
@@ -1345,7 +1344,6 @@
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
                 <skipClientITs>true</skipClientITs>
-                <excludeGroups>io.dockstore.common.MemoryIntensiveTest</excludeGroups>
             </properties>
             <build>
                 <plugins>
@@ -1374,17 +1372,6 @@
                 <skipITs>false</skipITs>
                 <skipClientITs>false</skipClientITs>
                 <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest,io.dockstore.common.NonConfidentialTest</excludeGroups>
-            </properties>
-        </profile>
-        <profile>
-            <id>memory-intensive-unit-tests</id>
-            <!-- run all memory intensive non-integration tests -->
-            <properties>
-                <skipTests>false</skipTests>
-                <skipITs>true</skipITs>
-                <groups>io.dockstore.common.MemoryIntensiveTest</groups>
-                <!-- https://github.com/jasongilman/proto-repl/issues/282 -->
-                <argLine>-XX:+UseContainerSupport</argLine>
             </properties>
         </profile>
         <profile>
