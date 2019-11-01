@@ -11,7 +11,6 @@ import java.util.Optional;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.MemoryIntensiveTest;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -29,13 +28,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
 import static org.mockito.Mockito.when;
 
-@Category(MemoryIntensiveTest.class)
 public class WDLHandlerTest {
 
     public static final String MAIN_WDL = "/GATKSVPipelineClinical.wdl";
