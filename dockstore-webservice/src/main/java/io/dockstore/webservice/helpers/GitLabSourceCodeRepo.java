@@ -79,10 +79,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return null;
     }
 
-    public String getREADMEContent(String repositoryId, String branch) {
-        return readFile(repositoryId, "README.md", branch);
-    }
-
     @Override
     public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
         try {

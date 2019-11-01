@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
 public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
     public static final int BYTES_IN_KB = 1024;
-    private static final List<String> README_PATHS = new ArrayList<>(Arrays.asList("README.md", "readme.md", "/README.md", "/readme.md", "README", "readme", "/README", "/readme"));
+    protected static final List<String> README_PATHS = new ArrayList<>(Arrays.asList("README.md", "readme.md", "/README.md", "/readme.md", "README", "readme", "/README", "/readme"));
     String gitUsername;
 
     /**
@@ -77,7 +77,6 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract String readFile(String repositoryId, String fileName, @NotNull String reference);
 
-    public abstract  String getREADMEContent(String repositoryId, String branch);
     /**
      * Read a file from the importer and add it into files
      * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
@@ -88,6 +87,10 @@ public abstract class SourceCodeRepoInterface {
     void readFile(String repositoryId, Version tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
         Optional<SourceFile> sourceFile = this.readFile(repositoryId, tag, fileType, path);
         sourceFile.ifPresent(files::add);
+    }
+
+    public String getREADMEContent(String repositoryId, String branch) {
+        return README_PATHS.stream().map(path -> this.readFile(repositoryId, path, branch)).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     /**

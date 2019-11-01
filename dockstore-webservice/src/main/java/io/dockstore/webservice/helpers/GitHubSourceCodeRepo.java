@@ -294,11 +294,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
-    public String getREADMEContent(String repositoryId, String branch) {
-        return this.readFile(repositoryId, "README.md", branch);
-    }
-
-
     @Override
     public Service initializeService(String repositoryId) {
         Service service = new Service();
