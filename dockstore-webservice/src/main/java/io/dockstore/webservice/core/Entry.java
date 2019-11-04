@@ -33,6 +33,7 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -113,7 +114,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
     private String description;
 
-    private DescriptionSource descriptionSource;
+    @Column(name = "description_source")
+    @Enumerated(EnumType.STRING)
+    private DescriptionSource descriptionSource = DescriptionSource.DESCRIPTOR;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
