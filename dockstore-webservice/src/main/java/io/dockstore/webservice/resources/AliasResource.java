@@ -12,7 +12,6 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -25,7 +24,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,8 +45,8 @@ public class AliasResource {
     private final WorkflowVersionResource workflowVersionResource;
 
 
-    public AliasResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource,
-            WorkflowVersionResource workflowVersionResource, DockstoreWebserviceConfiguration configuration) {
+    public AliasResource(SessionFactory sessionFactory, WorkflowResource workflowResource,
+            WorkflowVersionResource workflowVersionResource) {
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.workflowResource = workflowResource;

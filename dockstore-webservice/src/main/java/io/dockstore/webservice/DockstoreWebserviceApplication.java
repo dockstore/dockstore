@@ -298,7 +298,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final WorkflowVersionResource workflowVersionResource = new WorkflowVersionResource(httpClient, hibernate.getSessionFactory(), workflowResource, configuration);
         environment.jersey().register(workflowVersionResource);
 
-        final AliasResource aliasResource = new AliasResource(httpClient, hibernate.getSessionFactory(), workflowResource, workflowVersionResource, configuration);
+        final AliasResource aliasResource = new AliasResource(hibernate.getSessionFactory(), workflowResource, workflowVersionResource);
         environment.jersey().register(aliasResource);
 
         // attach the container dao statically to avoid too much modification of generated code

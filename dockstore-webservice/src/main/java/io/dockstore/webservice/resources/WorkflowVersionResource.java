@@ -51,8 +51,9 @@ public class WorkflowVersionResource implements AuthenticatedResourceInterface, 
     }
 
     @Override
+    // TODO: EntryResource.java also throws an exception for this method; need good explanation for why
     public WorkflowVersion getAndCheckResourceByAlias(String alias) {
-        throw new UnsupportedOperationException("Use the TRS API for tools and workflows????????????");
+        throw new UnsupportedOperationException("Use the TRS API for tools and workflows");
     }
 
 }
