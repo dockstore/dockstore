@@ -5,6 +5,7 @@ import java.util.Optional;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -42,12 +43,10 @@ public class WorkflowVersionResource implements AuthenticatedResourceInterface, 
             throw new CustomWebApplicationException("Workflow version not found when searching with id: " + workflowVersionId, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // TODO: How do I get the workflow from the workflow version?
-        // String workflowPath = workflowVersion.getWorkflowPath();
-        // final Class<? extends Workflow> targetClass = BioWorkflow.class;
-        // Workflow workflow = workflowDAO.findByPath(workflowPath, false, targetClass).orElse(null);
-        // workflowResource.checkEntry(workflow);
-        // workflowResource.checkUserCanUpdate(user, workflow);
+        long workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
+        Workflow workflow = workflowDAO.findById(workflowId);
+        workflowResource.checkEntry(workflow);
+        workflowResource.checkUserCanUpdate(user, workflow);
         return workflowVersion;
     }
 

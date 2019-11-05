@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -235,5 +236,10 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public Workflow findByAlias(String alias) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+    }
+
+    public long getWorkflowIdByWorkflowVersionId(long workflowVersionId) {
+        return ((BigInteger) namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
+                .setParameter("workflowVersionId", workflowVersionId).getSingleResult()).longValueExact();
     }
 }
