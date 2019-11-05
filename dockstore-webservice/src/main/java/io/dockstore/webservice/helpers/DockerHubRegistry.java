@@ -62,4 +62,9 @@ public class DockerHubRegistry extends AbstractImageRegistry {
     public boolean canConvertToAuto(Tool tool) {
         return false;
     }
+
+    @Override
+    public Tag getImageInformation(Tool tool, Tag tag) {
+        return tag;
+    }
 }

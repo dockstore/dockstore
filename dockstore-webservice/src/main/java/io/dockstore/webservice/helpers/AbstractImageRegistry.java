@@ -38,6 +38,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -107,6 +108,8 @@ public abstract class AbstractImageRegistry {
      * @return
      */
     public abstract boolean canConvertToAuto(Tool tool);
+
+    public abstract Tag getImageInformation(Tool tool, Tag tag);
 
     /**
      * Updates/Adds/Deletes tools and their associated tags
@@ -254,6 +257,7 @@ public abstract class AbstractImageRegistry {
      * @param fileDAO
      * @param toolDAO
      */
+    @SuppressWarnings("checkstyle:methodlength")
     private void updateTags(List<Tag> newTags, @NotNull Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO) {
         // Get all existing tags
@@ -291,6 +295,25 @@ public abstract class AbstractImageRegistry {
                     if (newTag.getName().equals(oldTag.getName())) {
                         exists = true;
 
+                        // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
+                        // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
+                        if (oldTag.getImages().isEmpty()) {
+                            oldTag.getImages().addAll(getImageInformation(tool, newTag).getImages());
+
+                        } else {
+                            // There should only be one image per tag so each loop should only execute once.
+                            Set<Image> oldImages = oldTag.getImages();
+                            Set<Image> newImages = newTag.getImages();
+                            for (Image image : oldImages) {
+                                for (Image newImage : newImages) {
+                                    if (image.getImageID() != newImage.getImageID()) {
+                                        oldTag.getImages().remove(image);
+                                        oldTag.getImages().addAll(getImageInformation(tool, newTag).getImages());
+                                    }
+                                }
+                            }
+                        }
+
                         oldTag.update(newTag);
 
                         // Update tag with default paths if dirty bit not set
@@ -319,6 +342,7 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
+                    clonedTag.getImages().addAll(getImageInformation(tool, clonedTag).getImages());
                     if (tool.getDefaultTestCwlParameterFile() != null) {
                         clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), DescriptorLanguage.FileType.CWL_TEST_JSON));
                     }

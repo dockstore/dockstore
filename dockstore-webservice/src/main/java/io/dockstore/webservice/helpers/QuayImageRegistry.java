@@ -22,11 +22,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,6 +37,8 @@ import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
@@ -94,7 +98,9 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             for (Entry<String, Map<String, String>> stringMapEntry : listOfTags.entrySet()) {
                 final String s = gson.toJson(stringMapEntry.getValue());
                 try {
+
                     final Tag tag = objectMapper.readValue(s, Tag.class);
+                    getImageInformation(tool, tag);
                     insertQuayLastModifiedIntoLastBuilt(stringMapEntry, tag);
                     tags.add(tag);
                 } catch (IOException ex) {
@@ -108,6 +114,31 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         updateTagsWithBuildInformation(repository, tags, tool);
 
         return tags;
+    }
+
+    public Tag getImageInformation(Tool tool, Tag tag) {
+        LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
+        final String repo = tool.getNamespace() + '/' + tool.getName();
+        final String repoUrl = QUAY_URL + "repository/" + repo;
+        final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
+
+        if (asStringBuilds.isPresent()) {
+            final String json = asStringBuilds.get();
+            Gson gson = new Gson();
+            Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
+            map = (Map<String, Map<String, Map<String, String>>>)gson.fromJson(json, map.getClass());
+
+            final Map<String, String> tagInfo = map.get("tags").get(tag.getName());
+            final String manifestDigest = tagInfo.get("manifest_digest");
+            final String imageID = tagInfo.get("image_id");
+
+            List<Checksum> checksums = new ArrayList<>();
+            checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+            Set<Image> images = new HashSet<>();
+            images.add(new Image(checksums, repo, tag.getName(), imageID));
+            tag.setImages(images);
+        }
+        return tag;
     }
 
     private void insertQuayLastModifiedIntoLastBuilt(Entry<String, Map<String, String>> stringMapEntry, Tag tag) {

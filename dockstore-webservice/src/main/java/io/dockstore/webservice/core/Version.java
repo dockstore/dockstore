@@ -156,7 +156,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OrderBy("type")
     private final SortedSet<Validation> validations;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
     @ApiModelProperty(value = "The images that belong to this version", position = 15)
     private Set<Image> images = new HashSet<>();

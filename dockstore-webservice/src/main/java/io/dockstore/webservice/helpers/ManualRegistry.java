@@ -61,4 +61,9 @@ public class ManualRegistry extends AbstractImageRegistry {
     public boolean canConvertToAuto(Tool tool) {
         return false;
     }
+
+    @Override
+    public Tag getImageInformation(Tool tool, Tag tag) {
+        return tag;
+    }
 }
