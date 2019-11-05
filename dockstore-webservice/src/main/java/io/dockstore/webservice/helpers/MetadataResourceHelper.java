@@ -6,9 +6,7 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.ToolPath;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowPath;
 
 public final class MetadataResourceHelper {
 
@@ -28,14 +26,6 @@ public final class MetadataResourceHelper {
             return baseUrl + "/services/" + workflow.getWorkflowPath();
         }
         throw new UnsupportedOperationException("should be unreachable");
-    }
-
-    public static String createWorkflowURL(WorkflowPath workflow, String entryType) {
-        return String.format("%s/%ss/%s", baseUrl, entryType, workflow.getEntryPath());
-    }
-
-    public static String createToolURL2(ToolPath toolPath) {
-        return String.format("%s/containers/%s", baseUrl, toolPath.getEntryPath());
     }
 
     public static String createOrganizationURL(Organization organization) {

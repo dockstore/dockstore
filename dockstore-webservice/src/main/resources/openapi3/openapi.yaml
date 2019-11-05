@@ -41,20 +41,6 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
       - bearer: []
-  /metadata/config.json:
-    get:
-      tags:
-      - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Config'
   /metadata/dockerRegistryList:
     get:
       tags:
@@ -209,6 +195,20 @@ paths:
           content:
             text/html: {}
             text/xml: {}
+  /metadata/config.json:
+    get:
+      tags:
+      - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
   /toolTester/logs/search:
     get:
       tags:
@@ -328,6 +328,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+  /users/users/organizations:
+    get:
+      description: Get all of the Dockstore organizations for a user, sorted by most
+        recently updated.
+      operationId: getUserDockstoreOrganizations
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of organizations to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationUpdateTime'
+      security:
+      - bearer: []
+  /users/users/entries:
+    get:
+      description: Get all of the entries for a user, sorted by most recently updated.
+      operationId: getUserEntries
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of entries to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryUpdateTime'
+      security:
+      - bearer: []
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -490,6 +545,13 @@ components:
       properties:
         content:
           type: string
+    Checksum:
+      type: object
+      properties:
+        type:
+          type: string
+        checksum:
+          type: string
     Entry:
       type: object
       properties:
@@ -549,9 +611,6 @@ components:
         last_modified:
           type: integer
           format: int32
-        last_modified_date:
-          type: string
-          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -567,10 +626,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
     FileFormat:
       type: object
       properties:
         value:
+          type: string
+    Image:
+      type: object
+      properties:
+        checksums:
+          type: array
+          items:
+            $ref: '#/components/schemas/Checksum'
+        repository:
+          type: string
+        tag:
+          type: string
+        imageID:
           type: string
     Label:
       type: object
@@ -660,9 +735,6 @@ components:
           format: date-time
         name:
           type: string
-        tosacceptanceDate:
-          type: string
-          format: date-time
         tosversion:
           type: string
           enum:
@@ -672,6 +744,9 @@ components:
           type: string
           format: date-time
           writeOnly: true
+        tosacceptanceDate:
+          type: string
+          format: date-time
     Validation:
       type: object
       properties:
@@ -744,25 +819,30 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Validation'
+        images:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
-        workingDirectory:
+        doiURL:
+          type: string
+        verified:
+          type: boolean
+        verifiedSource:
           type: string
         verifiedSources:
           type: array
           items:
             type: string
-        doiURL:
-          type: string
         doiStatus:
           type: string
           enum:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
-        verified:
-          type: boolean
-        verifiedSource:
+        workingDirectory:
           type: string
         dbUpdateDate:
           type: string
@@ -777,6 +857,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+    RegistryBean:
+      type: object
+      properties:
+        dockerPath:
+          type: string
+        friendlyName:
+          type: string
+        url:
+          type: string
+        privateOnly:
+          type: string
+        customDockerPath:
+          type: string
+        enum:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
     Config:
       type: object
       properties:
@@ -836,35 +945,6 @@ components:
           type: string
         discourseUrl:
           type: string
-    RegistryBean:
-      type: object
-      properties:
-        dockerPath:
-          type: string
-        friendlyName:
-          type: string
-        url:
-          type: string
-        privateOnly:
-          type: string
-        customDockerPath:
-          type: string
-        enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
     ToolTesterLog:
       type: object
       properties:
@@ -883,6 +963,30 @@ components:
           - SUMMARY
         filename:
           type: string
+    OrganizationUpdateTime:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        lastUpdateDate:
+          type: string
+          format: date-time
+    EntryUpdateTime:
+      type: object
+      properties:
+        path:
+          type: string
+        entryType:
+          type: string
+          enum:
+          - TOOL
+          - WORKFLOW
+          - SERVICE
+        lastUpdateDate:
+          type: string
+          format: date-time
     Repository:
       type: object
       properties:
@@ -998,17 +1102,14 @@ components:
         parent_id:
           type: integer
           format: int64
-        source_control_provider:
-          type: string
         full_workflow_path:
           type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
-        last_modified_date:
+        source_control_provider:
           type: string
-          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1024,6 +1125,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
     WorkflowVersion:
       type: object
       properties:
@@ -1062,6 +1166,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Validation'
+        images:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
         subClass:
           type: string
           enum:
@@ -1073,22 +1182,22 @@ components:
           type: string
         hidden:
           type: boolean
+        doiURL:
+          type: string
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
         verifiedSources:
           type: array
           items:
             type: string
-        doiURL:
-          type: string
         doiStatus:
           type: string
           enum:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
-        verified:
-          type: boolean
-        verifiedSource:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time

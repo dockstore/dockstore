@@ -149,6 +149,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return super.getGitUrl();
     }
 
+    @Override
+    public String getEntryPath() {
+        return this.getWorkflowPath();
+    }
+
     public abstract Entry getParentEntry();
 
     public abstract void setParentEntry(Entry parentEntry);

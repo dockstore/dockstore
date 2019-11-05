@@ -19,12 +19,13 @@ import javax.persistence.Entity;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 
 @ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow")
 @Entity
 @Table(name = "service")
-@NamedQuery(name = "io.dockstore.webservice.core.Service.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from Service c where c.isPublished = true")
+@NamedQuery(name = "io.dockstore.webservice.core.Service.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from Service c where c.isPublished = true")
 public class Service extends Workflow {
 
     public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM }
@@ -32,6 +33,10 @@ public class Service extends Workflow {
     @Override
     public Entry getParentEntry() {
         return null;
+    }
+
+    public EntryType getEntryType() {
+        return EntryType.SERVICE;
     }
 
     @Override
