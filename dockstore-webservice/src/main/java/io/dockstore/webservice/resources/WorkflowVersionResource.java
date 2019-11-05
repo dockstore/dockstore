@@ -3,7 +3,6 @@ package io.dockstore.webservice.resources;
 import java.util.Optional;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -11,7 +10,6 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +22,7 @@ public class WorkflowVersionResource implements AuthenticatedResourceInterface, 
     private final WorkflowResource workflowResource;
 
 
-    public WorkflowVersionResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, DockstoreWebserviceConfiguration configuration) {
+    public WorkflowVersionResource(SessionFactory sessionFactory, WorkflowResource workflowResource) {
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.workflowResource = workflowResource;

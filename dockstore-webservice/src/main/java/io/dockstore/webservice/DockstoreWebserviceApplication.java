@@ -295,7 +295,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(OpenApiResource.class);
 
-        final WorkflowVersionResource workflowVersionResource = new WorkflowVersionResource(httpClient, hibernate.getSessionFactory(), workflowResource, configuration);
+        final WorkflowVersionResource workflowVersionResource = new WorkflowVersionResource(hibernate.getSessionFactory(), workflowResource);
         environment.jersey().register(workflowVersionResource);
 
         final AliasResource aliasResource = new AliasResource(hibernate.getSessionFactory(), workflowResource, workflowVersionResource);
