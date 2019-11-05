@@ -47,7 +47,7 @@ public class SevenBridgesRegistry extends AbstractImageRegistry {
     }
 
     @Override
-    public Tag getImageInformation(Tool tool, Tag tag) {
+    public Tag getImageInformationForTag(Tool tool, Tag tag) {
         return tag;
     }
 }

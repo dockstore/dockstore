@@ -109,7 +109,7 @@ public abstract class AbstractImageRegistry {
      */
     public abstract boolean canConvertToAuto(Tool tool);
 
-    public abstract Tag getImageInformation(Tool tool, Tag tag);
+    public abstract Tag getImageInformationForTag(Tool tool, Tag tag);
 
     /**
      * Updates/Adds/Deletes tools and their associated tags
@@ -257,7 +257,6 @@ public abstract class AbstractImageRegistry {
      * @param fileDAO
      * @param toolDAO
      */
-    @SuppressWarnings("checkstyle:methodlength")
     private void updateTags(List<Tag> newTags, @NotNull Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO) {
         // Get all existing tags
@@ -295,24 +294,7 @@ public abstract class AbstractImageRegistry {
                     if (newTag.getName().equals(oldTag.getName())) {
                         exists = true;
 
-                        // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
-                        // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
-                        if (oldTag.getImages().isEmpty()) {
-                            oldTag.getImages().addAll(getImageInformation(tool, newTag).getImages());
-
-                        } else {
-                            // There should only be one image per tag so each loop should only execute once.
-                            Set<Image> oldImages = oldTag.getImages();
-                            Set<Image> newImages = newTag.getImages();
-                            for (Image image : oldImages) {
-                                for (Image newImage : newImages) {
-                                    if (image.getImageID() != newImage.getImageID()) {
-                                        oldTag.getImages().remove(image);
-                                        oldTag.getImages().addAll(getImageInformation(tool, newTag).getImages());
-                                    }
-                                }
-                            }
-                        }
+                        updateImageInformation(tool, newTag, oldTag);
 
                         oldTag.update(newTag);
 
@@ -342,7 +324,7 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
-                    clonedTag.getImages().addAll(getImageInformation(tool, clonedTag).getImages());
+                    clonedTag.getImages().addAll(getImageInformationForTag(tool, clonedTag).getImages());
                     if (tool.getDefaultTestCwlParameterFile() != null) {
                         clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), DescriptorLanguage.FileType.CWL_TEST_JSON));
                     }
@@ -423,6 +405,30 @@ public abstract class AbstractImageRegistry {
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
         toolDAO.create(tool);
+    }
+
+    private void updateImageInformation(Tool tool, Tag newTag, Tag oldTag) {
+        // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
+        // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
+        if (oldTag.getImages().isEmpty()) {
+            oldTag.getImages().addAll(getImageInformationForTag(tool, newTag).getImages());
+
+        } else {
+            // There should only be one image per tag so each loop should only execute once.
+            Iterator<Image> iterator = oldTag.getImages().iterator();
+            Iterator<Image> iterator2 = newTag.getImages().iterator();
+
+            while (iterator.hasNext()) {
+                Image oldImage = iterator.next();
+                while (iterator2.hasNext()) {
+                    Image newImage = iterator2.next();
+                    if (oldImage.getImageID() != newImage.getImageID()) {
+                        oldTag.getImages().remove(oldImage);
+                        oldTag.getImages().addAll(getImageInformationForTag(tool, newTag).getImages());
+                    }
+                }
+            }
+        }
     }
 
     private void updateFiles(Tool tool, Tag tag, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {
