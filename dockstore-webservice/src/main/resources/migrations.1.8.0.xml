@@ -66,4 +66,50 @@
         <addUniqueConstraint columnNames="imageid" constraintName="uk_imageid" tableName="entry_version_image"/>
         <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fk_entryVersionImage" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
     </changeSet>
+    <changeSet author="gluu" id="moveAuthorDescriptionEmail">
+        <addColumn tableName="version_metadata">
+            <column name="author" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="description" type="text"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="description_source" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="email" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            UPDATE      version_metadata vm
+            SET         author = w.author,
+                        email = w.email,
+                        description = w.description,
+                        description_source = 'DESCRIPTOR'
+            FROM        workflow_workflowversion wwv
+            JOIN        workflow w
+                            ON w.id = wwv.workflowid
+            WHERE  vm.id = wwv.workflowversionid
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE      version_metadata vm
+            SET         author = w.author,
+                        email = w.email,
+                        description = w.description,
+                        description_source = 'DESCRIPTOR'
+            FROM        tool_tag wwv
+            JOIN        tool w
+                            ON w.id = wwv.toolid
+            WHERE       vm.id = wwv.tagid
+        </sql>
+        <dropColumn columnName="author" tableName="service"/>
+        <dropColumn columnName="author" tableName="tool"/>
+        <dropColumn columnName="author" tableName="workflow"/>
+        <dropColumn columnName="description" tableName="service"/>
+        <dropColumn columnName="description" tableName="tool"/>
+        <dropColumn columnName="description" tableName="workflow"/>
+        <dropColumn columnName="email" tableName="service"/>
+        <dropColumn columnName="email" tableName="tool"/>
+        <dropColumn columnName="email" tableName="workflow"/>
+    </changeSet>
 </databaseChangeLog>
