@@ -71,15 +71,15 @@ public class AliasResource {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("workflow-versions/{alias}")
-    @ApiOperation(value = "Retrieves a workflow version by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = WorkflowVersion.class, authorizations = {
+    @ApiOperation(value = "Retrieves workflow version path information by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = WorkflowVersion.class, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public WorkflowVersion getWorkflowVersionByAlias(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public WorkflowVersion.WorkflowVersionPathInfo getWorkflowVersionPathInfoByAlias(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
 
         final WorkflowVersion workflowVersion = this.workflowVersionDAO.findByAlias(alias);
         if (workflowVersion == null) {
-            LOG.error("Could not find workflow version using the alias." + alias);
-            throw new CustomWebApplicationException("Workflow version not found when searching with alias:" + alias, HttpStatus.SC_BAD_REQUEST);
+            LOG.error("Could not find workflow version using the alias: " + alias);
+            throw new CustomWebApplicationException("Workflow version not found when searching with alias: " + alias, HttpStatus.SC_BAD_REQUEST);
         }
 
         long workflowVersionId = workflowVersion.getId();
@@ -88,8 +88,6 @@ public class AliasResource {
         workflowResource.checkEntry(workflow);
         workflowResource.optionalUserCheckEntry(user, workflow);
 
-        // TODO: add a place for the full path in the Workflow Version
-        //String workflowVersionFullPath = workflow.getWorkflowName() + ":" + workflowVersion.getName();
-        return workflowVersion;
+        return new WorkflowVersion.WorkflowVersionPathInfo(workflow.getWorkflowPath(), workflowVersion.getName());
     }
 }

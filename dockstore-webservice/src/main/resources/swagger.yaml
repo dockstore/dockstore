@@ -56,7 +56,7 @@ paths:
       summary: "Retrieves a workflow version by alias."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
-      operationId: "getWorkflowVersionByAlias"
+      operationId: "getWorkflowVersionPathInfoByAlias"
       produces:
       - "application/json"
       parameters:
@@ -7878,10 +7878,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parentEntry:
-        $ref: "#/definitions/Entry"
       isChecker:
         type: "boolean"
+      parentEntry:
+        $ref: "#/definitions/Entry"
       last_modified_date:
         type: "string"
         format: "date-time"

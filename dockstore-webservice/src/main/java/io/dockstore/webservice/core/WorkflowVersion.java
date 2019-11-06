@@ -178,4 +178,22 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.aliases = aliases;
     }
 
+    public static final class WorkflowVersionPathInfo {
+        private final String fullWorkflowPath;
+        private final String tagName;
+
+        public WorkflowVersionPathInfo(String fullWorkflowPath, String tagName) {
+            this.fullWorkflowPath = fullWorkflowPath;
+            this.tagName = tagName;
+        }
+
+        public String getFullWorkflowPath() {
+            return fullWorkflowPath;
+        }
+
+        public String getTagName() {
+            return tagName;
+        }
+    }
+
 }
