@@ -66,19 +66,4 @@
         <addUniqueConstraint columnNames="imageid" constraintName="uk_imageid" tableName="entry_version_image"/>
         <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fk_entryVersionImage" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
     </changeSet>
-    <changeSet author="gluu" id="addDescriptionSource">
-        <addColumn tableName="service">
-            <column name="description_source" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <addColumn tableName="tool">
-            <column name="description_source" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <addColumn tableName="workflow">
-            <column name="description_source" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <update tableName="workflow">
-            <column name="description_source" value="DESCRIPTOR"/>
-            <where>description is not null</where>
-        </update>
-    </changeSet>
 </databaseChangeLog>
