@@ -34,7 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
@@ -107,13 +106,13 @@ public class WDLHandler implements LanguageHandlerInterface {
                 });
 
                 if (!authors.isEmpty()) {
-                    entry.setAuthor(Joiner.on(", ").join(authors));
+                    version.setAuthor(String.join(", ", authors));
                 }
                 if (!emails.isEmpty()) {
-                    entry.setEmail(Joiner.on(", ").join(emails));
+                    entry.setEmail(String.join(", ", emails));
                 }
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {
-                    entry.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
+                    version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
                 }
             } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
@@ -133,9 +132,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     private void clearMetadata(Entry entry) {
         if (entry instanceof Workflow) {
-            entry.setAuthor(null);
             entry.setEmail(null);
-            entry.setDescriptionAndDescriptionSource(null, null);
         }
     }
 

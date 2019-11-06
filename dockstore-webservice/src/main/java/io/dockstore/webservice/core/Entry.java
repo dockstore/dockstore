@@ -33,7 +33,6 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -106,17 +105,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq")
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
-
-    @Column
-    @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl", position = 1)
-    private String author;
-    @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
-    private String description;
-
-    @Column(name = "description_source")
-    @Enumerated(EnumType.STRING)
-    private DescriptionSource descriptionSource = DescriptionSource.DESCRIPTOR;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
@@ -244,8 +232,17 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
 
-    public DescriptionSource getDescriptionSource() {
-        return descriptionSource;
+    DescriptionSource getDescriptionSource() {
+        T defaultVersionForRealz = this.getDefaultVersionForRealz();
+        if (defaultVersionForRealz != null) {
+            return defaultVersionForRealz.getDescriptionSource();
+        } else {
+            return null;
+        }
+    }
+
+    private T getDefaultVersionForRealz() {
+        return this.getWorkflowVersions().stream().filter(version -> version.name.equals(this.getDefaultVersion())).findFirst().orElse(null);
     }
 
     @JsonProperty
@@ -271,7 +268,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty
     public String getAuthor() {
-        return author;
+        T defaultVersionForRealz = this.getDefaultVersionForRealz();
+        if (defaultVersionForRealz != null) {
+            return defaultVersionForRealz.getAuthor();
+        } else {
+            return null;
+        }
     }
 
     @JsonProperty
@@ -285,12 +287,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty
     public String getDescription() {
-        return description;
-    }
-
-    public void setDescriptionAndDescriptionSource(String newDescription, DescriptionSource newDescriptionSource) {
-        this.description = newDescription;
-        this.descriptionSource = newDescriptionSource;
+        T defaultVersionForRealz = this.getDefaultVersionForRealz();
+        if (defaultVersionForRealz != null) {
+            return defaultVersionForRealz.getDescription();
+        } else {
+            return null;
+        }
     }
 
     public String getDefaultVersion() {
@@ -299,10 +301,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setDefaultVersion(String defaultVersion) {
         this.defaultVersion = defaultVersion;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
     }
 
     public Set<Label> getLabels() {
@@ -425,9 +423,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
-        this.setDescriptionAndDescriptionSource(entry.getDescription(), entry.getDescriptionSource());
         lastModified = entry.getLastModifiedDate();
-        this.setAuthor(entry.getAuthor());
         this.setEmail(entry.getEmail());
 
         // Only overwrite the giturl if the new git url is not empty (no value)

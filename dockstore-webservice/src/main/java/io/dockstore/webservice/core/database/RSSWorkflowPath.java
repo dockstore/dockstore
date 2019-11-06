@@ -28,13 +28,12 @@ import io.dockstore.webservice.core.BioWorkflow;
 public class RSSWorkflowPath {
     private final BioWorkflow bioWorkflow = new BioWorkflow();
 
-    public RSSWorkflowPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated, String description) {
+    public RSSWorkflowPath(SourceControl sourceControl, String organization, String repository, String entryName, Date lastUpdated) {
         this.bioWorkflow.setSourceControl(sourceControl);
         this.bioWorkflow.setOrganization(organization);
         this.bioWorkflow.setRepository(repository);
         this.bioWorkflow.setWorkflowName(entryName);
         this.bioWorkflow.setLastUpdated(lastUpdated);
-        this.bioWorkflow.setDescriptionAndDescriptionSource(description, null);
     }
 
     public BioWorkflow getBioWorkflow() {

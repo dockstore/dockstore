@@ -26,13 +26,12 @@ import io.dockstore.webservice.core.Tool;
  */
 public class RSSToolPath {
     private final Tool tool = new Tool();
-    public RSSToolPath(String registry, String namespace, String name, String entryName, Date lastUpdated, String description) {
+    public RSSToolPath(String registry, String namespace, String name, String entryName, Date lastUpdated) {
         this.tool.setRegistry(registry);
         this.tool.setNamespace(namespace);
         this.tool.setName(name);
         this.tool.setToolname(entryName);
         this.tool.setLastUpdated(lastUpdated);
-        this.tool.setDescriptionAndDescriptionSource(description, null);
     }
 
     public Tool getTool() {

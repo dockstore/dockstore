@@ -437,5 +437,27 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
 
+    @JsonProperty
+    public String getAuthor() {
+        return this.getVersionMetadata().author;
+    }
 
+    @JsonProperty
+    public String getDescription() {
+        return this.getVersionMetadata().description;
+    }
+
+    @JsonProperty
+    DescriptionSource getDescriptionSource() {
+        return this.getVersionMetadata().descriptionSource;
+    }
+
+    public void setDescriptionAndDescriptionSource(String newDescription, DescriptionSource newDescriptionSource) {
+        this.getVersionMetadata().description = newDescription;
+        this.getVersionMetadata().descriptionSource = newDescriptionSource;
+    }
+
+    public void setAuthor(String author) {
+        this.getVersionMetadata().author = author;
+    }
 }

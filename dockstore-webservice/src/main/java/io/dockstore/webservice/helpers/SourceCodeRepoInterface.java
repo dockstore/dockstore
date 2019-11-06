@@ -326,10 +326,6 @@ public abstract class SourceCodeRepoInterface {
 
         if (sourceFiles == null || sourceFiles.isEmpty()) {
             LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
-            String readmeContent = getREADMEContent(repositoryId, version.getReference());
-            if (readmeContent != null && !readmeContent.isBlank()) {
-                entry.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
-            }
             return entry;
         }
 
@@ -348,7 +344,7 @@ public abstract class SourceCodeRepoInterface {
         if (newEntry.getDescription() == null || newEntry.getDescription().isEmpty()) {
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
-                entry.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
             }
         }
         return newEntry;

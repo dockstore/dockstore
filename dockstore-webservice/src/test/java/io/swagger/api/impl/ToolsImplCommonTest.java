@@ -113,7 +113,6 @@ public class ToolsImplCommonTest {
         tool.setToolname(toolname);
         tool.setNamespace("test_org");
         tool.setRegistry(Registry.QUAY_IO.toString());
-        tool.setAuthor("sampleAuthor");
         tool.setGitUrl("git@github.com:test_org/test6.git");
 
         Tag tag = new Tag();
@@ -298,8 +297,6 @@ public class ToolsImplCommonTest {
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);
         workflow.setId(950);
-        workflow.setAuthor(null);
-        workflow.setDescriptionAndDescriptionSource(null, null);
         workflow.setLabels(Collections.emptySortedSet());
         workflow.setUsers(Collections.emptySortedSet());
         workflow.setEmail(null);
