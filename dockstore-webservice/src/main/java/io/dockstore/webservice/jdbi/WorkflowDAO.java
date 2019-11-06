@@ -252,10 +252,6 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             throw new CustomWebApplicationException("Could get workflow based on workflow version id " + workflowVersionId
                     + ". Error is " + nre.getMessage(), HttpStatus.SC_NOT_FOUND);
         }
-        Long workflowLongId = workflowBigIntId.longValueExact();
-        return workflowLongId;
-
-        // return ((BigInteger) namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
-        //         .setParameter("workflowVersionId", workflowVersionId).getSingleResult()).longValueExact();
+        return workflowBigIntId.longValueExact();
     }
 }
