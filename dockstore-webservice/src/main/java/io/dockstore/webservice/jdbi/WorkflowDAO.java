@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.persistence.NoResultException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -33,6 +34,8 @@ import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author dyuen
@@ -41,6 +44,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     private static final String WORKFLOW_NAME = "workflowName";
     private static final String IS_PUBLISHED = "isPublished";
+    private static final Logger LOG = LoggerFactory.getLogger(WorkflowDAO.class);
 
     public WorkflowDAO(SessionFactory factory) {
         super(factory);
@@ -238,8 +242,20 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
 
-    public long getWorkflowIdByWorkflowVersionId(long workflowVersionId) {
-        return ((BigInteger) namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
-                .setParameter("workflowVersionId", workflowVersionId).getSingleResult()).longValueExact();
+    public Long getWorkflowIdByWorkflowVersionId(long workflowVersionId) {
+        BigInteger workflowBigIntId;
+        try {
+            workflowBigIntId = ((BigInteger)namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
+                    .setParameter("workflowVersionId", workflowVersionId).getSingleResult());
+        } catch (NoResultException nre) {
+            LOG.error("Could get workflow based on workflow version id " + workflowVersionId + ". Error is " + nre.getMessage(), nre);
+            throw new CustomWebApplicationException("Could get workflow based on workflow version id " + workflowVersionId
+                    + ". Error is " + nre.getMessage(), HttpStatus.SC_NOT_FOUND);
+        }
+        Long workflowLongId = workflowBigIntId.longValueExact();
+        return workflowLongId;
+
+        // return ((BigInteger) namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
+        //         .setParameter("workflowVersionId", workflowVersionId).getSingleResult()).longValueExact();
     }
 }

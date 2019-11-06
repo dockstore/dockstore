@@ -83,7 +83,7 @@ public class AliasResource {
         }
 
         long workflowVersionId = workflowVersion.getId();
-        long workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
+        Long workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
         Workflow workflow = workflowDAO.findById(workflowId);
         workflowResource.checkEntry(workflow);
         workflowResource.optionalUserCheckEntry(user, workflow);

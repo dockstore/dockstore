@@ -41,7 +41,7 @@ public class WorkflowVersionResource implements AuthenticatedResourceInterface, 
             throw new CustomWebApplicationException("Workflow version not found when searching with id: " + workflowVersionId, HttpStatus.SC_BAD_REQUEST);
         }
 
-        long workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
+        Long workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
         Workflow workflow = workflowDAO.findById(workflowId);
         workflowResource.checkEntry(workflow);
         workflowResource.checkUserCanUpdate(user, workflow);
