@@ -158,7 +158,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void copyWorkflow(Workflow targetWorkflow) {
         targetWorkflow.setIsPublished(getIsPublished());
         targetWorkflow.setWorkflowName(getWorkflowName());
-        targetWorkflow.setEmail(getEmail());
         targetWorkflow.setLastModified(getLastModifiedDate());
         targetWorkflow.setOrganization(getOrganization());
         targetWorkflow.setRepository(getRepository());

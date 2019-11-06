@@ -47,7 +47,6 @@ public class WDLHandlerTest {
     public void getWorkflowContent() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Workflow workflow = new BioWorkflow();
-        workflow.setEmail("janedoe@example.org");
 
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
 
@@ -70,7 +69,6 @@ public class WDLHandlerTest {
     public void getWorkflowContentOfTool() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Tool tool = new Tool();
-        tool.setEmail("janedoe@example.org");
 
         Assert.assertEquals("Jane Doe", tool.getAuthor());
         Assert.assertEquals("A good description", tool.getDescription());

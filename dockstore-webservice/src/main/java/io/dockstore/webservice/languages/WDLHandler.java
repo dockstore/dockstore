@@ -45,7 +45,6 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
@@ -109,7 +108,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     version.setAuthor(String.join(", ", authors));
                 }
                 if (!emails.isEmpty()) {
-                    entry.setEmail(String.join(", ", emails));
+                    version.setEmail(String.join(", ", emails));
                 }
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {
                     version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
@@ -119,7 +118,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 Map<String, String> validationMessageObject = new HashMap<>();
                 validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata");
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
-                clearMetadata(entry);
+                this.clearMetadata(version);
                 return entry;
             }
         } catch (IOException e) {
@@ -130,10 +129,10 @@ public class WDLHandler implements LanguageHandlerInterface {
         return entry;
     }
 
-    private void clearMetadata(Entry entry) {
-        if (entry instanceof Workflow) {
-            entry.setEmail(null);
-        }
+    private void clearMetadata(Version version) {
+        version.setEmail(null);
+        version.setAuthor(null);
+        version.setDescriptionAndDescriptionSource(null, null);
     }
 
     /**

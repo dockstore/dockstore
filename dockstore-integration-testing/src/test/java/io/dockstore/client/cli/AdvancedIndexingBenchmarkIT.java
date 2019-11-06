@@ -245,7 +245,6 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     private Tool randomlyGenerateTool() {
         Tool tool = new Tool();
-        tool.setEmail(randomIdentifier());
         tool.setLastUpdated(new Date());
         tool.setGitUrl("https://github.com/" + randomIdentifier() + "/" + randomIdentifier());
         tool.setMode(ToolMode.MANUAL_IMAGE_PATH);

@@ -452,6 +452,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return this.getVersionMetadata().descriptionSource;
     }
 
+    public String getEmail() {
+        return this.getVersionMetadata().email;
+    }
+
     public void setDescriptionAndDescriptionSource(String newDescription, DescriptionSource newDescriptionSource) {
         this.getVersionMetadata().description = newDescription;
         this.getVersionMetadata().descriptionSource = newDescriptionSource;
@@ -459,5 +463,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setAuthor(String author) {
         this.getVersionMetadata().author = author;
+    }
+
+    public void setEmail(String email) {
+        this.getVersionMetadata().email = email;
     }
 }

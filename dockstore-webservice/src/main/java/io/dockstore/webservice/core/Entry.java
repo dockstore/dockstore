@@ -126,10 +126,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private SortedSet<User> starredUsers;
 
     @Column
-    @ApiModelProperty(value = "This is the email of the git organization", position = 6)
-    private String email;
-
-    @Column
     @ApiModelProperty(value = "This is the default version of the entry", position = 7)
     private String defaultVersion;
 
@@ -329,11 +325,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty
     public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
+        T defaultVersionForRealz = this.getDefaultVersionForRealz();
+        if (defaultVersionForRealz != null) {
+            return defaultVersionForRealz.getEmail();
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -424,7 +421,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     public void update(S entry) {
         lastModified = entry.getLastModifiedDate();
-        this.setEmail(entry.getEmail());
 
         // Only overwrite the giturl if the new git url is not empty (no value)
         // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.

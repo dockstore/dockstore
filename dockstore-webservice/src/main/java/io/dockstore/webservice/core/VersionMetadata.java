@@ -72,6 +72,10 @@ public class VersionMetadata {
     @Enumerated(EnumType.STRING)
     protected DescriptionSource descriptionSource = DescriptionSource.DESCRIPTOR;
 
+    @Column
+    @ApiModelProperty(value = "This is the email of the git organization")
+    protected String email;
+
     @Id
     @Column(name = "id")
     private long id;
