@@ -558,10 +558,6 @@ components:
         id:
           type: integer
           format: int64
-        author:
-          type: string
-        description:
-          type: string
         labels:
           uniqueItems: true
           type: array
@@ -577,8 +573,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/User'
-        email:
-          type: string
         defaultVersion:
           type: string
         lastUpdated:
@@ -606,6 +600,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Version'
+        author:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
         is_published:
           type: boolean
         last_modified:
@@ -842,7 +842,18 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
+        author:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
         workingDirectory:
+          type: string
+        description:
+          type: string
+        email:
           type: string
         dbUpdateDate:
           type: string
@@ -1022,10 +1033,6 @@ components:
         id:
           type: integer
           format: int64
-        author:
-          type: string
-        description:
-          type: string
         labels:
           uniqueItems: true
           type: array
@@ -1041,8 +1048,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/User'
-        email:
-          type: string
         defaultVersion:
           type: string
         lastUpdated:
@@ -1091,6 +1096,12 @@ components:
           items:
             $ref: '#/components/schemas/WorkflowVersion'
         path:
+          type: string
+        author:
+          type: string
+        description:
+          type: string
+        email:
           type: string
         is_published:
           type: boolean
@@ -1198,6 +1209,17 @@ components:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
+        author:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
+        description:
+          type: string
+        email:
+          type: string
         dbUpdateDate:
           type: string
           format: date-time

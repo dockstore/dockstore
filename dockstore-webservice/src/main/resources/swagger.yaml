@@ -6249,6 +6249,15 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
+      author:
+        type: "string"
+        readOnly: true
+      description:
+        type: "string"
+        readOnly: true
+      email:
+        type: "string"
+        readOnly: true
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -6271,15 +6280,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      author:
-        type: "string"
-        position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
-      description:
-        type: "string"
-        position: 2
-        description: "This is a human-readable description of this container and what\
-          \ it is trying to accomplish, required GA4GH"
       labels:
         type: "array"
         position: 3
@@ -6304,10 +6304,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
-      email:
-        type: "string"
-        position: 6
-        description: "This is the email of the git organization"
       defaultVersion:
         type: "string"
         position: 7
@@ -6488,6 +6484,15 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
+      author:
+        type: "string"
+        readOnly: true
+      description:
+        type: "string"
+        readOnly: true
+      email:
+        type: "string"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6507,15 +6512,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      author:
-        type: "string"
-        position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
-      description:
-        type: "string"
-        position: 2
-        description: "This is a human-readable description of this container and what\
-          \ it is trying to accomplish, required GA4GH"
       labels:
         type: "array"
         position: 3
@@ -6540,10 +6536,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
-      email:
-        type: "string"
-        position: 6
-        description: "This is the email of the git organization"
       defaultVersion:
         type: "string"
         position: 7
@@ -7081,6 +7073,19 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      author:
+        type: "string"
+      descriptionSource:
+        type: "string"
+        readOnly: true
+        enum:
+        - "README"
+        - "DESCRIPTOR"
+      description:
+        type: "string"
+        readOnly: true
+      email:
+        type: "string"
       reference:
         type: "string"
         position: 1
@@ -7674,7 +7679,20 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      author:
+        type: "string"
+      descriptionSource:
+        type: "string"
+        readOnly: true
+        enum:
+        - "README"
+        - "DESCRIPTOR"
       workingDirectory:
+        type: "string"
+      description:
+        type: "string"
+        readOnly: true
+      email:
         type: "string"
       reference:
         type: "string"
@@ -7829,6 +7847,15 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      author:
+        type: "string"
+        readOnly: true
+      description:
+        type: "string"
+        readOnly: true
+      email:
+        type: "string"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7848,15 +7875,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      author:
-        type: "string"
-        position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
-      description:
-        type: "string"
-        position: 2
-        description: "This is a human-readable description of this container and what\
-          \ it is trying to accomplish, required GA4GH"
       labels:
         type: "array"
         position: 3
@@ -7881,10 +7899,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
-      email:
-        type: "string"
-        position: 6
-        description: "This is the email of the git organization"
       defaultVersion:
         type: "string"
         position: 7
@@ -8007,6 +8021,19 @@ definitions:
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
       workingDirectory:
+        type: "string"
+      author:
+        type: "string"
+      descriptionSource:
+        type: "string"
+        readOnly: true
+        enum:
+        - "README"
+        - "DESCRIPTOR"
+      description:
+        type: "string"
+        readOnly: true
+      email:
         type: "string"
       reference:
         type: "string"
