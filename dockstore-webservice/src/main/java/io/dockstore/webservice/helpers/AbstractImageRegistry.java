@@ -109,7 +109,7 @@ public abstract class AbstractImageRegistry {
      */
     public abstract boolean canConvertToAuto(Tool tool);
 
-    public abstract Tag getImageInformationForTag(Tool tool, Tag tag);
+    public abstract Tag updateTagWithImageInformation(Tool tool, Tag tag);
 
     /**
      * Updates/Adds/Deletes tools and their associated tags
@@ -324,7 +324,7 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
-                    clonedTag.getImages().addAll(getImageInformationForTag(tool, clonedTag).getImages());
+                    clonedTag.getImages().addAll(updateTagWithImageInformation(tool, clonedTag).getImages());
                     if (tool.getDefaultTestCwlParameterFile() != null) {
                         clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), DescriptorLanguage.FileType.CWL_TEST_JSON));
                     }
@@ -411,7 +411,7 @@ public abstract class AbstractImageRegistry {
         // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
         // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
         if (oldTag.getImages().isEmpty()) {
-            oldTag.getImages().addAll(getImageInformationForTag(tool, newTag).getImages());
+            oldTag.getImages().addAll(updateTagWithImageInformation(tool, newTag).getImages());
 
         } else {
             // There should only be one image per tag so each loop should only execute once.
@@ -422,9 +422,9 @@ public abstract class AbstractImageRegistry {
                 Image oldImage = iterator.next();
                 while (iterator2.hasNext()) {
                     Image newImage = iterator2.next();
-                    if (oldImage.getImageID() != newImage.getImageID()) {
+                    if (!oldImage.getImageID().equals(newImage.getImageID())) {
                         oldTag.getImages().remove(oldImage);
-                        oldTag.getImages().addAll(getImageInformationForTag(tool, newTag).getImages());
+                        oldTag.getImages().addAll(updateTagWithImageInformation(tool, newTag).getImages());
                     }
                 }
             }

@@ -64,7 +64,7 @@ public class DockerHubRegistry extends AbstractImageRegistry {
     }
 
     @Override
-    public Tag getImageInformationForTag(Tool tool, Tag tag) {
+    public Tag updateTagWithImageInformation(Tool tool, Tag tag) {
         return tag;
     }
 }

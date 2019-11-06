@@ -82,18 +82,17 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         LOG.info(quayToken.getUsername() + " ======================= Getting tags for: {}================================", tool.getPath());
 
         final List<Tag> tags = new ArrayList<>();
-
-        Map<String, Map<String, Map<String, String>>> map = new HashMap<>(getToolFromQuay(tool));
-        if (map != null) {
+        Optional<Map<String, Map<String, Map<String, String>>>> optionalMap = getToolFromQuay(tool);
+        if (optionalMap.isPresent()) {
+            Map<String, Map<String, Map<String, String>>> map = optionalMap.get();
             final Map<String, Map<String, String>> listOfTags = map.get("tags");
-
             for (Entry<String, Map<String, String>> stringMapEntry : listOfTags.entrySet()) {
                 Gson gson = new Gson();
                 final String s = gson.toJson(stringMapEntry.getValue());
                 try {
 
                     final Tag tag = objectMapper.readValue(s, Tag.class);
-                    getImageInformationForTag(tool, tag);
+                    updateTagWithImageInformation(tool, tag);
                     insertQuayLastModifiedIntoLastBuilt(stringMapEntry, tag);
                     tags.add(tag);
                 } catch (IOException ex) {
@@ -109,12 +108,13 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return tags;
     }
 
-    public Tag getImageInformationForTag(Tool tool, Tag tag) {
+    public Tag updateTagWithImageInformation(Tool tool, Tag tag) {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
 
         final String repo = tool.getNamespace() + '/' + tool.getName();
-        Map<String, Map<String, Map<String, String>>> map = new HashMap<>(getToolFromQuay(tool));
-        if (map != null) {
+        Optional<Map<String, Map<String, Map<String, String>>>> optionalMap = getToolFromQuay(tool);
+        if (optionalMap.isPresent()) {
+            Map<String, Map<String, Map<String, String>>> map = optionalMap.get();
             final Map<String, String> tagInfo = map.get("tags").get(tag.getName());
             final String manifestDigest = tagInfo.get("manifest_digest");
             final String imageID = tagInfo.get("image_id");
@@ -126,7 +126,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return tag;
     }
 
-    private  Map<String, Map<String, Map<String, String>>> getToolFromQuay(Tool tool) {
+    private  Optional<Map<String, Map<String, Map<String, String>>>> getToolFromQuay(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
         final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
@@ -136,9 +136,9 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             Gson gson = new Gson();
             Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
             map = (Map<String, Map<String, Map<String, String>>>)gson.fromJson(json, map.getClass());
-            return map;
+            return Optional.of(map);
         }
-        return null;
+        return Optional.empty();
     }
 
     private void insertQuayLastModifiedIntoLastBuilt(Entry<String, Map<String, String>> stringMapEntry, Tag tag) {
