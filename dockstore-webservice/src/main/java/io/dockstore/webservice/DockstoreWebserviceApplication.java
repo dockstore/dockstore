@@ -82,7 +82,6 @@ import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.WorkflowResource;
-import io.dockstore.webservice.resources.WorkflowVersionResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
 import io.dropwizard.Application;
@@ -297,10 +296,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(OpenApiResource.class);
 
-        final WorkflowVersionResource workflowVersionResource = new WorkflowVersionResource(hibernate.getSessionFactory(), workflowResource);
-        environment.jersey().register(workflowVersionResource);
-
-        final AliasResource aliasResource = new AliasResource(hibernate.getSessionFactory(), workflowResource, workflowVersionResource);
+        final AliasResource aliasResource = new AliasResource(hibernate.getSessionFactory(), workflowResource);
         environment.jersey().register(aliasResource);
 
         // attach the container dao statically to avoid too much modification of generated code

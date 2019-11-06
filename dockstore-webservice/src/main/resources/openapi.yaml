@@ -53,7 +53,7 @@ paths:
     get:
       tags:
         - aliases
-      summary: Retrieves a workflow version by alias.
+      summary: Retrieves workflow version path information by alias.
       description: Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
       operationId: getWorkflowVersionPathInfoByAlias
@@ -70,7 +70,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowVersion"
+                $ref: "#/components/schemas/WorkflowVersionPathInfo"
       security:
         - BEARER: []
   "/aliases/workflow-versions/{workflowVersionId}":
@@ -8410,3 +8410,10 @@ components:
             - KUBERNETES
             - HELM
       description: This describes one workflow version associated with a workflow.
+    WorkflowVersionPathInfo:
+      type: object
+      properties:
+        fullWorkflowPath:
+          type: string
+        tagName:
+          type: string

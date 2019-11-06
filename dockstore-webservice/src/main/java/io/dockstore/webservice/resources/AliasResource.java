@@ -1,6 +1,8 @@
 package io.dockstore.webservice.resources;
 
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -11,10 +13,13 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Alias;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dropwizard.auth.Auth;
@@ -33,7 +38,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/aliases")
 @Api("/aliases")
 @Produces(MediaType.APPLICATION_JSON)
-public class AliasResource {
+public class AliasResource implements AliasableResourceInterface<WorkflowVersion> {
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows,"
             + " authentication can be provided for restricted workflows";
@@ -42,15 +47,12 @@ public class AliasResource {
     protected final WorkflowVersionDAO workflowVersionDAO;
     protected final WorkflowDAO workflowDAO;
     private final WorkflowResource workflowResource;
-    private final WorkflowVersionResource workflowVersionResource;
 
 
-    public AliasResource(SessionFactory sessionFactory, WorkflowResource workflowResource,
-            WorkflowVersionResource workflowVersionResource) {
+    public AliasResource(SessionFactory sessionFactory, WorkflowResource workflowResource) {
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.workflowResource = workflowResource;
-        this.workflowVersionResource = workflowVersionResource;
     }
 
 
@@ -64,14 +66,15 @@ public class AliasResource {
     public WorkflowVersion addAliases(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow version to modify.", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
             @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {
-        return workflowVersionResource.addAliases(user, workflowVersionId, aliases);
+        return addAliasesAndCheck(user, workflowVersionId, aliases, true);
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("workflow-versions/{alias}")
-    @ApiOperation(value = "Retrieves workflow version path information by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = WorkflowVersion.class, authorizations = {
+    @ApiOperation(value = "Retrieves workflow version path information by alias.", notes = OPTIONAL_AUTH_MESSAGE,
+            response = WorkflowVersion.WorkflowVersionPathInfo.class, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public WorkflowVersion.WorkflowVersionPathInfo getWorkflowVersionPathInfoByAlias(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
@@ -89,5 +92,50 @@ public class AliasResource {
         workflowResource.optionalUserCheckEntry(user, workflow);
 
         return new WorkflowVersion.WorkflowVersionPathInfo(workflow.getWorkflowPath(), workflowVersion.getName());
+    }
+
+    @Override
+    public Optional<PublicStateManager> getPublicStateManager() {
+        return Optional.empty();
+    }
+
+    @Override
+    public WorkflowVersion getAndCheckResource(User user, Long workflowVersionId) {
+        final WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            LOG.error("Could not find workflow version using the workflow version id: " + workflowVersionId);
+            throw new CustomWebApplicationException("Workflow version not found when searching with id: " + workflowVersionId, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Long workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
+        Workflow workflow = workflowDAO.findById(workflowId);
+        workflowResource.checkEntry(workflow);
+        workflowResource.checkUserCanUpdate(user, workflow);
+        return workflowVersion;
+    }
+
+    @Override
+    // TODO: EntryResource.java also throws an exception for this method; need good explanation for why
+    public WorkflowVersion getAndCheckResourceByAlias(String alias) {
+        throw new UnsupportedOperationException("Use the TRS API for tools and workflows");
+    }
+
+    @Override
+    public WorkflowVersion addAliasesAndCheck(User user, Long id, String aliases, boolean blockFormat) {
+        WorkflowVersion c = getAndCheckResource(user, id);
+        Set<String> oldAliases = c.getAliases().keySet();
+        Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
+
+        AliasableResourceInterface.checkAliases(newAliases, user, blockFormat);
+
+        Set<String> duplicateAliasesToAdd = Sets.intersection(newAliases, oldAliases);
+        if (!duplicateAliasesToAdd.isEmpty()) {
+            String dupAliasesString = String.join(", ", duplicateAliasesToAdd);
+            throw new CustomWebApplicationException("Aliases " + dupAliasesString + " already exist; please use unique aliases",
+                    HttpStatus.SC_BAD_REQUEST);
+        }
+
+        newAliases.forEach(alias -> c.getAliases().put(alias, new Alias()));
+        return c;
     }
 }
