@@ -103,15 +103,16 @@ public class WDLHandler implements LanguageHandlerInterface {
                         mainDescription[0] = description;
                     }
                 });
-
-                if (!authors.isEmpty()) {
-                    version.setAuthor(String.join(", ", authors));
-                }
-                if (!emails.isEmpty()) {
-                    version.setEmail(String.join(", ", emails));
-                }
-                if (!Strings.isNullOrEmpty(mainDescription[0])) {
-                    version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
+                if (version != null) {
+                    if (!authors.isEmpty()) {
+                        version.setAuthor(String.join(", ", authors));
+                    }
+                    if (!emails.isEmpty()) {
+                        version.setEmail(String.join(", ", emails));
+                    }
+                    if (!Strings.isNullOrEmpty(mainDescription[0])) {
+                        version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
+                    }
                 }
             } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);

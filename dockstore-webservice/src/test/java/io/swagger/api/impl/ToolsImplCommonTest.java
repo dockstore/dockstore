@@ -139,8 +139,10 @@ public class ToolsImplCommonTest {
         tag.addSourceFile(sourceFile);
         tag.addSourceFile(sourceFile2);
         tag.updateVerified();
+        tag.setAuthor("sampleAuthor");
         tool.addWorkflowVersion(tag);
         tool.setCheckerWorkflow(null);
+        tool.setDefaultVersion(tag.getName());
         Tool expectedTool = new Tool();
         if (toolname != null) {
             expectedTool.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6%2Fpotato");
@@ -187,6 +189,7 @@ public class ToolsImplCommonTest {
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion);
         expectedTool.setVersions(expectedToolVersions);
+        Assert.assertEquals("sampleAuthor", tool.getAuthor());
         Tool actualTool = ToolsImplCommon.convertEntryToTool(tool, actualConfig);
         actualTool.setMetaVersion(null);
         actualTool.getVersions().parallelStream().forEach(version -> version.setMetaVersion(null));

@@ -48,30 +48,36 @@ public class WDLParseTest {
     public void testWDLMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        Tag version = new Tag();
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().contains("Chip Stewart"));
-        assertTrue("incorrect email", entry.getEmail().contains("stewart@broadinstitute.org"));
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                    version);
+        assertTrue("incorrect author", version.getAuthor().contains("Chip Stewart"));
+        assertTrue("incorrect email", version.getEmail().contains("stewart@broadinstitute.org"));
     }
 
     @Test
     public void testWDLMetadataExampleWithMerge() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example1.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        Tag version = new Tag();
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertNull("incorrect email", entry.getEmail());
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                    version);
+        assertTrue("incorrect author", version.getAuthor().split(",").length >= 2);
+        assertNull("incorrect email", version.getEmail());
     }
 
     @Test
     public void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        Tag version = new Tag();
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                    version);
+        assertTrue("incorrect author", version.getAuthor().split(",").length >= 2);
+        assertEquals("incorrect email", "This is a cool workflow", version.getDescription());
     }
 
     /**
@@ -156,11 +162,13 @@ public class WDLParseTest {
             wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
 
             LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+            WorkflowVersion version = new WorkflowVersion();
             Entry entry = sInterface
-                    .parseWorkflowContent(new BioWorkflow(), primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
-            assertEquals("incorrect author", 1, entry.getAuthor().split(",").length);
-            assertEquals("incorrect email", "foobar@foo.com", entry.getEmail());
-            assertTrue("incorrect description", entry.getDescription().length() > 0);
+                    .parseWorkflowContent(new BioWorkflow(), primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet,
+                            version);
+            assertEquals("incorrect author", 1, version.getAuthor().split(",").length);
+            assertEquals("incorrect email", "foobar@foo.com", version.getEmail());
+            assertTrue("incorrect description", version.getDescription().length() > 0);
         } catch (Exception e) {
             Assert.fail("Should properly parse file and imports.");
         }

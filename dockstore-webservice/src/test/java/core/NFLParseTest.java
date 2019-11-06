@@ -40,28 +40,33 @@ public class NFLParseTest {
     public void testNFLCoreMetadataNoAuthorExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-chipseq/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
+        WorkflowVersion workflowVersion = new WorkflowVersion();
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new WorkflowVersion());
-        assertNull("incorrect author", entry.getAuthor());
-        assertTrue("incorrect description", entry.getDescription().startsWith("Analysis pipeline used for ChIP-seq (chromatin immunoprecipitation sequencing) data"));
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), workflowVersion);
+        assertNull("incorrect author", workflowVersion.getAuthor());
+        assertTrue("incorrect description", workflowVersion.getDescription().startsWith("Analysis pipeline used for ChIP-seq (chromatin immunoprecipitation sequencing) data"));
     }
 
     @Test
     public void testNFLCoreMetadataWithAuthorExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-rnaseq/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
+        WorkflowVersion version = new WorkflowVersion();
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new WorkflowVersion());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertTrue("incorrect description", entry.getDescription().startsWith("Nextflow RNA-Seq analysis pipeline, part of the nf-core community."));
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                    version);
+        assertTrue("incorrect author", version.getAuthor().split(",").length >= 2);
+        assertTrue("incorrect description", version.getDescription().startsWith("Nextflow RNA-Seq analysis pipeline, part of the nf-core community."));
     }
 
     @Test
     public void testNFLNotCoreExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("nfl-ampa/nextflow.config");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
+        WorkflowVersion version = new WorkflowVersion();
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new WorkflowVersion());
-        assertEquals("incorrect description", "Fast automated prediction of protein antimicrobial regions", entry.getDescription());
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                    version);
+        assertEquals("incorrect description", "Fast automated prediction of protein antimicrobial regions", version.getDescription());
     }
 }

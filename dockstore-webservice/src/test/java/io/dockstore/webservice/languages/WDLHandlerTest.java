@@ -13,8 +13,10 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -51,16 +53,17 @@ public class WDLHandlerTest {
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
 
         final String goodWdl = FileUtils.readFileToString(new File(validFilePath), StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(workflow, validFilePath, goodWdl, Collections.emptySet(), new WorkflowVersion());
-        Assert.assertEquals(workflow.getAuthor(), "Mr. Foo");
-        Assert.assertEquals(workflow.getEmail(), "foo@foo.com");
-        Assert.assertEquals(workflow.getDescription(),
-                "This is a cool workflow trying another line \n## This is a header\n* First Bullet\n* Second bullet");
+        WorkflowVersion version = new WorkflowVersion();
+        wdlHandler.parseWorkflowContent(workflow, validFilePath, goodWdl, Collections.emptySet(), version);
+        Assert.assertEquals("Mr. Foo", version.getAuthor());
+        Assert.assertEquals("foo@foo.com", version.getEmail());
+        Assert.assertEquals(
+                "This is a cool workflow trying another line \n" + "## This is a header\n" + "* First Bullet\n" + "* Second bullet", version.getDescription());
 
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
+        wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), version);
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());
     }
@@ -69,7 +72,13 @@ public class WDLHandlerTest {
     public void getWorkflowContentOfTool() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Tool tool = new Tool();
-
+        final Tag tag = new Tag();
+        tag.setAuthor("Jane Doe");
+        tag.setDescriptionAndDescriptionSource("A good description", DescriptionSource.DESCRIPTOR);
+        tag.setEmail("janedoe@example.org");
+        tag.setName("potato");
+        tool.addWorkflowVersion(tag);
+        tool.setDefaultVersion("potato");
         Assert.assertEquals("Jane Doe", tool.getAuthor());
         Assert.assertEquals("A good description", tool.getDescription());
         Assert.assertEquals("janedoe@example.org", tool.getEmail());
@@ -114,8 +123,9 @@ public class WDLHandlerTest {
         Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
 
         final BioWorkflow entry = new BioWorkflow();
-        wdlHandler.parseWorkflowContent(entry, "/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), null);
-        Assert.assertEquals("Christopher Whelan", entry.getAuthor());
+        WorkflowVersion workflowVersion = new WorkflowVersion();
+        wdlHandler.parseWorkflowContent(entry, "/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), workflowVersion);
+        Assert.assertEquals("Christopher Whelan", workflowVersion.getAuthor());
     }
 
     @Test

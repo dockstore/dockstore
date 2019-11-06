@@ -161,6 +161,10 @@ public class CWLHandler implements LanguageHandlerInterface {
         if (map != null) {
             String author = (String)map.get(authorKey);
             version.setAuthor(author);
+            String email = (String)map.get(emailKey);
+            if (!Strings.isNullOrEmpty(email)) {
+                version.setEmail(email.replaceFirst("^mailto:", ""));
+            }
         } else {
             LOG.info(errorMessage);
         }
