@@ -54,7 +54,7 @@
                 <constraints primaryKey="true" primaryKeyName="workflowversion_alias_pkey"/>
             </column>
         </createTable>
-        <addUniqueConstraint columnNames="alias" constraintName="aliases_are_unique" tableName="workflowversion_alias"/>
+        <addUniqueConstraint columnNames="alias" constraintName="workflow_version_aliases_are_unique" tableName="workflowversion_alias"/>
         <addForeignKeyConstraint baseColumnNames="id" baseTableName="workflowversion_alias" constraintName="fk_workflowversion_alias" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
     </changeSet>
     <changeSet author="natalieperez (generated)" id="create_images_checksums">
