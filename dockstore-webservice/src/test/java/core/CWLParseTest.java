@@ -21,9 +21,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dropwizard.testing.ResourceHelpers;
@@ -38,22 +40,28 @@ public class CWLParseTest {
     public void testOldMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Tag version = new Tag();
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
-                version);
-        Assert.assertEquals("incorrect author", "Keiran Raine", version.getAuthor());
-        Assert.assertEquals("incorrect email", "keiranmraine@gmail.com", version.getEmail());
+        Tool tool = new Tool();
+        Tag tag = new Tag();
+        addVersionAsDefault(tool, tag);
+        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                tag);
+        checkAuthorEmailDescription(entry, tag, "Keiran Raine", "keiranmraine@gmail.com", "The Sanger's Cancer Genome Project core somatic calling workflow from \n"
+                + "the ICGC PanCancer Analysis of Whole Genomes (PCAWG) project.\n"
+                + "For more information see the PCAWG project [page](https://dcc.icgc.org/pcawg) and our GitHub\n"
+                + "[page](https://github.com/ICGC-TCGA-PanCancer) for our code including the source for\n"
+                + "[this workflow](https://github.com/ICGC-TCGA-PanCancer/CGP-Somatic-Docker).");
     }
 
     @Test
     public void testNewMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Tag version = new Tag();
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
-                version);
-        Assert.assertEquals("incorrect author", "Denis Yuen", version.getAuthor());
-        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", version.getEmail());
+        Tool tool = new Tool();
+        Tag tag = new Tag();
+        addVersionAsDefault(tool, tag);
+        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                tag);
+        checkAuthorEmailDescription(entry, tag, "Denis Yuen", "dyuen@oicr.on.ca", "Note that this is an example and the metadata is not necessarily consistent.");
     }
 
     /**
@@ -65,12 +73,12 @@ public class CWLParseTest {
     public void testcwlVersion11doc1() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example1.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Tag version = new Tag();
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
-                version);
-        Assert.assertEquals("incorrect author", "Peter Amstutz", version.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", version.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", version.getDescription());
+        Tag tag = new Tag();
+        Tool tool = new Tool();
+        addVersionAsDefault(tool, tag);
+        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                tag);
+        checkAuthorEmailDescription(entry, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.");
     }
 
     /**
@@ -81,12 +89,12 @@ public class CWLParseTest {
     public void testcwlVersion11doc2() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Tag version = new Tag();
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
-                version);
-        Assert.assertEquals("incorrect author", "Peter Amstutz", version.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", version.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.", version.getDescription());
+        Tag tag = new Tag();
+        Tool tool = new Tool();
+        addVersionAsDefault(tool, tag);
+        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                tag);
+        checkAuthorEmailDescription(entry, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.");
     }
 
     /**
@@ -97,12 +105,12 @@ public class CWLParseTest {
     public void testcwlVersion11doc3() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_cwlVersion1_1_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Tag version = new Tag();
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
-                version);
-        Assert.assertEquals("incorrect author", "Peter Amstutz", version.getAuthor());
-        Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", version.getEmail());
-        Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", version.getDescription());
+        Tool tool = new Tool();
+        Tag tag = new Tag();
+        addVersionAsDefault(tool, tag);
+        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+                tag);
+        checkAuthorEmailDescription(entry, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.");
     }
 
     @Test
@@ -110,14 +118,37 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Tag tag = new Tag();
-        tag.setName("potato");
         Tool tool = new Tool();
-        tool.addWorkflowVersion(tag);
-        tool.setDefaultVersion("potato");
+        addVersionAsDefault(tool, tag);
         Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), tag);
-        Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
-        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
-        Assert.assertEquals("incorrect author", "Denis Yuen", tag.getAuthor());
-        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", tag.getEmail());
+        checkAuthorEmailDescription(entry, tag, "Denis Yuen", "dyuen@oicr.on.ca", "The Sanger's Cancer Genome Project core somatic calling workflow from \n"
+                + "the ICGC PanCancer Analysis of Whole Genomes (PCAWG) project.\n"
+                + "For more information see the PCAWG project [page](https://dcc.icgc.org/pcawg) and our GitHub\n"
+                + "[page](https://github.com/ICGC-TCGA-PanCancer) for our code including the source for\n"
+                + "[this workflow](https://github.com/ICGC-TCGA-PanCancer/CGP-Somatic-Docker).");
     }
+
+    private static void addVersionAsDefault(Entry entry, Version version) {
+        String randomVersionName = "potato";
+        version.setName(randomVersionName);
+        entry.addWorkflowVersion(version);
+        entry.setDefaultVersion(randomVersionName);
+    }
+
+    private static void checkAuthorEmailDescription(Entry entry, Version version, String author, String email, String description) {
+        Assert.assertEquals("incorrect author", author, entry.getAuthor());
+        Assert.assertEquals("incorrect author", author, version.getAuthor());
+        Assert.assertEquals("incorrect email", email, entry.getEmail());
+        Assert.assertEquals("incorrect email", email, version.getEmail());
+        Assert.assertEquals("incorrect description", description, entry.getDescription());
+        Assert.assertEquals("incorrect description", description, version.getDescription());
+        if (description == null) {
+            Assert.assertEquals("incorrect description source", null, version.getDescriptionSource());
+        } else {
+            Assert.assertEquals("incorrect description source", DescriptionSource.DESCRIPTOR, version.getDescriptionSource());
+        }
+
+    }
+
+
 }

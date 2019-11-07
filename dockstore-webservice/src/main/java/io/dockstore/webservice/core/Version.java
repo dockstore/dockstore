@@ -448,7 +448,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     @JsonProperty
-    DescriptionSource getDescriptionSource() {
+    public DescriptionSource getDescriptionSource() {
         return this.getVersionMetadata().descriptionSource;
     }
 
