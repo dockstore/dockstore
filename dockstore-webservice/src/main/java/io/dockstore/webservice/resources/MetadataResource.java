@@ -62,6 +62,7 @@ import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.statelisteners.RSSListener;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
@@ -96,6 +97,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
 import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
 /**
@@ -119,6 +121,7 @@ public class MetadataResource {
     private final ServiceDAO serviceDAO;
     private final DockstoreWebserviceConfiguration config;
     private final SitemapListener sitemapListener;
+    private final RSSListener rssListener;
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
         this.toolDAO = new ToolDAO(sessionFactory);
@@ -129,6 +132,7 @@ public class MetadataResource {
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
+        this.rssListener = PublicStateManager.getInstance().getRSSListener();
     }
 
     @GET
@@ -202,6 +206,14 @@ public class MetadataResource {
     @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
     @ApiOperation(value = "List all published tools and workflows in creation order.", notes = "NO authentication")
     public String rssFeed() {
+        try {
+            return rssListener.getCache().get(RSS_KEY, this::getRSS);
+        } catch (ExecutionException e) {
+            throw new CustomWebApplicationException("RSS cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private String getRSS() {
         List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).collect(Collectors.toList());
         List<Workflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).collect(
                 Collectors.toList());
