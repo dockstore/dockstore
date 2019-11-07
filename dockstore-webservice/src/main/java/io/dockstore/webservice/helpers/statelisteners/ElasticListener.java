@@ -232,6 +232,7 @@ public class ElasticListener implements StateListenerInterface {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
+        entry.getDescription();
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));

@@ -238,7 +238,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     private T getDefaultVersionForRealz() {
-        return this.getWorkflowVersions().stream().filter(version -> version.name.equals(this.getDefaultVersion())).findFirst().orElse(null);
+        return this.getWorkflowVersions().stream().filter(version -> version.name != null && version.name.equals(this.getDefaultVersion())).findFirst().orElse(null);
     }
 
     @JsonProperty
