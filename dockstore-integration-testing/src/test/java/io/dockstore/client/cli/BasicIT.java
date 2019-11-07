@@ -981,7 +981,7 @@ public class BasicIT extends BaseIT {
     }
 
     /**
-     * This tests that a tool can be updated to have default version, and that metadata is set related to the default version
+     * This tests that a tool with no valid tags cannot be published
      */
     @Test
     public void testSetDefaultTag() {
@@ -991,15 +991,6 @@ public class BasicIT extends BaseIT {
         Client.main(
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
                 "quay.io/dockstoretestuser/quayandgithub", "--default-version", "master", "--script" });
-
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-            + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master'", long.class);
-        Assert.assertEquals("the tool should have a default version set", 1, count);
-
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-                + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master' and author = 'Dockstore Test User'",
-            long.class);
-        Assert.assertEquals("the tool should have any metadata set (author)", 1, count2);
 
         // Invalidate tags
         testingPostgres.runUpdateStatement("UPDATE tag SET valid='f'");
