@@ -27,8 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
-@Path("/curation")
-@Api("/curation")
+@Path("curation")
+@Api("curation")
 @Produces(MediaType.APPLICATION_JSON)
 public class NotificationResource {
     private static final Logger LOG = LoggerFactory.getLogger(NotificationResource.class);
