@@ -38,7 +38,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
