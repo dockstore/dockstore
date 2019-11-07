@@ -109,7 +109,6 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return tags;
     }
 
-    // return a Set<Images> Collections.emptySet()
     public Set<Image> getImagesForTag(Tool tool, Tag tag) {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
 
@@ -128,6 +127,9 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return Collections.emptySet();
     }
 
+    /**
+     * Return map of JSON response from Quay that describes the tool. Each level of the JSON response is mapped to another map of Strings.
+     */
     private  Optional<Map<String, Map<String, Map<String, String>>>> getToolFromQuay(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
