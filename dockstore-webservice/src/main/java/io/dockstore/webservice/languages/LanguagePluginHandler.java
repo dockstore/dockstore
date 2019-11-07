@@ -27,7 +27,6 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -52,14 +51,13 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
+    public void parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         final MinimalLanguageInterface.WorkflowMetadata workflowMetadata = minimalLanguageInterface
             .parseWorkflowForMetadata(filepath, content, new HashMap<>());
         version.setAuthor(workflowMetadata.getAuthor());
         version.setEmail(workflowMetadata.getEmail());
         version.setDescriptionAndDescriptionSource(workflowMetadata.getDescription(), DescriptionSource.DESCRIPTOR);
         // TODO: hook up validation object to version for parsing metadata
-        return entry;
     }
 
     @Override

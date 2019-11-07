@@ -48,13 +48,12 @@ public class WDLHandlerTest {
     @Test
     public void getWorkflowContent() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
-        final Workflow workflow = new BioWorkflow();
 
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
 
         final String goodWdl = FileUtils.readFileToString(new File(validFilePath), StandardCharsets.UTF_8);
         WorkflowVersion version = new WorkflowVersion();
-        wdlHandler.parseWorkflowContent(workflow, validFilePath, goodWdl, Collections.emptySet(), version);
+        wdlHandler.parseWorkflowContent(validFilePath, goodWdl, Collections.emptySet(), version);
         Assert.assertEquals("Mr. Foo", version.getAuthor());
         Assert.assertEquals("foo@foo.com", version.getEmail());
         Assert.assertEquals(
@@ -63,9 +62,9 @@ public class WDLHandlerTest {
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), version);
-        Assert.assertNull(workflow.getAuthor());
-        Assert.assertNull(workflow.getEmail());
+        wdlHandler.parseWorkflowContent(invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), version);
+        Assert.assertNull(version.getAuthor());
+        Assert.assertNull(version.getEmail());
     }
 
     @Test
@@ -85,7 +84,7 @@ public class WDLHandlerTest {
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(tool, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
+        wdlHandler.parseWorkflowContent(invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
 
         // Check that parsing an invalid WDL workflow does not corrupt the CWL metadata
         Assert.assertEquals("Jane Doe", tool.getAuthor());
@@ -124,7 +123,7 @@ public class WDLHandlerTest {
 
         final BioWorkflow entry = new BioWorkflow();
         WorkflowVersion workflowVersion = new WorkflowVersion();
-        wdlHandler.parseWorkflowContent(entry, "/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), workflowVersion);
+        wdlHandler.parseWorkflowContent("/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), workflowVersion);
         Assert.assertEquals("Christopher Whelan", workflowVersion.getAuthor());
     }
 

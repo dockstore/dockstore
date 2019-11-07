@@ -43,9 +43,9 @@ public class CWLParseTest {
         Tool tool = new Tool();
         Tag tag = new Tag();
         addVersionAsDefault(tool, tag);
-        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+        sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
                 tag);
-        checkAuthorEmailDescription(entry, tag, "Keiran Raine", "keiranmraine@gmail.com", "The Sanger's Cancer Genome Project core somatic calling workflow from \n"
+        checkAuthorEmailDescription(tool, tag, "Keiran Raine", "keiranmraine@gmail.com", "The Sanger's Cancer Genome Project core somatic calling workflow from \n"
                 + "the ICGC PanCancer Analysis of Whole Genomes (PCAWG) project.\n"
                 + "For more information see the PCAWG project [page](https://dcc.icgc.org/pcawg) and our GitHub\n"
                 + "[page](https://github.com/ICGC-TCGA-PanCancer) for our code including the source for\n"
@@ -59,9 +59,9 @@ public class CWLParseTest {
         Tool tool = new Tool();
         Tag tag = new Tag();
         addVersionAsDefault(tool, tag);
-        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+        sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
                 tag);
-        checkAuthorEmailDescription(entry, tag, "Denis Yuen", "dyuen@oicr.on.ca", "Note that this is an example and the metadata is not necessarily consistent.");
+        checkAuthorEmailDescription(tool, tag, "Denis Yuen", "dyuen@oicr.on.ca", "Note that this is an example and the metadata is not necessarily consistent.");
     }
 
     /**
@@ -76,9 +76,9 @@ public class CWLParseTest {
         Tag tag = new Tag();
         Tool tool = new Tool();
         addVersionAsDefault(tool, tag);
-        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+        sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
                 tag);
-        checkAuthorEmailDescription(entry, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.");
+        checkAuthorEmailDescription(tool, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.");
     }
 
     /**
@@ -92,9 +92,9 @@ public class CWLParseTest {
         Tag tag = new Tag();
         Tool tool = new Tool();
         addVersionAsDefault(tool, tag);
-        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+        sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
                 tag);
-        checkAuthorEmailDescription(entry, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.");
+        checkAuthorEmailDescription(tool, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.");
     }
 
     /**
@@ -108,9 +108,9 @@ public class CWLParseTest {
         Tool tool = new Tool();
         Tag tag = new Tag();
         addVersionAsDefault(tool, tag);
-        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
+        sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(),
                 tag);
-        checkAuthorEmailDescription(entry, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.");
+        checkAuthorEmailDescription(tool, tag, "Peter Amstutz", "peter.amstutz@curoverse.com", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.");
     }
 
     @Test
@@ -120,8 +120,8 @@ public class CWLParseTest {
         Tag tag = new Tag();
         Tool tool = new Tool();
         addVersionAsDefault(tool, tag);
-        Entry entry = sInterface.parseWorkflowContent(tool, filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), tag);
-        checkAuthorEmailDescription(entry, tag, "Denis Yuen", "dyuen@oicr.on.ca", "The Sanger's Cancer Genome Project core somatic calling workflow from \n"
+        sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), tag);
+        checkAuthorEmailDescription(tool, tag, "Denis Yuen", "dyuen@oicr.on.ca", "The Sanger's Cancer Genome Project core somatic calling workflow from \n"
                 + "the ICGC PanCancer Analysis of Whole Genomes (PCAWG) project.\n"
                 + "For more information see the PCAWG project [page](https://dcc.icgc.org/pcawg) and our GitHub\n"
                 + "[page](https://github.com/ICGC-TCGA-PanCancer) for our code including the source for\n"

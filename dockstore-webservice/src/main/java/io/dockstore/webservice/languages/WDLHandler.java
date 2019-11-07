@@ -41,7 +41,6 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -64,7 +63,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
+    public void parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         WdlBridge wdlBridge = new WdlBridge();
         final Map<String, String> secondaryFiles = sourceFiles.stream()
                 .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
@@ -120,14 +119,13 @@ public class WDLHandler implements LanguageHandlerInterface {
                 validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata");
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
                 this.clearMetadata(version);
-                return entry;
+                return;
             }
         } catch (IOException e) {
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
-        return entry;
     }
 
     private void clearMetadata(Version version) {

@@ -357,6 +357,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
+    /**
+     * Refresh does the following things:
+     * Update user metadata for some reason
+     * Add new versions
+     * Remove versions
+     * For current versions, update version metadata, update source files, update verification status
+     * Associate checker workflow if found
+     * Refresh checker
+     * Update the index for that specific entry
+     *
+     * @param user
+     * @param workflowId
+     * @return
+     */
     @GET
     @Path("/{workflowId}/refresh")
     @Timed
@@ -397,11 +411,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // new workflow is the workflow as found on github (source control)
-        final Workflow newWorkflow = sourceCodeRepo
+        final Workflow workflowFromSourceControl = sourceCodeRepo
             .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
-        updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
-        FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
+        updateDBWorkflowWithSourceControlWorkflow(workflow, workflowFromSourceControl);
+        FileFormatHelper.updateFileFormats(workflowFromSourceControl.getWorkflowVersions(), fileFormatDAO);
 
         // Refresh checker workflow
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {

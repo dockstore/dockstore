@@ -17,6 +17,7 @@ package io.dockstore.client.cli;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -28,6 +29,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -79,7 +81,7 @@ public class ExtendedNextflowIT extends BaseIT {
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null, false);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
-
+        Workflow workflowWithDefaultVersion = workflowApi.updateWorkflowDefaultVersion(workflowByPathGithub.getId(), "nfcore");
         // Tests that nf-core nextflow.config files can be parsed
         List<SourceFile> sourceFileList = new ArrayList<>(
             refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("nfcore")).findFirst().get()
@@ -88,10 +90,12 @@ public class ExtendedNextflowIT extends BaseIT {
         Assert.assertTrue("files are not what we expected",
             sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/AMPA-BIGTABLE.pl")) && sourceFileList.stream()
                 .anyMatch(file -> file.getPath().equals("bin/multi-AMPA-BIGTABLE.pl")));
-
+        List<WorkflowVersion> workflowVersions = workflowWithDefaultVersion.getWorkflowVersions();
+        List<String> collect = workflowVersions.stream().map(version -> version.getAuthor()).collect(Collectors.toList());
+        collect.get(0);
         // check that metadata made it through properly
-        Assert.assertEquals("test.user@test.com", refreshGithub.getAuthor());
-        Assert.assertEquals("Fast automated prediction of protein antimicrobial regions", refreshGithub.getDescription());
+        Assert.assertEquals("test.user@test.com", workflowWithDefaultVersion.getAuthor());
+        Assert.assertEquals("Fast automated prediction of protein antimicrobial regions", workflowWithDefaultVersion.getDescription());
     }
 
     @Test

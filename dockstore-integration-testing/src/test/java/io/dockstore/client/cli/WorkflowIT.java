@@ -1575,11 +1575,12 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", null, false);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId());
-        Assert.assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
-        Assert.assertEquals("Peter Amstutz", workflow.getAuthor());
-        Assert.assertEquals("peter.amstutz@curoverse.com", workflow.getEmail());
-        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
-        Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
+        Workflow master = userWorkflowsApi.updateWorkflowDefaultVersion(workflowByPathGithub.getId(), "master");
+        Assert.assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", master.getDescription());
+        Assert.assertEquals("Peter Amstutz", master.getAuthor());
+        Assert.assertEquals("peter.amstutz@curoverse.com", master.getEmail());
+        Assert.assertTrue(master.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+        Optional<WorkflowVersion> optionalWorkflowVersion = master.getWorkflowVersions().stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion.isPresent());
         WorkflowVersion workflowVersion = optionalWorkflowVersion.get();

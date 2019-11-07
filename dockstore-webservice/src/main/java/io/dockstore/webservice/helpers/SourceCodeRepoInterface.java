@@ -340,14 +340,19 @@ public abstract class SourceCodeRepoInterface {
 
         // Parse file content and update
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        Entry newEntry = anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles, version);
-        if (newEntry.getDescription() == null || newEntry.getDescription().isEmpty()) {
-            String readmeContent = getREADMEContent(repositoryId, version.getReference());
-            if (readmeContent != null && !readmeContent.isBlank()) {
-                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+        Set<Version> versions2 = entry.getWorkflowVersions();
+        Set<SourceFile> finalSourceFiles = sourceFiles;
+        versions2.forEach(version3 -> {
+            anInterface.parseWorkflowContent(finalFilePath, firstFileContent, finalSourceFiles, version3);
+            if (version3.getDescription() == null || version3.getDescription().isEmpty()) {
+                String readmeContent = getREADMEContent(repositoryId, version3.getReference());
+                if (readmeContent != null && !readmeContent.isBlank()) {
+                    version3.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                }
             }
-        }
-        return newEntry;
+        });
+
+        return entry;
     }
 
     /**
