@@ -40,7 +40,6 @@ import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
-import io.swagger.client.model.Image;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -620,7 +619,7 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
-     * Tests that image and checksum information can be
+     * Tests that image and checksum information can be grabbed from Quay and update db correctly.
      */
     @Test
     public void testGrabbingImagesFromQuay() {
@@ -641,10 +640,8 @@ public class GeneralIT extends BaseIT {
         // Check that the image information has been grabbed on refresh.
         List<Tag> tags = containersApi.getContainer(tool.getId(), null).getWorkflowVersions();
         for (Tag tag : tags) {
-            List<Image> images = tag.getImages();
             assertNotNull(tag.getImages().get(0).getChecksums().get(0).getType());
             assertNotNull(tag.getImages().get(0).getChecksums().get(0).getChecksum());
-            tag.getImages().get(0).getChecksums().get(0);
         }
 
         // Check for case where user deletes tag and creates new one of same name.

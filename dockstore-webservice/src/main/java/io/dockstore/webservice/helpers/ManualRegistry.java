@@ -17,9 +17,12 @@
 package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 
@@ -63,7 +66,7 @@ public class ManualRegistry extends AbstractImageRegistry {
     }
 
     @Override
-    public Tag updateTagWithImageInformation(Tool tool, Tag tag) {
-        return tag;
+    public Set<Image> getImagesForTag(Tool tool, Tag tag) {
+        return Collections.emptySet();
     }
 }

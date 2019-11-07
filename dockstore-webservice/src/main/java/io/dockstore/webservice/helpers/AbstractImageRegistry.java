@@ -109,7 +109,7 @@ public abstract class AbstractImageRegistry {
      */
     public abstract boolean canConvertToAuto(Tool tool);
 
-    public abstract Tag updateTagWithImageInformation(Tool tool, Tag tag);
+    public abstract Set<Image> getImagesForTag(Tool tool, Tag tag);
 
     /**
      * Updates/Adds/Deletes tools and their associated tags
@@ -324,7 +324,7 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
-                    clonedTag.getImages().addAll(updateTagWithImageInformation(tool, clonedTag).getImages());
+                    clonedTag.getImages().addAll(getImagesForTag(tool, clonedTag));
                     if (tool.getDefaultTestCwlParameterFile() != null) {
                         clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), DescriptorLanguage.FileType.CWL_TEST_JSON));
                     }
@@ -411,23 +411,11 @@ public abstract class AbstractImageRegistry {
         // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
         // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
         if (oldTag.getImages().isEmpty()) {
-            oldTag.getImages().addAll(updateTagWithImageInformation(tool, newTag).getImages());
+            oldTag.getImages().addAll(getImagesForTag(tool, newTag));
 
         } else {
-            // There should only be one image per tag so each loop should only execute once.
-            Iterator<Image> iterator = oldTag.getImages().iterator();
-            Iterator<Image> iterator2 = newTag.getImages().iterator();
-
-            while (iterator.hasNext()) {
-                Image oldImage = iterator.next();
-                while (iterator2.hasNext()) {
-                    Image newImage = iterator2.next();
-                    if (!oldImage.getImageID().equals(newImage.getImageID())) {
-                        oldTag.getImages().remove(oldImage);
-                        oldTag.getImages().addAll(updateTagWithImageInformation(tool, newTag).getImages());
-                    }
-                }
-            }
+            oldTag.getImages().removeAll(oldTag.getImages());
+            oldTag.getImages().addAll(newTag.getImages());
         }
     }
 

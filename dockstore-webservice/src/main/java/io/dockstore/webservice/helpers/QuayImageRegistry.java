@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -92,7 +93,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 try {
 
                     final Tag tag = objectMapper.readValue(s, Tag.class);
-                    updateTagWithImageInformation(tool, tag);
+                    tag.getImages().addAll(getImagesForTag(tool, tag));
                     insertQuayLastModifiedIntoLastBuilt(stringMapEntry, tag);
                     tags.add(tag);
                 } catch (IOException ex) {
@@ -108,7 +109,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return tags;
     }
 
-    public Tag updateTagWithImageInformation(Tool tool, Tag tag) {
+    // return a Set<Images> Collections.emptySet()
+    public Set<Image> getImagesForTag(Tool tool, Tag tag) {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
 
         final String repo = tool.getNamespace() + '/' + tool.getName();
@@ -121,9 +123,9 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
             List<Checksum> checksums = new ArrayList<>();
             checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-            tag.setImages(Collections.singleton(new Image(checksums, repo, tag.getName(), imageID)));
+            return Collections.singleton(new Image(checksums, repo, tag.getName(), imageID));
         }
-        return tag;
+        return Collections.emptySet();
     }
 
     private  Optional<Map<String, Map<String, Map<String, String>>>> getToolFromQuay(Tool tool) {
