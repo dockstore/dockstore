@@ -73,7 +73,7 @@ public class Image {
 
     }
 
-    public Image(ArrayList<Checksum> checksums, String repository, String tag, String imageID) {
+    public Image(List<Checksum> checksums, String repository, String tag, String imageID) {
         this.checksums = checksums;
         this.repository = repository;
         this.tag = tag;
