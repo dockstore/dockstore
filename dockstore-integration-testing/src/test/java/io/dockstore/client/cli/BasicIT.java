@@ -1341,6 +1341,7 @@ public class BasicIT extends BaseIT {
             "--script" });
 
         // NOTE: The tool should have an associated email
+        testingPostgres.runUpdateStatement("update tool set email='potato@stew.com'");
 
         // Make the tool private
         Client.main(

@@ -250,7 +250,6 @@ public abstract class SourceCodeRepoInterface {
         //TODO to parse metadata in WDL, there is a hidden dependency on validation now (validation does checks for things like recursive imports)
         // this means that two paths need to pass data in the same way to avoid oddities like validation passing and metadata parsing crashing on an invalid parse tree
         updateEntryMetadata(workflow, workflow.getDescriptorType());
-        workflow.syncMetadataWithDefault();
         return workflow;
     }
 
@@ -262,7 +261,7 @@ public abstract class SourceCodeRepoInterface {
      * @param type the type of language to look for
      * @return the entry again
      */
-    Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
+    public Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
         Version version = null;
@@ -330,6 +329,7 @@ public abstract class SourceCodeRepoInterface {
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
                 version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                entry.setDescriptionThingy(version.getDescription());
             }
             return entry;
         }
@@ -350,8 +350,10 @@ public abstract class SourceCodeRepoInterface {
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
                 version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                entry.setDescriptionThingy(version.getDescription());
             }
         }
+        entry.setMetadata(newVersion);
         return entry;
     }
 

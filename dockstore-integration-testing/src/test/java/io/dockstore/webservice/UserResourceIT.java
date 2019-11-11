@@ -371,6 +371,8 @@ public class UserResourceIT extends BaseIT {
         // Update an entry
         Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
         Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId());
+
+        // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
         Assert.assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
 
         // Entry should now be at the top

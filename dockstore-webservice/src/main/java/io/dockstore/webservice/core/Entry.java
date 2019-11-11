@@ -281,10 +281,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public void syncMetadataWithDefault() {
         T defaultVersionForRealz = this.getDefaultVersionForRealz();
         if (defaultVersionForRealz != null) {
-            VersionMetadata versionMetadata = defaultVersionForRealz.getVersionMetadata();
-            this.author = versionMetadata.author;
-            this.email = versionMetadata.email;
-            this.description = versionMetadata.description;
+            this.setMetadata(defaultVersionForRealz);
         }
     }
 
@@ -417,7 +414,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
-        entry.syncMetadataWithDefault();
+        this.author = entry.getAuthor();
+        this.email = entry.getEmail();
+        this.description = entry.getDescription();
+
         lastModified = entry.getLastModifiedDate();
 
         // Only overwrite the giturl if the new git url is not empty (no value)
@@ -434,6 +434,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     public void setDescriptionThingy(String newDescription) {
         this.description = newDescription;
+    }
+
+    public void setMetadata(Version version) {
+        this.description = version.getDescription();
+        this.email = version.getEmail();
+        this.author = version.getAuthor();
     }
 
     public void setAuthorThingy(String newAuthor) {
