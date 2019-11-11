@@ -350,6 +350,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().doiStatus = doiStatus;
     }
 
+    public void setDescriptionAndDescriptionSource(String newDescription, DescriptionSource newDescriptionSource) {
+        this.getVersionMetadata().description = newDescription;
+        this.getVersionMetadata().descriptionSource = newDescriptionSource;
+    }
+
+    public void setAuthor(String newAuthor) {
+        this.getVersionMetadata().author = newAuthor;
+    }
+
+    public void setEmail(String newEmail) {
+        this.getVersionMetadata().email = newEmail;
+    }
+
     public ReferenceType getReferenceType() {
         return referenceType;
     }

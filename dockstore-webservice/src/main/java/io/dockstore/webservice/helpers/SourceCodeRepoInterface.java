@@ -38,6 +38,7 @@ import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -249,6 +250,7 @@ public abstract class SourceCodeRepoInterface {
         //TODO to parse metadata in WDL, there is a hidden dependency on validation now (validation does checks for things like recursive imports)
         // this means that two paths need to pass data in the same way to avoid oddities like validation passing and metadata parsing crashing on an invalid parse tree
         updateEntryMetadata(workflow, workflow.getDescriptorType());
+        workflow.syncMetadataWithDefault();
         return workflow;
     }
 
@@ -327,7 +329,7 @@ public abstract class SourceCodeRepoInterface {
             LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
-                entry.setDescription(readmeContent);
+                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
             }
             return entry;
         }
@@ -347,7 +349,7 @@ public abstract class SourceCodeRepoInterface {
         if (newEntry.getDescription() == null || newEntry.getDescription().isEmpty()) {
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
-                entry.setDescription(readmeContent);
+                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
             }
         }
         return newEntry;

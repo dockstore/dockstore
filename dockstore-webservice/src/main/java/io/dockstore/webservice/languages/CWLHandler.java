@@ -39,6 +39,7 @@ import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
@@ -109,7 +110,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 final String finalChoiceForDescription = ObjectUtils.firstNonNull(doc, description, label);
 
                 if (finalChoiceForDescription != null) {
-                    entry.setDescription(finalChoiceForDescription);
+                    version.setDescriptionAndDescriptionSource(finalChoiceForDescription, DescriptionSource.DESCRIPTOR);
                 } else {
                     LOG.info("Description not found!");
                 }
@@ -117,9 +118,9 @@ public class CWLHandler implements LanguageHandlerInterface {
                 String dctKey = "dct:creator";
                 String schemaKey = "s:author";
                 if (map.containsKey(schemaKey)) {
-                    processAuthor(entry, map, schemaKey, "s:name", "s:email", "Author not found!");
+                    processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
                 } else if (map.containsKey(dctKey)) {
-                    processAuthor(entry, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
+                    processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
@@ -151,7 +152,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      * @param emailKey
      * @param errorMessage
      */
-    private void processAuthor(Entry entry, Map map, String dctKey, String authorKey, String emailKey, String errorMessage) {
+    private void processAuthor(Version version, Map map, String dctKey, String authorKey, String emailKey, String errorMessage) {
         Object o = map.get(dctKey);
         if (o instanceof List) {
             o = ((List)o).get(0);
@@ -159,10 +160,10 @@ public class CWLHandler implements LanguageHandlerInterface {
         map = (Map)o;
         if (map != null) {
             String author = (String)map.get(authorKey);
-            entry.setAuthor(author);
+            version.setAuthor(author);
             String email = (String)map.get(emailKey);
             if (!Strings.isNullOrEmpty(email)) {
-                entry.setEmail(email.replaceFirst("^mailto:", ""));
+                version.setEmail(email.replaceFirst("^mailto:", ""));
             }
         } else {
             LOG.info(errorMessage);

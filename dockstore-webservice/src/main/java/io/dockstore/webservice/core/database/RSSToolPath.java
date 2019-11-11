@@ -32,7 +32,7 @@ public class RSSToolPath {
         this.tool.setName(name);
         this.tool.setToolname(entryName);
         this.tool.setLastUpdated(lastUpdated);
-        this.tool.setDescription(description);
+        this.tool.setDescriptionThingy(description);
     }
 
     public Tool getTool() {

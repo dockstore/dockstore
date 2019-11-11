@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.8.0-alpha.1-SNAPSHOT
+  version: 1.8.0-alpha.2-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -6486,9 +6486,15 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
+        defaultVersionForRealz:
+          $ref: "#/components/schemas/WorkflowVersion"
         parent_id:
           type: integer
           format: int64
+          readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
           readOnly: true
         has_checker:
           type: boolean
@@ -6505,17 +6511,15 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
+          readOnly: true
         description:
           type: string
           description: This is a human-readable description of this container and what it
             is trying to accomplish, required GA4GH
+          readOnly: true
         labels:
           type: array
           description: Labels (i.e. meta tags) for describing the purpose and contents of
@@ -6540,6 +6544,7 @@ components:
         email:
           type: string
           description: This is the email of the git organization
+          readOnly: true
         defaultVersion:
           type: string
           description: This is the default version of the entry
@@ -6820,8 +6825,14 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Tag"
+        defaultVersionForRealz:
+          $ref: "#/components/schemas/Tag"
         custom_docker_registry_path:
           type: string
+          readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
           readOnly: true
         has_checker:
           type: boolean
@@ -6838,17 +6849,15 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
+          readOnly: true
         description:
           type: string
           description: This is a human-readable description of this container and what it
             is trying to accomplish, required GA4GH
+          readOnly: true
         labels:
           type: array
           description: Labels (i.e. meta tags) for describing the purpose and contents of
@@ -6873,6 +6882,7 @@ components:
         email:
           type: string
           description: This is the email of the git organization
+          readOnly: true
         defaultVersion:
           type: string
           description: This is the default version of the entry
@@ -7032,6 +7042,12 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
+        defaultVersionForRealz:
+          $ref: "#/components/schemas/Version"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7047,17 +7063,15 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
+          readOnly: true
         description:
           type: string
           description: This is a human-readable description of this container and what it
             is trying to accomplish, required GA4GH
+          readOnly: true
         labels:
           type: array
           description: Labels (i.e. meta tags) for describing the purpose and contents of
@@ -7082,6 +7096,7 @@ components:
         email:
           type: string
           description: This is the email of the git organization
+          readOnly: true
         defaultVersion:
           type: string
           description: This is the default version of the entry
@@ -8035,15 +8050,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -8248,10 +8263,16 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
+        isChecker:
+          type: boolean
+        defaultVersionForRealz:
+          $ref: "#/components/schemas/WorkflowVersion"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -8267,17 +8288,15 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
+          readOnly: true
         description:
           type: string
           description: This is a human-readable description of this container and what it
             is trying to accomplish, required GA4GH
+          readOnly: true
         labels:
           type: array
           description: Labels (i.e. meta tags) for describing the purpose and contents of
@@ -8302,6 +8321,7 @@ components:
         email:
           type: string
           description: This is the email of the git organization
+          readOnly: true
         defaultVersion:
           type: string
           description: This is the default version of the entry

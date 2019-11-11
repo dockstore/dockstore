@@ -278,11 +278,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return description;
     }
 
-    /**
-     * @param description the repo description to set
-     */
-    public void setDescription(String description) {
-        this.description = description;
+    public void syncMetadataWithDefault() {
+        T defaultVersionForRealz = this.getDefaultVersionForRealz();
+        if (defaultVersionForRealz != null) {
+            VersionMetadata versionMetadata = defaultVersionForRealz.getVersionMetadata();
+            this.author = versionMetadata.author;
+            this.email = versionMetadata.email;
+            this.description = versionMetadata.description;
+        }
     }
 
     public String getDefaultVersion() {
@@ -293,8 +296,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.defaultVersion = defaultVersion;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
+    public T getDefaultVersionForRealz() {
+        return this.getWorkflowVersions().stream().filter(thing -> thing.name.equals(this.defaultVersion)).findFirst().orElse(null);
     }
 
     public Set<Label> getLabels() {
@@ -324,10 +327,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonProperty
     public String getEmail() {
         return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     /**
@@ -417,10 +416,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
-        this.setDescription(entry.getDescription());
+        entry.syncMetadataWithDefault();
         lastModified = entry.getLastModifiedDate();
-        this.setAuthor(entry.getAuthor());
-        this.setEmail(entry.getEmail());
 
         // Only overwrite the giturl if the new git url is not empty (no value)
         // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.
@@ -428,6 +425,22 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         if (!entry.getGitUrl().isEmpty()) {
             gitUrl = entry.getGitUrl();
         }
+    }
+
+    /**
+     * This is only for the RSS ToolPath
+     * @param newDescription
+     */
+    public void setDescriptionThingy(String newDescription) {
+        this.description = newDescription;
+    }
+
+    public void setAuthorThingy(String newAuthor) {
+        this.author = newAuthor;
+    }
+
+    public void setEmailThingy(String newEmail) {
+        this.email = newEmail;
     }
 
     @JsonProperty("input_file_formats")

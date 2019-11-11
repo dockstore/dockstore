@@ -37,6 +37,7 @@ import groovyjarjarantlr.TokenStreamException;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
@@ -65,11 +66,11 @@ public class NextflowHandler implements LanguageHandlerInterface {
             final Configuration configuration = NextflowUtilities.grabConfig(content);
             String descriptionInProgress = null;
             if (configuration.containsKey("manifest.description")) {
-                entry.setDescription(configuration.getString("manifest.description"));
+                version.setDescriptionAndDescriptionSource(configuration.getString("manifest.description"), DescriptionSource.DESCRIPTOR);
                 descriptionInProgress = entry.getDescription();
             }
             if (configuration.containsKey("manifest.author")) {
-                entry.setAuthor(configuration.getString("manifest.author"));
+                version.setAuthor(configuration.getString("manifest.author"));
             }
             // look for extended help message from nf-core workflows when it is available
             String mainScriptPath = "main.nf";
@@ -87,7 +88,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
                 }
                 String builder = Stream.of(descriptionInProgress, helpMessage).filter(s -> s != null && !s.isEmpty())
                     .collect(Collectors.joining(""));
-                entry.setDescription(builder);
+                version.setDescriptionAndDescriptionSource(builder, DescriptionSource.DESCRIPTOR);
             }
         } catch (NextflowUtilities.NextflowParsingException e) {
             createValidationMessageForGeneralFailure(version, filepath);

@@ -41,6 +41,20 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
       - bearer: []
+  /metadata/config.json:
+    get:
+      tags:
+      - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
   /metadata/dockerRegistryList:
     get:
       tags:
@@ -195,20 +209,6 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/config.json:
-    get:
-      tags:
-      - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Config'
   /toolTester/logs/search:
     get:
       tags:
@@ -606,11 +606,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Version'
+        defaultVersionForRealz:
+          $ref: '#/components/schemas/Version'
+        descriptionThingy:
+          type: string
+          writeOnly: true
+        authorThingy:
+          type: string
+          writeOnly: true
+        emailThingy:
+          type: string
+          writeOnly: true
         is_published:
           type: boolean
         last_modified:
           type: integer
           format: int32
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -626,9 +640,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     FileFormat:
       type: object
       properties:
@@ -735,6 +746,9 @@ components:
           format: date-time
         name:
           type: string
+        tosacceptanceDate:
+          type: string
+          format: date-time
         tosversion:
           type: string
           enum:
@@ -744,9 +758,6 @@ components:
           type: string
           format: date-time
           writeOnly: true
-        tosacceptanceDate:
-          type: string
-          format: date-time
     Validation:
       type: object
       properties:
@@ -826,8 +837,11 @@ components:
             $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
-        doiURL:
+        workingDirectory:
           type: string
+        email:
+          type: string
+          writeOnly: true
         verified:
           type: boolean
         verifiedSource:
@@ -836,14 +850,17 @@ components:
           type: array
           items:
             type: string
+        doiURL:
+          type: string
         doiStatus:
           type: string
           enum:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
-        workingDirectory:
+        author:
           type: string
+          writeOnly: true
         dbUpdateDate:
           type: string
           format: date-time
@@ -857,35 +874,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-    RegistryBean:
-      type: object
-      properties:
-        dockerPath:
-          type: string
-        friendlyName:
-          type: string
-        url:
-          type: string
-        privateOnly:
-          type: string
-        customDockerPath:
-          type: string
-        enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
     Config:
       type: object
       properties:
@@ -944,6 +932,35 @@ components:
         googleClientId:
           type: string
         discourseUrl:
+          type: string
+    RegistryBean:
+      type: object
+      properties:
+        dockerPath:
+          type: string
+        friendlyName:
+          type: string
+        url:
+          type: string
+        privateOnly:
+          type: string
+        customDockerPath:
+          type: string
+        enum:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
           type: string
     ToolTesterLog:
       type: object
@@ -1092,6 +1109,17 @@ components:
             $ref: '#/components/schemas/WorkflowVersion'
         path:
           type: string
+        defaultVersionForRealz:
+          $ref: '#/components/schemas/WorkflowVersion'
+        descriptionThingy:
+          type: string
+          writeOnly: true
+        authorThingy:
+          type: string
+          writeOnly: true
+        emailThingy:
+          type: string
+          writeOnly: true
         is_published:
           type: boolean
         last_modified:
@@ -1104,12 +1132,15 @@ components:
           format: int64
         full_workflow_path:
           type: string
+        source_control_provider:
+          type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
-        source_control_provider:
+        last_modified_date:
           type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1125,9 +1156,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     WorkflowVersion:
       type: object
       properties:
@@ -1182,8 +1210,9 @@ components:
           type: string
         hidden:
           type: boolean
-        doiURL:
+        email:
           type: string
+          writeOnly: true
         verified:
           type: boolean
         verifiedSource:
@@ -1192,12 +1221,17 @@ components:
           type: array
           items:
             type: string
+        doiURL:
+          type: string
         doiStatus:
           type: string
           enum:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
+        author:
+          type: string
+          writeOnly: true
         dbUpdateDate:
           type: string
           format: date-time
