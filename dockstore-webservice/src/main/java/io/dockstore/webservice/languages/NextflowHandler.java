@@ -38,7 +38,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -60,14 +59,14 @@ public class NextflowHandler implements LanguageHandlerInterface {
     private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
+    public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         // this is where we can look for things like Nextflow config files or maybe a future Dockstore.yml
         try {
             final Configuration configuration = NextflowUtilities.grabConfig(content);
             String descriptionInProgress = null;
             if (configuration.containsKey("manifest.description")) {
                 version.setDescriptionAndDescriptionSource(configuration.getString("manifest.description"), DescriptionSource.DESCRIPTOR);
-                descriptionInProgress = entry.getDescription();
+                descriptionInProgress = version.getDescription();
             }
             if (configuration.containsKey("manifest.author")) {
                 version.setAuthor(configuration.getString("manifest.author"));
@@ -93,7 +92,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
         } catch (NextflowUtilities.NextflowParsingException e) {
             createValidationMessageForGeneralFailure(version, filepath);
         }
-        return entry;
+        return version;
     }
 
     @Override

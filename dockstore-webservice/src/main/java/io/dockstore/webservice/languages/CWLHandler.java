@@ -40,7 +40,6 @@ import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
@@ -65,7 +64,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
+    public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
@@ -140,12 +139,12 @@ public class CWLHandler implements LanguageHandlerInterface {
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_CWL, false, validationMessageObject));
             }
         }
-        return entry;
+        return version;
     }
 
     /**
      * Look at the map of metadata and populate entry with an author and email
-     * @param entry
+     * @param version
      * @param map
      * @param dctKey
      * @param authorKey

@@ -179,6 +179,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return this.getVersionMetadata().verifiedSource;
     }
 
+    public String getAuthor() {
+        return this.getVersionMetadata().author;
+    }
+
+    public String getDescription() {
+        return this.getVersionMetadata().description;
+    }
+
+    public String getEmail() {
+        return this.getVersionMetadata().email;
+    }
+
     @ApiModelProperty(value = "Verified source for the version", position = 18)
     public String[] getVerifiedSources() {
         if (this.getVersionMetadata().verifiedSource == null) {
