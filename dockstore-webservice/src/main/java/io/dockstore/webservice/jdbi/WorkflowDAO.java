@@ -242,16 +242,21 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
 
-    public Long getWorkflowIdByWorkflowVersionId(long workflowVersionId) {
-        BigInteger workflowBigIntId;
+    /**
+     * Finds a workflow id based on a workflow version id. If the workflow cannot be found
+     * and an exception is generated an empty optional is returned
+     *
+     * @param workflowVersionId the id of the workflow version
+     * @return optional workflow id
+     */
+    public Optional<Long> getWorkflowIdByWorkflowVersionId(long workflowVersionId) {
         try {
-            workflowBigIntId = ((BigInteger)namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
+            BigInteger workflowBigIntId = ((BigInteger)namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
                     .setParameter("workflowVersionId", workflowVersionId).getSingleResult());
+            return Optional.of(workflowBigIntId.longValueExact());
         } catch (NoResultException nre) {
             LOG.error("Could get workflow based on workflow version id " + workflowVersionId + ". Error is " + nre.getMessage(), nre);
-            throw new CustomWebApplicationException("Could get workflow based on workflow version id " + workflowVersionId
-                    + ". Error is " + nre.getMessage(), HttpStatus.SC_NOT_FOUND);
+            return Optional.empty();
         }
-        return workflowBigIntId.longValueExact();
     }
 }

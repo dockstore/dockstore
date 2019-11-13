@@ -69,6 +69,22 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
         return addAliasesAndCheck(user, workflowVersionId, aliases, true);
     }
 
+    /**
+     * Finds a workflow and returns the workflow id based on a workflow version id.
+     *
+     * @param workflowVersionId the id of the workflow version
+     * @return workflow id or throws an exception if the workflow cannot be found
+     */
+    private long getWorkflowId(long workflowVersionId) {
+        Optional<Long> workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
+        if (!workflowId.isPresent()) {
+            LOG.error("Could get workflow based on workflow version id " + workflowVersionId);
+            throw new CustomWebApplicationException("Could get workflow based on workflow version id " + workflowVersionId, HttpStatus.SC_NOT_FOUND);
+        }
+        return workflowId.get();
+    }
+
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -86,7 +102,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
         }
 
         long workflowVersionId = workflowVersion.getId();
-        Long workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
+        long workflowId = getWorkflowId(workflowVersionId);
         Workflow workflow = workflowDAO.findById(workflowId);
         workflowResource.checkEntry(workflow);
         workflowResource.optionalUserCheckEntry(user, workflow);
@@ -107,7 +123,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
             throw new CustomWebApplicationException("Workflow version not found when searching with id: " + workflowVersionId, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Long workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
+        Long workflowId = getWorkflowId(workflowVersionId);
         Workflow workflow = workflowDAO.findById(workflowId);
         workflowResource.checkEntry(workflow);
         workflowResource.checkUserCanUpdate(user, workflow);

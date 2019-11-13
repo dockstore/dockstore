@@ -178,8 +178,11 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.aliases = aliases;
     }
 
+    @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that contains the URL to the workflow and the version tag name.")
     public static final class WorkflowVersionPathInfo {
+        @ApiModelProperty(value = "URL to workflow.")
         private final String fullWorkflowPath;
+        @ApiModelProperty(value = "Name of workflow version tag")
         private final String tagName;
 
         public WorkflowVersionPathInfo(String fullWorkflowPath, String tagName) {
