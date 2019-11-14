@@ -278,6 +278,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return description;
     }
 
+    /**
+     * Currently unused because too many entries do not have a default version set
+     */
     public void syncMetadataWithDefault() {
         T defaultVersionForRealz = this.getDefaultVersionForRealz();
         if (defaultVersionForRealz != null) {
@@ -432,7 +435,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * This is only for the RSS ToolPath
      * @param newDescription
      */
-    public void setDescriptionThingy(String newDescription) {
+    public void setDescription(String newDescription) {
         this.description = newDescription;
     }
 
@@ -442,11 +445,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.author = version.getAuthor();
     }
 
-    public void setAuthorThingy(String newAuthor) {
+    public void setAuthor(String newAuthor) {
         this.author = newAuthor;
     }
 
-    public void setEmailThingy(String newEmail) {
+    public void setEmail(String newEmail) {
         this.email = newEmail;
     }
 

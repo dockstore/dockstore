@@ -73,9 +73,9 @@ public class WDLHandlerTest {
     public void getWorkflowContentOfTool() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Tool tool = new Tool();
-        tool.setAuthorThingy("Jane Doe");
-        tool.setDescriptionThingy("A good description");
-        tool.setEmailThingy("janedoe@example.org");
+        tool.setAuthor("Jane Doe");
+        tool.setDescription("A good description");
+        tool.setEmail("janedoe@example.org");
 
         Assert.assertEquals("Jane Doe", tool.getAuthor());
         Assert.assertEquals("A good description", tool.getDescription());

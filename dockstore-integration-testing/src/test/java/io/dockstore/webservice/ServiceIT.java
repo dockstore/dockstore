@@ -456,7 +456,7 @@ public class ServiceIT extends BaseIT {
             final Transaction transaction = session.beginTransaction();
 
             Workflow testWorkflow = new BioWorkflow();
-            testWorkflow.setDescriptionThingy("foo workflow");
+            testWorkflow.setDescription("foo workflow");
             testWorkflow.setIsPublished(true);
             testWorkflow.setSourceControl(SourceControl.GITHUB);
             testWorkflow.setDescriptorType(DescriptorLanguage.CWL);
@@ -464,7 +464,7 @@ public class ServiceIT extends BaseIT {
             testWorkflow.setRepository("shield_repo");
 
             Service testService = new Service();
-            testService.setDescriptionThingy("test service");
+            testService.setDescription("test service");
             testService.setIsPublished(true);
             testService.setSourceControl(SourceControl.GITHUB);
             testService.setDescriptorType(DescriptorLanguage.SERVICE);
@@ -474,7 +474,7 @@ public class ServiceIT extends BaseIT {
             testService.setDefaultWorkflowPath(".dockstore.yml");
 
             Service test2Service = new Service();
-            test2Service.setDescriptionThingy("test service");
+            test2Service.setDescription("test service");
             test2Service.setIsPublished(true);
             test2Service.setSourceControl(SourceControl.GITHUB);
             test2Service.setMode(WorkflowMode.SERVICE);

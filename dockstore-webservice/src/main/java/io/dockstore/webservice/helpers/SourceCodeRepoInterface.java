@@ -329,7 +329,7 @@ public abstract class SourceCodeRepoInterface {
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
                 version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
-                entry.setDescriptionThingy(version.getDescription());
+                entry.setDescription(version.getDescription());
             }
             return entry;
         }
@@ -350,7 +350,7 @@ public abstract class SourceCodeRepoInterface {
             String readmeContent = getREADMEContent(repositoryId, version.getReference());
             if (readmeContent != null && !readmeContent.isBlank()) {
                 version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
-                entry.setDescriptionThingy(version.getDescription());
+                entry.setDescription(version.getDescription());
             }
         }
         entry.setMetadata(newVersion);
