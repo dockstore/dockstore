@@ -432,12 +432,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
-        this.author = entry.getAuthor();
-        this.email = entry.getEmail();
-        this.description = entry.getDescription();
-
+        setMetadata(entry);
         lastModified = entry.getLastModifiedDate();
-
         // Only overwrite the giturl if the new git url is not empty (no value)
         // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.
         //  Giturl will only be changed if the git repo from quay has an autobuild
@@ -446,10 +442,16 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
+    public void setMetadata(S entry) {
+        this.author = entry.getAuthor();
+        this.description = entry.getDescription();
+        this.email = entry.getEmail();
+    }
+
     public void setMetadata(Version version) {
+        this.author = version.getAuthor();
         this.description = version.getDescription();
         this.email = version.getEmail();
-        this.author = version.getAuthor();
     }
 
     @JsonProperty("input_file_formats")
