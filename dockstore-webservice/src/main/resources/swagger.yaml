@@ -6047,214 +6047,18 @@ definitions:
       content:
         type: "string"
   BioWorkflow:
-    type: "object"
-    required:
-    - "defaultTestParameterFilePath"
-    - "descriptorType"
-    - "gitUrl"
-    - "mode"
-    - "organization"
-    - "repository"
-    - "sourceControl"
-    - "workflow_path"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the container in this web service"
-      aliases:
-        type: "object"
-        description: "aliases can be used as an alternate unique id for entries"
-        additionalProperties:
-          $ref: "#/definitions/Alias"
-      dbCreateDate:
-        type: "string"
-        format: "date-time"
-      dbUpdateDate:
-        type: "string"
-        format: "date-time"
-      topicId:
-        type: "integer"
-        format: "int64"
-        description: "The Id of the corresponding topic on Dockstore Discuss"
-      defaultVersionForRealz:
-        $ref: "#/definitions/WorkflowVersion"
-      parent_id:
-        type: "integer"
-        format: "int64"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      author:
-        type: "string"
-        position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
-        readOnly: true
-      description:
-        type: "string"
-        position: 2
-        description: "This is a human-readable description of this container and what\
-          \ it is trying to accomplish, required GA4GH"
-        readOnly: true
-      labels:
-        type: "array"
-        position: 3
-        description: "Labels (i.e. meta tags) for describing the purpose and contents\
-          \ of containers"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Label"
-      users:
-        type: "array"
-        position: 4
-        description: "This indicates the users that have control over this entry,\
-          \ dockstore specific"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
-      starredUsers:
-        type: "array"
-        position: 5
-        description: "This indicates the users that have starred this entry, dockstore\
-          \ specific"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
-      email:
-        type: "string"
-        position: 6
-        description: "This is the email of the git organization"
-        readOnly: true
-      defaultVersion:
-        type: "string"
-        position: 7
-        description: "This is the default version of the entry"
-      is_published:
-        type: "boolean"
-        position: 8
-        description: "Implementation specific visibility in this web service"
-      last_modified:
-        type: "integer"
-        format: "int32"
-        position: 9
-        description: "Implementation specific timestamp for last modified. Tools->\
-          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
-          \ (new version created). Workflows-> For remote: When refresh is hit, last\
-          \ time GitHub repo was changed. Hosted: Last time a new version was made."
-      lastUpdated:
-        type: "string"
-        format: "date-time"
-        position: 10
-        description: "Implementation specific timestamp for last updated on webservice.\
-          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
-          \ tool info (like changing dockerfile path) updated, or default version\
-          \ selected. For hosted tools: when you created the tool. Workflows-> For\
-          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
-          \ created."
-      gitUrl:
-        type: "string"
-        position: 11
-        description: "This is a link to the associated repo with a descriptor, required\
-          \ GA4GH"
-      checker_id:
-        type: "integer"
-        format: "int64"
-        position: 12
-        description: "The id of the associated checker workflow"
-        readOnly: true
-      conceptDoi:
-        type: "string"
-        position: 13
-        description: "The Digital Object Identifier (DOI) representing all of the\
-          \ versions of your workflow"
-      mode:
-        type: "string"
-        position: 13
-        description: "This indicates what mode this is in which informs how we do\
-          \ things like refresh, dockstore specific"
-        enum:
-        - "FULL"
-        - "STUB"
-        - "HOSTED"
-        - "SERVICE"
-      workflowName:
-        type: "string"
-        position: 14
-        description: "This is the name of the workflow, not needed when only one workflow\
-          \ in a repo"
-      organization:
-        type: "string"
-        position: 15
-        description: "This is a git organization for the workflow"
-      repository:
-        type: "string"
-        position: 16
-        description: "This is a git repository name"
-      sourceControl:
-        type: "string"
-        position: 17
-        description: "This is a specific source control provider like github or bitbucket\
-          \ or n/a?, required: GA4GH"
-      descriptorType:
-        type: "string"
-        position: 18
-        description: "This is a descriptor type for the workflow, either CWL, WDL,\
-          \ or Nextflow (Defaults to CWL)"
-        enum:
-        - "CWL"
-        - "WDL"
-        - "NFL"
-        - "service"
-      workflow_path:
-        type: "string"
-        position: 19
-        description: "This indicates for the associated git repository, the default\
-          \ path to the primary descriptor document"
-      defaultTestParameterFilePath:
-        type: "string"
-        position: 20
-        description: "This indicates for the associated git repository, the default\
-          \ path to the test parameter file"
-      workflowVersions:
-        type: "array"
-        position: 21
-        description: "Implementation specific tracking of valid build workflowVersions\
-          \ for the docker container"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/WorkflowVersion"
-      is_checker:
-        type: "boolean"
-        position: 23
-      full_workflow_path:
-        type: "string"
-        position: 24
-        readOnly: true
-      path:
-        type: "string"
-        position: 25
-      source_control_provider:
-        type: "string"
-        position: 26
-        readOnly: true
-    description: "This describes one workflow in the dockstore"
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties:
+        parent_id:
+          type: "integer"
+          format: "int64"
+          readOnly: true
+        is_checker:
+          type: "boolean"
+          position: 23
+      description: "This describes one workflow in the dockstore"
   Checksum:
     type: "object"
     properties:
@@ -6445,14 +6249,8 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
-      defaultVersionForRealz:
-        $ref: "#/definitions/Tag"
       custom_docker_registry_path:
         type: "string"
-        readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
         readOnly: true
       has_checker:
         type: "boolean"
@@ -6469,17 +6267,19 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
         description: "This is the name of the author stated in the Dockstore.cwl"
-        readOnly: true
       description:
         type: "string"
         position: 2
         description: "This is a human-readable description of this container and what\
           \ it is trying to accomplish, required GA4GH"
-        readOnly: true
       labels:
         type: "array"
         position: 3
@@ -6508,7 +6308,6 @@ definitions:
         type: "string"
         position: 6
         description: "This is the email of the git organization"
-        readOnly: true
       defaultVersion:
         type: "string"
         position: 7
@@ -6689,12 +6488,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
-      defaultVersionForRealz:
-        $ref: "#/definitions/Version"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6710,17 +6503,19 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
         description: "This is the name of the author stated in the Dockstore.cwl"
-        readOnly: true
       description:
         type: "string"
         position: 2
         description: "This is a human-readable description of this container and what\
           \ it is trying to accomplish, required GA4GH"
-        readOnly: true
       labels:
         type: "array"
         position: 3
@@ -6749,7 +6544,6 @@ definitions:
         type: "string"
         position: 6
         description: "This is the email of the git organization"
-        readOnly: true
       defaultVersion:
         type: "string"
         position: 7
@@ -7287,6 +7081,12 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      author:
+        type: "string"
+      description:
+        type: "string"
+      email:
+        type: "string"
       reference:
         type: "string"
         position: 1
@@ -7880,7 +7680,13 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      author:
+        type: "string"
       workingDirectory:
+        type: "string"
+      description:
+        type: "string"
+      email:
         type: "string"
       reference:
         type: "string"
@@ -8035,12 +7841,6 @@ definitions:
         $ref: "#/definitions/Entry"
       isChecker:
         type: "boolean"
-      defaultVersionForRealz:
-        $ref: "#/definitions/WorkflowVersion"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -8056,17 +7856,19 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
         description: "This is the name of the author stated in the Dockstore.cwl"
-        readOnly: true
       description:
         type: "string"
         position: 2
         description: "This is a human-readable description of this container and what\
           \ it is trying to accomplish, required GA4GH"
-        readOnly: true
       labels:
         type: "array"
         position: 3
@@ -8095,7 +7897,6 @@ definitions:
         type: "string"
         position: 6
         description: "This is the email of the git organization"
-        readOnly: true
       defaultVersion:
         type: "string"
         position: 7
@@ -8218,6 +8019,12 @@ definitions:
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
       workingDirectory:
+        type: "string"
+      author:
+        type: "string"
+      description:
+        type: "string"
+      email:
         type: "string"
       reference:
         type: "string"

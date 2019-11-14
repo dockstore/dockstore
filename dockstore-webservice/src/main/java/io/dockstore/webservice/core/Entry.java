@@ -279,6 +279,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     /**
+     * @param description the repo description to s
+     */
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    /**
      * Currently unused because too many entries do not have a default version set
      */
     public void syncMetadataWithDefault() {
@@ -299,6 +306,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     public T getDefaultVersionForRealz() {
         return this.getWorkflowVersions().stream().filter(thing -> thing.name.equals(this.defaultVersion)).findFirst().orElse(null);
+    }
+
+    public void setAuthor(String newAuthor) {
+        this.author = newAuthor;
     }
 
     public Set<Label> getLabels() {
@@ -328,6 +339,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonProperty
     public String getEmail() {
         return email;
+    }
+
+    public void setEmail(String newEmail) {
+        this.email = newEmail;
     }
 
     /**
@@ -431,26 +446,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
-    /**
-     * This is only for the RSS ToolPath
-     * @param newDescription
-     */
-    public void setDescription(String newDescription) {
-        this.description = newDescription;
-    }
-
     public void setMetadata(Version version) {
         this.description = version.getDescription();
         this.email = version.getEmail();
         this.author = version.getAuthor();
-    }
-
-    public void setAuthor(String newAuthor) {
-        this.author = newAuthor;
-    }
-
-    public void setEmail(String newEmail) {
-        this.email = newEmail;
     }
 
     @JsonProperty("input_file_formats")
