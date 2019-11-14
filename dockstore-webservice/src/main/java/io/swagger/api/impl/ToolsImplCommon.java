@@ -80,13 +80,17 @@ public final class ToolsImplCommon {
         return toolDescriptor;
     }
 
+    public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config) {
+        return convertEntryToTool(container, config, false);
+    }
+
     /**
      * Convert our Tool object to a standard Tool format
      *
      * @param container our data object
      * @return standardised data object
      */
-    public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config) {
+    public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config, boolean showHiddenTags) {
         String url;
         String newID = getNewId(container);
         boolean isDockstoreTool;
@@ -144,7 +148,7 @@ public final class ToolsImplCommon {
         for (Version version : inputVersions) {
             // tags with no names make no sense here
             // also hide hidden tags
-            if (version.getName() == null || version.isHidden()) {
+            if (version.getName() == null || (version.isHidden() && !showHiddenTags)) {
                 continue;
             }
             if (version instanceof Tag && ((Tag)version).getImageId() == null) {
