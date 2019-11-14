@@ -319,7 +319,10 @@ public abstract class SourceCodeRepoInterface {
             } else {
                 Set<Version> workflowVersions = entry.getWorkflowVersions();
                 Optional<Version> firstWorkflowVersion = workflowVersions.stream()
-                        .filter(workflowVersion -> workflowVersion.getReference().equals(branch)).findFirst();
+                        .filter(workflowVersion -> {
+                            String reference = workflowVersion.getReference();
+                            return reference != null && reference.equals(branch);
+                        }).findFirst();
                 firstWorkflowVersion.ifPresent(version -> entry.checkAndSetDefaultVersion(version.getName()));
             }
         }
@@ -335,9 +338,11 @@ public abstract class SourceCodeRepoInterface {
         if (sourceFiles == null || sourceFiles.isEmpty()) {
             String message = String.format("%s : Error getting descriptor for %s with path %s", repositoryId, branch, filePath);
             LOG.info(message);
-            String readmeContent = getREADMEContent(repositoryId, version.getReference());
-            if (readmeContent != null && !readmeContent.isBlank()) {
-                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+            if (version.getReference() != null) {
+                String readmeContent = getREADMEContent(repositoryId, version.getReference());
+                if (readmeContent != null && !readmeContent.isBlank()) {
+                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                }
             }
             return;
         }
@@ -347,7 +352,7 @@ public abstract class SourceCodeRepoInterface {
             fileContent = first.get().getContent();
             LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
             anInterface.parseWorkflowContent(filePath, fileContent, sourceFiles, version);
-            if (version.getDescription() == null || version.getDescription().isEmpty()) {
+            if ((version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null) {
                 String readmeContent = getREADMEContent(repositoryId, version.getReference());
                 if (readmeContent != null && !readmeContent.isBlank()) {
                     version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
