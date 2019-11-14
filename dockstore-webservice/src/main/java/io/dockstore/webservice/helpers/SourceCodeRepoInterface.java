@@ -254,8 +254,10 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Update an entry with the contents of the descriptor file from a source code repo
-     * If no description from the descriptor file, fall back to README from default branch
+     * Set default branch if there isn't one
+     * Update all versions with metadata from the contents of the descriptor file from a source code repo
+     * If no description from the descriptor file, fall back to README
+     * Update entry with the default version's metadata
      *
      * @param entry entry to update
      * @param type the type of language to look for
@@ -264,97 +266,94 @@ public abstract class SourceCodeRepoInterface {
     public Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
-        Version version = null;
 
         if (repositoryId == null) {
             LOG.info("Could not find repository information.");
             return entry;
         }
 
-        String branch = getMainBranch(entry, repositoryId);
-
-        if (branch == null) {
-            LOG.info(repositoryId + " : Error getting the main branch.");
+        // If no tags or workflow versions, have no metadata
+        if (entry.getWorkflowVersions().isEmpty()) {
             return entry;
         }
 
-        // Determine the file path of the descriptor
-        String filePath = null;
-        Set<SourceFile> sourceFiles = null;
-
-        // If entry is a tool
+        setDefaultBranch(entry, repositoryId);
         if (entry instanceof Tool) {
-            // If no tags exist on quay
-            if (entry.getWorkflowVersions().isEmpty()) {
-                return entry;
-            }
-
-            // Find filepath to parse
-            for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
-                if (tag.getReference() != null && tag.getReference().equals(branch)) {
-                    sourceFiles = tag.getSourceFiles();
-                    if (type == DescriptorLanguage.CWL) {
-                        filePath = tag.getCwlPath();
-                        version = tag;
-                    } else if (type == DescriptorLanguage.WDL) {
-                        filePath = tag.getWdlPath();
-                        version = tag;
-                    } else {
-                        throw new UnsupportedOperationException("tool is not a CWL or WDL file");
-                    }
+            Tool tool = (Tool)entry;
+            tool.getWorkflowVersions().forEach(tag -> {
+                String filePath;
+                if (type == DescriptorLanguage.CWL) {
+                    filePath = tag.getCwlPath();
+                } else if (type == DescriptorLanguage.WDL) {
+                    filePath = tag.getWdlPath();
+                } else {
+                    throw new UnsupportedOperationException("tool is not a CWL or WDL file");
                 }
-            }
+                updateVersionMetadata(filePath, tag, type, repositoryId);
+            });
         }
-
-        // If entry is a workflow
-
         if (entry instanceof Workflow) {
-            // Find filepath to parse
-            for (WorkflowVersion workflowVersion : ((Workflow)entry).getWorkflowVersions()) {
-                if (workflowVersion.getReference().equals(branch)) {
-                    filePath = workflowVersion.getWorkflowPath();
-                    sourceFiles = workflowVersion.getSourceFiles();
-                    version = workflowVersion;
+            Workflow workflow = (Workflow)entry;
+            workflow.getWorkflowVersions().forEach(workflowVersion -> {
+                String filePath = workflowVersion.getWorkflowPath();
+                updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
+            });
+        }
+        entry.syncMetadataWithDefault();
+        return entry;
+    }
+
+    /**
+     * Sets the default version if there isn't already one present.
+     * This is required because entry-level metadata depends on the default version
+     *
+     * @param entry
+     * @param repositoryId
+     */
+    private void setDefaultBranch(Entry entry, String repositoryId) {
+        if (entry.getDefaultVersion() == null) {
+            String branch = getMainBranch(entry, repositoryId);
+            if (branch == null) {
+                String message = String.format("%s : Error getting the main branch.", repositoryId);
+                LOG.info(message);
+            } else {
+                Set<Version> workflowVersions = entry.getWorkflowVersions();
+                Optional<Version> firstWorkflowVersion = workflowVersions.stream()
+                        .filter(workflowVersion -> workflowVersion.getReference().equals(branch)).findFirst();
+                firstWorkflowVersion.ifPresent(version -> entry.checkAndSetDefaultVersion(version.getName()));
+            }
+        }
+    }
+
+    private void updateVersionMetadata(String filePath, Version version, DescriptorLanguage type, String repositoryId) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
+        String branch = version.getName();
+        if (Strings.isNullOrEmpty(filePath)) {
+            String message = String.format("%s : No descriptor found for %s.", repositoryId, branch);
+            LOG.info(message);
+        }
+        if (sourceFiles == null || sourceFiles.isEmpty()) {
+            String message = String.format("%s : Error getting descriptor for %s with path %s", repositoryId, branch, filePath);
+            LOG.info(message);
+            String readmeContent = getREADMEContent(repositoryId, version.getReference());
+            if (readmeContent != null && !readmeContent.isBlank()) {
+                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+            }
+            return;
+        }
+        String fileContent;
+        Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(filePath)).findFirst();
+        if (first.isPresent()) {
+            fileContent = first.get().getContent();
+            LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
+            Version newVersion = anInterface.parseWorkflowContent(filePath, fileContent, sourceFiles, version);
+            if (newVersion.getDescription() == null || newVersion.getDescription().isEmpty()) {
+                String readmeContent = getREADMEContent(repositoryId, version.getReference());
+                if (readmeContent != null && !readmeContent.isBlank()) {
+                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
                 }
             }
         }
-
-        if (Strings.isNullOrEmpty(filePath)) {
-            LOG.info(repositoryId + " : No descriptor found for " + branch + ".");
-            return entry;
-        }
-
-        if (sourceFiles == null || sourceFiles.isEmpty()) {
-            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
-            String readmeContent = getREADMEContent(repositoryId, version.getReference());
-            if (readmeContent != null && !readmeContent.isBlank()) {
-                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
-                entry.setDescription(version.getDescription());
-            }
-            return entry;
-        }
-
-        String firstFileContent;
-        String finalFilePath = filePath;
-        Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(finalFilePath)).findFirst();
-        if (first.isPresent()) {
-            firstFileContent = first.get().getContent();
-        } else {
-            return entry;
-        }
-
-        // Parse file content and update
-        LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        Version newVersion = anInterface.parseWorkflowContent(finalFilePath, firstFileContent, sourceFiles, version);
-        if (newVersion.getDescription() == null || newVersion.getDescription().isEmpty()) {
-            String readmeContent = getREADMEContent(repositoryId, version.getReference());
-            if (readmeContent != null && !readmeContent.isBlank()) {
-                version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
-                entry.setDescription(version.getDescription());
-            }
-        }
-        entry.setMetadata(newVersion);
-        return entry;
     }
 
     /**

@@ -305,7 +305,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore
     public T getDefaultVersionForRealz() {
-        return this.getWorkflowVersions().stream().filter(thing -> thing.name.equals(this.defaultVersion)).findFirst().orElse(null);
+        return this.getWorkflowVersions().stream().filter(thing -> thing.getName().equals(this.defaultVersion)).findFirst().orElse(null);
     }
 
     public void setAuthor(String newAuthor) {
