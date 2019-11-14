@@ -233,12 +233,13 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         validatedVersion.setValid(true); // Hosted entry versions must be valid to save
         validatedVersion.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, validatedVersion);
+        long l = getVersionDAO().create(validatedVersion);
+        entry.getWorkflowVersions().add(getVersionDAO().findById(l));
         entry.checkAndSetDefaultVersion(validatedVersion.getName());
         // Set entry-level metadata to this latest version
         // TODO: handle when latest version is removed
+        entry.setDefaultVersion(validatedVersion.getName());
         entry.syncMetadataWithDefault();
-        long l = getVersionDAO().create(validatedVersion);
-        entry.getWorkflowVersions().add(getVersionDAO().findById(l));
         FileFormatHelper.updateFileFormats(entry.getWorkflowVersions(), fileFormatDAO);
         // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
         if (validatedVersion instanceof WorkflowVersion) {
