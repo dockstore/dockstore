@@ -291,7 +291,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public void syncMetadataWithDefault() {
         T defaultVersionForRealz = this.getDefaultVersionForRealz();
         if (defaultVersionForRealz != null) {
-            this.setMetadata(defaultVersionForRealz);
+            this.setMetadataFromVersion(defaultVersionForRealz);
         }
     }
 
@@ -432,7 +432,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
-        setMetadata(entry);
+        setMetadataFromEntry(entry);
         lastModified = entry.getLastModifiedDate();
         // Only overwrite the giturl if the new git url is not empty (no value)
         // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.
@@ -442,13 +442,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
-    public void setMetadata(S entry) {
+    public void setMetadataFromEntry(S entry) {
         this.author = entry.getAuthor();
         this.description = entry.getDescription();
         this.email = entry.getEmail();
     }
 
-    public void setMetadata(Version version) {
+    public void setMetadataFromVersion(Version version) {
         this.author = version.getAuthor();
         this.description = version.getDescription();
         this.email = version.getEmail();
