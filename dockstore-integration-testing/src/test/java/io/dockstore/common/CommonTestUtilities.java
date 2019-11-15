@@ -21,7 +21,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.messages.Container;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -281,5 +285,23 @@ public final class CommonTestUtilities {
         Assert.assertTrue(log.contains("NAME"));
         Assert.assertTrue(log.contains("DESCRIPTION"));
         Assert.assertTrue(log.contains("Git Repo"));
+    }
+
+    public static void restartElasticsearch() throws Exception {
+        final DockerClient docker = DefaultDockerClient.fromEnv().build();
+        List<Container> containers = docker.listContainers();
+        Optional<Container> elasticsearch = containers.stream().filter(container -> container.image().contains("elasticsearch"))
+                .findFirst();
+        if (elasticsearch.isPresent()) {
+            Container container = elasticsearch.get();
+            try {
+                docker.restartContainer(container.id());
+                // Wait 10 seconds for elasticsearch to become ready
+                // TODO: Replace with better wait
+                Thread.sleep(10000);
+            } catch (Exception e) {
+                System.out.println("Problems restarting Docker container");
+            }
+        }
     }
 }
