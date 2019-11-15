@@ -433,6 +433,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     public void update(S entry) {
         setMetadataFromEntry(entry);
+        this.defaultVersion = entry.getDefaultVersion();
         lastModified = entry.getLastModifiedDate();
         // Only overwrite the giturl if the new git url is not empty (no value)
         // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.

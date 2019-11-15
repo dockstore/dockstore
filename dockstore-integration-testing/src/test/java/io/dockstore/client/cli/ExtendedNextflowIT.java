@@ -110,13 +110,25 @@ public class ExtendedNextflowIT extends BaseIT {
         workflowByPathBitbucket.setWorkflowPath("/nextflow.config");
         workflowByPathBitbucket.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathBitbucket.getId(), workflowByPathBitbucket);
-
+        final String PARTIAL_README_DESCRIPTION = "AMPA-NF is a pipeline for assessing the antimicrobial domains of proteins,";
+        final String DESCRIPTOR_DESCRIPTION = "Fast automated prediction of protein antimicrobial regions";
         workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId());
-        Assert.assertFalse("Should not have gotten description from README when nextflow.config has it", bitbucketWorkflow.getDescription()
-                .contains(
-                        "AMPA-NF is a pipeline for assessing the antimicrobial domains of proteins, with a focus on the design on new antimicrobial drugs. The application provides fast discovery of antimicrobial patterns in proteins that can be used to develop new peptide-based drugs against pathogens."));
-
+        // There are 3 versions: master, v1.0, and v2.0
+        // master and v2.0 has a nextflow.config file that has description and author, v1.0 does not
+        // v1.0 will pull description from README instead but the others will use nextflow.config
+        Assert.assertEquals(DESCRIPTOR_DESCRIPTION, bitbucketWorkflow.getDescription());
+        bitbucketWorkflow.getWorkflowVersions().forEach(workflowVersion -> {
+            if (workflowVersion.getName().equals("v1.0")) {
+                Assert.assertTrue(workflowVersion.getDescription().contains(PARTIAL_README_DESCRIPTION));
+                Assert.assertNull(workflowVersion.getAuthor());
+                Assert.assertNull(workflowVersion.getEmail());
+            } else {
+                Assert.assertNotNull(DESCRIPTOR_DESCRIPTION, workflowVersion.getDescription());
+                Assert.assertEquals("test.user@test.com", workflowVersion.getAuthor());
+                Assert.assertNull(workflowVersion.getEmail());
+            }
+        });
         List<SourceFile> sourceFileList = new ArrayList<>(
             bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get()
                 .getSourceFiles());
