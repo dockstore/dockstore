@@ -408,6 +408,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
         workflow.getWorkflowVersions().forEach(Version::updateVerified);
+        String repositoryId = sourceCodeRepo.getRepositoryId(workflow);
+        sourceCodeRepo.setDefaultBranch(workflow, repositoryId);
+        workflow.syncMetadataWithDefault();
         // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
         return workflow;

@@ -240,9 +240,13 @@ public abstract class AbstractImageRegistry {
         // Get tags and update for each tool
         List<Tag> toolTags = getTags(tool);
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO);
+        Tool updatedTool = newDBTools.get(0);
 
+        String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
+        sourceCodeRepoInterface.setDefaultBranch(updatedTool, repositoryId);
+        updatedTool.syncMetadataWithDefault();
         // Return the updated tool
-        return newDBTools.get(0);
+        return updatedTool;
     }
 
     /**

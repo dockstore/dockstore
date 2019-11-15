@@ -254,16 +254,14 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Set default branch if there isn't one
      * Update all versions with metadata from the contents of the descriptor file from a source code repo
      * If no description from the descriptor file, fall back to README
-     * Update entry with the default version's metadata
      *
      * @param entry entry to update
      * @param type the type of language to look for
      * @return the entry again
      */
-    public Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
+    Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
 
@@ -277,7 +275,6 @@ public abstract class SourceCodeRepoInterface {
             return entry;
         }
 
-        setDefaultBranch(entry, repositoryId);
         if (entry instanceof Tool) {
             Tool tool = (Tool)entry;
             tool.getWorkflowVersions().forEach(tag -> {
@@ -299,7 +296,6 @@ public abstract class SourceCodeRepoInterface {
                 updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
             });
         }
-        entry.syncMetadataWithDefault();
         return entry;
     }
 
@@ -310,7 +306,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @param repositoryId
      */
-    private void setDefaultBranch(Entry entry, String repositoryId) {
+    public void setDefaultBranch(Entry entry, String repositoryId) {
         if (entry.getDefaultVersion() == null) {
             String branch = getMainBranch(entry, repositoryId);
             if (branch == null) {
