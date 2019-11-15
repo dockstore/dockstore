@@ -146,12 +146,7 @@ public final class ToolsImplCommon {
         // handle verified information
         tool = setVerified(tool, inputVersions);
         for (Version version : inputVersions) {
-            // tags with no names make no sense here
-            // also hide hidden tags
-            if (version.getName() == null || (version.isHidden() && !showHiddenTags)) {
-                continue;
-            }
-            if (version instanceof Tag && ((Tag)version).getImageId() == null) {
+            if (shouldHideToolVersion(version, showHiddenTags)) {
                 continue;
             }
 
@@ -225,6 +220,25 @@ public final class ToolsImplCommon {
             }
         }
         return tool;
+    }
+
+    /**
+     * Whether to hide the ToolVersion in TRS or not
+     * @param version   Dockstore version
+     * @param showHiddenTags    Whether the user has read access to the Dockstore version or not
+     * @return
+     */
+    private static boolean shouldHideToolVersion(Version version, boolean showHiddenTags) {
+        // Hide version if no name
+        if (version.getName() == null) {
+            return true;
+        }
+        // Hide hidden versions if not authenticated
+        if (version.isHidden() && !showHiddenTags) {
+            return true;
+        }
+        // Hide tags with no image ID
+        return version instanceof Tag && ((Tag)version).getImageId() == null;
     }
 
     /**
