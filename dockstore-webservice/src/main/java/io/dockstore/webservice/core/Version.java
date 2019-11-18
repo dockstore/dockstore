@@ -179,18 +179,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return this.getVersionMetadata().verifiedSource;
     }
 
-    public String getAuthor() {
-        return this.getVersionMetadata().author;
-    }
-
-    public String getDescription() {
-        return this.getVersionMetadata().description;
-    }
-
-    public String getEmail() {
-        return this.getVersionMetadata().email;
-    }
-
     @ApiModelProperty(value = "Verified source for the version", position = 18)
     public String[] getVerifiedSources() {
         if (this.getVersionMetadata().verifiedSource == null) {
@@ -356,6 +344,26 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "This indicates the DOI status", position = 20)
     public DOIStatus getDoiStatus() {
         return versionMetadata.doiStatus;
+    }
+
+    @ApiModelProperty(position = 21)
+    public String getAuthor() {
+        return this.getVersionMetadata().author;
+    }
+
+    @ApiModelProperty(position = 22)
+    public String getDescription() {
+        return this.getVersionMetadata().description;
+    }
+
+    @ApiModelProperty(position = 23)
+    public DescriptionSource getDescriptionSource() {
+        return this.getVersionMetadata().descriptionSource;
+    }
+
+    @ApiModelProperty(position = 24)
+    public String getEmail() {
+        return this.getVersionMetadata().email;
     }
 
     public void setDoiStatus(DOIStatus doiStatus) {
