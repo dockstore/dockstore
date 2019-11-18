@@ -75,7 +75,8 @@ public class NotificationIT extends BaseIT {
         try {
             curationApiUser.createNotification(notification);  // try to create as non-admin
         } catch (ApiException e) {
-            userCanCreate = false;  // this should return a 401 error
+            userCanCreate = false;
+            assertEquals(401, e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanCreate);  // only admin/curators should be able to create notifications
     }
@@ -92,7 +93,8 @@ public class NotificationIT extends BaseIT {
         try {
             curationApiUser.deleteNotification(id);
         } catch (ApiException e) {
-            userCanDelete = false;  // this should return a 401 error
+            userCanDelete = false;
+            assertEquals(401, e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanDelete);
 
@@ -117,7 +119,8 @@ public class NotificationIT extends BaseIT {
         try {
             curationApiUser.updateNotification(id, update);
         } catch (ApiException e) {
-            userCanUpdate = false;  // this should return a 401 error
+            userCanUpdate = false;
+            assertEquals(401, e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanUpdate);
 
