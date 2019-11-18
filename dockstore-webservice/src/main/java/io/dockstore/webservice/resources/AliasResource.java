@@ -34,14 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 
 @Path("/aliases")
 @Api("/aliases")
 @Produces(MediaType.APPLICATION_JSON)
 public class AliasResource implements AliasableResourceInterface<WorkflowVersion> {
-
-    private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows,"
-            + " authentication can be provided for restricted workflows";
 
     private static final Logger LOG = LoggerFactory.getLogger(AliasResource.class);
     protected final WorkflowVersionDAO workflowVersionDAO;

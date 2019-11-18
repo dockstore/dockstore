@@ -123,6 +123,7 @@ import static io.dockstore.common.DescriptorLanguage.OLD_CWL;
 import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
 /**
@@ -143,7 +144,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
-    private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
