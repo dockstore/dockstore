@@ -228,7 +228,7 @@ public class ElasticListener implements StateListenerInterface {
      * @return The Elasticsearch object string to be placed into the index
      * @throws IOException  Mapper problems
      */
-    protected static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
+    public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
@@ -264,7 +264,7 @@ public class ElasticListener implements StateListenerInterface {
      * @param entries   List of all entries
      * @return          List of entries without checker workflows
      */
-    protected static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
+    public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
         return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow && !((Workflow)entry).isIsChecker())).collect(Collectors.toList());
     }
 }
