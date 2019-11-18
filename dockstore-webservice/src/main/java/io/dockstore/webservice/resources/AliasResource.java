@@ -138,8 +138,8 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
 
     @Override
     public WorkflowVersion addAliasesAndCheck(User user, Long id, String aliases, boolean blockFormat) {
-        WorkflowVersion c = getAndCheckResource(user, id);
-        Set<String> oldAliases = c.getAliases().keySet();
+        WorkflowVersion workflowVersion = getAndCheckResource(user, id);
+        Set<String> oldAliases = workflowVersion.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
         AliasableResourceInterface.checkAliases(newAliases, user, blockFormat);
@@ -151,7 +151,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
                     HttpStatus.SC_BAD_REQUEST);
         }
 
-        newAliases.forEach(alias -> c.getAliases().put(alias, new Alias()));
-        return c;
+        newAliases.forEach(alias -> workflowVersion.getAliases().put(alias, new Alias()));
+        return workflowVersion;
     }
 }
