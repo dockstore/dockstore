@@ -300,7 +300,7 @@ public final class CommonTestUtilities {
                 // TODO: Replace with better wait
                 Thread.sleep(15000);
             } catch (Exception e) {
-                System.out.println("Problems restarting Docker container");
+                System.err.println("Problems restarting Docker container");
             }
         }
     }
