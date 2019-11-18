@@ -296,9 +296,9 @@ public final class CommonTestUtilities {
             Container container = elasticsearch.get();
             try {
                 docker.restartContainer(container.id());
-                // Wait 10 seconds for elasticsearch to become ready
+                // Wait 15 seconds for elasticsearch to become ready
                 // TODO: Replace with better wait
-                Thread.sleep(10000);
+                Thread.sleep(15000);
             } catch (Exception e) {
                 System.out.println("Problems restarting Docker container");
             }
