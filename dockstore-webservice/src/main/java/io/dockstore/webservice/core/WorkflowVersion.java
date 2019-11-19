@@ -16,12 +16,6 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Date;
-import java.util.Objects;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
@@ -29,6 +23,11 @@ import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.io.FilenameUtils;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import java.util.Date;
+import java.util.Objects;
 
 /**
  * This implements version for a Workflow.
@@ -115,7 +114,9 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public int compareTo(WorkflowVersion that) {
-        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
+        return ComparisonChain.start()
+                .compare(this.getLastModified(), that.getLastModified(), Ordering.natural().reverse().nullsLast())
+                .compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
                 .compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast()).result();
     }
 
