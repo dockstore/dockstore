@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -29,7 +31,6 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
-import io.dockstore.common.ToilCompatibleTest;
 import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -45,7 +46,6 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -78,23 +78,6 @@ public class GeneralIT extends BaseIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    /**
-     * Checks that auto upgrade works and that the dockstore CLI is updated to the latest tag
-     * Must be run after class since upgrading before tests may cause them to fail
-     */
-    @Ignore
-    public static void testAutoUpgrade() {
-        String installLocation = Client.getInstallLocation();
-        String latestVersion = Client.getLatestVersion();
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "--upgrade", "--script" });
-        String currentVersion = Client.getCurrentVersion();
-
-        if (installLocation != null && latestVersion != null && currentVersion != null) {
-            Assert.assertEquals("Dockstore CLI should now be up to date with the latest stable tag.", currentVersion, latestVersion);
-        }
-    }
 
     @Before
     @Override
@@ -190,19 +173,14 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testLabelIncorrectInput() {
-        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithub", "--add", "docker-hub", "--add", "quay.io", "--script" });
-    }
-
-    /**
-     * Checks that you can't add/remove labels if there is a duplicate label being added and removed
-     */
-    @Test
-    public void testLabelMatchingAddAndRemove() {
-        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithub", "--add", "quay", "--add", "dockerhub", "--remove", "dockerhub", "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        try {
+            toolApi.updateLabels(tool.getId(), "docker-hub,quay.io", "");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Invalid label format"));
+        }
     }
 
     /**
@@ -210,16 +188,15 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testAddEditRemoveLabel() {
-        // Test adding/removing labels for different containers
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithub", "--add", "quay", "--add", "github", "--remove", "dockerhub", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithub", "--add", "github", "--add", "dockerhub", "--remove", "quay", "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
 
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithubalternate", "--add", "alternate", "--add", "github", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithubalternate", "--remove", "github", "--script" });
+        // Test adding/removing labels for different containers
+        toolApi.updateLabels(tool.getId(), "quay,github", "");
+        toolApi.updateLabels(tool.getId(), "github,dockerhub", "");
+        toolApi.updateLabels(tool.getId(), "alternate,github,dockerhub", "");
+        toolApi.updateLabels(tool.getId(), "alternate,dockerhub", "");
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label where entryid = '2'", long.class);
         assertEquals("there should be 2 labels for the given container, there are " + count, 2, count);
@@ -236,10 +213,22 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testVersionTagWDLCWLAndDockerfilePathsAlteration() {
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--cwl-path", "/testDir/Dockstore.cwl", "--wdl-path",
-                "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        if (tag.isEmpty()) {
+            fail("Tag master should exist");
+        }
+        List<Tag> tags = new ArrayList<>();
+        Tag updatedTag = tag.get();
+        updatedTag.setCwlPath("/testDir/Dockstore.cwl");
+        updatedTag.setWdlPath("/testDir/Dockstore.wdl");
+        updatedTag.setDockerfilePath("/testDir/Dockerfile");
+        tags.add(updatedTag);
+        toolTagsApi.updateTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
@@ -247,13 +236,18 @@ public class GeneralIT extends BaseIT {
             long.class);
         assertEquals("there should now be an invalid tag, found " + count, 1, count);
 
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--cwl-path", "/Dockstore.cwl", "--wdl-path",
-                "/Dockstore.wdl", "--dockerfile-path", "/Dockerfile", "--script" });
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "refresh", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithub", "--script" });
+        tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        if (tag.isEmpty()) {
+            fail("Tag master should exist");
+        }
+        tags = new ArrayList<>();
+        updatedTag = tag.get();
+        updatedTag.setCwlPath("/Dockstore.cwl");
+        updatedTag.setWdlPath("/Dockstore.wdl");
+        updatedTag.setDockerfilePath("/Dockerfile");
+        tags.add(updatedTag);
+        toolTagsApi.updateTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
 
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
@@ -263,42 +257,77 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
-     * Test trying to remove a tag tag for auto build
+     * Test trying to remove a tag for auto build
      */
     @Test
     public void testVersionTagRemoveAutoContainer() {
-        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "remove", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        if (tag.isEmpty()) {
+            fail("Tag master should exist");
+        }
+        try {
+            toolTagsApi.deleteTags(tool.getId(), tag.get().getId());
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Only manually added images can delete version tags"));
+        }
     }
 
     /**
-     * Test trying to add a tag tag for auto build
+     * Test trying to add a tag for auto build
      */
     @Test
     public void testVersionTagAddAutoContainer() {
-        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "add", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--name", "masterTest", "--image-id",
-                "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+
+        try {
+            // Add tag
+            tool = addTag(tool, toolTagsApi, toolApi);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Only manually added images can add version tags"));
+        }
+    }
+
+    private DockstoreTool createManualTool() {
+        DockstoreTool tool = new DockstoreTool();
+        tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        tool.setName("quayandgithub");
+        tool.setNamespace("dockstoretestuser2");
+        tool.setRegistryString(Registry.QUAY_IO.toString());
+        tool.setDefaultDockerfilePath("/Dockerfile");
+        tool.setDefaultCwlPath("/Dockstore.cwl");
+        tool.setDefaultWdlPath("/Dockstore.wdl");
+        tool.setDefaultCWLTestParameterFile("/test.cwl.json");
+        tool.setDefaultWDLTestParameterFile("/test.wdl.json");
+        tool.setIsPublished(false);
+        tool.setGitUrl("git@github.com:dockstoretestuser2/quayandgithubalternate.git");
+        tool.setToolname("alternate");
+        tool.setPrivateAccess(false);
+        return tool;
     }
 
     /**
-     * Tests adding tag tags to a manually registered container
+     * Tests adding tags to a manually registered container
      */
     @Test
     public void testAddVersionTagManualContainer() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
-            "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
-            "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = createManualTool();
+        tool.setDefaultDockerfilePath("/testDir/Dockerfile");
+        tool.setDefaultCwlPath("/testDir/Dockstore.cwl");
+        tool = toolApi.registerManual(tool);
+        toolApi.refresh(tool.getId());
 
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "add", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--image-id",
-                "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
+        // Add tag
+        tool = addTag(tool, toolTagsApi, toolApi);
 
         final long count = testingPostgres.runSelectStatement(
             " select count(*) from  tool_tag, tool where tool_tag.toolid = tool.id and giturl ='git@github.com:dockstoretestuser2/quayandgithubalternate.git' and toolname = 'alternate'",
@@ -306,7 +335,6 @@ public class GeneralIT extends BaseIT {
         assertEquals(
             "there should be 3 tags, 2  that are autogenerated (master and latest) and the newly added masterTest tag, found " + count, 3,
             count);
-
     }
 
     /**
@@ -314,16 +342,36 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testVersionTagHide() {
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "true", "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        if (tag.isEmpty()) {
+            fail("Tag master should exist");
+        }
+        List<Tag> tags = new ArrayList<>();
+        Tag updatedTag = tag.get();
+        updatedTag.setHidden(true);
+        tags.add(updatedTag);
+        toolTagsApi.updateTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 1 hidden tag", 1, count);
 
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "false", "--script" });
+        tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        if (tag.isEmpty()) {
+            fail("Tag master should exist");
+        }
+        tags = new ArrayList<>();
+        updatedTag = tag.get();
+        updatedTag.setHidden(false);
+        tags.add(updatedTag);
+        toolTagsApi.updateTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 0 hidden tag", 0, count2);
@@ -334,9 +382,21 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testVersionTagWDL() {
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/randomDir/Dockstore.wdl", "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        if (tag.isEmpty()) {
+            fail("Tag master should exist");
+        }
+        List<Tag> tags = new ArrayList<>();
+        Tag updatedTag = tag.get();
+        updatedTag.setWdlPath("/randomDir/Dockstore.wdl");
+        tags.add(updatedTag);
+        toolTagsApi.updateTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+
         // should now be invalid
 
         final long count = testingPostgres.runSelectStatement(
@@ -345,10 +405,17 @@ public class GeneralIT extends BaseIT {
             long.class);
 
         assertEquals("there should now be 1 invalid tag, found " + count, 1, count);
+        tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        if (tag.isEmpty()) {
+            fail("Tag master should exist");
+        }
+        tags = new ArrayList<>();
+        updatedTag = tag.get();
+        updatedTag.setWdlPath("/Dockstore.wdl");
+        tags.add(updatedTag);
+        toolTagsApi.updateTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
 
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/Dockstore.wdl", "--script" });
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
@@ -358,118 +425,75 @@ public class GeneralIT extends BaseIT {
 
     }
 
+    private DockstoreTool addTag(DockstoreTool tool, ContainertagsApi toolTagsApi, ContainersApi toolApi) {
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
+        tag.setName("masterTest");
+        tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
+        tag.setReference("master");
+        tags.add(tag);
+        toolTagsApi.addTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+        return tool;
+    }
+
     /**
-     * Will test deleting a tag tag from a manually registered container
+     * Will test deleting a tag from a manually registered container
      */
     @Test
     public void testVersionTagDelete() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
-            "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
-            "--cwl-path", "/testDir/Dockstore.cwl", "--wdl-path", "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile",
-            "--script" });
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        // Register tool
+        DockstoreTool tool = createManualTool();
+        tool.setDefaultDockerfilePath("/testDir/Dockerfile");
+        tool.setDefaultCwlPath("/testDir/Dockstore.cwl");
+        tool.setDefaultWdlPath("/testDir/Dockstore.wdl");
+        tool.setGitUrl("git@github.com:dockstoretestuser2/quayandgithubalternate.git");
+        tool = toolApi.registerManual(tool);
+        tool = toolApi.refresh(tool.getId());
 
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "add", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--image-id",
-                "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
+        // Add tag
+        tool = addTag(tool, toolTagsApi, toolApi);
 
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "remove", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--script" });
+        // Delete version
+        Optional<Tag> optionalTag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "masterTest")).findFirst();
+        if (optionalTag.isEmpty()) {
+            fail("Tag masterTest should exist");
+        }
+        toolTagsApi.deleteTags(tool.getId(), optionalTag.get().getId());
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         assertEquals("there should be no tags with the name masterTest", 0, count);
     }
 
     /**
-     * Check that refreshing an incorrect individual container won't work
+     * Check that cannot retrieve an incorrect individual container
      */
     @Test
-    public void testRefreshIncorrectContainer() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "refresh", "--entry",
-            "quay.io/dockstoretestuser2/unknowncontainer", "--script" });
+    public void testGetIncorrectContainer() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        try {
+            DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/unknowncontainer", null);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Entry not found"));
+        }
     }
 
     /**
-     * Tests that tool2JSON works for entries on Dockstore
+     * Check that a user can't retrieve another users container
      */
     @Test
-    public void testTool2JSONWDL() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithubwdl" });
-        // need to publish before converting
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "entry2json", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl", "--descriptor", "wdl", "--script" });
-        // TODO: Test that output is the expected WDL file
-        Assert.assertTrue(systemOutRule.getLog().contains("\"test.hello.name\": \"String\""));
-    }
-
-    @Test
-    public void registerUnregisterAndCopy() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithubwdl" });
-
-        boolean published = testingPostgres.runSelectStatement(
-            "select ispublished from tool where registry = '" + Registry.QUAY_IO.toString()
-                + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';", boolean.class);
-        assertTrue("tool not published", published);
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithubwdl", "--entryname", "foo" });
-
-        long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-            + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';", long.class);
-        assertEquals("should be two after republishing", 2, count);
-
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--unpub", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl" });
-
-        published = testingPostgres.runSelectStatement("select ispublished from tool where registry = '" + Registry.QUAY_IO.toString()
-            + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;", boolean.class);
-        assertFalse(published);
-    }
-
-    /**
-     * Tests that WDL2JSON works for local file
-     */
-    @Test
-    public void testWDL2JSON() {
-        File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "wdl2json", "--wdl",
-            sourceFile.getAbsolutePath(), "--script" });
-        // TODO: Test that output is the expected WDL file
-    }
-
-    @Test
-    @Category(ToilCompatibleTest.class)
-    public void testCWL2JSON() {
-        File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2json", "--cwl",
-            sourceFile.getAbsolutePath(), "--script" });
-        // TODO: Test that output is the expected JSON file
-    }
-
-    @Test
-    @Category(ToilCompatibleTest.class)
-    public void testCWL2YAML() {
-        File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2yaml", "--cwl",
-            sourceFile.getAbsolutePath(), "--script" });
-        // TODO: Test that output is the expected yaml file
-    }
-
-    /**
-     * Check that a user can't refresh another users container
-     */
-    @Test
-    public void testRefreshOtherUsersContainer() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "refresh", "--entry",
-            "quay.io/test_org/test1", "--script" });
+    public void testGetOtherUsersContainer() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        try {
+            DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/test_org/test1", null);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Entry not found"));
+        }
     }
 
     /**
@@ -477,69 +501,47 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testUserPrivilege() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+
+        DockstoreTool tool = createManualTool();
+        tool.setToolname("testTool");
+        tool.setDefaultDockerfilePath("/testDir/Dockerfile");
+        tool.setDefaultCwlPath("/testDir/Dockstore.cwl");
+        tool = toolApi.registerManual(tool);
+        tool = toolApi.refresh(tool.getId());
 
         // Repo user has access to
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
-            "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "testTool",
-            "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
             + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithub' and toolname = 'testTool'", long.class);
         assertEquals("the container should exist", 1, count);
 
         // Repo user is part of org
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), "--namespace", "dockstore2", "--name", "testrepo2", "--git-url",
-            "git@github.com:dockstoretestuser2/quayandgithub.git", "--git-reference", "master", "--toolname", "testOrg", "--cwl-path",
-            "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
+        DockstoreTool tool2 = createManualTool();
+        tool2.setToolname("testOrg");
+        tool2.setName("testrepo2");
+        tool2.setNamespace("dockstore2");
+        tool2.setGitUrl("git@github.com:dockstoretestuser2/quayandgithub.git");
+        tool2 = toolApi.registerManual(tool2);
+        tool2 = toolApi.refresh(tool2.getId());
+
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
             + "' and namespace = 'dockstore2' and name = 'testrepo2' and toolname = 'testOrg'", long.class);
         assertEquals("the container should exist", 1, count2);
 
         // Repo user doesn't own
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser", "--name", "testrepo", "--git-url",
-            "git@github.com:dockstoretestuser/quayandgithub.git", "--git-reference", "master", "--toolname", "testTool", "--cwl-path",
-            "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
+        // TODO: The actual error is that the tool has no tags, not that the user does not have access
+        DockstoreTool tool3 = createManualTool();
+        tool3.setToolname("testTool");
+        tool3.setName("testrepo");
+        tool3.setNamespace("dockstoretestuser");
+        tool3.setGitUrl("git@github.com:dockstoretestuser/quayandgithub.git");
+        try {
+            tool3 = toolApi.registerManual(tool3);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("no tags"));
+        }
     }
-
-    /**
-     * Tests that WDL and CWL files can be grabbed from the command line
-     */
-    @Test
-    public void testGetWdlAndCwl() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithubwdl" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "wdl", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithubwdl", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithub" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "cwl", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithub", "--script" });
-    }
-
-    /**
-     * Tests that attempting to get a WDL file when none exists won't work
-     */
-    @Test
-    public void testGetWdlFailure() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "wdl", "--entry",
-            "quay.io/dockstoretestuser2/quayandgithub", "--script" });
-    }
-
-    // moved to dockstore-cli
-    //    /**
-    //     * Tests that a developer can launch a CWL Tool locally, instead of getting files from Dockstore
-    //     */
-    //    @Test
-    //    @Category(ToilCompatibleTest.class)
-    //    public void testLocalLaunchCWL() {
-    //        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
-    //                ResourceHelpers.resourceFilePath("arrays.cwl"), "--json",
-    //                ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script" });
-    //    }
 
     /**
      * Test to update the default path of CWL and it should change the tag's CWL path in the database
@@ -847,47 +849,6 @@ public class GeneralIT extends BaseIT {
         assertEquals("the cwl path should be changed to /test1/Dockerfile", "/test1/Dockerfile", path);
     }
 
-    // moved to dockstore-cli
-    //    /**
-    //     * This tests that attempting to launch a CWL tool locally, where no file exists, an IOError will occur
-    //     */
-    //    @Test
-    //    public void testLocalLaunchCWLNoFile() {
-    //        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
-    //        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
-    //                "imnotreal.cwl", "--json", "filtercount-job.json", "--script" });
-    //    }
-    //
-    //    /**
-    //     * This tests that attempting to launch a WDL tool locally, where no file exists, an IOError will occur
-    //     */
-    //    @Test
-    //    public void testLocalLaunchWDLNoFile() {
-    //        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
-    //        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
-    //                "imnotreal.wdl", "--json", "imnotreal-job.json", "--descriptor", "wdl", "--script" });
-    //    }
-    //
-    //    /**
-    //     * This tests that attempting to launch a CWL tool remotely, where no file exists, an APIError will occur
-    //     */
-    //    @Test
-    //    public void testRemoteLaunchCWLNoFile() {
-    //        systemExit.expectSystemExitWithStatus(Client.IO_ERROR);
-    //        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
-    //                "imnotreal.cwl", "--json", "imnotreal-job.json", "--script" });
-    //    }
-    //
-    //    /**
-    //     * This tests that attempting to launch a WDL tool remotely, where no file exists, an APIError will occur
-    //     */
-    //    @Test
-    //    public void testRemoteLaunchWDLNoFile() {
-    //        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
-    //        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
-    //                "imnotreal.wdl", "--json", "imnotreal-job.json", "--descriptor", "wdl", "--script" });
-    //    }
-
     /**
      * Creates a basic Manual Tool with Quay
      *
@@ -1086,26 +1047,6 @@ public class GeneralIT extends BaseIT {
         anonContainersApi.getToolZip(toolId, versionId);
         // Other user: Should pass
         otherUserContainersApi.getToolZip(toolId, versionId);
-
-        // test that these zips can be downloaded via CLI
-
-        // download zip via CLI
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "download", "--entry",
-            refresh.getToolPath() + ":" + tag.getName(), "--zip", "--script" });
-        File downloadedZip = new File(new ToolClient(null, false).zipFilename(refresh));
-        // record entries
-        List<String> collect = new ZipFile(downloadedZip).stream().map(ZipEntry::getName).collect(Collectors.toList());
-        assert (downloadedZip.exists());
-        assert (downloadedZip.delete());
-
-        // download and unzip via CLI while at it
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "download", "--entry",
-            refresh.getToolPath() + ":" + tag.getName(), "--script" });
-        collect.forEach(entry -> {
-            File innerFile = new File(System.getProperty("user.dir"), entry);
-            assert (innerFile.exists());
-            assert (innerFile.delete());
-        });
     }
 
 }
