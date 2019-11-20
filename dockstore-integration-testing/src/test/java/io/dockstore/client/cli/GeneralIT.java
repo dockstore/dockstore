@@ -16,23 +16,17 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import com.google.common.collect.Lists;
-import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToolTest;
-import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -217,7 +211,8 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
-        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master"))
+            .findFirst();
         if (tag.isEmpty()) {
             fail("Tag master should exist");
         }
@@ -265,7 +260,8 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
-        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master"))
+            .findFirst();
         if (tag.isEmpty()) {
             fail("Tag master should exist");
         }
@@ -346,7 +342,8 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
-        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master"))
+            .findFirst();
         if (tag.isEmpty()) {
             fail("Tag master should exist");
         }
@@ -386,7 +383,8 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
         ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
-        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
+        Optional<Tag> tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master"))
+            .findFirst();
         if (tag.isEmpty()) {
             fail("Tag master should exist");
         }
@@ -458,7 +456,8 @@ public class GeneralIT extends BaseIT {
         tool = addTag(tool, toolTagsApi, toolApi);
 
         // Delete version
-        Optional<Tag> optionalTag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "masterTest")).findFirst();
+        Optional<Tag> optionalTag = tool.getWorkflowVersions().stream()
+            .filter(existingTag -> Objects.equals(existingTag.getName(), "masterTest")).findFirst();
         if (optionalTag.isEmpty()) {
             fail("Tag masterTest should exist");
         }
@@ -653,7 +652,8 @@ public class GeneralIT extends BaseIT {
 
         final long count = testingPostgres.runSelectStatement("select count(*) from image", long.class);
         testingPostgres.runUpdateStatement("update image set image_id = 'dummyid'");
-        assertEquals("dummyid", containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
+        assertEquals("dummyid",
+            containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
         usersApi.refresh(userid);
         final long count2 = testingPostgres.runSelectStatement("select count(*) from image", long.class);
         assertEquals(imageID, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
@@ -786,13 +786,15 @@ public class GeneralIT extends BaseIT {
 
         // try deleting a row join table
         master.getSourceFiles().forEach(s -> {
-            final int affected = testingPostgres.runUpdateStatement("delete from version_sourcefile vs where vs.sourcefileid = " + s.getId());
+            final int affected = testingPostgres
+                .runUpdateStatement("delete from version_sourcefile vs where vs.sourcefileid = " + s.getId());
             assertEquals(0, affected);
         });
 
         // try updating a row in the join table
         master.getSourceFiles().forEach(s -> {
-            final int affected = testingPostgres.runUpdateStatement("update version_sourcefile set sourcefileid=123456 where sourcefileid = " + s.getId());
+            final int affected = testingPostgres
+                .runUpdateStatement("update version_sourcefile set sourcefileid=123456 where sourcefileid = " + s.getId());
             assertEquals(0, affected);
         });
 
@@ -800,8 +802,8 @@ public class GeneralIT extends BaseIT {
         // try creating a row in the join table
         master.getSourceFiles().forEach(s -> {
             try {
-                testingPostgres.runUpdateStatement("insert into version_sourcefile (versionid, sourcefileid) values (" + versionId
-                        + ", " + 1234567890 + ")");
+                testingPostgres.runUpdateStatement(
+                    "insert into version_sourcefile (versionid, sourcefileid) values (" + versionId + ", " + 1234567890 + ")");
                 fail("Insert should have failed to do row-level security");
             } catch (Exception ex) {
                 Assert.assertTrue(ex.getMessage().contains("new row violates row-level"));
