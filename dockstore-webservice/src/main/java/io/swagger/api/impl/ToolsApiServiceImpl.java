@@ -453,6 +453,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private Response getFileByToolVersionID(String registryId, String versionId, DescriptorLanguage.FileType type, String relativePath,
         boolean unwrap, Optional<User> user) {
+
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
@@ -461,13 +462,20 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             throw new RuntimeException(e);
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
+
         // check whether this is registered
         if (entry == null) {
             Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "incorrect id");
             return Response.status(status).build();
         }
 
-        final io.swagger.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config);
+        boolean showHiddenVersions = false;
+        if (user.isPresent() && !AuthenticatedResourceInterface
+                .userCannotRead(user.get(), entry)) {
+            showHiddenVersions = true;
+        }
+
+        final io.swagger.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config, showHiddenVersions);
 
         String finalVersionId = versionId;
         if (convertedTool == null || convertedTool.getVersions() == null) {

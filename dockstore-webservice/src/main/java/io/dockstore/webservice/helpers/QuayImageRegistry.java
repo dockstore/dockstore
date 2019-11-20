@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,6 +37,8 @@ import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
@@ -77,24 +81,19 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     @Override
     public List<Tag> getTags(Tool tool) {
         LOG.info(quayToken.getUsername() + " ======================= Getting tags for: {}================================", tool.getPath());
-        final String repo = tool.getNamespace() + '/' + tool.getName();
-        final String repoUrl = QUAY_URL + "repository/" + repo;
-        final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
 
         final List<Tag> tags = new ArrayList<>();
-
-        if (asStringBuilds.isPresent()) {
-            final String json = asStringBuilds.get();
-            Gson gson = new Gson();
-            Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
-            map = (Map<String, Map<String, Map<String, String>>>)gson.fromJson(json, map.getClass());
-
+        Optional<Map<String, Map<String, Map<String, String>>>> optionalMap = getToolFromQuay(tool);
+        if (optionalMap.isPresent()) {
+            Map<String, Map<String, Map<String, String>>> map = optionalMap.get();
             final Map<String, Map<String, String>> listOfTags = map.get("tags");
-
             for (Entry<String, Map<String, String>> stringMapEntry : listOfTags.entrySet()) {
+                Gson gson = new Gson();
                 final String s = gson.toJson(stringMapEntry.getValue());
                 try {
+
                     final Tag tag = objectMapper.readValue(s, Tag.class);
+                    tag.getImages().addAll(getImagesForTag(tool, tag));
                     insertQuayLastModifiedIntoLastBuilt(stringMapEntry, tag);
                     tags.add(tag);
                 } catch (IOException ex) {
@@ -108,6 +107,42 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         updateTagsWithBuildInformation(repository, tags, tool);
 
         return tags;
+    }
+
+    public Set<Image> getImagesForTag(Tool tool, Tag tag) {
+        LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
+
+        final String repo = tool.getNamespace() + '/' + tool.getName();
+        Optional<Map<String, Map<String, Map<String, String>>>> optionalMap = getToolFromQuay(tool);
+        if (optionalMap.isPresent()) {
+            Map<String, Map<String, Map<String, String>>> map = optionalMap.get();
+            final Map<String, String> tagInfo = map.get("tags").get(tag.getName());
+            final String manifestDigest = tagInfo.get("manifest_digest");
+            final String imageID = tagInfo.get("image_id");
+
+            List<Checksum> checksums = new ArrayList<>();
+            checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+            return Collections.singleton(new Image(checksums, repo, tag.getName(), imageID));
+        }
+        return Collections.emptySet();
+    }
+
+    /**
+     * Return map of JSON response from Quay that describes the tool. Each level of the JSON response is mapped to another map of Strings.
+     */
+    private  Optional<Map<String, Map<String, Map<String, String>>>> getToolFromQuay(Tool tool) {
+        final String repo = tool.getNamespace() + '/' + tool.getName();
+        final String repoUrl = QUAY_URL + "repository/" + repo;
+        final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
+
+        if (asStringBuilds.isPresent()) {
+            final String json = asStringBuilds.get();
+            Gson gson = new Gson();
+            Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
+            map = (Map<String, Map<String, Map<String, String>>>)gson.fromJson(json, map.getClass());
+            return Optional.of(map);
+        }
+        return Optional.empty();
     }
 
     private void insertQuayLastModifiedIntoLastBuilt(Entry<String, Map<String, String>> stringMapEntry, Tag tag) {

@@ -17,6 +17,8 @@ package io.dockstore.webservice.helpers.statelisteners;
 
 import java.util.List;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import org.slf4j.Logger;
@@ -27,15 +29,31 @@ import org.slf4j.LoggerFactory;
  */
 public class RSSListener implements StateListenerInterface {
 
+    public static final String RSS_KEY = "rss";
     private static final Logger LOGGER = LoggerFactory.getLogger(RSSListener.class);
+    private Cache<String, String> cache = CacheBuilder.newBuilder().build();
+
+    /**
+     * Custom getter
+     * @return
+     */
+    public Cache<String, String> getCache() {
+        return cache;
+    }
 
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
-        LOGGER.error("this should update the RSS feed for the one new entry");
+        //TODO ideally, we could should update the rss for the one new entry
+        invalidateCache();
+    }
+
+    public void invalidateCache() {
+        this.cache.invalidateAll();
     }
 
     @Override
     public void bulkUpsert(List<Entry> entries) {
-        LOGGER.error("this should generate a whole new RSS feed");
+        //TODO ideally, the listener should know how to generate a whole new rss, probably not worth it right now
+        invalidateCache();
     }
 }

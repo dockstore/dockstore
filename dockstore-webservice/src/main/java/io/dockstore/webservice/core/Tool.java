@@ -16,13 +16,17 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
+import io.dockstore.common.Registry;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Check;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -38,18 +42,13 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
-
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.EntryType;
-import io.dockstore.common.Registry;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.Check;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * This describes one tool in the dockstore, extending entry with fields necessary to describe bioinformatics tools.
@@ -148,6 +147,16 @@ public class Tool extends Entry<Tool, Tag> {
         // this.userId = userId;
         this.name = name;
         workflowVersions = new TreeSet<>();
+    }
+
+    @JsonProperty
+    @Override
+    public String getGitUrl() {
+        if (mode == ToolMode.HOSTED) {
+            // for a dockstore hosted tool, fake a git url. Used by the UI
+            return "git@dockstore.org:" + this.getPath()  + ".git";
+        }
+        return super.getGitUrl();
     }
 
     @Override

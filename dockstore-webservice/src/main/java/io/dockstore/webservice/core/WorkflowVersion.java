@@ -139,7 +139,9 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public int compareTo(WorkflowVersion that) {
-        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
+        return ComparisonChain.start()
+                .compare(this.getLastModified(), that.getLastModified(), Ordering.natural().reverse().nullsLast())
+                .compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
                 .compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast()).result();
     }
 

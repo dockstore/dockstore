@@ -619,6 +619,47 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
+     * Tests that image and checksum information can be grabbed from Quay and update db correctly.
+     */
+    @Test
+    public void testGrabbingImagesFromQuay() {
+        ContainersApi containersApi = setupWebService();
+        DockstoreTool tool = getContainer();
+        tool.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
+        tool.setNamespace("dockstoretestuser2");
+        tool.setName("dockstore-tool-imports");
+        tool.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+        tool = containersApi.registerManual(tool);
+
+        assertEquals(0, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().size());
+
+        UsersApi usersApi = new UsersApi(containersApi.getApiClient());
+        final Long userid = usersApi.getUser().getId();
+        usersApi.refresh(userid);
+
+        // Check that the image information has been grabbed on refresh.
+        List<Tag> tags = containersApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        for (Tag tag : tags) {
+            assertNotNull(tag.getImages().get(0).getChecksums().get(0).getType());
+            assertNotNull(tag.getImages().get(0).getChecksums().get(0).getChecksum());
+        }
+
+        // Check for case where user deletes tag and creates new one of same name.
+        // Check that the new imageid and checksums are grabbed from Quay on refresh. Also check the old images have been deleted.
+        String imageID = tags.get(0).getImages().get(0).getImageID();
+        String imageID2 = tags.get(1).getImages().get(0).getImageID();
+
+        final long count = testingPostgres.runSelectStatement("select count(*) from image", long.class);
+        testingPostgres.runUpdateStatement("update image set image_id = 'dummyid'");
+        assertEquals("dummyid", containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
+        usersApi.refresh(userid);
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from image", long.class);
+        assertEquals(imageID, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
+        assertEquals(imageID2, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(1).getImages().get(0).getImageID());
+        assertEquals(count, count2);
+    }
+
+    /**
      * Tests that if a tool has a tag with mismatching tag name and tag reference, and it is set as the default tag
      * then the author metadata is properly grabbed.
      */

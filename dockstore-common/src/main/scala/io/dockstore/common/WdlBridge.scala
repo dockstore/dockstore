@@ -337,7 +337,10 @@ class WdlBridge {
       }
     } catch {
       case ex: WdlParser.SyntaxError => throw ex
-      case ex: Exception => throw new WdlParser.SyntaxError("There was an error creating a Wom Bundle for the workflow.")
+      case ex: Exception => {
+        WdlBridge.logger.error("Unexpected error parsing WDL", ex)
+        throw new WdlParser.SyntaxError("There was an error creating a Wom Bundle for the workflow.")
+      }
     }
   }
 
@@ -365,6 +368,10 @@ class WdlBridge {
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get
 }
 
+object WdlBridge {
+  val logger = LoggerFactory.getLogger(WdlBridge.getClass)
+}
+
 /**
   * Class for resolving imports defined in memory (mapping of path to content)
   */
@@ -390,9 +397,9 @@ case class MapResolver(filePath: String) extends ImportResolver {
 }
 
 object WdlBridgeShutDown {
-  private val logger = LoggerFactory.getLogger("WdlBridge")
   def shutdownSTTP(): Unit = {
     HttpResolver.closeBackendIfNecessary();
-    logger.info("WDL HTTP import resolver closed")
+    WdlBridge.logger.info("WDL HTTP import resolver closed")
   }
 }
+
