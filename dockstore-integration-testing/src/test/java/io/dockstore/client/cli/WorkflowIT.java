@@ -1629,20 +1629,7 @@ public class WorkflowIT extends BaseIT {
                 "test", "wdl", "/test.json");
         return ownerWorkflowApi.refresh(workflow.getId());
     }
-
-    /**
-     * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
-     */
-    private static class EntryVersionHelperImpl implements EntryVersionHelper {
-
-        @Override
-        public EntryDAO getDAO() {
-            return null;
-        }
-    }
-
-
-
+    
     @Test
     public void testWorkflowVersionAliasOperations() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -1693,6 +1680,17 @@ public class WorkflowIT extends BaseIT {
         // Get workflow version by alias
         io.dockstore.webservice.core.WorkflowVersion aliasWorkflowVersion = workflowVersionDAO.findByAlias("foobar");
         Assert.assertNotNull("Should retrieve the workflow by alias", aliasWorkflowVersion);
+    }
+
+    /**
+     * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
+     */
+    private static class EntryVersionHelperImpl implements EntryVersionHelper {
+
+        @Override
+        public EntryDAO getDAO() {
+            return null;
+        }
     }
 }
 
