@@ -119,6 +119,21 @@ public class Notification {
         this.type = type;
     }
 
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    public void setDbCreateDate(Timestamp dbCreateDate) {
+        this.dbCreateDate = dbCreateDate;
+    }
+
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
+
+    public void setDbUpdateDate(Timestamp dbUpdateDate) {
+        this.dbUpdateDate = dbUpdateDate;
+    }
 
     public enum Priority {
         LOW, MEDIUM, HIGH, CRITICAL
