@@ -1655,8 +1655,6 @@ public class WorkflowIT extends BaseIT {
                         && workflowVersionWithAliases.getAliases().containsKey("spam")
                         && workflowVersionWithAliases.getAliases().containsKey("test workflowversion"));
 
-        Assert.assertNotNull("Getting workflow by ID has null alias", workflowVersionWithAliases.getAliases());
-
         // add a few new aliases
         workflowVersion = aliasesApi.addAliases(workflowVersion.getId(), "foobar, another workflowversion");
         Assert.assertTrue("entry is missing expected aliases",
