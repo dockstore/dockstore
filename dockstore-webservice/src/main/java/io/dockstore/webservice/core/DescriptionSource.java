@@ -21,6 +21,5 @@ package io.dockstore.webservice.core;
  */
 public enum DescriptionSource {
     README,
-    DESCRIPTOR,
-    CUSTOM
+    DESCRIPTOR
 }
