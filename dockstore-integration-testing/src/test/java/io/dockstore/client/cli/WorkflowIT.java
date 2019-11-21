@@ -16,6 +16,29 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import javax.ws.rs.core.GenericType;
+
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
@@ -66,28 +89,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import javax.ws.rs.core.GenericType;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -312,7 +313,8 @@ public class WorkflowIT extends BaseIT {
         workflowApi.getWorkflowZip(workflowId, versionId);
         byte[] arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, webClient);
-        Path write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
+        File tempZip = File.createTempFile("temp", "zip");
+        Path write = Files.write(tempZip.toPath(), arbitraryURL);
         ZipFile zipFile = new ZipFile(write.toFile());
         assertTrue("zip file seems incorrect",
             zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
@@ -326,15 +328,18 @@ public class WorkflowIT extends BaseIT {
             thrownException = true;
         }
         assertTrue(thrownException);
+        tempZip.deleteOnExit();
 
         // Download published workflow version
         workflowApi.publish(workflowId, SwaggerUtility.createPublishRequest(true));
         arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, CommonTestUtilities.getWebClient(false, null, testingPostgres));
-        write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
+        File tempZip2 = File.createTempFile("temp", "zip");
+        write = Files.write(tempZip2.toPath(), arbitraryURL);
         zipFile = new ZipFile(write.toFile());
         assertTrue("zip file seems incorrect",
             zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
+        tempZip2.deleteOnExit();
     }
 
     /**
