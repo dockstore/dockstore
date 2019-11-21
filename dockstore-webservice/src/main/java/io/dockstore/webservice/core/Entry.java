@@ -289,7 +289,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * Currently unused because too many entries do not have a default version set
      */
     public void syncMetadataWithDefault() {
-        T defaultVersionForRealz = this.getDefaultVersionForRealz();
+        T defaultVersionForRealz = this.getRealDefaultVersion();
         if (defaultVersionForRealz != null) {
             this.setMetadataFromVersion(defaultVersionForRealz);
         }
@@ -304,7 +304,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonIgnore
-    public T getDefaultVersionForRealz() {
+    public T getRealDefaultVersion() {
         return this.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(this.defaultVersion)).findFirst().orElse(null);
     }
 
