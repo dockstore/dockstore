@@ -37,6 +37,7 @@ import com.google.common.annotations.Beta;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -132,6 +133,12 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
 
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
 
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
+            String msg = "Only manually added images can add version tags.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         for (Tag tag : tags) {
             final long tagId = tagDAO.create(tag);
             Tag byId = tagDAO.findById(tagId);
@@ -161,6 +168,12 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
+
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
+            String msg = "Only manually added images can delete version tags.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
 
         Tag tag = tagDAO.findById(tagId);
         if (tag == null) {
