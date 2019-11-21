@@ -306,7 +306,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @param repositoryId
      */
-    public void setDefaultBranch(Entry entry, String repositoryId) {
+    public void setDefaultBranchIfNotSet(Entry entry, String repositoryId) {
         if (entry.getDefaultVersion() == null) {
             String branch = getMainBranch(entry, repositoryId);
             if (branch == null) {
@@ -317,7 +317,7 @@ public abstract class SourceCodeRepoInterface {
                 Optional<Version> firstWorkflowVersion = workflowVersions.stream()
                         .filter(workflowVersion -> {
                             String reference = workflowVersion.getReference();
-                            return reference != null && reference.equals(branch);
+                            return branch.equals(reference);
                         }).findFirst();
                 firstWorkflowVersion.ifPresent(version -> entry.checkAndSetDefaultVersion(version.getName()));
             }
@@ -336,7 +336,7 @@ public abstract class SourceCodeRepoInterface {
             LOG.info(message);
             if (version.getReference() != null) {
                 String readmeContent = getREADMEContent(repositoryId, version.getReference());
-                if (readmeContent != null && !readmeContent.isBlank()) {
+                if (StringUtils.isNotBlank(readmeContent)) {
                     version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
                 }
             }
@@ -355,7 +355,7 @@ public abstract class SourceCodeRepoInterface {
             }
             if ((version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null) {
                 String readmeContent = getREADMEContent(repositoryId, version.getReference());
-                if (readmeContent != null && !readmeContent.isBlank()) {
+                if (StringUtils.isNotBlank(readmeContent)) {
                     version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
                 }
             }

@@ -243,7 +243,7 @@ public abstract class AbstractImageRegistry {
         Tool updatedTool = newDBTools.get(0);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
-        sourceCodeRepoInterface.setDefaultBranch(updatedTool, repositoryId);
+        sourceCodeRepoInterface.setDefaultBranchIfNotSet(updatedTool, repositoryId);
         updatedTool.syncMetadataWithDefault();
         // Return the updated tool
         return updatedTool;

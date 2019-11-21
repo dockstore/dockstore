@@ -279,7 +279,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     /**
-     * @param description the repo description to s
+     * @param description the repo description to set
      */
     public void setDescription(String description) {
         this.description = description;
@@ -305,7 +305,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore
     public T getDefaultVersionForRealz() {
-        return this.getWorkflowVersions().stream().filter(thing -> thing.getName().equals(this.defaultVersion)).findFirst().orElse(null);
+        return this.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(this.defaultVersion)).findFirst().orElse(null);
     }
 
     public void setAuthor(String newAuthor) {

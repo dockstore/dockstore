@@ -56,7 +56,7 @@ public class VersionMetadata {
     protected Version.DOIStatus doiStatus;
 
     @Column
-    @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl")
+    @ApiModelProperty(value = "This is the name of the author stated in the descriptor")
     protected String author;
 
     @Column(columnDefinition = "TEXT")
@@ -68,7 +68,7 @@ public class VersionMetadata {
     protected DescriptionSource descriptionSource;
 
     @Column
-    @ApiModelProperty(value = "This is the email of the git organization")
+    @ApiModelProperty(value = "This is the email of the author stated in the descriptor")
     protected String email;
 
     @MapsId
