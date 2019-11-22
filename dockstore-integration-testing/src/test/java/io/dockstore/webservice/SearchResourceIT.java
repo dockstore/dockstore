@@ -38,6 +38,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -66,11 +67,12 @@ public class SearchResourceIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        restartElasticsearch();
     }
 
     /**
      * Continuously checks the elasticsearch index to see if it has the correct amount of entries
-     * Checks every 2 seconds, maximum 30 seconds.
+     * Increasing amount of sleep time, up to 15 seconds or so
      * @param hit   The amount of hits expected
      * @param extendedGa4GhApi  The api to get the elasticsearch results
      * @param counter   The amount of tries attempted
@@ -79,10 +81,11 @@ public class SearchResourceIT extends BaseIT {
         try {
             String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
             if (!s.contains("\"total\":" + hit)) {
-                if (counter > 30) {
+                if (counter > 5) {
                     Assert.fail(s + " does not have the correct amount of hits");
                 } else {
-                    Thread.sleep(2000);
+                    long sleepTime = 1000 * counter;
+                    Thread.sleep(sleepTime);
                     waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1);
                 }
             }

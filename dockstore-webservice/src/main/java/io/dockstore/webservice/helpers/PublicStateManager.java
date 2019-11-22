@@ -47,6 +47,10 @@ public final class PublicStateManager {
         return sitemapListener;
     }
 
+    public RSSListener getRSSListener() {
+        return rssListener;
+    }
+
     public static PublicStateManager getInstance() {
         return SINGLETON;
     }

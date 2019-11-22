@@ -6081,6 +6081,10 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6096,10 +6100,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6379,6 +6379,8 @@ definitions:
         type: "string"
       documentationUrl:
         type: "string"
+      featuredContentUrl:
+        type: "string"
       githubClientId:
         type: "string"
       quayIoClientId:
@@ -6443,6 +6445,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6458,10 +6464,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6679,6 +6681,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6694,10 +6700,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7403,7 +7405,6 @@ definitions:
         enum:
         - "README"
         - "DESCRIPTOR"
-        - "CUSTOM"
       email:
         type: "string"
         position: 24
@@ -8011,7 +8012,6 @@ definitions:
         enum:
         - "README"
         - "DESCRIPTOR"
-        - "CUSTOM"
       email:
         type: "string"
         position: 24
@@ -8052,6 +8052,10 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -8067,10 +8071,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -8359,7 +8359,6 @@ definitions:
         enum:
         - "README"
         - "DESCRIPTOR"
-        - "CUSTOM"
       email:
         type: "string"
         position: 24

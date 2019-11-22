@@ -38,6 +38,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -107,6 +108,8 @@ public abstract class AbstractImageRegistry {
      * @return
      */
     public abstract boolean canConvertToAuto(Tool tool);
+
+    public abstract Set<Image> getImagesForTag(Tool tool, Tag tag);
 
     /**
      * Updates/Adds/Deletes tools and their associated tags
@@ -295,6 +298,8 @@ public abstract class AbstractImageRegistry {
                     if (newTag.getName().equals(oldTag.getName())) {
                         exists = true;
 
+                        updateImageInformation(tool, newTag, oldTag);
+
                         oldTag.update(newTag);
 
                         // Update tag with default paths if dirty bit not set
@@ -323,6 +328,7 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
+                    clonedTag.getImages().addAll(getImagesForTag(tool, clonedTag));
                     if (tool.getDefaultTestCwlParameterFile() != null) {
                         clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), DescriptorLanguage.FileType.CWL_TEST_JSON));
                     }
@@ -403,6 +409,18 @@ public abstract class AbstractImageRegistry {
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
         toolDAO.create(tool);
+    }
+
+    private void updateImageInformation(Tool tool, Tag newTag, Tag oldTag) {
+        // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
+        // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
+        if (oldTag.getImages().isEmpty()) {
+            oldTag.getImages().addAll(getImagesForTag(tool, newTag));
+
+        } else {
+            oldTag.getImages().removeAll(oldTag.getImages());
+            oldTag.getImages().addAll(newTag.getImages());
+        }
     }
 
     private void updateFiles(Tool tool, Tag tag, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {

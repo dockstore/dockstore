@@ -150,6 +150,16 @@ public class Tool extends Entry<Tool, Tag> {
         workflowVersions = new TreeSet<>();
     }
 
+    @JsonProperty
+    @Override
+    public String getGitUrl() {
+        if (mode == ToolMode.HOSTED) {
+            // for a dockstore hosted tool, fake a git url. Used by the UI
+            return "git@dockstore.org:" + this.getPath()  + ".git";
+        }
+        return super.getGitUrl();
+    }
+
     @Override
     public String getEntryPath() {
         return this.getToolPath();

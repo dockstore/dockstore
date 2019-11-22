@@ -115,7 +115,6 @@ public class ToolsImplCommonTest {
         tool.setRegistry(Registry.QUAY_IO.toString());
         tool.setAuthor("sampleAuthor");
         tool.setGitUrl("git@github.com:test_org/test6.git");
-
         Tag tag = new Tag();
         tag.setImageId("sampleImageId");
         tag.setName("sampleTag");
@@ -125,6 +124,16 @@ public class ToolsImplCommonTest {
         tag.setAutomated(true);
         tag.setReference("sampleReference");
         tag.setValid(true);
+        Tag hiddenTag = new Tag();
+        hiddenTag.setImageId("hiddenImageId");
+        hiddenTag.setName("hiddenName");
+        hiddenTag.setSize(9001);
+        hiddenTag.setDockerfilePath("/Dockerfile");
+        hiddenTag.setCwlPath("HiddenDockstore.cwl");
+        hiddenTag.setAutomated(true);
+        hiddenTag.setReference("hiddenReference");
+        hiddenTag.setValid(true);
+        hiddenTag.setHidden(true);
         SourceFile sourceFile = new SourceFile();
         sourceFile.setId(0);
         sourceFile.setType(DescriptorLanguage.FileType.DOCKERFILE);
@@ -140,7 +149,11 @@ public class ToolsImplCommonTest {
         tag.addSourceFile(sourceFile);
         tag.addSourceFile(sourceFile2);
         tag.updateVerified();
+        hiddenTag.addSourceFile(sourceFile);
+        hiddenTag.addSourceFile(sourceFile2);
+        tag.updateVerified();
         tool.addWorkflowVersion(tag);
+        tool.addWorkflowVersion(hiddenTag);
         tool.setCheckerWorkflow(null);
         Tool expectedTool = new Tool();
         if (toolname != null) {
@@ -188,11 +201,12 @@ public class ToolsImplCommonTest {
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion);
         expectedTool.setVersions(expectedToolVersions);
-        Tool actualTool = ToolsImplCommon.convertEntryToTool(tool, actualConfig);
+        Tool actualTool = ToolsImplCommon.convertEntryToTool(tool, actualConfig, false);
         actualTool.setMetaVersion(null);
         actualTool.getVersions().parallelStream().forEach(version -> version.setMetaVersion(null));
         assertEquals(expectedTool, actualTool);
-
+        Tool actualToolWithHiddenVersions = ToolsImplCommon.convertEntryToTool(tool, actualConfig, true);
+        assertEquals(actualTool.getVersions().size() + 1, actualToolWithHiddenVersions.getVersions().size());
     }
 
     /**

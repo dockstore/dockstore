@@ -41,41 +41,52 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
       - bearer: []
-  /metadata/dockerRegistryList:
+  /metadata/descriptorLanguageList:
     get:
       tags:
       - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
+      summary: Get the list of descriptor languages supported on Dockstore
+      description: Get the list of descriptor languages supported on Dockstore, NO
+        authentication
+      operationId: getDescriptorLanguages
       responses:
         default:
-          description: List of Docker registries
+          description: List of descriptor languages
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/RegistryBean'
-  /metadata/sitemap:
+                  $ref: '#/components/schemas/DescriptorLanguageBean'
+  /metadata/okHttpCachePerformance:
     get:
       tags:
       - metadata
-      summary: List all available workflow, tool, organization, and collection paths.
-      description: List all available workflow, tool, organization, and collection
-        paths. Available means published for tools/workflows, and approved for organizations
-        and their respective collections. NO authentication
-      operationId: sitemap
+      summary: Get measures of cache performance
+      description: Get measures of cache performance, NO authentication
+      operationId: getCachePerformance
+      responses:
+        default:
+          description: Cache performance information
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /metadata/elasticSearch:
+    get:
+      tags:
+      - metadata
+      summary: Successful response if elastic search is up and running
+      description: Successful response if elastic search is up and running, NO authentication
+      operationId: checkElasticSearch
       responses:
         default:
           description: default response
           content:
-            text/html:
-              schema:
-                type: string
-            text/xml:
-              schema:
-                type: string
+            text/html: {}
+            text/xml: {}
   /metadata/rss:
     get:
       tags:
@@ -149,52 +160,22 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
-  /metadata/descriptorLanguageList:
+  /metadata/dockerRegistryList:
     get:
       tags:
       - metadata
-      summary: Get the list of descriptor languages supported on Dockstore
-      description: Get the list of descriptor languages supported on Dockstore, NO
-        authentication
-      operationId: getDescriptorLanguages
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
       responses:
         default:
-          description: List of descriptor languages
+          description: List of Docker registries
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/DescriptorLanguageBean'
-  /metadata/okHttpCachePerformance:
-    get:
-      tags:
-      - metadata
-      summary: Get measures of cache performance
-      description: Get measures of cache performance, NO authentication
-      operationId: getCachePerformance
-      responses:
-        default:
-          description: Cache performance information
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: string
-  /metadata/elasticSearch:
-    get:
-      tags:
-      - metadata
-      summary: Successful response if elastic search is up and running
-      description: Successful response if elastic search is up and running, NO authentication
-      operationId: checkElasticSearch
-      responses:
-        default:
-          description: default response
-          content:
-            text/html: {}
-            text/xml: {}
+                  $ref: '#/components/schemas/RegistryBean'
   /metadata/config.json:
     get:
       tags:
@@ -209,6 +190,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
+  /metadata/sitemap:
+    get:
+      tags:
+      - metadata
+      summary: List all available workflow, tool, organization, and collection paths.
+      description: List all available workflow, tool, organization, and collection
+        paths. Available means published for tools/workflows, and approved for organizations
+        and their respective collections. NO authentication
+      operationId: sitemap
+      responses:
+        default:
+          description: default response
+          content:
+            text/html:
+              schema:
+                type: string
+            text/xml:
+              schema:
+                type: string
   /toolTester/logs/search:
     get:
       tags:
@@ -328,61 +328,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/users/organizations:
-    get:
-      description: Get all of the Dockstore organizations for a user, sorted by most
-        recently updated.
-      operationId: getUserDockstoreOrganizations
-      parameters:
-      - name: count
-        in: query
-        description: Maximum number of organizations to return
-        schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Filter paths with matching text
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OrganizationUpdateTime'
-      security:
-      - bearer: []
-  /users/users/entries:
-    get:
-      description: Get all of the entries for a user, sorted by most recently updated.
-      operationId: getUserEntries
-      parameters:
-      - name: count
-        in: query
-        description: Maximum number of entries to return
-        schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Filter paths with matching text
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EntryUpdateTime'
-      security:
-      - bearer: []
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -464,6 +409,61 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Repository'
+      security:
+      - bearer: []
+  /users/users/organizations:
+    get:
+      description: Get all of the Dockstore organizations for a user, sorted by most
+        recently updated.
+      operationId: getUserDockstoreOrganizations
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of organizations to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationUpdateTime'
+      security:
+      - bearer: []
+  /users/users/entries:
+    get:
+      description: Get all of the entries for a user, sorted by most recently updated.
+      operationId: getUserEntries
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of entries to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryUpdateTime'
       security:
       - bearer: []
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
@@ -615,6 +615,9 @@ components:
         last_modified:
           type: integer
           format: int32
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -630,9 +633,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
       writeOnly: true
     FileFormat:
       type: object
@@ -831,6 +831,12 @@ components:
             $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
+        workingDirectory:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
         doiURL:
           type: string
         verified:
@@ -852,14 +858,7 @@ components:
           enum:
           - README
           - DESCRIPTOR
-          - CUSTOM
         author:
-          type: string
-        description:
-          type: string
-        workingDirectory:
-          type: string
-        email:
           type: string
         dbUpdateDate:
           type: string
@@ -874,6 +873,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
     RegistryBean:
       type: object
       properties:
@@ -888,20 +901,6 @@ components:
         customDockerPath:
           type: string
         enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
           type: string
     Config:
       type: object
@@ -948,6 +947,8 @@ components:
           type: string
         documentationUrl:
           type: string
+        featuredContentUrl:
+          type: string
         githubClientId:
           type: string
         quayIoClientId:
@@ -980,6 +981,26 @@ components:
           - SUMMARY
         filename:
           type: string
+    Repository:
+      type: object
+      properties:
+        organization:
+          type: string
+        repositoryName:
+          type: string
+        gitRegistry:
+          type: string
+          enum:
+          - dockstore.org
+          - github.com
+          - bitbucket.org
+          - gitlab.com
+        canDelete:
+          type: boolean
+        present:
+          type: boolean
+        path:
+          type: string
     OrganizationUpdateTime:
       type: object
       properties:
@@ -1004,26 +1025,6 @@ components:
         lastUpdateDate:
           type: string
           format: date-time
-    Repository:
-      type: object
-      properties:
-        organization:
-          type: string
-        repositoryName:
-          type: string
-        gitRegistry:
-          type: string
-          enum:
-          - dockstore.org
-          - github.com
-          - bitbucket.org
-          - gitlab.com
-        canDelete:
-          type: boolean
-        present:
-          type: boolean
-        path:
-          type: string
     BioWorkflow:
       type: object
       properties:
@@ -1123,14 +1124,17 @@ components:
         parent_id:
           type: integer
           format: int64
-        full_workflow_path:
-          type: string
         workflow_path:
+          type: string
+        full_workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
         source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1146,9 +1150,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     Service:
       type: object
       allOf:
@@ -1253,14 +1254,17 @@ components:
         last_modified:
           type: integer
           format: int32
-        full_workflow_path:
-          type: string
         workflow_path:
+          type: string
+        full_workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
         source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1276,9 +1280,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
         type:
           type: string
       writeOnly: true
@@ -1338,6 +1339,10 @@ components:
           type: string
         hidden:
           type: boolean
+        description:
+          type: string
+        email:
+          type: string
         doiURL:
           type: string
         verified:
@@ -1359,12 +1364,7 @@ components:
           enum:
           - README
           - DESCRIPTOR
-          - CUSTOM
         author:
-          type: string
-        description:
-          type: string
-        email:
           type: string
         dbUpdateDate:
           type: string

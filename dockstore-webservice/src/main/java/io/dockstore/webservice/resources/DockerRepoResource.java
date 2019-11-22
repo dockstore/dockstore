@@ -286,6 +286,7 @@ public class DockerRepoResource
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
+        tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getImages()));
         Hibernate.initialize(tool.getAliases());
         return tool;
     }

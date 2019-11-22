@@ -643,6 +643,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String documentationUrl;
 
+        private String featuredContentUrl;
 
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
@@ -812,6 +813,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setDocumentationUrl(String documentationUrl) {
             this.documentationUrl = documentationUrl;
+        }
+
+        public String getFeaturedContentUrl() {
+            return featuredContentUrl;
+        }
+
+        public void setFeaturedContentUrl(String featuredContentUrl) {
+            this.featuredContentUrl = featuredContentUrl;
         }
     }
 }
