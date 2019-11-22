@@ -51,9 +51,11 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.AliasesApi;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.Ga4GhApi;
@@ -142,6 +144,7 @@ public class WorkflowIT extends BaseIT {
     private final String jsonFilePath = ResourceHelpers.resourceFilePath("wc-job.json");
 
     private WorkflowDAO workflowDAO;
+    private WorkflowVersionDAO workflowVersionDAO;
     private Session session;
 
     @Before
@@ -150,6 +153,7 @@ public class WorkflowIT extends BaseIT {
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
 
         this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
 
         // used to allow us to use workflowDAO outside of the web service
         this.session = application.getHibernate().getSessionFactory().openSession();
@@ -1484,6 +1488,56 @@ public class WorkflowIT extends BaseIT {
         Workflow workflow = ownerWorkflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl",
                 "test", "wdl", "/test.json");
         return ownerWorkflowApi.refresh(workflow.getId());
+    }
+    
+    @Test
+    public void testWorkflowVersionAliasOperations() throws ApiException {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv",
+                "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+
+        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+        Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
+                .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
+        assertTrue(optionalWorkflowVersion.isPresent());
+        WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
+
+        // give the workflow version a few aliases
+        AliasesApi aliasesApi = new AliasesApi(webClient);
+        WorkflowVersion workflowVersionWithAliases = aliasesApi.addAliases(workflowVersion.getId(), "awesome workflowversion, spam, test workflowversion");
+        Assert.assertTrue("entry is missing expected aliases",
+                workflowVersionWithAliases.getAliases().containsKey("awesome workflowversion")
+                        && workflowVersionWithAliases.getAliases().containsKey("spam")
+                        && workflowVersionWithAliases.getAliases().containsKey("test workflowversion"));
+
+        // add a few new aliases
+        workflowVersion = aliasesApi.addAliases(workflowVersion.getId(), "foobar, another workflowversion");
+        Assert.assertTrue("entry is missing expected aliases",
+                workflowVersion.getAliases().containsKey("foobar")
+                        && workflowVersion.getAliases().containsKey("test workflowversion")
+                        && workflowVersion.getAliases().size() == 5);
+
+        // try to add duplicates; this is not allowed
+        boolean throwsError = false;
+        try {
+            // add a few new aliases
+            workflowVersion = aliasesApi.addAliases(workflow.getId(), "another workflowversion");
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to add a duplicate Workflow version alias.");
+        }
+
+        // Get workflow version by alias
+        io.dockstore.webservice.core.WorkflowVersion aliasWorkflowVersion = workflowVersionDAO.findByAlias("foobar");
+        Assert.assertNotNull("Should retrieve the workflow by alias", aliasWorkflowVersion);
     }
 
     /**

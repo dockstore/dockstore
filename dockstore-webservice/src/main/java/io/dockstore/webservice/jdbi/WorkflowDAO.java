@@ -16,11 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.persistence.NoResultException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -32,6 +34,8 @@ import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author dyuen
@@ -40,6 +44,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     private static final String WORKFLOW_NAME = "workflowName";
     private static final String IS_PUBLISHED = "isPublished";
+    private static final Logger LOG = LoggerFactory.getLogger(WorkflowDAO.class);
 
     public WorkflowDAO(SessionFactory factory) {
         super(factory);
@@ -235,5 +240,23 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public Workflow findByAlias(String alias) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+    }
+
+    /**
+     * Finds a workflow id based on a workflow version id. If the workflow cannot be found
+     * and an exception is generated an empty optional is returned
+     *
+     * @param workflowVersionId the id of the workflow version
+     * @return optional workflow id
+     */
+    public Optional<Long> getWorkflowIdByWorkflowVersionId(long workflowVersionId) {
+        try {
+            BigInteger workflowBigIntId = ((BigInteger)namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
+                    .setParameter("workflowVersionId", workflowVersionId).getSingleResult());
+            return Optional.of(workflowBigIntId.longValueExact());
+        } catch (NoResultException nre) {
+            LOG.error("Could get workflow based on workflow version id " + workflowVersionId + ". Error is " + nre.getMessage(), nre);
+            return Optional.empty();
+        }
     }
 }
