@@ -110,6 +110,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.zenodo.client.ApiClient;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -1304,6 +1305,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                 // If path changed then update dirty bit to true
                 if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {
+                    String newExtension = FilenameUtils.getExtension(version.getWorkflowPath());
+                    String correctExtension = FilenameUtils.getExtension(w.getDefaultWorkflowPath());
+                    if (!Objects.equals(newExtension, correctExtension)) {
+                        throw new CustomWebApplicationException("Please ensure that the workflow path uses the file extension " + correctExtension, HttpStatus.SC_BAD_REQUEST);
+                    }
                     existingTag.setDirtyBit(true);
                 }
 
