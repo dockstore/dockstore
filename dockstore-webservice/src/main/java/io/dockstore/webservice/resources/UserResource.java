@@ -629,7 +629,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         List<OrganizationUpdateTime> sortedOrganizations = organizations
                 .stream()
                 .filter((OrganizationUpdateTime organizationUpdateTime) -> filter == null || filter.isBlank() || organizationUpdateTime.getName().contains(filter) || organizationUpdateTime.getDisplayName().contains(filter))
-                .sorted(Comparator.comparing(OrganizationUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.naturalOrder())))
+                .sorted(Comparator.comparing(OrganizationUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
         // Grab subset if necessary
@@ -666,7 +666,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         List<EntryUpdateTime> sortedEntries = entryUpdateTimes
                 .stream()
                 .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().contains(filter))
-                .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.naturalOrder())))
+                .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
         // Grab subset if necessary
