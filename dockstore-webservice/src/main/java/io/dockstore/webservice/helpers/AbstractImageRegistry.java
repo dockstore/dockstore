@@ -16,6 +16,11 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -33,10 +38,12 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
@@ -64,7 +71,9 @@ import org.slf4j.LoggerFactory;
  * @author dyuen
  */
 public abstract class AbstractImageRegistry {
+    public static final String DOCKERHUB_URL = "https://hub.docker.com/v2/";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractImageRegistry.class);
+
 
     /**
      * Get the list of namespaces and organizations that the user is associated to on Quay.io.
@@ -240,13 +249,104 @@ public abstract class AbstractImageRegistry {
         final List<Tool> newDBTools = new ArrayList<>();
         newDBTools.add(toolDAO.findById(tool.getId()));
 
+        List<Tag> toolTags;
         // Get tags and update for each tool
-        List<Tag> toolTags = getTags(tool);
+        if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
+            toolTags = getTagsDockerHub(tool);
+        } else {
+            toolTags = getTags(tool);
+        }
+
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO);
 
         // Return the updated tool
         return newDBTools.get(0);
     }
+
+    public List<Tag> getTagsDockerHub(Tool tool) {
+        final String repo = tool.getNamespace() + '/' + tool.getName();
+        LOG.info(" ======================= Getting tags for: {}================================", tool.getPath());
+
+        final List<Tag> tags = new ArrayList<>();
+
+        Optional<String> dockerHubResponse = getDockerHubToolAsString(tool);
+
+        Map<String, List<Map<String, List<Map<String, String>>>>> manifestDigestMap = new HashMap<>();
+        Map<String, List<Map<String, String>>> nameMap = new HashMap<>();
+
+        if (dockerHubResponse.isPresent()) {
+            final String manifestJSON = dockerHubResponse.get();
+            final String nameJSON = dockerHubResponse.get();
+            Gson gson = new Gson();
+
+            manifestDigestMap = (Map<String, List<Map<String, List<Map<String, String>>>>>)gson.fromJson(manifestJSON, manifestDigestMap.getClass());
+            nameMap = (Map<String, List<Map<String, String>>>)gson.fromJson(nameJSON, nameMap.getClass());
+
+            List<Map<String, String>> listOfTags = nameMap.get("results");
+
+            Iterator<Map<String, String>> iterator = listOfTags.iterator();
+            Iterator<Map<String, List<Map<String, String>>>> iterator2 = manifestDigestMap.get("results").iterator();
+
+            while (iterator.hasNext() && iterator2.hasNext()) {
+                Map<String, String> i = iterator.next();
+                final String tagName = i.get("name");
+                final String imageID = i.get("image_id");
+                try {
+                    final String manifestDigest = iterator2.next().get("images").get(0).get("digest");
+                    final Tag tag = new Tag();
+                    tag.setName(tagName);
+
+
+                    List<Checksum> checksums = new ArrayList<>();
+                    checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+                    Set<Image> images = Collections.singleton(new Image(checksums, repo, tag.getName(), imageID));
+                    tag.getImages().addAll(images);
+
+                    tags.add(tag);
+                } catch (IndexOutOfBoundsException ex) {
+                    LOG.info("Unable to grab image and checksum information for" + tool.getNamespace() + '/' + tool.getName());
+                }
+
+            }
+            return tags;
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+
+    private Optional<String> getDockerHubToolAsString(Tool tool) {
+        final String repo = tool.getNamespace() + '/' + tool.getName();
+        final String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
+
+        String command = "curl " + repoUrl;
+        // ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
+        // Process process = processBuilder.start();
+        Optional<String> response;
+        try {
+            Process process = Runtime.getRuntime().exec(command);
+            InputStream inputStream = process.getInputStream();
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                sb.append(line);
+            }
+
+            response = Optional.of(sb.toString());
+
+            if (response.isPresent()) {
+                return response;
+            }
+
+        } catch (IOException ex) {
+            LOG.info("Unable to get DockerHub response for " + repo);
+        }
+        return Optional.empty();
+    }
+
+
 
     /**
      * Updates/Adds/Deletes tags for a specific tool
@@ -353,13 +453,7 @@ public abstract class AbstractImageRegistry {
             }
 
             // delete tool if it has no users
-            for (Tag t : toDelete) {
-                LOG.info(tool.getToolPath() + " : DELETING tag: {}", t.getName());
-                t.getSourceFiles().clear();
-                t.getValidations().clear();
-                // tagDAO.delete(t);
-                tool.getWorkflowVersions().remove(t);
-            }
+            deleteToolWithNoUsers(tool, toDelete);
 
             if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 if (allAutomated) {
@@ -368,6 +462,11 @@ public abstract class AbstractImageRegistry {
                     tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
                 }
             }
+        }
+
+        // For tools from dockerhub, grab/update the image and checksum information
+        if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
+            updateDockerHubImageInformation(newTags, tool, existingTags);
         }
 
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
@@ -407,10 +506,32 @@ public abstract class AbstractImageRegistry {
         toolDAO.create(tool);
     }
 
+    private void deleteToolWithNoUsers(@NotNull Tool tool, List<Tag> toDelete) {
+        for (Tag t : toDelete) {
+            LOG.info(tool.getToolPath() + " : DELETING tag: {}", t.getName());
+            t.getSourceFiles().clear();
+            t.getValidations().clear();
+            // tagDAO.delete(t);
+            tool.getWorkflowVersions().remove(t);
+        }
+    }
+
+    private void updateDockerHubImageInformation(List<Tag> newTags, @NotNull Tool tool, List<Tag> existingTags) {
+        if (newTags != null) {
+            for (Tag newTag : newTags) {
+                for (Tag oldTag : existingTags) {
+                    if (oldTag.getName().equals(newTag.getName())) {
+                        updateImageInformation(tool, newTag, oldTag);
+                    }
+                }
+            }
+        }
+    }
+
     private void updateImageInformation(Tool tool, Tag newTag, Tag oldTag) {
         // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
         // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
-        if (oldTag.getImages().isEmpty()) {
+        if (oldTag.getImages().isEmpty() && !tool.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
             oldTag.getImages().addAll(getImagesForTag(tool, newTag));
 
         } else {
