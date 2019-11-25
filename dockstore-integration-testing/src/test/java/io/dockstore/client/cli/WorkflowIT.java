@@ -161,6 +161,38 @@ public class WorkflowIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
+    /**
+     * Manually register and publish a workflow with the given path and name
+     *
+     * @param workflowsApi
+     * @param workflowPath
+     * @param workflowName
+     * @param descriptorType
+     * @param sourceControl
+     * @param descriptorPath
+     * @param toPublish
+     * @return Published workflow
+     */
+    private Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
+        // Manually register
+        Workflow workflow = workflowsApi
+            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
+                "/test.json");
+        assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
+
+        // Refresh
+        workflow = workflowsApi.refresh(workflow.getId());
+        assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Publish
+        if (toPublish) {
+            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            assertTrue(workflow.isIsPublished());
+        }
+        return workflow;
+    }
+
     @Test
     public void testStubRefresh() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -258,37 +290,31 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testHostedDelete() {
+    public void testHostedEditAndDelete() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
-        usersApi.refreshWorkflows(user.getId());
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
-        // using hosted apis to edit normal workflows should fail
+        Workflow workflow = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl", SourceControl.GITHUB,
+            "/Dockstore.cwl", false);
+
+        // using hosted apis to delete normal workflow should fail
         HostedApi hostedApi = new HostedApi(webClient);
-        thrown.expect(ApiException.class);
-        hostedApi.deleteHostedWorkflowVersion(refreshGithub.getId(), "v1.0");
-    }
+        try {
+            hostedApi.deleteHostedWorkflowVersion(workflow.getId(), "v1.0");
+            fail("Should throw API exception");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("cannot modify non-hosted entries this way"));
+        }
 
-    @Test
-    public void testHostedEdit() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        UsersApi usersApi = new UsersApi(webClient);
-        User user = usersApi.getUser();
-        usersApi.refreshWorkflows(user.getId());
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
-
-        // using hosted apis to edit normal workflows should fail
-        HostedApi hostedApi = new HostedApi(webClient);
-        thrown.expect(ApiException.class);
-        hostedApi.editHostedWorkflow(refreshGithub.getId(), new ArrayList<>());
+        // using hosted apis to edit normal workflow should fail
+        try {
+            hostedApi.editHostedWorkflow(workflow.getId(), new ArrayList<>());
+            fail("Should throw API exception");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("cannot modify non-hosted entries this way"));
+        }
     }
 
     /**
@@ -516,17 +542,9 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        UsersApi usersApi = new UsersApi(webClient);
-        User user = usersApi.getUser();
+        Workflow workflowByPathGithub = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/rnatoy", "", "nfl", SourceControl.GITHUB,
+            "/nextflow.config", false);
 
-        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
-
-        for (Workflow workflow : workflows) {
-            assertNotSame("", workflow.getWorkflowName());
-        }
-
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null, false);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
@@ -571,18 +589,11 @@ public class WorkflowIT extends BaseIT {
     public void testNextflowWorkflowWithConfigIncludes() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
         UsersApi usersApi = new UsersApi(webClient);
-        User user = usersApi.getUser();
 
-        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+        Workflow workflowByPathGithub = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/vipr", "", "nfl", SourceControl.GITHUB,
+            "/nextflow.config", false);
 
-        for (Workflow workflow : workflows) {
-            assertNotSame("", workflow.getWorkflowName());
-        }
-
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null, false);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
@@ -601,17 +612,9 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        UsersApi usersApi = new UsersApi(webClient);
-        User user = usersApi.getUser();
+        Workflow workflowByPathGithub = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/galaxy-workflows", "", "nfl", SourceControl.GITHUB,
+            "/nextflow.config", false);
 
-        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
-
-        for (Workflow workflow : workflows) {
-            assertNotSame("", workflow.getWorkflowName());
-        }
-
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null, false);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
@@ -799,17 +802,10 @@ public class WorkflowIT extends BaseIT {
     public void testManualRegisterThenPublish() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
         UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
 
         // Make publish request (true)
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-
-        // Set up postgres
-
-        // Get workflows
-        usersApi.refreshWorkflows(userId);
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
