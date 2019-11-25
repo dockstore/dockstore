@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -196,29 +195,6 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             LOG.error(user.getUsername() + ": could not find tag: " + tagId + " in " + tool.getToolPath());
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
-    }
-
-    @POST
-    @Timed
-    @UnitOfWork
-    @Path("/{containerId}/verify/{tagId}")
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Updates the verification status of a version. ADMIN ONLY", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
-    public Set<Tag> verifyToolTag(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "ID of the tool to update.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "ID of the tag to update.", required = true) @PathParam("tagId") Long tagId) {
-        Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
-        Tag tag = tagDAO.findById(tagId);
-        if (tag == null) {
-            LOG.error(user.getUsername() + ": could not find tag: " + tool.getToolPath());
-            throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
-        }
-        tag.updateVerified();
-        Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
-        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
-        return result.getWorkflowVersions();
     }
 
     @POST
