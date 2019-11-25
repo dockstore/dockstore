@@ -362,7 +362,7 @@ public class GeneralIT extends BaseIT {
         tool.setDefaultCwlPath("/Docstore.cwl");
         tool = toolApi.registerManual(tool);
 
-        tool = addTag(tool, toolTagsApi, toolApi);
+        tool = addDockerHubTag(tool, toolTagsApi, toolApi);
 
         List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         for (Tag tag: tags) {
@@ -477,8 +477,19 @@ public class GeneralIT extends BaseIT {
     private DockstoreTool addTag(DockstoreTool tool, ContainertagsApi toolTagsApi, ContainersApi toolApi) {
         List<Tag> tags = new ArrayList<>();
         Tag tag = new Tag();
+        tag.setName("masterTest");
+        tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
+        tag.setReference("master");
+        tags.add(tag);
+        toolTagsApi.addTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+        return tool;
+    }
+
+    private DockstoreTool addDockerHubTag(DockstoreTool tool, ContainertagsApi toolTagsApi, ContainersApi toolApi) {
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
         tag.setName("latest");
-        // tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
         tag.setReference("master");
         tags.add(tag);
         toolTagsApi.addTags(tool.getId(), tags);
@@ -712,10 +723,6 @@ public class GeneralIT extends BaseIT {
         assertEquals(count, count2);
     }
 
-    @Test
-    public void testGrabbingImagesFromDockerHub() {
-
-    }
     /**
      * Tests that if a tool has a tag with mismatching tag name and tag reference, and it is set as the default tag
      * then the author metadata is properly grabbed.

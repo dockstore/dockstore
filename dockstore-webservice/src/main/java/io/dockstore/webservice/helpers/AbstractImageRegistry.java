@@ -273,11 +273,19 @@ public abstract class AbstractImageRegistry {
 
         Map<String, List<Map<String, List<Map<String, String>>>>> manifestDigestMap = new HashMap<>();
         Map<String, List<Map<String, String>>> nameMap = new HashMap<>();
+        Map<String, String> error = new HashMap<>();
 
         if (dockerHubResponse.isPresent()) {
+            Gson gson = new Gson();
+            final String errorJSON = dockerHubResponse.get();
             final String manifestJSON = dockerHubResponse.get();
             final String nameJSON = dockerHubResponse.get();
-            Gson gson = new Gson();
+
+            error = (Map<String, String>)gson.fromJson(errorJSON, error.getClass());
+            if (error.get("message") != null) {
+                LOG.info("Error response from DockerHub: " + error.get("message"));
+                return new ArrayList<>();
+            }
 
             manifestDigestMap = (Map<String, List<Map<String, List<Map<String, String>>>>>)gson.fromJson(manifestJSON, manifestDigestMap.getClass());
             nameMap = (Map<String, List<Map<String, String>>>)gson.fromJson(nameJSON, nameMap.getClass());
@@ -310,6 +318,7 @@ public abstract class AbstractImageRegistry {
             }
             return tags;
         } else {
+            LOG.info("Could not get response from DockerHub");
             return new ArrayList<>();
         }
     }
@@ -320,11 +329,9 @@ public abstract class AbstractImageRegistry {
         final String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
 
         String command = "curl " + repoUrl;
-        // ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
-        // Process process = processBuilder.start();
         Optional<String> response;
         try {
-            Process process = Runtime.getRuntime().exec(command);
+            Process process = Runtime.getRuntime().exec(command.split(" "));
             InputStream inputStream = process.getInputStream();
             InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -335,6 +342,8 @@ public abstract class AbstractImageRegistry {
             }
 
             response = Optional.of(sb.toString());
+            inputStreamReader.close();
+            bufferedReader.close();
 
             if (response.isPresent()) {
                 return response;
