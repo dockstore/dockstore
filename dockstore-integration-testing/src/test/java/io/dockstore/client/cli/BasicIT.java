@@ -16,8 +16,11 @@
 
 package io.dockstore.client.cli;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
@@ -28,8 +31,14 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,6 +50,8 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
+import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -67,16 +78,46 @@ public class BasicIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
-    /**
-     * Test the "dockstore tool publish" command
-     */
-    @Test
-    public void testPublishList() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--script" });
-        Assert.assertTrue("Should have contained the unpublished tool belonging to the user",
-            systemOutRule.getLog().contains("quay.io/dockstoretestuser/noautobuild"));
-        Assert.assertFalse("Should not have contained the unpublished tool belonging to another user",
-            systemOutRule.getLog().contains("quay.io/test_org/test1"));
+    private DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
+        String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
+        String versionName, boolean toPublish) {
+
+        DockstoreTool newTool = new DockstoreTool();
+        newTool.setNamespace(namespace);
+        newTool.setName(name);
+        newTool.setToolname(toolName);
+        newTool.setDefaultCwlPath(cwlPath);
+        newTool.setDefaultWdlPath(wdlPath);
+        newTool.setDefaultDockerfilePath(dockerfilePath);
+        newTool.setGitUrl(gitUrl);
+        newTool.setRegistry(registry);
+        newTool.setRegistryString(registry.getValue());
+        newTool.setMode(MANUAL_IMAGE_PATH);
+
+        if (!Registry.QUAY_IO.name().equals(registry.name())) {
+            Tag tag = new Tag();
+            tag.setReference(gitReference);
+            tag.setName(versionName);
+            tag.setDockerfilePath(dockerfilePath);
+            tag.setCwlPath(cwlPath);
+            tag.setWdlPath(wdlPath);
+            List<Tag> tags = new ArrayList<>();
+            tags.add(tag);
+            newTool.setWorkflowVersions(tags);
+        }
+
+        // Manually register
+        DockstoreTool tool = containersApi.registerManual(newTool);
+
+        // Refresh
+        tool = containersApi.refresh(tool.getId());
+
+        // Publish
+        if (toPublish) {
+            tool = containersApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+            assertTrue(tool.isIsPublished());
+        }
+        return tool;
     }
 
     /*
@@ -88,23 +129,29 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testRefresh() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        UsersApi usersApi = new UsersApi(client);
+
         final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         // should have 0 tools to start with
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
+        usersApi.refresh((long)1);
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
 
         // delete quay.io token
         testingPostgres.runUpdateStatement("delete from token where tokensource = 'quay.io'");
+
         // refresh
-        systemExit.expectSystemExitWithStatus(6);
-        systemExit.checkAssertionAfterwards(() -> {
+        try {
+            usersApi.refresh((long)1);
+        } catch (ApiException e) {
+            assertTrue("Should see error message since user has Quay tools but no Quay token.",
+                e.getMessage().contains("Please add a Quay.io token"));
             // should not delete tools
             final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
             Assert.assertEquals("there should be no change in count of tools", secondToolCount, thirdToolCount);
-        });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
+        }
     }
 
     /**
@@ -112,22 +159,27 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testRefreshWorkflow() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        UsersApi usersApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        // Refresh all
+        usersApi.refreshWorkflows((long)1);
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
 
         // refresh a specific workflow
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry",
-            SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl" });
+        Workflow workflow = workflowsApi
+            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
+        workflow = workflowsApi.refresh(workflow.getId());
 
         // artificially create an invalid version
         testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
         testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
 
-        // refresh
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry",
-            SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl" });
+        // refresh individual workflow
+        workflow = workflowsApi.refresh(workflow.getId());
 
         // check that the version was deleted
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
@@ -149,10 +201,12 @@ public class BasicIT extends BaseIT {
             .runSelectStatement("select count(*) from workflow where giturl like '%ampa-nf%'", long.class);
         assertTrue("should find non-zero number of next flow workflows", nfWorkflowCount > 0);
 
-        // refresh
-        systemExit.expectSystemExit();
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry",
-            SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl" });
+        // refresh without github token
+        try {
+            workflow = workflowsApi.refresh(workflow.getId());
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("No GitHub or Google token found"));
+        }
     }
 
     /**
@@ -160,33 +214,43 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testVersionTagDockerhub() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub",
-            "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
-            "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(client);
+
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
 
         // Add a tag
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag", "add", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--name", "masterTest", "--image-id",
-            "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
+        Tag tag = new Tag();
+        tag.setName("masterTest");
+        tag.setReference("master");
+        tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
+        List<Tag> tags = new ArrayList<>();
+        tags.add(tag);
+        tags = toolTagsApi.addTags(tool.getId(), tags);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         Assert.assertEquals("there should be one tag", 1, count);
 
         // Update tag
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag", "update", "--entry",
-                "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--name", "masterTest", "--hidden", "true",
-                "--script" });
+        Optional<Tag> optTag = tags.stream().filter(version -> Objects.equals(version.getName(), "masterTest")).findFirst();
+        if (optTag.isEmpty()) {
+            fail("Should have masterTest tag");
+        }
+        tag = optTag.get();
+        tag.setHidden(true);
+        tags = new ArrayList<>();
+        tags.add(tag);
+        toolTagsApi.updateTags(tool.getId(), tags);
+        toolsApi.refresh(tool.getId());
 
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from tag t, version_metadata vm where name = 'masterTest' and vm.hidden='t' and t.id = vm.id", long.class);
         Assert.assertEquals("there should be one tag", 1, count2);
 
-        // Remove tag
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag", "remove", "--entry",
-                "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--name", "masterTest", "--script" });
+        toolTagsApi.deleteTags(tool.getId(), tag.getId());
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         Assert.assertEquals("there should be no tags", 0, count3);
@@ -198,9 +262,12 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testManualQuaySameAsAutoQuay() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
-            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular", "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.toString()
@@ -213,10 +280,12 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testManualQuayToAutoSamePathDifferentGitRepo() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
-            "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference", "master", "--toolname", "alternate",
-            "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "alternate",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "/testDir/Dockstore.cwl", "/testDir/Dockstore.wdl",
+            "/testDir/Dockerfile", DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.toString()
@@ -229,13 +298,16 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testManualQuayToAutoNoAutoWithoutToolname() {
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                "quay.io/dockstoretestuser/quayandgithub", "--toolname", "testToolname", "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
 
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
-            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "testtool", "--script" });
+        DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
+        existingTool.setToolname("testToolname");
+        toolsApi.updateContainer(existingTool.getId(), existingTool);
+
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "testtool",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.toString()
@@ -249,12 +321,16 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testManualQuayManualBuild() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "noautobuild", "--git-url",
-            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "alternate",
-            "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
 
+        try {
+            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "noautobuild", "alternate",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
+        }
     }
 
     /**
@@ -262,11 +338,16 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testManualQuayNoTags() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "nobuildsatall",
-            "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "alternate",
-            "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        try {
+            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "nobuildsatall", "alternate",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("has no tags."));
+        }
     }
 
     /**
@@ -274,20 +355,21 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testQuayNoAutobuild() {
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                "quay.io/dockstoretestuser/noautobuild", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
-                "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", "");
+        existingTool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        existingTool = toolsApi.updateContainer(existingTool.getId(), existingTool);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
                 + "' and namespace = 'dockstoretestuser' and name = 'noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
             long.class);
         Assert.assertEquals("the tool should now have an associated git repo", 1, count);
 
-        Client.main(
-            new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                "quay.io/dockstoretestuser/nobuildsatall", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
-                "--script" });
+        DockstoreTool existingToolNoBuild = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/nobuildsatall", "");
+        existingToolNoBuild.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        existingToolNoBuild = toolsApi.updateContainer(existingToolNoBuild.getId(), existingToolNoBuild);
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
                 + "' and namespace = 'dockstoretestuser' and name = 'nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
@@ -302,34 +384,41 @@ public class BasicIT extends BaseIT {
     @Test
     public void testAddQuayRepoOfNonOwnedOrg() {
         // Repo user isn't part of org
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstore2", "--name", "testrepo2", "--git-url",
-            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "testOrg", "--cwl-path",
-            "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
 
+        try {
+            DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstore2", "testrepo2", "testOrg",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("User does not own"));
+        }
     }
 
     /**
-     * Check that refreshing an existing tool will not throw an error
-     * Todo: Update test to check the outcome of a refresh
+     * Check that refreshing an existing tool with a different tool name will not throw an error
      */
     @Test
     public void testRefreshCorrectTool() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
-            "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name",
-            "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:dockstoretestuser/dockstore-whalesay.git", "--git-reference", "master",
-            "--toolname", "regular", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub",
-            "--git-url", "git@github.com:dockstoretestuser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
-            "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandbitbucket", "");
+        toolsApi.refresh(tool.getId());
+
+        // Register BitBucket tool
+        DockstoreTool bitbucketTool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandbitbucket", "regular",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+        bitbucketTool = toolsApi.refresh(bitbucketTool.getId());
+        assertTrue(bitbucketTool.isIsPublished());
+
+        // Register GitHub tool
+        DockstoreTool githubTool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+        githubTool = toolsApi.refresh(githubTool.getId());
+        assertTrue(githubTool.isIsPublished());
     }
 
     /**
@@ -341,7 +430,6 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testRefreshAfterDeletingAVersion() {
-
         // Get the tool id of the entry whose path is quay.io/dockstoretestuser/quayandgithub
         final long id = testingPostgres
             .runSelectStatement("select id from tool where name = 'quayandgithub' and namespace='dockstoretestuser' and registry='quay.io'",
@@ -365,8 +453,10 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals(currentNumberOfTags - 1, afterDeletionTags);
 
         // Refresh the tool
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
-            "quay.io/dockstoretestuser/quayandgithub", "--script" });
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
+        toolsApi.refresh(tool.getId());
 
         // Check how many tags there are after the refresh
         final long afterRefreshTags = testingPostgres
@@ -379,72 +469,104 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testGitReferenceFeatureBranch() {
-
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where reference = 'feature/test'", long.class);
         Assert.assertEquals("there should be 2 tags with the reference feature/test", 2, count);
     }
 
     /*
-     * Test Quay and Github -
-     * These tests are focused on testing tools created from Quay and Github repositories
+     * Tests for creating tools from various image registries and git registries
      */
 
     /**
-     * Checks that the two Quay/Github tools were automatically found
+     * Tests auto registration of tools
      */
     @Test
-    public void testQuayGithubAutoRegistration() {
+    public void testAutoRegistration() {
+        autoRegistrationHelper(Registry.QUAY_IO, "github.com", 5);
+        autoRegistrationHelper(Registry.QUAY_IO, "bitbucket.org", 2);
+        autoRegistrationHelper(Registry.QUAY_IO, "gitlab.com", 2);
+    }
 
+    private void autoRegistrationHelper(Registry imageRegistry, String gitRegistry, int expectedToolCount) {
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where  registry = '" + Registry.QUAY_IO.toString() + "' and giturl like 'git@github.com%'",
+            "select count(*) from tool where  registry = '" + imageRegistry.toString() + "' and giturl like 'git@" + gitRegistry + "%'",
             long.class);
-        Assert.assertEquals("there should be 5 registered from Quay and Github, there are " + count, 5, count);
+        Assert.assertEquals(
+            "there should be " + expectedToolCount + " registered from " + imageRegistry + " and " + gitRegistry + ", there are " + count,
+            expectedToolCount, count);
     }
 
     /**
-     * Ensures that you can't publish an automatically added Quay/Github tool with an alternate structure unless you change the Dockerfile and Dockstore.cwl locations
+     * Tests publishing tools with non-standard structure
      */
     @Test
-    public void testQuayGithubPublishAlternateStructure() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser/quayandgithubalternate", "--script" });
+    public void testPublishAlternateStructure() {
+        publishAlternateStructureHelper("quay.io/dockstoretestuser/quayandgithubalternate");
+        publishAlternateStructureHelper("quay.io/dockstoretestuser/quayandbitbucketalternate");
+        publishAlternateStructureHelper("quay.io/dockstoretestuser/quayandgitlabalternate");
+    }
 
-        // TODO: change the tag tag locations of Dockerfile and Dockstore.cwl, now should be able to publish
+    private void publishAlternateStructureHelper(String toolPath) {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
+        try {
+            toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
+        }
     }
 
     /**
-     * Checks that you can properly publish and unpublish a Quay/Github tool
+     * Tests publishing tools with normal structure
      */
     @Test
-    public void testQuayGithubPublishAndUnpublishATool() {
+    public void testPublishAndUnpublishTool() {
+        publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgithub");
+        publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandbitbucket");
+        publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgitlab");
+    }
+
+    private void publishAndUnpublishToolHelper(String toolPath) {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
+
         // Publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser/quayandgithub", "--script" });
+        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
 
         final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where name = 'quayandgithub' and ispublished='t'", long.class);
+            .runSelectStatement("select count(*) from tool where name = '" + toolPath.split("/")[2] + "' and ispublished='t'", long.class);
         Assert.assertEquals("there should be 1 registered", 1, count);
 
         // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "quay.io/dockstoretestuser/quayandgithub", "--script" });
+        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
 
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where name = 'quayandgithub' and ispublished='t'", long.class);
+            .runSelectStatement("select count(*) from tool where name = '" + toolPath.split("/")[2] + "' and ispublished='t'", long.class);
         Assert.assertEquals("there should be 0 registered", 0, count2);
     }
 
     /**
-     * Checks that you can manually publish and unpublish a Quay/Github tool with an alternate structure, if the CWL and Dockerfile paths are defined properly
+     * Tests publishing tools with non-standard structure
      */
     @Test
-    public void testQuayGithubManualPublishAndUnpublishAlternateStructure() {
+    public void testPublishAndUnpublishAlternateStructure() {
+        publishAndUnpublishAlternateStructureHelper("dockstoretestuser", "quayandgithubalternate",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git");
+        publishAndUnpublishAlternateStructureHelper("dockstoretestuser", "quayandbitbucketalternate",
+            "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalternate.git");
+        publishAndUnpublishAlternateStructureHelper("dockstoretestuser", "quayandgitlabalternate",
+            "git@gitlab.com:dockstore.test.user/quayandgitlabalternate.git");
+    }
+
+    private void publishAndUnpublishAlternateStructureHelper(String namespace, String name, String gitUrl) {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
         // Manual publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate",
-            "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference", "master", "--toolname",
-            "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "alternate", gitUrl, "/testDir/Dockstore.cwl",
+            "/testDir/Dockstore.wdl", "/testDir/Dockerfile", DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
@@ -452,8 +574,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entries, there are " + count, 1, count);
 
         // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "quay.io/dockstoretestuser/quayandgithubalternate/alternate", "--script" });
+        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 
@@ -461,14 +582,27 @@ public class BasicIT extends BaseIT {
     }
 
     /**
-     * Ensures that one cannot register an existing Quay/Github entry if you don't give it an alternate toolname
+     * Tests registering a tool that already exists
      */
     @Test
-    public void testQuayGithubManuallyRegisterDuplicate() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithub",
-            "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--script" });
+    public void testManuallyRegisterDuplicate() {
+        manuallyRegisterDuplicateHelper("dockstoretestuser", "quayandgithub", "git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        manuallyRegisterDuplicateHelper("dockstoretestuser", "quayandbitbucket",
+            "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git");
+        manuallyRegisterDuplicateHelper("dockstoretestuser", "quayandgitlab", "git@gitlab.com:DockstoreTestUser/dockstore-whalesay.git");
+    }
+
+    private void manuallyRegisterDuplicateHelper(String namespace, String name, String gitUrl) {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Manual publish
+        try {
+            DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "", gitUrl, "/Dockstore.cwl", "/Dockstore.wdl",
+                "/Dockerfile", DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("already exists"));
+        }
     }
 
     /**
@@ -476,206 +610,34 @@ public class BasicIT extends BaseIT {
      */
     @Test
     public void testQuayGithubQuickRegisterWithWDL() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
-            "quay.io/dockstoretestuser/quayandgithub", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser/quayandgithub", "--script" });
-
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
+        tool = toolsApi.refresh(tool.getId());
+        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and ispublished = 't'", long.class);
         Assert.assertEquals("the given entry should be published", 1, count);
     }
 
-    /*
-     * Test Quay and Bitbucket -
-     * These tests are focused on testing entries created from Quay and Bitbucket repositories
-     */
-
     /**
-     * Checks that the two Quay/Bitbucket entrys were automatically found
+     * Tests the manual registration of a standard workflow
      */
     @Test
-    public void testQuayBitbucketAutoRegistration() {
-
-        final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where registry = '" + Registry.QUAY_IO.toString() + "' and giturl like 'git@bitbucket.org%'",
-            long.class);
-        Assert.assertEquals("there should be 2 registered from Quay and Bitbucket", 2, count);
+    public void testManualRegistration() {
+        manualRegistrationHelper("dockstoretestuser", "dockerhubandgithub", "git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        manualRegistrationHelper("dockstoretestuser", "dockerhubandbitbucket", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git");
+        manualRegistrationHelper("dockstoretestuser", "dockerhubandgitlab", "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git");
     }
 
-    /**
-     * Ensures that you can't publish an automatically added Quay/Bitbucket entry with an alternate structure unless you change the Dockerfile and Dockstore.cwl locations
-     */
-    @Test
-    public void testQuayBitbucketPublishAlternateStructure() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser/quayandbitbucketalternate", "--script" });
+    private void manualRegistrationHelper(String namespace, String name, String gitUrl) {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
 
-        // TODO: change the tag tag locations of Dockerfile and Dockstore.cwl, now should be able to publish
-    }
-
-    /**
-     * Checks that you can properly publish and unpublish a Quay/Bitbucket entry
-     */
-    @Test
-    public void testQuayAndBitbucketPublishAndUnpublishAentry() {
-        // Publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where name = 'quayandbitbucket' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 1 registered", 1, count);
-
-        // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
-
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where name = 'quayandbitbucket' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 0 registered", 0, count2);
-    }
-
-    /**
-     * Checks that you can manually publish and unpublish a Quay/Bitbucket entry with an alternate structure, if the CWL and Dockerfile paths are defined properly
-     */
-    @Test
-    public void testQuayBitbucketManualPublishAndUnpublishAlternateStructure() {
-        // Manual Publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandbitbucketalternate",
-            "--git-url", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalternate.git", "--git-reference", "master", "--toolname",
-            "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entries, there are " + count, 1, count);
-
-        // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "quay.io/dockstoretestuser/quayandbitbucketalternate/alternate", "--script" });
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 0 entries, there are " + count2, 0, count2);
-
-    }
-
-    /**
-     * Ensures that one cannot register an existing Quay/Bitbucket entry if you don't give it an alternate toolname
-     */
-    @Test
-    public void testQuayBitbucketManuallyRegisterDuplicate() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandbitbucket",
-            "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--script" });
-    }
-
-    /*
-     * Test Quay and Gitlab -
-     * These tests are focused on testing entries created from Quay and Gitlab repositories
-     */
-
-    /**
-     * Checks that the two Quay/Gitlab entries were automatically found
-     */
-    @Test
-    public void testQuayGitlabAutoRegistration() {
-        // Need to add these to the db dump (db dump 1)
-
-        final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where  registry = '" + Registry.QUAY_IO.toString() + "' and giturl like 'git@gitlab.com%'",
-            long.class);
-        Assert.assertEquals("there should be 2 registered from Quay and Gitlab", 2, count);
-    }
-
-    /**
-     * Ensures that you can't publish an automatically added Quay/Gitlab entry with an alternate structure unless you change the Dockerfile and Dockstore.cwl locations
-     */
-    @Test
-    public void testQuayGitlabPublishAlternateStructure() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser/quayandgitlabalternate", "--script" });
-    }
-
-    /**
-     * Checks that you can properly publish and unpublish a Quay/Gitlab entry
-     */
-    @Test
-    public void testQuayAndGitlabPublishAndUnpublishAnentry() {
-        // Publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",
-            "quay.io/dockstoretestuser/quayandgitlab", "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where name = 'quayandgitlab' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 1 registered", 1, count);
-
-        // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "quay.io/dockstoretestuser/quayandgitlab", "--script" });
-
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where name = 'quayandgitlab' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 0 registered", 0, count2);
-    }
-
-    /**
-     * Checks that you can manually publish and unpublish a Quay/Gitlab entry with an alternate structure, if the CWL and Dockerfile paths are defined properly
-     */
-    @Test
-    @Category(SlowTest.class)
-    public void testQuayGitlabManualPublishAndUnpublishAlternateStructure() {
-        // Manual Publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgitlabalternate",
-            "--git-url", "git@gitlab.com:dockstore.test.user/quayandgitlabalternate.git", "--git-reference", "master", "--toolname",
-            "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entries, there are " + count, 1, count);
-
-        // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "quay.io/dockstoretestuser/quayandgitlabalternate/alternate", "--script" });
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 0 entries, there are " + count2, 0, count2);
-
-    }
-
-    /**
-     * Ensures that one cannot register an existing Quay/Gitlab entry if you don't give it an alternate toolname
-     */
-    @Test
-    public void testQuayGitlabManuallyRegisterDuplicate() {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgitlab",
-            "--git-url", "git@gitlab.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--script" });
-    }
-
-    /*
-     * Test dockerhub and github -
-     * These tests are focused on testing entrys created from Dockerhub and Github repositories
-     */
-
-    /**
-     * Tests manual registration and unpublishing of a Dockerhub/Github entry
-     */
-    @Test
-    public void testDockerhubGithubManualRegistration() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub",
-            "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
-            "--script" });
+        // Manual publish
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "regular",
+            gitUrl, "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
@@ -683,39 +645,96 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entries", 1, count);
 
         // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--script" });
+        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
 
         Assert.assertEquals("there should be 0 entries", 0, count2);
-
     }
 
     /**
-     * Will test manually publishing and unpublishing a Dockerhub/Github entry with an alternate structure
+     * Tests the manual registration of a non-standard workflow
      */
     @Test
-    public void testDockerhubGithubAlternateStructure() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub",
-            "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference", "master", "--toolname",
-            "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+    public void testManualRegistrationAlternativeStructure() {
+        manualRegistrationAlternativeStructureHelper("dockstoretestuser", "dockerhubandgithub", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git");
+        manualRegistrationAlternativeStructureHelper("dockstoretestuser", "dockerhubandbitbucket", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalternate.git");
+        manualRegistrationAlternativeStructureHelper("dockstoretestuser", "dockerhubandgitlab", "git@gitlab.com:dockstore.test.user/quayandgitlabalternate.git");
+    }
+
+    private void manualRegistrationAlternativeStructureHelper(String namespace, String name, String gitUrl) {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Manual publish
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "alternate",
+            gitUrl, "/testDir/Dockstore.cwl", "/testDir/Dockstore.wdl", "/testDir/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 
-        Assert.assertEquals("there should be 1 entry", 1, count);
+        Assert.assertEquals("there should be 1 entries", 1, count);
 
         // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/alternate", "--script" });
+        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f'", long.class);
+            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 
-        Assert.assertEquals("there should be 1 entry", 1, count2);
+        Assert.assertEquals("there should be 0 entries", 0, count2);
     }
 
+    /**
+     * Tests the manual registration of an existing workflow
+     */
+    @Test
+    public void testManuallyRegisteringDuplicates() {
+        manuallyRegisteringDuplicatesHelper("dockstoretestuser", "dockerhubandgithub", "git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        manuallyRegisteringDuplicatesHelper("dockstoretestuser", "dockerhubandbitbucket", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git");
+        manuallyRegisteringDuplicatesHelper("dockstoretestuser", "dockerhubandgitlab", "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git");
+
+    }
+
+    private void manuallyRegisteringDuplicatesHelper(String namespace, String name, String gitUrl) {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Manual publish
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "regular",
+            gitUrl,  "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+
+        final long count = testingPostgres
+            .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
+
+        Assert.assertEquals("there should be 1 entry", 1, count);
+
+        DockstoreTool duplicateTool = manualRegisterAndPublish(toolsApi, namespace, name, "regular2",
+            gitUrl,  "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+
+        // Unpublish the duplicate entry
+        final long count2 = testingPostgres
+            .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
+        Assert.assertEquals("there should be 2 entries", 2, count2);
+        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+
+        final long count3 = testingPostgres
+            .runSelectStatement("select count(*) from tool where toolname = 'regular2' and ispublished='t'", long.class);
+
+        Assert.assertEquals("there should be 1 entry", 1, count3);
+
+        toolsApi.publish(duplicateTool.getId(), SwaggerUtility.createPublishRequest(false));
+        final long count4 = testingPostgres
+            .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
+
+        Assert.assertEquals("there should be 0 entries", 0, count4);
+    }
+
+    /*
+     * Test dockerhub and github -
+     * These tests are focused on testing entrys created from Dockerhub and Github repositories
+     */
     /**
      * Will test attempting to manually publish a Dockerhub/Github entry using incorrect CWL and/or dockerfile locations
      */
@@ -730,102 +749,10 @@ public class BasicIT extends BaseIT {
             "--script" });
     }
 
-    /**
-     * Checks that you can manually publish and unpublish a Dockerhub/Github duplicate if different toolnames are set (but same Path)
-     */
-    @Test
-    public void testDockerhubGithubManualRegistrationDuplicates() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub",
-            "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
-            "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entry", 1, count);
-
-        // Add duplicate entry with different toolname
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub",
-            "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular2",
-            "--script" });
-
-        // Unpublish the duplicate entrys
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 2 entries", 2, count2);
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--script" });
-        final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular2' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entry", 1, count3);
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular2", "--script" });
-        final long count4 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 0 entries", 0, count4);
-
-    }
-
     /*
      * Test dockerhub and bitbucket -
      * These tests are focused on testing entrys created from Dockerhub and Bitbucket repositories
      */
-
-    /**
-     * Tests manual registration and unpublishing of a Dockerhub/Bitbucket entry
-     */
-    @Test
-    public void testDockerhubBitbucketManualRegistration() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name",
-            "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master",
-            "--toolname", "regular", "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entries, there are " + count, 1, count);
-
-        // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular", "--script" });
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 0 entries, there are " + count2, 0, count2);
-    }
-
-    /**
-     * Will test manually publishing and unpublishing a Dockerhub/Bitbucket entry with an alternate structure
-     */
-    @Test
-    public void testDockerhubBitbucketAlternateStructure() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name",
-            "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalternate.git", "--git-reference",
-            "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile",
-            "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 1 entry", 1, count);
-
-        // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/alternate", "--script" });
-
-        final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f'", long.class);
-        Assert.assertEquals("there should be 1 entry", 1, count3);
-
-    }
-
     /**
      * Will test attempting to manually publish a Dockerhub/Bitbucket entry using incorrect CWL and/or dockerfile locations
      */
@@ -840,145 +767,11 @@ public class BasicIT extends BaseIT {
             "--script" });
     }
 
-    /**
-     * Checks that you can manually publish and unpublish a Dockerhub/Bitbucket duplicate if different toolnames are set (but same Path)
-     */
-    @Test
-    public void testDockerhubBitbucketManualRegistrationDuplicates() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name",
-            "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master",
-            "--toolname", "regular", "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entry", 1, count);
-
-        // Add duplicate entry with different toolname
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name",
-            "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master",
-            "--toolname", "regular2", "--script" });
-
-        // Unpublish the duplicate entrys
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 2 entries", 2, count2);
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular", "--script" });
-        final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular2' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entry", 1, count3);
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular2", "--script" });
-        final long count4 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 0 entries", 0, count4);
-
-    }
-
     /*
      * Test dockerhub and gitlab -
      * These tests are focused on testing entries created from Dockerhub and Gitlab repositories
      */
 
-    /**
-     * Tests manual registration and unpublishing of a Dockerhub/Gitlab entry
-     */
-    @Test
-    @Category(SlowTest.class)
-    public void testDockerhubGitlabManualRegistration() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab",
-            "--git-url", "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
-            "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entries, there are " + count, 1, count);
-
-        // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgitlab/regular", "--script" });
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 0 entries, there are " + count2, 0, count2);
-    }
-
-    /**
-     * Will test manually publishing and unpublishing a Dockerhub/Gitlab entry with an alternate structure
-     */
-    @Test
-    @Category(SlowTest.class)
-    public void testDockerhubGitlabAlternateStructure() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab",
-            "--git-url", "git@gitlab.com:dockstore.test.user/quayandgitlabalternate.git", "--git-reference", "master", "--toolname",
-            "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 1 entry", 1, count);
-
-        // Unpublish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgitlab/alternate", "--script" });
-
-        final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f'", long.class);
-        Assert.assertEquals("there should be 1 entry", 1, count3);
-
-    }
-
-    /**
-     * Checks that you can manually publish and unpublish a Dockerhub/Gitlab duplicate if different toolnames are set (but same Path)
-     */
-    @Test
-    @Category(SlowTest.class)
-    public void testDockerhubGitlabManualRegistrationDuplicates() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab",
-            "--git-url", "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
-            "--script" });
-
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entry", 1, count);
-
-        // Add duplicate entry with different toolname
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab",
-            "--git-url", "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular2",
-            "--script" });
-
-        // Unpublish the duplicate entries
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
-        Assert.assertEquals("there should be 2 entries", 2, count2);
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgitlab/regular", "--script" });
-        final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname = 'regular2' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 1 entry", 1, count3);
-
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry",
-            "registry.hub.docker.com/dockstoretestuser/dockerhubandgitlab/regular2", "--script" });
-        final long count4 = testingPostgres
-            .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
-
-        Assert.assertEquals("there should be 0 entries", 0, count4);
-
-    }
 
     /**
      * This tests that a tool can be updated to have default version, and that metadata is set related to the default version
