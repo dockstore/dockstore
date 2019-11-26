@@ -926,7 +926,11 @@ public class DockerRepoResource
         @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
-        starEntryHelper(tool, user, "tool", tool.getToolPath());
+        if (request.getStar()) {
+            starEntryHelper(tool, user, "tool", tool.getToolPath());
+        } else {
+            unstarEntryHelper(tool, user, "tool", tool.getToolPath());
+        }
         PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
     }
 
@@ -935,8 +939,9 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/unstar")
     @ApiOperation(value = "Unstar a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Deprecated(since = "1.8.0")
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         unstarEntryHelper(tool, user, "tool", tool.getToolPath());
         PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
