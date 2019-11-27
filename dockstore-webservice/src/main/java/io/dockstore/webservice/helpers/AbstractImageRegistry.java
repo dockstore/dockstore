@@ -16,12 +16,9 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -53,14 +50,22 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.dockerhub.DockerHubImage;
+import io.dockstore.webservice.core.dockerhub.DockerHubTag;
+import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -268,18 +273,14 @@ public abstract class AbstractImageRegistry {
         LOG.info(" ======================= Getting tags for: {}================================", tool.getPath());
 
         final List<Tag> tags = new ArrayList<>();
-
         Optional<String> dockerHubResponse = getDockerHubToolAsString(tool);
-
-        Map<String, List<Map<String, List<Map<String, String>>>>> manifestDigestMap = new HashMap<>();
-        Map<String, List<Map<String, String>>> nameMap = new HashMap<>();
         Map<String, String> error = new HashMap<>();
+        DockerHubTag dockerHubTag;
 
         if (dockerHubResponse.isPresent()) {
             Gson gson = new Gson();
             final String errorJSON = dockerHubResponse.get();
             final String manifestJSON = dockerHubResponse.get();
-            final String nameJSON = dockerHubResponse.get();
 
             error = (Map<String, String>)gson.fromJson(errorJSON, error.getClass());
             if (error.get("message") != null) {
@@ -287,36 +288,30 @@ public abstract class AbstractImageRegistry {
                 return new ArrayList<>();
             }
 
-            manifestDigestMap = (Map<String, List<Map<String, List<Map<String, String>>>>>)gson.fromJson(manifestJSON, manifestDigestMap.getClass());
-            nameMap = (Map<String, List<Map<String, String>>>)gson.fromJson(nameJSON, nameMap.getClass());
+            dockerHubTag = gson.fromJson(manifestJSON, DockerHubTag.class);
+            List<Results> results = Arrays.asList(dockerHubTag.getResults());
 
-            List<Map<String, String>> listOfTags = nameMap.get("results");
-
-            Iterator<Map<String, String>> iterator = listOfTags.iterator();
-            Iterator<Map<String, List<Map<String, String>>>> iterator2 = manifestDigestMap.get("results").iterator();
-
-            while (iterator.hasNext() && iterator2.hasNext()) {
-                Map<String, String> i = iterator.next();
-                final String tagName = i.get("name");
-                final String imageID = i.get("image_id");
-                try {
-                    final String manifestDigest = iterator2.next().get("images").get(0).get("digest");
+            try {
+                for (Results r : results) {
                     final Tag tag = new Tag();
-                    tag.setName(tagName);
+                    tag.setName(r.getName());
 
-
+                    List<DockerHubImage> dockerHubImages = Arrays.asList(r.getImages());
                     List<Checksum> checksums = new ArrayList<>();
-                    checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-                    Set<Image> images = Collections.singleton(new Image(checksums, repo, tag.getName(), imageID));
+                    for (DockerHubImage i : dockerHubImages) {
+                        final String manifestDigest = i.getDigest();
+                        checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+                    }
+                    Set<Image> images = Collections.singleton(new Image(checksums, repo, tag.getName(), r.getImageID()));
                     tag.getImages().addAll(images);
-
                     tags.add(tag);
-                } catch (IndexOutOfBoundsException ex) {
-                    LOG.info("Unable to grab image and checksum information for" + tool.getNamespace() + '/' + tool.getName());
                 }
 
+            } catch (IndexOutOfBoundsException ex) {
+                LOG.info("Unable to grab image and checksum information for" + tool.getNamespace() + '/' + tool.getName());
             }
             return tags;
+
         } else {
             LOG.info("Could not get response from DockerHub");
             return new ArrayList<>();
@@ -327,23 +322,14 @@ public abstract class AbstractImageRegistry {
     private Optional<String> getDockerHubToolAsString(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
         final String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
-
-        String command = "curl " + repoUrl;
         Optional<String> response;
-        try {
-            Process process = Runtime.getRuntime().exec(command.split(" "));
-            InputStream inputStream = process.getInputStream();
-            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                sb.append(line);
-            }
 
-            response = Optional.of(sb.toString());
-            inputStreamReader.close();
-            bufferedReader.close();
+        try {
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpResponse httpResponse = client.execute(new HttpGet(repoUrl));
+            HttpEntity httpEntity = httpResponse.getEntity();
+            String apiOutput = EntityUtils.toString(httpEntity);
+            response = Optional.of(apiOutput);
 
             if (response.isPresent()) {
                 return response;
