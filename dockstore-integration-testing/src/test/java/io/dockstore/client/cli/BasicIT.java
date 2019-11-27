@@ -155,6 +155,7 @@ public class BasicIT extends BaseIT {
         // refresh
         try {
             usersApi.refresh((long)1);
+            fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message since user has Quay tools but no Quay token.",
                 e.getMessage().contains("Please add a Quay.io token"));
@@ -338,6 +339,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "noautobuild", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+            fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
         }
@@ -355,6 +357,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "nobuildsatall", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+            fail("Should not be able to register");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("has no tags."));
         }
@@ -401,6 +404,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstore2", "testrepo2", "testOrg",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+            fail("Should not be able to register");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("User does not own"));
         }
@@ -522,6 +526,7 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
         try {
             toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+            fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
@@ -610,6 +615,7 @@ public class BasicIT extends BaseIT {
         try {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "", gitUrl, "/Dockstore.cwl", "/Dockstore.wdl",
                 "/Dockerfile", DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+            fail("Should not be able to register");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("already exists"));
         }
@@ -799,6 +805,7 @@ public class BasicIT extends BaseIT {
         // Shouldn't be able to publish
         try {
             toolsApi.publish(existingTool.getId(), SwaggerUtility.createPublishRequest(true));
+            fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
         }
@@ -819,6 +826,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithubalternate", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "", "", "/testDir/Dockerfile",
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
@@ -1313,6 +1321,7 @@ public class BasicIT extends BaseIT {
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
                 "testimages.sbgenomics.com");
+            fail("Should not be able to register");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("The provided registry is not valid"));
         }
