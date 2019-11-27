@@ -327,6 +327,19 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        Registry registry = foundTool.getRegistryProvider();
+        if (registry.isPrivateOnly() && !tool.isPrivateAccess()) {
+            throw new CustomWebApplicationException("The registry " + registry.getFriendlyName() + " is private only, cannot set tool to public.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (registry.isPrivateOnly() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
+            throw new CustomWebApplicationException("Private tools require a tool maintainer email.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (!foundTool.isPrivateAccess() && tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && Strings.isNullOrEmpty(tool.getEmail())) {
+            throw new CustomWebApplicationException("A published, private tool must have either an tool author email or tool maintainer email set up.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         updateInfo(foundTool, tool);
 
         Tool result = toolDAO.findById(containerId);
@@ -468,6 +481,20 @@ public class DockerRepoResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool registerManual(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
+        // Check for custom docker registries
+        Registry registry = tool.getRegistryProvider();
+        if (registry == null) {
+            throw new CustomWebApplicationException("The provided registry is not valid. If you are using a custom registry please ensure that it matches the allowed paths.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (registry.isPrivateOnly() && !tool.isPrivateAccess()) {
+            throw new CustomWebApplicationException("The registry " + registry.getFriendlyName() + " is a private only registry.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
+            throw new CustomWebApplicationException("Tool maintainer email is required for private tools.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
