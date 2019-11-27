@@ -77,6 +77,7 @@ public class BasicIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     private DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
         String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
         String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
@@ -123,6 +124,7 @@ public class BasicIT extends BaseIT {
         return tool;
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     private DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
         String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
         String versionName, boolean toPublish) {
@@ -1362,7 +1364,7 @@ public class BasicIT extends BaseIT {
                 DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
             fail("Should fail due to no custom docker path");
         } catch (ApiException e) {
-
+            assertTrue(e.getMessage().contains("The provided registry is not valid"));
         }
     }
 
