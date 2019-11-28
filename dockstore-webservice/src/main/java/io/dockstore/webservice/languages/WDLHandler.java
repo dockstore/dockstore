@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -66,10 +67,8 @@ public class WDLHandler implements LanguageHandlerInterface {
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         WdlBridge wdlBridge = new WdlBridge();
-        Map<String, String> secondaryFiles = new HashMap<>();
-        sourceFiles.forEach(file -> {
-            secondaryFiles.put(file.getPath(), file.getContent());
-        });
+        final Map<String, String> secondaryFiles = sourceFiles.stream()
+                .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
         wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
 
         File tempMainDescriptor = null;
@@ -78,7 +77,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
 
             try {
-                List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath());
+                List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath(), filepath);
                 Set<String> authors = new HashSet<>();
                 Set<String> emails = new HashSet<>();
                 final String[] mainDescription = { null };
@@ -184,7 +183,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                             }
                             return new VersionTypeValidation(false, validationMessageObject);
                         }
-                        secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
+                        secondaryDescContent.put(sourceFile.getAbsolutePath(), sourceFile.getContent());
                     }
                 }
                 tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
@@ -196,9 +195,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                 wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
 
                 if (Objects.equals(type, "tool")) {
-                    wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath());
+                    wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath(), primaryDescriptorFilePath);
                 } else {
-                    wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath());
+                    wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
                 }
             } catch (wdl.draft3.parser.WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
@@ -295,9 +294,9 @@ public class WDLHandler implements LanguageHandlerInterface {
         }
 
         for (String importPath : currentFileImports) {
-            if (!imports.containsKey(importPath)) {
+            String absoluteImportPath = convertRelativePathToAbsolutePath(currentFilePath, importPath);
+            if (!imports.containsKey(absoluteImportPath)) {
                 SourceFile importFile = new SourceFile();
-                String absoluteImportPath = convertRelativePathToAbsolutePath(currentFilePath, importPath);
 
                 final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
                 if (fileResponse == null) {
@@ -308,9 +307,10 @@ public class WDLHandler implements LanguageHandlerInterface {
                 importFile.setPath(importPath);
                 importFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
                 importFile.setAbsolutePath(absoluteImportPath);
-                imports.put(importFile.getPath(), importFile);
+                imports.put(absoluteImportPath, importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
             }
+
         }
         return imports;
     }
@@ -321,13 +321,13 @@ public class WDLHandler implements LanguageHandlerInterface {
      *
      * @param mainDescName         the name of the main descriptor
      * @param mainDescriptor       the content of the main descriptor
-     * @param secondaryDescContent the content of the secondary descriptors in a map, looks like file paths -> content
+     * @param secondarySourceFiles the content of the secondary descriptors in a map, looks like file paths -> content
      * @param type                 tools or DAG
      * @param dao                  used to retrieve information on tools
      * @return either a list of tools or a json map
      */
     @Override
-    public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent,
+    public String getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles,
             LanguageHandlerInterface.Type type, ToolDAO dao) {
         // Initialize general variables
         String callType = "call"; // This may change later (ex. tool, workflow)
@@ -343,16 +343,18 @@ public class WDLHandler implements LanguageHandlerInterface {
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
 
             WdlBridge wdlBridge = new WdlBridge();
-            wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+            final Map<String, String> pathToContentMap = secondarySourceFiles.stream()
+                    .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
+            wdlBridge.setSecondaryFiles(new HashMap<>(pathToContentMap));
 
             // Iterate over each call, grab docker containers
-            Map<String, String> callsToDockerMap = wdlBridge.getCallsToDockerMap(tempMainDescriptor.getAbsolutePath());
+            Map<String, String> callsToDockerMap = wdlBridge.getCallsToDockerMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
 
             // Iterate over each call, determine dependencies
-            Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(tempMainDescriptor.getAbsolutePath());
+            Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(tempMainDescriptor.getAbsolutePath(), mainDescName);
             toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
             // Get import files
-            namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath());
+            namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
         } catch (IOException | NoSuchElementException | wdl.draft3.parser.WdlParser.SyntaxError e) {
             throw new CustomWebApplicationException("could not process wdl into DAG: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {

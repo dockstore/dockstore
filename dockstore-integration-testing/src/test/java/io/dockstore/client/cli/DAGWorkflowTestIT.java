@@ -36,6 +36,8 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
+import static org.junit.Assert.fail;
+
 /**
  * Created by jpatricia on 24/06/16.
  */
@@ -300,8 +302,14 @@ public class DAGWorkflowTestIT extends BaseIT {
 
     /**
      * This tests that a WDL workflow with complex imports is properly imported (also tests absolute paths)
+     *
+     * Note: With fix for https://github.com/dockstore/dockstore/issues/2931, this WDL now fails. Adjusting test accordingly. If you run
+     * womtool validate from the command line, this workflow fails to validate, so our code was correctly validating this WDL before,
+     * that seems to have been incorrect.
+     *
      * @throws ApiException
      */
+    @SuppressWarnings("checkstyle:EmptyCatchBlock")
     @Test
     public void testComplexImportWdlWorkflow() throws ApiException {
         // Input: /parent/parent.wdl
@@ -309,11 +317,12 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Branch: master
         // Return: DAG with 7 nodes
 
-        final List<String> strings = getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl",
-                "test");
-        int countNode = countNodeInJSON(strings);
-
-        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 7 nodes", countNode, 7);
+        try {
+            getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl", "test");
+            fail("Invalid WDL somehow came back good");
+        } catch (Exception ex) {
+            Assert.assertTrue(ex.getMessage().contains("could not process wdl into DAG: Failed to import workflow importC.wdl."));
+        }
     }
+
 }

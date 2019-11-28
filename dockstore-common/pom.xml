@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.7.1-SNAPSHOT</version>
+        <version>1.7.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-common</artifactId>
@@ -256,11 +256,6 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-validator</groupId>
-            <artifactId>commons-validator</artifactId>
-            <version>1.6</version>
         </dependency>
     </dependencies>
 

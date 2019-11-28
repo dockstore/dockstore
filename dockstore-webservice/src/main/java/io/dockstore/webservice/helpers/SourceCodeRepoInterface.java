@@ -555,7 +555,7 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId
      * @param version
      */
-    abstract String getCommitID(String repositoryId, Version version);
+    protected abstract String getCommitID(String repositoryId, Version version);
 
     /**
      * Returns a workflow version with validation information updated
