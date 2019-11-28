@@ -318,4 +318,7 @@
             UPDATE validation SET message = REPLACE(message, 'Unknown methods were found', 'NOTE: WDL 1.0 is now supported by Dockstore. If you have access, please refresh to fix validation errors. Unknown methods were found')
         </sql>
     </changeSet>
+    <changeSet author="gluu (generated)" id="unlimitedAvatarUrlLength">
+        <modifyDataType columnName="avatarurl" newDataType="clob" tableName="enduser"/>
+    </changeSet>
 </databaseChangeLog>
