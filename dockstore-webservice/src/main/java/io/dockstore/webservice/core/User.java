@@ -111,7 +111,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     @OrderBy("id")
     private SortedMap<String, Profile> userProfiles = new TreeMap<>();
 
-    @Column
+    @Column(columnDefinition = "text")
     @ApiModelProperty(value = "URL of user avatar on GitHub/Google that can be selected by the user", position = 7)
     private String avatarUrl;
 
