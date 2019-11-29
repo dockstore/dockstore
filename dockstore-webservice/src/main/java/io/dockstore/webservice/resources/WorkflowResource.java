@@ -1445,8 +1445,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
-
-        starEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
+        if (request.getStar()) {
+            starEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
+        } else {
+            unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
+        }
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 
@@ -1455,6 +1458,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}/unstar")
     @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Deprecated(since = "1.8.0")
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);

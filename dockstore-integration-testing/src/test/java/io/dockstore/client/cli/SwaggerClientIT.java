@@ -101,6 +101,7 @@ import static org.junit.Assert.fail;
  *
  * @author xliu
  */
+@SuppressWarnings("checkstyle:MagicNumber")
 @Category(ConfidentialTest.class)
 public class SwaggerClientIT extends BaseIT {
 
@@ -108,6 +109,9 @@ public class SwaggerClientIT extends BaseIT {
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     private static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     private static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
+    private static final StarRequest STAR_REQUEST = SwaggerUtility.createStarRequest(true);
+    private static final StarRequest UNSTAR_REQUEST = SwaggerUtility.createStarRequest(false);
+
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -577,7 +581,7 @@ public class SwaggerClientIT extends BaseIT {
         try {
             // should not be able to star unpublished entries as a different user
             ContainersApi otherContainersApi = new ContainersApi(otherWebClient);
-            otherContainersApi.starEntry(containerId, SwaggerUtility.createStarRequest(true));
+            otherContainersApi.starEntry(containerId, STAR_REQUEST);
         } catch (ApiException e) {
             expectedFailure = true;
         }
@@ -593,16 +597,15 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarringUnpublishedTool() throws ApiException {
         ApiClient apiClient = getWebClient();
         ContainersApi containersApi = new ContainersApi(apiClient);
-        StarRequest request = SwaggerUtility.createStarRequest(true);
         try {
-            containersApi.starEntry(1L, request);
+            containersApi.starEntry(1L, STAR_REQUEST);
             Assert.fail("Should've encountered problems for trying to star an unpublished tool");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("Forbidden"));
             Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
         }
         try {
-            containersApi.unstarEntry(1L);
+            containersApi.starEntry(1L, UNSTAR_REQUEST);
             Assert.fail("Should've encountered problems for trying to unstar an unpublished tool");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("cannot unstar"));
@@ -621,18 +624,17 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         ApiClient adminApiClient = getAdminWebClient();
         WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminApiClient);
-        StarRequest request = SwaggerUtility.createStarRequest(true);
         PublishRequest publishRequest = SwaggerUtility.createPublishRequest(false);
         adminWorkflowsApi.publish(11L, publishRequest);
         try {
-            workflowsApi.starEntry(11L, request);
+            workflowsApi.starEntry(11L, STAR_REQUEST);
             Assert.fail("Should've encountered problems for trying to star an unpublished workflow");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("Forbidden"));
             Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
         }
         try {
-            workflowsApi.unstarEntry(11L);
+            workflowsApi.starEntry(11L, UNSTAR_REQUEST);
             Assert.fail("Should've encountered problems for trying to unstar an unpublished workflow");
         } catch (ApiException e) {
             Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("cannot unstar"));
@@ -656,13 +658,12 @@ public class SwaggerClientIT extends BaseIT {
         long containerId = container.getId();
         assertEquals(2, containerId);
 
-        StarRequest request = SwaggerUtility.createStarRequest(true);
-        containersApi.starEntry(containerId, request);
+        containersApi.starEntry(containerId, STAR_REQUEST);
         List<User> starredUsers = containersApi.getStarredUsers(container.getId());
         Assert.assertEquals(1, starredUsers.size());
         starredUsers.forEach(user -> assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         thrown.expect(ApiException.class);
-        containersApi.starEntry(containerId, request);
+        containersApi.starEntry(containerId, STAR_REQUEST);
     }
 
     /**
@@ -680,7 +681,7 @@ public class SwaggerClientIT extends BaseIT {
         long containerId = container.getId();
         assertEquals(2, containerId);
         thrown.expect(ApiException.class);
-        containersApi.unstarEntry(containerId);
+        containersApi.starEntry(containerId, UNSTAR_REQUEST);
     }
 
     /**
@@ -696,13 +697,12 @@ public class SwaggerClientIT extends BaseIT {
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null, false);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
-        StarRequest request = SwaggerUtility.createStarRequest(true);
-        workflowsApi.starEntry(workflowId, request);
+        workflowsApi.starEntry(workflowId, STAR_REQUEST);
         List<User> starredUsers = workflowsApi.getStarredUsers(workflow.getId());
         Assert.assertEquals(1, starredUsers.size());
         starredUsers.forEach(user -> assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         thrown.expect(ApiException.class);
-        workflowsApi.starEntry(workflowId, request);
+        workflowsApi.starEntry(workflowId, STAR_REQUEST);
     }
 
     /**
@@ -719,7 +719,7 @@ public class SwaggerClientIT extends BaseIT {
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         thrown.expect(ApiException.class);
-        workflowApi.unstarEntry(workflowId);
+        workflowApi.starEntry(11L, UNSTAR_REQUEST);
     }
 
     /**
@@ -979,10 +979,9 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi) throws ApiException {
-        StarRequest request = SwaggerUtility.createStarRequest(true);
         containerIds.forEach(containerId -> {
             try {
-                containersApi.starEntry(containerId, request);
+                containersApi.starEntry(containerId, STAR_REQUEST);
             } catch (ApiException e) {
                 fail("Couldn't star entry");
             }
@@ -995,7 +994,7 @@ public class SwaggerClientIT extends BaseIT {
         }
         containerIds.parallelStream().forEach(containerId -> {
             try {
-                containersApi.unstarEntry(containerId);
+                containersApi.starEntry(containerId, UNSTAR_REQUEST);
             } catch (ApiException e) {
                 fail("Couldn't unstar entry");
             }
