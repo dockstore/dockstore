@@ -110,6 +110,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.zenodo.client.ApiClient;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -1307,6 +1308,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                 // If path changed then update dirty bit to true
                 if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {
+                    String newExtension = FilenameUtils.getExtension(version.getWorkflowPath());
+                    String correctExtension = FilenameUtils.getExtension(w.getDefaultWorkflowPath());
+                    if (!Objects.equals(newExtension, correctExtension)) {
+                        throw new CustomWebApplicationException("Please ensure that the workflow path uses the file extension " + correctExtension, HttpStatus.SC_BAD_REQUEST);
+                    }
                     existingTag.setDirtyBit(true);
                 }
 
@@ -1442,8 +1448,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
-
-        starEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
+        if (request.getStar()) {
+            starEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
+        } else {
+            unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
+        }
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 
@@ -1452,6 +1461,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/{workflowId}/unstar")
     @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Deprecated(since = "1.8.0")
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
