@@ -789,8 +789,10 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
         // Update tool with default version that has metadata
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
-        existingTool.setDefaultVersion("master");
-        existingTool = toolsApi.updateContainer(existingTool.getId(), existingTool);
+        Long toolId = existingTool.getId();
+        DockstoreTool refresh = toolsApi.refresh(toolId);
+        refresh.setDefaultVersion("master");
+        existingTool = toolsApi.updateContainer(toolId, refresh);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master'", long.class);
@@ -806,7 +808,7 @@ public class BasicIT extends BaseIT {
 
         // Shouldn't be able to publish
         try {
-            toolsApi.publish(existingTool.getId(), SwaggerUtility.createPublishRequest(true));
+            toolsApi.publish(toolId, SwaggerUtility.createPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));

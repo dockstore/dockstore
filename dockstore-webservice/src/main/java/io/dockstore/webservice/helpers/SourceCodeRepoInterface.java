@@ -73,6 +73,9 @@ public abstract class SourceCodeRepoInterface {
      */
     public String getREADMEContent(String repositoryId, String branch) {
         List<String> strings = this.listFiles(repositoryId, "/", branch);
+        if (strings == null) {
+            return null;
+        }
         Optional<String> first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
         return first.map(s -> this.readFile(repositoryId, s, branch)).orElse(null);
     }
