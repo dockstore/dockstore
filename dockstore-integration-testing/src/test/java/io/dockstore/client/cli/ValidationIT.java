@@ -1,6 +1,7 @@
 package io.dockstore.client.cli;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -8,6 +9,7 @@ import java.util.Optional;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -385,5 +387,14 @@ public class ValidationIT extends BaseIT {
         Assert.assertTrue("Should be valid", isTagValid(tool, "master"));
         toolsApi.deleteTestParameterFiles(tool.getId(), testParameterFiles, "WDL", "master");
         tool = toolsApi.refresh(tool.getId());
+    }
+
+    @Test
+    public void getThingy() {
+        final List<String> readmePaths = new ArrayList<>(
+                Arrays.asList("README.md", "readme.md", "/README.md", "/readme.md", "README", "readme", "/README", "/readme"));
+        readmePaths.forEach(readmePath -> {
+            Assert.assertTrue(readmePath, SourceCodeRepoInterface.matchesREADME(readmePath));
+        });
     }
 }

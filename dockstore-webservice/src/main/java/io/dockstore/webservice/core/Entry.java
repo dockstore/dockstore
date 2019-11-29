@@ -289,9 +289,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * Currently unused because too many entries do not have a default version set
      */
     public void syncMetadataWithDefault() {
-        T defaultVersionForRealz = this.getRealDefaultVersion();
-        if (defaultVersionForRealz != null) {
-            this.setMetadataFromVersion(defaultVersionForRealz);
+        T realDefaultVersion = this.getRealDefaultVersion();
+        if (realDefaultVersion != null) {
+            this.setMetadataFromVersion(realDefaultVersion);
         }
     }
 

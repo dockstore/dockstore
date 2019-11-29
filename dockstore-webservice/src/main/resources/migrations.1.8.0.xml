@@ -82,16 +82,16 @@
     </changeSet>
     <changeSet author="gluu (generated)" id="addVersionMetadata">
         <addColumn tableName="version_metadata">
-            <column name="author" type="varchar(255 BYTE)"/>
+            <column name="author" type="varchar(255)"/>
         </addColumn>
             <addColumn tableName="version_metadata">
             <column name="description" type="text"/>
         </addColumn>
             <addColumn tableName="version_metadata">
-            <column name="description_source" type="varchar(255 BYTE)"/>
+            <column name="description_source" type="varchar(255)"/>
         </addColumn>
             <addColumn tableName="version_metadata">
-            <column name="email" type="varchar(255 BYTE)"/>
+            <column name="email" type="varchar(255)"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>

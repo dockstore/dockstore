@@ -17,8 +17,6 @@
 package io.dockstore.webservice.helpers;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
@@ -64,11 +62,23 @@ import org.slf4j.LoggerFactory;
 public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
     public static final int BYTES_IN_KB = 1024;
-    protected static final List<String> README_PATHS = new ArrayList<>(Arrays.asList("README.md", "readme.md", "/README.md", "/readme.md", "README", "readme", "/README", "/readme"));
     String gitUsername;
 
+    /**
+     * Tries to get the README contents
+     * First gets all the file names, then see if any of them matches the README regex
+     * @param repositoryId
+     * @param branch
+     * @return
+     */
     public String getREADMEContent(String repositoryId, String branch) {
-        return README_PATHS.stream().map(path -> this.readFile(repositoryId, path, branch)).filter(Objects::nonNull).findFirst().orElse(null);
+        List<String> strings = this.listFiles(repositoryId, "/", branch);
+        Optional<String> first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
+        return first.map(s -> this.readFile(repositoryId, s, branch)).orElse(null);
+    }
+
+    public static boolean matchesREADME(String filename) {
+        return filename.matches("(?i:/?readme([.]md)?)");
     }
 
     /**
