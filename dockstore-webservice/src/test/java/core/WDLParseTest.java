@@ -72,6 +72,30 @@ public class WDLParseTest {
         assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
     }
 
+    @Test
+    public void testRecursiveImportsMetadata() {
+        SourceFile sourceFile1 = new SourceFile();
+        sourceFile1.setAbsolutePath("/Dockstore.wdl");
+        sourceFile1.setPath("Dockstore.wdl");
+        sourceFile1.setContent("import \"first-import.wdl\" as first\n" + "task hello {\n" + "  String name\n" + "\n" + "  command {\n"
+                + "    echo 'Hello ${name}!'\n" + "  }\n" + "  output {\n" + "    File response = stdout()\n" + "  }\n" + "}\n" + "\n"
+                + "workflow test {\n" + "  call hello\n" + "  call first.hello\n" + "}");
+        SourceFile sourceFile2 = new SourceFile();
+        sourceFile2.setAbsolutePath("/first-import.wdl");
+        sourceFile2.setPath("first-import.wdl");
+        sourceFile2.setContent("import \"Dockstore.wdl\" as second\n" + "task hello {\n" + "  String name\n" + "\n" + "  command {\n"
+                + "    echo 'Hello ${name}!'\n" + "  }\n" + "  output {\n" + "    File response = stdout()\n" + "  }\n" + "}");
+        Set<SourceFile> sourceFiles = new HashSet<>();
+        sourceFiles.add(sourceFile1);
+        sourceFiles.add(sourceFile2);
+        try {
+            WDLHandler.checkForRecursiveLocalImports(sourceFile1.getContent(), sourceFiles, new HashSet<>(), "/");
+            Assert.fail("Should have detected recursive local import");
+        } catch (Exception e) {
+            Assert.assertEquals("Recursive local import detected", e.getMessage());
+        }
+    }
+
     /**
      * Tests that Dockstore can handle a workflow with recursive imports
      */
