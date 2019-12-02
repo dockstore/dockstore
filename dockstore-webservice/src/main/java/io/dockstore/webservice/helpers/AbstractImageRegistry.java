@@ -17,6 +17,7 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,13 +60,9 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -325,12 +322,8 @@ public abstract class AbstractImageRegistry {
         Optional<String> response;
 
         try {
-            HttpClient client = HttpClientBuilder.create().build();
-            HttpResponse httpResponse = client.execute(new HttpGet(repoUrl));
-            HttpEntity httpEntity = httpResponse.getEntity();
-            String apiOutput = EntityUtils.toString(httpEntity);
-            response = Optional.of(apiOutput);
-
+            URL url = new URL(repoUrl);
+            response = Optional.of(IOUtils.toString(url, "UTF-8"));
             if (response.isPresent()) {
                 return response;
             }

@@ -366,8 +366,12 @@ public class GeneralIT extends BaseIT {
 
         List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         for (Tag tag: tags) {
-            assertNotNull(tag.getImages().get(0).getChecksums().get(0).getType());
-            assertNotNull(tag.getImages().get(0).getChecksums().get(0).getChecksum());
+            String hashType = tag.getImages().get(0).getChecksums().get(0).getType();
+            String checksum = tag.getImages().get(0).getChecksums().get(0).getChecksum();
+            assertNotNull(hashType);
+            assertFalse(hashType.isEmpty());
+            assertNotNull(checksum);
+            assertFalse(checksum.isEmpty());
         }
 
         // Check for case where user deletes tag and creates new one of same name.
