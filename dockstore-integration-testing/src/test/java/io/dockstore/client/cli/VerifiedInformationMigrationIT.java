@@ -4,13 +4,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.dropwizard.testing.ResourceHelpers;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
