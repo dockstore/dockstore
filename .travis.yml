@@ -97,7 +97,8 @@ before_install:
 - pyenv global 3.6.7
 
 install:
-- ./install-jdk.sh -F 11 -L GPL
+# temporary workaround to get 11.0.4 or newer
+- ./install-jdk.sh --url 'https://api.adoptopenjdk.net/v2/binary/releases/openjdk11?openjdk_impl=hotspot&os=linux&arch=x64&release=latest&heap_size=normal&type=jdk'
 - docker version
 - scripts/install-tests.sh
 
