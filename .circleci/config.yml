@@ -68,9 +68,9 @@ jobs:
       - store_test_results:
           path: ~/junit
       - store_artifacts:
-          path: 
-           - ~/junit
-           - dockstore-webservice/target/*.jar
+          path: ~/junit
+      - store_artifacts:
+          path: dockstore-webservice/target/*.jar
 
     branches:
       ignore:
