@@ -12,6 +12,7 @@ cache:
   - $HOME/.m2/repository
   - $HOME/apache-maven-3.5.4
   - $HOME/apache-maven-3.6.0
+  - $HOME/apache-maven-3.6.1
 
 dist: xenial
 language: java
@@ -76,8 +77,8 @@ jobs:
 # build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
 before_install:
-- export M2_HOME=$HOME/apache-maven-3.6.0
-- if [ ! -d $M2_HOME/bin ]; then curl https://archive.apache.org/dist/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz | tar zxf - -C $HOME; fi
+- export M2_HOME=$HOME/apache-maven-3.6.1
+- if [ ! -d $M2_HOME/bin ]; then curl https://archive.apache.org/dist/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz | tar zxf - -C $HOME; fi
 - export PATH=$M2_HOME/bin:$PATH
 # see https://www.deps.co/guides/travis-ci-latest-java/
 - if [ -e $JAVA_HOME/lib/security/cacerts ]; then sudo rm $JAVA_HOME/lib/security/cacerts && sudo ln -s /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts; fi
