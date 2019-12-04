@@ -17,8 +17,8 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
-                   context="1.7.0.relinquish">
-    <changeSet id="dyuen" author="relinquish">
+                   context="1.8.0.relinquish">
+    <changeSet id="natalieperez" author="relinquish">
         <sql dbms="postgresql">
             CREATE USER dockstore with password 'dockstore' createdb;
             ALTER DATABASE postgres owner to dockstore;
