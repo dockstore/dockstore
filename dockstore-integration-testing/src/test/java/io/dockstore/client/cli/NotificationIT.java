@@ -12,6 +12,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.ws.rs.core.Response;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -76,7 +78,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.createNotification(notification);  // try to create as non-admin
         } catch (ApiException e) {
             userCanCreate = false;
-            assertEquals(401, e.getCode());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED, e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanCreate);  // only admin/curators should be able to create notifications
     }
@@ -94,7 +96,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.deleteNotification(id);
         } catch (ApiException e) {
             userCanDelete = false;
-            assertEquals(401, e.getCode());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED, e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanDelete);
 
@@ -120,7 +122,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.updateNotification(id, update);
         } catch (ApiException e) {
             userCanUpdate = false;
-            assertEquals(401, e.getCode());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED, e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanUpdate);
 
