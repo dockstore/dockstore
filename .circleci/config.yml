@@ -70,7 +70,7 @@ jobs:
       - store_artifacts:
           path: ~/junit
       - store_artifacts:
-          path: dockstore-webservice/target/*.jar
+          path: dockstore-webservice/target
 
     branches:
       ignore:
