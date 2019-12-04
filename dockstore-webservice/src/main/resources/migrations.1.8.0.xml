@@ -80,4 +80,9 @@
         <addUniqueConstraint columnNames="imageid" constraintName="uk_imageid" tableName="entry_version_image"/>
         <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fk_entryVersionImage" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
     </changeSet>
+    <changeSet id="remove_all_stubs" author="agduncan">
+        <delete tableName="workflow">
+            <where>mode='STUB'</where>
+        </delete>
+    </changeSet>
 </databaseChangeLog>
