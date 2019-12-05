@@ -60,6 +60,7 @@ import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -254,6 +255,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
+        final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
 
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
@@ -283,7 +285,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource, entryResource);
         environment.jersey().register(dockerRepoResource);
-        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
+        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
         environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer));

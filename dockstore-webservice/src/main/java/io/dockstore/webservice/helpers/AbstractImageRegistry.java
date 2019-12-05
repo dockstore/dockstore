@@ -46,6 +46,7 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -59,6 +60,7 @@ import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.core.gitlab.GitLabContainerRegistry;
 import io.dockstore.webservice.core.gitlab.GitLabTag;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -144,7 +146,7 @@ public abstract class AbstractImageRegistry {
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
-            String organization) {
+            String organization, final EventDAO eventDAO) {
         // Get all the namespaces for the given registry
         List<String> namespaces;
         if (organization != null) {
@@ -185,7 +187,7 @@ public abstract class AbstractImageRegistry {
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
                     gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
-            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO);
+            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO);
         }
 
         return newDBTools;
@@ -198,7 +200,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface) {
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
@@ -265,7 +267,7 @@ public abstract class AbstractImageRegistry {
             toolTags = getTags(tool);
         }
 
-        updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO);
+        updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO);
         Tool updatedTool = newDBTools.get(0);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
@@ -355,11 +357,12 @@ public abstract class AbstractImageRegistry {
      * @param fileDAO
      * @param toolDAO
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void updateTags(List<Tag> newTags, @NotNull Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
-        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO) {
+        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
-
+        boolean releaseCreated = false;
         if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
@@ -391,11 +394,8 @@ public abstract class AbstractImageRegistry {
                 for (Tag oldTag : existingTags) {
                     if (newTag.getName().equals(oldTag.getName())) {
                         exists = true;
-
                         updateImageInformation(tool, newTag, oldTag);
-
                         oldTag.update(newTag);
-
                         // Update tag with default paths if dirty bit not set
                         if (!oldTag.isDirtyBit()) {
                             // Has not been modified => set paths
@@ -441,7 +441,7 @@ public abstract class AbstractImageRegistry {
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
-
+                    releaseCreated = true;
                     tool.addWorkflowVersion(tag);
 
                     if (!tag.isAutomated()) {
@@ -501,6 +501,10 @@ public abstract class AbstractImageRegistry {
         FileFormatHelper.updateFileFormats(tool.getWorkflowVersions(), fileFormatDAO);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
+        if (releaseCreated) {
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).build();
+            eventDAO.create(event);
+        }
         toolDAO.create(tool);
     }
 

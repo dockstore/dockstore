@@ -54,6 +54,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -72,6 +73,7 @@ import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -125,6 +127,7 @@ public class DockerRepoResource
     private final HttpClient client;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
+    private final EventDAO eventDAO;
     private final ObjectMapper objectMapper;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
@@ -137,6 +140,7 @@ public class DockerRepoResource
         this.tagDAO = new TagDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
+        this.eventDAO = new EventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.client = client;
 
@@ -178,7 +182,7 @@ public class DockerRepoResource
 
             updatedTools.addAll(abstractImageRegistry
                 .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken,
-                    organization));
+                    organization, eventDAO));
         }
         return updatedTools;
     }
@@ -268,7 +272,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
                 HttpStatus.SC_NOT_FOUND);
         }
-        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo);
+        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo, eventDAO);
     }
 
     @GET
@@ -494,7 +498,7 @@ public class DockerRepoResource
         if (tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
             throw new CustomWebApplicationException("Tool maintainer email is required for private tools.", HttpStatus.SC_BAD_REQUEST);
         }
-
+        boolean releaseCreated = false;
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
@@ -502,6 +506,7 @@ public class DockerRepoResource
         for (Tag tag : tool.getWorkflowVersions()) {
             final long l = tagDAO.create(tag);
             createdTags.add(tagDAO.findById(l));
+            releaseCreated = true;
         }
         tool.getWorkflowVersions().clear();
         tool.getWorkflowVersions().addAll(createdTags);
@@ -539,7 +544,10 @@ public class DockerRepoResource
         }
 
         long id = toolDAO.create(tool);
-
+        if (releaseCreated) {
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).build();
+            eventDAO.create(event);
+        }
         return toolDAO.findById(id);
     }
 

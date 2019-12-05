@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -25,6 +26,7 @@ import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -57,6 +59,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final WorkflowDAO workflowDAO;
     protected final UserDAO userDAO;
     protected final WorkflowVersionDAO workflowVersionDAO;
+    protected final EventDAO eventDAO;
     protected final FileDAO fileDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
@@ -75,7 +78,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.userDAO = new UserDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
-
+        this.eventDAO = new EventDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -202,6 +205,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflow.removeWorkflowVersion(existingVersionMap.get(version));
         }
 
+        boolean releaseCreated = false;
+
         // Then copy over content that changed
         for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
             // skip frozen versions
@@ -214,6 +219,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             } else {
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
+                releaseCreated = true;
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
                 workflow.getWorkflowVersions().add(workflowVersionFromDB);
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
@@ -250,6 +256,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             for (Validation versionValidation : version.getValidations()) {
                 workflowVersionFromDB.addOrUpdateValidation(versionValidation);
             }
+        }
+        if (releaseCreated) {
+            Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).build();
+            eventDAO.create(event);
         }
     }
 

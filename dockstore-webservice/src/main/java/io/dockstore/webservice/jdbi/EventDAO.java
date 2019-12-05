@@ -39,6 +39,12 @@ public class EventDAO extends AbstractDAO<Event> {
         return ((Long)query.getSingleResult()).longValue();
     }
 
+    public List<Event> findEventsByEntryIDs(List<Long> entryIds) {
+        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntry");
+        query.setParameterList("entryIDs", entryIds);
+        return list(query);
+    }
+
     public void delete(Event event) {
         Session session = currentSession();
         session.delete(event);
