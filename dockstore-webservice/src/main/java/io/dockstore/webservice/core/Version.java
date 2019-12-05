@@ -346,8 +346,41 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return versionMetadata.doiStatus;
     }
 
+    @ApiModelProperty(position = 21)
+    public String getAuthor() {
+        return this.getVersionMetadata().author;
+    }
+
+    @ApiModelProperty(position = 22)
+    public String getDescription() {
+        return this.getVersionMetadata().description;
+    }
+
+    @ApiModelProperty(position = 23)
+    public DescriptionSource getDescriptionSource() {
+        return this.getVersionMetadata().descriptionSource;
+    }
+
+    @ApiModelProperty(position = 24)
+    public String getEmail() {
+        return this.getVersionMetadata().email;
+    }
+
     public void setDoiStatus(DOIStatus doiStatus) {
         this.getVersionMetadata().doiStatus = doiStatus;
+    }
+
+    public void setDescriptionAndDescriptionSource(String newDescription, DescriptionSource newDescriptionSource) {
+        this.getVersionMetadata().description = newDescription;
+        this.getVersionMetadata().descriptionSource = newDescriptionSource;
+    }
+
+    public void setAuthor(String newAuthor) {
+        this.getVersionMetadata().author = newAuthor;
+    }
+
+    public void setEmail(String newEmail) {
+        this.getVersionMetadata().email = newEmail;
     }
 
     public ReferenceType getReferenceType() {

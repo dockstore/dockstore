@@ -34,18 +34,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
@@ -65,7 +63,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
+    public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         WdlBridge wdlBridge = new WdlBridge();
         final Map<String, String> secondaryFiles = sourceFiles.stream()
                 .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
@@ -106,36 +104,30 @@ public class WDLHandler implements LanguageHandlerInterface {
                 });
 
                 if (!authors.isEmpty()) {
-                    entry.setAuthor(Joiner.on(", ").join(authors));
+                    version.setAuthor(String.join(", ", authors));
                 }
                 if (!emails.isEmpty()) {
-                    entry.setEmail(Joiner.on(", ").join(emails));
+                    version.setEmail(String.join(", ", emails));
                 }
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {
-                    entry.setDescription(mainDescription[0]);
+                    version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
                 }
             } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
                 Map<String, String> validationMessageObject = new HashMap<>();
                 validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata");
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
-                clearMetadata(entry);
-                return entry;
+                version.setAuthor(null);
+                version.setDescriptionAndDescriptionSource(null, null);
+                version.setEmail(null);
+                return version;
             }
         } catch (IOException e) {
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
-        return entry;
-    }
-
-    private void clearMetadata(Entry entry) {
-        if (entry instanceof Workflow) {
-            entry.setAuthor(null);
-            entry.setEmail(null);
-            entry.setDescription(null);
-        }
+        return version;
     }
 
     /**

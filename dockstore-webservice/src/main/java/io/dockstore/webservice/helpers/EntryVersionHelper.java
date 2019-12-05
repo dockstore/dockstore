@@ -88,6 +88,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
         Entry result = getDAO().findById(id);
         checkEntry(result);
+        entry.syncMetadataWithDefault();
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
     }

@@ -7729,6 +7729,17 @@ components:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
+        author:
+          type: string
+        description:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+            - README
+            - DESCRIPTOR
+        email:
+          type: string
         last_built:
           type: string
           format: date-time
@@ -8272,6 +8283,17 @@ components:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
+        author:
+          type: string
+        description:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+            - README
+            - DESCRIPTOR
+        email:
+          type: string
       description: Base class for versions of entries in the Dockstore
     Workflow:
       type: object
@@ -8562,6 +8584,17 @@ components:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
+        author:
+          type: string
+        description:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+            - README
+            - DESCRIPTOR
+        email:
+          type: string
         workflow_path:
           type: string
           description: Path for the workflow

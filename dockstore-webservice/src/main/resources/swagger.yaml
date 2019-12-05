@@ -7446,6 +7446,21 @@ definitions:
         - "NOT_REQUESTED"
         - "REQUESTED"
         - "CREATED"
+      author:
+        type: "string"
+        position: 21
+      description:
+        type: "string"
+        position: 22
+      descriptionSource:
+        type: "string"
+        position: 23
+        enum:
+        - "README"
+        - "DESCRIPTOR"
+      email:
+        type: "string"
+        position: 24
       last_built:
         type: "string"
         format: "date-time"
@@ -8038,6 +8053,21 @@ definitions:
         - "NOT_REQUESTED"
         - "REQUESTED"
         - "CREATED"
+      author:
+        type: "string"
+        position: 21
+      description:
+        type: "string"
+        position: 22
+      descriptionSource:
+        type: "string"
+        position: 23
+        enum:
+        - "README"
+        - "DESCRIPTOR"
+      email:
+        type: "string"
+        position: 24
     description: "Base class for versions of entries in the Dockstore"
   Workflow:
     type: "object"
@@ -8375,6 +8405,21 @@ definitions:
         - "NOT_REQUESTED"
         - "REQUESTED"
         - "CREATED"
+      author:
+        type: "string"
+        position: 21
+      description:
+        type: "string"
+        position: 22
+      descriptionSource:
+        type: "string"
+        position: 23
+        enum:
+        - "README"
+        - "DESCRIPTOR"
+      email:
+        type: "string"
+        position: 24
       workflow_path:
         type: "string"
         position: 101
