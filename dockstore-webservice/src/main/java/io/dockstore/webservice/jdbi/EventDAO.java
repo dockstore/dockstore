@@ -1,6 +1,7 @@
 package io.dockstore.webservice.jdbi;
 
 import java.util.List;
+import java.util.Set;
 
 import io.dockstore.webservice.core.Event;
 import io.dropwizard.hibernate.AbstractDAO;
@@ -39,7 +40,7 @@ public class EventDAO extends AbstractDAO<Event> {
         return ((Long)query.getSingleResult()).longValue();
     }
 
-    public List<Event> findEventsByEntryIDs(List<Long> entryIds) {
+    public List<Event> findEventsByEntryIDs(Set<Long> entryIds) {
         Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntry");
         query.setParameterList("entryIDs", entryIds);
         return list(query);
