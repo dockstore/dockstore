@@ -789,8 +789,10 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
         // Update tool with default version that has metadata
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
-        existingTool.setDefaultVersion("master");
-        existingTool = toolsApi.updateContainer(existingTool.getId(), existingTool);
+        Long toolId = existingTool.getId();
+        DockstoreTool refresh = toolsApi.refresh(toolId);
+        refresh.setDefaultVersion("master");
+        existingTool = toolsApi.updateContainer(toolId, refresh);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master'", long.class);
@@ -806,7 +808,7 @@ public class BasicIT extends BaseIT {
 
         // Shouldn't be able to publish
         try {
-            toolsApi.publish(existingTool.getId(), SwaggerUtility.createPublishRequest(true));
+            toolsApi.publish(toolId, SwaggerUtility.createPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
@@ -1019,50 +1021,6 @@ public class BasicIT extends BaseIT {
 
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         Assert.assertEquals("there should be one sourcefile that is a test parameter file, there are " + count4, 0, count4);
-    }
-
-    /**
-     * This tests that you can verify and unverify a tool
-     */
-    @Ignore("Deprecated. CLI needs to be changed to use new Extended TRS verification endpoint")
-    @Test
-    public void testVerify() {
-        // Versions should be unverified
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and t.id = vm.id", long.class);
-
-        Assert.assertEquals("there should be no verified tags, there are " + count, 0, count);
-
-        // Verify tag
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry",
-            "quay.io/dockstoretestuser/quayandbitbucket", "--verified-source", "Docker testing group", "--version", "master", "--script" });
-
-        // Tag should be verified
-        final long count2 = testingPostgres.runSelectStatement(
-            "select count(*) from tag t, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group' and t.id = vm.id",
-            long.class);
-
-        Assert.assertEquals("there should be one verified tag, there are " + count2, 1, count2);
-
-        // Update tag to have new verified source
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry",
-            "quay.io/dockstoretestuser/quayandbitbucket", "--verified-source", "Docker testing group2", "--version", "master",
-            "--script" });
-
-        // Tag should have new verified source
-        final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from tag t, version_metadata vm where vm.verified='true' and vm.verifiedSource='Docker testing group2' and t.id = vm.id",
-            long.class);
-        Assert.assertEquals("there should be one verified tag, there are " + count3, 1, count3);
-
-        // Unverify tag
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry",
-            "quay.io/dockstoretestuser/quayandbitbucket", "--unverify", "--version", "master", "--script" });
-
-        // Tag should be unverified
-        final long count5 = testingPostgres
-            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.verified='true' and t.id = vm.id", long.class);
-        Assert.assertEquals("there should be no verified tags, there are " + count5, 0, count5);
     }
 
     /**

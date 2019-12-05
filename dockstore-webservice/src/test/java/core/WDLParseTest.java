@@ -23,11 +23,9 @@ import java.util.Set;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
@@ -48,8 +46,8 @@ public class WDLParseTest {
     public void testWDLMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Version entry = sInterface
+            .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         assertTrue("incorrect author", entry.getAuthor().contains("Chip Stewart"));
         assertTrue("incorrect email", entry.getEmail().contains("stewart@broadinstitute.org"));
     }
@@ -58,8 +56,8 @@ public class WDLParseTest {
     public void testWDLMetadataExampleWithMerge() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example1.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Version entry = sInterface
+            .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
         assertNull("incorrect email", entry.getEmail());
     }
@@ -68,8 +66,8 @@ public class WDLParseTest {
     public void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Version entry = sInterface
+            .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
         assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
     }
@@ -156,8 +154,8 @@ public class WDLParseTest {
             wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
 
             LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-            Entry entry = sInterface
-                    .parseWorkflowContent(new BioWorkflow(), primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
+            Version entry = sInterface
+                    .parseWorkflowContent(primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
             assertEquals("incorrect author", 1, entry.getAuthor().split(",").length);
             assertEquals("incorrect email", "foobar@foo.com", entry.getEmail());
             assertTrue("incorrect description", entry.getDescription().length() > 0);

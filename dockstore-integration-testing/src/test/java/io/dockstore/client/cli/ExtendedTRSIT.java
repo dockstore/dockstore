@@ -230,24 +230,6 @@ public class ExtendedTRSIT extends BaseIT {
             "2.0.0");
         Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"),
             "1.0.0");
-
-        assertNotOutOfSync(toolId, toolApi, ga4GhApi);
-
-        // Purposely mess up the verification (no longer in sync with sourcefile verification)
-        testingPostgres.runUpdateStatement("UPDATE version_metadata set verified=false");
-        testingPostgres.runUpdateStatement("UPDATE version_metadata set verifiedsource=null");
-
-        assertOutOfSync(toolId, toolApi, ga4GhApi);
-
-        // Sync tool back
-        containertagsApi.verifyToolTag(toolId, tagId);
-
-        assertNotOutOfSync(toolId, toolApi, ga4GhApi);
-
-        // Sync again
-        containertagsApi.verifyToolTag(toolId, tagId);
-
-        assertNotOutOfSync(toolId, toolApi, ga4GhApi);
     }
 
     private Tag getSpecificVersion(DockstoreTool dockstoreTool) {

@@ -197,7 +197,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
         Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(version.getWorkflowPath())).findFirst();
         first.ifPresent(sourceFile -> LOG.info("refreshing metadata based on " + sourceFile.getPath() + " from " + version.getName()));
-        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(workflow, sourceFile.getPath(), sourceFile.getContent(), sourceFiles, version));
+        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(sourceFile.getPath(), sourceFile.getContent(), sourceFiles, version));
     }
 
     @Override

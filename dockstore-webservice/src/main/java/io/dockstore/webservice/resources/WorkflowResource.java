@@ -409,6 +409,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
         workflow.getWorkflowVersions().forEach(Version::updateVerified);
+        String repositoryId = sourceCodeRepo.getRepositoryId(workflow);
+        sourceCodeRepo.setDefaultBranchIfNotSet(workflow, repositoryId);
+        workflow.syncMetadataWithDefault();
         // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
         return workflow;
@@ -527,30 +530,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
         }
     }
-
-    @POST
-    @Timed
-    @UnitOfWork
-    @Path("/{workflowId}/verify/{workflowVersionId}")
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Updates the verification status of a version. ADMIN ONLY", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
-    public Set<WorkflowVersion> verifyWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "ID of the workflow to update.", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "Id of the version to update.", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
-        Workflow workflow = findWorkflowByIdAndCheckWorkflowAndUser(workflowId, user);
-        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
-        if (workflowVersion == null) {
-            LOG.error(user.getUsername() + ": could not find version: " + workflow.getWorkflowPath());
-            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
-        }
-        workflowVersion.updateVerified();
-        Workflow result = workflowDAO.findById(workflowId);
-        checkEntry(result);
-        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
-        return result.getWorkflowVersions();
-    }
-
 
     /**
      * Get the Zenodo access token and refresh it if necessary

@@ -55,22 +55,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
-  /metadata/dockerRegistryList:
-    get:
-      tags:
-      - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
-      responses:
-        default:
-          description: List of Docker registries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
   /metadata/sitemap:
     get:
       tags:
@@ -88,63 +72,6 @@ paths:
               schema:
                 type: string
             text/xml:
-              schema:
-                type: string
-  /metadata/rss:
-    get:
-      tags:
-      - metadata
-      summary: List all published tools and workflows in creation order
-      description: List all published tools and workflows in creation order, NO authentication
-      operationId: rssFeed
-      responses:
-        default:
-          description: default response
-          content:
-            text/xml:
-              schema:
-                type: string
-  /metadata/runner_dependencies:
-    get:
-      tags:
-      - metadata
-      summary: Returns the file containing runner dependencies
-      description: Returns the file containing runner dependencies, NO authentication
-      operationId: getRunnerDependencies
-      parameters:
-      - name: client_version
-        in: query
-        description: The Dockstore client version
-        schema:
-          type: string
-      - name: python_version
-        in: query
-        description: Python version, only relevant for the cwltool runner
-        schema:
-          type: string
-          default: "2"
-      - name: runner
-        in: query
-        description: The tool runner
-        schema:
-          type: string
-          default: cwltool
-          enum:
-          - cwltool
-      - name: output
-        in: query
-        description: Response type
-        schema:
-          type: string
-          default: text
-          enum:
-          - json
-          - text
-      responses:
-        default:
-          description: The requirements.txt file
-          content:
-            application/json:
               schema:
                 type: string
   /metadata/sourceControlList:
@@ -209,6 +136,79 @@ paths:
           content:
             text/html: {}
             text/xml: {}
+  /metadata/rss:
+    get:
+      tags:
+      - metadata
+      summary: List all published tools and workflows in creation order
+      description: List all published tools and workflows in creation order, NO authentication
+      operationId: rssFeed
+      responses:
+        default:
+          description: default response
+          content:
+            text/xml:
+              schema:
+                type: string
+  /metadata/runner_dependencies:
+    get:
+      tags:
+      - metadata
+      summary: Returns the file containing runner dependencies
+      description: Returns the file containing runner dependencies, NO authentication
+      operationId: getRunnerDependencies
+      parameters:
+      - name: client_version
+        in: query
+        description: The Dockstore client version
+        schema:
+          type: string
+      - name: python_version
+        in: query
+        description: Python version, only relevant for the cwltool runner
+        schema:
+          type: string
+          default: "2"
+      - name: runner
+        in: query
+        description: The tool runner
+        schema:
+          type: string
+          default: cwltool
+          enum:
+          - cwltool
+      - name: output
+        in: query
+        description: Response type
+        schema:
+          type: string
+          default: text
+          enum:
+          - json
+          - text
+      responses:
+        default:
+          description: The requirements.txt file
+          content:
+            application/json:
+              schema:
+                type: string
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
+      responses:
+        default:
+          description: List of Docker registries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
   /toolTester/logs/search:
     get:
       tags:
@@ -606,6 +606,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Version'
+        metadataFromEntry:
+          $ref: '#/components/schemas/Entry'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         is_published:
           type: boolean
         last_modified:
@@ -629,6 +633,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+      writeOnly: true
     FileFormat:
       type: object
       properties:
@@ -735,6 +740,9 @@ components:
           format: date-time
         name:
           type: string
+        tosacceptanceDate:
+          type: string
+          format: date-time
         tosversion:
           type: string
           enum:
@@ -744,9 +752,6 @@ components:
           type: string
           format: date-time
           writeOnly: true
-        tosacceptanceDate:
-          type: string
-          format: date-time
     Validation:
       type: object
       properties:
@@ -824,11 +829,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Image'
-        workingDirectory:
-          type: string
         hidden:
           type: boolean
-        doiURL:
+        workingDirectory:
+          type: string
+        description:
+          type: string
+        email:
           type: string
         verified:
           type: boolean
@@ -838,12 +845,21 @@ components:
           type: array
           items:
             type: string
+        doiURL:
+          type: string
         doiStatus:
           type: string
           enum:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
+        author:
+          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -918,6 +934,20 @@ components:
           type: string
         discourseUrl:
           type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
     RegistryBean:
       type: object
       properties:
@@ -932,20 +962,6 @@ components:
         customDockerPath:
           type: string
         enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
           type: string
     ToolTesterLog:
       type: object
@@ -1094,6 +1110,10 @@ components:
             $ref: '#/components/schemas/WorkflowVersion'
         path:
           type: string
+        metadataFromEntry:
+          $ref: '#/components/schemas/Workflow'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         is_published:
           type: boolean
         last_modified:
@@ -1104,13 +1124,13 @@ components:
         parent_id:
           type: integer
           format: int64
-        workflow_path:
-          type: string
-        defaultTestParameterFilePath:
-          type: string
         full_workflow_path:
           type: string
         source_control_provider:
+          type: string
+        workflow_path:
+          type: string
+        defaultTestParameterFilePath:
           type: string
         last_modified_date:
           type: string
@@ -1130,6 +1150,141 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+    Service:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+    Workflow:
+      required:
+      - type
+      type: object
+      properties:
+        descriptorType:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - service
+          
+          
+        id:
+          type: integer
+          format: int64
+        author:
+          type: string
+        description:
+          type: string
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        email:
+          type: string
+        defaultVersion:
+          type: string
+        lastUpdated:
+          type: string
+          format: date-time
+        gitUrl:
+          type: string
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        topicId:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
+        mode:
+          type: string
+          enum:
+          - FULL
+          - STUB
+          - HOSTED
+          - SERVICE
+        workflowName:
+          type: string
+        organization:
+          type: string
+        repository:
+          type: string
+        sourceControl:
+          type: string
+          enum:
+          - dockstore.org
+          - github.com
+          - bitbucket.org
+          - gitlab.com
+        workflowVersions:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowVersion'
+        path:
+          type: string
+        parentEntry:
+          $ref: '#/components/schemas/Entry'
+        isChecker:
+          type: boolean
+        metadataFromEntry:
+          $ref: '#/components/schemas/Workflow'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
+        is_published:
+          type: boolean
+        last_modified:
+          type: integer
+          format: int32
+        full_workflow_path:
+          type: string
+        source_control_provider:
+          type: string
+        workflow_path:
+          type: string
+        defaultTestParameterFilePath:
+          type: string
+        last_modified_date:
+          type: string
+          format: date-time
+        checker_id:
+          type: integer
+          format: int64
+        has_checker:
+          type: boolean
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        type:
+          type: string
+      writeOnly: true
+      discriminator:
+        propertyName: type
     WorkflowVersion:
       type: object
       properties:
@@ -1173,6 +1328,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Image'
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
         subClass:
           type: string
           enum:
@@ -1184,7 +1343,9 @@ components:
           type: string
         hidden:
           type: boolean
-        doiURL:
+        description:
+          type: string
+        email:
           type: string
         verified:
           type: boolean
@@ -1194,12 +1355,21 @@ components:
           type: array
           items:
             type: string
+        doiURL:
+          type: string
         doiStatus:
           type: string
           enum:
           - NOT_REQUESTED
           - REQUESTED
           - CREATED
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
+        author:
+          type: string
         dbUpdateDate:
           type: string
           format: date-time

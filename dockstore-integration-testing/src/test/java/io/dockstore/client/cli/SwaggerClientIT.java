@@ -380,38 +380,6 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testGetVerifiedSpecificTool() throws ApiException {
-        ApiClient client = getAdminWebClient();
-        Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
-        ContainersApi containersApi = new ContainersApi(client);
-        ContainertagsApi containertagsApi = new ContainertagsApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        final DockstoreTool dockstoreTool = containersApi.registerManual(c);
-
-        io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        assertNotNull(tool);
-        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        assertEquals(1, tags.size());
-        Tag tag = tags.get(0);
-
-        // verify master branch
-        assertFalse(tag.isVerified());
-        assertEquals(new ArrayList<>(), tag.getVerifiedSources());
-
-        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId());
-
-        // check again
-        tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        tag = tags.get(0);
-
-        // The tag verification endpoint does nothing unless the extended TRS endpoint was used to verify
-        assertFalse(tag.isVerified());
-        assertEquals(new ArrayList<>(), tag.getVerifiedSources());
-    }
-
-    @Test
     public void testGetFiles() throws IOException, ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);

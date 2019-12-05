@@ -32,7 +32,6 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -56,12 +55,13 @@ public interface LanguageHandlerInterface {
     /**
      * Parses the content of the primary descriptor to get author, email, and description
      *
-     * @param entry    an entry to be updated
      * @param filepath path to file
-     * @param content  a cwl document
-     * @return the updated entry
+     * @param content a descriptor language document
+     * @param sourceFiles
+     * @param version the version to modify
+     * @return
      */
-    Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version);
+    Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version);
 
     /**
      * Validates a workflow set for the workflow described by with primaryDescriptorFilePath

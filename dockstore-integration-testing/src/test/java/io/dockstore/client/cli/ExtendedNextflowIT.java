@@ -105,15 +105,30 @@ public class ExtendedNextflowIT extends BaseIT {
         usersApi.refreshWorkflows(user.getId());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
+        Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
         // need to set paths properly
-        workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
-        workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
-
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
-        final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId());
-
+        workflowByPathBitbucket.setWorkflowPath("/nextflow.config");
+        workflowByPathBitbucket.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
+        workflowApi.updateWorkflow(workflowByPathBitbucket.getId(), workflowByPathBitbucket);
+        final String partialReadmeDescription = "AMPA-NF is a pipeline for assessing the antimicrobial domains of proteins,";
+        final String descriptorDescription = "Fast automated prediction of protein antimicrobial regions";
+        workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
+        final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId());
+        // There are 3 versions: master, v1.0, and v2.0
+        // master and v2.0 has a nextflow.config file that has description and author, v1.0 does not
+        // v1.0 will pull description from README instead but the others will use nextflow.config
+        Assert.assertEquals(descriptorDescription, bitbucketWorkflow.getDescription());
+        bitbucketWorkflow.getWorkflowVersions().forEach(workflowVersion -> {
+            if (workflowVersion.getName().equals("v1.0")) {
+                Assert.assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
+                Assert.assertNull(workflowVersion.getAuthor());
+                Assert.assertNull(workflowVersion.getEmail());
+            } else {
+                Assert.assertNotNull(descriptorDescription, workflowVersion.getDescription());
+                Assert.assertEquals("test.user@test.com", workflowVersion.getAuthor());
+                Assert.assertNull(workflowVersion.getEmail());
+            }
+        });
         List<SourceFile> sourceFileList = new ArrayList<>(
             bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get()
                 .getSourceFiles());
@@ -144,7 +159,7 @@ public class ExtendedNextflowIT extends BaseIT {
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null, false);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId());
-
+        Assert.assertTrue("Should have gotten the description from README", bitbucketWorkflow.getDescription().contains("A Nextflow implementation of Kallisto & Sleuth RNA-Seq Tools"));
         List<SourceFile> sourceFileList = new ArrayList<>(
             bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v1.0")).findFirst().get()
                 .getSourceFiles());

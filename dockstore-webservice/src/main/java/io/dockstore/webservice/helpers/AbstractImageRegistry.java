@@ -260,9 +260,13 @@ public abstract class AbstractImageRegistry {
         }
 
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO);
+        Tool updatedTool = newDBTools.get(0);
 
+        String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
+        sourceCodeRepoInterface.setDefaultBranchIfNotSet(updatedTool, repositoryId);
+        updatedTool.syncMetadataWithDefault();
         // Return the updated tool
-        return newDBTools.get(0);
+        return updatedTool;
     }
 
     public List<Tag> getTagsDockerHub(Tool tool) {

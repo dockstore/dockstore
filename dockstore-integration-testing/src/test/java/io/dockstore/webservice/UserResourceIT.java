@@ -28,7 +28,6 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
@@ -42,7 +41,9 @@ import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -133,6 +134,12 @@ public class UserResourceIT extends BaseIT {
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
+    }
+
+    @Test
+    public void longAvatarUrlTest() {
+        String generatedString = RandomStringUtils.randomAlphanumeric(9001);
+        testingPostgres.runUpdateStatement(String.format("update enduser set avatarurl='%s'", generatedString));
     }
 
     /**
@@ -359,7 +366,6 @@ public class UserResourceIT extends BaseIT {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        ContainersApi toolsApi = new ContainersApi(client);
         User user = userApi.getUser();
 
         Workflow addedWorkflow = workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
@@ -367,21 +373,18 @@ public class UserResourceIT extends BaseIT {
         List<DockstoreTool> tools = userApi.refresh(user.getId());
         List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
         assertFalse(entries.isEmpty());
-        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(0).getPath());
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPath());
 
         // Update an entry
         Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
-        workflowsApi.refresh(workflow.getId());
+        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId());
+
+        // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
+        Assert.assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
 
         // Entry should now be at the top
         entries = userApi.getUserEntries(10, null);
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(0).getPath());
-        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(1).getPath());
-
-        // Search for quay.io
-        entries = userApi.getUserEntries(10, "quay.io");
-        assertEquals("quay.io/dockstoretestuser2/quayandgithub", entries.get(0).getPath());
 
         // Create organizations
         Organization foobarOrg = createOrganization(client, "Foobar", "Foo Bar");
