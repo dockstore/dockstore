@@ -12,6 +12,7 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.validation.constraints.Size;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -42,6 +43,7 @@ public class Notification {
     private long id;
 
     @Column
+    @Size(max = 280)
     @ApiModelProperty(value = "Text content of the notification to be displayed", position = 1)
     private String message;
 
