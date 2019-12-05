@@ -41,6 +41,7 @@ import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -133,6 +134,12 @@ public class UserResourceIT extends BaseIT {
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
+    }
+
+    @Test
+    public void longAvatarUrlTest() {
+        String generatedString = RandomStringUtils.randomAlphanumeric(9001);
+        testingPostgres.runUpdateStatement(String.format("update enduser set avatarurl='%s'", generatedString));
     }
 
     /**
