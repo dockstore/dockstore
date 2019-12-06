@@ -661,7 +661,7 @@ public class UserResource implements AuthenticatedResourceInterface {
                 timestamp = mostRecentTag.get().getDbUpdateDate();
             }
             List<String> pathElements = Arrays.asList(entry.getEntryPath().split("/"));
-            String prettyPath = pathElements.subList(1, pathElements.size()).stream().collect(Collectors.joining("/"));
+            String prettyPath = String.join("/", pathElements.subList(1, pathElements.size()));
             entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), prettyPath, entry.getEntryType(), timestamp));
         });
 
