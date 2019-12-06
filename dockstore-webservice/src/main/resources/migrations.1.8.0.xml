@@ -80,6 +80,21 @@
         <addUniqueConstraint columnNames="imageid" constraintName="uk_imageid" tableName="entry_version_image"/>
         <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fk_entryVersionImage" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
     </changeSet>
+
+    <changeSet author="esoth" id="notifications">
+        <createTable tableName="notification">
+            <column name="id" type="bigserial">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="message" type="varchar(280)"/>
+            <column name="expiration" type="timestamp"/>
+            <column name="priority" type="varchar(255)"/>
+            <column name="type" type="varchar(255)"/>
+            <column name="dbcreatedate" type="timestamp"/>
+            <column name="dbupdatedate" type="timestamp"/>
+        </createTable>
+    </changeSet>
+
     <changeSet author="gluu (generated)" id="addVersionMetadata">
         <addColumn tableName="version_metadata">
             <column name="author" type="varchar(255)"/>
