@@ -467,17 +467,6 @@ public class GeneralIT extends BaseIT {
         return tool;
     }
 
-    private DockstoreTool addQuayTag(DockstoreTool tool, ContainertagsApi toolTagsApi, ContainersApi toolApi) {
-        List<Tag> tags = new ArrayList<>();
-        Tag tag = new Tag();
-        tag.setName("latest");
-        tag.setReference("master");
-        tags.add(tag);
-        toolTagsApi.addTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
-        return tool;
-    }
-
     private DockstoreTool addDockerHubTag(DockstoreTool tool, ContainertagsApi toolTagsApi, ContainersApi toolApi) {
         List<Tag> tags = new ArrayList<>();
         Tag tag = new Tag();
