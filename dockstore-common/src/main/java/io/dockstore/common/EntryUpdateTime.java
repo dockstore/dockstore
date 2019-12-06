@@ -10,11 +10,13 @@ import java.util.Date;
  */
 public class EntryUpdateTime {
     private String path;
+    private String prettyPath;
     private EntryType entryType;
     private Date lastUpdateDate;
 
-    public EntryUpdateTime(String path, EntryType entryType, Timestamp lastUpdateDate) {
+    public EntryUpdateTime(String path, String prettyPath, EntryType entryType, Timestamp lastUpdateDate) {
         this.path = path;
+        this.prettyPath = prettyPath;
         this.entryType = entryType;
         this.lastUpdateDate = lastUpdateDate;
     }
@@ -25,6 +27,14 @@ public class EntryUpdateTime {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getPrettyPath() {
+        return prettyPath;
+    }
+
+    public void setPrettyPath(String prettyPath) {
+        this.prettyPath = prettyPath;
     }
 
     public EntryType getEntryType() {

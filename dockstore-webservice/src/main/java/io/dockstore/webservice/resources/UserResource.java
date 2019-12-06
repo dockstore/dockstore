@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -659,7 +660,9 @@ public class UserResource implements AuthenticatedResourceInterface {
             if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
                 timestamp = mostRecentTag.get().getDbUpdateDate();
             }
-            entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), entry.getEntryType(), timestamp));
+            List<String> pathElements = Arrays.asList(entry.getEntryPath().split("/"));
+            String prettyPath = String.join("/", pathElements.subList(1, pathElements.size()));
+            entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), prettyPath, entry.getEntryType(), timestamp));
         });
 
         // Sort all entryUpdateTimes by timestamp
