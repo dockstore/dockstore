@@ -3,6 +3,8 @@ package io.dockstore.client.cli;
 import java.sql.Timestamp;
 import java.util.List;
 
+import javax.ws.rs.core.Response;
+
 import io.dockstore.common.ConfidentialTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -11,8 +13,6 @@ import io.swagger.client.model.Notification;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -78,7 +78,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.createNotification(notification);  // try to create as non-admin
         } catch (ApiException e) {
             userCanCreate = false;
-            assertEquals(Response.Status.UNAUTHORIZED, e.getCode());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED, e.getResponseBody());  // this should return a 401 error
         }
         assertFalse(userCanCreate);  // only admin/curators should be able to create notifications
     }
@@ -96,7 +96,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.deleteNotification(id);
         } catch (ApiException e) {
             userCanDelete = false;
-            assertEquals(Response.Status.UNAUTHORIZED, e.getCode());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED, e.getResponseBody());  // this should return a 401 error
         }
         assertFalse(userCanDelete);
 
@@ -122,7 +122,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.updateNotification(id, update);
         } catch (ApiException e) {
             userCanUpdate = false;
-            assertEquals(Response.Status.UNAUTHORIZED, e.getCode());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED, e.getResponseBody());  // this should return a 401 error
         }
         assertFalse(userCanUpdate);
 
