@@ -126,8 +126,6 @@ public abstract class AbstractImageRegistry {
      */
     public abstract boolean canConvertToAuto(Tool tool);
 
-//    public abstract Set<Image> getImagesForTag(Tool tool, Tag tag);
-
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
