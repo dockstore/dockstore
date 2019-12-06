@@ -78,7 +78,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.createNotification(notification);  // try to create as non-admin
         } catch (ApiException e) {
             userCanCreate = false;
-            assertEquals(Response.Status.UNAUTHORIZED, e.getResponseBody());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanCreate);  // only admin/curators should be able to create notifications
     }
@@ -96,7 +96,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.deleteNotification(id);
         } catch (ApiException e) {
             userCanDelete = false;
-            assertEquals(Response.Status.UNAUTHORIZED, e.getResponseBody());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanDelete);
 
@@ -122,7 +122,7 @@ public class NotificationIT extends BaseIT {
             curationApiUser.updateNotification(id, update);
         } catch (ApiException e) {
             userCanUpdate = false;
-            assertEquals(Response.Status.UNAUTHORIZED, e.getResponseBody());  // this should return a 401 error
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getCode());  // this should return a 401 error
         }
         assertFalse(userCanUpdate);
 
