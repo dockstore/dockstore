@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -334,7 +335,7 @@ public abstract class AbstractImageRegistry {
 
         try {
             URL url = new URL(repoUrl);
-            response = Optional.of(IOUtils.toString(url, "UTF-8"));
+            response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
             if (response.isPresent()) {
                 return response;
             }
@@ -546,7 +547,7 @@ public abstract class AbstractImageRegistry {
 
         try {
             URL projectURL = new URL(projectPath);
-            projectResponse = Optional.of(IOUtils.toString(projectURL, "UTF-8"));
+            projectResponse = Optional.of(IOUtils.toString(projectURL, StandardCharsets.UTF_8));
 
             if (projectResponse.isPresent()) {
                 final String projectJSON = projectResponse.get();
@@ -556,7 +557,7 @@ public abstract class AbstractImageRegistry {
 
                 final String tagsListPath = projectPath + '/' + registries.get(0).getId() + '/' + "tags";
                 URL tagsListURL = new URL(tagsListPath);
-                Optional<String> tagsListResponse = Optional.of(IOUtils.toString(tagsListURL, "UTF-8"));
+                Optional<String> tagsListResponse = Optional.of(IOUtils.toString(tagsListURL, StandardCharsets.UTF_8));
 
                 if (tagsListResponse.isPresent()) {
                     String tagsListJSON = tagsListResponse.get();
@@ -567,7 +568,7 @@ public abstract class AbstractImageRegistry {
                         for (GitLabTag gitLabTag : gitLabTags) {
                             final String detailedTagInfoUrlString = tagsListPath + '/' + gitLabTag.getName();
                             URL detailedTagInfoURL = new URL(detailedTagInfoUrlString);
-                            Optional<String> detailedTagInfoResponse = Optional.of(IOUtils.toString(detailedTagInfoURL, "UTF-8"));
+                            Optional<String> detailedTagInfoResponse = Optional.of(IOUtils.toString(detailedTagInfoURL, StandardCharsets.UTF_8));
 
                             if (detailedTagInfoResponse.isPresent()) {
                                 final String detailedTagInfoJSON = detailedTagInfoResponse.get();

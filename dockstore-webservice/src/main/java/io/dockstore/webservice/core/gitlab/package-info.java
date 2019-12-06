@@ -15,6 +15,7 @@
 
 /**
  * Models for responses from GitLab. Used right now just to grab checksum info for images. But if other fields are needed
- * in the future, then the fields that are two words (ex: imageID) need something like @SerializedName("image_id")
+ * in the future, then the fields that are two words (ex: imageID) need something like @SerializedName("image_id").
+ * Created by looking at https://docs.gitlab.com/ee/api/container_registry.html
  */
 package io.dockstore.webservice.core.gitlab;

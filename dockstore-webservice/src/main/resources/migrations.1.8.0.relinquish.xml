@@ -20,10 +20,6 @@
                    context="1.8.0.relinquish">
     <changeSet id="natalieperez" author="relinquish">
         <sql dbms="postgresql">
-            CREATE USER dockstore with password 'dockstore' createdb;
-            ALTER DATABASE postgres owner to dockstore;
-
-            ALTER TABLE label OWNER TO dockstore;
             ALTER TABLE workflowversion_alias OWNER TO dockstore;
             ALTER TABLE image OWNER TO dockstore;
             ALTER TABLE entry_version-image OWNER TO dockstore;

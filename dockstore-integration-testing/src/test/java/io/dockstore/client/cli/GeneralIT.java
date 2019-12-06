@@ -467,6 +467,17 @@ public class GeneralIT extends BaseIT {
         return tool;
     }
 
+    private DockstoreTool addQuayTag(DockstoreTool tool, ContainertagsApi toolTagsApi, ContainersApi toolApi) {
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
+        tag.setName("latest");
+        tag.setReference("master");
+        tags.add(tag);
+        toolTagsApi.addTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+        return tool;
+    }
+
     private DockstoreTool addDockerHubTag(DockstoreTool tool, ContainertagsApi toolTagsApi, ContainersApi toolApi) {
         List<Tag> tags = new ArrayList<>();
         Tag tag = new Tag();
@@ -727,11 +738,16 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.registerManual(tool);
 
         tool = addDockerHubTag(tool, toolTagsApi, toolApi);
-        List<Tag> tags = verifyChecksumsAreSaved(toolApi, tool);
+        List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(tags);
 
         // Check for case where user deletes tag and creates new one of same name.
         // Check that the new imageid and checksums are grabbed on refresh. Also check the old images have been deleted.
         refreshAfterDeletedTag(toolApi, tool, tags);
+        testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where giturl = 'git@bitbucket.org:dockstoretestuser2/dockstore-whalesay-2.git'");
+        toolApi.refresh(tool.getId());
+        List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(updatedTags);
     }
 
     private void refreshAfterDeletedTag(ContainersApi toolApi, DockstoreTool tool, List<Tag> tags) {
@@ -756,15 +772,21 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.registerManual(tool);
 
         tool = addGitLabTag(tool, toolTagsApi, toolApi);
-        List<Tag> tags = verifyChecksumsAreSaved(toolApi, tool);
+        List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(tags);
 
         // Check for case where user deletes tag and creates new one of same name.
         // Check that the new imageid and checksums are grabbed on refresh. Also check the old images have been deleted.
         refreshAfterDeletedTag(toolApi, tool, tags);
+
+        // mimic getting an registry being slow/now responsding and verify we do not delete the image information we already have by going to an invalid url.
+        testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where giturl = 'git@gitlab.com:NatalieEO/dockstore-tool-bamstats.git'");
+        toolApi.refresh(tool.getId());
+        List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(updatedTags);
     }
 
-    private List<Tag> verifyChecksumsAreSaved(ContainersApi toolApi, DockstoreTool tool) {
-        List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+    private void verifyChecksumsAreSaved(List<Tag> tags) {
         for (Tag tag : tags) {
             String hashType = tag.getImages().get(0).getChecksums().get(0).getType();
             String checksum = tag.getImages().get(0).getChecksums().get(0).getChecksum();
@@ -773,7 +795,6 @@ public class GeneralIT extends BaseIT {
             assertNotNull(checksum);
             assertFalse(checksum.isEmpty());
         }
-        return tags;
     }
 
     /**
