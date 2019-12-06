@@ -40,9 +40,9 @@ public class EventDAO extends AbstractDAO<Event> {
         return ((Long)query.getSingleResult()).longValue();
     }
 
-    public List<Event> findEventsByEntryIDs(Set<Long> entryIds) {
+    public List<Event> findEventsByEntryIDs(Set<Long> entryIds, Integer offset, Integer limit) {
         Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntry");
-        query.setParameterList("entryIDs", entryIds);
+        query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(limit);
         return list(query);
     }
 
