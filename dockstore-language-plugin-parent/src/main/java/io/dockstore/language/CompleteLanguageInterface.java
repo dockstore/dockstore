@@ -15,11 +15,37 @@
  */
 package io.dockstore.language;
 
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.Pair;
+
 /**
  * Complete interface for new languages
  *
  * TODO: DAG interface methods
  */
 public interface CompleteLanguageInterface extends RecommendedLanguageInterface {
+
+    CytoscapeObject generateDAG(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+
+    List<RowData> generateToolsTable(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+
+    class RowData {
+        public RowType rowType;
+        public String toolid;
+        public String label;
+        // not applicable for Galaxy
+        public String filename;
+        public URL link;
+        public String dockerContainer;
+    }
+
+    enum RowType {
+        TOOL,
+        SUBWORKFLOW
+    }
+
 
 }
