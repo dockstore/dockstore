@@ -1,5 +1,6 @@
 package io.dockstore.webservice.jdbi;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -41,6 +42,9 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsByEntryIDs(Set<Long> entryIds, Integer offset, Integer limit) {
+        if (entryIds.isEmpty()) {
+            return Collections.emptyList();
+        }
         Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntry");
         query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(limit);
         return list(query);

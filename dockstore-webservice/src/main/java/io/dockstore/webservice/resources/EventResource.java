@@ -32,6 +32,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -43,10 +44,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-
-enum EventSearchType  {
-    STARRED_ENTRIES
-}
 
 /**
  * @author gluu
@@ -60,8 +57,10 @@ public class EventResource {
     private static final String SUMMARY = "Get events based on filters.";
     private static final String DESCRIPTION = "Optional authentication.";
     private final EventDAO eventDAO;
+    private final UserDAO userDAO;
     public EventResource(SessionFactory sessionFactory) {
         this.eventDAO = new EventDAO(sessionFactory);
+        this.userDAO = new UserDAO(sessionFactory);
     }
     @GET
     @Timed
@@ -69,10 +68,11 @@ public class EventResource {
     @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = SUMMARY, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
-    public List<Event> getEvents(@ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit, @QueryParam("limit") @DefaultValue("0") Integer offset) {
+    public List<Event> getEvents(@ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit, @QueryParam("offset") @DefaultValue("0") @ApiParam Integer offset) {
+        User userWithSession = this.userDAO.findById(user.getId());
         if (eventSearchType.equals(EventSearchType.STARRED_ENTRIES)) {
-            Set<Long> entryIDs = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-            return this.eventDAO.findEventsByEntryIDs(entryIDs, limit, offset);
+            Set<Long> entryIDs = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
+            return this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit);
         } else {
             return Collections.emptyList();
         }

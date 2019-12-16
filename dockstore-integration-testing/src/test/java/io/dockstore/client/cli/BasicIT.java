@@ -28,14 +28,18 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.EventsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Event;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
@@ -234,7 +238,14 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-
+        EventsApi eventsApi = new EventsApi(client);
+        List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertEquals("No starred entries, so there should be no events returned",0, events.size());
+        StarRequest starRequest = new StarRequest();
+        starRequest.setStar(true);
+        toolsApi.starEntry(tool.getId(), starRequest);
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool",1, events.size());
         // Add a tag
         Tag tag = new Tag();
         tag.setName("masterTest");
@@ -242,8 +253,10 @@ public class BasicIT extends BaseIT {
         tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        tags = toolTagsApi.addTags(tool.getId(), tags);
 
+        tags = toolTagsApi.addTags(tool.getId(), tags);
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertEquals("Should have created another event for the new tag", 2, events.size());
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         Assert.assertEquals("there should be one tag", 1, count);
 
