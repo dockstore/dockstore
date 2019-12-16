@@ -240,12 +240,12 @@ public class BasicIT extends BaseIT {
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("No starred entries, so there should be no events returned",0, events.size());
+        Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool",1, events.size());
+        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool", 1, events.size());
         // Add a tag
         Tag tag = new Tag();
         tag.setName("masterTest");
