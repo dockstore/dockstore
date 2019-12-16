@@ -99,8 +99,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     @Override
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         try {
-            File file = new File(filepath);
-            String parent = file.getParent();
+            String parent = filepath.startsWith("/") ? new File(filepath).getParent() : "/";
             checkForRecursiveLocalImports(content, sourceFiles, new HashSet<>(), parent);
         } catch (ParseException e) {
             LOG.error("Recursive local imports found: " + version.getName(), e);
