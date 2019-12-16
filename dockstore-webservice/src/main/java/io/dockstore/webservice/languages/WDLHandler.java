@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,7 +65,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     public static void checkForRecursiveLocalImports(String content, Set<SourceFile> sourceFiles, Set<String> absolutePaths, String parent)
-            throws Exception {
+            throws ParseException {
         // Use matcher to get imports
         String[] lines = StringUtils.split(content, '\n');
         for (String line : lines) {
@@ -76,7 +77,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     String localRelativePath = match.replaceFirst("file://", "");
                     String absolutePath = LanguageHandlerHelper.convertRelativePathToAbsolutePath(parent, localRelativePath);
                     if (absolutePaths.contains(absolutePath)) {
-                        throw new Exception("Recursive local import detected: " + absolutePath);
+                        throw new ParseException("Recursive local import detected: " + absolutePath, 0);
                     }
                     // Creating a new set to avoid false positive caused by multiple "branches" that have the same import
                     Set<String> newAbsolutePaths = new HashSet<>();
@@ -101,7 +102,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             File file = new File(filepath);
             String parent = file.getParent();
             checkForRecursiveLocalImports(content, sourceFiles, new HashSet<>(), parent);
-        } catch (Exception e) {
+        } catch (ParseException e) {
             LOG.error("Recursive local imports found: " + version.getName(), e);
             Map<String, String> validationMessageObject = new HashMap<>();
             validationMessageObject.put(filepath, e.getMessage());

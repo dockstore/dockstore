@@ -18,6 +18,7 @@ package core;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedSet;
@@ -78,7 +79,7 @@ public class WDLParseTest {
         try {
             WDLHandler.checkForRecursiveLocalImports(getSourceFile1().getContent(), getSourceFiles(), new HashSet<>(), "/");
             Assert.fail("Should have detected recursive local import");
-        } catch (Exception e) {
+        } catch (ParseException e) {
             Assert.assertEquals("Recursive local import detected: /first-import.wdl", e.getMessage());
         }
     }
