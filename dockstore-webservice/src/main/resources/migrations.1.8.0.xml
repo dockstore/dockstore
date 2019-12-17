@@ -99,7 +99,7 @@
               DELETE FROM entry_label WHERE entryid IN (SELECT id FROM workflow WHERE mode='STUB');
               DELETE FROM entry_blacklistedversionnames WHERE entry_id IN (SELECT id FROM workflow WHERE mode='STUB');
               DELETE FROM entry_defaultpaths WHERE entry_id IN (SELECT id FROM workflow WHERE mode='STUB');
-              DELETE FROM workflow WHERE mode='STUB';
+              DELETE FROM workflow WHERE mode='STUB' AND NOT ischecker;
           </sql>
       </changeSet>
 </databaseChangeLog>
