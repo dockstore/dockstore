@@ -6247,6 +6247,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6262,10 +6266,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6483,6 +6483,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6498,10 +6502,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7050,6 +7050,8 @@ definitions:
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
         - "DOCKSTORE_SERVICE_OTHER"
+        - "DOCKSTORE_GXFORMAT2"
+        - "GXFORMAT2_TEST_FILE"
       content:
         type: "string"
         position: 2
@@ -7390,6 +7392,7 @@ definitions:
         - "WDL"
         - "NFL"
         - "SERVICE"
+        - "GXFORMAT2"
       descriptor:
         type: "string"
         description: "The descriptor that represents this version of the tool."
@@ -7521,6 +7524,7 @@ definitions:
           - "WDL"
           - "NFL"
           - "SERVICE"
+          - "GXFORMAT2"
       containerfile:
         type: "boolean"
         description: "Reports if this tool has a containerfile available."
@@ -7590,15 +7594,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       username:
         type: "string"
         position: 1
@@ -7658,6 +7662,8 @@ definitions:
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
         - "DOCKSTORE_SERVICE_OTHER"
+        - "DOCKSTORE_GXFORMAT2"
+        - "GXFORMAT2_TEST_FILE"
       valid:
         type: "boolean"
         position: 2
@@ -7852,10 +7858,14 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parentEntry:
-        $ref: "#/definitions/Entry"
       isChecker:
         type: "boolean"
+      parentEntry:
+        $ref: "#/definitions/Entry"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7871,10 +7881,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7991,6 +7997,7 @@ definitions:
         - "CWL"
         - "WDL"
         - "NFL"
+        - "gxformat2"
         - "service"
       workflow_path:
         type: "string"

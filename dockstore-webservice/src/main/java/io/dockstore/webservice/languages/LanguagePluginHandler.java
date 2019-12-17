@@ -23,8 +23,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.core.DescriptionSource;
@@ -166,6 +168,13 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     @Override
     public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
         ToolDAO dao) {
+
+        if (minimalLanguageInterface instanceof CompleteLanguageInterface) {
+            final List<Map<String, Object>> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
+                .loadCytoscapeElements(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            Gson gson = new Gson();
+            return gson.toJson(maps);
+        }
         return "";
     }
 }

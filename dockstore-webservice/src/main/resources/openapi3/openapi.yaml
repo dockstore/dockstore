@@ -55,6 +55,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
+      responses:
+        default:
+          description: List of Docker registries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
   /metadata/sitemap:
     get:
       tags:
@@ -193,22 +209,6 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/dockerRegistryList:
-    get:
-      tags:
-      - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
-      responses:
-        default:
-          description: List of Docker registries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
   /toolTester/logs/search:
     get:
       tags:
@@ -291,61 +291,6 @@ paths:
             text/plain:
               schema:
                 type: string
-  /users/users/organizations:
-    get:
-      description: Get all of the Dockstore organizations for a user, sorted by most
-        recently updated.
-      operationId: getUserDockstoreOrganizations
-      parameters:
-      - name: count
-        in: query
-        description: Maximum number of organizations to return
-        schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Filter paths with matching text
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OrganizationUpdateTime'
-      security:
-      - bearer: []
-  /users/users/entries:
-    get:
-      description: Get all of the entries for a user, sorted by most recently updated.
-      operationId: getUserEntries
-      parameters:
-      - name: count
-        in: query
-        description: Maximum number of entries to return
-        schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Filter paths with matching text
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EntryUpdateTime'
-      security:
-      - bearer: []
   /users/{userId}:
     get:
       operationId: getSpecificUser
@@ -383,6 +328,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+  /users/users/entries:
+    get:
+      description: Get all of the entries for a user, sorted by most recently updated.
+      operationId: getUserEntries
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of entries to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryUpdateTime'
+      security:
+      - bearer: []
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -464,6 +436,34 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Repository'
+      security:
+      - bearer: []
+  /users/users/organizations:
+    get:
+      description: Get all of the Dockstore organizations for a user, sorted by most
+        recently updated.
+      operationId: getUserDockstoreOrganizations
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of organizations to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationUpdateTime'
       security:
       - bearer: []
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
@@ -601,20 +601,23 @@ components:
           format: int64
         conceptDoi:
           type: string
-        metadataFromEntry:
-          $ref: '#/components/schemas/Entry'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
         workflowVersions:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/Version'
+        metadataFromEntry:
+          $ref: '#/components/schemas/Entry'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         is_published:
           type: boolean
         last_modified:
           type: integer
           format: int32
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -630,9 +633,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
       writeOnly: true
     FileFormat:
       type: object
@@ -698,6 +698,8 @@ components:
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
           - DOCKSTORE_SERVICE_OTHER
+          - DOCKSTORE_GXFORMAT2
+          - GXFORMAT2_TEST_FILE
         content:
           type: string
         path:
@@ -740,9 +742,6 @@ components:
           format: date-time
         name:
           type: string
-        tosacceptanceDate:
-          type: string
-          format: date-time
         tosversion:
           type: string
           enum:
@@ -752,6 +751,9 @@ components:
           type: string
           format: date-time
           writeOnly: true
+        tosacceptanceDate:
+          type: string
+          format: date-time
     Validation:
       type: object
       properties:
@@ -773,6 +775,8 @@ components:
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
           - DOCKSTORE_SERVICE_OTHER
+          - DOCKSTORE_GXFORMAT2
+          - GXFORMAT2_TEST_FILE
         valid:
           type: boolean
         message:
@@ -831,6 +835,14 @@ components:
             $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
+        workingDirectory:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
+        doiURL:
+          type: string
         author:
           type: string
         verified:
@@ -841,8 +853,6 @@ components:
           type: array
           items:
             type: string
-        doiURL:
-          type: string
         doiStatus:
           type: string
           enum:
@@ -854,12 +864,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        workingDirectory:
-          type: string
-        description:
-          type: string
-        email:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -934,20 +938,6 @@ components:
           type: string
         discourseUrl:
           type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
     RegistryBean:
       type: object
       properties:
@@ -962,6 +952,20 @@ components:
         customDockerPath:
           type: string
         enum:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
           type: string
     ToolTesterLog:
       type: object
@@ -981,16 +985,6 @@ components:
           - SUMMARY
         filename:
           type: string
-    OrganizationUpdateTime:
-      type: object
-      properties:
-        name:
-          type: string
-        displayName:
-          type: string
-        lastUpdateDate:
-          type: string
-          format: date-time
     EntryUpdateTime:
       type: object
       properties:
@@ -1027,6 +1021,16 @@ components:
           type: boolean
         path:
           type: string
+    OrganizationUpdateTime:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        lastUpdateDate:
+          type: string
+          format: date-time
     BioWorkflow:
       type: object
       properties:
@@ -1035,6 +1039,7 @@ components:
           enum:
           - CWL
           - WDL
+          - gxformat2
           - NFL
           - service
           
@@ -1126,14 +1131,17 @@ components:
         parent_id:
           type: integer
           format: int64
-        source_control_provider:
+        full_workflow_path:
           type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
-        full_workflow_path:
+        source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1149,9 +1157,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     Service:
       type: object
       allOf:
@@ -1166,6 +1171,7 @@ components:
           enum:
           - CWL
           - WDL
+          - gxformat2
           - NFL
           - service
           
@@ -1243,10 +1249,10 @@ components:
             $ref: '#/components/schemas/WorkflowVersion'
         path:
           type: string
-        parentEntry:
-          $ref: '#/components/schemas/Entry'
         isChecker:
           type: boolean
+        parentEntry:
+          $ref: '#/components/schemas/Entry'
         metadataFromEntry:
           $ref: '#/components/schemas/Workflow'
         metadataFromVersion:
@@ -1256,14 +1262,17 @@ components:
         last_modified:
           type: integer
           format: int32
-        source_control_provider:
+        full_workflow_path:
           type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
-        full_workflow_path:
+        source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1279,9 +1288,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
         type:
           type: string
       writeOnly: true
@@ -1345,6 +1351,12 @@ components:
           type: string
         hidden:
           type: boolean
+        description:
+          type: string
+        email:
+          type: string
+        doiURL:
+          type: string
         author:
           type: string
         verified:
@@ -1355,8 +1367,6 @@ components:
           type: array
           items:
             type: string
-        doiURL:
-          type: string
         doiStatus:
           type: string
           enum:
@@ -1368,10 +1378,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        description:
-          type: string
-        email:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time

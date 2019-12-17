@@ -1227,10 +1227,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException(
                     "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
                             + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
-        } else if (!"nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith(descriptorType)) {
+        }
+        if ("gxformat2".equals(descriptorType) && !defaultWorkflowPath.endsWith("yml")) {
             throw new CustomWebApplicationException(
-                    "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
-                            + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
+                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+                    + " and ends in yml", HttpStatus.SC_BAD_REQUEST);
+        } else if (!"nfl".equals(descriptorType) && !"gxformat2".equals(descriptorType) && !defaultWorkflowPath.endsWith(descriptorType)) {
+            // TODO: ugly
+            throw new CustomWebApplicationException(
+                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+                    + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
         // Validate source control registry

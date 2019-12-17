@@ -16,6 +16,7 @@
 package io.dockstore.webservice.languages;
 
 import io.dockstore.common.DescriptorLanguage;
+import org.galaxyproject.dockstore_galaxy_interface.language.GalaxyWorkflowPlugin;
 
 public final class LanguageHandlerFactory {
     private LanguageHandlerFactory() {
@@ -30,6 +31,8 @@ public final class LanguageHandlerFactory {
             return new WDLHandler();
         case NEXTFLOW:
             return new NextflowHandler();
+        case GXFORMAT2:
+            return new LanguagePluginHandler(GalaxyWorkflowPlugin.class);
         // DOCKSTORE-2428 - demo how to add new workflow language
         //        case SWL:
         //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
@@ -48,6 +51,8 @@ public final class LanguageHandlerFactory {
             return new WDLHandler();
         case NEXTFLOW_CONFIG:
             return new NextflowHandler();
+        case DOCKSTORE_GXFORMAT2:
+            return new LanguagePluginHandler(GalaxyWorkflowPlugin.class);
         // DOCKSTORE-2428 - demo how to add new workflow language
         //        case DOCKSTORE_SWL:
         //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);

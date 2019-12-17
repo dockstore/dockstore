@@ -42,6 +42,12 @@ public enum DescriptorLanguage {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
         }
     },
+    GXFORMAT2("gxformat2", "Galaxy Workflow Format 2", FileType.DOCKSTORE_GXFORMAT2, FileType.GXFORMAT2_TEST_FILE) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type);
+        }
+    },
     // DOCKSTORE-2428 - demo how to add new workflow language
     //SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON)
     NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS) {
@@ -167,7 +173,7 @@ public enum DescriptorLanguage {
      */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML, DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON, DOCKSTORE_SERVICE_OTHER
+        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML, DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON, DOCKSTORE_SERVICE_OTHER, DOCKSTORE_GXFORMAT2, GXFORMAT2_TEST_FILE
         // DOCKSTORE_SWL, SWL_TEST_JSON
         // DOCKSTORE-2428 - demo how to add new workflow language
     }

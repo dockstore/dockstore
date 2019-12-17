@@ -1096,6 +1096,7 @@
                                     <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
                                     <excludes>
                                         <exclude>io.dockstore:*</exclude>
+                                        <exclude>com.github.galaxyproject.dockstore-galaxy-interface:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
