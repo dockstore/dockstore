@@ -1,12 +1,14 @@
 package io.dockstore.webservice.core.gitlab;
 
+import java.text.SimpleDateFormat;
+
 public class GitLabContainerRegistry {
     private long id;
     private String name;
     private String path;
     private long projectID;
     private String location;
-    private String createdAt;
+    private SimpleDateFormat createdAt;
 
     public long getId() {
         return id;
@@ -48,11 +50,11 @@ public class GitLabContainerRegistry {
         this.location = location;
     }
 
-    public String getCreatedAt() {
+    public SimpleDateFormat getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(SimpleDateFormat createdAt) {
         this.createdAt = createdAt;
     }
 }
