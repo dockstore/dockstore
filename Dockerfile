@@ -8,7 +8,6 @@ FROM ubuntu:18.04
 # Update the APT cache
 # prepare for Java download
 RUN apt-get update \
-    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     software-properties-common \
     telnet \
