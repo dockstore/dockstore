@@ -583,7 +583,7 @@ public abstract class AbstractImageRegistry {
                             }
                         }
                     } catch (IndexOutOfBoundsException | NullPointerException ex) {
-                        LOG.info("Unable to grab image and checksum information for" + tool.getNamespace() + '/' + tool.getName());
+                        LOG.error("Unable to grab image and checksum information for" + tool.getNamespace() + '/' + tool.getName(), ex);
                     }
                     return tags;
                 }
