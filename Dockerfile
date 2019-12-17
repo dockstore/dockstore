@@ -1,6 +1,6 @@
 FROM maven:3.6.2-jdk-11 AS maven
 
-ADD . /
+COPY . /
 RUN mvn clean install -DskipTests
 
 FROM ubuntu:18.04
@@ -9,20 +9,22 @@ FROM ubuntu:18.04
 # prepare for Java download
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y \
+    && apt-get install -y --no-install-recommends \
     software-properties-common \
     telnet \
     vim \
     wget \
     locales \
-    && apt-get clean
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # install java
 RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update \
-    && apt-get install openjdk-11-jdk -y \
-    && apt-get install curl -y \
-    && apt-get clean
+    && apt-get install openjdk-11-jdk=11.0.4+11-1ubuntu2~18.04.3 -y --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
