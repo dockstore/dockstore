@@ -15,6 +15,7 @@
  */
 package io.dockstore.language;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -85,6 +86,13 @@ public interface MinimalLanguageInterface {
          * @return contents of the file at path
          */
         String readFile(String path);
+
+        /**
+         * Get list of files in a directory (non-recursive) relative to the initial path
+         * TODO: underlying interface should return whether files are directories, but we seem to have gotten away with it so far
+         * @return return list of files
+         */
+        List<String> listFiles(String pathToDirectory);
     }
 
     /**

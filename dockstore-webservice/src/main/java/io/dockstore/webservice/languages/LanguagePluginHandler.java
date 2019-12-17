@@ -17,6 +17,7 @@ package io.dockstore.webservice.languages;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -130,7 +131,18 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
 
-        MinimalLanguageInterface.FileReader reader = path -> sourceCodeRepoInterface.readFile(repositoryId, path, version.getReference());
+        MinimalLanguageInterface.FileReader reader = new MinimalLanguageInterface.FileReader() {
+
+            @Override
+            public String readFile(String path) {
+                return sourceCodeRepoInterface.readFile(repositoryId, path, version.getReference());
+            }
+
+            @Override
+            public List<String> listFiles(String pathToDirectory) {
+                return sourceCodeRepoInterface.listFiles(repositoryId, pathToDirectory, version.getReference());
+            }
+        };
 
         final Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> stringPairMap = minimalLanguageInterface
             .indexWorkflowFiles(filepath, content, reader);
