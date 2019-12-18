@@ -82,7 +82,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     // Creating a new set to avoid false positive caused by multiple "branches" that have the same import
                     Set<String> newAbsolutePaths = new HashSet<>();
                     newAbsolutePaths.addAll(absolutePaths);
-                    newAbsolutePaths.add(absolutePath); // remove file:// from path
+                    newAbsolutePaths.add(absolutePath);
                     Optional<SourceFile> sourcefile = sourceFiles.stream()
                             .filter(sourceFile -> sourceFile.getAbsolutePath().equals(absolutePath)).findFirst();
                     if (sourcefile.isPresent()) {
