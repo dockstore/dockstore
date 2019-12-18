@@ -55,6 +55,7 @@ import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -72,6 +73,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -113,12 +115,14 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
+    private final EventDAO eventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
 
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
                         DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+        this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -243,9 +247,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // Delete entries for which this user is the only user
         deleteSelfFromEntries(user);
-
         invalidateTokensForUser(user);
-
         return userDAO.delete(user);
     }
 
@@ -273,6 +275,8 @@ public class UserResource implements AuthenticatedResourceInterface {
                                 MessageFormat.format("Unexpected entry type {0}", entry.getClass().toString()),
                                 HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
+                    List<Event> eventsByEntryIDs = eventDAO.findEventsByEntryId(entry.getId());
+                    eventsByEntryIDs.forEach(eventDAO::delete);
                     entryDAO.delete(entry);
                 });
     }
