@@ -9,7 +9,7 @@
     <parent>
         <artifactId>dockstore</artifactId>
         <groupId>io.dockstore</groupId>
-        <version>1.8.0-alpha.3-GALAXYEXP</version>
+        <version>1.8.0-alpha.4-GALAXYEXP-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
