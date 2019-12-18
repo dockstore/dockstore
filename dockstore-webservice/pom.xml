@@ -775,6 +775,12 @@
             <groupId>com.github.galaxyproject.dockstore-galaxy-interface</groupId>
             <artifactId>dockstore-galaxy-interface</artifactId>
             <version>0.0.1-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.dockstore</groupId>
+                    <artifactId>dockstore-common</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

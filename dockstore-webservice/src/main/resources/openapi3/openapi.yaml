@@ -328,6 +328,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+  /users/users/organizations:
+    get:
+      description: Get all of the Dockstore organizations for a user, sorted by most
+        recently updated.
+      operationId: getUserDockstoreOrganizations
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of organizations to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationUpdateTime'
+      security:
+      - bearer: []
   /users/users/entries:
     get:
       description: Get all of the entries for a user, sorted by most recently updated.
@@ -436,34 +464,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Repository'
-      security:
-      - bearer: []
-  /users/users/organizations:
-    get:
-      description: Get all of the Dockstore organizations for a user, sorted by most
-        recently updated.
-      operationId: getUserDockstoreOrganizations
-      parameters:
-      - name: count
-        in: query
-        description: Maximum number of organizations to return
-        schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Filter paths with matching text
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OrganizationUpdateTime'
       security:
       - bearer: []
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
@@ -985,6 +985,16 @@ components:
           - SUMMARY
         filename:
           type: string
+    OrganizationUpdateTime:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        lastUpdateDate:
+          type: string
+          format: date-time
     EntryUpdateTime:
       type: object
       properties:
@@ -1021,16 +1031,6 @@ components:
           type: boolean
         path:
           type: string
-    OrganizationUpdateTime:
-      type: object
-      properties:
-        name:
-          type: string
-        displayName:
-          type: string
-        lastUpdateDate:
-          type: string
-          format: date-time
     BioWorkflow:
       type: object
       properties:
