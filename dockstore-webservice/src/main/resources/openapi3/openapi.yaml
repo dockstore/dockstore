@@ -742,6 +742,9 @@ components:
           format: date-time
         name:
           type: string
+        tosacceptanceDate:
+          type: string
+          format: date-time
         tosversion:
           type: string
           enum:
@@ -751,9 +754,6 @@ components:
           type: string
           format: date-time
           writeOnly: true
-        tosacceptanceDate:
-          type: string
-          format: date-time
     Validation:
       type: object
       properties:
@@ -841,10 +841,6 @@ components:
           type: string
         email:
           type: string
-        doiURL:
-          type: string
-        author:
-          type: string
         verified:
           type: boolean
         verifiedSource:
@@ -853,6 +849,8 @@ components:
           type: array
           items:
             type: string
+        doiURL:
+          type: string
         doiStatus:
           type: string
           enum:
@@ -864,6 +862,8 @@ components:
           enum:
           - README
           - DESCRIPTOR
+        author:
+          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -1135,9 +1135,9 @@ components:
           type: string
         workflow_path:
           type: string
-        defaultTestParameterFilePath:
-          type: string
         source_control_provider:
+          type: string
+        defaultTestParameterFilePath:
           type: string
         last_modified_date:
           type: string
@@ -1249,10 +1249,10 @@ components:
             $ref: '#/components/schemas/WorkflowVersion'
         path:
           type: string
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: '#/components/schemas/Entry'
+        isChecker:
+          type: boolean
         metadataFromEntry:
           $ref: '#/components/schemas/Workflow'
         metadataFromVersion:
@@ -1266,9 +1266,9 @@ components:
           type: string
         workflow_path:
           type: string
-        defaultTestParameterFilePath:
-          type: string
         source_control_provider:
+          type: string
+        defaultTestParameterFilePath:
           type: string
         last_modified_date:
           type: string
@@ -1355,10 +1355,6 @@ components:
           type: string
         email:
           type: string
-        doiURL:
-          type: string
-        author:
-          type: string
         verified:
           type: boolean
         verifiedSource:
@@ -1367,6 +1363,8 @@ components:
           type: array
           items:
             type: string
+        doiURL:
+          type: string
         doiStatus:
           type: string
           enum:
@@ -1378,6 +1376,8 @@ components:
           enum:
           - README
           - DESCRIPTOR
+        author:
+          type: string
         dbUpdateDate:
           type: string
           format: date-time
