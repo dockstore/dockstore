@@ -1,8 +1,6 @@
 package io.dockstore.webservice.resources;
 
-import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -13,12 +11,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Alias;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -53,7 +50,6 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
         this.workflowResource = workflowResource;
     }
 
-
     @POST
     @Timed
     @UnitOfWork
@@ -66,22 +62,6 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
             @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {
         return addAliasesAndCheck(user, workflowVersionId, aliases, true);
     }
-
-    /**
-     * Finds a workflow and returns the workflow id based on a workflow version id.
-     *
-     * @param workflowVersionId the id of the workflow version
-     * @return workflow id or throws an exception if the workflow cannot be found
-     */
-    private long getWorkflowId(long workflowVersionId) {
-        Optional<Long> workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
-        if (!workflowId.isPresent()) {
-            LOG.error("Could get workflow based on workflow version id " + workflowVersionId);
-            throw new CustomWebApplicationException("Could get workflow based on workflow version id " + workflowVersionId, HttpStatus.SC_NOT_FOUND);
-        }
-        return workflowId.get();
-    }
-
 
     @GET
     @Timed
@@ -100,7 +80,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
         }
 
         long workflowVersionId = workflowVersion.getId();
-        long workflowId = getWorkflowId(workflowVersionId);
+        long workflowId = AliasHelper.getWorkflowId(workflowDAO, workflowVersionId);
         Workflow workflow = workflowDAO.findById(workflowId);
         workflowResource.checkEntry(workflow);
         workflowResource.optionalUserCheckEntry(user, workflow);
@@ -115,17 +95,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
 
     @Override
     public WorkflowVersion getAndCheckResource(User user, Long workflowVersionId) {
-        final WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
-        if (workflowVersion == null) {
-            LOG.error("Could not find workflow version using the workflow version id: " + workflowVersionId);
-            throw new CustomWebApplicationException("Workflow version not found when searching with id: " + workflowVersionId, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        Long workflowId = getWorkflowId(workflowVersionId);
-        Workflow workflow = workflowDAO.findById(workflowId);
-        workflowResource.checkEntry(workflow);
-        workflowResource.checkUserCanUpdate(user, workflow);
-        return workflowVersion;
+        return AliasHelper.getAndCheckWorkflowVersionResource(workflowResource, workflowDAO, workflowVersionDAO, user, workflowVersionId);
     }
 
     @Override
@@ -136,20 +106,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
 
     @Override
     public WorkflowVersion addAliasesAndCheck(User user, Long id, String aliases, boolean blockFormat) {
-        WorkflowVersion workflowVersion = getAndCheckResource(user, id);
-        Set<String> oldAliases = workflowVersion.getAliases().keySet();
-        Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
+        return AliasHelper.addWorkflowVersionAliasesAndCheck(workflowResource, workflowDAO, workflowVersionDAO, user, id, aliases, blockFormat);
 
-        AliasableResourceInterface.checkAliases(newAliases, user, blockFormat);
-
-        Set<String> duplicateAliasesToAdd = Sets.intersection(newAliases, oldAliases);
-        if (!duplicateAliasesToAdd.isEmpty()) {
-            String dupAliasesString = String.join(", ", duplicateAliasesToAdd);
-            throw new CustomWebApplicationException("Aliases " + dupAliasesString + " already exist; please use unique aliases",
-                    HttpStatus.SC_BAD_REQUEST);
-        }
-
-        newAliases.forEach(alias -> workflowVersion.getAliases().put(alias, new Alias()));
-        return workflowVersion;
     }
 }

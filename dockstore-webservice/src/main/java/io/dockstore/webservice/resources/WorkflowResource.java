@@ -74,6 +74,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -634,13 +635,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         workflowVersion.setDoiURL(zenodoDoiResult.getDoiUrl());
         workflow.setConceptDoi(zenodoDoiResult.getConceptDoi());
-        // Only add the alias to the workflow after publishing the DOI succeeds
+        // Only add the alias to the workflow version after publishing the DOI succeeds
         // Otherwise if the publish call fails we will have added an alias
         // that will not be used and cannot be deleted
         // This code also checks that the alias does not start with an invalid prefix
         // If it does, this will generate an exception, the alias will not be added
-        // to the workflow, but there may be an invalid Related Identifier URL on the Zenodo entry
-        entryResource.addAliasesAndCheck(user, workflow.getId(), zenodoDoiResult.getDoiAlias(), false);
+        // to the workflow version, but there may be an invalid Related Identifier URL on the Zenodo entry
+        AliasHelper.addWorkflowVersionAliasesAndCheck(this, workflowDAO, workflowVersionDAO, user,
+                workflowVersion.getId(), zenodoDoiResult.getDoiAlias(), false);
     }
 
 
