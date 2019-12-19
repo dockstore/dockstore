@@ -93,7 +93,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 try {
 
                     final Tag tag = objectMapper.readValue(s, Tag.class);
-                    tag.getImages().addAll(getImagesForTag(tool, tag));
+                    tag.getImages().addAll(getImagesForTag(tool, tag, map));
                     insertQuayLastModifiedIntoLastBuilt(stringMapEntry, tag);
                     tags.add(tag);
                 } catch (IOException ex) {
@@ -109,13 +109,11 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return tags;
     }
 
-    public Set<Image> getImagesForTag(Tool tool, Tag tag) {
+    public Set<Image> getImagesForTag(Tool tool, Tag tag, Map<String, Map<String, Map<String, String>>> map) {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
 
         final String repo = tool.getNamespace() + '/' + tool.getName();
-        Optional<Map<String, Map<String, Map<String, String>>>> optionalMap = getToolFromQuay(tool);
-        if (optionalMap.isPresent()) {
-            Map<String, Map<String, Map<String, String>>> map = optionalMap.get();
+        try {
             final Map<String, String> tagInfo = map.get("tags").get(tag.getName());
             final String manifestDigest = tagInfo.get("manifest_digest");
             final String imageID = tagInfo.get("image_id");
@@ -123,8 +121,10 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             List<Checksum> checksums = new ArrayList<>();
             checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
             return Collections.singleton(new Image(checksums, repo, tag.getName(), imageID));
+        } catch (IndexOutOfBoundsException | NullPointerException ex) {
+            LOG.error("Could not get checksum information for " + repo, ex);
+            return Collections.emptySet();
         }
-        return Collections.emptySet();
     }
 
     /**
