@@ -13,7 +13,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.resources.AliasableResourceInterface;
-import io.dockstore.webservice.resources.WorkflowResource;
+import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,28 +30,29 @@ public final class AliasHelper {
      *
      * @param workflowDAO Workflow data access object
      * @param workflowVersionId the id of the workflow version
-     * @return workflow id or throws an exception if the workflow cannot be found
+     * @return workflow or throws an exception if the workflow cannot be found
      */
-    public static long getWorkflowId(WorkflowDAO workflowDAO, long workflowVersionId) {
-        Optional<Long> workflowId = workflowDAO.getWorkflowIdByWorkflowVersionId(workflowVersionId);
-        if (!workflowId.isPresent()) {
+    public static Workflow getWorkflow(WorkflowDAO workflowDAO, long workflowVersionId) {
+        Optional<Workflow> workflow = workflowDAO.getWorkflowByWorkflowVersionId(workflowVersionId);
+        if (!workflow.isPresent()) {
             LOG.error("Could get workflow based on workflow version id " + workflowVersionId);
             throw new CustomWebApplicationException("Could get workflow based on workflow version id " + workflowVersionId, HttpStatus.SC_NOT_FOUND);
         }
-        return workflowId.get();
+        return workflow.get();
     }
 
     /**
      * Gets the Workflow Version object via a Workflow Version ID
      * and checks that the Workflow exists and that the
      * user is authorized to update it
-     * @param workflowResource Workflow resource object
+     * @param authenticatedResourceInterface interface to check users and entries
      * @param workflowDAO Workflow data access object
      * @param workflowVersionDAO Workflow Version data access object
      * @param user user authenticated to update the workflow
      * @param workflowVersionId the id of the workflow version
+     * @return the workflow version
      */
-    public static WorkflowVersion getAndCheckWorkflowVersionResource(WorkflowResource workflowResource, WorkflowDAO workflowDAO,
+    public static WorkflowVersion getAndCheckWorkflowVersionResource(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
             WorkflowVersionDAO workflowVersionDAO, User user, Long workflowVersionId) {
         final WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -59,10 +60,9 @@ public final class AliasHelper {
             throw new CustomWebApplicationException("Workflow version not found when searching with id: " + workflowVersionId, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Long workflowId = getWorkflowId(workflowDAO, workflowVersionId);
-        Workflow workflow = workflowDAO.findById(workflowId);
-        workflowResource.checkEntry(workflow);
-        workflowResource.checkUserCanUpdate(user, workflow);
+        Workflow workflow = getWorkflow(workflowDAO, workflowVersionId);
+        authenticatedResourceInterface.checkEntry(workflow);
+        authenticatedResourceInterface.checkUserCanUpdate(user, workflow);
         return workflowVersion;
     }
 
@@ -71,7 +71,7 @@ public final class AliasHelper {
      * and check that they are valid before adding them:
      * 1. If admin/curator, then no limit on prefix
      * 2. If blockFormat false, then no limit on format
-     * @param workflowResource Workflow resource object
+     * @param authenticatedResourceInterface interface to check users and entries
      * @param workflowDAO Workflow data access object
      * @param workflowVersionDAO Workflow Version data access object
      * @param user user authenticated to issue a DOI for the workflow
@@ -80,9 +80,9 @@ public final class AliasHelper {
      * @param blockFormat if true don't allow specific formats
      * @return the Workflow Version
      */
-    public static WorkflowVersion addWorkflowVersionAliasesAndCheck(WorkflowResource workflowResource, WorkflowDAO workflowDAO,
+    public static WorkflowVersion addWorkflowVersionAliasesAndCheck(AuthenticatedResourceInterface authenticatedResourceInterface, WorkflowDAO workflowDAO,
             WorkflowVersionDAO workflowVersionDAO, User user, Long id, String aliases, boolean blockFormat) {
-        WorkflowVersion workflowVersion = getAndCheckWorkflowVersionResource(workflowResource, workflowDAO, workflowVersionDAO, user, id);
+        WorkflowVersion workflowVersion = getAndCheckWorkflowVersionResource(authenticatedResourceInterface, workflowDAO, workflowVersionDAO, user, id);
         Set<String> oldAliases = workflowVersion.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
 
@@ -98,7 +98,4 @@ public final class AliasHelper {
         newAliases.forEach(alias -> workflowVersion.getAliases().put(alias, new Alias()));
         return workflowVersion;
     }
-
-
-
 }
