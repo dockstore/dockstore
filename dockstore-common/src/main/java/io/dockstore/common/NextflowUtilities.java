@@ -111,17 +111,6 @@ public final class NextflowUtilities {
     }
 
     /**
-     * This is an expensive operation; a new Java VM is spun up for this, so only allow one at a time by
-     * synchronizing the method.
-     * @param content
-     * @param join
-     * @return
-     */
-    private synchronized static ImmutablePair<String, String> executeNextflowConfig(File content, String join) {
-        return Utilities.executeCommand(join, content.getParentFile());
-    }
-
-    /**
      * @param content the content of the config file
      * @return a commons configuration file with the keys from the nextflow config file
      */
@@ -146,6 +135,17 @@ public final class NextflowUtilities {
                 FileUtils.deleteQuietly(nextflowDir.toFile());
             }
         }
+    }
+
+    /**
+     * This is an expensive operation; a new Java VM is spun up for this, so only allow one at a time by
+     * synchronizing the method.
+     * @param content
+     * @param join
+     * @return
+     */
+    private static synchronized ImmutablePair<String, String> executeNextflowConfig(File content, String join) {
+        return Utilities.executeCommand(join, content.getParentFile());
     }
 
     /**
