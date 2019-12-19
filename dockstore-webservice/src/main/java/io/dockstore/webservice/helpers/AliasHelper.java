@@ -35,8 +35,8 @@ public final class AliasHelper {
     public static Workflow getWorkflow(WorkflowDAO workflowDAO, long workflowVersionId) {
         Optional<Workflow> workflow = workflowDAO.getWorkflowByWorkflowVersionId(workflowVersionId);
         if (!workflow.isPresent()) {
-            LOG.error("Could get workflow based on workflow version id " + workflowVersionId);
-            throw new CustomWebApplicationException("Could get workflow based on workflow version id " + workflowVersionId, HttpStatus.SC_NOT_FOUND);
+            LOG.error("Could not get workflow based on workflow version id " + workflowVersionId);
+            throw new CustomWebApplicationException("Could not get workflow based on workflow version id " + workflowVersionId, HttpStatus.SC_NOT_FOUND);
         }
         return workflow.get();
     }
@@ -61,7 +61,6 @@ public final class AliasHelper {
         }
 
         Workflow workflow = getWorkflow(workflowDAO, workflowVersionId);
-        authenticatedResourceInterface.checkEntry(workflow);
         authenticatedResourceInterface.checkUserCanUpdate(user, workflow);
         return workflowVersion;
     }
