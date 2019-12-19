@@ -98,6 +98,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
+        LOG.info("Processing import for repository {}, version {}, filepath {}", repositoryId, version.getName(), filepath);
         // FIXME: see{@link NextflowUtilities#grabConfig(String) grabConfig} method for comments on why
         // we have to look at imports in this crummy way
         final Matcher matcher = INCLUDE_CONFIG_PATTERN.matcher(content);
