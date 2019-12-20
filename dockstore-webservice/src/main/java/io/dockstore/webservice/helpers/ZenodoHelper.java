@@ -260,8 +260,8 @@ public final class ZenodoHelper {
         List<RelatedIdentifier> relatedIdentifierList = new ArrayList<>();
 
         // Add the workflow version alias as a related identifier on Zenodo
-        // E.g https://dockstore.org/workflows/aliases/10.5281/zenodo.2630727
-        final String aliasUrl = dockstoreUrl + "/aliases/workflows/" + doiAlias;
+        // E.g https://dockstore.org/aliases/workflow-versions/10.5281-zenodo.2630727
+        final String aliasUrl = dockstoreUrl + "/aliases/workflow-versions/" + doiAlias;
         addUriToRelatedIdentifierList(relatedIdentifierList, aliasUrl);
 
         // Add the UI2 link to the workflow to Zenodo as a related identifier
