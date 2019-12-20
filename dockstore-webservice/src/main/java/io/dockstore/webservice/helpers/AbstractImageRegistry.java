@@ -187,7 +187,7 @@ public abstract class AbstractImageRegistry {
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
                     gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
-            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO);
+            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
 
         return newDBTools;
@@ -267,7 +267,7 @@ public abstract class AbstractImageRegistry {
             toolTags = getTags(tool);
         }
 
-        updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO);
+        updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         Tool updatedTool = newDBTools.get(0);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
@@ -359,7 +359,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     private void updateTags(List<Tag> newTags, @NotNull Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
-        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO) {
+        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO, final User user) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
         boolean releaseCreated = false;
@@ -502,7 +502,7 @@ public abstract class AbstractImageRegistry {
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
         if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).build();
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).withInitiatorUser(user).build();
             eventDAO.create(event);
         }
         toolDAO.create(tool);

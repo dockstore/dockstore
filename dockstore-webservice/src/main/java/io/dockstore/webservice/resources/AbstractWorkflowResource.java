@@ -190,7 +190,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param workflow    workflow to be updated
      * @param newWorkflow workflow to grab new content from
      */
-    protected void updateDBWorkflowWithSourceControlWorkflow(Workflow workflow, Workflow newWorkflow) {
+    protected void updateDBWorkflowWithSourceControlWorkflow(Workflow workflow, Workflow newWorkflow, final User user) {
         // update root workflow
         workflow.update(newWorkflow);
         // update workflow versions
@@ -258,7 +258,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
         if (releaseCreated) {
-            Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).build();
+            Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).withInitiatorUser(user).build();
             eventDAO.create(event);
         }
     }
@@ -391,7 +391,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     final long entityId = workflowDAO.create(entity);
                     final Workflow createdEntity = workflowDAO.findById(entityId);
                     final Workflow updatedEntity = gitHubSourceCodeRepo.getWorkflow(repositoryName, Optional.of(createdEntity));
-                    updateDBWorkflowWithSourceControlWorkflow(createdEntity, updatedEntity);
+                    updateDBWorkflowWithSourceControlWorkflow(createdEntity, updatedEntity, user);
                 });
     }
 
