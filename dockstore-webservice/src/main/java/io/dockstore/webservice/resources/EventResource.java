@@ -45,6 +45,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
 import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 
 /**
@@ -72,7 +73,7 @@ public class EventResource {
     @ApiOperation(value = SUMMARY, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
     // TODO: Add openapi annotation for pagination range
-    public List<Event> getEvents(@ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(100) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @QueryParam("limit") Integer limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    public List<Event> getEvents(@ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
         if (eventSearchType.equals(EventSearchType.STARRED_ENTRIES)) {
             User userWithSession = this.userDAO.findById(user.getId());
             Set<Long> entryIDs = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());

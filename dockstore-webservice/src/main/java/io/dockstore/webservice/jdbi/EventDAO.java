@@ -11,7 +11,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
 public class EventDAO extends AbstractDAO<Event> {
-    public static final Integer MAX_LIMIT = 100;
+    public static final int MAX_LIMIT = 100;
     public static final String PAGINATION_RANGE = "range[1,100]";
     public EventDAO(SessionFactory factory) {
         super(factory);
@@ -43,7 +43,7 @@ public class EventDAO extends AbstractDAO<Event> {
         return ((Long)query.getSingleResult()).longValue();
     }
 
-    public List<Event> findEventsByEntryIDs(Set<Long> entryIds, Integer offset, Integer limit) {
+    public List<Event> findEventsByEntryIDs(Set<Long> entryIds, Integer offset, int limit) {
         limit = Math.min(MAX_LIMIT, limit);
         if (entryIds.isEmpty()) {
             return Collections.emptyList();
@@ -59,7 +59,8 @@ public class EventDAO extends AbstractDAO<Event> {
         return list(query);
     }
 
-    public List<Event> findEventsByUserId(long userId, Integer offset, Integer limit) {
+    public List<Event> findEventsByUserId(long userId, Integer offset, int limit) {
+        limit = Math.min(MAX_LIMIT, limit);
         Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByUserId");
         query.setParameter("userId", userId).setFirstResult(offset).setMaxResults(limit);
         return list(query);
