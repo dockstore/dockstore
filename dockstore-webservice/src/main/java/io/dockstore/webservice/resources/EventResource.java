@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -62,13 +64,15 @@ public class EventResource {
         this.eventDAO = eventDAO;
         this.userDAO = userDAO;
     }
+    @SuppressWarnings("checkstyle:MagicNumber")
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = SUMMARY, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
-    public List<Event> getEvents(@ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @QueryParam("limit") Integer limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    // TODO: Add openapi annotation for pagination range
+    public List<Event> getEvents(@ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(100) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @QueryParam("limit") Integer limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
         if (eventSearchType.equals(EventSearchType.STARRED_ENTRIES)) {
             User userWithSession = this.userDAO.findById(user.getId());
             Set<Long> entryIDs = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
