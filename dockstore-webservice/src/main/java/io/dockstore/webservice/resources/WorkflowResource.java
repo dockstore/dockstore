@@ -267,12 +267,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             try {
                 if (hasToken) {
                     // get workflows from source control for a user and updates db
+
                     refreshHelper(sourceCodeRepo, user, organization, alreadyProcessed);
                 }
                 // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
             } catch (WebApplicationException ex) {
-                LOG.error(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
-                throw ex;
+                String msg = user.getUsername() + ": " + "Failed to refresh user " + user.getId();
+                LOG.error(msg);
+                LOG.error(ex.getMessage());
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
 
