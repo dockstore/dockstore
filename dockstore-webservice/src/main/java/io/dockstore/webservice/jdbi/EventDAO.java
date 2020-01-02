@@ -44,12 +44,12 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsByEntryIDs(Set<Long> entryIds, Integer offset, int limit) {
-        limit = Math.min(MAX_LIMIT, limit);
+        int newLimit = Math.min(MAX_LIMIT, limit);
         if (entryIds.isEmpty()) {
             return Collections.emptyList();
         }
         Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntry");
-        query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(limit);
+        query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
 
@@ -60,9 +60,9 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsByUserId(long userId, Integer offset, int limit) {
-        limit = Math.min(MAX_LIMIT, limit);
+        int newLimit = Math.min(MAX_LIMIT, limit);
         Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByUserId");
-        query.setParameter("userId", userId).setFirstResult(offset).setMaxResults(limit);
+        query.setParameter("userId", userId).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
 
@@ -73,8 +73,9 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsByEntryId(long entryId, Integer offset, Integer limit) {
+        int newLimit = Math.min(MAX_LIMIT, limit);
         Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntryId");
-        query.setParameter("entryId", entryId).setFirstResult(offset).setMaxResults(limit);
+        query.setParameter("entryId", entryId).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
 
