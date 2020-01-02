@@ -11,6 +11,8 @@ import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
 public class EventDAO extends AbstractDAO<Event> {
+    public static final Integer MAX_LIMIT = 100;
+    public static final String PAGINATION_RANGE = "range[1,100]";
     public EventDAO(SessionFactory factory) {
         super(factory);
     }
@@ -42,6 +44,7 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsByEntryIDs(Set<Long> entryIds, Integer offset, Integer limit) {
+        limit = Math.min(MAX_LIMIT, limit);
         if (entryIds.isEmpty()) {
             return Collections.emptyList();
         }
@@ -56,9 +59,21 @@ public class EventDAO extends AbstractDAO<Event> {
         return list(query);
     }
 
+    public List<Event> findEventsByUserId(long userId, Integer offset, Integer limit) {
+        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByUserId");
+        query.setParameter("userId", userId).setFirstResult(offset).setMaxResults(limit);
+        return list(query);
+    }
+
     public List<Event> findEventsByEntryId(long entryId) {
         Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntryId");
         query.setParameter("entryId", entryId);
+        return list(query);
+    }
+
+    public List<Event> findEventsByEntryId(long entryId, Integer offset, Integer limit) {
+        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntryId");
+        query.setParameter("entryId", entryId).setFirstResult(offset).setMaxResults(limit);
         return list(query);
     }
 
