@@ -127,12 +127,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private User versionEditor;
 
     // database timestamps
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     @CreationTimestamp
     @ApiModelProperty(position = 10)
     private Timestamp dbCreateDate;
 
-    @Column()
+    @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
     @ApiModelProperty(position = 11)

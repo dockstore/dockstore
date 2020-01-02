@@ -174,11 +174,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private Map<String, Alias> aliases = new HashMap<>();
 
     // database timestamps
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
 
-    @Column()
+    @Column(nullable = false)
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
