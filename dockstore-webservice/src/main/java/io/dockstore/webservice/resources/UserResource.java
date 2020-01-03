@@ -55,7 +55,6 @@ import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -275,8 +274,7 @@ public class UserResource implements AuthenticatedResourceInterface {
                                 MessageFormat.format("Unexpected entry type {0}", entry.getClass().toString()),
                                 HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
-                    List<Event> eventsByEntryIDs = eventDAO.findEventsByEntryId(entry.getId());
-                    eventsByEntryIDs.forEach(eventDAO::delete);
+                    eventDAO.deleteEventByEntryID(entry.getId());
                     entryDAO.delete(entry);
                 });
     }
