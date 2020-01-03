@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.8.0-alpha.4-SNAPSHOT"
+  version: "1.8.0-beta.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2951,7 +2951,7 @@ paths:
       parameters:
       - name: "alias"
         in: "path"
-        description: "Alias"
+        description: "Alias."
         required: true
         type: "string"
       responses:
@@ -3025,7 +3025,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Entry to modify."
+        description: "Organization to modify."
         required: true
         type: "integer"
         format: "int64"
@@ -3357,13 +3357,13 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to update description."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Organization's description in markdown"
+        description: "Organization's description in markdown."
         required: true
         schema:
           type: "string"
@@ -3436,7 +3436,7 @@ paths:
         format: "int64"
       - name: "accept"
         in: "query"
-        description: "Accept or reject"
+        description: "Accept or reject."
         required: true
         type: "boolean"
       responses:
@@ -3498,7 +3498,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Request an organization approval."
+      summary: "Re-request an organization approval."
       description: "Only for rejected organizations"
       operationId: "requestOrganizationReview"
       produces:
@@ -3529,13 +3529,13 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to star."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
       - in: "body"
         name: "body"
-        description: "StarRequest to star an organization for a user"
+        description: "StarRequest to star an organization for a user."
         required: true
         schema:
           $ref: "#/definitions/StarRequest"
@@ -3556,7 +3556,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Get starred users of an approved organization by id."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
@@ -3579,7 +3579,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to unstar."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
@@ -3704,12 +3704,14 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - in: "body"
-        name: "body"
-        description: "Role of user. \"MAINTAINER\" or \"MEMBER\""
+      - name: "role"
+        in: "query"
+        description: "Role of user."
         required: true
-        schema:
-          type: "string"
+        type: "string"
+        enum:
+        - "MAINTAINER"
+        - "MEMBER"
       - name: "username"
         in: "path"
         description: "User to add to org."
@@ -6357,10 +6359,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6376,6 +6374,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6593,10 +6595,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Version"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6612,6 +6610,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -8010,10 +8012,6 @@ definitions:
         type: "boolean"
       parentEntry:
         $ref: "#/definitions/Entry"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -8029,6 +8027,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

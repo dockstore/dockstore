@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.8.0-alpha.4-SNAPSHOT
+  version: 1.8.0-beta.1-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -3182,7 +3182,7 @@ paths:
       parameters:
         - name: alias
           in: path
-          description: Alias
+          description: Alias.
           required: true
           schema:
             type: string
@@ -3260,7 +3260,7 @@ paths:
       parameters:
         - name: organizationId
           in: path
-          description: Entry to modify.
+          description: Organization to modify.
           required: true
           schema:
             type: integer
@@ -3614,7 +3614,7 @@ paths:
       parameters:
         - name: organizationId
           in: path
-          description: Organization to update description.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3624,7 +3624,7 @@ paths:
           application/json:
             schema:
               type: string
-        description: Organization's description in markdown
+        description: Organization's description in markdown.
         required: true
       responses:
         "200":
@@ -3699,7 +3699,7 @@ paths:
             format: int64
         - name: accept
           in: query
-          description: Accept or reject
+          description: Accept or reject.
           required: true
           schema:
             type: boolean
@@ -3764,7 +3764,7 @@ paths:
     post:
       tags:
         - organizations
-      summary: Request an organization approval.
+      summary: Re-request an organization approval.
       description: Only for rejected organizations
       operationId: requestOrganizationReview
       parameters:
@@ -3794,7 +3794,7 @@ paths:
       parameters:
         - name: organizationId
           in: path
-          description: Organization to star.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3804,7 +3804,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/StarRequest"
-        description: StarRequest to star an organization for a user
+        description: StarRequest to star an organization for a user.
         required: true
       responses:
         default:
@@ -3821,7 +3821,7 @@ paths:
       parameters:
         - name: organizationId
           in: path
-          description: Get starred users of an approved organization by id.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3845,7 +3845,7 @@ paths:
       parameters:
         - name: organizationId
           in: path
-          description: Organization to unstar.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3970,6 +3970,15 @@ paths:
       description: ""
       operationId: addUserToOrgByUsername
       parameters:
+        - name: role
+          in: query
+          description: Role of user.
+          required: true
+          schema:
+            type: string
+            enum:
+              - MAINTAINER
+              - MEMBER
         - name: username
           in: path
           description: User to add to org.
@@ -3983,13 +3992,6 @@ paths:
           schema:
             type: integer
             format: int64
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-        description: Role of user. "MAINTAINER" or "MEMBER"
-        required: true
       responses:
         "200":
           description: successful operation
@@ -6761,10 +6763,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6780,6 +6778,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6970,10 +6972,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6989,6 +6987,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -8252,10 +8254,6 @@ components:
           type: boolean
         parentEntry:
           $ref: "#/components/schemas/Entry"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -8271,6 +8269,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
