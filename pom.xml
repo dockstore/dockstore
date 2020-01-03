@@ -1397,7 +1397,7 @@
             </build>
         </profile>
         <profile>
-            <id>skipTestsForReleasePerform-tests</id>
+            <id>skipForRelease</id>
             <properties>
                 <!-- skip swagger kongchen generation on release and rely on checked in yaml -->
                 <swagger.skip>true</swagger.skip>
