@@ -3106,7 +3106,7 @@ paths:
       parameters:
         - name: alias
           in: path
-          description: Alias
+          description: Alias of the collection
           required: true
           schema:
             type: string
@@ -3477,14 +3477,14 @@ paths:
       parameters:
         - name: organizationId
           in: path
-          description: Organization ID
+          description: Organization ID.
           required: true
           schema:
             type: integer
             format: int64
         - name: collectionId
           in: path
-          description: Collection ID
+          description: Collection ID.
           required: true
           schema:
             type: integer
@@ -3494,7 +3494,7 @@ paths:
           application/json:
             schema:
               type: string
-        description: Collections's description in markdown
+        description: Collections's description in markdown.
         required: true
       responses:
         "200":
@@ -4005,7 +4005,7 @@ paths:
     get:
       tags:
         - organizations
-      summary: Retrieves a collection by ID.
+      summary: Retrieves a collection by name.
       description: Does not require authentication for approved organizations,
         authentication can be provided for unapproved organizations
       operationId: getCollectionByName

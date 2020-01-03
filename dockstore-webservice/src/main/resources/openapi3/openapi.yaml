@@ -15,13 +15,371 @@ externalDocs:
   description: User documentation for dockstore
   url: https://docs.dockstore.org/
 tags:
-- name: metadata
-  description: description of the webservice itself
 - name: organizations
   description: Operations on Dockstore organizations.
+- name: metadata
+  description: description of the webservice itself
 - name: toolTester
   description: Interactions with the Dockstore-support's ToolTester application
 paths:
+  /organizations/collections/{collectionId}/aliases:
+    post:
+      tags:
+      - organizations
+      summary: Add aliases linked to a Collection in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: addCollectionAliases_1
+      parameters:
+      - name: collectionId
+        in: path
+        description: Collection to modify.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: aliases
+        in: query
+        description: Comma-delimited list of aliases.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Aliasable'
+      security:
+      - bearer: []
+  /organizations/collections/{alias}/aliases:
+    get:
+      tags:
+      - organizations
+      summary: Retrieves a collection by alias.
+      description: Retrieves a collection by alias.
+      operationId: getCollectionByAlias
+      parameters:
+      - name: alias
+        in: path
+        description: Alias of the collection.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+  /organizations/{organizationId}/collections/{collectionId}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieves a collection by ID.
+      description: Retrieves a collection by ID. Supports optional authentication.
+      operationId: getCollectionById
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update a collection.
+      description: Update a collection. Currently only name, display name, description,
+        and topic can be updated.
+      operationId: updateCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collection to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationName}/collections/{collectionName}/name:
+    get:
+      tags:
+      - organizations
+      summary: Retrieves a collection by name.
+      description: Retrieves a collection by name. Supports optional authentication.
+      operationId: getCollectionById_1
+      parameters:
+      - name: organizationName
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      - name: collectionName
+        in: path
+        description: Collection name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/collections/{collectionId}/entry:
+    post:
+      tags:
+      - organizations
+      summary: Add an entry to a collection.
+      description: Add an entry to a collection.
+      operationId: addEntryToCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: entryId
+        in: query
+        description: Entry ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    delete:
+      tags:
+      - organizations
+      summary: Delete an entry to a collection.
+      description: Delete an entry to a collection.
+      operationId: deleteEntryFromCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: entryId
+        in: query
+        description: Entry ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/collections:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve all collections for an organization.
+      description: Retrieve all collections for an organization. Supports optional
+        authentication.
+      operationId: getCollectionsFromOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: include
+        in: query
+        description: Included fields.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    post:
+      tags:
+      - organizations
+      summary: Create a collection in the given organization.
+      description: Create a collection in the given organization.
+      operationId: createCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collection to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/collections/{collectionId}/description:
+    get:
+      tags:
+      - organizations
+      summary: Retrieves a collection description by organization ID and collection
+        ID.
+      description: Retrieves a collection description by organization ID and collection
+        ID. Supports optional authentication.
+      operationId: getCollectionDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update a collection's description.
+      description: Update a collection's description. Description in markdown.
+      operationId: updateCollectionDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collections's description in markdown.
+        content:
+          '*/*':
+            schema:
+              type: string
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.
@@ -211,54 +569,115 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
-  /organizations:
-    get:
+  /organizations/{organizationId}/users/{username}:
+    put:
       tags:
       - organizations
-      summary: List all available organizations.
-      description: List all organizations that have been approved by a curator or
-        admin, sorted by number of stars.
-      operationId: getApprovedOrganizations
+      summary: Adds a user role to an organization.
+      description: Adds a user role to an organization.
+      operationId: addUserToOrgByUsername
+      parameters:
+      - name: role
+        in: query
+        description: Role of user.
+        required: true
+        schema:
+          type: string
+          enum:
+          - MAINTAINER
+          - MEMBER
+      - name: username
+        in: path
+        description: User to add to org.
+        required: true
+        schema:
+          type: string
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-    post:
+                $ref: '#/components/schemas/OrganizationUser'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/user:
+    put:
       tags:
       - organizations
-      summary: Create an organization.
-      description: Create an organization. Organization requires approval by an admin
-        before being made public.
-      operationId: createOrganization
+      summary: Adds a user role to an organization.
+      description: Adds a user role to an organization.
+      operationId: addUserToOrg
+      parameters:
+      - name: role
+        in: query
+        description: Role of user.
+        required: true
+        schema:
+          type: string
+          enum:
+          - MAINTAINER
+          - MEMBER
+      - name: userId
+        in: query
+        description: User ID of user to add to organization.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
       requestBody:
-        description: Organization to register.
+        description: This is here to appease Swagger. It requires PUT methods to have
+          a body, even if it is empty. Please leave it empty.
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
+              type: string
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/OrganizationUser'
       security:
       - bearer: []
-  /organizations/{organizationId}/approve:
     post:
       tags:
       - organizations
-      summary: Approves an organization.
-      description: Approves the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
+      summary: Updates a user role in an organization.
+      description: Updates a user role in an organization.
+      operationId: updateUserRole
       parameters:
+      - name: role
+        in: query
+        description: Role of user.
+        required: true
+        schema:
+          type: string
+          enum:
+          - MAINTAINER
+          - MEMBER
+      - name: userId
+        in: query
+        description: User ID of user to add to organization.
+        required: true
+        schema:
+          type: integer
+          format: int64
       - name: organizationId
         in: path
         description: Organization ID.
@@ -272,17 +691,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/OrganizationUser'
       security:
       - bearer: []
-  /organizations/{organizationId}/reject:
-    post:
+    delete:
       tags:
       - organizations
-      summary: Rejects an organization.
-      description: Rejects the organization with the given id. Admin/curator only.
-      operationId: rejectOrganization
+      summary: Remove a user from an organization.
+      description: Remove a user from an organization.
+      operationId: deleteUserRole
       parameters:
+      - name: userId
+        in: query
+        description: User ID of user to add to organization.
+        required: true
+        schema:
+          type: integer
+          format: int64
       - name: organizationId
         in: path
         description: Organization ID.
@@ -294,19 +719,17 @@ paths:
         default:
           description: default response
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
+            application/json: {}
       security:
       - bearer: []
-  /organizations/{organizationId}/request:
+  /organizations/{organizationId}/invitation:
     post:
       tags:
       - organizations
-      summary: Re-request an organization review.
-      description: Re-request a review of the given organization. Requires the organization
-        to be rejected.
-      operationId: requestOrganizationReview
+      summary: Accept or reject an organization invitation.
+      description: Accept or reject an organization invitation. True accepts the invitation,
+        false rejects the invitation.
+      operationId: acceptOrRejectInvitation
       parameters:
       - name: organizationId
         in: path
@@ -315,26 +738,39 @@ paths:
         schema:
           type: integer
           format: int64
+      - name: accept
+        in: query
+        description: Accept or reject.
+        required: true
+        schema:
+          type: boolean
       responses:
         default:
           description: default response
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
+            application/json: {}
       security:
       - bearer: []
-  /organizations/name/{name}:
-    get:
+  /organizations/{organizationId}/aliases:
+    post:
       tags:
       - organizations
-      summary: Retrieves an organization by name.
-      description: Retrieves an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
+      summary: Add aliases linked to a listing in Dockstore.
+      description: Add aliases linked to a listing in Dockstore. Aliases are alphanumerical
+        (case-insensitive and may contain internal hyphens), given in a comma-delimited
+        list.
+      operationId: addOrganizationAliases_1
       parameters:
-      - name: name
+      - name: organizationId
         in: path
-        description: Organization name.
+        description: Organization to modify.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: aliases
+        in: query
+        description: Comma-delimited list of aliases.
         required: true
         schema:
           type: string
@@ -344,62 +780,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieves an organization by ID.
-      description: Retrieves an organization by ID. Supports optional authentication.
-      operationId: getOrganizationById
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-    put:
-      tags:
-      - organizations
-      summary: Update an organization.
-      description: Update an organization. Currently only name, display name, description,
-        topic, email, link, avatarUrl, and location can be updated.
-      operationId: updateOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
       security:
       - bearer: []
   /organizations/{organizationId}/description:
@@ -643,29 +1024,54 @@ paths:
                   $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
-  /organizations/{organizationId}/users/{username}:
-    put:
+  /organizations:
+    get:
       tags:
       - organizations
-      summary: Adds a user role to an organization.
-      description: Adds a user role to an organization.
-      operationId: addUserToOrgByUsername
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approves an organization.
+      description: Approves the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
       parameters:
-      - name: role
-        in: query
-        description: Role of user.
-        required: true
-        schema:
-          type: string
-          enum:
-          - MAINTAINER
-          - MEMBER
-      - name: username
-        in: path
-        description: User to add to org.
-        required: true
-        schema:
-          type: string
       - name: organizationId
         in: path
         description: Organization ID.
@@ -679,33 +1085,113 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganizationUser'
+                $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
-  /organizations/{organizationId}/user:
-    put:
+  /organizations/{organizationId}/reject:
+    post:
       tags:
       - organizations
-      summary: Adds a user role to an organization.
-      description: Adds a user role to an organization.
-      operationId: addUserToOrg
+      summary: Rejects an organization.
+      description: Rejects the organization with the given id. Admin/curator only.
+      operationId: rejectOrganization
       parameters:
-      - name: role
-        in: query
-        description: Role of user.
-        required: true
-        schema:
-          type: string
-          enum:
-          - MAINTAINER
-          - MEMBER
-      - name: userId
-        in: query
-        description: User ID of user to add to organization.
+      - name: organizationId
+        in: path
+        description: Organization ID.
         required: true
         schema:
           type: integer
           format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization
+        to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieves an organization by name.
+      description: Retrieves an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieves an organization by ID.
+      description: Retrieves an organization by ID. Supports optional authentication.
+      operationId: getOrganizationById
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update an organization.
+      description: Update an organization. Currently only name, display name, description,
+        topic, email, link, avatarUrl, and location can be updated.
+      operationId: updateOrganization
+      parameters:
       - name: organizationId
         in: path
         description: Organization ID.
@@ -714,147 +1200,19 @@ paths:
           type: integer
           format: int64
       requestBody:
-        description: This is here to appease Swagger. It requires PUT methods to have
-          a body, even if it is empty. Please leave it empty.
+        description: Organization to register.
         content:
           '*/*':
             schema:
-              type: string
+              $ref: '#/components/schemas/Organization'
+        required: true
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganizationUser'
-      security:
-      - bearer: []
-    post:
-      tags:
-      - organizations
-      summary: Updates a user role in an organization.
-      description: Updates a user role in an organization.
-      operationId: updateUserRole
-      parameters:
-      - name: role
-        in: query
-        description: Role of user.
-        required: true
-        schema:
-          type: string
-          enum:
-          - MAINTAINER
-          - MEMBER
-      - name: userId
-        in: query
-        description: User ID of user to add to organization.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationUser'
-      security:
-      - bearer: []
-    delete:
-      tags:
-      - organizations
-      summary: Remove a user from an organization.
-      description: Remove a user from an organization.
-      operationId: deleteUserRole
-      parameters:
-      - name: userId
-        in: query
-        description: User ID of user to add to organization.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-      - bearer: []
-  /organizations/{organizationId}/invitation:
-    post:
-      tags:
-      - organizations
-      summary: Accept or reject an organization invitation.
-      description: Accept or reject an organization invitation. True accepts the invitation,
-        false rejects the invitation.
-      operationId: acceptOrRejectInvitation
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: accept
-        in: query
-        description: Accept or reject.
-        required: true
-        schema:
-          type: boolean
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-      - bearer: []
-  /organizations/{organizationId}/aliases:
-    post:
-      tags:
-      - organizations
-      summary: Add aliases linked to a listing in Dockstore.
-      description: Add aliases linked to a listing in Dockstore. Aliases are alphanumerical
-        (case-insensitive and may contain internal hyphens), given in a comma-delimited
-        list.
-      operationId: addOrganizationAliases_1
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization to modify.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: aliases
-        in: query
-        description: Comma-delimited list of aliases.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
   /organizations/{alias}/aliases:
@@ -1221,6 +1579,56 @@ components:
           type: string
         checksum:
           type: string
+    Collection:
+      required:
+      - name
+      - topic
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Implementation specific ID for the collection in this web service
+          format: int64
+        name:
+          maxLength: 39
+          minLength: 3
+          pattern: '[a-zA-Z][a-zA-Z\d]*'
+          type: string
+          description: Name of the collection
+          example: Alignment
+        description:
+          type: string
+          description: Description of the collection
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
+          type: string
+        topic:
+          type: string
+          description: Short description of the collection
+          example: A collection of alignment algorithms
+        entries:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
+        organizationID:
+          type: integer
+          format: int64
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        organizationName:
+          type: string
+      description: Collection in an organization, collects entries
     Entry:
       type: object
       properties:
@@ -1542,6 +1950,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+    Aliasable:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
     RegistryBean:
       type: object
       properties:
@@ -1843,56 +2258,6 @@ components:
         last_modified_date:
           type: string
           format: date-time
-    Collection:
-      required:
-      - name
-      - topic
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Implementation specific ID for the collection in this web service
-          format: int64
-        name:
-          maxLength: 39
-          minLength: 3
-          pattern: '[a-zA-Z][a-zA-Z\d]*'
-          type: string
-          description: Name of the collection
-          example: Alignment
-        description:
-          type: string
-          description: Description of the collection
-        displayName:
-          maxLength: 50
-          minLength: 3
-          pattern: '[\w ,_\-&()'']*'
-          type: string
-        topic:
-          type: string
-          description: Short description of the collection
-          example: A collection of alignment algorithms
-        entries:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Entry'
-        organizationID:
-          type: integer
-          format: int64
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        dbCreateDate:
-          type: string
-          format: date-time
-        dbUpdateDate:
-          type: string
-          format: date-time
-        organizationName:
-          type: string
-      description: Collection in an organization, collects entries
     Event:
       type: object
       properties:
@@ -2415,13 +2780,6 @@ components:
       properties:
         star:
           type: boolean
-    Aliasable:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
     ToolTesterLog:
       type: object
       properties:
