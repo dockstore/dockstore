@@ -998,6 +998,7 @@
                     <version>2.5.3</version>
                     <configuration>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <releaseProfiles>skipForRelease</releaseProfiles>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1394,6 +1395,13 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>skipTestsForReleasePerform-tests</id>
+            <properties>
+                <!-- skip swagger kongchen generation on release and rely on checked in yaml -->
+                <swagger.skip>true</swagger.skip>
+            </properties>
         </profile>
     </profiles>
 </project>
