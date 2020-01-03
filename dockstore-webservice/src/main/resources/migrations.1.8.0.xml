@@ -117,8 +117,8 @@
     </changeSet>
     <changeSet id="set_null_db_times" author="aduncan">
         <sql dbms="postgresql">
-            UPDATE tool SET dbcreatedate=lastupdated where dbcreatedate is null;
-            UPDATE tool SET dbupdatedate=lastupdated where dbupdatedate is null;
+            UPDATE tool SET dbcreatedate=lastupdated WHERE dbcreatedate IS NULL;
+            UPDATE tool SET dbupdatedate=lastupdated WHERE dbupdatedate IS NULL;
         </sql>
         <update tableName="tool">
             <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
@@ -130,8 +130,8 @@
         </update>
 
         <sql dbms="postgresql">
-            UPDATE tag SET dbcreatedate=lastbuilt where dbcreatedate is null;
-            UPDATE tag SET dbupdatedate=lastbuilt where dbupdatedate is null;
+            UPDATE tag SET dbcreatedate=lastbuilt WHERE dbcreatedate IS NULL;
+            UPDATE tag SET dbupdatedate=lastbuilt WHERE dbupdatedate IS NULL;
         </sql>
         <update tableName="tag">
             <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
@@ -143,8 +143,8 @@
         </update>
 
         <sql dbms="postgresql">
-            UPDATE workflow SET dbcreatedate=lastupdated where dbcreatedate is null;
-            UPDATE workflow SET dbupdatedate=lastupdated where dbupdatedate is null;
+            UPDATE workflow SET dbcreatedate=lastupdated WHERE dbcreatedate IS NULL;
+            UPDATE workflow SET dbupdatedate=lastupdated WHERE dbupdatedate IS NULL;
         </sql>
         <update tableName="workflow">
             <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
@@ -156,8 +156,8 @@
         </update>
 
         <sql dbms="postgresql">
-            UPDATE workflowversion SET dbcreatedate=lastmodified where dbcreatedate is null;
-            UPDATE workflowversion SET dbupdatedate=lastmodified where dbupdatedate is null;
+            UPDATE workflowversion SET dbcreatedate=lastmodified WHERE dbcreatedate IS NULL;
+            UPDATE workflowversion SET dbupdatedate=lastmodified WHERE dbupdatedate IS NULL;
         </sql>
         <update tableName="workflowversion">
             <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
