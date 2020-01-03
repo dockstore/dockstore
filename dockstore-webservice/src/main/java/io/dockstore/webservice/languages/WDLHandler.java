@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -62,18 +64,58 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final String ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT = "Error parsing workflow. You may have a recursive import.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
+    public static void checkForRecursiveLocalImports(String content, Set<SourceFile> sourceFiles, Set<String> absolutePaths, String parent)
+            throws ParseException {
+        // Use matcher to get imports
+        String[] lines = StringUtils.split(content, '\n');
+        for (String line : lines) {
+            Matcher m = IMPORT_PATTERN.matcher(line);
+
+            while (m.find()) {
+                String match = m.group(1);
+                if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
+                    String localRelativePath = match.replaceFirst("file://", "");
+                    String absolutePath = LanguageHandlerHelper.convertRelativePathToAbsolutePath(parent, localRelativePath);
+                    if (absolutePaths.contains(absolutePath)) {
+                        throw new ParseException("Recursive local import detected: " + absolutePath, 0);
+                    }
+                    // Creating a new set to avoid false positive caused by multiple "branches" that have the same import
+                    Set<String> newAbsolutePaths = new HashSet<>();
+                    newAbsolutePaths.addAll(absolutePaths);
+                    newAbsolutePaths.add(absolutePath);
+                    Optional<SourceFile> sourcefile = sourceFiles.stream()
+                            .filter(sourceFile -> sourceFile.getAbsolutePath().equals(absolutePath)).findFirst();
+                    if (sourcefile.isPresent()) {
+                        File file = new File(absolutePath);
+                        String newParent = file.getParent();
+                        checkForRecursiveLocalImports(sourcefile.get().getContent(), sourceFiles, newAbsolutePaths, newParent);
+                    }
+                }
+            }
+        }
+
+    }
+
     @Override
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
+        try {
+            String parent = filepath.startsWith("/") ? new File(filepath).getParent() : "/";
+            checkForRecursiveLocalImports(content, sourceFiles, new HashSet<>(), parent);
+        } catch (ParseException e) {
+            LOG.error("Recursive local imports found: " + version.getName(), e);
+            Map<String, String> validationMessageObject = new HashMap<>();
+            validationMessageObject.put(filepath, e.getMessage());
+            version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
+            return version;
+        }
         WdlBridge wdlBridge = new WdlBridge();
         final Map<String, String> secondaryFiles = sourceFiles.stream()
                 .collect(Collectors.toMap(SourceFile::getAbsolutePath, SourceFile::getContent));
         wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryFiles);
-
         File tempMainDescriptor = null;
         try {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
-
             try {
                 List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath(), filepath);
                 Set<String> authors = new HashSet<>();

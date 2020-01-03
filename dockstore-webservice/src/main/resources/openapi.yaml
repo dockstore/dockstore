@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.8.0-alpha.3-SNAPSHOT
+  version: 1.8.0-alpha.4-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -20,6 +20,7 @@ tags:
       (CWL and Dockerfile))
   - name: containertags
     description: List and modify tags for containers
+  - name: curation
   - name: entries
     description: Interact with entries in Dockstore regardless of whether they are
       containers or workflows
@@ -2658,6 +2659,116 @@ paths:
         - name: tagId
           in: path
           description: tagId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+  /curation/notifications:
+    get:
+      tags:
+        - curation
+      summary: Return all active notifications
+      description: NO Authentication
+      operationId: getActiveNotifications
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+    post:
+      tags:
+        - curation
+      summary: Create a notification
+      description: Curator/admin only
+      operationId: createNotification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Notification"
+        description: Notification to create
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+      security:
+        - BEARER: []
+  "/curation/notifications/{id}":
+    get:
+      tags:
+        - curation
+      summary: Return the notification with given id
+      description: NO Authentication
+      operationId: getNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+    put:
+      tags:
+        - curation
+      summary: Update a notification
+      description: Curator/admin only
+      operationId: updateNotification
+      parameters:
+        - name: id
+          in: path
+          description: Notification to update
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Notification"
+        description: Updated version of notification
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - curation
+      summary: Delete a notification
+      description: Curator/admin only
+      operationId: deleteNotification
+      parameters:
+        - name: id
+          in: path
+          description: Notification to delete
           required: true
           schema:
             type: integer
@@ -6650,6 +6761,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6665,10 +6780,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6859,6 +6970,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6874,10 +6989,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7128,6 +7239,44 @@ components:
         friendly-name:
           type: string
       description: Describes this registry to better allow for mirroring and indexing.
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID for the notification
+        message:
+          type: string
+          description: Text content of the notification to be displayed
+          minLength: 0
+          maxLength: 280
+        expiration:
+          type: string
+          format: date-time
+          description: Timestamp at which the notification is expired
+        type:
+          type: string
+          description: Type of notification, sitewide or newsbody
+          enum:
+            - SITEWIDE
+            - NEWSBODY
+        priority:
+          type: string
+          description: Priority level of the notification
+          enum:
+            - LOW
+            - MEDIUM
+            - HIGH
+            - CRITICAL
+        dbCreateDate:
+          type: string
+          format: date-time
+          description: Timestamp at which the notification was created
+        dbUpdateDate:
+          type: string
+          format: date-time
+          description: Timestamp at which the notification was last updated
     Organization:
       type: object
       required:
@@ -7875,15 +8024,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -8099,10 +8248,14 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parentEntry:
-          $ref: "#/components/schemas/Entry"
         isChecker:
           type: boolean
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -8118,10 +8271,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

@@ -291,6 +291,55 @@ paths:
             text/plain:
               schema:
                 type: string
+  /users/registries:
+    get:
+      description: Get all of the git registries accessible to the logged in user.
+      operationId: getUserRegistries
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum:
+                  - dockstore.org
+                  - github.com
+                  - bitbucket.org
+                  - gitlab.com
+      security:
+      - bearer: []
+  /users/registries/{gitRegistry}/organizations:
+    get:
+      description: Get all of the organizations for a given git registry accessible
+        to the logged in user.
+      operationId: getUserOrganizations
+      parameters:
+      - name: gitRegistry
+        in: path
+        description: Git registry
+        required: true
+        schema:
+          type: string
+          enum:
+          - dockstore.org
+          - github.com
+          - bitbucket.org
+          - gitlab.com
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  type: string
+      security:
+      - bearer: []
   /users/users/organizations:
     get:
       description: Get all of the Dockstore organizations for a user, sorted by most
@@ -346,6 +395,21 @@ paths:
                   $ref: '#/components/schemas/EntryUpdateTime'
       security:
       - bearer: []
+  /users/user:
+    get:
+      operationId: getUser
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
   /users/{userId}:
     get:
       operationId: getSpecificUser
@@ -368,70 +432,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/user:
-    get:
-      operationId: getUser
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  /users/registries:
-    get:
-      description: Get all of the git registries accessible to the logged in user.
-      operationId: getUserRegistries
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-                  enum:
-                  - dockstore.org
-                  - github.com
-                  - bitbucket.org
-                  - gitlab.com
-      security:
-      - bearer: []
-  /users/registries/{gitRegistry}/organizations:
-    get:
-      description: Get all of the organizations for a given git registry accessible
-        to the logged in user.
-      operationId: getUserOrganizations
-      parameters:
-      - name: gitRegistry
-        in: path
-        description: Git registry
-        required: true
-        schema:
-          type: string
-          enum:
-          - dockstore.org
-          - github.com
-          - bitbucket.org
-          - gitlab.com
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  type: string
-      security:
-      - bearer: []
   /users/registries/{gitRegistry}/organizations/{organization}:
     get:
       description: Get all of the repositories for an organization for a given git
@@ -601,23 +601,23 @@ components:
           format: int64
         conceptDoi:
           type: string
-        metadataFromEntry:
-          $ref: '#/components/schemas/Entry'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
         workflowVersions:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/Version'
+        metadataFromEntry:
+          $ref: '#/components/schemas/Entry'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         is_published:
           type: boolean
         last_modified:
           type: integer
           format: int32
-        checker_id:
-          type: integer
-          format: int64
+        last_modified_date:
+          type: string
+          format: date-time
         has_checker:
           type: boolean
         input_file_formats:
@@ -630,9 +630,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
+        checker_id:
+          type: integer
+          format: int64
       writeOnly: true
     FileFormat:
       type: object
@@ -740,9 +740,6 @@ components:
           format: date-time
         name:
           type: string
-        tosacceptanceDate:
-          type: string
-          format: date-time
         tosversion:
           type: string
           enum:
@@ -752,6 +749,9 @@ components:
           type: string
           format: date-time
           writeOnly: true
+        tosacceptanceDate:
+          type: string
+          format: date-time
     Validation:
       type: object
       properties:
@@ -831,16 +831,12 @@ components:
             $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
-        author:
+        workingDirectory:
           type: string
-        verified:
-          type: boolean
-        verifiedSource:
+        email:
           type: string
-        verifiedSources:
-          type: array
-          items:
-            type: string
+        description:
+          type: string
         doiURL:
           type: string
         doiStatus:
@@ -854,11 +850,15 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        workingDirectory:
+        verified:
+          type: boolean
+        verifiedSource:
           type: string
-        description:
-          type: string
-        email:
+        verifiedSources:
+          type: array
+          items:
+            type: string
+        author:
           type: string
         dbUpdateDate:
           type: string
@@ -1126,17 +1126,17 @@ components:
         parent_id:
           type: integer
           format: int64
-        source_control_provider:
+        full_workflow_path:
           type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
-        full_workflow_path:
+        source_control_provider:
           type: string
-        checker_id:
-          type: integer
-          format: int64
+        last_modified_date:
+          type: string
+          format: date-time
         has_checker:
           type: boolean
         input_file_formats:
@@ -1149,9 +1149,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
+        checker_id:
+          type: integer
+          format: int64
     Service:
       type: object
       allOf:
@@ -1243,10 +1243,10 @@ components:
             $ref: '#/components/schemas/WorkflowVersion'
         path:
           type: string
-        parentEntry:
-          $ref: '#/components/schemas/Entry'
         isChecker:
           type: boolean
+        parentEntry:
+          $ref: '#/components/schemas/Entry'
         metadataFromEntry:
           $ref: '#/components/schemas/Workflow'
         metadataFromVersion:
@@ -1256,17 +1256,17 @@ components:
         last_modified:
           type: integer
           format: int32
-        source_control_provider:
+        full_workflow_path:
           type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
-        full_workflow_path:
+        source_control_provider:
           type: string
-        checker_id:
-          type: integer
-          format: int64
+        last_modified_date:
+          type: string
+          format: date-time
         has_checker:
           type: boolean
         input_file_formats:
@@ -1279,9 +1279,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
+        checker_id:
+          type: integer
+          format: int64
         type:
           type: string
       writeOnly: true
@@ -1345,16 +1345,10 @@ components:
           type: string
         hidden:
           type: boolean
-        author:
+        email:
           type: string
-        verified:
-          type: boolean
-        verifiedSource:
+        description:
           type: string
-        verifiedSources:
-          type: array
-          items:
-            type: string
         doiURL:
           type: string
         doiStatus:
@@ -1368,9 +1362,15 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        description:
+        verified:
+          type: boolean
+        verifiedSource:
           type: string
-        email:
+        verifiedSources:
+          type: array
+          items:
+            type: string
+        author:
           type: string
         dbUpdateDate:
           type: string

@@ -360,12 +360,7 @@ public abstract class SourceCodeRepoInterface {
         if (first.isPresent()) {
             fileContent = first.get().getContent();
             LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-            try {
-                anInterface.parseWorkflowContent(filePath, fileContent, sourceFiles, version);
-            } catch (StackOverflowError e) {
-                // TODO: Prevent it, don't catch it. See issue: https://github.com/dockstore/dockstore/issues/3021
-                LOG.error("Problems parsing workflow");
-            }
+            anInterface.parseWorkflowContent(filePath, fileContent, sourceFiles, version);
             if ((version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null) {
                 String readmeContent = getREADMEContent(repositoryId, version.getReference());
                 if (StringUtils.isNotBlank(readmeContent)) {
