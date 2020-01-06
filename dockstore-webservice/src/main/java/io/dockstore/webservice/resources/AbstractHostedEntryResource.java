@@ -137,7 +137,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
-        PublicStateManager.getInstance().handleIndexUpdate(byId, StateManagerMode.UPDATE);
         return byId;
     }
 
