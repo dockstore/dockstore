@@ -138,7 +138,7 @@ public class Notification {
     }
 
     public enum Priority {
-        LOW, MEDIUM, HIGH, CRITICAL
+        LOW, MEDIUM, CRITICAL
     }
 
     public enum Type {
