@@ -64,7 +64,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("/organizations")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "organizations", description = "Operations on Dockstore organizations.")
-@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer", bearerFormat = "JWT") })
+@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
 public class CollectionResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Collection> {
 
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
@@ -93,9 +93,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork
     @Override
     @Path("/collections/{collectionId}/aliases")
-    @ApiOperation(nickname = "addCollectionAliases", value = "Add aliases linked to a Collection in Dockstore.", authorizations = {
+    @ApiOperation(nickname = "addCollectionAliases", value = "Add aliases linked to a collection in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Collection.class)
-    @Operation(operationId = "addCollectionAliases", summary = "Add aliases linked to a Collection in Dockstore.", description = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "addCollectionAliases", summary = "Add aliases linked to a collection in Dockstore.", description = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = "bearer"))
     public Collection addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Collection to modify.", required = true) @Parameter(description = "Collection to modify.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long id,
         @ApiParam(value = "Comma-delimited list of aliases.", required = true) @Parameter(description = "Comma-delimited list of aliases.", name = "aliases", in = ParameterIn.QUERY, required = true) @QueryParam("aliases") String aliases) {
@@ -106,8 +106,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/collections/{alias}/aliases")
-    @ApiOperation(nickname = "getCollectionByAlias", value = "Retrieves a collection by alias.", response = Collection.class)
-    @Operation(operationId = "getCollectionByAlias", summary = "Retrieves a collection by alias.", description = "Retrieves a collection by alias.")
+    @ApiOperation(nickname = "getCollectionByAlias", value = "Retrieve a collection by alias.", response = Collection.class)
+    @Operation(operationId = "getCollectionByAlias", summary = "Retrieve a collection by alias.", description = "Retrieve a collection by alias.")
     public Collection getCollectionByAlias(@ApiParam(value = "Alias of the collection", required = true) @Parameter(description = "Alias of the collection.", name = "alias", required = true) @PathParam("alias") String alias) {
         return this.getAndCheckResourceByAlias(alias);
     }
@@ -116,8 +116,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{organizationId}/collections/{collectionId}")
-    @ApiOperation(value = "Retrieves a collection by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
-    @Operation(operationId = "getCollectionById", summary = "Retrieves a collection by ID.", description = "Retrieves a collection by ID. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "Retrieve a collection by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
+    @Operation(operationId = "getCollectionById", summary = "Retrieve a collection by ID.", description = "Retrieve a collection by ID. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
     public Collection getCollectionById(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
@@ -154,8 +154,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{organizationName}/collections/{collectionName}/name")
-    @ApiOperation(value = "Retrieves a collection by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
-    @Operation(operationId = "getCollectionById", summary = "Retrieves a collection by name.", description = "Retrieves a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "Retrieve a collection by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
+    @Operation(operationId = "getCollectionById", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
     public Collection getCollectionByName(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
             @ApiParam(value = "Organization name.", required = true) @Parameter(description = "Organization name.", name = "organizationName", in = ParameterIn.PATH, required = true) @PathParam("organizationName") String organizationName,
             @ApiParam(value = "Collection name.", required = true) @Parameter(description = "Collection name.", name = "collectionName", in = ParameterIn.PATH, required = true) @PathParam("collectionName") String collectionName) {
@@ -500,8 +500,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{organizationId}/collections/{collectionId}/description")
-    @ApiOperation(value = "Retrieves a collection description by organization ID and collection ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
-    @Operation(operationId = "getCollectionDescription", summary = "Retrieves a collection description by organization ID and collection ID.", description = "Retrieves a collection description by organization ID and collection ID. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "Retrieve a collection description by organization ID and collection ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
+    @Operation(operationId = "getCollectionDescription", summary = "Retrieve a collection description by organization ID and collection ID.", description = "Retrieve a collection description by organization ID and collection ID. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
     public String getCollectionDescription(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
             @ApiParam(value = "Organization ID", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {

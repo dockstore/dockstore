@@ -74,7 +74,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/entries")
 @Api("entries")
 @Produces(MediaType.APPLICATION_JSON)
-@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer", bearerFormat = "JWT") })
+@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
 public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);

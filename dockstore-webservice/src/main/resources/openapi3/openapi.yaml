@@ -22,25 +22,25 @@ tags:
 - name: toolTester
   description: Interactions with the Dockstore-support's ToolTester application
 paths:
-  /organizations/collections/{collectionId}/aliases:
-    post:
+  /organizations/{organizationId}/collections:
+    get:
       tags:
       - organizations
-      summary: Add aliases linked to a Collection in Dockstore.
-      description: Aliases are alphanumerical (case-insensitive and may contain internal
-        hyphens), given in a comma-delimited list.
-      operationId: addCollectionAliases_1
+      summary: Retrieve all collections for an organization.
+      description: Retrieve all collections for an organization. Supports optional
+        authentication.
+      operationId: getCollectionsFromOrganization
       parameters:
-      - name: collectionId
+      - name: organizationId
         in: path
-        description: Collection to modify.
+        description: Organization ID.
         required: true
         schema:
           type: integer
           format: int64
-      - name: aliases
+      - name: include
         in: query
-        description: Comma-delimited list of aliases.
+        description: Included fields.
         required: true
         schema:
           type: string
@@ -50,23 +50,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
-  /organizations/collections/{alias}/aliases:
-    get:
+    post:
       tags:
       - organizations
-      summary: Retrieves a collection by alias.
-      description: Retrieves a collection by alias.
-      operationId: getCollectionByAlias
+      summary: Create a collection in the given organization.
+      description: Create a collection in the given organization.
+      operationId: createCollection
       parameters:
-      - name: alias
+      - name: organizationId
         in: path
-        description: Alias of the collection.
+        description: Organization ID.
         required: true
         schema:
-          type: string
+          type: integer
+          format: int64
+      requestBody:
+        description: Collection to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
       responses:
         default:
           description: default response
@@ -74,12 +83,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
   /organizations/{organizationId}/collections/{collectionId}:
     get:
       tags:
       - organizations
-      summary: Retrieves a collection by ID.
-      description: Retrieves a collection by ID. Supports optional authentication.
+      summary: Retrieve a collection by ID.
+      description: Retrieve a collection by ID. Supports optional authentication.
       operationId: getCollectionById
       parameters:
       - name: organizationId
@@ -147,8 +158,8 @@ paths:
     get:
       tags:
       - organizations
-      summary: Retrieves a collection by name.
-      description: Retrieves a collection by name. Supports optional authentication.
+      summary: Retrieve a collection by name.
+      description: Retrieve a collection by name. Supports optional authentication.
       operationId: getCollectionById_1
       parameters:
       - name: organizationName
@@ -247,25 +258,25 @@ paths:
                 $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
-  /organizations/{organizationId}/collections:
-    get:
+  /organizations/collections/{collectionId}/aliases:
+    post:
       tags:
       - organizations
-      summary: Retrieve all collections for an organization.
-      description: Retrieve all collections for an organization. Supports optional
-        authentication.
-      operationId: getCollectionsFromOrganization
+      summary: Add aliases linked to a collection in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: addCollectionAliases_1
       parameters:
-      - name: organizationId
+      - name: collectionId
         in: path
-        description: Organization ID.
+        description: Collection to modify.
         required: true
         schema:
           type: integer
           format: int64
-      - name: include
+      - name: aliases
         in: query
-        description: Included fields.
+        description: Comma-delimited list of aliases.
         required: true
         schema:
           type: string
@@ -275,32 +286,23 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
-    post:
+  /organizations/collections/{alias}/aliases:
+    get:
       tags:
       - organizations
-      summary: Create a collection in the given organization.
-      description: Create a collection in the given organization.
-      operationId: createCollection
+      summary: Retrieve a collection by alias.
+      description: Retrieve a collection by alias.
+      operationId: getCollectionByAlias
       parameters:
-      - name: organizationId
+      - name: alias
         in: path
-        description: Organization ID.
+        description: Alias of the collection.
         required: true
         schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Collection to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Collection'
-        required: true
+          type: string
       responses:
         default:
           description: default response
@@ -308,15 +310,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
   /organizations/{organizationId}/collections/{collectionId}/description:
     get:
       tags:
       - organizations
-      summary: Retrieves a collection description by organization ID and collection
+      summary: Retrieve a collection description by organization ID and collection
         ID.
-      description: Retrieves a collection description by organization ID and collection
+      description: Retrieve a collection description by organization ID and collection
         ID. Supports optional authentication.
       operationId: getCollectionDescription
       parameters:
@@ -401,55 +401,6 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
       - bearer: []
-  /metadata/dockerRegistryList:
-    get:
-      tags:
-      - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
-      responses:
-        default:
-          description: List of Docker registries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
-  /metadata/sitemap:
-    get:
-      tags:
-      - metadata
-      summary: List all available workflow, tool, organization, and collection paths.
-      description: List all available workflow, tool, organization, and collection
-        paths. Available means published for tools/workflows, and approved for organizations
-        and their respective collections. NO authentication
-      operationId: sitemap
-      responses:
-        default:
-          description: default response
-          content:
-            text/html:
-              schema:
-                type: string
-            text/xml:
-              schema:
-                type: string
-  /metadata/rss:
-    get:
-      tags:
-      - metadata
-      summary: List all published tools and workflows in creation order
-      description: List all published tools and workflows in creation order, NO authentication
-      operationId: rssFeed
-      responses:
-        default:
-          description: default response
-          content:
-            text/xml:
-              schema:
-                type: string
   /metadata/runner_dependencies:
     get:
       tags:
@@ -555,6 +506,39 @@ paths:
           content:
             text/html: {}
             text/xml: {}
+  /metadata/sitemap:
+    get:
+      tags:
+      - metadata
+      summary: List all available workflow, tool, organization, and collection paths.
+      description: List all available workflow, tool, organization, and collection
+        paths. Available means published for tools/workflows, and approved for organizations
+        and their respective collections. NO authentication
+      operationId: sitemap
+      responses:
+        default:
+          description: default response
+          content:
+            text/html:
+              schema:
+                type: string
+            text/xml:
+              schema:
+                type: string
+  /metadata/rss:
+    get:
+      tags:
+      - metadata
+      summary: List all published tools and workflows in creation order
+      description: List all published tools and workflows in creation order, NO authentication
+      operationId: rssFeed
+      responses:
+        default:
+          description: default response
+          content:
+            text/xml:
+              schema:
+                type: string
   /metadata/config.json:
     get:
       tags:
@@ -569,6 +553,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
+      responses:
+        default:
+          description: List of Docker registries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations:
     get:
       tags:
@@ -609,36 +633,12 @@ paths:
                 $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approves an organization.
-      description: Approves the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/{organizationId}/reject:
     post:
       tags:
       - organizations
-      summary: Rejects an organization.
-      description: Rejects the organization with the given id. Admin/curator only.
+      summary: Reject an organization.
+      description: Reject the organization with the given id. Admin/curator only.
       operationId: rejectOrganization
       parameters:
       - name: organizationId
@@ -686,8 +686,8 @@ paths:
     get:
       tags:
       - organizations
-      summary: Retrieves an organization by name.
-      description: Retrieves an organization by name. Supports optional authentication.
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
       operationId: getOrganizationByName
       parameters:
       - name: name
@@ -709,8 +709,8 @@ paths:
     get:
       tags:
       - organizations
-      summary: Retrieves an organization by ID.
-      description: Retrieves an organization by ID. Supports optional authentication.
+      summary: Retrieve an organization by ID.
+      description: Retrieve an organization by ID. Supports optional authentication.
       operationId: getOrganizationById
       parameters:
       - name: organizationId
@@ -764,8 +764,8 @@ paths:
     get:
       tags:
       - organizations
-      summary: Retrieves an organization description by organization ID.
-      description: Retrieves an organization description by organization ID. Supports
+      summary: Retrieve an organization description by organization ID.
+      description: Retrieve an organization description by organization ID. Supports
         optional authentication.
       operationId: getOrganizationDescription
       parameters:
@@ -820,8 +820,8 @@ paths:
     get:
       tags:
       - organizations
-      summary: Retrieves all members for an organization.
-      description: Retrieves all members for an organization. Supports optional authentication.
+      summary: Retrieve all members for an organization.
+      description: Retrieve all members for an organization. Supports optional authentication.
       operationId: getOrganizationMembers
       parameters:
       - name: organizationId
@@ -847,8 +847,8 @@ paths:
     get:
       tags:
       - organizations
-      summary: Retrieves all events for an organization.
-      description: Retrieves all events for an organization. Supports optional authentication.
+      summary: Retrieve all events for an organization.
+      description: Retrieve all events for an organization. Supports optional authentication.
       operationId: getOrganizationEvents
       parameters:
       - name: organizationId
@@ -949,8 +949,8 @@ paths:
     get:
       tags:
       - organizations
-      summary: Returns list of users who starred the given approved organization.
-      description: Returns list of users who starred the given approved organization.
+      summary: Return list of users who starred the given approved organization.
+      description: Return list of users who starred the given approved organization.
       operationId: getStarredUsersForApprovedOrganization
       parameters:
       - name: organizationId
@@ -1005,8 +1005,8 @@ paths:
     put:
       tags:
       - organizations
-      summary: Adds a user role to an organization.
-      description: Adds a user role to an organization.
+      summary: Add a user role to an organization.
+      description: Add a user role to an organization.
       operationId: addUserToOrgByUsername
       parameters:
       - name: username
@@ -1045,8 +1045,8 @@ paths:
     put:
       tags:
       - organizations
-      summary: Adds a user role to an organization.
-      description: Adds a user role to an organization.
+      summary: Add a user role to an organization.
+      description: Add a user role to an organization.
       operationId: addUserToOrg
       parameters:
       - name: role
@@ -1091,8 +1091,8 @@ paths:
     post:
       tags:
       - organizations
-      summary: Updates a user role in an organization.
-      description: Updates a user role in an organization.
+      summary: Update a user role in an organization.
+      description: Update a user role in an organization.
       operationId: updateUserRole
       parameters:
       - name: role
@@ -1220,8 +1220,8 @@ paths:
     get:
       tags:
       - organizations
-      summary: Retrieves an organization by alias.
-      description: Retrieves an organization by alias.
+      summary: Retrieve an organization by alias.
+      description: Retrieve an organization by alias.
       operationId: getOrganizationByAlias
       parameters:
       - name: alias
@@ -1319,43 +1319,6 @@ paths:
             text/plain:
               schema:
                 type: string
-  /users/{userId}:
-    get:
-      operationId: getSpecificUser
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  /users/user:
-    get:
-      operationId: getUser
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
   /users/users/organizations:
     get:
       description: Get all of the Dockstore organizations for a user, sorted by most
@@ -1411,6 +1374,43 @@ paths:
                   $ref: '#/components/schemas/EntryUpdateTime'
       security:
       - bearer: []
+  /users/{userId}:
+    get:
+      operationId: getSpecificUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/user:
+    get:
+      operationId: getUser
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -1679,20 +1679,23 @@ components:
           format: int64
         conceptDoi:
           type: string
+        metadataFromEntry:
+          $ref: '#/components/schemas/Entry'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         workflowVersions:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/Version'
-        metadataFromEntry:
-          $ref: '#/components/schemas/Entry'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
         is_published:
           type: boolean
         last_modified:
           type: integer
           format: int32
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1708,9 +1711,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
       writeOnly: true
     FileFormat:
       type: object
@@ -1909,9 +1909,13 @@ components:
             $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
+        workingDirectory:
+          type: string
+        description:
+          type: string
         doiURL:
           type: string
-        author:
+        email:
           type: string
         verified:
           type: boolean
@@ -1932,11 +1936,7 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        workingDirectory:
-          type: string
-        description:
-          type: string
-        email:
+        author:
           type: string
         dbUpdateDate:
           type: string
@@ -1958,21 +1958,6 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
-    RegistryBean:
-      type: object
-      properties:
-        dockerPath:
-          type: string
-        friendlyName:
-          type: string
-        url:
-          type: string
-        privateOnly:
-          type: string
-        customDockerPath:
-          type: string
-        enum:
-          type: string
     SourceControlBean:
       type: object
       properties:
@@ -2047,6 +2032,21 @@ components:
         googleClientId:
           type: string
         discourseUrl:
+          type: string
+    RegistryBean:
+      type: object
+      properties:
+        dockerPath:
+          type: string
+        friendlyName:
+          type: string
+        url:
+          type: string
+        privateOnly:
+          type: string
+        customDockerPath:
+          type: string
+        enum:
           type: string
     Organization:
       type: object
@@ -2233,14 +2233,17 @@ components:
         parent_id:
           type: integer
           format: int64
-        full_workflow_path:
-          type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
         source_control_provider:
           type: string
+        full_workflow_path:
+          type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -2256,9 +2259,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     Event:
       type: object
       properties:
@@ -2357,9 +2357,11 @@ components:
           type: string
         hidden:
           type: boolean
+        description:
+          type: string
         doiURL:
           type: string
-        author:
+        email:
           type: string
         verified:
           type: boolean
@@ -2380,9 +2382,7 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        description:
-          type: string
-        email:
+        author:
           type: string
         dbUpdateDate:
           type: string
@@ -2485,13 +2485,13 @@ components:
             $ref: '#/components/schemas/Tag'
         path:
           type: string
-        customerDockerRegistryPath:
-          type: string
-          writeOnly: true
         descriptorType:
           type: array
           items:
             type: string
+        customerDockerRegistryPath:
+          type: string
+          writeOnly: true
         metadataFromEntry:
           $ref: '#/components/schemas/Tool'
         metadataFromVersion:
@@ -2524,6 +2524,9 @@ components:
           type: string
         custom_docker_registry_path:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -2539,9 +2542,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     Workflow:
       required:
       - type
@@ -2642,14 +2642,17 @@ components:
         last_modified:
           type: integer
           format: int32
-        full_workflow_path:
-          type: string
         workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
         source_control_provider:
           type: string
+        full_workflow_path:
+          type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -2665,9 +2668,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
         type:
           type: string
       writeOnly: true
@@ -2731,9 +2731,11 @@ components:
           type: string
         hidden:
           type: boolean
+        description:
+          type: string
         doiURL:
           type: string
-        author:
+        email:
           type: string
         verified:
           type: boolean
@@ -2754,9 +2756,7 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        description:
-          type: string
-        email:
+        author:
           type: string
         dbUpdateDate:
           type: string
@@ -2849,4 +2849,3 @@ components:
     bearer:
       type: http
       scheme: bearer
-      bearerFormat: JWT
