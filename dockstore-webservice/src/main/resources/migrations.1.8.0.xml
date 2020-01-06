@@ -168,4 +168,17 @@
             <where>dbupdatedate is null</where>
         </update>
     </changeSet>
+    <changeSet id="add-not-null-db-dates" author="aduncan">
+        <addNotNullConstraint tableName="workflow" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="workflow" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="service" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="service" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="tool" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="tool" columnName="dbupdatedate"/>
+        
+        <addNotNullConstraint tableName="workflowversion" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="workflowversion" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="tag" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="tag" columnName="dbupdatedate"/>
+    </changeSet>
 </databaseChangeLog>

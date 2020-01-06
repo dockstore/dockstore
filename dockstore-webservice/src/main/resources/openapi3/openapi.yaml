@@ -41,22 +41,20 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
       - bearer: []
-  /metadata/dockerRegistryList:
+  /metadata/config.json:
     get:
       tags:
       - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
       responses:
         default:
-          description: List of Docker registries
+          description: default response
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
+                $ref: '#/components/schemas/Config'
   /metadata/sitemap:
     get:
       tags:
@@ -76,63 +74,22 @@ paths:
             text/xml:
               schema:
                 type: string
-  /metadata/rss:
+  /metadata/dockerRegistryList:
     get:
       tags:
       - metadata
-      summary: List all published tools and workflows in creation order
-      description: List all published tools and workflows in creation order, NO authentication
-      operationId: rssFeed
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
       responses:
         default:
-          description: default response
-          content:
-            text/xml:
-              schema:
-                type: string
-  /metadata/runner_dependencies:
-    get:
-      tags:
-      - metadata
-      summary: Returns the file containing runner dependencies
-      description: Returns the file containing runner dependencies, NO authentication
-      operationId: getRunnerDependencies
-      parameters:
-      - name: client_version
-        in: query
-        description: The Dockstore client version
-        schema:
-          type: string
-      - name: python_version
-        in: query
-        description: Python version, only relevant for the cwltool runner
-        schema:
-          type: string
-          default: "2"
-      - name: runner
-        in: query
-        description: The tool runner
-        schema:
-          type: string
-          default: cwltool
-          enum:
-          - cwltool
-      - name: output
-        in: query
-        description: Response type
-        schema:
-          type: string
-          default: text
-          enum:
-          - json
-          - text
-      responses:
-        default:
-          description: The requirements.txt file
+          description: List of Docker registries
           content:
             application/json:
               schema:
-                type: string
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
   /metadata/sourceControlList:
     get:
       tags:
@@ -195,20 +152,63 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/config.json:
+  /metadata/rss:
     get:
       tags:
       - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
+      summary: List all published tools and workflows in creation order
+      description: List all published tools and workflows in creation order, NO authentication
+      operationId: rssFeed
       responses:
         default:
           description: default response
           content:
+            text/xml:
+              schema:
+                type: string
+  /metadata/runner_dependencies:
+    get:
+      tags:
+      - metadata
+      summary: Returns the file containing runner dependencies
+      description: Returns the file containing runner dependencies, NO authentication
+      operationId: getRunnerDependencies
+      parameters:
+      - name: client_version
+        in: query
+        description: The Dockstore client version
+        schema:
+          type: string
+      - name: python_version
+        in: query
+        description: Python version, only relevant for the cwltool runner
+        schema:
+          type: string
+          default: "2"
+      - name: runner
+        in: query
+        description: The tool runner
+        schema:
+          type: string
+          default: cwltool
+          enum:
+          - cwltool
+      - name: output
+        in: query
+        description: Response type
+        schema:
+          type: string
+          default: text
+          enum:
+          - json
+          - text
+      responses:
+        default:
+          description: The requirements.txt file
+          content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Config'
+                type: string
   /toolTester/logs/search:
     get:
       tags:
@@ -615,6 +615,9 @@ components:
         last_modified:
           type: integer
           format: int32
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -630,9 +633,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
       writeOnly: true
     FileFormat:
       type: object
@@ -831,6 +831,12 @@ components:
             $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
+        workingDirectory:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
         doiURL:
           type: string
         author:
@@ -854,12 +860,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        workingDirectory:
-          type: string
-        description:
-          type: string
-        email:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -873,35 +873,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-    RegistryBean:
-      type: object
-      properties:
-        dockerPath:
-          type: string
-        friendlyName:
-          type: string
-        url:
-          type: string
-        privateOnly:
-          type: string
-        customDockerPath:
-          type: string
-        enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
     Config:
       type: object
       properties:
@@ -962,6 +933,35 @@ components:
         googleClientId:
           type: string
         discourseUrl:
+          type: string
+    RegistryBean:
+      type: object
+      properties:
+        dockerPath:
+          type: string
+        friendlyName:
+          type: string
+        url:
+          type: string
+        privateOnly:
+          type: string
+        customDockerPath:
+          type: string
+        enum:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
           type: string
     ToolTesterLog:
       type: object
@@ -1134,6 +1134,9 @@ components:
           type: string
         source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1149,9 +1152,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     Service:
       type: object
       allOf:
@@ -1264,6 +1264,9 @@ components:
           type: string
         source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1279,9 +1282,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
         type:
           type: string
       writeOnly: true
@@ -1345,6 +1345,10 @@ components:
           type: string
         hidden:
           type: boolean
+        description:
+          type: string
+        email:
+          type: string
         doiURL:
           type: string
         author:
@@ -1368,10 +1372,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        description:
-          type: string
-        email:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time
