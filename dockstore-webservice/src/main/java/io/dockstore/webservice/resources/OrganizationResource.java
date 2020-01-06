@@ -573,7 +573,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
     @Operation(operationId = "addUserToOrgByUsername", summary = "Adds a user role to an organization.", description = "Adds a user role to an organization.", security = @SecurityRequirement(name = "bearer"))
     public OrganizationUser addUserToOrgByUsername(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Role of user.", allowableValues = "MAINTAINER, MEMBER", required = true) @Parameter(description = "Role of user.", in = ParameterIn.QUERY, name = "role", schema = @Schema(allowableValues = {"MAINTAINER", "MEMBER"}), required = true) @QueryParam("role") String role,
+        @ApiParam(value = "Role of user.", allowableValues = "MAINTAINER, MEMBER", required = true) @Parameter(description = "Role of user.", name = "role", schema = @Schema(allowableValues = {"MAINTAINER", "MEMBER"}), required = true) String role,
         @ApiParam(value = "User to add to org.", required = true) @Parameter(description = "User to add to org.", name = "username", in = ParameterIn.PATH, required = true) @PathParam("username") String username,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         User userToAdd = userDAO.findByUsername(username);
