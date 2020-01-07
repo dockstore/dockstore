@@ -818,6 +818,7 @@ public class BasicIT extends BaseIT {
 
     /**
      * This tests that a tool cannot be manually published if it has no default descriptor paths
+     * Also tests for entry not found when a broken path is used
      */
     @Test
     public void testManualPublishToolNoDescriptorPaths() {
@@ -834,6 +835,7 @@ public class BasicIT extends BaseIT {
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
+        testBrokenPath();
     }
 
     /**
@@ -1345,5 +1347,16 @@ public class BasicIT extends BaseIT {
         //final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", long.class);
         final long count = testingPostgres.runSelectStatement("select count(*) from user_profile where location='Toronto'", long.class);
         Assert.assertEquals("One user should have this info now, there are " + count, 1, count);
+    }
+
+    public void testBrokenPath() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        try {
+            workflowsApi.getWorkflowByPath("potato", "potato", false);
+            Assert.fail("Should've not been able to get an entry that does not exist");
+        } catch (ApiException e) {
+            Assert.assertEquals("Entry not found", e.getMessage());
+        }
     }
 }
