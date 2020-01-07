@@ -30,6 +30,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -1396,7 +1397,7 @@ public class BasicIT extends BaseIT {
         // Add and update tag 101 times
         Set<String> randomTagNames = new HashSet<>();
 
-        for (int i = 0; i < 110; i++) {
+        for (int i = 0; i < EventDAO.MAX_LIMIT + 10; i++) {
             randomTagNames.add(RandomStringUtils.randomAlphanumeric(255));
         }
         randomTagNames.forEach(randomTagName -> {
@@ -1404,15 +1405,15 @@ public class BasicIT extends BaseIT {
             toolTagsApi.addTags(tool.getId(), randomTags);
         });
         try {
-            events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 101, 0);
+            events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT + 1, 0);
             Assert.fail("Should've failed because it's over the limit");
         } catch (ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to 100\"]}", e.getMessage());
+            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
         }
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 100, 0);
-        Assert.assertEquals("Should have been able to use the max limit", 100, events.size());
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 90, 0);
-        Assert.assertEquals("Should have used a specific limit", 90, events.size());
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT, 0);
+        Assert.assertEquals("Should have been able to use the max limit", EventDAO.MAX_LIMIT, events.size());
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT - 10, 0);
+        Assert.assertEquals("Should have used a specific limit", EventDAO.MAX_LIMIT  - 10, events.size());
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 1, 0);
         Assert.assertEquals("Should have been able to use the min limit", 1, events.size());
         try {
