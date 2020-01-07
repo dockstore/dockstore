@@ -160,7 +160,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         checkEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).withInitiatorUser(user).build();
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
             eventDAO.create(event);
         }
         return result.getWorkflowVersions();

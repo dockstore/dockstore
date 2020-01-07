@@ -258,7 +258,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
         if (releaseCreated) {
-            Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).withInitiatorUser(user).build();
+            Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
             eventDAO.create(event);
         }
     }

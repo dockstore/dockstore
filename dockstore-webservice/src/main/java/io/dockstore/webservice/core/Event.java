@@ -195,7 +195,7 @@ public class Event {
         MODIFY_COLLECTION,
         REMOVE_FROM_COLLECTION,
         ADD_TO_COLLECTION,
-        ADD_TO_ENTRY
+        ADD_VERSION_TO_ENTRY
     }
 
     public static class Builder {

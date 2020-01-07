@@ -502,7 +502,7 @@ public abstract class AbstractImageRegistry {
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
         if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).withInitiatorUser(user).build();
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
             eventDAO.create(event);
         }
         toolDAO.create(tool);

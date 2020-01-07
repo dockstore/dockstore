@@ -545,7 +545,7 @@ public class DockerRepoResource
 
         long id = toolDAO.create(tool);
         if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_TO_ENTRY).withInitiatorUser(user).build();
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
             eventDAO.create(event);
         }
         return toolDAO.findById(id);
