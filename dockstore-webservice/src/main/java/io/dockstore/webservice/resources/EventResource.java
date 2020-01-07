@@ -57,6 +57,7 @@ import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 @Path("/events")
 @Api("events")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "events")
 public class EventResource {
     private static final String PAGINATION_DEFAULT_STRING = "10";
     private static final String SUMMARY = "Get events based on filters.";
