@@ -629,7 +629,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         // Sort all organizations by timestamp
         List<OrganizationUpdateTime> sortedOrganizations = organizations
                 .stream()
-                .filter((OrganizationUpdateTime organizationUpdateTime) -> filter == null || filter.isBlank() || organizationUpdateTime.getName().contains(filter) || organizationUpdateTime.getDisplayName().contains(filter))
+                .filter((OrganizationUpdateTime organizationUpdateTime) -> filter == null || filter.isBlank() || organizationUpdateTime.getName().toLowerCase().contains(filter.toLowerCase()) || organizationUpdateTime.getDisplayName().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(OrganizationUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
