@@ -24,6 +24,7 @@ tags:
   - name: entries
     description: Interact with entries in Dockstore regardless of whether they are
       containers or workflows
+  - name: events
   - name: extendedGA4GH
     description: Optional experimental extensions of the GA4GH API
   - name: GA4GH
@@ -2855,6 +2856,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Entry"
+      security:
+        - BEARER: []
+  /events:
+    get:
+      tags:
+        - events
+      summary: Get events based on filters.
+      description: Optional authentication.
+      operationId: getEvents
+      parameters:
+        - name: event_search_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - STARRED_ENTRIES
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
       security:
         - BEARER: []
   /metadata/config.json:
@@ -7128,6 +7171,7 @@ components:
             - MODIFY_COLLECTION
             - REMOVE_FROM_COLLECTION
             - ADD_TO_COLLECTION
+            - ADD_VERSION_TO_ENTRY
       description: This describes events that occur on the Dockstore site.
     ExtendedUserData:
       type: object
@@ -8024,15 +8068,15 @@ components:
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         username:
           type: string
           description: Username on dockstore
@@ -8248,10 +8292,10 @@ components:
           type: integer
           format: int64
           description: The Id of the corresponding topic on Dockstore Discuss
-        parentEntry:
-          $ref: "#/components/schemas/Entry"
         isChecker:
           type: boolean
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
         has_checker:
           type: boolean
           readOnly: true
