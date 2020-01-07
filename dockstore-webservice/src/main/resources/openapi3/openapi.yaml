@@ -15,11 +15,371 @@ externalDocs:
   description: User documentation for dockstore
   url: https://docs.dockstore.org/
 tags:
+- name: organizations
+  description: Operations on Dockstore organizations.
 - name: metadata
   description: description of the webservice itself
 - name: toolTester
   description: Interactions with the Dockstore-support's ToolTester application
 paths:
+  /organizations/{organizationId}/collections:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve all collections for an organization.
+      description: Retrieve all collections for an organization. Supports optional
+        authentication.
+      operationId: getCollectionsFromOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: include
+        in: query
+        description: Included fields.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    post:
+      tags:
+      - organizations
+      summary: Create a collection in the given organization.
+      description: Create a collection in the given organization.
+      operationId: createCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collection to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/collections/{alias}/aliases:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection by alias.
+      description: Retrieve a collection by alias.
+      operationId: getCollectionByAlias
+      parameters:
+      - name: alias
+        in: path
+        description: Alias of the collection.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+  /organizations/{organizationId}/collections/{collectionId}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection by ID.
+      description: Retrieve a collection by ID. Supports optional authentication.
+      operationId: getCollectionById
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update a collection.
+      description: Update a collection. Currently only name, display name, description,
+        and topic can be updated.
+      operationId: updateCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collection to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationName}/collections/{collectionName}/name:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection by name.
+      description: Retrieve a collection by name. Supports optional authentication.
+      operationId: getCollectionById_1
+      parameters:
+      - name: organizationName
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      - name: collectionName
+        in: path
+        description: Collection name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/collections/{collectionId}/entry:
+    post:
+      tags:
+      - organizations
+      summary: Add an entry to a collection.
+      description: Add an entry to a collection.
+      operationId: addEntryToCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: entryId
+        in: query
+        description: Entry ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    delete:
+      tags:
+      - organizations
+      summary: Delete an entry to a collection.
+      description: Delete an entry to a collection.
+      operationId: deleteEntryFromCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: entryId
+        in: query
+        description: Entry ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/collections/{collectionId}/description:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection description by organization ID and collection
+        ID.
+      description: Retrieve a collection description by organization ID and collection
+        ID. Supports optional authentication.
+      operationId: getCollectionDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update a collection's description.
+      description: Update a collection's description. Description in markdown.
+      operationId: updateCollectionDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collections's description in markdown.
+        content:
+          '*/*':
+            schema:
+              type: string
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/collections/{collectionId}/aliases:
+    post:
+      tags:
+      - organizations
+      summary: Add aliases linked to a collection in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: addCollectionAliases_1
+      parameters:
+      - name: collectionId
+        in: path
+        description: Collection to modify.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: aliases
+        in: query
+        description: Comma-delimited list of aliases.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.
@@ -133,6 +493,20 @@ paths:
             application/json:
               schema:
                 type: string
+  /metadata/config.json:
+    get:
+      tags:
+      - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
   /metadata/sourceControlList:
     get:
       tags:
@@ -195,20 +569,674 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/config.json:
+  /organizations/{organizationId}/description:
     get:
       tags:
-      - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
+      - organizations
+      summary: Retrieve an organization description by organization ID.
+      description: Retrieve an organization description by organization ID. Supports
+        optional authentication.
+      operationId: getOrganizationDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Config'
+                type: string
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update an organization's description.
+      description: Update an organization's description. Expects description in markdown
+        format.
+      operationId: updateOrganizationDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Organization's description in markdown.
+        content:
+          '*/*':
+            schema:
+              type: string
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/members:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve all members for an organization.
+      description: Retrieve all members for an organization. Supports optional authentication.
+      operationId: getOrganizationMembers
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationUser'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/events:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve all events for an organization.
+      description: Retrieve all events for an organization. Supports optional authentication.
+      operationId: getOrganizationEvents
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: offset
+        in: query
+        description: Start index of paging.  If this exceeds the current result set
+          return an empty set.  If not specified in the request, this will start at
+          the beginning of the results.
+        required: true
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: limit
+        in: query
+        description: Amount of records to return in a given page, limited to 100
+        required: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/star:
+    put:
+      tags:
+      - organizations
+      summary: Star an organization.
+      description: Star an organization.
+      operationId: starOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: StarRequest to star an organization for a user.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/StarRequest'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
+  /organizations/{organizationId}/unstar:
+    delete:
+      tags:
+      - organizations
+      summary: Unstar an organization.
+      description: Unstar an organization.
+      operationId: unstarOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/starredUsers:
+    get:
+      tags:
+      - organizations
+      summary: Return list of users who starred the given approved organization.
+      description: Return list of users who starred the given approved organization.
+      operationId: getStarredUsersForApprovedOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /organizations/all:
+    get:
+      tags:
+      - organizations
+      summary: List all organizations.
+      description: List all organizations, regardless of organization status. Admin/curator
+        only.
+      operationId: getAllOrganizations
+      parameters:
+      - name: type
+        in: query
+        description: Filter to apply to organizations.
+        required: true
+        schema:
+          type: string
+          enum:
+          - all
+          - pending
+          - rejected
+          - approved
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations:
+    get:
+      tags:
+      - organizations
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by ID.
+      description: Retrieve an organization by ID. Supports optional authentication.
+      operationId: getOrganizationById
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update an organization.
+      description: Update an organization. Currently only name, display name, description,
+        topic, email, link, avatarUrl, and location can be updated.
+      operationId: updateOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/users/{username}:
+    put:
+      tags:
+      - organizations
+      summary: Add a user role to an organization.
+      description: Add a user role to an organization.
+      operationId: addUserToOrgByUsername
+      parameters:
+      - name: username
+        in: path
+        description: User to add to org.
+        required: true
+        schema:
+          type: string
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Role of user.
+        content:
+          '*/*':
+            schema:
+              type: string
+              enum:
+              - MAINTAINER
+              - MEMBER
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUser'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/user:
+    put:
+      tags:
+      - organizations
+      summary: Add a user role to an organization.
+      description: Add a user role to an organization.
+      operationId: addUserToOrg
+      parameters:
+      - name: role
+        in: query
+        description: Role of user.
+        required: true
+        schema:
+          type: string
+          enum:
+          - MAINTAINER
+          - MEMBER
+      - name: userId
+        in: query
+        description: User ID of user to add to organization.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: This is here to appease Swagger. It requires PUT methods to have
+          a body, even if it is empty. Please leave it empty.
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUser'
+      security:
+      - bearer: []
+    post:
+      tags:
+      - organizations
+      summary: Update a user role in an organization.
+      description: Update a user role in an organization.
+      operationId: updateUserRole
+      parameters:
+      - name: role
+        in: query
+        description: Role of user.
+        required: true
+        schema:
+          type: string
+          enum:
+          - MAINTAINER
+          - MEMBER
+      - name: userId
+        in: query
+        description: User ID of user to add to organization.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUser'
+      security:
+      - bearer: []
+    delete:
+      tags:
+      - organizations
+      summary: Remove a user from an organization.
+      description: Remove a user from an organization.
+      operationId: deleteUserRole
+      parameters:
+      - name: userId
+        in: query
+        description: User ID of user to add to organization.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
+  /organizations/{organizationId}/invitation:
+    post:
+      tags:
+      - organizations
+      summary: Accept or reject an organization invitation.
+      description: Accept or reject an organization invitation. True accepts the invitation,
+        false rejects the invitation.
+      operationId: acceptOrRejectInvitation
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: accept
+        in: query
+        description: Accept or reject.
+        required: true
+        schema:
+          type: boolean
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
+  /organizations/{organizationId}/aliases:
+    post:
+      tags:
+      - organizations
+      summary: Add aliases linked to a listing in Dockstore.
+      description: Add aliases linked to a listing in Dockstore. Aliases are alphanumerical
+        (case-insensitive and may contain internal hyphens), given in a comma-delimited
+        list.
+      operationId: addOrganizationAliases_1
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization to modify.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: aliases
+        in: query
+        description: Comma-delimited list of aliases.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{alias}/aliases:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by alias.
+      description: Retrieve an organization by alias.
+      operationId: getOrganizationByAlias
+      parameters:
+      - name: alias
+        in: path
+        description: Alias.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+  /organizations/{organizationId}/reject:
+    post:
+      tags:
+      - organizations
+      summary: Reject an organization.
+      description: Reject the organization with the given id. Admin/curator only.
+      operationId: rejectOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization
+        to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /toolTester/logs/search:
     get:
       tags:
@@ -552,6 +1580,56 @@ components:
           type: string
         checksum:
           type: string
+    Collection:
+      required:
+      - name
+      - topic
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Implementation specific ID for the collection in this web service
+          format: int64
+        name:
+          maxLength: 39
+          minLength: 3
+          pattern: '[a-zA-Z][a-zA-Z\d]*'
+          type: string
+          description: Name of the collection
+          example: Alignment
+        description:
+          type: string
+          description: Description of the collection
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
+          type: string
+        topic:
+          type: string
+          description: Short description of the collection
+          example: A collection of alignment algorithms
+        entries:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
+        organizationID:
+          type: integer
+          format: int64
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        organizationName:
+          type: string
+      description: Collection in an organization, collects entries
     Entry:
       type: object
       properties:
@@ -740,6 +1818,9 @@ components:
           format: date-time
         name:
           type: string
+        tosacceptanceDate:
+          type: string
+          format: date-time
         tosversion:
           type: string
           enum:
@@ -749,9 +1830,6 @@ components:
           type: string
           format: date-time
           writeOnly: true
-        tosacceptanceDate:
-          type: string
-          format: date-time
     Validation:
       type: object
       properties:
@@ -833,8 +1911,6 @@ components:
           type: boolean
         author:
           type: string
-        doiURL:
-          type: string
         verified:
           type: boolean
         verifiedSource:
@@ -843,6 +1919,8 @@ components:
           type: array
           items:
             type: string
+        doiURL:
+          type: string
         doiStatus:
           type: string
           enum:
@@ -873,6 +1951,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+    Aliasable:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
     RegistryBean:
       type: object
       properties:
@@ -887,20 +1972,6 @@ components:
         customDockerPath:
           type: string
         enum:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
           type: string
     Config:
       type: object
@@ -963,70 +2034,106 @@ components:
           type: string
         discourseUrl:
           type: string
-    ToolTesterLog:
+    SourceControlBean:
       type: object
       properties:
-        toolId:
+        value:
           type: string
-        toolVersionName:
+        friendlyName:
           type: string
-        testFilename:
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
           type: string
-        runner:
+        friendlyName:
           type: string
-        logType:
+    Organization:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          maxLength: 39
+          minLength: 3
+          pattern: '[a-zA-Z][a-zA-Z\d]*'
+          type: string
+        description:
+          type: string
+        link:
+          type: string
+        location:
+          type: string
+        email:
+          type: string
+        status:
           type: string
           enum:
-          - FULL
-          - SUMMARY
-        filename:
-          type: string
-    OrganizationUpdateTime:
-      type: object
-      properties:
-        name:
+          - PENDING
+          - REJECTED
+          - APPROVED
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationUser'
+        topic:
           type: string
         displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
           type: string
-        lastUpdateDate:
-          type: string
-          format: date-time
-    EntryUpdateTime:
-      type: object
-      properties:
-        path:
-          type: string
-        prettyPath:
-          type: string
-        entryType:
-          type: string
-          enum:
-          - TOOL
-          - WORKFLOW
-          - SERVICE
-        lastUpdateDate:
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
           type: string
           format: date-time
-    Repository:
+        dbUpdateDate:
+          type: string
+          format: date-time
+        avatarUrl:
+          pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
+          type: string
+    OrganizationUser:
       type: object
       properties:
+        id:
+          $ref: '#/components/schemas/OrganizationUserId'
+        user:
+          $ref: '#/components/schemas/User'
         organization:
-          type: string
-        repositoryName:
-          type: string
-        gitRegistry:
+          $ref: '#/components/schemas/Organization'
+        role:
           type: string
           enum:
-          - dockstore.org
-          - github.com
-          - bitbucket.org
-          - gitlab.com
-        canDelete:
+          - MAINTAINER
+          - MEMBER
+        accepted:
           type: boolean
-        present:
-          type: boolean
-        path:
+        dbCreateDate:
           type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+    OrganizationUserId:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        organizationId:
+          type: integer
+          format: int64
     BioWorkflow:
       type: object
       properties:
@@ -1126,13 +2233,13 @@ components:
         parent_id:
           type: integer
           format: int64
-        full_workflow_path:
+        source_control_provider:
           type: string
         workflow_path:
           type: string
-        source_control_provider:
-          type: string
         defaultTestParameterFilePath:
+          type: string
+        full_workflow_path:
           type: string
         checker_id:
           type: integer
@@ -1152,10 +2259,289 @@ components:
         last_modified_date:
           type: string
           format: date-time
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        user:
+          $ref: '#/components/schemas/User'
+        organization:
+          $ref: '#/components/schemas/Organization'
+        tool:
+          $ref: '#/components/schemas/Tool'
+        workflow:
+          $ref: '#/components/schemas/Workflow'
+        collection:
+          $ref: '#/components/schemas/Collection'
+        initiatorUser:
+          $ref: '#/components/schemas/User'
+        type:
+          type: string
+          enum:
+          - CREATE_ORG
+          - DELETE_ORG
+          - MODIFY_ORG
+          - APPROVE_ORG
+          - REJECT_ORG
+          - REREQUEST_ORG
+          - ADD_USER_TO_ORG
+          - REMOVE_USER_FROM_ORG
+          - MODIFY_USER_ROLE_ORG
+          - APPROVE_ORG_INVITE
+          - REJECT_ORG_INVITE
+          - CREATE_COLLECTION
+          - MODIFY_COLLECTION
+          - REMOVE_FROM_COLLECTION
+          - ADD_TO_COLLECTION
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
     Service:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        reference:
+          type: string
+        name:
+          type: string
+        commitID:
+          type: string
+        frozen:
+          type: boolean
+        referenceType:
+          type: string
+          enum:
+          - COMMIT
+          - TAG
+          - BRANCH
+          - NOT_APPLICABLE
+          - UNSET
+        sourceFiles:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        valid:
+          type: boolean
+        dirtyBit:
+          type: boolean
+        versionEditor:
+          $ref: '#/components/schemas/User'
+        validations:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Validation'
+        images:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        size:
+          type: integer
+          format: int64
+        automated:
+          type: boolean
+        workingDirectory:
+          type: string
+        hidden:
+          type: boolean
+        author:
+          type: string
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
+        verifiedSources:
+          type: array
+          items:
+            type: string
+        doiURL:
+          type: string
+        doiStatus:
+          type: string
+          enum:
+          - NOT_REQUESTED
+          - REQUESTED
+          - CREATED
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
+        description:
+          type: string
+        email:
+          type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        last_built:
+          type: string
+          format: date-time
+        image_id:
+          type: string
+        dockerfile_path:
+          type: string
+        cwl_path:
+          type: string
+        wdl_path:
+          type: string
+    Tool:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        author:
+          type: string
+        description:
+          type: string
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        email:
+          type: string
+        defaultVersion:
+          type: string
+        lastUpdated:
+          type: string
+          format: date-time
+        gitUrl:
+          type: string
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        topicId:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
+        mode:
+          type: string
+          enum:
+          - AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+          - AUTO_DETECT_QUAY_TAGS_WITH_MIXED
+          - MANUAL_IMAGE_PATH
+          - HOSTED
+        name:
+          type: string
+        toolname:
+          type: string
+        namespace:
+          type: string
+        lastBuild:
+          type: string
+          format: date-time
+        workflowVersions:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        tags:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        path:
+          type: string
+        descriptorType:
+          type: array
+          items:
+            type: string
+        customerDockerRegistryPath:
+          type: string
+          writeOnly: true
+        metadataFromEntry:
+          $ref: '#/components/schemas/Tool'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
+        is_published:
+          type: boolean
+        last_modified:
+          type: integer
+          format: int32
+        tool_maintainer_email:
+          type: string
+        private_access:
+          type: boolean
+        registry_string:
+          type: string
+        registry:
+          type: integer
+          format: int32
+        tool_path:
+          type: string
+        default_cwl_path:
+          type: string
+        default_wdl_path:
+          type: string
+        default_dockerfile_path:
+          type: string
+        defaultCWLTestParameterFile:
+          type: string
+        defaultWDLTestParameterFile:
+          type: string
+        custom_docker_registry_path:
+          type: string
+        checker_id:
+          type: integer
+          format: int64
+        has_checker:
+          type: boolean
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
     Workflow:
       required:
       - type
@@ -1243,10 +2629,10 @@ components:
             $ref: '#/components/schemas/WorkflowVersion'
         path:
           type: string
-        isChecker:
-          type: boolean
         parentEntry:
           $ref: '#/components/schemas/Entry'
+        isChecker:
+          type: boolean
         metadataFromEntry:
           $ref: '#/components/schemas/Workflow'
         metadataFromVersion:
@@ -1256,13 +2642,13 @@ components:
         last_modified:
           type: integer
           format: int32
-        full_workflow_path:
+        source_control_provider:
           type: string
         workflow_path:
           type: string
-        source_control_provider:
-          type: string
         defaultTestParameterFilePath:
+          type: string
+        full_workflow_path:
           type: string
         checker_id:
           type: integer
@@ -1347,8 +2733,6 @@ components:
           type: boolean
         author:
           type: string
-        doiURL:
-          type: string
         verified:
           type: boolean
         verifiedSource:
@@ -1357,6 +2741,8 @@ components:
           type: array
           items:
             type: string
+        doiURL:
+          type: string
         doiStatus:
           type: string
           enum:
@@ -1390,8 +2776,76 @@ components:
         last_modified:
           type: string
           format: date-time
+    StarRequest:
+      type: object
+      properties:
+        star:
+          type: boolean
+    ToolTesterLog:
+      type: object
+      properties:
+        toolId:
+          type: string
+        toolVersionName:
+          type: string
+        testFilename:
+          type: string
+        runner:
+          type: string
+        logType:
+          type: string
+          enum:
+          - FULL
+          - SUMMARY
+        filename:
+          type: string
+    OrganizationUpdateTime:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        lastUpdateDate:
+          type: string
+          format: date-time
+    EntryUpdateTime:
+      type: object
+      properties:
+        path:
+          type: string
+        prettyPath:
+          type: string
+        entryType:
+          type: string
+          enum:
+          - TOOL
+          - WORKFLOW
+          - SERVICE
+        lastUpdateDate:
+          type: string
+          format: date-time
+    Repository:
+      type: object
+      properties:
+        organization:
+          type: string
+        repositoryName:
+          type: string
+        gitRegistry:
+          type: string
+          enum:
+          - dockstore.org
+          - github.com
+          - bitbucket.org
+          - gitlab.com
+        canDelete:
+          type: boolean
+        present:
+          type: boolean
+        path:
+          type: string
   securitySchemes:
     bearer:
       type: http
       scheme: bearer
-      bearerFormat: JWT
