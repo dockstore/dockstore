@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.8.0-beta.4"
+  version: "1.8.0-beta.5-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2871,7 +2871,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by alias."
+      summary: "Retrieve a collection by alias."
       description: ""
       operationId: "getCollectionByAlias"
       produces:
@@ -2879,7 +2879,7 @@ paths:
       parameters:
       - name: "alias"
         in: "path"
-        description: "Alias"
+        description: "Alias of the collection"
         required: true
         type: "string"
       responses:
@@ -2891,7 +2891,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Add aliases linked to a Collection in Dockstore."
+      summary: "Add aliases linked to a collection in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "addCollectionAliases"
@@ -2920,7 +2920,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves an organization by name."
+      summary: "Retrieve an organization by name."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationByName"
@@ -2943,7 +2943,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves an organization by alias."
+      summary: "Retrieve an organization by alias."
       description: ""
       operationId: "getOrganizationByAlias"
       produces:
@@ -2951,7 +2951,7 @@ paths:
       parameters:
       - name: "alias"
         in: "path"
-        description: "Alias"
+        description: "Alias."
         required: true
         type: "string"
       responses:
@@ -2963,7 +2963,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves an organization by ID."
+      summary: "Retrieve an organization by ID."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationById"
@@ -3025,7 +3025,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Entry to modify."
+        description: "Organization to modify."
         required: true
         type: "integer"
         format: "int64"
@@ -3045,7 +3045,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Approves an organization."
+      summary: "Approve an organization."
       description: "Admin/curator only"
       operationId: "approveOrganization"
       produces:
@@ -3127,7 +3127,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by ID."
+      summary: "Retrieve a collection by ID."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getCollectionById"
@@ -3192,7 +3192,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection description by organization ID and collection\
+      summary: "Retrieve a collection description by organization ID and collection\
         \ ID."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
@@ -3230,19 +3230,19 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization ID"
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
       - name: "collectionId"
         in: "path"
-        description: "Collection ID"
+        description: "Collection ID."
         required: true
         type: "integer"
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Collections's description in markdown"
+        description: "Collections's description in markdown."
         required: true
         schema:
           type: "string"
@@ -3326,7 +3326,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves an organization description by organization ID."
+      summary: "Retrieve an organization description by organization ID."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationDescription"
@@ -3357,13 +3357,13 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to update description."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Organization's description in markdown"
+        description: "Organization's description in markdown."
         required: true
         schema:
           type: "string"
@@ -3378,7 +3378,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves all events for an organization."
+      summary: "Retrieve all events for an organization."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationEvents"
@@ -3436,7 +3436,7 @@ paths:
         format: "int64"
       - name: "accept"
         in: "query"
-        description: "Accept or reject"
+        description: "Accept or reject."
         required: true
         type: "boolean"
       responses:
@@ -3448,7 +3448,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves all members for an organization."
+      summary: "Retrieve all members for an organization."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationMembers"
@@ -3475,7 +3475,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Rejects an organization."
+      summary: "Reject an organization."
       description: "Admin/curator only"
       operationId: "rejectOrganization"
       produces:
@@ -3498,7 +3498,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Request an organization approval."
+      summary: "Re-request an organization approval."
       description: "Only for rejected organizations"
       operationId: "requestOrganizationReview"
       produces:
@@ -3529,13 +3529,13 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to star."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
       - in: "body"
         name: "body"
-        description: "StarRequest to star an organization for a user"
+        description: "StarRequest to star an organization for a user."
         required: true
         schema:
           $ref: "#/definitions/StarRequest"
@@ -3548,7 +3548,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Returns list of users who starred the given approved organization."
+      summary: "Return list of users who starred the given approved organization."
       description: ""
       operationId: "getStarredUsersForApprovedOrganization"
       produces:
@@ -3556,7 +3556,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Get starred users of an approved organization by id."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
@@ -3579,7 +3579,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to unstar."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
@@ -3592,7 +3592,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Updates a user role in an organization."
+      summary: "Update a user role in an organization."
       description: ""
       operationId: "updateUserRole"
       produces:
@@ -3628,7 +3628,7 @@ paths:
     put:
       tags:
       - "organizations"
-      summary: "Adds a user role to an organization."
+      summary: "Add a user role to an organization."
       description: ""
       operationId: "addUserToOrg"
       produces:
@@ -3698,7 +3698,7 @@ paths:
     put:
       tags:
       - "organizations"
-      summary: "Adds a user role to an organization."
+      summary: "Add a user role to an organization."
       description: ""
       operationId: "addUserToOrgByUsername"
       produces:
@@ -3706,7 +3706,7 @@ paths:
       parameters:
       - in: "body"
         name: "body"
-        description: "Role of user. \"MAINTAINER\" or \"MEMBER\""
+        description: "Role of user."
         required: true
         schema:
           type: "string"
@@ -3732,7 +3732,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by ID."
+      summary: "Retrieve a collection by name."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getCollectionByName"
