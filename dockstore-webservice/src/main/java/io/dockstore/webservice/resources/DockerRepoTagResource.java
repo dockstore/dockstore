@@ -63,6 +63,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containertags")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS)
 public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
     private final ToolDAO toolDAO;

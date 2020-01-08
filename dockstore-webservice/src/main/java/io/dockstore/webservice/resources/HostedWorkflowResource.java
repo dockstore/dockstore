@@ -72,6 +72,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  */
 @Api("hosted")
 @Path("/workflows")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "hosted", description = ResourceConstants.HOSTED)
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);
     private final WorkflowDAO workflowDAO;

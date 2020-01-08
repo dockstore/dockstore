@@ -136,6 +136,7 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "workflows", description = ResourceConstants.WORKFLOWS)
 public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     implements EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {

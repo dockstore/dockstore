@@ -30,6 +30,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/curation")
 @Api("/curation")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "curation", description = ResourceConstants.CURATION)
 public class NotificationResource {
     private static final Logger LOG = LoggerFactory.getLogger(NotificationResource.class);
 

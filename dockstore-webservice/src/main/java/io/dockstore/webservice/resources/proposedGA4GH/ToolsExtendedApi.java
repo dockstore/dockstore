@@ -32,6 +32,7 @@ import javax.ws.rs.core.UriInfo;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -53,6 +54,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended")
 @Api("extendedGA4GH")
 @Produces({ "application/json", "text/plain" })
+@io.swagger.v3.oas.annotations.tags.Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH)
 public class ToolsExtendedApi {
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 

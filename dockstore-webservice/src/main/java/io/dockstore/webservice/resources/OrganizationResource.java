@@ -66,7 +66,8 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/organizations")
 @Api("/organizations")
 @Produces(MediaType.APPLICATION_JSON)
-@Tag(name = "organizations", description = "Operations on Dockstore organizations.")
+@Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS)
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
 public class OrganizationResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Organization> {
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
