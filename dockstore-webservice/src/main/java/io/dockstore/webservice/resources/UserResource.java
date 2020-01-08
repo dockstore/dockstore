@@ -668,7 +668,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         // Sort all entryUpdateTimes by timestamp
         List<EntryUpdateTime> sortedEntries = entryUpdateTimes
                 .stream()
-                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().contains(filter))
+                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
