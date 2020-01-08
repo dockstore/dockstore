@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.resources.ResourceConstants;
 import io.swagger.api.factories.MetadataApiServiceFactory;
 import io.swagger.api.impl.ApiVersionConverter;
 import io.swagger.model.MetadataV1;
@@ -35,6 +36,7 @@ import io.swagger.model.MetadataV1;
 @Produces( { "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the metadata API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1)
 public class MetadataApiV1 {
     private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
 

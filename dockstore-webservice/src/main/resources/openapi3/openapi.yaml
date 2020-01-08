@@ -15,12 +15,44 @@ externalDocs:
   description: User documentation for dockstore
   url: https://docs.dockstore.org/
 tags:
+- name: aliases
+  description: Create, update list aliases for accessing entries
 - name: organizations
-  description: Operations on Dockstore organizations.
+  description: Operations on Dockstore organizations
+- name: containers
+  description: List and register entries in the dockstore (pairs of images + metadata
+    (CWL and Dockerfile))
+- name: containertags
+  description: List and modify tags for containers
+- name: entries
+  description: Interact with entries in Dockstore regardless of whether they are containers
+    or workflows
+- name: hosted
+  description: Created and modify hosted entries in the dockstore
 - name: metadata
-  description: description of the webservice itself
+  description: Information about Dockstore like RSS, sitemap, lists of dependencies,
+    etc.
+- name: curation
+  description: List and modify notifications for users of Dockstore
+- name: workflows
+  description: List and register workflows in the dockstore (CWL or WDL)
+- name: tokens
+  description: List, modify, refresh, and delete tokens for external services
 - name: toolTester
   description: Interactions with the Dockstore-support's ToolTester application
+- name: users
+  description: List, modify, and manage end users of the dockstore
+- name: extendedGA4GH
+  description: Optional experimental extensions of shapeless.the GA4GH API
+- name: GA4GH
+  description: A curated subset of resources proposed as a common standard for tool
+    repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)
+    . Integrators are welcome to use these endpoints but they are subject to change
+    based on community input.
+- name: GA4GHV1
+  description: A curated subset of resources proposed as a common standard for tool
+    repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)
+    and is considered final (not subject to change)
 paths:
   /organizations/collections/{collectionId}/aliases:
     post:
@@ -382,6 +414,8 @@ paths:
       - bearer: []
   /entries/{id}/topic:
     post:
+      tags:
+      - entries
       description: Create a discourse topic for an entry.
       operationId: setDiscourseTopic
       parameters:
@@ -677,6 +711,29 @@ paths:
                 $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations/{organizationId}/reject:
     post:
       tags:
@@ -717,29 +774,6 @@ paths:
         schema:
           type: integer
           format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/name/{name}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by name.
-      description: Retrieve an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
-      parameters:
-      - name: name
-        in: path
-        description: Organization name.
-        required: true
-        schema:
-          type: string
       responses:
         default:
           description: default response
@@ -1365,6 +1399,8 @@ paths:
                 type: string
   /users/{userId}:
     get:
+      tags:
+      - users
       operationId: getSpecificUser
       parameters:
       - name: userId
@@ -1387,6 +1423,8 @@ paths:
                 $ref: '#/components/schemas/User'
   /users/user:
     get:
+      tags:
+      - users
       operationId: getUser
       requestBody:
         content:
@@ -1402,6 +1440,8 @@ paths:
                 $ref: '#/components/schemas/User'
   /users/users/organizations:
     get:
+      tags:
+      - users
       description: Get all of the Dockstore organizations for a user, sorted by most
         recently updated.
       operationId: getUserDockstoreOrganizations
@@ -1430,6 +1470,8 @@ paths:
       - bearer: []
   /users/users/entries:
     get:
+      tags:
+      - users
       description: Get all of the entries for a user, sorted by most recently updated.
       operationId: getUserEntries
       parameters:
@@ -1457,6 +1499,8 @@ paths:
       - bearer: []
   /users/registries:
     get:
+      tags:
+      - users
       description: Get all of the git registries accessible to the logged in user.
       operationId: getUserRegistries
       responses:
@@ -1477,6 +1521,8 @@ paths:
       - bearer: []
   /users/registries/{gitRegistry}/organizations:
     get:
+      tags:
+      - users
       description: Get all of the organizations for a given git registry accessible
         to the logged in user.
       operationId: getUserOrganizations
@@ -1506,6 +1552,8 @@ paths:
       - bearer: []
   /users/registries/{gitRegistry}/organizations/{organization}:
     get:
+      tags:
+      - users
       description: Get all of the repositories for an organization for a given git
         registry accessible to the logged in user.
       operationId: getUserOrganizationRepositories
@@ -1540,6 +1588,8 @@ paths:
       - bearer: []
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     post:
+      tags:
+      - workflows
       description: Adds a workflow for a registry and repository path with defaults
         set.
       operationId: addWorkflow
@@ -1577,6 +1627,8 @@ paths:
       security:
       - bearer: []
     delete:
+      tags:
+      - workflows
       description: Delete a stubbed workflow for a registry and repository path.
       operationId: deleteWorkflow
       parameters:
@@ -2012,8 +2064,8 @@ components:
           - WDL
           - NFL
           - service
-          - cwl
-          - wdl
+          
+          
         id:
           type: integer
           format: int64
@@ -2462,6 +2514,8 @@ components:
           type: boolean
         registry_string:
           type: string
+        custom_docker_registry_path:
+          type: string
         registry:
           type: integer
           format: int32
@@ -2476,8 +2530,6 @@ components:
         defaultCWLTestParameterFile:
           type: string
         defaultWDLTestParameterFile:
-          type: string
-        custom_docker_registry_path:
           type: string
         checker_id:
           type: integer
@@ -2509,8 +2561,8 @@ components:
           - WDL
           - NFL
           - service
-          - cwl
-          - wdl
+          
+          
         id:
           type: integer
           format: int64

@@ -25,6 +25,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -36,6 +37,8 @@ import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 @Path("/aliases")
 @Api("/aliases")
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = "aliases", description = ResourceConstants.ALIASES)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "aliases", description = ResourceConstants.ALIASES)
 public class AliasResource implements AliasableResourceInterface<WorkflowVersion> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AliasResource.class);

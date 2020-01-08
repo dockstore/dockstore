@@ -28,6 +28,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiParam;
 import io.swagger.api.factories.ToolsApiServiceFactory;
@@ -43,7 +44,7 @@ import io.swagger.model.ToolVersionV1;
 @Produces( { "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the tools API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-public class ToolsApiV1 {
+@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1)public class ToolsApiV1 {
     private final ToolsApiService delegate = ToolsApiServiceFactory.getToolsApi();
 
     @GET

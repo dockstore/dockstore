@@ -60,6 +60,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  */
 @Api("hosted")
 @Path("/containers")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "hosted", description = ResourceConstants.HOSTED)
 public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, ToolDAO, TagDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedToolResource.class);
     private final ToolDAO toolDAO;
