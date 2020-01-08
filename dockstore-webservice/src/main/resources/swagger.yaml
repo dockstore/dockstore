@@ -26,6 +26,7 @@ tags:
 - name: "entries"
   description: "Interact with entries in Dockstore regardless of whether they are\
     \ containers or workflows"
+- name: "events"
 - name: "extendedGA4GH"
   description: "Optional experimental extensions of the GA4GH API"
 - name: "GA4GH"
@@ -2623,6 +2624,45 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
+  /events:
+    get:
+      tags:
+      - "events"
+      summary: "Get events based on filters."
+      description: "Optional authentication."
+      operationId: "getEvents"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "event_search_type"
+        in: "query"
+        required: false
+        type: "string"
+        enum:
+        - "STARRED_ENTRIES"
+      - name: "limit"
+        in: "query"
+        required: false
+        type: "integer"
+        default: 10
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      - name: "offset"
+        in: "query"
+        required: false
+        type: "integer"
+        default: 0
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Event"
       security:
       - BEARER: []
   /metadata/config.json:
@@ -6776,6 +6816,7 @@ definitions:
         - "MODIFY_COLLECTION"
         - "REMOVE_FROM_COLLECTION"
         - "ADD_TO_COLLECTION"
+        - "ADD_VERSION_TO_ENTRY"
     description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
@@ -7744,15 +7785,15 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       username:
         type: "string"
         position: 1
@@ -8006,10 +8047,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
-      parentEntry:
-        $ref: "#/definitions/Entry"
       isChecker:
         type: "boolean"
+      parentEntry:
+        $ref: "#/definitions/Entry"
       has_checker:
         type: "boolean"
         readOnly: true

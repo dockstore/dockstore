@@ -372,6 +372,10 @@ public class Tool extends Entry<Tool, Tag> {
         }
     }
 
+    public Event.Builder getEventBuilder() {
+        return new Event.Builder().withTool(this);
+    }
+
     /**
      * Remove this once users no longer use the old client (1.3.6)
      * @return

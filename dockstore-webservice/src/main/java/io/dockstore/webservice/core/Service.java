@@ -53,4 +53,8 @@ public class Service extends Workflow {
     public void setIsChecker(boolean isChecker) {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
     }
+
+    public Event.Builder getEventBuilder() {
+        return new Event.Builder().withService(this);
+    }
 }

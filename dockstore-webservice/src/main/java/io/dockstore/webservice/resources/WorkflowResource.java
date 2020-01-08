@@ -338,7 +338,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     workflow.getUsers().add(user);
 
                     // Update the existing matching workflows based off of the new information
-                    updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
+                    updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user);
                     alreadyProcessed.add(workflow.getId());
                 }
             } else {
@@ -354,7 +354,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     workflowFromDB.getUsers().add(user);
 
                     // Update newly created template workflow (workflowFromDB) with found data from the repository
-                    updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
+                    updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user);
                     alreadyProcessed.add(workflowFromDB.getId());
                 }
             }
@@ -404,7 +404,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final Workflow newWorkflow = sourceCodeRepo
             .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
-        updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
+        updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user);
         FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
 
         // Refresh checker workflow
@@ -1256,7 +1256,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Save into database and then pull versions
         Workflow workflowFromDB = saveNewWorkflow(newWorkflow, user);
-        updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
+        updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user);
         return workflowDAO.findById(workflowFromDB.getId());
 
     }

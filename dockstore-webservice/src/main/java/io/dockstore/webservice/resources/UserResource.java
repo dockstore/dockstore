@@ -72,6 +72,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -113,12 +114,14 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
+    private final EventDAO eventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
 
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
                         DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+        this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -243,9 +246,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // Delete entries for which this user is the only user
         deleteSelfFromEntries(user);
-
         invalidateTokensForUser(user);
-
         return userDAO.delete(user);
     }
 
@@ -273,6 +274,7 @@ public class UserResource implements AuthenticatedResourceInterface {
                                 MessageFormat.format("Unexpected entry type {0}", entry.getClass().toString()),
                                 HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
+                    eventDAO.deleteEventByEntryID(entry.getId());
                     entryDAO.delete(entry);
                 });
     }

@@ -41,6 +41,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
@@ -54,6 +55,7 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -86,6 +88,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private final UserDAO userDAO;
     private final PermissionsInterface permissionsInterface;
     private final FileFormatDAO fileFormatDAO;
+    private final EventDAO eventDAO;
     private final int calculatedEntryLimit;
     private final int calculatedEntryVersionLimit;
 
@@ -93,6 +96,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
+        this.eventDAO = new EventDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
         this.calculatedEntryLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowLimit(), Integer.MAX_VALUE);
         this.calculatedEntryVersionLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowVersionLimit(), Integer.MAX_VALUE);
@@ -248,6 +252,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         PublicStateManager.getInstance().handleIndexUpdate(newTool, StateManagerMode.UPDATE);
+        Event event = newTool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
+        eventDAO.create(event);
         return newTool;
     }
 

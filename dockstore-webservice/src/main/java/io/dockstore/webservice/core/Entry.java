@@ -546,6 +546,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
+    @JsonIgnore
+    public abstract Event.Builder getEventBuilder();
+
     public Timestamp getDbCreateDate() {
         return dbCreateDate;
     }
