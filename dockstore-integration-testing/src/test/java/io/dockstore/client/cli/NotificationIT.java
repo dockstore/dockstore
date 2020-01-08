@@ -34,7 +34,7 @@ public class NotificationIT extends BaseIT {
         Notification notification = new Notification();
         notification.setMessage("holla");
         notification.setExpiration(new Timestamp(100000));  // a past timestamp
-        notification.setPriority(Notification.PriorityEnum.HIGH);
+        notification.setPriority(Notification.PriorityEnum.CRITICAL);
         return notification;
     }
 
@@ -42,7 +42,7 @@ public class NotificationIT extends BaseIT {
         Notification notification = new Notification();
         notification.setMessage(currentMsg);
         notification.setExpiration(new Timestamp(System.currentTimeMillis() + 100000));  // a future timestamp
-        notification.setPriority(Notification.PriorityEnum.HIGH);
+        notification.setPriority(Notification.PriorityEnum.CRITICAL);
         return notification;
     }
 
