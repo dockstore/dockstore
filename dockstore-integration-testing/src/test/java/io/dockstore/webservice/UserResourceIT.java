@@ -374,6 +374,7 @@ public class UserResourceIT extends BaseIT {
         List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
         assertFalse(entries.isEmpty());
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPath());
+        assertEquals("dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPrettyPath());
 
         // Update an entry
         Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
@@ -385,6 +386,7 @@ public class UserResourceIT extends BaseIT {
         // Entry should now be at the top
         entries = userApi.getUserEntries(10, null);
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(0).getPath());
+        assertEquals("dockstore-workflow-md5sum-unified", entries.get(0).getPrettyPath());
 
         // Create organizations
         Organization foobarOrg = createOrganization(client, "Foobar", "Foo Bar");

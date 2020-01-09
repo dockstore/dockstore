@@ -663,14 +663,14 @@ public class UserResource implements AuthenticatedResourceInterface {
                 timestamp = mostRecentTag.get().getDbUpdateDate();
             }
             List<String> pathElements = Arrays.asList(entry.getEntryPath().split("/"));
-            String prettyPath = String.join("/", pathElements.subList(1, pathElements.size()));
+            String prettyPath = String.join("/", pathElements.subList(2, pathElements.size()));
             entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), prettyPath, entry.getEntryType(), timestamp));
         });
 
         // Sort all entryUpdateTimes by timestamp
         List<EntryUpdateTime> sortedEntries = entryUpdateTimes
                 .stream()
-                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().contains(filter))
+                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
