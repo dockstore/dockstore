@@ -17,7 +17,6 @@ package io.dockstore.webservice.resources;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -88,10 +88,8 @@ public class EventResource {
             events.addAll(this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit));
             return events;
         case STARRED_ORGANIZATION:
-            userWithSession.getStarredOrganizations().forEach(organization -> {
-                List<Event> eventsForOrganization = this.eventDAO.findEventsForOrganization(organization.getId(), offset, limit);
-                events.addAll(eventsForOrganization);
-            });
+            Set<Long> collect = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
+            events.addAll(this.eventDAO.findAllByOrganizationIds(collect, offset, limit));
             return events;
         default:
             return Collections.emptySet();
