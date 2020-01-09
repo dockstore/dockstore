@@ -6,7 +6,9 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.resources.EventSearchType;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -331,6 +333,13 @@ public class OrganizationIT extends BaseIT {
         assertEquals("potato", organization.getDescription());
         String description = organizationsApiUser2.getOrganizationDescription(organization.getId());
         assertEquals("potato", description);
+
+        organizationsApiUser2.starOrganization(organization.getId(), SwaggerUtility.createStarRequest(true));
+        final io.dockstore.openapi.client.ApiClient openAPIWebClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EventsApi eventsApi = new EventsApi(openAPIWebClientUser2);
+        List<io.dockstore.openapi.client.model.Event> events1 = eventsApi
+                .getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), null, null);
+        Assert.assertEquals("Should have 1 create, 1 approve, 4 modify events", 6, events1.size());
     }
 
     @Test(expected = ApiException.class)

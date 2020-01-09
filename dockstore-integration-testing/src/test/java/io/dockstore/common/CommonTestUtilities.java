@@ -138,6 +138,24 @@ public final class CommonTestUtilities {
     }
 
     /**
+     * Shared convenience method
+     *
+     * @return
+     */
+    public static io.dockstore.openapi.client.ApiClient getOpenAPIWebClient(boolean authenticated, String username, TestingPostgres testingPostgres) {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        io.dockstore.openapi.client.ApiClient client = new io.dockstore.openapi.client.ApiClient();
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        if (authenticated) {
+            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
+                    .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
+                            String.class)));
+        }
+        return client;
+    }
+
+    /**
      * Wrapper for dropping and recreating database from migrations for test confidential 1
      *
      * @param support reference to testing instance of the dockstore web service
