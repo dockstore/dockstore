@@ -63,6 +63,17 @@ public class EventDAO extends AbstractDAO<Event> {
         return list(query);
     }
 
+    public List<Event> findAllByOrganizationIdsOrEntryIds(Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
+        int newLimit = Math.min(MAX_LIMIT, limit);
+        if (organizationIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIdsOrEntryIds");
+        query.setParameterList("organizationIDs", organizationIds).setParameter("entryIDs", entryIds)
+                .setFirstResult(offset).setMaxResults(newLimit);
+        return list(query);
+    }
+
     public void delete(Event event) {
         Session session = currentSession();
         session.delete(event);

@@ -88,8 +88,13 @@ public class EventResource {
             events.addAll(this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit));
             return events;
         case STARRED_ORGANIZATION:
-            Set<Long> collect = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
-            events.addAll(this.eventDAO.findAllByOrganizationIds(collect, offset, limit));
+            Set<Long> organizationIDs = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
+            events.addAll(this.eventDAO.findAllByOrganizationIds(organizationIDs, offset, limit));
+            return events;
+        case ALL_STARRED:
+            Set<Long> organizationIDs2 = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
+            Set<Long> entryIDs2 = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
+            events.addAll(this.eventDAO.findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit));
             return events;
         default:
             return Collections.emptySet();
