@@ -16,6 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -51,8 +52,11 @@ import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
 import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 
 /**
+ * Avoid adding Swagger annotations to this, only use OpenAPI 3.0 annotations when possible.
+ * The UI currently does not rely on Swagger.
+ * TODO: Remove all Swagger annotations
  * @author gluu
- * @since 2019-12-05
+ * @since 1.8.0
  */
 @Path("/events")
 @Api("events")
@@ -68,20 +72,29 @@ public class EventResource {
         this.eventDAO = eventDAO;
         this.userDAO = userDAO;
     }
-    @SuppressWarnings("checkstyle:MagicNumber")
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = SUMMARY, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
-    public List<Event> getEvents(@ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
-        if (eventSearchType.equals(EventSearchType.STARRED_ENTRIES)) {
-            User userWithSession = this.userDAO.findById(user.getId());
+    public Set<Event> getEvents(@ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
+        User userWithSession = this.userDAO.findById(user.getId());
+        Set<Event> events = new HashSet<>();
+        switch (eventSearchType) {
+        case STARRED_ENTRIES:
             Set<Long> entryIDs = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-            return this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit);
-        } else {
-            return Collections.emptyList();
+            events.addAll(this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit));
+            return events;
+        case STARRED_ORGANIZATION:
+            userWithSession.getStarredOrganizations().forEach(organization -> {
+                List<Event> eventsForOrganization = this.eventDAO.findEventsForOrganization(organization.getId(), offset, limit);
+                events.addAll(eventsForOrganization);
+            });
+            return events;
+        default:
+            return Collections.emptySet();
         }
     }
 }

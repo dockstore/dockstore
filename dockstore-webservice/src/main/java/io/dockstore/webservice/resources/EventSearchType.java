@@ -16,5 +16,6 @@
 package io.dockstore.webservice.resources;
 
 public enum EventSearchType  {
-    STARRED_ENTRIES
+    STARRED_ENTRIES,
+    STARRED_ORGANIZATION
 }
