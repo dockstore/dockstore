@@ -121,38 +121,41 @@ public final class CommonTestUtilities {
 
     /**
      * Shared convenience method
-     *
+     * TODO: Somehow merge it with the method below, they are nearly identical
      * @return
      */
     public static ApiClient getWebClient(boolean authenticated, String username, TestingPostgres testingPostgres) {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        client.setBasePath(getBasePath());
         if (authenticated) {
-            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
-                    String.class)));
+            client.addDefaultHeader("Authorization", getDockstoreToken(testingPostgres, username));
         }
         return client;
     }
 
     /**
      * Shared convenience method
-     *
+     * TODO: Somehow merge it with the method above, they are nearly identical
      * @return
      */
     public static io.dockstore.openapi.client.ApiClient getOpenAPIWebClient(boolean authenticated, String username, TestingPostgres testingPostgres) {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         io.dockstore.openapi.client.ApiClient client = new io.dockstore.openapi.client.ApiClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        client.setBasePath(getBasePath());
         if (authenticated) {
-            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                    .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
-                            String.class)));
+            client.addDefaultHeader("Authorization", getDockstoreToken(testingPostgres, username));
         }
         return client;
+    }
+
+    private static String getBasePath() {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        return parseConfig.getString(Constants.WEBSERVICE_BASE_PATH);
+    }
+
+    private static String getDockstoreToken(TestingPostgres testingPostgres, String username) {
+        return "Bearer " + (testingPostgres
+                .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';", String.class));
     }
 
     /**
