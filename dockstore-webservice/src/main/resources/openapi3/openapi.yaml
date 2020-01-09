@@ -43,7 +43,7 @@ tags:
 - name: users
   description: List, modify, and manage end users of the dockstore
 - name: extendedGA4GH
-  description: Optional experimental extensions of shapeless.the GA4GH API
+  description: Optional experimental extensions of the GA4GH API
 - name: GA4GH
   description: A curated subset of resources proposed as a common standard for tool
     repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)
@@ -711,29 +711,6 @@ paths:
                 $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
-  /organizations/name/{name}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by name.
-      description: Retrieve an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
-      parameters:
-      - name: name
-        in: path
-        description: Organization name.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/{organizationId}/reject:
     post:
       tags:
@@ -774,6 +751,29 @@ paths:
         schema:
           type: integer
           format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
       responses:
         default:
           description: default response
@@ -970,6 +970,35 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Event'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/invitation:
+    post:
+      tags:
+      - organizations
+      summary: Accept or reject an organization invitation.
+      description: Accept or reject an organization invitation. True accepts the invitation,
+        false rejects the invitation.
+      operationId: acceptOrRejectInvitation
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: accept
+        in: query
+        description: Accept or reject.
+        required: true
+        schema:
+          type: boolean
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
       security:
       - bearer: []
   /organizations/{organizationId}/star:
@@ -1226,35 +1255,6 @@ paths:
         schema:
           type: integer
           format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-      - bearer: []
-  /organizations/{organizationId}/invitation:
-    post:
-      tags:
-      - organizations
-      summary: Accept or reject an organization invitation.
-      description: Accept or reject an organization invitation. True accepts the invitation,
-        false rejects the invitation.
-      operationId: acceptOrRejectInvitation
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: accept
-        in: query
-        description: Accept or reject.
-        required: true
-        schema:
-          type: boolean
       responses:
         default:
           description: default response
@@ -2005,9 +2005,9 @@ components:
             $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
-        doiURL:
-          type: string
         author:
+          type: string
+        doiURL:
           type: string
         verified:
           type: boolean
@@ -2364,9 +2364,9 @@ components:
           type: string
         hidden:
           type: boolean
-        doiURL:
-          type: string
         author:
+          type: string
+        doiURL:
           type: string
         verified:
           type: boolean
@@ -2514,8 +2514,6 @@ components:
           type: boolean
         registry_string:
           type: string
-        custom_docker_registry_path:
-          type: string
         registry:
           type: integer
           format: int32
@@ -2530,6 +2528,8 @@ components:
         defaultCWLTestParameterFile:
           type: string
         defaultWDLTestParameterFile:
+          type: string
+        custom_docker_registry_path:
           type: string
         checker_id:
           type: integer
@@ -2738,9 +2738,9 @@ components:
           type: string
         hidden:
           type: boolean
-        doiURL:
-          type: string
         author:
+          type: string
+        doiURL:
           type: string
         verified:
           type: boolean
