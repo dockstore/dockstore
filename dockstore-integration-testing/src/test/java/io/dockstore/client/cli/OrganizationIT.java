@@ -8,6 +8,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -334,12 +335,30 @@ public class OrganizationIT extends BaseIT {
         String description = organizationsApiUser2.getOrganizationDescription(organization.getId());
         assertEquals("potato", description);
 
+        testStarredOrganizationEvents(organizationsApiUser2, organization);
+    }
+
+    private void testStarredOrganizationEvents(OrganizationsApi organizationsApiUser2, Organization organization) {
         organizationsApiUser2.starOrganization(organization.getId(), SwaggerUtility.createStarRequest(true));
         final io.dockstore.openapi.client.ApiClient openAPIWebClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EventsApi eventsApi = new EventsApi(openAPIWebClientUser2);
-        List<io.dockstore.openapi.client.model.Event> events1 = eventsApi
+        List<io.dockstore.openapi.client.model.Event> events = eventsApi
                 .getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), null, null);
-        Assert.assertEquals("Should have 1 create, 1 approve, 4 modify events", 6, events1.size());
+        Assert.assertEquals("Should have 1 create, 1 approve, 4 modify events", 6, events.size());
+        events = eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 5, null);
+        Assert.assertEquals("Should have 1 create, 1 approve, 4 modify events", 5, events.size());
+        try {
+            eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), EventDAO.MAX_LIMIT + 1, 0);
+            Assert.fail("Should've failed because it's over the limit");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
+        }
+        try {
+            eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 0, 0);
+            Assert.fail("Should've failed because it's under the limit");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            Assert.assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
+        }
     }
 
     @Test(expected = ApiException.class)
