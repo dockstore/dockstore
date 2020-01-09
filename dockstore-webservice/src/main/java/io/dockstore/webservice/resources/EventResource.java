@@ -16,7 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -79,25 +79,21 @@ public class EventResource {
     @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = SUMMARY, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
-    public Set<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    public List<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User userWithSession = this.userDAO.findById(user.getId());
-        Set<Event> events = new HashSet<>();
         switch (eventSearchType) {
         case STARRED_ENTRIES:
             Set<Long> entryIDs = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-            events.addAll(this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit));
-            return events;
+            return this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit);
         case STARRED_ORGANIZATION:
             Set<Long> organizationIDs = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
-            events.addAll(this.eventDAO.findAllByOrganizationIds(organizationIDs, offset, limit));
-            return events;
+            return this.eventDAO.findAllByOrganizationIds(organizationIDs, offset, limit);
         case ALL_STARRED:
             Set<Long> organizationIDs2 = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
             Set<Long> entryIDs2 = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-            events.addAll(this.eventDAO.findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit));
-            return events;
+            return this.eventDAO.findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit);
         default:
-            return Collections.emptySet();
+            return Collections.emptyList();
         }
     }
 }
