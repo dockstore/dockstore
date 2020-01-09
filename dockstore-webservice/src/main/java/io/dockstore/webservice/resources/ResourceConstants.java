@@ -24,7 +24,7 @@ public final class ResourceConstants {
     public static final String GA4GH = "A curated subset of resources proposed as a common standard for tool repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2) . Integrators are welcome to use these endpoints but they are subject to change based on community input.";
     public static final String EXTENDEDGA4GH = "Optional experimental extensions of the GA4GH API";
     public static final String TOKENS = "List, modify, refresh, and delete tokens for external services";
-    public static final String WORKFLOWS = "List and register workflows in the dockstore (CWL or WDL)";
+    public static final String WORKFLOWS = "List and register workflows in the dockstore (CWL, Nextflow, WDL)";
     public static final String HOSTED = "Created and modify hosted entries in the dockstore";
     public static final String USERS = "List, modify, and manage end users of the dockstore";
     public static final String METADATA = "Information about Dockstore like RSS, sitemap, lists of dependencies, etc.";
