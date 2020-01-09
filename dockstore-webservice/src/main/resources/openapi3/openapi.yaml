@@ -82,7 +82,70 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/collections:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve all collections for an organization.
+      description: Retrieve all collections for an organization. Supports optional
+        authentication.
+      operationId: getCollectionsFromOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: include
+        in: query
+        description: Included fields.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    post:
+      tags:
+      - organizations
+      summary: Create a collection in the given organization.
+      description: Create a collection in the given organization.
+      operationId: createCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collection to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
   /organizations/collections/{alias}/aliases:
@@ -270,69 +333,6 @@ paths:
         schema:
           type: integer
           format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/collections:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve all collections for an organization.
-      description: Retrieve all collections for an organization. Supports optional
-        authentication.
-      operationId: getCollectionsFromOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: include
-        in: query
-        description: Included fields.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
-    post:
-      tags:
-      - organizations
-      summary: Create a collection in the given organization.
-      description: Create a collection in the given organization.
-      operationId: createCollection
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Collection to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Collection'
-        required: true
       responses:
         default:
           description: default response
@@ -571,6 +571,35 @@ paths:
             application/json:
               schema:
                 type: string
+  /metadata/okHttpCachePerformance:
+    get:
+      tags:
+      - metadata
+      summary: Get measures of cache performance
+      description: Get measures of cache performance, NO authentication
+      operationId: getCachePerformance
+      responses:
+        default:
+          description: Cache performance information
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /metadata/elasticSearch:
+    get:
+      tags:
+      - metadata
+      summary: Successful response if elastic search is up and running
+      description: Successful response if elastic search is up and running, NO authentication
+      operationId: checkElasticSearch
+      responses:
+        default:
+          description: default response
+          content:
+            text/html: {}
+            text/xml: {}
   /metadata/sourceControlList:
     get:
       tags:
@@ -604,35 +633,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DescriptorLanguageBean'
-  /metadata/okHttpCachePerformance:
-    get:
-      tags:
-      - metadata
-      summary: Get measures of cache performance
-      description: Get measures of cache performance, NO authentication
-      operationId: getCachePerformance
-      responses:
-        default:
-          description: Cache performance information
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: string
-  /metadata/elasticSearch:
-    get:
-      tags:
-      - metadata
-      summary: Successful response if elastic search is up and running
-      description: Successful response if elastic search is up and running, NO authentication
-      operationId: checkElasticSearch
-      responses:
-        default:
-          description: default response
-          content:
-            text/html: {}
-            text/xml: {}
   /metadata/config.json:
     get:
       tags:
@@ -972,35 +972,6 @@ paths:
                   $ref: '#/components/schemas/Event'
       security:
       - bearer: []
-  /organizations/{organizationId}/invitation:
-    post:
-      tags:
-      - organizations
-      summary: Accept or reject an organization invitation.
-      description: Accept or reject an organization invitation. True accepts the invitation,
-        false rejects the invitation.
-      operationId: acceptOrRejectInvitation
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: accept
-        in: query
-        description: Accept or reject.
-        required: true
-        schema:
-          type: boolean
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-      - bearer: []
   /organizations/{organizationId}/star:
     put:
       tags:
@@ -1255,6 +1226,35 @@ paths:
         schema:
           type: integer
           format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
+  /organizations/{organizationId}/invitation:
+    post:
+      tags:
+      - organizations
+      summary: Accept or reject an organization invitation.
+      description: Accept or reject an organization invitation. True accepts the invitation,
+        false rejects the invitation.
+      operationId: acceptOrRejectInvitation
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: accept
+        in: query
+        description: Accept or reject.
+        required: true
+        schema:
+          type: boolean
       responses:
         default:
           description: default response
@@ -1669,6 +1669,13 @@ components:
       properties:
         content:
           type: string
+    Aliasable:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
     Checksum:
       type: object
       properties:
@@ -1789,6 +1796,9 @@ components:
         last_modified:
           type: integer
           format: int32
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -1804,9 +1814,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
       writeOnly: true
     FileFormat:
       type: object
@@ -2005,9 +2012,15 @@ components:
             $ref: '#/components/schemas/Image'
         hidden:
           type: boolean
-        author:
+        workingDirectory:
+          type: string
+        description:
+          type: string
+        email:
           type: string
         doiURL:
+          type: string
+        author:
           type: string
         verified:
           type: boolean
@@ -2028,12 +2041,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        workingDirectory:
-          type: string
-        description:
-          type: string
-        email:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -2047,13 +2054,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-    Aliasable:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
     BioWorkflow:
       type: object
       properties:
@@ -2153,14 +2153,17 @@ components:
         parent_id:
           type: integer
           format: int64
-        full_workflow_path:
-          type: string
         workflow_path:
+          type: string
+        full_workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
         source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -2176,9 +2179,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     Event:
       type: object
       properties:
@@ -2364,9 +2364,13 @@ components:
           type: string
         hidden:
           type: boolean
-        author:
+        description:
+          type: string
+        email:
           type: string
         doiURL:
+          type: string
+        author:
           type: string
         verified:
           type: boolean
@@ -2387,10 +2391,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        description:
-          type: string
-        email:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time
@@ -2492,13 +2492,13 @@ components:
             $ref: '#/components/schemas/Tag'
         path:
           type: string
-        customerDockerRegistryPath:
-          type: string
-          writeOnly: true
         descriptorType:
           type: array
           items:
             type: string
+        customerDockerRegistryPath:
+          type: string
+          writeOnly: true
         metadataFromEntry:
           $ref: '#/components/schemas/Tool'
         metadataFromVersion:
@@ -2531,6 +2531,9 @@ components:
           type: string
         custom_docker_registry_path:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -2546,9 +2549,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     Workflow:
       required:
       - type
@@ -2649,14 +2649,17 @@ components:
         last_modified:
           type: integer
           format: int32
-        full_workflow_path:
-          type: string
         workflow_path:
+          type: string
+        full_workflow_path:
           type: string
         defaultTestParameterFilePath:
           type: string
         source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -2672,9 +2675,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
         type:
           type: string
       writeOnly: true
@@ -2738,9 +2738,13 @@ components:
           type: string
         hidden:
           type: boolean
-        author:
+        description:
+          type: string
+        email:
           type: string
         doiURL:
+          type: string
+        author:
           type: string
         verified:
           type: boolean
@@ -2761,10 +2765,6 @@ components:
           enum:
           - README
           - DESCRIPTOR
-        description:
-          type: string
-        email:
-          type: string
         dbUpdateDate:
           type: string
           format: date-time

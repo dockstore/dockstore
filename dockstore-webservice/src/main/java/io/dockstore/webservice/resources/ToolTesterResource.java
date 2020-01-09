@@ -51,7 +51,6 @@ import org.slf4j.LoggerFactory;
 @Path("/toolTester")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "toolTester", description = ResourceConstants.TOOLTESTER)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "toolTester", description = ResourceConstants.TOOLTESTER)
 public class ToolTesterResource {
     private static final Logger LOG = LoggerFactory.getLogger(ToolTesterResource.class);
     private final String bucketName;

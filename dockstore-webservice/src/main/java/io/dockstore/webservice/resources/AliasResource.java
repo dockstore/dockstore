@@ -38,7 +38,6 @@ import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 @Api("/aliases")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "aliases", description = ResourceConstants.ALIASES)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "aliases", description = ResourceConstants.ALIASES)
 public class AliasResource implements AliasableResourceInterface<WorkflowVersion> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AliasResource.class);
