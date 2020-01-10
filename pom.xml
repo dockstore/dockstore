@@ -32,7 +32,7 @@
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
         <dropwizard.version>1.3.16</dropwizard.version>
-        <dockstore-client.version>1.7.0-rc.1</dockstore-client.version>
+        <dockstore-client.version>1.8.0-beta.1</dockstore-client.version>
 
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
         <swagger-annotations-version>1.5.23</swagger-annotations-version>
