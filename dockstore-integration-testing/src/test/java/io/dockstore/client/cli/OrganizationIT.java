@@ -338,15 +338,23 @@ public class OrganizationIT extends BaseIT {
         testStarredOrganizationEvents(organizationsApiUser2, organization);
     }
 
+    /**
+     * This tests that:
+     * the pagination limit works
+     * the newest events are gotten
+     * @param organizationsApiUser2 Organization API for user 2 who will star the organization
+     * @param organization  An organization which is known to have 6 events (create > modify > approve > modify > modify > modify)
+     */
     private void testStarredOrganizationEvents(OrganizationsApi organizationsApiUser2, Organization organization) {
         organizationsApiUser2.starOrganization(organization.getId(), SwaggerUtility.createStarRequest(true));
         final io.dockstore.openapi.client.ApiClient openAPIWebClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EventsApi eventsApi = new EventsApi(openAPIWebClientUser2);
         List<io.dockstore.openapi.client.model.Event> events = eventsApi
                 .getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), null, null);
-        Assert.assertEquals("Should have 1 create, 1 approve, 4 modify events", 6, events.size());
+        Assert.assertEquals("Should have the correct amount of events", 6, events.size());
         events = eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 5, null);
-        Assert.assertEquals("Should have 1 create, 1 approve, 4 modify events", 5, events.size());
+        Assert.assertEquals("Should have the correct amount of events", 5, events.size());
+        Assert.assertFalse("The create org event is the oldest, it should not be returned", events.stream().anyMatch(event -> event.getType().equals(io.dockstore.openapi.client.model.Event.TypeEnum.CREATE_ORG)));
         try {
             eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), EventDAO.MAX_LIMIT + 1, 0);
             Assert.fail("Should've failed because it's over the limit");
