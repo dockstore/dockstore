@@ -115,7 +115,6 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         if (tag.automated) {
             super.setReference(tag.getReference());
         }
-
         automated = tag.automated;
         imageId = tag.imageId;
         size = tag.size;
