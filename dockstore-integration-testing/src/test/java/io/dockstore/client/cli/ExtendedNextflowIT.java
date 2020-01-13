@@ -140,10 +140,11 @@ public class ExtendedNextflowIT extends BaseIT {
     private void testWorkflowVersionMetadata(Workflow workflow) {
         final String partialReadmeDescription = "AMPA-NF is a pipeline for assessing the antimicrobial domains of proteins,";
         final String descriptorDescription = "Fast automated prediction of protein antimicrobial regions";
+        final String versionWithReadmeDescription = "v1.0";
         Assert.assertEquals(descriptorDescription, workflow.getDescription());
-        Assert.assertEquals(descriptorDescription, workflow.getDescription());
+        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.getName().equals(versionWithReadmeDescription)));
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
-            if (workflowVersion.getName().equals("v1.0")) {
+            if (workflowVersion.getName().equals(versionWithReadmeDescription)) {
                 Assert.assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
                 Assert.assertNull(workflowVersion.getAuthor());
                 Assert.assertNull(workflowVersion.getEmail());
