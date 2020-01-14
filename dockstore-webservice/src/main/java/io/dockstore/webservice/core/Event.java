@@ -15,6 +15,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -59,16 +60,19 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "toolId", referencedColumnName = "id")
     @ApiModelProperty(value = "Tool that the event is acting on.", position = 3)
+    @JsonIgnoreProperties({ "workflowVersions" })
     private Tool tool;
 
     @ManyToOne
     @JoinColumn(name = "workflowId", referencedColumnName = "id")
     @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
+    @JsonIgnoreProperties({ "workflowVersions" })
     private BioWorkflow workflow;
 
     @ManyToOne
     @JoinColumn(name = "collectionId", referencedColumnName = "id")
     @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
+    @JsonIgnoreProperties({ "entries" })
     private Collection collection;
 
     @ManyToOne
