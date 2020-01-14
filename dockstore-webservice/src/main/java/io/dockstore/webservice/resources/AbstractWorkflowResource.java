@@ -205,8 +205,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflow.removeWorkflowVersion(existingVersionMap.get(version));
         }
 
-        boolean releaseCreated = false;
-
         // Then copy over content that changed
         for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
             // skip frozen versions
@@ -219,7 +217,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             } else {
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
-                releaseCreated = true;
+                Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withVersion(version).withInitiatorUser(user).build();
+                eventDAO.create(event);
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
                 workflow.getWorkflowVersions().add(workflowVersionFromDB);
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
@@ -256,10 +255,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             for (Validation versionValidation : version.getValidations()) {
                 workflowVersionFromDB.addOrUpdateValidation(versionValidation);
             }
-        }
-        if (releaseCreated) {
-            Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-            eventDAO.create(event);
         }
     }
 

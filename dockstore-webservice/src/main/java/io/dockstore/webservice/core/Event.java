@@ -55,6 +55,7 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "organizationId", referencedColumnName = "id")
     @ApiModelProperty(value = "Organization that the event is acting on.", position = 2)
+    @JsonIgnoreProperties("starredUsers")
     private Organization organization;
 
     @ManyToOne
@@ -160,6 +161,10 @@ public class Event {
 
     public User getInitiatorUser() {
         return initiatorUser;
+    }
+
+    public Version getVersion() {
+        return version;
     }
 
     public void setInitiatorUser(User initiatorUser) {
@@ -276,7 +281,7 @@ public class Event {
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;
             event.type = this.type;
-
+            event.version = this.version;
             return event;
         }
     }
