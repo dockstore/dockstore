@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.8.0-beta.6-SNAPSHOT"
+  version: "1.8.0-beta.9-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2647,6 +2647,8 @@ paths:
         type: "string"
         enum:
         - "STARRED_ENTRIES"
+        - "STARRED_ORGANIZATION"
+        - "ALL_STARRED"
       - name: "limit"
         in: "query"
         required: false
