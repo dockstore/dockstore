@@ -454,6 +454,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Hibernate.initialize(workflow.getUsers());
         initializeValidations(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        workflow.getWorkflowVersions().stream().forEach(wv -> Hibernate.initialize(wv.getAliases()));
         return workflow;
     }
 
@@ -707,6 +708,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         initializeValidations(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        workflow.getWorkflowVersions().stream().forEach(wv -> Hibernate.initialize(wv.getAliases()));
         return filterContainersForHiddenTags(workflow);
     }
 
@@ -858,6 +860,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         initializeValidations(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        workflow.getWorkflowVersions().stream().forEach(wv -> Hibernate.initialize(wv.getAliases()));
         return workflow;
     }
 
@@ -1044,6 +1047,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         initializeValidations(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        workflow.getWorkflowVersions().stream().forEach(wv -> Hibernate.initialize(wv.getAliases()));
         filterContainersForHiddenTags(workflow);
 
         // evil hack for backwards compatibility with 1.6.0 CLI, sorry

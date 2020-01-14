@@ -93,7 +93,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "List all available organizations.", notes = "NO Authentication", responseContainer = "List", response = Organization.class)
     @Operation(operationId = "getApprovedOrganizations", summary = "List all available organizations.", description = "List all organizations that have been approved by a curator or admin, sorted by number of stars.")
     public List<Organization> getApprovedOrganizations() {
-        return organizationDAO.findApprovedSortedByStar();
+        List<Organization> organizations = organizationDAO.findApprovedSortedByStar();
+        organizations.stream().forEach(org -> Hibernate.initialize(org.getAliases()));
+        return organizations;
     }
 
     @POST
@@ -193,6 +195,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             // No user given, only show approved organizations
             Organization organization = organizationDAO.findApprovedByName(name);
             throwExceptionForNullOrganization(organization);
+            Hibernate.initialize(organization.getAliases());
             return organization;
         } else {
             // User is given, check if organization is either approved or the user has access
@@ -202,6 +205,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
             // If approved then return
             if (Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED)) {
+                Hibernate.initialize(organization.getAliases());
                 return organization;
             }
 
@@ -209,6 +213,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             OrganizationUser role = getUserOrgRole(organization, user.get().getId());
 
             if (user.get().getIsAdmin() || user.get().isCurator() || role != null) {
+                Hibernate.initialize(organization.getAliases());
                 return organization;
             } else {
                 String msg = "Organization not found";
@@ -879,7 +884,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public Organization getAndCheckResourceByAlias(String alias) {
         final Organization orgByAlias = this.organizationDAO.getByAlias(alias);
         // If approved then return
+        throwExceptionForNullOrganization(orgByAlias);
         if (Objects.equals(orgByAlias.getStatus(), Organization.ApplicationState.APPROVED)) {
+            Hibernate.initialize(orgByAlias.getAliases());
             return orgByAlias;
         }
         throw new CustomWebApplicationException("Organization not found", HttpStatus.SC_NOT_FOUND);
