@@ -23,7 +23,9 @@ import io.swagger.v3.oas.integration.api.ObjectMapperProcessor;
 public class OrderedObjectMapperProcessor implements ObjectMapperProcessor {
     @Override
     public void processJsonObjectMapper(ObjectMapper mapper) {
-        /* do nothing */
+        // we don't use json, but this seems to be the one that matters for yaml
+        mapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+        mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }
 
     @Override
