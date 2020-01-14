@@ -379,6 +379,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonProperty("last_modified_date")
+    @ApiModelProperty(position = 13)
     public Date getLastModifiedDate() {
         return lastModified;
     }

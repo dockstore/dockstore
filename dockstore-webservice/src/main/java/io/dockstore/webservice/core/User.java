@@ -152,7 +152,6 @@ public class User implements Principal, Comparable<User>, Serializable {
     private TOSVersion tosVersion =  TOSVersion.NONE;
 
     @Column
-    @ApiModelProperty(value = "Time TOS was accepted", position = 15)
     private Date tosVersionAcceptanceDate;
 
     @Column(columnDefinition = "Text default 'NONE'")
@@ -474,6 +473,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     }
 
     @JsonProperty
+    @ApiModelProperty(value = "Time TOS was accepted", position = 15)
     public Date getTOSAcceptanceDate() {
         return this.tosVersionAcceptanceDate;
     }
