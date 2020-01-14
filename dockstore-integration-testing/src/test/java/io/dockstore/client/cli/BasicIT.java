@@ -30,6 +30,8 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.api.EventsApi;
+import io.dockstore.openapi.client.model.Event;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
@@ -37,11 +39,9 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.EventsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Event;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
@@ -242,8 +242,9 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-        EventsApi eventsApi = new EventsApi(client);
-        List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        EventsApi eventsApi = new EventsApi(openAPIClient);
+        List<io.dockstore.openapi.client.model.Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
@@ -1380,13 +1381,14 @@ public class BasicIT extends BaseIT {
 
     public void eventResourcePaginationTest() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         ContainertagsApi toolTagsApi = new ContainertagsApi(client);
 
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-        EventsApi eventsApi = new EventsApi(client);
+        EventsApi eventsApi = new EventsApi(openAPIClient);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
         StarRequest starRequest = new StarRequest();
