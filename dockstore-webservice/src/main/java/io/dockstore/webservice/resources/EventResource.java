@@ -38,10 +38,6 @@ import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -49,17 +45,14 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
-import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 
 /**
  * Avoid adding Swagger annotations to this, only use OpenAPI 3.0 annotations when possible.
  * The UI currently does not rely on Swagger.
- * TODO: Remove all Swagger annotations
  * @author gluu
  * @since 1.8.0
  */
 @Path("/events")
-@Api("events")
 @Produces(MediaType.APPLICATION_JSON)
 @io.swagger.v3.oas.annotations.tags.Tag(name = "events")
 public class EventResource {
@@ -76,10 +69,8 @@ public class EventResource {
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = "bearer"))
-    @ApiOperation(value = SUMMARY, authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
-    public List<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME))
+    public List<Event> getEvents(@Parameter(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User userWithSession = this.userDAO.findById(user.getId());
         switch (eventSearchType) {
         case STARRED_ENTRIES:
