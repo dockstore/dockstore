@@ -28,7 +28,7 @@ RUN apt-get update \
 RUN locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
-COPY --from=maven /dockstore-webservice/target/d*SNAPSHOT.jar /
+COPY --from=maven /dockstore-webservice/target/d*SNAPSHOT.jar /home
 
 # install dockerize
 ENV DOCKERIZE_VERSION v0.2.0
@@ -39,5 +39,5 @@ RUN curl -L https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VE
 RUN mkdir /dockstore_logs && chmod a+rx /dockstore_logs
 
 # Waiting for postgres service
-CMD ["dockerize", "-wait", "tcp://postgres:5432", "-timeout", "60s", "./init_webservice.sh"]
+CMD ["dockerize", "-wait", "tcp://postgres:5432", "-timeout", "60s", "/home/init_webservice.sh"]
 
