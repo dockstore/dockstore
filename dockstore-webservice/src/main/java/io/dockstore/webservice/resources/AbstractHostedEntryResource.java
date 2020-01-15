@@ -252,8 +252,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         PublicStateManager.getInstance().handleIndexUpdate(newTool, StateManagerMode.UPDATE);
-        Event event = newTool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withVersion(version).withInitiatorUser(user).build();
-        eventDAO.create(event);
+        eventDAO.createAddTagToEntryEvent(user, newTool, version);
         return newTool;
     }
 

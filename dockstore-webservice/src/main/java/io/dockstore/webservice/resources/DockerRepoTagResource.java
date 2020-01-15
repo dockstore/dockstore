@@ -34,7 +34,6 @@ import javax.ws.rs.core.Response;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
@@ -144,8 +143,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         }
         for (Tag tag : tags) {
             final long tagId = tagDAO.create(tag);
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withVersion(tag).withInitiatorUser(user).build();
-            eventDAO.create(event);
+            eventDAO.createAddTagToEntryEvent(user, tool, tag);
             Tag byId = tagDAO.findById(tagId);
             // Set dirty bit since this is a manual add
             byId.setDirtyBit(true);

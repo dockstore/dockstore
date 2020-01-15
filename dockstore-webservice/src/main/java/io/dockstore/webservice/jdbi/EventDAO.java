@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -86,5 +89,12 @@ public class EventDAO extends AbstractDAO<Event> {
         query.setParameter("entryId", entryId);
         query.executeUpdate();
         currentSession().flush();
+    }
+
+    public void createAddTagToEntryEvent(User user, Entry entry, Version version) {
+        if (version.getReferenceType() == Version.ReferenceType.TAG) {
+            Event event = entry.getEventBuilder().withType(Event.EventType.ADD_TAG_TO_ENTRY).withInitiatorUser(user).withVersion(version).build();
+            create(event);
+        }
     }
 }

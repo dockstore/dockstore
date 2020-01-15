@@ -55,6 +55,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.dockerhub.DockerHubImage;
 import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
@@ -500,8 +501,7 @@ public abstract class AbstractImageRegistry {
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(version -> {
             tagDAO.create(version);
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).withVersion(version).build();
-            eventDAO.create(event);
+            eventDAO.createAddTagToEntryEvent(user, tool, version);
         });
         toolDAO.create(tool);
     }

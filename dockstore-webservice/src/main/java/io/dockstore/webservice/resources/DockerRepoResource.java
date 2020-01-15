@@ -54,7 +54,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -505,8 +504,7 @@ public class DockerRepoResource
         Set<Tag> createdTags = new HashSet<>();
         for (Tag tag : tool.getWorkflowVersions()) {
             final long l = tagDAO.create(tag);
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withVersion(tag).withInitiatorUser(user).build();
-            eventDAO.create(event);
+            eventDAO.createAddTagToEntryEvent(user, tool, tag);
             createdTags.add(tagDAO.findById(l));
         }
         tool.getWorkflowVersions().clear();

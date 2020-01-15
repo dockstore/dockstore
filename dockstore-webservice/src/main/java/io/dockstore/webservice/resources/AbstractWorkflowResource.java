@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -217,8 +216,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             } else {
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
-                Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withVersion(version).withInitiatorUser(user).build();
-                eventDAO.create(event);
+                eventDAO.createAddTagToEntryEvent(user, workflow, version);
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
                 workflow.getWorkflowVersions().add(workflowVersionFromDB);
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
