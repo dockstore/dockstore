@@ -6696,12 +6696,12 @@ components:
     Checksum:
       type: object
       properties:
-        type:
-          type: string
-          description: The type of hash algorithm, e.g., SHA256
         checksum:
           type: string
           description: String representation of the checksum value.
+        type:
+          type: string
+          description: The type of hash algorithm, e.g., SHA256
       description: This describes a checksum that is a associated with a tag or workflow
         version's image.
     Collection:
@@ -6709,18 +6709,6 @@ components:
       required:
         - name
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the collection in this web service
-        entries:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Entry"
-        organizationID:
-          type: integer
-          format: int64
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for collections
@@ -6732,6 +6720,18 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        entries:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Entry"
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the collection in this web service
+        organizationID:
+          type: integer
+          format: int64
         organizationName:
           type: string
           description: The name of the organization the collection belongs to
@@ -6759,28 +6759,40 @@ components:
     CollectionOrganization:
       type: object
       properties:
+        collectionDisplayName:
+          type: string
         collectionId:
           type: integer
           format: int64
         collectionName:
           type: string
-        collectionDisplayName:
+        organizationDisplayName:
           type: string
         organizationId:
           type: integer
           format: int64
         organizationName:
           type: string
-        organizationDisplayName:
-          type: string
     Config:
       type: object
       properties:
-        dnaStackImportUrl:
+        bitBucketAuthUrl:
+          type: string
+        bitBucketClientId:
+          type: string
+        cwlVisualizerUri:
+          type: string
+        discourseUrl:
           type: string
         dnaNexusImportUrl:
           type: string
-        terraImportUrl:
+        dnaStackImportUrl:
+          type: string
+        documentationUrl:
+          type: string
+        featuredContentUrl:
+          type: string
+        gitHubAppInstallationUrl:
           type: string
         gitHubAuthUrl:
           type: string
@@ -6788,59 +6800,47 @@ components:
           type: string
         gitHubScope:
           type: string
-        quayIoAuthUrl:
-          type: string
-        quayIoRedirectPath:
-          type: string
-        quayIoScope:
-          type: string
-        bitBucketAuthUrl:
+        githubClientId:
           type: string
         gitlabAuthUrl:
+          type: string
+        gitlabClientId:
           type: string
         gitlabRedirectPath:
           type: string
         gitlabScope:
           type: string
+        googleClientId:
+          type: string
+        googleScope:
+          type: string
+        quayIoAuthUrl:
+          type: string
+        quayIoClientId:
+          type: string
+        quayIoRedirectPath:
+          type: string
+        quayIoScope:
+          type: string
+        tagManagerId:
+          type: string
+        terraImportUrl:
+          type: string
         zenodoAuthUrl:
+          type: string
+        zenodoClientId:
           type: string
         zenodoRedirectPath:
           type: string
         zenodoScope:
           type: string
-        googleScope:
-          type: string
-        cwlVisualizerUri:
-          type: string
-        tagManagerId:
-          type: string
-        gitHubAppInstallationUrl:
-          type: string
-        documentationUrl:
-          type: string
-        featuredContentUrl:
-          type: string
-        githubClientId:
-          type: string
-        quayIoClientId:
-          type: string
-        bitBucketClientId:
-          type: string
-        gitlabClientId:
-          type: string
-        zenodoClientId:
-          type: string
-        googleClientId:
-          type: string
-        discourseUrl:
-          type: string
       description: Configuration information for UI clients of the Dockstore webservice.
     DescriptorLanguageBean:
       type: object
       properties:
-        value:
-          type: string
         friendlyName:
+          type: string
+        value:
           type: string
     DockstoreTool:
       type: object
@@ -6857,52 +6857,52 @@ components:
         - private_access
         - registry_string
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the container in this web service
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
           additionalProperties:
             $ref: "#/components/schemas/Alias"
+        custom_docker_registry_path:
+          type: string
+          readOnly: true
         dbCreateDate:
           type: string
           format: date-time
         dbUpdateDate:
           type: string
           format: date-time
-        topicId:
-          type: integer
-          format: int64
-          description: The Id of the corresponding topic on Dockstore Discuss
-        tags:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/Tag"
-        custom_docker_registry_path:
-          type: string
-          readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
         input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        tags:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Tag"
+        topicId:
+          type: integer
+          format: int64
+          description: The Id of the corresponding topic on Dockstore Discuss
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7069,10 +7069,6 @@ components:
       required:
         - gitUrl
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the container in this web service
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -7084,6 +7080,29 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        has_checker:
+          type: boolean
+          readOnly: true
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
+        input_file_formats:
+          type: array
+          readOnly: true
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        output_file_formats:
+          type: array
+          readOnly: true
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/FileFormat"
         topicId:
           type: integer
           format: int64
@@ -7093,25 +7112,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Version"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
-          type: array
-          readOnly: true
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/FileFormat"
-        output_file_formats:
-          type: array
-          readOnly: true
-          uniqueItems: true
-          items:
-            $ref: "#/components/schemas/FileFormat"
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7182,10 +7182,6 @@ components:
     EntryUpdateTime:
       type: object
       properties:
-        path:
-          type: string
-        prettyPath:
-          type: string
         entryType:
           type: string
           enum:
@@ -7195,6 +7191,10 @@ components:
         lastUpdateDate:
           type: string
           format: date-time
+        path:
+          type: string
+        prettyPath:
+          type: string
     Error:
       type: object
       required:
@@ -7210,16 +7210,16 @@ components:
       required:
         - type
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the event in this web service
         dbCreateDate:
           type: string
           format: date-time
         dbUpdateDate:
           type: string
           format: date-time
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the event in this web service
         user:
           $ref: "#/components/schemas/User"
         organization:
@@ -7337,9 +7337,6 @@ components:
         - api_version
         - version
       properties:
-        version:
-          type: string
-          description: The version of this registry
         api_version:
           type: string
           description: The version of the GA4GH tool-registry API supported by this registry
@@ -7350,17 +7347,20 @@ components:
           type: string
           description: A friendly name that can be used in addition to the hostname to
             describe a registry
+        version:
+          type: string
+          description: The version of this registry
       description: Describes this registry to better allow for mirroring and indexing.
     MetadataV1:
       type: object
       properties:
-        version:
-          type: string
         api-version:
           type: string
         country:
           type: string
         friendly-name:
+          type: string
+        version:
           type: string
       description: Describes this registry to better allow for mirroring and indexing.
     Notification:
@@ -7407,10 +7407,6 @@ components:
         - status
         - users
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the organization in this web service
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for organizations
@@ -7422,6 +7418,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the organization in this web service
         name:
           type: string
           example: OICR
@@ -7457,6 +7457,10 @@ components:
         topic:
           type: string
           description: Short description of the organization
+        avatarUrl:
+          type: string
+          description: Logo URL
+          pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
         displayName:
           type: string
           description: Display name for an organization (Ex. Ontario Institute for Cancer
@@ -7464,10 +7468,6 @@ components:
           minLength: 3
           maxLength: 50
           pattern: "[\\w ,_\\-&()']*"
-        avatarUrl:
-          type: string
-          description: Logo URL
-          pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
         starredUsers:
           type: array
           description: This indicates the users that have starred this organization
@@ -7477,31 +7477,19 @@ components:
     OrganizationUpdateTime:
       type: object
       properties:
-        name:
-          type: string
         displayName:
           type: string
         lastUpdateDate:
           type: string
           format: date-time
+        name:
+          type: string
     OrganizationUser:
       type: object
       required:
         - accepted
         - role
       properties:
-        id:
-          $ref: "#/components/schemas/OrganizationUserId"
-        user:
-          $ref: "#/components/schemas/User"
-        organization:
-          $ref: "#/components/schemas/Organization"
-        role:
-          type: string
-          description: The role of the user in the organization
-          enum:
-            - MAINTAINER
-            - MEMBER
         accepted:
           type: boolean
           description: Has the user accepted their membership.
@@ -7511,13 +7499,25 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        id:
+          $ref: "#/components/schemas/OrganizationUserId"
+        organization:
+          $ref: "#/components/schemas/Organization"
+        role:
+          type: string
+          description: The role of the user in the organization
+          enum:
+            - MAINTAINER
+            - MEMBER
+        user:
+          $ref: "#/components/schemas/User"
     OrganizationUserId:
       type: object
       properties:
-        userId:
+        organizationId:
           type: integer
           format: int64
-        organizationId:
+        userId:
           type: integer
           format: int64
     Permission:
@@ -7534,17 +7534,17 @@ components:
     Profile:
       type: object
       properties:
-        name:
-          type: string
-        email:
-          type: string
         avatarURL:
+          type: string
+        bio:
           type: string
         company:
           type: string
+        email:
+          type: string
         location:
           type: string
-        bio:
+        name:
           type: string
         username:
           type: string
@@ -7557,25 +7557,23 @@ components:
     RegistryBean:
       type: object
       properties:
+        customDockerPath:
+          type: string
         dockerPath:
+          type: string
+        enum:
           type: string
         friendlyName:
           type: string
-        url:
-          type: string
         privateOnly:
           type: string
-        customDockerPath:
-          type: string
-        enum:
+        url:
           type: string
     Repository:
       type: object
       properties:
-        organization:
-          type: string
-        repositoryName:
-          type: string
+        canDelete:
+          type: boolean
         gitRegistry:
           type: string
           enum:
@@ -7583,11 +7581,13 @@ components:
             - github.com
             - bitbucket.org
             - gitlab.com
-        canDelete:
-          type: boolean
+        organization:
+          type: string
+        path:
+          type: string
         present:
           type: boolean
-        path:
+        repositoryName:
           type: string
     Service:
       allOf:
@@ -7612,9 +7612,9 @@ components:
     SourceControlBean:
       type: object
       properties:
-        value:
-          type: string
         friendlyName:
+          type: string
+        value:
           type: string
     SourceFile:
       type: object
@@ -7623,14 +7623,14 @@ components:
         - path
         - type
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the source file in this web service
         frozen:
           type: boolean
           description: When true, this version cannot be affected by refreshes to the
             content or updates to its metadata
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the source file in this web service
         verifiedBySource:
           type: object
           description: maps from platform to whether an entry successfully ran on it using
@@ -7811,11 +7811,6 @@ components:
     Token:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the token in this web service
-          readOnly: true
         dbCreateDate:
           type: string
           format: date-time
@@ -7823,6 +7818,11 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+          readOnly: true
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the token in this web service
           readOnly: true
         tokenSource:
           type: string
@@ -7854,14 +7854,6 @@ components:
         - url
         - versions
       properties:
-        url:
-          type: string
-          example: http://agora.broadinstitute.org/tools/123456
-          description: The URL for this tool in this registry
-        id:
-          type: string
-          example: "123456"
-          description: A unique identifier of the tool, scoped to this registry
         aliases:
           type: array
           description: OPTIONAL A list of strings that can be used to identify this tool.
@@ -7869,39 +7861,50 @@ components:
             tool for registries. Can be used to match tools across registries.
           items:
             type: string
-        organization:
-          type: string
-          description: The organization that published the image.
-        toolname:
-          type: string
-          description: The name of the tool.
-        toolclass:
-          $ref: "#/components/schemas/ToolClass"
-        description:
-          type: string
-          description: The description of the tool.
         author:
           type: string
           description: Contact information for the author of this tool entry in the
             registry. (More complex authorship information is handled by the
             descriptor)
-        meta_version:
+        checker_url:
           type: string
-          description: The version of this tool in the registry. Iterates when fields like
-            the description, author, etc. are updated.
+          description: Optional url to the checker tool that will exit successfully if this
+            tool produced the expected result given test data.
         contains:
           type: array
           example: '"https://bio.tools/tool/mytum.de/SNAP2/1"'
           description: An array of IDs for the applications that are stored inside this tool
           items:
             type: string
+        description:
+          type: string
+          description: The description of the tool.
         has_checker:
           type: boolean
           description: Whether this tool has a checker tool associated with it
-        checker_url:
+        id:
           type: string
-          description: Optional url to the checker tool that will exit successfully if this
-            tool produced the expected result given test data.
+          example: "123456"
+          description: A unique identifier of the tool, scoped to this registry
+        meta_version:
+          type: string
+          description: The version of this tool in the registry. Iterates when fields like
+            the description, author, etc. are updated.
+        organization:
+          type: string
+          description: The organization that published the image.
+        signed:
+          type: boolean
+          description: Reports whether this tool has been signed.
+        toolclass:
+          $ref: "#/components/schemas/ToolClass"
+        toolname:
+          type: string
+          description: The name of the tool.
+        url:
+          type: string
+          example: http://agora.broadinstitute.org/tools/123456
+          description: The URL for this tool in this registry
         verified:
           type: boolean
           description: Reports whether this tool has been verified by a specific
@@ -7910,9 +7913,6 @@ components:
           type: string
           description: Source of metadata that can support a verified tool, such as an
             email or URL
-        signed:
-          type: boolean
-          description: Reports whether this tool has been signed.
         versions:
           type: array
           description: A list of versions for this tool
@@ -7924,15 +7924,15 @@ components:
     ToolClass:
       type: object
       properties:
+        description:
+          type: string
+          description: A longer explanation of what this class is and what it can accomplish
         id:
           type: string
           description: The unique identifier for the class
         name:
           type: string
           description: A short friendly name for the class
-        description:
-          type: string
-          description: A longer explanation of what this class is and what it can accomplish
       description: Describes a class (type) of tool allowing us to categorize workflows,
         tasks, and maybe even other entities (such as services) separately
     ToolDescriptor:
@@ -7940,6 +7940,9 @@ components:
       required:
         - type
       properties:
+        descriptor:
+          type: string
+          description: The descriptor that represents this version of the tool.
         type:
           type: string
           enum:
@@ -7947,9 +7950,6 @@ components:
             - WDL
             - NFL
             - SERVICE
-        descriptor:
-          type: string
-          description: The descriptor that represents this version of the tool.
         url:
           type: string
           example: https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl
@@ -7976,10 +7976,6 @@ components:
     ToolFile:
       type: object
       properties:
-        path:
-          type: string
-          description: Relative path of the file.  A descriptor's path can be used with the
-            GA4GH .../{type}/descriptor/{relative_path} endpoint
         file_type:
           type: string
           enum:
@@ -7988,23 +7984,27 @@ components:
             - SECONDARY_DESCRIPTOR
             - CONTAINERFILE
             - OTHER
+        path:
+          type: string
+          description: Relative path of the file.  A descriptor's path can be used with the
+            GA4GH .../{type}/descriptor/{relative_path} endpoint
     ToolTesterLog:
       type: object
       properties:
-        toolId:
-          type: string
-        toolVersionName:
-          type: string
-        testFilename:
-          type: string
-        runner:
+        filename:
           type: string
         logType:
           type: string
           enum:
             - FULL
             - SUMMARY
-        filename:
+        runner:
+          type: string
+        testFilename:
+          type: string
+        toolId:
+          type: string
+        toolVersionName:
           type: string
     ToolTestsV1:
       type: object
@@ -8023,32 +8023,32 @@ components:
     ToolV1:
       type: object
       properties:
-        url:
-          type: string
-        id:
-          type: string
-        organization:
-          type: string
-        toolname:
-          type: string
-        toolclass:
-          $ref: "#/components/schemas/ToolClass"
-        description:
-          type: string
         author:
-          type: string
-        meta-version:
           type: string
         contains:
           type: array
           items:
             type: string
+        description:
+          type: string
+        id:
+          type: string
+        meta-version:
+          type: string
+        organization:
+          type: string
+        signed:
+          type: boolean
+        toolclass:
+          $ref: "#/components/schemas/ToolClass"
+        toolname:
+          type: string
+        url:
+          type: string
         verified:
           type: boolean
         verified-source:
           type: string
-        signed:
-          type: boolean
         versions:
           type: array
           items:
@@ -8062,30 +8062,9 @@ components:
         - id
         - url
       properties:
-        name:
-          type: string
-          description: The name of the version.
-        url:
-          type: string
-          example: http://agora.broadinstitute.org/tools/123456/1
-          description: The URL for this tool in this registry
-        id:
-          type: string
-          example: v1
-          description: An identifier of the version of this tool for this particular tool
-            registry
-        image:
-          type: string
-          example: quay.io/seqware/seqware_full/1.1
-          description: The docker path to the image (and version) for this tool
-        registry_url:
-          type: string
-          description: A URL to a Singularity registry is provided when a specific type of
-            image does not use ids in the Docker format. Used along with
-            image_name to locate a specific image.
-        image_name:
-          type: string
-          description: Used in conjunction with a registry_url if provided to locate images
+        containerfile:
+          type: boolean
+          description: Reports if this tool has a containerfile available.
         descriptor_type:
           type: array
           description: The type (or types) of descriptors available.
@@ -8096,13 +8075,34 @@ components:
               - WDL
               - NFL
               - SERVICE
-        containerfile:
-          type: boolean
-          description: Reports if this tool has a containerfile available.
+        id:
+          type: string
+          example: v1
+          description: An identifier of the version of this tool for this particular tool
+            registry
+        image:
+          type: string
+          example: quay.io/seqware/seqware_full/1.1
+          description: The docker path to the image (and version) for this tool
+        image_name:
+          type: string
+          description: Used in conjunction with a registry_url if provided to locate images
         meta_version:
           type: string
           description: The version of this tool version in the registry. Iterates when
             fields like the description, author, etc. are updated.
+        name:
+          type: string
+          description: The name of the version.
+        registry_url:
+          type: string
+          description: A URL to a Singularity registry is provided when a specific type of
+            image does not use ids in the Docker format. Used along with
+            image_name to locate a specific image.
+        url:
+          type: string
+          example: http://agora.broadinstitute.org/tools/123456/1
+          description: The URL for this tool in this registry
         verified:
           type: boolean
           description: Reports whether this tool has been verified by a specific
@@ -8116,14 +8116,6 @@ components:
     ToolVersionV1:
       type: object
       properties:
-        name:
-          type: string
-        url:
-          type: string
-        id:
-          type: string
-        image:
-          type: string
         descriptor-type:
           type: array
           items:
@@ -8133,7 +8125,15 @@ components:
               - WDL
         dockerfile:
           type: boolean
+        id:
+          type: string
+        image:
+          type: string
         meta-version:
+          type: string
+        name:
+          type: string
+        url:
           type: string
         verified:
           type: boolean
@@ -8153,27 +8153,27 @@ components:
           format: int64
           description: Implementation specific ID for the container in this web service
           readOnly: true
-        userProfiles:
-          type: object
-          description: Profile information of the user retrieved from 3rd party sites
-            (GitHub, Google, etc)
-          additionalProperties:
-            $ref: "#/components/schemas/Profile"
         privacyPolicyVersion:
           type: string
           description: Indicates which version of the privacy policy the user has accepted
           enum:
             - NONE
             - PRIVACY_POLICY_VERSION_2_5
+        tosacceptanceDate:
+          type: string
+          format: date-time
+          readOnly: true
         tosversion:
           type: string
           enum:
             - NONE
             - TOS_VERSION_1
-        tosacceptanceDate:
-          type: string
-          format: date-time
-          readOnly: true
+        userProfiles:
+          type: object
+          description: Profile information of the user retrieved from 3rd party sites
+            (GitHub, Google, etc)
+          additionalProperties:
+            $ref: "#/components/schemas/Profile"
         username:
           type: string
           description: Username on dockstore
@@ -8233,12 +8233,12 @@ components:
     VerificationInformation:
       type: object
       properties:
-        verified:
-          type: boolean
         metadata:
           type: string
         platformVersion:
           type: string
+        verified:
+          type: boolean
     Version:
       type: object
       required:
@@ -8370,10 +8370,6 @@ components:
       discriminator:
         propertyName: type
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the container in this web service
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -8385,33 +8381,37 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        topicId:
-          type: integer
-          format: int64
-          description: The Id of the corresponding topic on Dockstore Discuss
-        isChecker:
-          type: boolean
-        parentEntry:
-          $ref: "#/components/schemas/Entry"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
         input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        isChecker:
+          type: boolean
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        parentEntry:
+          $ref: "#/components/schemas/Entry"
+        topicId:
+          type: integer
+          format: int64
+          description: The Id of the corresponding topic on Dockstore Discuss
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -8541,16 +8541,16 @@ components:
         - name
         - reference
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Implementation specific ID for the tag in this web service
-          readOnly: true
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for workflow versions
           additionalProperties:
             $ref: "#/components/schemas/Alias"
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the tag in this web service
+          readOnly: true
         workingDirectory:
           type: string
         reference:
