@@ -82,70 +82,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/collections:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve all collections for an organization.
-      description: Retrieve all collections for an organization. Supports optional
-        authentication.
-      operationId: getCollectionsFromOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: include
-        in: query
-        description: Included fields.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
-    post:
-      tags:
-      - organizations
-      summary: Create a collection in the given organization.
-      description: Create a collection in the given organization.
-      operationId: createCollection
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Collection to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Collection'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
       security:
       - bearer: []
   /organizations/collections/{alias}/aliases:
@@ -342,6 +279,69 @@ paths:
                 $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
+  /organizations/{organizationId}/collections:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve all collections for an organization.
+      description: Retrieve all collections for an organization. Supports optional
+        authentication.
+      operationId: getCollectionsFromOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: include
+        in: query
+        description: Included fields.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    post:
+      tags:
+      - organizations
+      summary: Create a collection in the given organization.
+      description: Create a collection in the given organization.
+      operationId: createCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collection to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
   /organizations/{organizationId}/collections/{collectionId}/description:
     get:
       tags:
@@ -476,6 +476,22 @@ paths:
                   $ref: '#/components/schemas/Event'
       security:
       - bearer: []
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
+      responses:
+        default:
+          description: List of Docker registries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
   /metadata/sitemap:
     get:
       tags:
@@ -495,20 +511,6 @@ paths:
             text/xml:
               schema:
                 type: string
-  /metadata/config.json:
-    get:
-      tags:
-      - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Config'
   /metadata/rss:
     get:
       tags:
@@ -628,22 +630,211 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/dockerRegistryList:
+  /metadata/config.json:
     get:
       tags:
       - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
       responses:
         default:
-          description: List of Docker registries
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+  /organizations:
+    get:
+      tags:
+      - organizations
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/RegistryBean'
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/reject:
+    post:
+      tags:
+      - organizations
+      summary: Reject an organization.
+      description: Reject the organization with the given id. Admin/curator only.
+      operationId: rejectOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization
+        to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by ID.
+      description: Retrieve an organization by ID. Supports optional authentication.
+      operationId: getOrganizationById
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update an organization.
+      description: Update an organization. Currently only name, display name, description,
+        topic, email, link, avatarUrl, and location can be updated.
+      operationId: updateOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations/{organizationId}/description:
     get:
       tags:
@@ -885,101 +1076,6 @@ paths:
                   $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
-  /organizations:
-    get:
-      tags:
-      - organizations
-      summary: List all available organizations.
-      description: List all organizations that have been approved by a curator or
-        admin, sorted by number of stars.
-      operationId: getApprovedOrganizations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-    post:
-      tags:
-      - organizations
-      summary: Create an organization.
-      description: Create an organization. Organization requires approval by an admin
-        before being made public.
-      operationId: createOrganization
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by ID.
-      description: Retrieve an organization by ID. Supports optional authentication.
-      operationId: getOrganizationById
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-    put:
-      tags:
-      - organizations
-      summary: Update an organization.
-      description: Update an organization. Currently only name, display name, description,
-        topic, email, link, avatarUrl, and location can be updated.
-      operationId: updateOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/{organizationId}/users/{username}:
     put:
       tags:
@@ -1192,7 +1288,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
       security:
       - bearer: []
   /organizations/{alias}/aliases:
@@ -1216,102 +1312,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/reject:
-    post:
-      tags:
-      - organizations
-      summary: Reject an organization.
-      description: Reject the organization with the given id. Admin/curator only.
-      operationId: rejectOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/request:
-    post:
-      tags:
-      - organizations
-      summary: Re-request an organization review.
-      description: Re-request a review of the given organization. Requires the organization
-        to be rejected.
-      operationId: requestOrganizationReview
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/name/{name}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by name.
-      description: Retrieve an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
-      parameters:
-      - name: name
-        in: path
-        description: Organization name.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /toolTester/logs/search:
     get:
       tags:
@@ -1666,19 +1666,12 @@ components:
       properties:
         content:
           type: string
-    Aliasable:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
     Checksum:
       type: object
       properties:
-        type:
-          type: string
         checksum:
+          type: string
+        type:
           type: string
     Collection:
       required:
@@ -1686,6 +1679,29 @@ components:
       - topic
       type: object
       properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+          description: Description of the collection
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
+          type: string
+        entries:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
         id:
           type: integer
           description: Implementation specific ID for the collection in this web service
@@ -1697,120 +1713,97 @@ components:
           type: string
           description: Name of the collection
           example: Alignment
-        description:
-          type: string
-          description: Description of the collection
-        displayName:
-          maxLength: 50
-          minLength: 3
-          pattern: '[\w ,_\-&()'']*'
+        organizationID:
+          type: integer
+          format: int64
+        organizationName:
           type: string
         topic:
           type: string
           description: Short description of the collection
           example: A collection of alignment algorithms
-        entries:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Entry'
-        organizationID:
-          type: integer
-          format: int64
+      description: Collection in an organization, collects entries
+    Entry:
+      type: object
+      properties:
         aliases:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        author:
+          type: string
+        checker_id:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
         dbCreateDate:
           type: string
           format: date-time
         dbUpdateDate:
           type: string
           format: date-time
-        organizationName:
-          type: string
-      description: Collection in an organization, collects entries
-    Entry:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        author:
+        defaultVersion:
           type: string
         description:
           type: string
+        email:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        is_published:
+          type: boolean
         labels:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/Label'
-        users:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        starredUsers:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        email:
-          type: string
-        defaultVersion:
-          type: string
         lastUpdated:
           type: string
           format: date-time
-        gitUrl:
-          type: string
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        dbCreateDate:
-          type: string
-          format: date-time
-        dbUpdateDate:
-          type: string
-          format: date-time
-        topicId:
-          type: integer
-          format: int64
-        conceptDoi:
-          type: string
-        workflowVersions:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Version'
-        metadataFromEntry:
-          $ref: '#/components/schemas/Entry'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        is_published:
-          type: boolean
         last_modified:
           type: integer
           format: int32
         last_modified_date:
           type: string
           format: date-time
-        checker_id:
-          type: integer
-          format: int64
-        has_checker:
-          type: boolean
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
+        metadataFromEntry:
+          $ref: '#/components/schemas/Entry'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         output_file_formats:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        topicId:
+          type: integer
+          format: int64
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        workflowVersions:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Version'
       writeOnly: true
     FileFormat:
       type: object
@@ -1824,11 +1817,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Checksum'
+        imageID:
+          type: string
         repository:
           type: string
         tag:
-          type: string
-        imageID:
           type: string
     Label:
       type: object
@@ -1841,26 +1834,34 @@ components:
     Profile:
       type: object
       properties:
-        name:
-          type: string
-        email:
-          type: string
         avatarURL:
+          type: string
+        bio:
           type: string
         company:
           type: string
+        email:
+          type: string
         location:
           type: string
-        bio:
+        name:
           type: string
         username:
           type: string
     SourceFile:
       type: object
       properties:
+        absolutePath:
+          type: string
+        content:
+          type: string
+        frozen:
+          type: boolean
         id:
           type: integer
           format: int64
+        path:
+          type: string
         type:
           type: string
           enum:
@@ -1876,14 +1877,6 @@ components:
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
           - DOCKSTORE_SERVICE_OTHER
-        content:
-          type: string
-        path:
-          type: string
-        absolutePath:
-          type: string
-        frozen:
-          type: boolean
         verifiedBySource:
           type: object
           additionalProperties:
@@ -1891,23 +1884,17 @@ components:
     User:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        username:
-          type: string
-        isAdmin:
-          type: boolean
-        userProfiles:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Profile'
         avatarUrl:
           type: string
         curator:
           type: boolean
-        setupComplete:
+        id:
+          type: integer
+          format: int64
+        isAdmin:
           type: boolean
+        name:
+          type: string
         privacyPolicyVersion:
           type: string
           enum:
@@ -1916,8 +1903,11 @@ components:
         privacyPolicyVersionAcceptanceDate:
           type: string
           format: date-time
-        name:
+        setupComplete:
+          type: boolean
+        tosacceptanceDate:
           type: string
+          format: date-time
         tosversion:
           type: string
           enum:
@@ -1927,15 +1917,20 @@ components:
           type: string
           format: date-time
           writeOnly: true
-        tosacceptanceDate:
+        userProfiles:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Profile'
+        username:
           type: string
-          format: date-time
     Validation:
       type: object
       properties:
         id:
           type: integer
           format: int64
+        message:
+          type: string
         type:
           type: string
           enum:
@@ -1953,31 +1948,70 @@ components:
           - DOCKSTORE_SERVICE_OTHER
         valid:
           type: boolean
-        message:
-          type: string
     VerificationInformation:
       type: object
       properties:
-        verified:
-          type: boolean
         metadata:
           type: string
         platformVersion:
           type: string
+        verified:
+          type: boolean
     Version:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        reference:
-          type: string
-        name:
+        author:
           type: string
         commitID:
           type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
+        dirtyBit:
+          type: boolean
+        doiStatus:
+          type: string
+          enum:
+          - NOT_REQUESTED
+          - REQUESTED
+          - CREATED
+        doiURL:
+          type: string
+        email:
+          type: string
         frozen:
           type: boolean
+        hidden:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        images:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        name:
+          type: string
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        reference:
+          type: string
         referenceType:
           type: string
           enum:
@@ -1993,32 +2027,11 @@ components:
             $ref: '#/components/schemas/SourceFile'
         valid:
           type: boolean
-        dirtyBit:
-          type: boolean
-        versionEditor:
-          $ref: '#/components/schemas/User'
         validations:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/Validation'
-        images:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Image'
-        hidden:
-          type: boolean
-        workingDirectory:
-          type: string
-        description:
-          type: string
-        email:
-          type: string
-        doiURL:
-          type: string
-        author:
-          type: string
         verified:
           type: boolean
         verifiedSource:
@@ -2027,30 +2040,17 @@ components:
           type: array
           items:
             type: string
-        doiStatus:
+        versionEditor:
+          $ref: '#/components/schemas/User'
+        workingDirectory:
           type: string
-          enum:
-          - NOT_REQUESTED
-          - REQUESTED
-          - CREATED
-        descriptionSource:
-          type: string
-          enum:
-          - README
-          - DESCRIPTOR
-        dbUpdateDate:
-          type: string
-          format: date-time
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
+    Aliasable:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
     BioWorkflow:
       type: object
       properties:
@@ -2063,52 +2063,67 @@ components:
           - service
           
           
-        id:
-          type: integer
-          format: int64
-        author:
-          type: string
-        description:
-          type: string
-        labels:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-        users:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        starredUsers:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        email:
-          type: string
-        defaultVersion:
-          type: string
-        lastUpdated:
-          type: string
-          format: date-time
-        gitUrl:
-          type: string
         aliases:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        author:
+          type: string
+        checker_id:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
         dbCreateDate:
           type: string
           format: date-time
         dbUpdateDate:
           type: string
           format: date-time
-        topicId:
+        defaultTestParameterFilePath:
+          type: string
+        defaultVersion:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
+        full_workflow_path:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
           type: integer
           format: int64
-        conceptDoi:
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        is_checker:
+          type: boolean
+        is_published:
+          type: boolean
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        lastUpdated:
           type: string
+          format: date-time
+        last_modified:
+          type: integer
+          format: int32
+        last_modified_date:
+          type: string
+          format: date-time
+        metadataFromEntry:
+          $ref: '#/components/schemas/Workflow'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         mode:
           type: string
           enum:
@@ -2116,9 +2131,17 @@ components:
           - STUB
           - HOSTED
           - SERVICE
-        workflowName:
-          type: string
         organization:
+          type: string
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        parent_id:
+          type: integer
+          format: int64
+        path:
           type: string
         repository:
           type: string
@@ -2129,71 +2152,50 @@ components:
           - github.com
           - bitbucket.org
           - gitlab.com
+        source_control_provider:
+          type: string
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        topicId:
+          type: integer
+          format: int64
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        workflowName:
+          type: string
         workflowVersions:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/WorkflowVersion'
-        path:
-          type: string
-        metadataFromEntry:
-          $ref: '#/components/schemas/Workflow'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        is_published:
-          type: boolean
-        last_modified:
-          type: integer
-          format: int32
-        is_checker:
-          type: boolean
-        parent_id:
-          type: integer
-          format: int64
-        full_workflow_path:
-          type: string
         workflow_path:
           type: string
-        defaultTestParameterFilePath:
-          type: string
-        source_control_provider:
-          type: string
-        last_modified_date:
-          type: string
-          format: date-time
-        checker_id:
-          type: integer
-          format: int64
-        has_checker:
-          type: boolean
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
     Event:
       type: object
       properties:
+        collection:
+          $ref: '#/components/schemas/Collection'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
         id:
           type: integer
           format: int64
-        user:
+        initiatorUser:
           $ref: '#/components/schemas/User'
         organization:
           $ref: '#/components/schemas/Organization'
         tool:
           $ref: '#/components/schemas/Tool'
-        workflow:
-          $ref: '#/components/schemas/Workflow'
-        collection:
-          $ref: '#/components/schemas/Collection'
-        initiatorUser:
-          $ref: '#/components/schemas/User'
         type:
           type: string
           enum:
@@ -2213,81 +2215,68 @@ components:
           - REMOVE_FROM_COLLECTION
           - ADD_TO_COLLECTION
           - ADD_VERSION_TO_ENTRY
+        user:
+          $ref: '#/components/schemas/User'
+        workflow:
+          $ref: '#/components/schemas/Workflow'
+    Organization:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        avatarUrl:
+          pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
+          type: string
         dbCreateDate:
           type: string
           format: date-time
         dbUpdateDate:
           type: string
           format: date-time
-    Organization:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          maxLength: 39
-          minLength: 3
-          pattern: '[a-zA-Z][a-zA-Z\d]*'
-          type: string
         description:
-          type: string
-        link:
-          type: string
-        location:
-          type: string
-        email:
-          type: string
-        status:
-          type: string
-          enum:
-          - PENDING
-          - REJECTED
-          - APPROVED
-        users:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/OrganizationUser'
-        topic:
           type: string
         displayName:
           maxLength: 50
           minLength: 3
           pattern: '[\w ,_\-&()'']*'
           type: string
+        email:
+          type: string
+        id:
+          type: integer
+          format: int64
+        link:
+          type: string
+        location:
+          type: string
+        name:
+          maxLength: 39
+          minLength: 3
+          pattern: '[a-zA-Z][a-zA-Z\d]*'
+          type: string
         starredUsers:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/User'
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        dbCreateDate:
+        status:
           type: string
-          format: date-time
-        dbUpdateDate:
+          enum:
+          - PENDING
+          - REJECTED
+          - APPROVED
+        topic:
           type: string
-          format: date-time
-        avatarUrl:
-          pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
-          type: string
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationUser'
     OrganizationUser:
       type: object
       properties:
-        id:
-          $ref: '#/components/schemas/OrganizationUserId'
-        user:
-          $ref: '#/components/schemas/User'
-        organization:
-          $ref: '#/components/schemas/Organization'
-        role:
-          type: string
-          enum:
-          - MAINTAINER
-          - MEMBER
         accepted:
           type: boolean
         dbCreateDate:
@@ -2296,13 +2285,24 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        id:
+          $ref: '#/components/schemas/OrganizationUserId'
+        organization:
+          $ref: '#/components/schemas/Organization'
+        role:
+          type: string
+          enum:
+          - MAINTAINER
+          - MEMBER
+        user:
+          $ref: '#/components/schemas/User'
     OrganizationUserId:
       type: object
       properties:
-        userId:
+        organizationId:
           type: integer
           format: int64
-        organizationId:
+        userId:
           type: integer
           format: int64
     Service:
@@ -2312,17 +2312,69 @@ components:
     Tag:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        reference:
+        author:
           type: string
-        name:
-          type: string
+        automated:
+          type: boolean
         commitID:
+          type: string
+        cwl_path:
+          type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
+        dirtyBit:
+          type: boolean
+        dockerfile_path:
+          type: string
+        doiStatus:
+          type: string
+          enum:
+          - NOT_REQUESTED
+          - REQUESTED
+          - CREATED
+        doiURL:
+          type: string
+        email:
           type: string
         frozen:
           type: boolean
+        hidden:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        image_id:
+          type: string
+        images:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        last_built:
+          type: string
+          format: date-time
+        name:
+          type: string
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        reference:
+          type: string
         referenceType:
           type: string
           enum:
@@ -2331,6 +2383,9 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
+        size:
+          type: integer
+          format: int64
         sourceFiles:
           uniqueItems: true
           type: array
@@ -2338,37 +2393,11 @@ components:
             $ref: '#/components/schemas/SourceFile'
         valid:
           type: boolean
-        dirtyBit:
-          type: boolean
-        versionEditor:
-          $ref: '#/components/schemas/User'
         validations:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/Validation'
-        images:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Image'
-        size:
-          type: integer
-          format: int64
-        automated:
-          type: boolean
-        workingDirectory:
-          type: string
-        hidden:
-          type: boolean
-        description:
-          type: string
-        email:
-          type: string
-        doiURL:
-          type: string
-        author:
-          type: string
         verified:
           type: boolean
         verifiedSource:
@@ -2377,90 +2406,92 @@ components:
           type: array
           items:
             type: string
-        doiStatus:
-          type: string
-          enum:
-          - NOT_REQUESTED
-          - REQUESTED
-          - CREATED
-        descriptionSource:
-          type: string
-          enum:
-          - README
-          - DESCRIPTOR
-        dbUpdateDate:
-          type: string
-          format: date-time
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        last_built:
-          type: string
-          format: date-time
-        image_id:
-          type: string
-        dockerfile_path:
-          type: string
-        cwl_path:
-          type: string
+        versionEditor:
+          $ref: '#/components/schemas/User'
         wdl_path:
+          type: string
+        workingDirectory:
           type: string
     Tool:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        author:
-          type: string
-        description:
-          type: string
-        labels:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-        users:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        starredUsers:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        email:
-          type: string
-        defaultVersion:
-          type: string
-        lastUpdated:
-          type: string
-          format: date-time
-        gitUrl:
-          type: string
         aliases:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        author:
+          type: string
+        checker_id:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
+        custom_docker_registry_path:
+          type: string
+        customerDockerRegistryPath:
+          type: string
+          writeOnly: true
         dbCreateDate:
           type: string
           format: date-time
         dbUpdateDate:
           type: string
           format: date-time
-        topicId:
+        defaultCWLTestParameterFile:
+          type: string
+        defaultVersion:
+          type: string
+        defaultWDLTestParameterFile:
+          type: string
+        default_cwl_path:
+          type: string
+        default_dockerfile_path:
+          type: string
+        default_wdl_path:
+          type: string
+        description:
+          type: string
+        descriptorType:
+          type: array
+          items:
+            type: string
+        email:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
           type: integer
           format: int64
-        conceptDoi:
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        is_published:
+          type: boolean
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        lastBuild:
           type: string
+          format: date-time
+        lastUpdated:
+          type: string
+          format: date-time
+        last_modified:
+          type: integer
+          format: int32
+        last_modified_date:
+          type: string
+          format: date-time
+        metadataFromEntry:
+          $ref: '#/components/schemas/Tool'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         mode:
           type: string
           enum:
@@ -2470,82 +2501,51 @@ components:
           - HOSTED
         name:
           type: string
-        toolname:
-          type: string
         namespace:
           type: string
-        lastBuild:
-          type: string
-          format: date-time
-        workflowVersions:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Tag'
-        tags:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Tag'
-        path:
-          type: string
-        descriptorType:
-          type: array
-          items:
-            type: string
-        customerDockerRegistryPath:
-          type: string
-          writeOnly: true
-        metadataFromEntry:
-          $ref: '#/components/schemas/Tool'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        is_published:
-          type: boolean
-        last_modified:
-          type: integer
-          format: int32
-        tool_maintainer_email:
-          type: string
-        private_access:
-          type: boolean
-        registry_string:
-          type: string
-        tool_path:
-          type: string
-        default_cwl_path:
-          type: string
-        default_wdl_path:
-          type: string
-        default_dockerfile_path:
-          type: string
-        defaultCWLTestParameterFile:
-          type: string
-        defaultWDLTestParameterFile:
-          type: string
-        registry:
-          type: integer
-          format: int32
-        custom_docker_registry_path:
-          type: string
-        last_modified_date:
-          type: string
-          format: date-time
-        checker_id:
-          type: integer
-          format: int64
-        has_checker:
-          type: boolean
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
         output_file_formats:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        path:
+          type: string
+        private_access:
+          type: boolean
+        registry:
+          type: integer
+          format: int32
+        registry_string:
+          type: string
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        tags:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        tool_maintainer_email:
+          type: string
+        tool_path:
+          type: string
+        toolname:
+          type: string
+        topicId:
+          type: integer
+          format: int64
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        workflowVersions:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
     Workflow:
       required:
       - type
@@ -2560,52 +2560,67 @@ components:
           - service
           
           
-        id:
-          type: integer
-          format: int64
-        author:
-          type: string
-        description:
-          type: string
-        labels:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-        users:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        starredUsers:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        email:
-          type: string
-        defaultVersion:
-          type: string
-        lastUpdated:
-          type: string
-          format: date-time
-        gitUrl:
-          type: string
         aliases:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/Alias'
+        author:
+          type: string
+        checker_id:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
         dbCreateDate:
           type: string
           format: date-time
         dbUpdateDate:
           type: string
           format: date-time
-        topicId:
+        defaultTestParameterFilePath:
+          type: string
+        defaultVersion:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
+        full_workflow_path:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
           type: integer
           format: int64
-        conceptDoi:
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        isChecker:
+          type: boolean
+        is_published:
+          type: boolean
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        lastUpdated:
           type: string
+          format: date-time
+        last_modified:
+          type: integer
+          format: int32
+        last_modified_date:
+          type: string
+          format: date-time
+        metadataFromEntry:
+          $ref: '#/components/schemas/Workflow'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
         mode:
           type: string
           enum:
@@ -2613,9 +2628,16 @@ components:
           - STUB
           - HOSTED
           - SERVICE
-        workflowName:
-          type: string
         organization:
+          type: string
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        parentEntry:
+          $ref: '#/components/schemas/Entry'
+        path:
           type: string
         repository:
           type: string
@@ -2626,52 +2648,30 @@ components:
           - github.com
           - bitbucket.org
           - gitlab.com
+        source_control_provider:
+          type: string
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        topicId:
+          type: integer
+          format: int64
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        workflowName:
+          type: string
         workflowVersions:
           uniqueItems: true
           type: array
           items:
             $ref: '#/components/schemas/WorkflowVersion'
-        path:
-          type: string
-        isChecker:
-          type: boolean
-        parentEntry:
-          $ref: '#/components/schemas/Entry'
-        metadataFromEntry:
-          $ref: '#/components/schemas/Workflow'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        is_published:
-          type: boolean
-        last_modified:
-          type: integer
-          format: int32
-        full_workflow_path:
-          type: string
         workflow_path:
           type: string
-        defaultTestParameterFilePath:
-          type: string
-        source_control_provider:
-          type: string
-        last_modified_date:
-          type: string
-          format: date-time
-        checker_id:
-          type: integer
-          format: int64
-        has_checker:
-          type: boolean
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
         type:
           type: string
       writeOnly: true
@@ -2680,17 +2680,65 @@ components:
     WorkflowVersion:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        reference:
-          type: string
-        name:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        author:
           type: string
         commitID:
           type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
+        dirtyBit:
+          type: boolean
+        doiStatus:
+          type: string
+          enum:
+          - NOT_REQUESTED
+          - REQUESTED
+          - CREATED
+        doiURL:
+          type: string
+        email:
+          type: string
         frozen:
           type: boolean
+        hidden:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        images:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        last_modified:
+          type: string
+          format: date-time
+        name:
+          type: string
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        reference:
+          type: string
         referenceType:
           type: string
           enum:
@@ -2704,26 +2752,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SourceFile'
-        valid:
-          type: boolean
-        dirtyBit:
-          type: boolean
-        versionEditor:
-          $ref: '#/components/schemas/User'
-        validations:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Validation'
-        images:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Image'
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
         subClass:
           type: string
           enum:
@@ -2731,18 +2759,13 @@ components:
           - SWARM
           - KUBERNETES
           - HELM
-        workingDirectory:
-          type: string
-        hidden:
+        valid:
           type: boolean
-        description:
-          type: string
-        email:
-          type: string
-        doiURL:
-          type: string
-        author:
-          type: string
+        validations:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Validation'
         verified:
           type: boolean
         verifiedSource:
@@ -2751,43 +2774,61 @@ components:
           type: array
           items:
             type: string
-        doiStatus:
-          type: string
-          enum:
-          - NOT_REQUESTED
-          - REQUESTED
-          - CREATED
-        descriptionSource:
-          type: string
-          enum:
-          - README
-          - DESCRIPTOR
-        dbUpdateDate:
-          type: string
-          format: date-time
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
+        versionEditor:
+          $ref: '#/components/schemas/User'
         workflow_path:
           type: string
-        last_modified:
+        workingDirectory:
           type: string
-          format: date-time
+    RegistryBean:
+      type: object
+      properties:
+        customDockerPath:
+          type: string
+        dockerPath:
+          type: string
+        enum:
+          type: string
+        friendlyName:
+          type: string
+        privateOnly:
+          type: string
+        url:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+        value:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+        value:
+          type: string
     Config:
       type: object
       properties:
-        dnaStackImportUrl:
+        bitBucketAuthUrl:
+          type: string
+        bitBucketClientId:
+          type: string
+        cwlVisualizerUri:
+          type: string
+        discourseUrl:
           type: string
         dnaNexusImportUrl:
           type: string
-        terraImportUrl:
+        dnaStackImportUrl:
+          type: string
+        documentationUrl:
+          type: string
+        featuredContentUrl:
+          type: string
+        gitHubAppInstallationUrl:
           type: string
         gitHubAuthUrl:
           type: string
@@ -2795,80 +2836,39 @@ components:
           type: string
         gitHubScope:
           type: string
-        quayIoAuthUrl:
-          type: string
-        quayIoRedirectPath:
-          type: string
-        quayIoScope:
-          type: string
-        bitBucketAuthUrl:
+        githubClientId:
           type: string
         gitlabAuthUrl:
+          type: string
+        gitlabClientId:
           type: string
         gitlabRedirectPath:
           type: string
         gitlabScope:
           type: string
+        googleClientId:
+          type: string
+        googleScope:
+          type: string
+        quayIoAuthUrl:
+          type: string
+        quayIoClientId:
+          type: string
+        quayIoRedirectPath:
+          type: string
+        quayIoScope:
+          type: string
+        tagManagerId:
+          type: string
+        terraImportUrl:
+          type: string
         zenodoAuthUrl:
+          type: string
+        zenodoClientId:
           type: string
         zenodoRedirectPath:
           type: string
         zenodoScope:
-          type: string
-        googleScope:
-          type: string
-        cwlVisualizerUri:
-          type: string
-        tagManagerId:
-          type: string
-        gitHubAppInstallationUrl:
-          type: string
-        documentationUrl:
-          type: string
-        featuredContentUrl:
-          type: string
-        githubClientId:
-          type: string
-        quayIoClientId:
-          type: string
-        bitBucketClientId:
-          type: string
-        gitlabClientId:
-          type: string
-        zenodoClientId:
-          type: string
-        googleClientId:
-          type: string
-        discourseUrl:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        value:
-          type: string
-        friendlyName:
-          type: string
-    RegistryBean:
-      type: object
-      properties:
-        dockerPath:
-          type: string
-        friendlyName:
-          type: string
-        url:
-          type: string
-        privateOnly:
-          type: string
-        customDockerPath:
-          type: string
-        enum:
           type: string
     StarRequest:
       type: object
@@ -2878,38 +2878,34 @@ components:
     ToolTesterLog:
       type: object
       properties:
-        toolId:
-          type: string
-        toolVersionName:
-          type: string
-        testFilename:
-          type: string
-        runner:
+        filename:
           type: string
         logType:
           type: string
           enum:
           - FULL
           - SUMMARY
-        filename:
+        runner:
+          type: string
+        testFilename:
+          type: string
+        toolId:
+          type: string
+        toolVersionName:
           type: string
     OrganizationUpdateTime:
       type: object
       properties:
-        name:
-          type: string
         displayName:
           type: string
         lastUpdateDate:
           type: string
           format: date-time
+        name:
+          type: string
     EntryUpdateTime:
       type: object
       properties:
-        path:
-          type: string
-        prettyPath:
-          type: string
         entryType:
           type: string
           enum:
@@ -2919,13 +2915,15 @@ components:
         lastUpdateDate:
           type: string
           format: date-time
+        path:
+          type: string
+        prettyPath:
+          type: string
     Repository:
       type: object
       properties:
-        organization:
-          type: string
-        repositoryName:
-          type: string
+        canDelete:
+          type: boolean
         gitRegistry:
           type: string
           enum:
@@ -2933,11 +2931,13 @@ components:
           - github.com
           - bitbucket.org
           - gitlab.com
-        canDelete:
-          type: boolean
+        organization:
+          type: string
+        path:
+          type: string
         present:
           type: boolean
-        path:
+        repositoryName:
           type: string
   securitySchemes:
     bearer:
