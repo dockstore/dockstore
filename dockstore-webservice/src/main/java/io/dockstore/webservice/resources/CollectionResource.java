@@ -184,6 +184,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
             Hibernate.initialize(collection.getEntries());
+            Hibernate.initialize(collection.getAliases());
             return collection;
         }
     }
@@ -587,6 +588,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
 
         Hibernate.initialize(byAlias.getEntries());
+        Hibernate.initialize(byAlias.getAliases());
         return byAlias;
     }
 }

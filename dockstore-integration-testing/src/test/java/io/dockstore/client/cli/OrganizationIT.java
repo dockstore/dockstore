@@ -1268,6 +1268,69 @@ public class OrganizationIT extends BaseIT {
      * This tests that aliases can be set on collections and workflows
      */
     @Test
+    public void testAliasesAreInReturnedOrganizationOrCollection() {
+        // Setup postgres
+
+        // Setup admin
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        long collectionId = collection.getId();
+
+        // approve the org
+        testingPostgres.runUpdateStatement(
+                "update organization set status = '" + io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() + "'");
+
+        // set aliases
+        final Collection collectionWithAlias = organizationsApi.addCollectionAliases(collectionId, "test collection, spam");
+        final Organization organizationWithAlias = organizationsApi.addOrganizationAliases(organization.getId(), "test organization, spam");
+
+        assertEquals(2, collectionWithAlias.getAliases().size());
+        assertEquals(2, organizationWithAlias.getAliases().size());
+
+        Organization organizationById = organizationsApi.getOrganizationById(organization.getId());
+        Assert.assertNotNull("Getting organization by ID has null alias", organizationById.getAliases());
+        Collection collectionById = organizationsApi.getCollectionById(organization.getId(), collectionId);
+        Assert.assertNotNull("Getting collection by ID has null alias", collectionById.getAliases());
+
+        // note that namespaces for organizations and collections are separate (therefore a collection can have the same alias as an organization)
+        final Collection collectionByAlias = organizationsApi.getCollectionByAlias("spam");
+        assertNotNull(collectionByAlias);
+        Assert.assertNotNull("Getting collection by alias has null alias", collectionByAlias.getAliases());
+        final Organization organizationByAlias = organizationsApi.getOrganizationByAlias("spam");
+        assertNotNull(organizationByAlias);
+        Assert.assertNotNull("Getting organization by alias has null alias", organizationByAlias.getAliases());
+
+        final Collection collectionByName = organizationsApi.getCollectionByName(organizationByAlias.getName(),
+                collectionByAlias.getName());
+        assertNotNull(collectionByName);
+        Assert.assertNotNull("Getting collection by name has null alias", collectionByName.getAliases());
+        final Organization organizationByName = organizationsApi.getOrganizationByName(organizationByAlias.getName());
+        assertNotNull(organizationByName);
+        Assert.assertNotNull("Getting organization by name has null alias", organizationByName.getAliases());
+
+
+        // Should now appear in approved list
+        List<Organization> organizationList = organizationsApi.getApprovedOrganizations();
+        assertEquals("Should have one approved Organization.", organizationList.size(), 1);
+        // organization alias should be in return from API call
+        organizationList.forEach(approvedOrganization -> Assert.assertNotNull(approvedOrganization.getAliases()));
+    }
+
+    /**
+     * This tests that aliases can be set on collections and workflows
+     */
+    @Test
     public void testAliasOperations() {
         // Setup postgres
 
