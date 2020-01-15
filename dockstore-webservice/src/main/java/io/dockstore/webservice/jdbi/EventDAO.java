@@ -48,8 +48,29 @@ public class EventDAO extends AbstractDAO<Event> {
         if (entryIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntry");
+        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
         query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(newLimit);
+        return list(query);
+    }
+
+    public List<Event> findAllByOrganizationIds(Set<Long> organizationIds, Integer offset, int limit) {
+        int newLimit = Math.min(MAX_LIMIT, limit);
+        if (organizationIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
+        query.setParameterList("organizationIDs", organizationIds).setFirstResult(offset).setMaxResults(newLimit);
+        return list(query);
+    }
+
+    public List<Event> findAllByOrganizationIdsOrEntryIds(Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
+        int newLimit = Math.min(MAX_LIMIT, limit);
+        if (organizationIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIdsOrEntryIds");
+        query.setParameterList("organizationIDs", organizationIds).setParameter("entryIDs", entryIds)
+                .setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
 

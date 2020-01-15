@@ -15,6 +15,11 @@
 
 package io.dockstore.webservice.resources;
 
+// STARRED_ENTRIES return events related to starred entries
+// STARRED_ORGANIZATION return events related to starred organization
+// STARRED returns events related to both starred entries AND starred organizations
 public enum EventSearchType  {
-    STARRED_ENTRIES
+    STARRED_ENTRIES,
+    STARRED_ORGANIZATION,
+    ALL_STARRED
 }
