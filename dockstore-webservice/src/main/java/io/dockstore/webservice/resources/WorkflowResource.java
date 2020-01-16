@@ -454,7 +454,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Hibernate.initialize(workflow.getUsers());
         initializeValidations(include, workflow);
         Hibernate.initialize(workflow.getAliases());
-        workflow.getWorkflowVersions().stream().forEach(wv -> Hibernate.initialize(wv.getAliases()));
         return workflow;
     }
 
@@ -708,7 +707,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         initializeValidations(include, workflow);
         Hibernate.initialize(workflow.getAliases());
-        workflow.getWorkflowVersions().stream().forEach(wv -> Hibernate.initialize(wv.getAliases()));
         return filterContainersForHiddenTags(workflow);
     }
 
@@ -860,7 +858,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         initializeValidations(include, workflow);
         Hibernate.initialize(workflow.getAliases());
-        workflow.getWorkflowVersions().stream().forEach(wv -> Hibernate.initialize(wv.getAliases()));
         return workflow;
     }
 
@@ -1047,7 +1044,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         initializeValidations(include, workflow);
         Hibernate.initialize(workflow.getAliases());
-        workflow.getWorkflowVersions().stream().forEach(wv -> Hibernate.initialize(wv.getAliases()));
         filterContainersForHiddenTags(workflow);
 
         // evil hack for backwards compatibility with 1.6.0 CLI, sorry
@@ -1621,12 +1617,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     /**
      * If include contains validations field, initialize the workflows validations for all of its workflow versions
+     * If include contains aliases field, initialize the aliases for all of its workflow versions
      * @param include
      * @param workflow
      */
     private void initializeValidations(String include, Workflow workflow) {
         if (checkIncludes(include, "validations")) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
+        }
+        if (checkIncludes(include, "aliases")) {
+            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getAliases()));
         }
     }
 
