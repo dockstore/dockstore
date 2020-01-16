@@ -1543,6 +1543,66 @@ public class WorkflowIT extends BaseIT {
         Assert.assertNotNull("Should retrieve the workflow by alias", aliasWorkflowVersion);
     }
 
+    @Test
+    public void testWorkflowVersionAliasesAreReturned() throws ApiException {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+
+        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
+        Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
+                .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
+        assertTrue(optionalWorkflowVersion.isPresent());
+        WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
+
+        // give the workflow version a few aliases
+        AliasesApi aliasesApi = new AliasesApi(webClient);
+        WorkflowVersion workflowVersionWithAliases = aliasesApi
+                .addAliases(workflowVersion.getId(), "awesome workflowversion, spam, test workflowversion");
+        Assert.assertTrue("entry is missing expected aliases",
+                workflowVersionWithAliases.getAliases().containsKey("awesome workflowversion") && workflowVersionWithAliases.getAliases().containsKey("spam")
+                        && workflowVersionWithAliases.getAliases().containsKey("test workflowversion"));
+
+        Workflow workflowById = workflowApi.getWorkflow(workflow.getId(), null);
+        Optional<WorkflowVersion> optionalWorkflowVersionById = workflowById.getWorkflowVersions().stream()
+                .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
+        assertTrue(optionalWorkflowVersionById.isPresent());
+        WorkflowVersion workflowVersionById = optionalWorkflowVersionById.get();
+        Assert.assertNotNull("Getting workflow version via workflow ID has null alias", workflowVersionById.getAliases());
+
+        final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflow.getId(), null);
+        assertNotNull("did not get published workflow", publishedWorkflow);
+        Optional<WorkflowVersion> optionalWorkflowVersionByPublished = publishedWorkflow.getWorkflowVersions().stream()
+                .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
+        assertTrue(optionalWorkflowVersionByPublished.isPresent());
+        WorkflowVersion workflowVersionByPublshed = optionalWorkflowVersionByPublished.get();
+        Assert.assertNotNull("Getting workflow version via published workflow has null alias", workflowVersionByPublshed.getAliases());
+
+        final Workflow workflowByPath = workflowApi
+                .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        assertNotNull("did not get published workflow by path", workflowByPath);
+        Optional<WorkflowVersion> optionalWorkflowVersionByPath = workflowByPath.getWorkflowVersions().stream()
+                .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
+        assertTrue(optionalWorkflowVersionByPath.isPresent());
+        WorkflowVersion workflowVersionByPath = optionalWorkflowVersionByPath.get();
+        Assert.assertNotNull("Getting workflow version via workflow path has null alias", workflowVersionByPath.getAliases());
+
+
+        final Workflow publishedWorkflowByPath = workflowApi
+                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        assertNotNull("did not get published workflow by path", publishedWorkflowByPath);
+        Optional<WorkflowVersion> optionalWorkflowVersionByPublishedByPath = publishedWorkflowByPath.getWorkflowVersions().stream()
+                .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
+        assertTrue(optionalWorkflowVersionByPublishedByPath.isPresent());
+        WorkflowVersion workflowVersionByPublshedByPath = optionalWorkflowVersionByPublishedByPath.get();
+        Assert.assertNotNull("Getting workflow version via published workflow has null alias", workflowVersionByPublshedByPath.getAliases());
+
+    }
+
     /**
      * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
      */
