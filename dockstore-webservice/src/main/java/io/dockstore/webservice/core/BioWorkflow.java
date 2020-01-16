@@ -84,4 +84,8 @@ public class BioWorkflow extends Workflow {
             return null;
         }
     }
+
+    public Event.Builder getEventBuilder() {
+        return new Event.Builder().withBioWorkflow(this);
+    }
 }

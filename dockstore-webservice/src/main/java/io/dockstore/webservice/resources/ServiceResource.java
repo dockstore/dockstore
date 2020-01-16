@@ -28,6 +28,7 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "workflows", description = ResourceConstants.WORKFLOWS)
 public class ServiceResource extends AbstractWorkflowResource<Service> {
 
     public ServiceResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration) {

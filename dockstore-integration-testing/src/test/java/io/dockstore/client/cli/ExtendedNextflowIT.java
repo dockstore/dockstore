@@ -110,16 +110,41 @@ public class ExtendedNextflowIT extends BaseIT {
         workflowByPathBitbucket.setWorkflowPath("/nextflow.config");
         workflowByPathBitbucket.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathBitbucket.getId(), workflowByPathBitbucket);
-        final String partialReadmeDescription = "AMPA-NF is a pipeline for assessing the antimicrobial domains of proteins,";
-        final String descriptorDescription = "Fast automated prediction of protein antimicrobial regions";
         workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId());
+        Workflow byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
         // There are 3 versions: master, v1.0, and v2.0
         // master and v2.0 has a nextflow.config file that has description and author, v1.0 does not
         // v1.0 will pull description from README instead but the others will use nextflow.config
-        Assert.assertEquals(descriptorDescription, bitbucketWorkflow.getDescription());
-        bitbucketWorkflow.getWorkflowVersions().forEach(workflowVersion -> {
-            if (workflowVersion.getName().equals("v1.0")) {
+        testWorkflowVersionMetadata(bitbucketWorkflow);
+        testWorkflowVersionMetadata(byPathWorkflow);
+        // Purposely mess up the metadata to test if it can be updated through refresh
+        testingPostgres.runUpdateStatement("update version_metadata set email='bad_potato'");
+        testingPostgres.runUpdateStatement("update version_metadata set author='bad_potato'");
+        testingPostgres.runUpdateStatement("update version_metadata set description='bad_potato'");
+        final Workflow refreshedBitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId());
+        byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
+        // This tests if it can fix outdated metadata
+        testWorkflowVersionMetadata(refreshedBitbucketWorkflow);
+        testWorkflowVersionMetadata(byPathWorkflow);
+        List<SourceFile> sourceFileList = new ArrayList<>(
+            bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get()
+                .getSourceFiles());
+        Assert.assertEquals(4, sourceFileList.size());
+    }
+
+    /**
+     * This tests the DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW metadata is correct after a refresh
+     * @param workflow  The DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW workflow
+     */
+    private void testWorkflowVersionMetadata(Workflow workflow) {
+        final String partialReadmeDescription = "AMPA-NF is a pipeline for assessing the antimicrobial domains of proteins,";
+        final String descriptorDescription = "Fast automated prediction of protein antimicrobial regions";
+        final String versionWithReadmeDescription = "v1.0";
+        Assert.assertEquals(descriptorDescription, workflow.getDescription());
+        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.getName().equals(versionWithReadmeDescription)));
+        workflow.getWorkflowVersions().forEach(workflowVersion -> {
+            if (workflowVersion.getName().equals(versionWithReadmeDescription)) {
                 Assert.assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
                 Assert.assertNull(workflowVersion.getAuthor());
                 Assert.assertNull(workflowVersion.getEmail());
@@ -129,10 +154,6 @@ public class ExtendedNextflowIT extends BaseIT {
                 Assert.assertNull(workflowVersion.getEmail());
             }
         });
-        List<SourceFile> sourceFileList = new ArrayList<>(
-            bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get()
-                .getSourceFiles());
-        Assert.assertEquals(4, sourceFileList.size());
     }
 
     @Test

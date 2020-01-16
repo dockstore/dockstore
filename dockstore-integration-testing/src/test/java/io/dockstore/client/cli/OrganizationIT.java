@@ -6,7 +6,10 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.resources.EventSearchType;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -331,6 +334,39 @@ public class OrganizationIT extends BaseIT {
         assertEquals("potato", organization.getDescription());
         String description = organizationsApiUser2.getOrganizationDescription(organization.getId());
         assertEquals("potato", description);
+
+        testStarredOrganizationEvents(organizationsApiUser2, organization);
+    }
+
+    /**
+     * This tests that:
+     * the pagination limit works
+     * the newest events are gotten
+     * @param organizationsApiUser2 Organization API for user 2 who will star the organization
+     * @param organization  An organization which is known to have 6 events (create > modify > approve > modify > modify > modify)
+     */
+    private void testStarredOrganizationEvents(OrganizationsApi organizationsApiUser2, Organization organization) {
+        organizationsApiUser2.starOrganization(organization.getId(), SwaggerUtility.createStarRequest(true));
+        final io.dockstore.openapi.client.ApiClient openAPIWebClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EventsApi eventsApi = new EventsApi(openAPIWebClientUser2);
+        List<io.dockstore.openapi.client.model.Event> events = eventsApi
+                .getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), null, null);
+        Assert.assertEquals("Should have the correct amount of events", 6, events.size());
+        events = eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 5, null);
+        Assert.assertEquals("Should have the correct amount of events", 5, events.size());
+        Assert.assertFalse("The create org event is the oldest, it should not be returned", events.stream().anyMatch(event -> event.getType().equals(io.dockstore.openapi.client.model.Event.TypeEnum.CREATE_ORG)));
+        try {
+            eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), EventDAO.MAX_LIMIT + 1, 0);
+            Assert.fail("Should've failed because it's over the limit");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
+        }
+        try {
+            eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 0, 0);
+            Assert.fail("Should've failed because it's under the limit");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            Assert.assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
+        }
     }
 
     @Test(expected = ApiException.class)

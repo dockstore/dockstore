@@ -17,7 +17,9 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,12 +39,14 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -54,6 +58,9 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.dockerhub.DockerHubImage;
 import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
+import io.dockstore.webservice.core.gitlab.GitLabContainerRegistry;
+import io.dockstore.webservice.core.gitlab.GitLabTag;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -75,6 +82,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractImageRegistry {
     public static final String DOCKERHUB_URL = "https://hub.docker.com/v2/";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractImageRegistry.class);
+    private static final String GITLAB_URL = "https://gitlab.com/api/v4/";
 
 
     /**
@@ -120,8 +128,6 @@ public abstract class AbstractImageRegistry {
      */
     public abstract boolean canConvertToAuto(Tool tool);
 
-    public abstract Set<Image> getImagesForTag(Tool tool, Tag tag);
-
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
@@ -140,7 +146,7 @@ public abstract class AbstractImageRegistry {
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
-            String organization) {
+            String organization, final EventDAO eventDAO) {
         // Get all the namespaces for the given registry
         List<String> namespaces;
         if (organization != null) {
@@ -181,7 +187,7 @@ public abstract class AbstractImageRegistry {
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
                     gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
-            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO);
+            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
 
         return newDBTools;
@@ -194,7 +200,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface) {
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
@@ -255,11 +261,13 @@ public abstract class AbstractImageRegistry {
         // Get tags and update for each tool
         if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
             toolTags = getTagsDockerHub(tool);
+        } else if (tool.getRegistry().equals(Registry.GITLAB.toString())) {
+            toolTags = getTagsGitLab(tool);
         } else {
             toolTags = getTags(tool);
         }
 
-        updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO);
+        updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         Tool updatedTool = newDBTools.get(0);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
@@ -327,7 +335,7 @@ public abstract class AbstractImageRegistry {
 
         try {
             URL url = new URL(repoUrl);
-            response = Optional.of(IOUtils.toString(url, "UTF-8"));
+            response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
             if (response.isPresent()) {
                 return response;
             }
@@ -349,11 +357,12 @@ public abstract class AbstractImageRegistry {
      * @param fileDAO
      * @param toolDAO
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void updateTags(List<Tag> newTags, @NotNull Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
-        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO) {
+        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO, final User user) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
-
+        boolean releaseCreated = false;
         if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
@@ -385,11 +394,8 @@ public abstract class AbstractImageRegistry {
                 for (Tag oldTag : existingTags) {
                     if (newTag.getName().equals(oldTag.getName())) {
                         exists = true;
-
                         updateImageInformation(tool, newTag, oldTag);
-
                         oldTag.update(newTag);
-
                         // Update tag with default paths if dirty bit not set
                         if (!oldTag.isDirtyBit()) {
                             // Has not been modified => set paths
@@ -416,7 +422,7 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
-                    clonedTag.getImages().addAll(getImagesForTag(tool, clonedTag));
+                    clonedTag.getImages().addAll(newTag.getImages());
                     if (tool.getDefaultTestCwlParameterFile() != null) {
                         clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), DescriptorLanguage.FileType.CWL_TEST_JSON));
                     }
@@ -435,7 +441,7 @@ public abstract class AbstractImageRegistry {
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
-
+                    releaseCreated = true;
                     tool.addWorkflowVersion(tag);
 
                     if (!tag.isAutomated()) {
@@ -457,8 +463,8 @@ public abstract class AbstractImageRegistry {
         }
 
         // For tools from dockerhub, grab/update the image and checksum information
-        if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
-            updateDockerHubImageInformation(newTags, tool, existingTags);
+        if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString()) || tool.getRegistry().equals(Registry.GITLAB.toString())) {
+            updateNonQuayImageInformation(newTags, tool, existingTags);
         }
 
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
@@ -495,6 +501,10 @@ public abstract class AbstractImageRegistry {
         FileFormatHelper.updateFileFormats(tool.getWorkflowVersions(), fileFormatDAO);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
+        if (releaseCreated) {
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
+            eventDAO.create(event);
+        }
         toolDAO.create(tool);
     }
 
@@ -508,7 +518,7 @@ public abstract class AbstractImageRegistry {
         }
     }
 
-    private void updateDockerHubImageInformation(List<Tag> newTags, @NotNull Tool tool, List<Tag> existingTags) {
+    private void updateNonQuayImageInformation(List<Tag> newTags, @NotNull Tool tool, List<Tag> existingTags) {
         if (newTags != null) {
             for (Tag newTag : newTags) {
                 for (Tag oldTag : existingTags) {
@@ -523,13 +533,71 @@ public abstract class AbstractImageRegistry {
     private void updateImageInformation(Tool tool, Tag newTag, Tag oldTag) {
         // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
         // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
-        if (oldTag.getImages().isEmpty() && !tool.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
-            oldTag.getImages().addAll(getImagesForTag(tool, newTag));
-
+        if (oldTag.getImages().isEmpty() && tool.getRegistry().equals(Registry.QUAY_IO.toString())) {
+            oldTag.getImages().addAll(newTag.getImages());
         } else {
             oldTag.getImages().removeAll(oldTag.getImages());
             oldTag.getImages().addAll(newTag.getImages());
         }
+    }
+
+    private List<Tag> getTagsGitLab(Tool tool) {
+        final String repo = tool.getNamespace() + "%2F" + tool.getName();
+        final String projectPath = GITLAB_URL + "projects/" + repo + "/registry/repositories";
+        final List<Tag> tags = new ArrayList<>();
+        Optional<String> projectResponse;
+
+        try {
+            URL projectURL = new URL(projectPath);
+            projectResponse = Optional.of(IOUtils.toString(projectURL, StandardCharsets.UTF_8));
+
+            if (projectResponse.isPresent()) {
+                final String projectJSON = projectResponse.get();
+                Gson gson = new Gson();
+                Type gitLabContainerRegistryListType = new TypeToken<ArrayList<GitLabContainerRegistry>>() { }.getType();
+                List<GitLabContainerRegistry> registries = gson.fromJson(projectJSON, gitLabContainerRegistryListType);
+
+                final String tagsListPath = projectPath + '/' + registries.get(0).getId() + '/' + "tags";
+                URL tagsListURL = new URL(tagsListPath);
+                Optional<String> tagsListResponse = Optional.of(IOUtils.toString(tagsListURL, StandardCharsets.UTF_8));
+
+                if (tagsListResponse.isPresent()) {
+                    String tagsListJSON = tagsListResponse.get();
+                    Type gitLabTagType = new TypeToken<ArrayList<GitLabTag>>() { }.getType();
+                    List<GitLabTag> gitLabTags = gson.fromJson(tagsListJSON, gitLabTagType);
+
+                    try {
+                        for (GitLabTag gitLabTag : gitLabTags) {
+                            final String detailedTagInfoUrlString = tagsListPath + '/' + gitLabTag.getName();
+                            URL detailedTagInfoURL = new URL(detailedTagInfoUrlString);
+                            Optional<String> detailedTagInfoResponse = Optional.of(IOUtils.toString(detailedTagInfoURL, StandardCharsets.UTF_8));
+
+                            if (detailedTagInfoResponse.isPresent()) {
+                                final String detailedTagInfoJSON = detailedTagInfoResponse.get();
+                                gitLabTag = gson.fromJson(detailedTagInfoJSON, GitLabTag.class);
+                                final Tag tag = new Tag();
+                                tag.setName(gitLabTag.getName());
+                                final String manifestDigest = gitLabTag.getDigest();
+                                List<Checksum> checksums = new ArrayList<>();
+
+                                checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+                                Set<Image> images = Collections.singleton(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null));
+                                tag.getImages().addAll(images);
+                                tags.add(tag);
+                            }
+                        }
+                    } catch (IndexOutOfBoundsException | NullPointerException ex) {
+                        LOG.error("Unable to grab image and checksum information for" + tool.getNamespace() + '/' + tool.getName(), ex);
+                    }
+                    return tags;
+                }
+            } else {
+                LOG.info("Could not get response from GitLab");
+            }
+        } catch (IOException ex) {
+            LOG.error("Unable to get GitLab response for " + repo, ex);
+        }
+        return Collections.emptyList();
     }
 
     private void updateFiles(Tool tool, Tag tag, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {

@@ -106,7 +106,7 @@ import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SIT
 @Path("/metadata")
 @Api("metadata")
 @Produces({MediaType.TEXT_HTML, MediaType.TEXT_XML})
-@io.swagger.v3.oas.annotations.tags.Tag(name = "metadata", description = "description of the webservice itself")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "metadata", description = ResourceConstants.METADATA)
 public class MetadataResource {
 
     public static final int RSS_ENTRY_LIMIT = 50;

@@ -84,22 +84,101 @@
         <addColumn tableName="version_metadata">
             <column name="author" type="varchar(255)"/>
         </addColumn>
-            <addColumn tableName="version_metadata">
+        <addColumn tableName="version_metadata">
             <column name="description" type="text"/>
         </addColumn>
-            <addColumn tableName="version_metadata">
+        <addColumn tableName="version_metadata">
             <column name="description_source" type="varchar(255)"/>
         </addColumn>
-            <addColumn tableName="version_metadata">
+        <addColumn tableName="version_metadata">
             <column name="email" type="varchar(255)"/>
         </addColumn>
     </changeSet>
     <changeSet id="remove_all_stubs" author="agduncan">
-          <sql dbms="postgresql">
-              DELETE FROM entry_label WHERE entryid IN (SELECT id FROM workflow WHERE mode='STUB');
-              DELETE FROM entry_blacklistedversionnames WHERE entry_id IN (SELECT id FROM workflow WHERE mode='STUB');
-              DELETE FROM entry_defaultpaths WHERE entry_id IN (SELECT id FROM workflow WHERE mode='STUB');
-              DELETE FROM workflow WHERE mode='STUB' AND NOT ischecker;
-          </sql>
-      </changeSet>
+        <sql dbms="postgresql">
+            DELETE FROM entry_label WHERE entryid IN (SELECT id FROM workflow WHERE mode='STUB');
+            DELETE FROM entry_blacklistedversionnames WHERE entry_id IN (SELECT id FROM workflow WHERE mode='STUB');
+            DELETE FROM entry_defaultpaths WHERE entry_id IN (SELECT id FROM workflow WHERE mode='STUB');
+            DELETE FROM workflow WHERE mode='STUB' AND NOT ischecker;
+        </sql>
+    </changeSet>
+    <changeSet author="esoth" id="notifications">
+        <createTable tableName="notification">
+            <column name="id" type="bigserial">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="message" type="varchar(280)"/>
+            <column name="expiration" type="timestamp"/>
+            <column name="priority" type="varchar(255)"/>
+            <column name="type" type="varchar(255)"/>
+            <column name="dbcreatedate" type="timestamp"/>
+            <column name="dbupdatedate" type="timestamp"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="set_null_db_times" author="aduncan">
+        <sql dbms="postgresql">
+            UPDATE tool SET dbcreatedate=lastupdated WHERE dbcreatedate IS NULL;
+            UPDATE tool SET dbupdatedate=lastupdated WHERE dbupdatedate IS NULL;
+        </sql>
+        <update tableName="tool">
+            <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbcreatedate is null</where>
+        </update>
+        <update tableName="tool">
+            <column name="dbupdatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbupdatedate is null</where>
+        </update>
+
+        <sql dbms="postgresql">
+            UPDATE tag SET dbcreatedate=lastbuilt WHERE dbcreatedate IS NULL;
+            UPDATE tag SET dbupdatedate=lastbuilt WHERE dbupdatedate IS NULL;
+        </sql>
+        <update tableName="tag">
+            <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbcreatedate is null</where>
+        </update>
+        <update tableName="tag">
+            <column name="dbupdatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbupdatedate is null</where>
+        </update>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET dbcreatedate=lastupdated WHERE dbcreatedate IS NULL;
+            UPDATE workflow SET dbupdatedate=lastupdated WHERE dbupdatedate IS NULL;
+        </sql>
+        <update tableName="workflow">
+            <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbcreatedate is null</where>
+        </update>
+        <update tableName="workflow">
+            <column name="dbupdatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbupdatedate is null</where>
+        </update>
+
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET dbcreatedate=lastmodified WHERE dbcreatedate IS NULL;
+            UPDATE workflowversion SET dbupdatedate=lastmodified WHERE dbupdatedate IS NULL;
+        </sql>
+        <update tableName="workflowversion">
+            <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbcreatedate is null</where>
+        </update>
+        <update tableName="workflowversion">
+            <column name="dbupdatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbupdatedate is null</where>
+        </update>
+    </changeSet>
+    <changeSet id="add-not-null-db-dates" author="aduncan">
+        <addNotNullConstraint tableName="workflow" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="workflow" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="service" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="service" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="tool" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="tool" columnName="dbupdatedate"/>
+        
+        <addNotNullConstraint tableName="workflowversion" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="workflowversion" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="tag" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="tag" columnName="dbupdatedate"/>
+    </changeSet>
 </databaseChangeLog>

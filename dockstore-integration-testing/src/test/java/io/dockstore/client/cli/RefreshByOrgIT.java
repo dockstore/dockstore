@@ -117,7 +117,7 @@ public class RefreshByOrgIT {
         checkInitialDB();
         // insert a non-existent tool to be deleted during refresh
         testingPostgres.runUpdateStatement(
-            "insert into tool (id, giturl, mode, name, namespace, registry, ispublished) select 100, giturl, mode, 'newtool', namespace, registry, ispublished from tool where id = 2;");
+            "insert into tool (id, giturl, mode, name, namespace, registry, ispublished, dbupdatedate, dbcreatedate) select 100, giturl, mode, 'newtool', namespace, registry, ispublished, dbupdatedate, dbcreatedate from tool where id = 2;");
         testingPostgres.runUpdateStatement("insert into user_entry (userid, entryid) values (1, 100)");
         Long count = testingPostgres.runSelectStatement("select count(*) from tool where id = 100;", long.class);
         assertEquals(1, (long)count);

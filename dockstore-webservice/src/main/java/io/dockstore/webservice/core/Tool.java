@@ -326,6 +326,9 @@ public class Tool extends Entry<Tool, Tag> {
     @Schema(type = "integer")
     @ApiModelProperty(position = 30)
     public Registry getRegistryProvider() {
+        if (this.registry == null) {
+            return null;
+        }
         for (Registry r : Registry.values()) {
             if (r.toString() != null && r.toString().equals(this.registry)) {
                 return r;
@@ -333,7 +336,7 @@ public class Tool extends Entry<Tool, Tag> {
         }
 
         // Deal with registries with custom registry paths
-        if (this.registry != null && this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+        if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
             return Registry.AMAZON_ECR;
         } else if (this.registry.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
             return Registry.SEVEN_BRIDGES;
@@ -370,6 +373,10 @@ public class Tool extends Entry<Tool, Tag> {
         if (newCustomDockerRegistryString != null) {
             this.setRegistry(newCustomDockerRegistryString);
         }
+    }
+
+    public Event.Builder getEventBuilder() {
+        return new Event.Builder().withTool(this);
     }
 
     /**

@@ -127,12 +127,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private User versionEditor;
 
     // database timestamps
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     @CreationTimestamp
     @ApiModelProperty(position = 10)
     private Timestamp dbCreateDate;
 
-    @Column()
+    @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
     @ApiModelProperty(position = 11)
@@ -218,6 +218,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         name = version.getName();
         referenceType = version.getReferenceType();
         frozen = version.isFrozen();
+        this.setVersionMetadata(version.getVersionMetadata());
     }
 
     public void clone(T version) {
@@ -462,8 +463,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return versionMetadata;
     }
 
-    public void setVersionMetadata(VersionMetadata versionMetadata) {
-        this.versionMetadata = versionMetadata;
+    /**
+     * Setting each property individually because we don't want the id
+     * @param newVersionMetadata    Newest metadata from source control
+     */
+    public void setVersionMetadata(VersionMetadata newVersionMetadata) {
+        this.setAuthor(newVersionMetadata.author);
+        this.setEmail(newVersionMetadata.email);
+        this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }

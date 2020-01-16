@@ -72,6 +72,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -103,6 +104,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/users")
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final UserDAO userDAO;
@@ -113,12 +115,14 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
+    private final EventDAO eventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
 
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
                         DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+        this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -243,9 +247,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // Delete entries for which this user is the only user
         deleteSelfFromEntries(user);
-
         invalidateTokensForUser(user);
-
         return userDAO.delete(user);
     }
 
@@ -273,6 +275,7 @@ public class UserResource implements AuthenticatedResourceInterface {
                                 MessageFormat.format("Unexpected entry type {0}", entry.getClass().toString()),
                                 HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
+                    eventDAO.deleteEventByEntryID(entry.getId());
                     entryDAO.delete(entry);
                 });
     }
@@ -629,7 +632,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         // Sort all organizations by timestamp
         List<OrganizationUpdateTime> sortedOrganizations = organizations
                 .stream()
-                .filter((OrganizationUpdateTime organizationUpdateTime) -> filter == null || filter.isBlank() || organizationUpdateTime.getName().contains(filter) || organizationUpdateTime.getDisplayName().contains(filter))
+                .filter((OrganizationUpdateTime organizationUpdateTime) -> filter == null || filter.isBlank() || organizationUpdateTime.getName().toLowerCase().contains(filter.toLowerCase()) || organizationUpdateTime.getDisplayName().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(OrganizationUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
@@ -661,14 +664,14 @@ public class UserResource implements AuthenticatedResourceInterface {
                 timestamp = mostRecentTag.get().getDbUpdateDate();
             }
             List<String> pathElements = Arrays.asList(entry.getEntryPath().split("/"));
-            String prettyPath = String.join("/", pathElements.subList(1, pathElements.size()));
+            String prettyPath = String.join("/", pathElements.subList(2, pathElements.size()));
             entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), prettyPath, entry.getEntryType(), timestamp));
         });
 
         // Sort all entryUpdateTimes by timestamp
         List<EntryUpdateTime> sortedEntries = entryUpdateTimes
                 .stream()
-                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().contains(filter))
+                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 

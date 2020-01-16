@@ -57,6 +57,7 @@ import org.hibernate.annotations.Check;
  * @author dyuen
  */
 @ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class}, discriminator = "type")
+
 @Entity
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
 @Table(name = "foo")
@@ -77,10 +78,10 @@ import org.hibernate.annotations.Check;
 
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
-        @NamedNativeQuery(name = "Workflow.getWorkflowIdByWorkflowVersionId", query = "select workflow.id from workflow, workflow_workflowversion "
-                + "where workflow.id = workflow_workflowversion.workflowid and workflow_workflowversion.workflowversionid = :workflowVersionId")
-        })
-
+        @NamedNativeQuery(name = "Workflow.getWorkflowByWorkflowVersionId", query = "select w.* from Workflow w, workflow_workflowversion "
+                + "where w.id = workflow_workflowversion.workflowid and workflow_workflowversion.workflowversionid = :workflowVersionId",
+        resultClass = BioWorkflow.class)
+ })
 
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
 @JsonPropertyOrder("descriptorType")

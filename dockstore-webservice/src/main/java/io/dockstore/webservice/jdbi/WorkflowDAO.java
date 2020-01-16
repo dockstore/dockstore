@@ -16,8 +16,8 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -105,7 +105,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
         // Not a valid path
         if (splitPath == null) {
-            return null;
+            return Collections.emptyList();
         }
 
         // Valid path
@@ -243,17 +243,17 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     /**
-     * Finds a workflow id based on a workflow version id. If the workflow cannot be found
+     * Finds a workflow based on a workflow version id. If the workflow cannot be found
      * and an exception is generated an empty optional is returned
      *
      * @param workflowVersionId the id of the workflow version
-     * @return optional workflow id
+     * @return optional workflow
      */
-    public Optional<Long> getWorkflowIdByWorkflowVersionId(long workflowVersionId) {
+    public Optional<Workflow> getWorkflowByWorkflowVersionId(long workflowVersionId) {
         try {
-            BigInteger workflowBigIntId = ((BigInteger)namedQuery("Workflow.getWorkflowIdByWorkflowVersionId")
-                    .setParameter("workflowVersionId", workflowVersionId).getSingleResult());
-            return Optional.of(workflowBigIntId.longValueExact());
+            Workflow workflow = uniqueResult(namedQuery("Workflow.getWorkflowByWorkflowVersionId")
+                    .setParameter("workflowVersionId", workflowVersionId));
+            return Optional.of(workflow);
         } catch (NoResultException nre) {
             LOG.error("Could get workflow based on workflow version id " + workflowVersionId + ". Error is " + nre.getMessage(), nre);
             return Optional.empty();

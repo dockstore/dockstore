@@ -34,12 +34,14 @@ import javax.ws.rs.core.Response;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
@@ -61,14 +63,17 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containertags")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS)
 public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
+    private final EventDAO eventDAO;
 
-    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO) {
+    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, EventDAO eventDAO) {
         this.tagDAO = tagDAO;
         this.toolDAO = toolDAO;
+        this.eventDAO = eventDAO;
     }
 
     @GET
@@ -137,11 +142,11 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-
+        boolean releaseCreated = false;
         for (Tag tag : tags) {
             final long tagId = tagDAO.create(tag);
             Tag byId = tagDAO.findById(tagId);
-
+            releaseCreated = true;
             // Set dirty bit since this is a manual add
             byId.setDirtyBit(true);
 
@@ -155,6 +160,10 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
+        if (releaseCreated) {
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
+            eventDAO.create(event);
+        }
         return result.getWorkflowVersions();
     }
 

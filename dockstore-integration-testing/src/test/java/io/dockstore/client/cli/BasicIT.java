@@ -18,9 +18,11 @@ package io.dockstore.client.cli;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -28,17 +30,23 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.EventsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Event;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -234,7 +242,14 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-
+        EventsApi eventsApi = new EventsApi(client);
+        List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
+        StarRequest starRequest = new StarRequest();
+        starRequest.setStar(true);
+        toolsApi.starEntry(tool.getId(), starRequest);
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool", 1, events.size());
         // Add a tag
         Tag tag = new Tag();
         tag.setName("masterTest");
@@ -242,8 +257,10 @@ public class BasicIT extends BaseIT {
         tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
-        tags = toolTagsApi.addTags(tool.getId(), tags);
 
+        tags = toolTagsApi.addTags(tool.getId(), tags);
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertEquals("Should have created another event for the new tag", 2, events.size());
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         Assert.assertEquals("there should be one tag", 1, count);
 
@@ -818,6 +835,7 @@ public class BasicIT extends BaseIT {
 
     /**
      * This tests that a tool cannot be manually published if it has no default descriptor paths
+     * Also tests for entry not found when a broken path is used
      */
     @Test
     public void testManualPublishToolNoDescriptorPaths() {
@@ -834,6 +852,7 @@ public class BasicIT extends BaseIT {
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
+        testBrokenPath();
     }
 
     /**
@@ -1345,5 +1364,75 @@ public class BasicIT extends BaseIT {
         //final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", long.class);
         final long count = testingPostgres.runSelectStatement("select count(*) from user_profile where location='Toronto'", long.class);
         Assert.assertEquals("One user should have this info now, there are " + count, 1, count);
+    }
+
+    public void testBrokenPath() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        try {
+            workflowsApi.getWorkflowByPath("potato", "potato", false);
+            Assert.fail("Should've not been able to get an entry that does not exist");
+        } catch (ApiException e) {
+            Assert.assertEquals("Entry not found", e.getMessage());
+        }
+    }
+    @Test()
+
+    public void eventResourcePaginationTest() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(client);
+
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+        EventsApi eventsApi = new EventsApi(client);
+        List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
+        StarRequest starRequest = new StarRequest();
+        starRequest.setStar(true);
+        toolsApi.starEntry(tool.getId(), starRequest);
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool", 1, events.size());
+        // Add and update tag 101 times
+        Set<String> randomTagNames = new HashSet<>();
+
+        for (int i = 0; i < EventDAO.MAX_LIMIT + 10; i++) {
+            randomTagNames.add(RandomStringUtils.randomAlphanumeric(255));
+        }
+        randomTagNames.forEach(randomTagName -> {
+            List<Tag> randomTags = getRandomTags(randomTagName);
+            toolTagsApi.addTags(tool.getId(), randomTags);
+        });
+        try {
+            events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT + 1, 0);
+            Assert.fail("Should've failed because it's over the limit");
+        } catch (ApiException e) {
+            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
+        }
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT, 0);
+        Assert.assertEquals("Should have been able to use the max limit", EventDAO.MAX_LIMIT, events.size());
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT - 10, 0);
+        Assert.assertEquals("Should have used a specific limit", EventDAO.MAX_LIMIT  - 10, events.size());
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 1, 0);
+        Assert.assertEquals("Should have been able to use the min limit", 1, events.size());
+        try {
+            events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 0, 0);
+            Assert.fail("Should've failed because it's under the limit");
+        } catch (ApiException e) {
+            Assert.assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
+        }
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), null, null);
+        Assert.assertEquals("Should have used the default limit", 10, events.size());
+    }
+
+    private List<Tag> getRandomTags(String name) {
+        Tag tag = new Tag();
+        tag.setName(name);
+        tag.setReference("potato");
+        tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
+        List<Tag> tags = new ArrayList<>();
+        tags.add(tag);
+        return tags;
     }
 }

@@ -99,7 +99,7 @@ public final class NextflowUtilities {
                 Arrays.asList("java", "-jar", getNextflowTargetFile().getAbsolutePath(), "config", "-properties");
             final String join = Joiner.on(" ").join(strings);
             LOG.info("running: " + join);
-            final ImmutablePair<String, String> execute = Utilities.executeCommand(join, content.getParentFile());
+            final ImmutablePair<String, String> execute = executeNextflowConfig(content, join);
             String stdout = execute.getLeft();
             Properties properties = new Properties();
             properties.load(new StringReader(stdout));
@@ -135,6 +135,17 @@ public final class NextflowUtilities {
                 FileUtils.deleteQuietly(nextflowDir.toFile());
             }
         }
+    }
+
+    /**
+     * This is an expensive operation; a new Java VM is spun up for this, so only allow one at a time by
+     * synchronizing the method.
+     * @param content
+     * @param join
+     * @return
+     */
+    private static synchronized ImmutablePair<String, String> executeNextflowConfig(File content, String join) {
+        return Utilities.executeCommand(join, content.getParentFile());
     }
 
     /**
