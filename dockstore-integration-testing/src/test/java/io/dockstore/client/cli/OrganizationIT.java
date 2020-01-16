@@ -251,7 +251,7 @@ public class OrganizationIT extends BaseIT {
         // Should now appear in approved list
         organizationList = organizationsApiUser2.getApprovedOrganizations();
         assertEquals("Should have one approved Organizations.", organizationList.size(), 1);
-        organizationList.forEach(approvedOrganization -> Assert.assertNull(approvedOrganization.getAliases()));
+        organizationList.forEach(approvedOrganization -> Assert.assertTrue(approvedOrganization.getAliases().isEmpty()));
 
         // Should not be able to request re-review
         canRequestReview = true;
