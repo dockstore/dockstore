@@ -54,7 +54,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -499,15 +498,15 @@ public class DockerRepoResource
         if (tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
             throw new CustomWebApplicationException("Tool maintainer email is required for private tools.", HttpStatus.SC_BAD_REQUEST);
         }
-        boolean releaseCreated = false;
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
         Set<Tag> createdTags = new HashSet<>();
         for (Tag tag : tool.getWorkflowVersions()) {
             final long l = tagDAO.create(tag);
-            createdTags.add(tagDAO.findById(l));
-            releaseCreated = true;
+            Tag byId = tagDAO.findById(l);
+            createdTags.add(byId);
+            this.eventDAO.createAddTagToEntryEvent(user, tool, tag);
         }
         tool.getWorkflowVersions().clear();
         tool.getWorkflowVersions().addAll(createdTags);
@@ -545,10 +544,6 @@ public class DockerRepoResource
         }
 
         long id = toolDAO.create(tool);
-        if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-            eventDAO.create(event);
-        }
         return toolDAO.findById(id);
     }
 

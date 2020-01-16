@@ -46,7 +46,6 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -441,7 +440,7 @@ public abstract class AbstractImageRegistry {
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
-                    releaseCreated = true;
+                    eventDAO.createAddTagToEntryEvent(user, tool, tag);
                     tool.addWorkflowVersion(tag);
 
                     if (!tag.isAutomated()) {
@@ -501,10 +500,6 @@ public abstract class AbstractImageRegistry {
         FileFormatHelper.updateFileFormats(tool.getWorkflowVersions(), fileFormatDAO);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
-        if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-            eventDAO.create(event);
-        }
         toolDAO.create(tool);
     }
 

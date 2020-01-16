@@ -249,18 +249,19 @@ public class BasicIT extends BaseIT {
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool", 1, events.size());
+        Assert.assertEquals("Should not be an event for the non-tag version that was automatically created for the newly registered tool", 0, events.size());
         // Add a tag
         Tag tag = new Tag();
         tag.setName("masterTest");
         tag.setReference("master");
+        tag.setReferenceType(Tag.ReferenceTypeEnum.TAG);
         tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
 
         tags = toolTagsApi.addTags(tool.getId(), tags);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should have created another event for the new tag", 2, events.size());
+        Assert.assertEquals("Should have created an event for the new tag", 1, events.size());
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         Assert.assertEquals("there should be one tag", 1, count);
 
@@ -1393,7 +1394,7 @@ public class BasicIT extends BaseIT {
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool", 1, events.size());
+        Assert.assertEquals("Should not be an event for the non-tag version that was automatically created for the newly registered tool", 0, events.size());
         // Add and update tag 101 times
         Set<String> randomTagNames = new HashSet<>();
 
@@ -1431,6 +1432,7 @@ public class BasicIT extends BaseIT {
         tag.setName(name);
         tag.setReference("potato");
         tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
+        tag.setReferenceType(Tag.ReferenceTypeEnum.TAG);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
         return tags;

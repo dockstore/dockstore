@@ -41,7 +41,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
@@ -252,8 +251,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         PublicStateManager.getInstance().handleIndexUpdate(newTool, StateManagerMode.UPDATE);
-        Event event = newTool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-        eventDAO.create(event);
+        this.eventDAO.createAddTagToEntryEvent(user, newTool, version);
         return newTool;
     }
 
