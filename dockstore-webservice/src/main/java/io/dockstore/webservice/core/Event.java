@@ -190,6 +190,10 @@ public class Event {
         this.type = type;
     }
 
+    public Version getVersion() {
+        return version;
+    }
+
     public enum EventType {
         CREATE_ORG,
         DELETE_ORG,

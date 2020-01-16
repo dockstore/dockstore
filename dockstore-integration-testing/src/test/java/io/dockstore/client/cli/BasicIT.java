@@ -1415,6 +1415,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("Should have been able to use the max limit", EventDAO.MAX_LIMIT, events.size());
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT - 10, 0);
         Assert.assertEquals("Should have used a specific limit", EventDAO.MAX_LIMIT  - 10, events.size());
+        events.forEach(event -> Assert.assertNotNull(event.getVersion()));
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 1, 0);
         Assert.assertEquals("Should have been able to use the min limit", 1, events.size());
         try {
