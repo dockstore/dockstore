@@ -70,6 +70,7 @@ import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApiService;
 import io.dockstore.webservice.resources.rss.RSSEntry;
@@ -350,7 +351,9 @@ public class MetadataResource {
         Arrays.stream(DescriptorLanguage.values()).filter(lang ->
             // crappy evil hack for 1.6.0 backwards compatibility after all sorts of Jackson annotations failed
             // delete after 1.6.0 CLI users fade out https://github.com/dockstore/dockstore/issues/2860
-            lang != DescriptorLanguage.OLD_CWL && lang != DescriptorLanguage.OLD_WDL).
+            lang != DescriptorLanguage.OLD_CWL && lang != DescriptorLanguage.OLD_WDL).filter(lang ->
+            // only include plugin languages that have installed plugins
+            !lang.isPluginLanguage() || LanguageHandlerFactory.getPluginMap().containsKey(lang)).
             forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
     }

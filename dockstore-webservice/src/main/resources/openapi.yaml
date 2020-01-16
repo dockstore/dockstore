@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.9.0-alpha.0-GALAXYEXP-SNAPSHOT
+  version: 1.9.0-alpha.0-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -7655,6 +7655,8 @@ components:
             - DOCKSTORE_SERVICE_OTHER
             - DOCKSTORE_GXFORMAT2
             - GXFORMAT2_TEST_FILE
+            - DOCKSTORE_SWL
+            - SWL_TEST_JSON
         content:
           type: string
           description: Cache for the contents of the target file
@@ -8230,6 +8232,8 @@ components:
             - DOCKSTORE_SERVICE_OTHER
             - DOCKSTORE_GXFORMAT2
             - GXFORMAT2_TEST_FILE
+            - DOCKSTORE_SWL
+            - SWL_TEST_JSON
         valid:
           type: boolean
           description: Is the file type valid

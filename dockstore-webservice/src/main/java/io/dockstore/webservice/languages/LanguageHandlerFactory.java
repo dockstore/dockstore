@@ -15,15 +15,49 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.dockstore.common.DescriptorLanguage;
-import org.galaxyproject.dockstore_galaxy_interface.language.GalaxyWorkflowPlugin;
+import io.dockstore.language.MinimalLanguageInterface;
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginWrapper;
+
+import static io.dockstore.common.DescriptorLanguage.FileType;
 
 public final class LanguageHandlerFactory {
+    private static DefaultPluginManager pluginManager = null;
+    private static Map<DescriptorLanguage, MinimalLanguageInterface> pluginMap = new HashMap<>();
+    private static Map<FileType, MinimalLanguageInterface> fileTypeMap = new HashMap<>();
+
     private LanguageHandlerFactory() {
         // do nothing constructor
     }
 
+    public static void setLanguagePluginManager(DefaultPluginManager manager) {
+        if (LanguageHandlerFactory.pluginManager == null) {
+            LanguageHandlerFactory.pluginManager = manager;
+
+            List<PluginWrapper> plugins = manager.getStartedPlugins();
+            for (PluginWrapper wrapper : plugins) {
+                List<MinimalLanguageInterface> minimalLanguageInterfaces = manager.getExtensions(MinimalLanguageInterface.class, wrapper.getPluginId());
+                minimalLanguageInterfaces.forEach(inter -> {
+                    pluginMap.put(inter.getDescriptorLanguage(), inter);
+                });
+                minimalLanguageInterfaces.forEach(inter -> {
+                    fileTypeMap.put(inter.getDescriptorLanguage().getFileType(), inter);
+                    fileTypeMap.put(inter.getDescriptorLanguage().getTestParamType(), inter);
+                });
+            }
+            pluginMap = Collections.unmodifiableMap(pluginMap);
+            fileTypeMap = Collections.unmodifiableMap(fileTypeMap);
+        }
+    }
+
     public static LanguageHandlerInterface getInterface(DescriptorLanguage type) {
+
         switch (type) {
         case CWL:
             return new CWLHandler();
@@ -31,19 +65,18 @@ public final class LanguageHandlerFactory {
             return new WDLHandler();
         case NEXTFLOW:
             return new NextflowHandler();
-        case GXFORMAT2:
-            return new LanguagePluginHandler(GalaxyWorkflowPlugin.class);
-        // DOCKSTORE-2428 - demo how to add new workflow language
-        //        case SWL:
-        //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
         case SERVICE:
             return new LanguagePluginHandler(ServicePrototypePlugin.class);
         default:
+            // look through plugin list
+            if (pluginMap.containsKey(type)) {
+                return new LanguagePluginHandler(pluginMap.get(type).getClass());
+            }
             throw new UnsupportedOperationException("language not known");
         }
     }
 
-    public static LanguageHandlerInterface getInterface(DescriptorLanguage.FileType type) {
+    public static LanguageHandlerInterface getInterface(FileType type) {
         switch (type) {
         case DOCKSTORE_CWL:
             return new CWLHandler();
@@ -51,15 +84,30 @@ public final class LanguageHandlerFactory {
             return new WDLHandler();
         case NEXTFLOW_CONFIG:
             return new NextflowHandler();
-        case DOCKSTORE_GXFORMAT2:
-            return new LanguagePluginHandler(GalaxyWorkflowPlugin.class);
-        // DOCKSTORE-2428 - demo how to add new workflow language
-        //        case DOCKSTORE_SWL:
-        //            return new LanguagePluginHandler(SillyWorkflowLanguagePlugin.class);
         case DOCKSTORE_SERVICE_YML:
             return new LanguagePluginHandler(ServicePrototypePlugin.class);
         default:
+            // look through plugin list
+            if (fileTypeMap.containsKey(type)) {
+                return new LanguagePluginHandler(fileTypeMap.get(type).getClass());
+            }
             throw new UnsupportedOperationException("language not known");
         }
+    }
+
+    /**
+     * Get map of activated plugins
+     * @return
+     */
+    public static Map<DescriptorLanguage, MinimalLanguageInterface> getPluginMap() {
+        return pluginMap;
+    }
+
+    /**
+     * Get map of activated plugins by filetype
+     * @return
+     */
+    public static Map<FileType, MinimalLanguageInterface> getFileTypeMap() {
+        return fileTypeMap;
     }
 }

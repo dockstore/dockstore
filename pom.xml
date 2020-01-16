@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.9.0-alpha.0-GALAXYEXP-SNAPSHOT</version>
+    <version>1.9.0-alpha.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -704,9 +704,9 @@
                 <version>20180130</version>
             </dependency>
             <dependency>
-                <groupId>ro.fortsoft.pf4j</groupId>
+                <groupId>org.pf4j</groupId>
                 <artifactId>pf4j</artifactId>
-                <version>1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -853,6 +853,7 @@
                     <configuration>
                         <release>11</release>
                         <showDeprecation>true</showDeprecation>
+                        <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1097,7 +1098,6 @@
                                     <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
                                     <excludes>
                                         <exclude>io.dockstore:*</exclude>
-                                        <exclude>com.github.galaxyproject.dockstore-galaxy-interface:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />

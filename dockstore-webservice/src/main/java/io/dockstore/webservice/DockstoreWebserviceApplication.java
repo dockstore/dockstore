@@ -21,15 +21,22 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import avro.shaded.com.google.common.base.Joiner;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.google.common.base.MoreObjects;
+import io.dockstore.common.LanguagePluginManager;
+import io.dockstore.language.CompleteLanguageInterface;
+import io.dockstore.language.MinimalLanguageInterface;
+import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Collection;
@@ -66,6 +73,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.resources.AliasResource;
@@ -121,6 +129,8 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -227,6 +237,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     }
 
+    public static File getFilePluginLocation() {
+        String userHome = System.getProperty("user.home");
+        return new File(userHome + File.separator + ".dockstore" + File.separator + "language-plugins");
+    }
+
     @Override
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
@@ -236,6 +251,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setBasePath(MoreObjects.firstNonNull(configuration.getExternalConfig().getBasePath(), "/"));
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
+
+        final DefaultPluginManager languagePluginManager = LanguagePluginManager.getInstance(getFilePluginLocation());
+        describeAvailableLanguagePlugins(languagePluginManager);
+        LanguageHandlerFactory.setLanguagePluginManager(languagePluginManager);
 
         final PublicStateManager publicStateManager = PublicStateManager.getInstance();
         publicStateManager.setConfig(configuration);
@@ -367,6 +386,33 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
 
+    }
+
+    private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager) {
+        List<PluginWrapper> plugins = languagePluginManager.getStartedPlugins();
+        StringBuilder builder = new StringBuilder();
+        builder.append("PluginId\tPlugin Version\tPlugin Path\tInitial Path Pattern\tPlugin Type(s)\n");
+        for (PluginWrapper plugin : plugins) {
+            builder.append(plugin.getPluginId());
+            builder.append("\t");
+            builder.append(plugin.getPlugin().getWrapper().getDescriptor().getVersion());
+            builder.append("\t");
+            builder.append(getFilePluginLocation().getAbsolutePath()).append(File.separator);
+            builder.append(plugin.getPlugin().getWrapper().getPluginPath()).append("(.zip)");
+            builder.append("\t");
+            List<CompleteLanguageInterface> completeLanguageInterfaces = languagePluginManager.getExtensions(CompleteLanguageInterface.class, plugin.getPluginId());
+            List<RecommendedLanguageInterface> recommendedLanguageInterfaces = languagePluginManager.getExtensions(RecommendedLanguageInterface.class, plugin.getPluginId());
+            List<MinimalLanguageInterface> minimalLanguageInterfaces = languagePluginManager.getExtensions(MinimalLanguageInterface.class, plugin.getPluginId());
+            minimalLanguageInterfaces.forEach(extension -> Joiner.on(',').appendTo(builder, Collections.singleton(extension.initialPathPattern())));
+            builder.append("\t");
+            minimalLanguageInterfaces.forEach(extension -> Joiner.on(',').appendTo(builder, Collections.singleton("Minimal")));
+            builder.append(" ");
+            recommendedLanguageInterfaces.forEach(extension -> Joiner.on(',').appendTo(builder, Collections.singleton("Recommended")));
+            builder.append(" ");
+            completeLanguageInterfaces.forEach(extension -> Joiner.on(',').appendTo(builder, Collections.singleton("Complete")));
+            builder.append("\n");
+        }
+        LOG.info("Started language plugins:\n" + builder);
     }
 
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {
