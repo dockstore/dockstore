@@ -361,7 +361,6 @@ public abstract class AbstractImageRegistry {
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO, final User user) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
-        boolean releaseCreated = false;
         if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
