@@ -153,8 +153,6 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             final SourceFile sourceFile = new SourceFile();
             sourceFile.setPath(entry.getKey());
             sourceFile.setContent(entry.getValue().getLeft());
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SWL);
             if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);

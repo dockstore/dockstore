@@ -1233,6 +1233,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
                             + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
         }
+        // TODO: should also use plugins
+        // DOCKSTORE-2428 - demo how to add new workflow language
         if ("gxformat2".equals(descriptorType) && !defaultWorkflowPath.endsWith("yml")) {
             throw new CustomWebApplicationException(
                 "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType

@@ -124,6 +124,7 @@ import io.swagger.jaxrs.listing.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -237,9 +238,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
     }
 
-    public static File getFilePluginLocation() {
+    public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {
         String userHome = System.getProperty("user.home");
-        return new File(userHome + File.separator + ".dockstore" + File.separator + "language-plugins");
+        String filename = userHome + File.separator + ".dockstore" + File.separator + "language-plugins";
+        filename = StringUtils.isEmpty(configuration.getLanguagePluginLocation()) ? filename : configuration.getLanguagePluginLocation();
+        return new File(filename);
     }
 
     @Override
@@ -252,8 +255,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
 
-        final DefaultPluginManager languagePluginManager = LanguagePluginManager.getInstance(getFilePluginLocation());
-        describeAvailableLanguagePlugins(languagePluginManager);
+        final DefaultPluginManager languagePluginManager = LanguagePluginManager.getInstance(getFilePluginLocation(configuration));
+        describeAvailableLanguagePlugins(languagePluginManager, configuration);
         LanguageHandlerFactory.setLanguagePluginManager(languagePluginManager);
 
         final PublicStateManager publicStateManager = PublicStateManager.getInstance();
@@ -388,7 +391,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     }
 
-    private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager) {
+    private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager, DockstoreWebserviceConfiguration configuration) {
         List<PluginWrapper> plugins = languagePluginManager.getStartedPlugins();
         StringBuilder builder = new StringBuilder();
         builder.append("PluginId\tPlugin Version\tPlugin Path\tInitial Path Pattern\tPlugin Type(s)\n");
@@ -397,7 +400,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             builder.append("\t");
             builder.append(plugin.getPlugin().getWrapper().getDescriptor().getVersion());
             builder.append("\t");
-            builder.append(getFilePluginLocation().getAbsolutePath()).append(File.separator);
+            builder.append(getFilePluginLocation(configuration).getAbsolutePath()).append(File.separator);
             builder.append(plugin.getPlugin().getWrapper().getPluginPath()).append("(.zip)");
             builder.append("\t");
             List<CompleteLanguageInterface> completeLanguageInterfaces = languagePluginManager.getExtensions(CompleteLanguageInterface.class, plugin.getPluginId());
