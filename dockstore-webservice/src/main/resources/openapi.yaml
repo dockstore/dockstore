@@ -3013,7 +3013,7 @@ paths:
           required: false
           schema:
             type: string
-            default: "2"
+            default: "3"
         - name: runner
           in: query
           description: The tool runner

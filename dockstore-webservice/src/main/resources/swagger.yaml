@@ -2788,7 +2788,7 @@ paths:
         description: "Python version, only relevant for the cwltool runner"
         required: false
         type: "string"
-        default: "2"
+        default: "3"
       - name: "runner"
         in: "query"
         description: "The tool runner"
