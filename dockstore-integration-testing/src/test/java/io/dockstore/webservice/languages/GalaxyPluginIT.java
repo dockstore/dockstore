@@ -15,11 +15,13 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -33,6 +35,7 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.model.DescriptorLanguageBean;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -68,17 +71,17 @@ public class GalaxyPluginIT {
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
 
-
     static {
         try {
             // stash a Galaxy plugin in the plugin directory
             final Path temporaryTestingPlugins = Files.createTempDirectory("temporaryTestingPlugins");
             final Path path = Paths.get(temporaryTestingPlugins.toString(), GALAXY_PLUGIN_FILENAME);
             FileUtils.copyURLToFile(new URL(GALAXY_PLUGIN_LOCATION), path.toFile());
-
-            SUPPORT = new DropwizardTestSupport<>(
-                    DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, ConfigOverride.config("languagePluginLocation",
-                temporaryTestingPlugins.toString()));
+            final Collection<File> files = FileUtils.listFiles(temporaryTestingPlugins.toFile(), TrueFileFilter.INSTANCE, null);
+            final String absolutePath = temporaryTestingPlugins.toFile().getAbsolutePath();
+            System.out.println("path for support: " + absolutePath);
+            SUPPORT = new DropwizardTestSupport<>(DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH,
+                ConfigOverride.config("languagePluginLocation", absolutePath));
         } catch (IOException e) {
             throw new RuntimeException("could not create temporary directory");
         }
@@ -115,7 +118,6 @@ public class GalaxyPluginIT {
     @Before
     public void setup() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
-        DockstoreWebserviceApplication application = SUPPORT.getApplication();
     }
 
     @Test
@@ -123,11 +125,16 @@ public class GalaxyPluginIT {
         MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // should have default languages plus galaxy via plugin
-        Assert.assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
-        Assert.assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
-        Assert.assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
-        Assert.assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
-        // should no be present
-        Assert.assertFalse(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
+        Assert.assertTrue(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
+        Assert.assertTrue(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
+        Assert.assertTrue(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
+        Assert.assertTrue(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
+        // should not be present
+        Assert.assertFalse(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
     }
 }

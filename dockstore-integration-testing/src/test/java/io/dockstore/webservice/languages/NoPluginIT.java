@@ -17,6 +17,7 @@ package io.dockstore.webservice.languages;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -58,11 +59,13 @@ public class NoPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
+
     static {
         try {
-            SUPPORT = new DropwizardTestSupport<>(
-                    DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH, ConfigOverride.config("languagePluginLocation",
-                    Files.createTempDirectory("temporaryTestingPlugins").toString()));
+            final Path temporaryTestingPlugins = Files.createTempDirectory("temporaryTestingNoPlugins");
+            final String absolutePath = temporaryTestingPlugins.toFile().getAbsolutePath();
+            SUPPORT = new DropwizardTestSupport<>(DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH,
+                ConfigOverride.config("languagePluginLocation", absolutePath));
         } catch (IOException e) {
             throw new RuntimeException("could not create temporary directory");
         }
@@ -99,7 +102,6 @@ public class NoPluginIT {
     @Before
     public void setup() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
-        DockstoreWebserviceApplication application = SUPPORT.getApplication();
     }
 
     @Test
@@ -107,10 +109,15 @@ public class NoPluginIT {
         MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // by default, Dockstore should handle CWL, WDL, NEXTFLOW but no plugin languages
-        Assert.assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
-        Assert.assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
-        Assert.assertTrue(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
-        Assert.assertFalse(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
-        Assert.assertFalse(descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
+        Assert.assertTrue(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
+        Assert.assertTrue(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
+        Assert.assertTrue(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
+        Assert.assertFalse(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
+        Assert.assertFalse(
+            descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
     }
 }

@@ -242,6 +242,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         String userHome = System.getProperty("user.home");
         String filename = userHome + File.separator + ".dockstore" + File.separator + "language-plugins";
         filename = StringUtils.isEmpty(configuration.getLanguagePluginLocation()) ? filename : configuration.getLanguagePluginLocation();
+        System.out.println("File plugin path set to:" + filename);
         return new File(filename);
     }
 
@@ -393,6 +394,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager, DockstoreWebserviceConfiguration configuration) {
         List<PluginWrapper> plugins = languagePluginManager.getStartedPlugins();
+        if (plugins.isEmpty()) {
+            return;
+        }
         StringBuilder builder = new StringBuilder();
         builder.append("PluginId\tPlugin Version\tPlugin Path\tInitial Path Pattern\tPlugin Type(s)\n");
         for (PluginWrapper plugin : plugins) {
@@ -400,8 +404,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             builder.append("\t");
             builder.append(plugin.getPlugin().getWrapper().getDescriptor().getVersion());
             builder.append("\t");
-            builder.append(getFilePluginLocation(configuration).getAbsolutePath()).append(File.separator);
-            builder.append(plugin.getPlugin().getWrapper().getPluginPath()).append("(.zip)");
+            builder.append(plugin.getPlugin().getWrapper().getPluginPath());
             builder.append("\t");
             List<CompleteLanguageInterface> completeLanguageInterfaces = languagePluginManager.getExtensions(CompleteLanguageInterface.class, plugin.getPluginId());
             List<RecommendedLanguageInterface> recommendedLanguageInterfaces = languagePluginManager.getExtensions(RecommendedLanguageInterface.class, plugin.getPluginId());
@@ -415,6 +418,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             completeLanguageInterfaces.forEach(extension -> Joiner.on(',').appendTo(builder, Collections.singleton("Complete")));
             builder.append("\n");
         }
+        System.out.println("Started language plugins:\n" + builder);
         LOG.info("Started language plugins:\n" + builder);
     }
 
