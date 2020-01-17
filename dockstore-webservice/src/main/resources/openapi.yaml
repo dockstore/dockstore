@@ -5392,7 +5392,7 @@ paths:
             type: string
         - name: include
           in: query
-          description: "Comma-delimited list of fields to include: validations"
+          description: "Comma-delimited list of fields to include: validations, aliases"
           required: false
           schema:
             type: string
@@ -5583,7 +5583,7 @@ paths:
             type: string
         - name: include
           in: query
-          description: "Comma-delimited list of fields to include: validations"
+          description: "Comma-delimited list of fields to include: validations, aliases"
           required: false
           schema:
             type: string
@@ -5744,7 +5744,7 @@ paths:
             format: int64
         - name: include
           in: query
-          description: "Comma-delimited list of fields to include: validations"
+          description: "Comma-delimited list of fields to include: validations, aliases"
           required: false
           schema:
             type: string
@@ -5928,7 +5928,7 @@ paths:
             format: int64
         - name: include
           in: query
-          description: "Comma-delimited list of fields to include: validations"
+          description: "Comma-delimited list of fields to include: validations, aliases"
           required: false
           schema:
             type: string
