@@ -244,12 +244,12 @@ public class BasicIT extends BaseIT {
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
+        Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should not be an event for the non-tag version that was automatically created for the newly registered tool", 0, events.size());
+        Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
         // Add a tag
         Tag tag = new Tag();
         tag.setName("masterTest");
@@ -1389,12 +1389,12 @@ public class BasicIT extends BaseIT {
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
+        Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should not be an event for the non-tag version that was automatically created for the newly registered tool", 0, events.size());
+        Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
         // Add and update tag 101 times
         Set<String> randomTagNames = new HashSet<>();
 
