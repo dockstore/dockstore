@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.8.0-beta.9-SNAPSHOT"
+  version: "1.9.0-alpha.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -5070,7 +5070,7 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations"
+        description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
       - name: "services"
@@ -5247,7 +5247,7 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations"
+        description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
       - name: "services"
@@ -5400,7 +5400,7 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations"
+        description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
       responses:
@@ -5573,7 +5573,7 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations"
+        description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
       responses:
