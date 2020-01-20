@@ -6,9 +6,19 @@ import java.util.List;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.ChecksumConverter;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 
 public class ChecksumConverterTest {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
 
     @Test
     public void checksumConverter() {
@@ -19,7 +29,7 @@ public class ChecksumConverterTest {
 
         // Can hand empty list
         List<Checksum> listChecksums = new ArrayList<>();
-        Assert.assertEquals(null, cs.convertToDatabaseColumn(listChecksums));
+        Assert.assertNull(cs.convertToDatabaseColumn(listChecksums));
 
         // Can handle multiple checksums
         for(int i = 0; i < stringTypes.length; i++) {
@@ -40,13 +50,13 @@ public class ChecksumConverterTest {
         // Can handle invalid formatting
         String invalidStringChecksum = stringTypes[0] + stringChecksums[0];
         String incompleteStringChecksum = stringTypes[0];
-        Assert.assertEquals(null, cs.convertToEntityAttribute(invalidStringChecksum));
-        Assert.assertEquals(null, cs.convertToEntityAttribute(incompleteStringChecksum));
+        Assert.assertNull(cs.convertToEntityAttribute(invalidStringChecksum));
+        Assert.assertNull(cs.convertToEntityAttribute(incompleteStringChecksum));
 
         Checksum incompleteChecksum = new Checksum();
         incompleteChecksum.setType(stringTypes[0]);
         listChecksums.add(incompleteChecksum);
-        Assert.assertEquals(null, cs.convertToDatabaseColumn(listChecksums));
+        Assert.assertNull(cs.convertToDatabaseColumn(listChecksums));
 
     }
 }
