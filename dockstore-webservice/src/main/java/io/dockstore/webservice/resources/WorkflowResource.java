@@ -1809,6 +1809,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return addEntityFromGitHubRepository(repository, username, installationId);
     }
 
+    @POST
+    @Path("/path/workflow/upsertVersion/")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = BioWorkflow.class)
+    public BioWorkflow upsertWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
+        @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
+        @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
+        @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        return (BioWorkflow)upsertVersion(repository, username, gitReference, installationId, WorkflowMode.DOCKSTORE_YML);
+    }
+
     /**
      * Finds the tool by Id, and then checks that it exists and that the user has access to it
      * @param entryId Id of tool of interest

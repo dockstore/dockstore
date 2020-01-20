@@ -2131,6 +2131,7 @@ components:
           - STUB
           - HOSTED
           - SERVICE
+          - DOCKSTORE_YML
         organization:
           type: string
         output_file_formats:
@@ -2628,6 +2629,7 @@ components:
           - STUB
           - HOSTED
           - SERVICE
+          - DOCKSTORE_YML
         organization:
           type: string
         output_file_formats:

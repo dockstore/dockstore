@@ -47,14 +47,13 @@ public class ServiceResource extends AbstractWorkflowResource<Service> {
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "Add or update a service version for a given GitHub tag for a service with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Service.class)
     public Service upsertServiceVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
             @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
             @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
             @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
-        return upsertVersion(repository, username, gitReference, installationId, SERVICE);
-
+        return (Service)upsertVersion(repository, username, gitReference, installationId, SERVICE);
     }
 
     @POST

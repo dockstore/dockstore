@@ -12,7 +12,9 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -40,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
 /**
@@ -148,7 +151,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Create path on Dockstore (not unique across workflows)
         String dockstoreWorkflowPath = String.join("/", TokenType.GITHUB_COM.toString(), repository);
 
-        // Find all workflows with the given path that are full
+        // Find all workflows with the given path that match the mode
         List<Workflow> workflows = findAllWorkflowsByPath(dockstoreWorkflowPath, workflowMode);
 
         if (workflows.size() > 0) {
@@ -173,12 +176,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 versions.forEach(version -> sourceCodeRepo.updateReferenceType(repository, version));
             }
         } else {
-            // TODO: Abstract this better; shouldn't be checking for SERVICE in the base class like this.
-            if (workflowMode == SERVICE) {
-                String msg = "No service with path " + dockstoreWorkflowPath + " exists on Dockstore.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            }
+            String msg = "No entry with path " + dockstoreWorkflowPath + " exists on Dockstore.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         return dockstoreWorkflowPath;
@@ -264,7 +264,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
 
-    protected T upsertVersion(String repository, String username, String gitReference, String installationId, WorkflowMode workflowMode) {
+    protected Workflow upsertVersion(String repository, String username, String gitReference, String installationId, WorkflowMode workflowMode) {
         // Retrieve the user who triggered the call (may not exist on Dockstore)
         User sendingUser = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
@@ -272,11 +272,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         String installationAccessToken = gitHubAppSetup(installationId);
 
         // Call common upsert code
-        String dockstoreServicePath = upsertVersionHelper(repository, gitReference, null, workflowMode, installationAccessToken);
+        String dockstoreEntryPath = upsertVersionHelper(repository, gitReference, null, workflowMode, installationAccessToken);
 
-        // Add user to service if necessary
-        T entity = workflowDAO.findByPath(dockstoreServicePath, false, entityClass).get();
-        if (sendingUser != null && !entity.getUsers().contains(sendingUser)) {
+        // Add user to entry if necessary
+        Workflow entity = null;
+        if (Objects.equals(workflowMode, SERVICE)) {
+            entity =  workflowDAO.findByPath(dockstoreEntryPath, false, Service.class).get();
+        } else if (Objects.equals(workflowMode, DOCKSTORE_YML)) {
+            entity =  workflowDAO.findByPath(dockstoreEntryPath, false, BioWorkflow.class).get();
+        }
+        if (sendingUser != null && entity != null && !entity.getUsers().contains(sendingUser)) {
             entity.getUsers().add(sendingUser);
         }
 

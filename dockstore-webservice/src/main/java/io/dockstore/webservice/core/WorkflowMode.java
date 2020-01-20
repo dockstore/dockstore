@@ -40,5 +40,9 @@ public enum WorkflowMode {
     /**
      * A degenerate workflow
      */
-    SERVICE
+    SERVICE,
+    /**
+     * A workflow that uses a .dockstore.yml
+     */
+    DOCKSTORE_YML
 }
