@@ -83,6 +83,7 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "versionId", referencedColumnName = "id")
     @ApiModelProperty(value = "Version associated with the event.", position = 8)
+    @JsonIgnoreProperties({"sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images", "versionEditor"})
     private Version version;
 
     @Column
