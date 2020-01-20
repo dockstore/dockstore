@@ -32,7 +32,7 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * These represent actual workflows in terms of CWL, WDL, and other bioinformatics workflows
  */
-@ApiModel(value = "BioWorkflow", description = "This describes one workflow in the dockstore")
+@ApiModel(value = "BioWorkflow", description = "This describes one workflow in the dockstore", parent = Workflow.class)
 @Entity
 @Table(name = "workflow")
 @NamedQueries({
