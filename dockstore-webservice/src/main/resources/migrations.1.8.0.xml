@@ -181,9 +181,4 @@
         <addNotNullConstraint tableName="tag" columnName="dbcreatedate"/>
         <addNotNullConstraint tableName="tag" columnName="dbupdatedate"/>
     </changeSet>
-    <changeSet author="gluu (generated)" id="addVersionToEvent">
-        <addColumn tableName="event">
-            <column name="versionid" type="int8"/>
-        </addColumn>
-    </changeSet>
 </databaseChangeLog>
