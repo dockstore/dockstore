@@ -257,7 +257,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setScan(true);
 
         final DefaultPluginManager languagePluginManager = LanguagePluginManager.getInstance(getFilePluginLocation(configuration));
-        describeAvailableLanguagePlugins(languagePluginManager, configuration);
+        describeAvailableLanguagePlugins(languagePluginManager);
         LanguageHandlerFactory.setLanguagePluginManager(languagePluginManager);
 
         final PublicStateManager publicStateManager = PublicStateManager.getInstance();
@@ -392,7 +392,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     }
 
-    private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager, DockstoreWebserviceConfiguration configuration) {
+    private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager) {
         List<PluginWrapper> plugins = languagePluginManager.getStartedPlugins();
         if (plugins.isEmpty()) {
             LOG.info("No language plugins installed");
