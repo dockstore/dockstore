@@ -15,13 +15,11 @@
  */
 package io.dockstore.webservice.languages;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -35,7 +33,6 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.model.DescriptorLanguageBean;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -77,7 +74,7 @@ public class GalaxyPluginIT {
             final Path temporaryTestingPlugins = Files.createTempDirectory("temporaryTestingPlugins");
             final Path path = Paths.get(temporaryTestingPlugins.toString(), GALAXY_PLUGIN_FILENAME);
             FileUtils.copyURLToFile(new URL(GALAXY_PLUGIN_LOCATION), path.toFile());
-            final Collection<File> files = FileUtils.listFiles(temporaryTestingPlugins.toFile(), TrueFileFilter.INSTANCE, null);
+            System.out.println("copied Galaxy plugin to: " + path.toString());
             final String absolutePath = temporaryTestingPlugins.toFile().getAbsolutePath();
             System.out.println("path for support: " + absolutePath);
             SUPPORT = new DropwizardTestSupport<>(DockstoreWebserviceApplication.class, DROPWIZARD_CONFIGURATION_FILE_PATH,

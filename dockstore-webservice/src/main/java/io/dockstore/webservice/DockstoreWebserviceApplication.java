@@ -395,6 +395,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager, DockstoreWebserviceConfiguration configuration) {
         List<PluginWrapper> plugins = languagePluginManager.getStartedPlugins();
         if (plugins.isEmpty()) {
+            LOG.info("No language plugins installed");
             return;
         }
         StringBuilder builder = new StringBuilder();
@@ -418,7 +419,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             completeLanguageInterfaces.forEach(extension -> Joiner.on(',').appendTo(builder, Collections.singleton("Complete")));
             builder.append("\n");
         }
-        System.out.println("Started language plugins:\n" + builder);
         LOG.info("Started language plugins:\n" + builder);
     }
 

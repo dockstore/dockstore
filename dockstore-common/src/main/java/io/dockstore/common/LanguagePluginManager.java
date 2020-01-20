@@ -19,20 +19,19 @@ import java.io.File;
 
 import org.pf4j.DefaultPluginManager;
 
+/**
+ * Was intially a static class but the cached singleton was causing issues.
+ */
 public final class LanguagePluginManager {
-    private static DefaultPluginManager singleton = null;
 
     private LanguagePluginManager() {
         // block instantiation
     }
 
     public static synchronized DefaultPluginManager getInstance(File pluginsDirectory) {
-        if (singleton != null) {
-            return singleton;
-        }
-        singleton = new DefaultPluginManager(pluginsDirectory.toPath());
-        singleton.loadPlugins();
-        singleton.startPlugins();
-        return singleton;
+        DefaultPluginManager manager = new DefaultPluginManager(pluginsDirectory.toPath());
+        manager.loadPlugins();
+        manager.startPlugins();
+        return manager;
     }
 }

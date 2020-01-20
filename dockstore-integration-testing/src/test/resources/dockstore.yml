@@ -89,9 +89,10 @@ database:
 
 logging:
   level: ERROR
-  loggers:
-    org.pf4j:
-      level: DEBUG
+# uncomment to debug plugins
+#  loggers:
+#    org.pf4j:
+#      level: DEBUG
   appenders:
     - type: console
       threshold: ERROR

@@ -28,7 +28,6 @@ import org.pf4j.PluginWrapper;
 import static io.dockstore.common.DescriptorLanguage.FileType;
 
 public final class LanguageHandlerFactory {
-    private static DefaultPluginManager pluginManager = null;
     private static Map<DescriptorLanguage, MinimalLanguageInterface> pluginMap = new HashMap<>();
     private static Map<FileType, MinimalLanguageInterface> fileTypeMap = new HashMap<>();
 
@@ -37,23 +36,23 @@ public final class LanguageHandlerFactory {
     }
 
     public static void setLanguagePluginManager(DefaultPluginManager manager) {
-        if (LanguageHandlerFactory.pluginManager == null) {
-            LanguageHandlerFactory.pluginManager = manager;
-
-            List<PluginWrapper> plugins = manager.getStartedPlugins();
-            for (PluginWrapper wrapper : plugins) {
-                List<MinimalLanguageInterface> minimalLanguageInterfaces = manager.getExtensions(MinimalLanguageInterface.class, wrapper.getPluginId());
-                minimalLanguageInterfaces.forEach(inter -> {
-                    pluginMap.put(inter.getDescriptorLanguage(), inter);
-                });
-                minimalLanguageInterfaces.forEach(inter -> {
-                    fileTypeMap.put(inter.getDescriptorLanguage().getFileType(), inter);
-                    fileTypeMap.put(inter.getDescriptorLanguage().getTestParamType(), inter);
-                });
-            }
-            pluginMap = Collections.unmodifiableMap(pluginMap);
-            fileTypeMap = Collections.unmodifiableMap(fileTypeMap);
+        // should not have to do this, but starting and restarting webserver in tests does weird things when these static variables carry-over
+        pluginMap = new HashMap<>();
+        fileTypeMap = new HashMap<>();
+        List<PluginWrapper> plugins = manager.getStartedPlugins();
+        for (PluginWrapper wrapper : plugins) {
+            List<MinimalLanguageInterface> minimalLanguageInterfaces = manager
+                .getExtensions(MinimalLanguageInterface.class, wrapper.getPluginId());
+            minimalLanguageInterfaces.forEach(inter -> {
+                pluginMap.put(inter.getDescriptorLanguage(), inter);
+            });
+            minimalLanguageInterfaces.forEach(inter -> {
+                fileTypeMap.put(inter.getDescriptorLanguage().getFileType(), inter);
+                fileTypeMap.put(inter.getDescriptorLanguage().getTestParamType(), inter);
+            });
         }
+        pluginMap = Collections.unmodifiableMap(pluginMap);
+        fileTypeMap = Collections.unmodifiableMap(fileTypeMap);
     }
 
     public static LanguageHandlerInterface getInterface(DescriptorLanguage type) {
