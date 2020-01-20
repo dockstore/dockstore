@@ -82,30 +82,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
-  /organizations/collections/{alias}/aliases:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve a collection by alias.
-      description: Retrieve a collection by alias.
-      operationId: getCollectionByAlias
-      parameters:
-      - name: alias
-        in: path
-        description: Alias of the collection.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
   /organizations/{organizationId}/collections/{collectionId}:
     get:
       tags:
@@ -175,6 +154,97 @@ paths:
                 $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
+  /organizations/{organizationId}/collections/{collectionId}/description:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection description by organization ID and collection
+        ID.
+      description: Retrieve a collection description by organization ID and collection
+        ID. Supports optional authentication.
+      operationId: getCollectionDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update a collection's description.
+      description: Update a collection's description. Description in markdown.
+      operationId: updateCollectionDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collections's description in markdown.
+        content:
+          '*/*':
+            schema:
+              type: string
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/collections/{alias}/aliases:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection by alias.
+      description: Retrieve a collection by alias.
+      operationId: getCollectionByAlias
+      parameters:
+      - name: alias
+        in: path
+        description: Alias of the collection.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
   /organizations/{organizationName}/collections/{collectionName}/name:
     get:
       tags:
@@ -332,76 +402,6 @@ paths:
           '*/*':
             schema:
               $ref: '#/components/schemas/Collection'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/collections/{collectionId}/description:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve a collection description by organization ID and collection
-        ID.
-      description: Retrieve a collection description by organization ID and collection
-        ID. Supports optional authentication.
-      operationId: getCollectionDescription
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: collectionId
-        in: path
-        description: Collection ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
-      security:
-      - bearer: []
-    put:
-      tags:
-      - organizations
-      summary: Update a collection's description.
-      description: Update a collection's description. Description in markdown.
-      operationId: updateCollectionDescription
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: collectionId
-        in: path
-        description: Collection ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Collections's description in markdown.
-        content:
-          '*/*':
-            schema:
-              type: string
         required: true
       responses:
         default:
@@ -644,54 +644,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
-  /organizations/{organizationId}/request:
-    post:
-      tags:
-      - organizations
-      summary: Re-request an organization review.
-      description: Re-request a review of the given organization. Requires the organization
-        to be rejected.
-      operationId: requestOrganizationReview
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/name/{name}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by name.
-      description: Retrieve an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
-      parameters:
-      - name: name
-        in: path
-        description: Organization name.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations:
     get:
       tags:
@@ -771,6 +723,54 @@ paths:
         schema:
           type: integer
           format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization
+        to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
       responses:
         default:
           description: default response
@@ -1666,6 +1666,13 @@ components:
       properties:
         content:
           type: string
+    Aliasable:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
     Checksum:
       type: object
       properties:
@@ -2043,13 +2050,6 @@ components:
           $ref: '#/components/schemas/User'
         workingDirectory:
           type: string
-    Aliasable:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
     BioWorkflow:
       type: object
       properties:
