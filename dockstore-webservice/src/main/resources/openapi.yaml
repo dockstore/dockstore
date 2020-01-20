@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.8.0-beta.9-SNAPSHOT
+  version: 1.9.0-alpha.0-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -5308,24 +5308,7 @@ paths:
         lambda not to retry.
       operationId: addService
       requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                repository:
-                  description: Repository path
-                  type: string
-                username:
-                  description: Name of user on GitHub
-                  type: string
-                installationId:
-                  description: GitHub installation ID
-                  type: string
-              required:
-                - repository
-                - username
-                - installationId
+        $ref: "#/components/requestBodies/addService"
       responses:
         "200":
           description: successful operation
@@ -5376,6 +5359,25 @@ paths:
                 $ref: "#/components/schemas/Workflow"
       security:
         - BEARER: []
+  /workflows/path/workflow:
+    post:
+      tags:
+        - workflows
+      summary: Create a workflow for the given repository (ex. dockstore/dockstore-ui2).
+      description: To be called by a lambda function. Error code 418 is returned to tell
+        lambda not to retry.
+      operationId: addWorkflowFromGitHub
+      requestBody:
+        $ref: "#/components/requestBodies/addService"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   "/workflows/path/workflow/{repository}":
     get:
       tags:
@@ -5392,7 +5394,7 @@ paths:
             type: string
         - name: include
           in: query
-          description: "Comma-delimited list of fields to include: validations"
+          description: "Comma-delimited list of fields to include: validations, aliases"
           required: false
           schema:
             type: string
@@ -5583,7 +5585,7 @@ paths:
             type: string
         - name: include
           in: query
-          description: "Comma-delimited list of fields to include: validations"
+          description: "Comma-delimited list of fields to include: validations, aliases"
           required: false
           schema:
             type: string
@@ -5744,7 +5746,7 @@ paths:
             format: int64
         - name: include
           in: query
-          description: "Comma-delimited list of fields to include: validations"
+          description: "Comma-delimited list of fields to include: validations, aliases"
           required: false
           schema:
             type: string
@@ -5928,7 +5930,7 @@ paths:
             format: int64
         - name: include
           in: query
-          description: "Comma-delimited list of fields to include: validations"
+          description: "Comma-delimited list of fields to include: validations, aliases"
           required: false
           schema:
             type: string
@@ -6619,6 +6621,25 @@ servers:
   - url: https://dockstore.org/api
 components:
   requestBodies:
+    addService:
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              repository:
+                description: Repository path
+                type: string
+              username:
+                description: Name of user on GitHub
+                type: string
+              installationId:
+                description: GitHub installation ID
+                type: string
+            required:
+              - repository
+              - username
+              - installationId
     PublishRequest:
       content:
         application/json:

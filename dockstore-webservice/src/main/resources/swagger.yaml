@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.8.0-beta.9-SNAPSHOT"
+  version: "1.9.0-alpha.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -5053,6 +5053,41 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+  /workflows/path/workflow:
+    post:
+      tags:
+      - "workflows"
+      summary: "Create a workflow for the given repository (ex. dockstore/dockstore-ui2)."
+      description: "To be called by a lambda function. Error code 418 is returned\
+        \ to tell lambda not to retry."
+      operationId: "addWorkflowFromGitHub"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "formData"
+        description: "Repository path"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Name of user on GitHub"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/path/workflow/{repository}:
     get:
       tags:
@@ -5070,7 +5105,7 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations"
+        description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
       - name: "services"
@@ -5247,7 +5282,7 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations"
+        description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
       - name: "services"
@@ -5400,7 +5435,7 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations"
+        description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
       responses:
@@ -5573,7 +5608,7 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations"
+        description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
       responses:

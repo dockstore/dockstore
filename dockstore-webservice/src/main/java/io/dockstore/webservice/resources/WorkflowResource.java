@@ -34,8 +34,10 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -197,7 +199,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @Override
     protected Workflow initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo) {
-        return sourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
+        return sourceCodeRepo.initializeWorkflow(repository);
     }
 
 
@@ -1790,6 +1792,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @POST
+    @Path("/path/workflow/")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Create a workflow for the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow addWorkflowFromGitHub(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
+        @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
+        @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        return addEntityFromGitHubRepository(repository, username, installationId);
     }
 
     /**

@@ -327,7 +327,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Determine if service is already in Dockstore
         workflowDAO.findByPath(entityPath, false, entityClass).ifPresent((entity) -> {
             // TODO: When we add support for workflows, this message needs to be updated
-            String msg = "A service already exists for GitHub repository " + githubRepository;
+            String msg = "A " + entityClass.getCanonicalName() + " already exists for GitHub repository " + githubRepository;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         });
@@ -349,9 +349,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         T entity = initializeEntity(githubRepository, sourceCodeRepo);
         entity.getUsers().add(sendingUser);
-        long serviceId = workflowDAO.create(entity);
+        long entryId = workflowDAO.create(entity);
 
-        return workflowDAO.findById(serviceId);
+        return workflowDAO.findById(entryId);
     }
 
     /**

@@ -39,6 +39,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -291,6 +292,24 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             throw new CustomWebApplicationException("Could not reach GitHub", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
+        return workflow;
+    }
+
+    /**
+     * Initializes a workflow based on GitHub app installation
+     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     * @return stub workflow based on GitHub repository
+     */
+    public Workflow initializeWorkflow(String repositoryId) {
+        Workflow workflow = new BioWorkflow();
+        workflow.setOrganization(repositoryId.split("/")[0]);
+        workflow.setRepository(repositoryId.split("/")[1]);
+        workflow.setSourceControl(SourceControl.GITHUB);
+        workflow.setGitUrl("git@github.com:" + repositoryId + ".git");
+        workflow.setLastUpdated(new Date());
+        workflow.setDescriptorType(DescriptorLanguage.CWL);
+        workflow.setMode(WorkflowMode.STUB);
+        workflow.setDefaultWorkflowPath(".dockstore.yml");
         return workflow;
     }
 
