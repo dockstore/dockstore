@@ -8514,8 +8514,8 @@ components:
             or n/a?, required: GA4GH"
         descriptorType:
           type: string
-          description: This is a descriptor type for the workflow, either CWL, WDL, or
-            Nextflow (Defaults to CWL)
+          description: This is a descriptor type for the workflow, by default either CWL,
+            WDL, NFL, or gxformat2 (Defaults to CWL).
           enum:
             - CWL
             - WDL

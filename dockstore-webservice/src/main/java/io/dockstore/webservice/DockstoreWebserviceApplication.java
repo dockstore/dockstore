@@ -242,7 +242,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         String userHome = System.getProperty("user.home");
         String filename = userHome + File.separator + ".dockstore" + File.separator + "language-plugins";
         filename = StringUtils.isEmpty(configuration.getLanguagePluginLocation()) ? filename : configuration.getLanguagePluginLocation();
-        System.out.println("File plugin path set to:" + filename);
+        LOG.info("File plugin path set to:" + filename);
         return new File(filename);
     }
 
