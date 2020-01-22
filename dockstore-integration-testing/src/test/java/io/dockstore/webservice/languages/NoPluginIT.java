@@ -51,8 +51,8 @@ import static io.dockstore.common.CommonTestUtilities.getWebClient;
  * This test does not require confidential data.
  * These tests are a bit weird because we're testing the webservice running with no language plugin installed
  *
- * @author gluu
- * @since 24/07/18
+ * @author dyuen
+ * @since 1.9.0
  */
 @Category(NonConfidentialTest.class)
 public class NoPluginIT {
