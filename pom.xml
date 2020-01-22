@@ -50,7 +50,7 @@
         <cwlavro.version>2.0.4.2</cwlavro.version>
         <okhttp.version>3.14.2</okhttp.version>
         <slf4j.version>1.7.26</slf4j.version>
-        <swagger-ui.version>3.23.11</swagger-ui.version>
+        <swagger-ui.version>3.25.0</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
         <httpcomponents.version>4.5.10</httpcomponents.version>

@@ -114,7 +114,6 @@ The dependency environment for Dockstore is described by our
 [Travis-CI config](https://github.com/dockstore/dockstore/blob/develop/.travis.yml). In addition to the dependencies for 
 Dockstore users, note the setup instructions for postgres. Specifically, you will need to have postgres installed 
 and setup with the database user specified in [.travis.yml](https://github.com/dockstore/dockstore/blob/develop/.travis.yml#L26) (ideally, postgres is need only for integration tests but not unit tests).
-Additional, OpenAPI generation requires swagger2openapi installed with `npm install -g swagger2openapi@2.11.16`.
 
 ### Building
 

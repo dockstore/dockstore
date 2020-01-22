@@ -1045,7 +1045,6 @@
                     <outputFileName>openapi</outputFileName>
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
                     <outputFormat>YAML</outputFormat>
-                    <openapiFilePath>${project.basedir}/src/main/resources/configurationFilePath.yaml</openapiFilePath>
                     <prettyPrint>true</prettyPrint>
                     <resourcePackages>
                         <package>io.swagger.api</package>
@@ -1161,24 +1160,6 @@
                             <sources>
                                 <source>src/test/java</source>
                             </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
-                <executions>
-                    <!-- Execute script, translate swagger to open, and clean up-->
-                    <execution>
-                        <id>process-openapi</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <executable>${basedir}/swagger2open.sh</executable>
                         </configuration>
                     </execution>
                 </executions>
