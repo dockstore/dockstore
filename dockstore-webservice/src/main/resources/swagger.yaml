@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.9.0-alpha.0-SNAPSHOT"
+  version: "1.9.0-alpha.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -7316,6 +7316,10 @@ definitions:
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
         - "DOCKSTORE_SERVICE_OTHER"
+        - "DOCKSTORE_GXFORMAT2"
+        - "GXFORMAT2_TEST_FILE"
+        - "DOCKSTORE_SWL"
+        - "SWL_TEST_JSON"
       content:
         type: "string"
         position: 2
@@ -7659,6 +7663,7 @@ definitions:
         - "WDL"
         - "NFL"
         - "SERVICE"
+        - "GXFORMAT2"
       url:
         type: "string"
         example: "https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl"
@@ -7783,6 +7788,7 @@ definitions:
           - "WDL"
           - "NFL"
           - "SERVICE"
+          - "GXFORMAT2"
       id:
         type: "string"
         example: "v1"
@@ -7942,6 +7948,10 @@ definitions:
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
         - "DOCKSTORE_SERVICE_OTHER"
+        - "DOCKSTORE_GXFORMAT2"
+        - "GXFORMAT2_TEST_FILE"
+        - "DOCKSTORE_SWL"
+        - "SWL_TEST_JSON"
       valid:
         type: "boolean"
         position: 2
@@ -8269,12 +8279,13 @@ definitions:
       descriptorType:
         type: "string"
         position: 18
-        description: "This is a descriptor type for the workflow, either CWL, WDL,\
-          \ or Nextflow (Defaults to CWL)"
+        description: "This is a descriptor type for the workflow, by default either\
+          \ CWL, WDL, NFL, or gxformat2 (Defaults to CWL)."
         enum:
         - "CWL"
         - "WDL"
         - "NFL"
+        - "gxformat2"
         - "service"
       workflow_path:
         type: "string"

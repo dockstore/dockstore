@@ -695,6 +695,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         switch (fileType) {
         case NEXTFLOW_TEST_PARAMS:
         case CWL_TEST_JSON:
+        case GXFORMAT2_TEST_FILE:
             // DOCKSTORE-2428 - demo how to add new workflow language
             // case SWL_TEST_JSON:
         case DOCKSTORE_SERVICE_TEST_JSON:
@@ -704,6 +705,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return ToolFile.FileTypeEnum.CONTAINERFILE;
         case DOCKSTORE_WDL:
         case DOCKSTORE_CWL:
+        case DOCKSTORE_GXFORMAT2:
             // DOCKSTORE-2428 - demo how to add new workflow language
             // case DOCKSTORE_SWL:
         case DOCKSTORE_SERVICE_YML:
