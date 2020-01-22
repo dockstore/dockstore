@@ -290,8 +290,10 @@ public class UserResourceIT extends BaseIT {
 
         List<Repository> repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()).findAny().isPresent());
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && !repo.isPresent()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && !repo.isPresent()));
 
         // Register a workflow
         BioWorkflow ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
@@ -301,8 +303,10 @@ public class UserResourceIT extends BaseIT {
         // dockstoretesting/basic-workflow should be present now
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()).findAny().isPresent());
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent()));
 
         // Try deleting a workflow
         workflowsApi.deleteWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
@@ -319,7 +323,8 @@ public class UserResourceIT extends BaseIT {
         workflowsApi.refresh(ghWorkflow.getId());
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()));
 
         // Test Gitlab
         orgs = userApi.getUserOrganizations(SourceControl.GITLAB.name());
@@ -328,8 +333,10 @@ public class UserResourceIT extends BaseIT {
 
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-md5sum-unified") && !repo.isPresent()).findAny().isPresent());
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && !repo.isPresent()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-md5sum-unified") && !repo.isPresent()));
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && !repo.isPresent()));
 
         // Register a workflow
         BioWorkflow glWorkflow = workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
@@ -338,7 +345,8 @@ public class UserResourceIT extends BaseIT {
         // dockstore.test.user2/dockstore-workflow-example should be present now
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && repo.isPresent()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && repo.isPresent()));
 
         // Try registering the workflow again (duplicate) should fail
         try {

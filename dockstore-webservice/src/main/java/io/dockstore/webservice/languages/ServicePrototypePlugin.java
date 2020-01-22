@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.RecommendedLanguageInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -31,9 +32,10 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 public class ServicePrototypePlugin implements RecommendedLanguageInterface {
     private static final Logger LOG = LoggerFactory.getLogger(ServicePrototypePlugin.class);
+
     @Override
-    public boolean isService() {
-        return true;
+    public DescriptorLanguage getDescriptorLanguage() {
+        return DescriptorLanguage.SERVICE;
     }
 
     @Override

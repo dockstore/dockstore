@@ -13,7 +13,7 @@ info:
   license:
     name: Apache License Version 2.0
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
-  version: 1.9.0-alpha.0-SNAPSHOT
+  version: 1.9.0-alpha.1-SNAPSHOT
 tags:
 - name: aliases
   description: Create, update list aliases for accessing entries
@@ -1290,7 +1290,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
       security:
       - bearer: []
   /organizations/{alias}/aliases:
@@ -1878,6 +1878,10 @@ components:
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
           - DOCKSTORE_SERVICE_OTHER
+          - DOCKSTORE_GXFORMAT2
+          - GXFORMAT2_TEST_FILE
+          - DOCKSTORE_SWL
+          - SWL_TEST_JSON
         verifiedBySource:
           type: object
           additionalProperties:
@@ -1947,6 +1951,10 @@ components:
           - DOCKSTORE_SERVICE_YML
           - DOCKSTORE_SERVICE_TEST_JSON
           - DOCKSTORE_SERVICE_OTHER
+          - DOCKSTORE_GXFORMAT2
+          - GXFORMAT2_TEST_FILE
+          - DOCKSTORE_SWL
+          - SWL_TEST_JSON
         valid:
           type: boolean
     VerificationInformation:
@@ -2060,6 +2068,8 @@ components:
           enum:
           - CWL
           - WDL
+          - gxformat2
+          - SWL
           - NFL
           - service
           
@@ -2557,6 +2567,8 @@ components:
           enum:
           - CWL
           - WDL
+          - gxformat2
+          - SWL
           - NFL
           - service
           

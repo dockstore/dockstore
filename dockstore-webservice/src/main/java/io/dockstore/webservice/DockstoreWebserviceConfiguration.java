@@ -126,6 +126,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
 
+    private String languagePluginLocation;
+
     private String sqsURL;
 
     private String toolTesterBucket = null;
@@ -493,11 +495,20 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         return uiConfig;
     }
 
+    @JsonProperty
+    public String getLanguagePluginLocation() {
+        return languagePluginLocation;
+    }
+
+    public void setLanguagePluginLocation(String languagePluginLocation) {
+        this.languagePluginLocation = languagePluginLocation;
+    }
+
     /**
      * This config defines values that define the webservice from the outside world.
      * Most notably, for swagger. But also to configure generated RSS paths and TRS paths
      */
-    public class ExternalConfig {
+    public static class ExternalConfig {
         @NotEmpty
         private String hostname;
 
