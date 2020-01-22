@@ -31,15 +31,15 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
-        <dropwizard.version>1.3.16</dropwizard.version>
+        <dropwizard.version>1.3.17</dropwizard.version>
         <dockstore-client.version>1.8.0-beta.1</dockstore-client.version>
 
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
-        <swagger-annotations-version>1.5.23</swagger-annotations-version>
-        <openapi-annotations-version>2.0.9</openapi-annotations-version>
+        <swagger-annotations-version>1.6.0</swagger-annotations-version>
+        <openapi-annotations-version>2.1.1</openapi-annotations-version>
         <assertj.version>3.9.1</assertj.version>
-        <jackson.version>2.9.10.20191020</jackson.version>
-        <jackson.major.version>2.9.10</jackson.major.version>
+        <jackson.version>2.10.1</jackson.version>
+        <jackson.major.version>2.10.1</jackson.major.version>
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
@@ -53,8 +53,8 @@
         <swagger-ui.version>3.23.11</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
-        <httpcomponents.version>4.5.8</httpcomponents.version>
-        <httpcore.version>4.4.11</httpcore.version>
+        <httpcomponents.version>4.5.10</httpcomponents.version>
+        <httpcore.version>4.4.12</httpcore.version>
         <jetty-servlet.version>9.4.18.v20190429</jetty-servlet.version>
         <netty.version>4.1.33.Final</netty.version>
         <scala.version>2.12.8</scala.version>
@@ -109,7 +109,7 @@
             </snapshots>
             <id>jcenter</id>
             <name>bintray</name>
-            <url>http://jcenter.bintray.com</url>
+            <url>https://jcenter.bintray.com</url>
         </repository>
         <!-- broad -->
         <repository>
@@ -177,7 +177,7 @@
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
                 <artifactId>system-rules</artifactId>
-                <version>1.17.1</version>
+                <version>1.19.0</version>
                 <!-- junit:junit-dep is deprecated, and junit:junit replaces it. -->
                 <exclusions>
                     <exclusion>
@@ -247,7 +247,7 @@
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.11</version>
+                <version>1.13</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson/jackson-bom -->
             <dependency>
@@ -382,7 +382,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.8.1</version>
+                <version>3.9</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -755,9 +755,9 @@
                 <version>1.1.1</version>
             </dependency>
             <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>2.3.1</version>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>2.3.2</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
@@ -834,7 +834,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.4</version>
+                    <version>0.8.5</version>
                 </plugin>
                 <plugin>
                     <groupId>com.googlecode.maven-download-plugin</groupId>
@@ -849,7 +849,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.0</version>
+                    <version>3.8.1</version>
                     <configuration>
                         <release>11</release>
                         <showDeprecation>true</showDeprecation>
@@ -873,7 +873,6 @@
                         </excludes>
                     </configuration>
                 </plugin>
-                <!-- version fixed at 2.17 due to https://sourceforge.net/p/eclipse-cs/discussion/274376/thread/ba316e08/?limit=25 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
@@ -882,7 +881,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>8.24</version>
+                            <version>8.28</version>
                         </dependency>
                     </dependencies>
                     <configuration>
@@ -907,7 +906,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>3.2.1</version>
                     <executions>
                         <execution>
                             <id>attach-sources</id>
@@ -1239,7 +1238,7 @@
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.2.0</version>
+                <version>1.3.2</version>
                 <configuration>
                     <groups>java.,javax.,*</groups>
                     <staticAfter>true</staticAfter>
