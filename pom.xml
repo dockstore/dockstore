@@ -37,14 +37,14 @@
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
         <swagger-annotations-version>1.6.0</swagger-annotations-version>
         <openapi-annotations-version>2.1.1</openapi-annotations-version>
-        <assertj.version>3.9.1</assertj.version>
+        <assertj.version>3.14.0</assertj.version>
         <jackson.version>2.10.1</jackson.version>
         <jackson.major.version>2.10.1</jackson.major.version>
         <jersey-version>2.25.1</jersey-version>
-        <junit-version>4.12</junit-version>
+        <junit-version>4.13</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>2.5.25</aws.version>
-        <powermock.version>2.0.0</powermock.version>
+        <powermock.version>2.0.4</powermock.version>
         <postgresql.version>42.2.5</postgresql.version>
         <mockito.version>2.28.2</mockito.version>
         <cwlavro.version>2.0.4.2</cwlavro.version>
@@ -402,7 +402,7 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.24.1-GA</version>
+                <version>3.25.0-GA</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
