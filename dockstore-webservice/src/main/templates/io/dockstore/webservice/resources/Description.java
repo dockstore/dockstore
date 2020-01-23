@@ -32,6 +32,7 @@ import io.swagger.jaxrs.config.ReaderListener;
 import io.swagger.models.Swagger;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.In;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -45,9 +46,12 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Generated("maven resources template")
 @Api("tools")
 @Provider
+//TODO clean this up, preferably by destroying swagger
+@OpenAPIDefinition(tags = {@io.swagger.v3.oas.annotations.tags.Tag (name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS)},
+    info = @io.swagger.v3.oas.annotations.info.Info(description = Description.DESCRIPTION, version = "${project.version}", title = "Dockstore API", contact = @io.swagger.v3.oas.annotations.info.Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @io.swagger.v3.oas.annotations.info.License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = "TBD")
+)
 @SwaggerDefinition(info = @Info(description =
-    "This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as "
-        + "CWL documents and Dockerfiles used to build those images", version = "${project.version}", title = "Dockstore API", contact = @Contact(name = "Dockstore@ga4gh", email = "theglobalalliance@genomicsandhealth.org", url = "https://github.com/dockstore/dockstore"), license = @License(name = "Apache License Version 2.0", url = "https://github.com/dockstore/dockstore/blob/develop/LICENSE"), termsOfService = "TBD"), tags = {
+    Description.DESCRIPTION, version = "${project.version}", title = "Dockstore API", contact = @Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = "TBD"), tags = {
     @Tag(name = "entries", description = ResourceConstants.ENTRIES),
     @Tag(name = "containers", description = ResourceConstants.CONTAINERS),
     @Tag(name = "aliases", description = ResourceConstants.ALIASES),
@@ -60,11 +64,20 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
     @Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS),
     @Tag(name = "toolTester", description = ResourceConstants.TOOLTESTER),
     @Tag(name = "curation", description = ResourceConstants.CURATION),
+    @Tag(name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS),
     @Tag(name = "hosted", description = ResourceConstants.HOSTED),
     @Tag(name = "users", description = ResourceConstants.USERS),
     @Tag(name = "metadata", description = ResourceConstants.METADATA) }, externalDocs = @ExternalDocs(value = "Dockstore documentation", url = "https://www.dockstore.org/docs/getting-started"), securityDefinition = @SecurityDefinition(apiKeyAuthDefinitions = {
     @io.swagger.annotations.ApiKeyAuthDefinition(key = JWT_SECURITY_DEFINITION_NAME, in = io.swagger.annotations.ApiKeyAuthDefinition.ApiKeyLocation.HEADER, name = "Authorization") }))
 public class Description implements ReaderListener {
+
+    public static final String DESCRIPTION = "This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as CWL documents and Dockerfiles used to build those images. Explore swagger.json for a Swagger 2.0 description of our API and explore openapi.yaml for OpenAPI 3.0 descriptions.";
+    public static final String NAME = "Dockstore@ga4gh";
+    public static final String EMAIL = "theglobalalliance@genomicsandhealth.org";
+    public static final String CONTACT_URL = "https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506";
+    public static final String APACHE_LICENSE_VERSION_2_0 = "Apache License Version 2.0";
+    public static final String LICENSE_LOCATION = "https://github.com/dockstore/dockstore/blob/develop/LICENSE";
+
     @Override
     public void beforeScan(Reader reader, Swagger swagger) {
 

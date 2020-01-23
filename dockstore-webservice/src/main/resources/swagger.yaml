@@ -3,13 +3,14 @@ swagger: "2.0"
 info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
-    \ used to build those images"
+    \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
+    \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
   version: "1.9.0-alpha.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
     name: "Dockstore@ga4gh"
-    url: "https://github.com/dockstore/dockstore"
+    url: "https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506"
     email: "theglobalalliance@genomicsandhealth.org"
   license:
     name: "Apache License Version 2.0"
@@ -45,6 +46,9 @@ tags:
 - name: "metadata"
   description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
     \ etc."
+- name: "NIHdatacommons"
+  description: "Needed for SmartAPI compatibility apparantly, might be cargo cult\
+    \ behaviour"
 - name: "organizations"
   description: "Operations on Dockstore organizations"
 - name: "tokens"
