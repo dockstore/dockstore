@@ -23,4 +23,9 @@
             <column name="versionid" type="int8"/>
         </addColumn>
     </changeSet>
+    <changeSet id="removeVersionEventsWithoutVersions" author="">
+        <delete tableName="event">
+            <where>type='ADD_VERSION_TO_ENTRY' and versionid is null</where>
+        </delete>
+    </changeSet>
 </databaseChangeLog>
