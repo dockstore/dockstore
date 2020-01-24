@@ -506,7 +506,7 @@ public class DockerRepoResource
             final long l = tagDAO.create(tag);
             Tag byId = tagDAO.findById(l);
             createdTags.add(byId);
-            this.eventDAO.createAddTagToEntryEvent(user, tool, tag);
+            this.eventDAO.createAddTagToEntryEvent(user, tool, byId);
         }
         tool.getWorkflowVersions().clear();
         tool.getWorkflowVersions().addAll(createdTags);
