@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -74,6 +75,11 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         final Query query = namedQuery("io.dockstore.webservice.core.User.findByGitHubUsername")
             .setParameter("username", username);
         return (User)query.uniqueResult();
+    }
+
+    public Long findPublishedEntries(String username)  {
+        final Query query = namedQuery("io.dockstore.webservice.core.User.countPublishedEntries").setParameter("username", username);
+        return (Long)query.uniqueResult();
     }
 
     public boolean delete(User user) {
