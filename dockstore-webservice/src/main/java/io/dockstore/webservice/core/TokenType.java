@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 
 /**
@@ -26,19 +27,26 @@ import io.swagger.annotations.ApiModel;
  */
 @ApiModel(description = "Enumerates the sources for access tokens for the dockstore")
 public enum TokenType {
-    @JsonProperty("quay.io") QUAY_IO("quay.io", false),
-    @JsonProperty("github.com") GITHUB_COM("github.com", true),
-    @JsonProperty("dockstore") DOCKSTORE("dockstore", false),
-    @JsonProperty("bitbucket.org") BITBUCKET_ORG("bitbucket.org", true),
-    @JsonProperty("gitlab.com") GITLAB_COM("gitlab.com", true),
-    @JsonProperty("zenodo.org") ZENODO_ORG("zenodo.org", false),
-    @JsonProperty("google.com") GOOGLE_COM("google.com", false);
+    @JsonProperty("quay.io")
+    QUAY_IO("quay.io", null),
+    @JsonProperty("github.com")
+    GITHUB_COM("github.com", SourceControl.GITHUB),
+    @JsonProperty("dockstore")
+    DOCKSTORE("dockstore", null),
+    @JsonProperty("bitbucket.org")
+    BITBUCKET_ORG("bitbucket.org", SourceControl.BITBUCKET),
+    @JsonProperty("gitlab.com")
+    GITLAB_COM("gitlab.com", SourceControl.GITLAB),
+    @JsonProperty("zenodo.org")
+    ZENODO_ORG("zenodo.org", null),
+    @JsonProperty("google.com")
+    GOOGLE_COM("google.com", null);
     private final String friendlyName;
-    private final boolean sourceControlToken;
+    private final SourceControl sourceControl;
 
-    TokenType(String friendlyName, boolean sourceControlToken) {
+    TokenType(String friendlyName, SourceControl sourceControl) {
         this.friendlyName = friendlyName;
-        this.sourceControlToken = sourceControlToken;
+        this.sourceControl = sourceControl;
     }
 
     @Override
@@ -47,6 +55,10 @@ public enum TokenType {
     }
 
     public boolean isSourceControlToken() {
-        return sourceControlToken;
+        return sourceControl != null;
+    }
+
+    public SourceControl getSourceControl() {
+        return sourceControl;
     }
 }

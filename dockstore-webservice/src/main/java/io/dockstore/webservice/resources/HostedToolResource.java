@@ -38,7 +38,8 @@ import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -59,6 +60,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  */
 @Api("hosted")
 @Path("/containers")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "hosted", description = ResourceConstants.HOSTED)
 public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, ToolDAO, TagDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedToolResource.class);
     private final ToolDAO toolDAO;
@@ -113,7 +115,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         for (SourceFile file : sourceFiles) {
             if (file.getPath().equals(tag.getCwlPath()) || file.getPath().equals(tag.getWdlPath())) {
                 LOG.info("refreshing metadata based on " + file.getPath() + " from " + tag.getName());
-                LanguageHandlerFactory.getInterface(file.getType()).parseWorkflowContent(entry, file.getPath(), file.getContent(), sourceFiles, tag);
+                LanguageHandlerFactory.getInterface(file.getType()).parseWorkflowContent(file.getPath(), file.getContent(), sourceFiles, tag);
             }
         }
     }
@@ -142,7 +144,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool deleteHostedVersion(User user, Long entryId, String version) {
         Tool tool = super.deleteHostedVersion(user, entryId, version);
-        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
         return tool;
     }
 

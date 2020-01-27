@@ -21,6 +21,7 @@ import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
+import io.dockstore.webservice.resources.ResourceConstants;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.auth.Auth;
@@ -39,6 +40,7 @@ import javax.validation.constraints.*;
 {{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/consumes}} }){{/hasConsumes}}
 {{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/produces}} }){{/hasProduces}}
 @io.swagger.annotations.Api(description = "the {{{baseName}}} API")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GH", description = ResourceConstants.GA4GH)
 {{>generatedAnnotation}}
 {{#operations}}
 public class {{classname}}  {

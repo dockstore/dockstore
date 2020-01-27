@@ -19,15 +19,15 @@ import static org.mockito.Mockito.when;
 
 public class SimpleAuthenticatorTest {
 
-    private TokenDAO tokenDAO;
-    private UserDAO userDAO;
-    private SimpleAuthenticator simpleAuthenticator;
+    private static final Long USER_ID = 1L;
+    private static final String USER_EMAIL = "jdoe@example.com";
     private final String credentials = "asdfafds";
-    private static final Long USER_ID = new Long(1);
     private final Token token = Mockito.mock(Token.class);
     private final User user = new User();
     private final Userinfoplus userinfoplus = Mockito.mock(Userinfoplus.class);
-    private final static String USER_EMAIL = "jdoe@example.com";
+    private TokenDAO tokenDAO;
+    private UserDAO userDAO;
+    private SimpleAuthenticator simpleAuthenticator;
 
     @Before
     public void setUp() {

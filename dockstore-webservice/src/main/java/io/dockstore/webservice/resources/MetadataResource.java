@@ -28,6 +28,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -49,15 +53,21 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Config;
-import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.RSSToolPath;
+import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.statelisteners.RSSListener;
+import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
+import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
@@ -87,23 +97,31 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
+import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
+
 /**
  * @author dyuen
  */
 @Path("/metadata")
 @Api("metadata")
 @Produces({MediaType.TEXT_HTML, MediaType.TEXT_XML})
-@io.swagger.v3.oas.annotations.tags.Tag(name = "metadata", description = "description of the webservice itself")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "metadata", description = ResourceConstants.METADATA)
 public class MetadataResource {
 
+    public static final int RSS_ENTRY_LIMIT = 50;
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
-    private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
+    private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
     private final OrganizationDAO organizationDAO;
     private final CollectionDAO collectionDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
+    private final ServiceDAO serviceDAO;
     private final DockstoreWebserviceConfiguration config;
+    private final SitemapListener sitemapListener;
+    private final RSSListener rssListener;
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
         this.toolDAO = new ToolDAO(sessionFactory);
@@ -111,6 +129,10 @@ public class MetadataResource {
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.config = config;
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
+        this.serviceDAO = new ServiceDAO(sessionFactory);
+        this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
+        this.rssListener = PublicStateManager.getInstance().getRSSListener();
     }
 
     @GET
@@ -120,30 +142,44 @@ public class MetadataResource {
     @Operation(summary = "List all available workflow, tool, organization, and collection paths.", description = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication")
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
-        //TODO needs to be more efficient via JPA query
-        List<Tool> tools = toolDAO.findAllPublished();
-        // #2683 avoid web crawling services for 1.7.0
-        List<Workflow> workflows = workflowDAO.findAllPublished(null, Integer.MAX_VALUE, null, null, null, (Class)BioWorkflow.class);
+        try {
+            SortedSet<String> sitemap = sitemapListener.getCache().get(SITEMAP_KEY, this::getSitemap);
+            return String.join(System.lineSeparator(), sitemap);
+        } catch (ExecutionException e) {
+            throw new CustomWebApplicationException("Sitemap cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public SortedSet<String> getSitemap() {
+        SortedSet<String> urls = new TreeSet<>();
+        urls.addAll(getToolPaths());
+        urls.addAll(getBioWorkflowPaths());
+        urls.addAll(getOrganizationAndCollectionPaths());
+        return urls;
+    }
+
+    /**
+     * Adds organization and collection URLs
+     * //TODO needs to be more efficient via JPA query
+     */
+    private List<String> getOrganizationAndCollectionPaths() {
+        List<String> urls = new ArrayList<>();
         List<Organization> organizations = organizationDAO.findAllApproved();
-        StringBuilder builder = new StringBuilder();
-        for (Tool tool : tools) {
-            builder.append(createToolURL(tool));
-            builder.append(System.lineSeparator());
-        }
-        for (Workflow workflow : workflows) {
-            builder.append(createWorkflowURL(workflow));
-            builder.append(System.lineSeparator());
-        }
-        for (Organization organization: organizations) {
-            builder.append(createOrganizationURL(organization));
-            builder.append(System.lineSeparator());
+        organizations.forEach(organization -> {
+            urls.add(createOrganizationURL(organization));
             List<Collection> collections = collectionDAO.findAllByOrg(organization.getId());
-            for (Collection collection: collections) {
-                builder.append(createCollectionURL(collection, organization));
-                builder.append(System.lineSeparator());
-            }
-        }
-        return builder.toString();
+            collections.stream().map(collection -> createCollectionURL(collection, organization)).forEach(urls::add);
+        });
+        return urls;
+    }
+
+    private List<String> getToolPaths() {
+        return toolDAO.findAllPublishedPaths().stream().map(toolPath -> createToolURL(toolPath.getTool())).collect(Collectors.toList());
+    }
+
+    private List<String> getBioWorkflowPaths() {
+        return bioWorkflowDAO.findAllPublishedPaths().stream().map(workflowPath -> createWorkflowURL(workflowPath.getBioWorkflow())).collect(
+                Collectors.toList());
     }
 
     private String createOrganizationURL(Organization organization) {
@@ -170,11 +206,17 @@ public class MetadataResource {
     @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
     @ApiOperation(value = "List all published tools and workflows in creation order.", notes = "NO authentication")
     public String rssFeed() {
+        try {
+            return rssListener.getCache().get(RSS_KEY, this::getRSS);
+        } catch (ExecutionException e) {
+            throw new CustomWebApplicationException("RSS cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 
-        final int limit = 50;
-        List<Tool> tools = toolDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
-        // #2683 avoid web crawling services for 1.7.0
-        List<Workflow> workflows = workflowDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc", (Class)BioWorkflow.class);
+    private String getRSS() {
+        List<Tool> tools = toolDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSToolPath::getTool).collect(Collectors.toList());
+        List<Workflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).collect(
+                Collectors.toList());
 
         List<Entry> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
@@ -242,7 +284,7 @@ public class MetadataResource {
             @Parameter(name = "client_version", description = "The Dockstore client version")
             @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
             @Parameter(name = "python_version", description = "Python version, only relevant for the cwltool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "2"))
-            @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("2") @QueryParam("python_version") String pythonVersion,
+            @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("3") @QueryParam("python_version") String pythonVersion,
             @Parameter(name = "runner", description = "The tool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "cwltool", allowableValues = {"cwltool"}))
             @ApiParam(value = "The tool runner", allowableValues = "cwltool") @DefaultValue("cwltool") @QueryParam("runner") String runner,
             @Parameter(name = "output", description = "Response type", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "text", allowableValues = {"json", "text"}))
@@ -287,7 +329,7 @@ public class MetadataResource {
     @ApiResponse(description = "List of Docker registries", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = Registry.RegistryBean.class))))
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
+    @ApiOperation(nickname = "getDockerRegistries", value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
         List<Registry.RegistryBean> registryList = new ArrayList<>();
         Arrays.asList(Registry.values()).forEach(registry -> registryList.add(new Registry.RegistryBean(registry)));

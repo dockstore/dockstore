@@ -9,7 +9,7 @@
     <parent>
         <artifactId>dockstore</artifactId>
         <groupId>io.dockstore</groupId>
-        <version>1.7.5-SNAPSHOT</version>
+        <version>1.8.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -255,7 +255,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.major.version}</version>
         </dependency>
     </dependencies>
 

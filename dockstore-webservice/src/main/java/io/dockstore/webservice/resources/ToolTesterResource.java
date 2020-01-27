@@ -35,6 +35,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.tooltester.ToolTesterLog;
 import io.dockstore.webservice.core.tooltester.ToolTesterLogType;
 import io.dockstore.webservice.core.tooltester.ToolTesterS3Client;
+import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,9 +47,10 @@ import org.slf4j.LoggerFactory;
  * @author gluu
  * @since 1.7.0
  */
+@Api("/toolTester")
 @Path("/toolTester")
 @Produces(MediaType.APPLICATION_JSON)
-@Tag(name = "toolTester", description = "Interactions with the Dockstore-support's ToolTester application")
+@Tag(name = "toolTester", description = ResourceConstants.TOOLTESTER)
 public class ToolTesterResource {
     private static final Logger LOG = LoggerFactory.getLogger(ToolTesterResource.class);
     private final String bucketName;

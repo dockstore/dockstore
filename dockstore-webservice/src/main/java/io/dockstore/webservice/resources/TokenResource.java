@@ -92,6 +92,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/auth/tokens")
 @Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "tokens", description = ResourceConstants.TOKENS)
 public class TokenResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     /**
      * Global instance of the HTTP transport.
@@ -172,9 +173,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/quay.io")
-    @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
-            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
-                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access token.", HttpStatus.SC_BAD_REQUEST);
@@ -238,9 +237,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/gitlab.com")
-    @ApiOperation(value = "Add a new gitlab.com token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
-            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
-                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new gitlab.com token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGitlabToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                 JSON_FACTORY, new GenericUrl(GITLAB_URL + "oauth/token"),
@@ -313,16 +310,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      * Otherwise, below table indicates what happens when the "Login with Google" button in the UI2 is clicked
      * <table border="1">
      * <tr>
-     * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
+     * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</b></td> <td><b>Have GitHub account with Google token</b></td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account no Google token</td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
+     * <td> <b>Have Google Account no Google token</b></td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account with Google token</td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
+     * <td> <b>Have Google Account with Google token</b></td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
      * </tr>
      * <tr>
-     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
+     * <td> <b>No Google Account</b></td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
      * </tr>
      * </table>
      *

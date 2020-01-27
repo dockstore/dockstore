@@ -24,7 +24,6 @@ import java.util.Optional;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -41,7 +40,7 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -75,13 +74,13 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/entries")
 @Api("entries")
 @Produces(MediaType.APPLICATION_JSON)
-@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer", bearerFormat = "JWT") })
+@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
+@io.swagger.v3.oas.annotations.tags.Tag(name = "entries", description = ResourceConstants.ENTRIES)
 public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
     private final ToolDAO toolDAO;
-    private final ElasticManager elasticManager;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
@@ -91,7 +90,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
-        elasticManager = new ElasticManager();
 
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -105,18 +103,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         topicsApi = new TopicsApi(apiClient);
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @Override
     @Path("/{id}/aliases")
-    @ApiOperation(nickname = "updateAliases", value = "Update the aliases linked to a entry in Dockstore.", authorizations = {
+    @ApiOperation(nickname = "addAliases", value = "Add aliases linked to a entry in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Entry.class)
-    public Entry updateAliases(@ApiParam(hidden = true) @Auth User user,
+    public Entry addAliases(@ApiParam(hidden = true) @Auth User user,
                                @ApiParam(value = "Entry to modify.", required = true) @PathParam("id") Long id,
-                               @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
-                               @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return AliasableResourceInterface.super.updateAliases(user, id, aliases, emptyBody);
+                               @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {
+        return AliasableResourceInterface.super.addAliases(user, id, aliases);
     }
 
     @GET
@@ -226,8 +223,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @Override
-    public Optional<ElasticManager> getElasticManager() {
-        return Optional.of(elasticManager);
+    public Optional<PublicStateManager> getPublicStateManager() {
+        return Optional.of(PublicStateManager.getInstance());
     }
 
     @Override

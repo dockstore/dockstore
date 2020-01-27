@@ -45,5 +45,4 @@ public class SevenBridgesRegistry extends AbstractImageRegistry {
     public boolean canConvertToAuto(Tool tool) {
         return false;
     }
-
 }

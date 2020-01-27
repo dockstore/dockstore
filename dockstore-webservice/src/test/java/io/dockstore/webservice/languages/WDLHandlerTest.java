@@ -11,9 +11,9 @@ import java.util.Optional;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.MemoryIntensiveTest;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -29,7 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
@@ -49,26 +48,26 @@ public class WDLHandlerTest {
     @Test
     public void getWorkflowContent() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
-        final Workflow workflow = new BioWorkflow();
+        final Version workflow = new WorkflowVersion();
         workflow.setAuthor("Jane Doe");
-        workflow.setDescription("A good description");
+        workflow.setDescriptionAndDescriptionSource("A good description", DescriptionSource.DESCRIPTOR);
         workflow.setEmail("janedoe@example.org");
 
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
 
         final String goodWdl = FileUtils.readFileToString(new File(validFilePath), StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(workflow, validFilePath, goodWdl, Collections.emptySet(), new WorkflowVersion());
-        Assert.assertEquals(workflow.getAuthor(), "Mr. Foo");
-        Assert.assertEquals(workflow.getEmail(), "foo@foo.com");
-        Assert.assertEquals(workflow.getDescription(),
+        Version version = wdlHandler.parseWorkflowContent(validFilePath, goodWdl, Collections.emptySet(), workflow);
+        Assert.assertEquals(version.getAuthor(), "Mr. Foo");
+        Assert.assertEquals(version.getEmail(), "foo@foo.com");
+        Assert.assertEquals(version.getDescription(),
                 "This is a cool workflow trying another line \n## This is a header\n* First Bullet\n* Second bullet");
 
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(workflow, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
-        Assert.assertNull(workflow.getAuthor());
-        Assert.assertNull(workflow.getEmail());
+        Version version1 = wdlHandler.parseWorkflowContent(invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), version);
+        Assert.assertNull(version1.getAuthor());
+        Assert.assertNull(version1.getEmail());
     }
 
     @Test
@@ -85,7 +84,7 @@ public class WDLHandlerTest {
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);
-        wdlHandler.parseWorkflowContent(tool, invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
+        wdlHandler.parseWorkflowContent(invalidFilePath, invalidDescriptionWdl, Collections.emptySet(), new WorkflowVersion());
 
         // Check that parsing an invalid WDL workflow does not corrupt the CWL metadata
         Assert.assertEquals("Jane Doe", tool.getAuthor());
@@ -123,8 +122,8 @@ public class WDLHandlerTest {
         Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
 
         final BioWorkflow entry = new BioWorkflow();
-        wdlHandler.parseWorkflowContent(entry, "/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), null);
-        Assert.assertEquals("Christopher Whelan", entry.getAuthor());
+        Version version = wdlHandler.parseWorkflowContent("/GATKSVPipelineClinical.wdl", content, new HashSet<>(map.values()), new WorkflowVersion());
+        Assert.assertEquals("Christopher Whelan", version.getAuthor());
     }
 
     @Test
@@ -170,6 +169,11 @@ public class WDLHandlerTest {
             } catch (IOException e) {
                 return null;
             }
+        }
+
+        @Override
+        public String getREADMEContent(String repositoryId, String branch) {
+            return null;
         }
 
         // From here on down these methods are not invoked in our tests

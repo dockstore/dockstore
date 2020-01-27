@@ -18,17 +18,18 @@ package core;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.SortedSet;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.MemoryIntensiveTest;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
@@ -46,13 +47,12 @@ import static org.junit.Assert.assertTrue;
 
 @Category(MemoryIntensiveTest.class)
 public class WDLParseTest {
-
     @Test
     public void testWDLMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Version entry = sInterface
+            .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         assertTrue("incorrect author", entry.getAuthor().contains("Chip Stewart"));
         assertTrue("incorrect email", entry.getEmail().contains("stewart@broadinstitute.org"));
     }
@@ -61,8 +61,8 @@ public class WDLParseTest {
     public void testWDLMetadataExampleWithMerge() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example1.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Version entry = sInterface
+            .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
         assertNull("incorrect email", entry.getEmail());
     }
@@ -71,11 +71,57 @@ public class WDLParseTest {
     public void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        Version entry = sInterface
+            .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
         assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
     }
+
+    @Test
+    public void testRecursiveImportsMetadata() {
+        try {
+            WDLHandler.checkForRecursiveLocalImports(getSourceFile1().getContent(), getSourceFiles(), new HashSet<>(), "/");
+            Assert.fail("Should have detected recursive local import");
+        } catch (ParseException e) {
+            Assert.assertEquals("Recursive local import detected: /first-import.wdl", e.getMessage());
+        }
+    }
+
+    @Test
+    public void parseRecursiveWorkflowContent() {
+        WDLHandler wdlHandler = new WDLHandler();
+        WorkflowVersion version = new WorkflowVersion();
+        wdlHandler.parseWorkflowContent(getSourceFile1().getAbsolutePath(), getSourceFile1().getContent(), getSourceFiles(), version);
+        SortedSet<Validation> validations = version.getValidations();
+        Assert.assertTrue(validations.first().getMessage().contains("Recursive local import detected: /first-import.wdl"));
+    }
+
+    private static SourceFile getSourceFile1() {
+        SourceFile sourceFile1 = new SourceFile();
+        sourceFile1.setAbsolutePath("/Dockstore.wdl");
+        sourceFile1.setPath("Dockstore.wdl");
+        sourceFile1.setContent("import \"first-import.wdl\" as first\n" + "task hello {\n" + "  String name\n" + "\n" + "  command {\n"
+                + "    echo 'Hello ${name}!'\n" + "  }\n" + "  output {\n" + "    File response = stdout()\n" + "  }\n" + "}\n" + "\n"
+                + "workflow test {\n" + "  call hello\n" + "  call first.hello\n" + "}");
+        return sourceFile1;
+    }
+
+    private static SourceFile getSourceFile2() {
+        SourceFile sourceFile2 = new SourceFile();
+        sourceFile2.setAbsolutePath("/first-import.wdl");
+        sourceFile2.setPath("first-import.wdl");
+        sourceFile2.setContent("import \"Dockstore.wdl\" as second\n" + "task hello {\n" + "  String name\n" + "\n" + "  command {\n"
+                + "    echo 'Hello ${name}!'\n" + "  }\n" + "  output {\n" + "    File response = stdout()\n" + "  }\n" + "}");
+        return sourceFile2;
+    }
+
+    private static Set<SourceFile> getSourceFiles() {
+        Set<SourceFile> sourceFiles = new HashSet<>();
+        sourceFiles.add(getSourceFile1());
+        sourceFiles.add(getSourceFile2());
+        return sourceFiles;
+    }
+
 
     /**
      * Tests that Dockstore can handle a workflow with recursive imports
@@ -159,8 +205,8 @@ public class WDLParseTest {
             wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
 
             LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
-            Entry entry = sInterface
-                    .parseWorkflowContent(new BioWorkflow(), primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
+            Version entry = sInterface
+                    .parseWorkflowContent(primaryWDL.getAbsolutePath(), FileUtils.readFileToString(primaryWDL, StandardCharsets.UTF_8), sourceFileSet, new WorkflowVersion());
             assertEquals("incorrect author", 1, entry.getAuthor().split(",").length);
             assertEquals("incorrect email", "foobar@foo.com", entry.getEmail());
             assertTrue("incorrect description", entry.getDescription().length() > 0);

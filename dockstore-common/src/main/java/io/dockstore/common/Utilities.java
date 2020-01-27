@@ -40,6 +40,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.exec.environment.EnvironmentUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -97,6 +98,11 @@ public final class Utilities {
         return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), workingDir);
     }
 
+    public static ImmutablePair<String, String> executeCommand(String command, OutputStream stdoutStream, OutputStream stderrStream,
+            File workingDir, Map<String, String> additionalEnvironment) {
+        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), workingDir, additionalEnvironment);
+    }
+
     /**
      * Execute a command and return stdout and stderr
      *
@@ -105,6 +111,18 @@ public final class Utilities {
      */
     private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
             Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream, File workingDir) {
+        return executeCommand(command, dumpOutput, stdoutStream, stderrStream, workingDir, null);
+    }
+
+    /**
+     * Execute a command and return stdout and stderr
+     *
+     * @param command the command to execute
+     * @param additionalEnvironment additional environment variables that are added to the system environment; can be null
+     * @return the stdout and stderr
+     */
+    private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
+            Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream, File workingDir, Map<String, String> additionalEnvironment) {
         // TODO: limit our output in case the called program goes crazy
 
         // these are for returning the output for use by this
@@ -123,6 +141,8 @@ public final class Utilities {
             String utf8 = StandardCharsets.UTF_8.name();
             try {
                 final CommandLine parse = CommandLine.parse(command);
+                // When running bash commands directly, we need this to substitute variables
+                parse.setSubstitutionMap(additionalEnvironment);
                 Executor executor = new DefaultExecutor();
                 if (workingDir != null) {
                     LOG.info("working directory is " + workingDir.toString());
@@ -132,9 +152,13 @@ public final class Utilities {
                 if (dumpOutput) {
                     LOG.info("CMD: " + command);
                 }
+                final Map<String, String> procEnvironment = EnvironmentUtils.getProcEnvironment();
+                if (additionalEnvironment != null) {
+                    procEnvironment.putAll(additionalEnvironment);
+                }
                 // get stdout and stderr
                 executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
-                executor.execute(parse, resultHandler);
+                executor.execute(parse, procEnvironment, resultHandler);
                 resultHandler.waitFor();
                 // not sure why commons-exec does not throw an exception
                 if (resultHandler.getExitValue() != 0) {

@@ -43,10 +43,10 @@ import static org.junit.Assert.assertTrue;
  * @since 19/04/17
  */
 public class GA4GHV1IT extends GA4GHIT {
-    private static final String apiVersion = "api/ga4gh/v1/";
+    private static final String API_VERSION = "api/ga4gh/v1/";
 
     public String getApiVersion() {
-        return apiVersion;
+        return API_VERSION;
     }
 
     @Test
@@ -113,9 +113,9 @@ public class GA4GHV1IT extends GA4GHIT {
         Response response = checkedResponse(baseURL + "tool-classes");
         List<ToolClass> responseObject = response.readEntity(new GenericType<List<ToolClass>>() {
         });
-        final String expected = SUPPORT.getObjectMapper()
-                .writeValueAsString(SUPPORT.getObjectMapper().readValue(fixture("fixtures/toolClasses.json"), new TypeReference<List<ToolClass>>() {
-                }));
+        final String expected = SUPPORT.getObjectMapper().writeValueAsString(
+            SUPPORT.getObjectMapper().readValue(fixture("fixtures/toolClasses.json"), new TypeReference<List<ToolClass>>() {
+            }));
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).isEqualTo(expected);
     }
 
@@ -137,8 +137,7 @@ public class GA4GHV1IT extends GA4GHIT {
 
     @Override
     protected void toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal() throws Exception {
-        Response response = checkedResponse(
-            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
@@ -250,7 +249,6 @@ public class GA4GHV1IT extends GA4GHIT {
     /**
      * This tests if the 4 workflows with a combination of different repositories and either same or matching workflow name
      * can be retrieved separately
-     *
      */
     @Test
     public void toolsIdGet4Workflows() throws Exception {

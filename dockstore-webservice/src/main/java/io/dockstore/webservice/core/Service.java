@@ -16,13 +16,16 @@
 package io.dockstore.webservice.core;
 
 import javax.persistence.Entity;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 
 @ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow")
 @Entity
 @Table(name = "service")
+@NamedQuery(name = "io.dockstore.webservice.core.Service.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from Service c where c.isPublished = true")
 public class Service extends Workflow {
 
     public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM }
@@ -30,6 +33,10 @@ public class Service extends Workflow {
     @Override
     public Entry getParentEntry() {
         return null;
+    }
+
+    public EntryType getEntryType() {
+        return EntryType.SERVICE;
     }
 
     @Override
@@ -45,5 +52,9 @@ public class Service extends Workflow {
     @Override
     public void setIsChecker(boolean isChecker) {
         throw new UnsupportedOperationException("cannot add a checker workflow to a Service");
+    }
+
+    public Event.Builder getEventBuilder() {
+        return new Event.Builder().withService(this);
     }
 }

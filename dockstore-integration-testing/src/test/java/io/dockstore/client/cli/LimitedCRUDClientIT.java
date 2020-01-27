@@ -65,38 +65,38 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests CRUD style operations for tools and workflows hosted directly on Dockstore
  *
- * @author dyuen,agduncan
+ * @author dyuen, agduncan
  */
 @Category(ConfidentialTest.class)
 public class LimitedCRUDClientIT {
-    private static TestingPostgres testingPostgres;
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
     /**
      * Used to set user based hosted entry count and hosted entry version limits -- higher than the system limits for those values.
      */
     public static final int NEW_LIMITS = 20;
-
     /**
      * The system limit for hosted entry count and hosted entry version.
      * Specified in dockstore-integration-testing/src/test/resources/dockstore.yml
      */
     public static final int SYSTEM_LIMIT = 10;
+    private static TestingPostgres testingPostgres;
+    @Rule
+    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     //TODO: duplicates BaseIT but with a different config file, attempt to simplify after release
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
@@ -106,7 +106,7 @@ public class LimitedCRUDClientIT {
     }
 
     @AfterClass
-    public static void afterClass(){
+    public static void afterClass() {
         SUPPORT.after();
     }
 
@@ -122,22 +122,15 @@ public class LimitedCRUDClientIT {
         usersApi.setUserLimits(user.getId(), new Limits());
     }
 
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
-
-
     @Test
-    public void testToolCreation(){
+    public void testToolCreation() {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+        DockstoreTool hostedTool = api
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
-        assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
+        assertEquals("One user should belong to this tool, yourself", 1, hostedTool.getUsers().size());
         hostedTool.getUsers().forEach(user -> {
             assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles());
         });
@@ -155,8 +148,9 @@ public class LimitedCRUDClientIT {
         assertNull(container.getUsers());
 
         // test repeated workflow creation up to limit
-        for(int i = 1; i < SYSTEM_LIMIT; i++) {
-            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+        for (int i = 1; i < SYSTEM_LIMIT; i++) {
+            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace",
+                null);
         }
 
         thrown.expect(ApiException.class);
@@ -174,32 +168,36 @@ public class LimitedCRUDClientIT {
         Limits limits = new Limits();
         limits.setHostedEntryCountLimit(NEW_LIMITS);
         usersApi.setUserLimits(user.getId(), limits);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+        DockstoreTool hostedTool = api
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
-        assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
+        assertEquals("One user should belong to this tool, yourself", 1, hostedTool.getUsers().size());
 
         // test repeated workflow creation up to limit
-        for(int i = 1; i <= NEW_LIMITS - 1; i++) {
-            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+        for (int i = 1; i <= NEW_LIMITS - 1; i++) {
+            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace",
+                null);
         }
 
         thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+        api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(),
+            "coolNamespace", null);
     }
 
     @Test
     public void testToolVersionCreation() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+        DockstoreTool hostedTool = api
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles();
 
         api.editHostedTool(hostedTool.getId(), sourceFiles);
 
         // test repeated workflow version creation up to limit
-        for(int i = 1; i < SYSTEM_LIMIT; i++) {
+        for (int i = 1; i < SYSTEM_LIMIT; i++) {
             sourceFiles.get(0).setContent(sourceFiles.get(0).getContent() + "\ns:citation: " + UUID.randomUUID().toString());
             api.editHostedTool(hostedTool.getId(), sourceFiles);
         }
@@ -220,18 +218,19 @@ public class LimitedCRUDClientIT {
         usersApi.setUserLimits(user.getId(), limits);
 
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+        DockstoreTool hostedTool = api
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles();
         api.editHostedTool(hostedTool.getId(), sourceFiles);
 
         // a few updates with no actual changes shouldn't break anything since they are ignored
-        for(int i = 1; i <= NEW_LIMITS - 1; i++) {
+        for (int i = 1; i <= NEW_LIMITS - 1; i++) {
             api.editHostedTool(hostedTool.getId(), sourceFiles);
         }
 
         // test repeated workflow version creation up to limit
-        for(int i = 1; i <= NEW_LIMITS - 1; i++) {
+        for (int i = 1; i <= NEW_LIMITS - 1; i++) {
             sourceFiles.get(0).setContent(sourceFiles.get(0).getContent() + "\ns:citation: " + UUID.randomUUID().toString());
             api.editHostedTool(hostedTool.getId(), sourceFiles);
         }
@@ -257,7 +256,8 @@ public class LimitedCRUDClientIT {
 
     private List<SourceFile> generateSourceFiles() throws IOException {
         SourceFile descriptorFile = new SourceFile();
-        descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
+        descriptorFile
+            .setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         descriptorFile.setPath("/Dockstore.cwl");
         descriptorFile.setAbsolutePath("/Dockstore.cwl");

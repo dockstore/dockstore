@@ -44,10 +44,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class OpenApiIT {
 
-
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
     protected static javax.ws.rs.client.Client client;
+    @Rule
+    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @Rule
+    public final TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
     private final String basePath = "/"; //SUPPORT.getConfiguration().getExternalConfig().getBasePath();
     private final String baseURL = String.format("http://localhost:%d" + basePath, SUPPORT.getLocalPort());
 
@@ -59,30 +66,18 @@ public class OpenApiIT {
     }
 
     @AfterClass
-    public static void afterClass(){
+    public static void afterClass() {
         SUPPORT.after();
     }
 
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
-
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-
     @Test
-    public void testSwagger2_0() {
+    public void testSwagger20() {
         Response response = client.target(baseURL + "swagger.json").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
     }
 
     @Test
-    public void testOpenApi3_0() {
+    public void testOpenApi30() {
         Response response = client.target(baseURL + "openapi.yaml").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
     }

@@ -36,6 +36,7 @@ import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -61,8 +62,27 @@ import org.slf4j.LoggerFactory;
 public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
     public static final int BYTES_IN_KB = 1024;
-
     String gitUsername;
+
+    /**
+     * Tries to get the README contents
+     * First gets all the file names, then see if any of them matches the README regex
+     * @param repositoryId
+     * @param branch
+     * @return
+     */
+    public String getREADMEContent(String repositoryId, String branch) {
+        List<String> strings = this.listFiles(repositoryId, "/", branch);
+        if (strings == null) {
+            return null;
+        }
+        Optional<String> first = strings.stream().filter(SourceCodeRepoInterface::matchesREADME).findFirst();
+        return first.map(s -> this.readFile(repositoryId, s, branch)).orElse(null);
+    }
+
+    public static boolean matchesREADME(String filename) {
+        return filename.matches("(?i:/?readme([.]md)?)");
+    }
 
     /**
      * If this interface is pointed at a specific repository, grab a
@@ -174,6 +194,17 @@ public abstract class SourceCodeRepoInterface {
             Map<String, WorkflowVersion> existingDefaults);
 
     /**
+     * Creates a basic workflow object with default values
+     * @param repository repository organization and name (ex. dockstore/dockstore-ui2)
+     * @return basic workflow object
+     */
+    public Workflow createStubBioworkflow(String repository) {
+        Workflow workflow = initializeWorkflow(repository, new BioWorkflow());
+        workflow.setDescriptorType(DescriptorLanguage.CWL);
+        return workflow;
+    }
+
+    /**
      * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
      *
      * @param repositoryId
@@ -236,92 +267,107 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Update an entry with the contents of the descriptor file from a source code repo
+     * Update all versions with metadata from the contents of the descriptor file from a source code repo
+     * If no description from the descriptor file, fall back to README
      *
-     * @param entry@Override
-     * @param type
-     * @return
+     * @param entry entry to update
+     * @param type the type of language to look for
+     * @return the entry again
      */
     Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
-        Version version = null;
 
         if (repositoryId == null) {
             LOG.info("Could not find repository information.");
             return entry;
         }
 
-        String branch = getMainBranch(entry, repositoryId);
-
-        if (branch == null) {
-            LOG.info(repositoryId + " : Error getting the main branch.");
+        // If no tags or workflow versions, have no metadata
+        if (entry.getWorkflowVersions().isEmpty()) {
             return entry;
         }
 
-        // Determine the file path of the descriptor
-        String filePath = null;
-        Set<SourceFile> sourceFiles = null;
-
-        // If entry is a tool
         if (entry instanceof Tool) {
-            // If no tags exist on quay
-            if (entry.getWorkflowVersions().isEmpty()) {
-                return entry;
-            }
-
-            // Find filepath to parse
-            for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
-                if (tag.getReference() != null && tag.getReference().equals(branch)) {
-                    sourceFiles = tag.getSourceFiles();
-                    if (type == DescriptorLanguage.CWL) {
-                        filePath = tag.getCwlPath();
-                        version = tag;
-                    } else if (type == DescriptorLanguage.WDL) {
-                        filePath = tag.getWdlPath();
-                        version = tag;
-                    } else {
-                        throw new UnsupportedOperationException("tool is not a CWL or WDL file");
-                    }
+            Tool tool = (Tool)entry;
+            tool.getWorkflowVersions().forEach(tag -> {
+                String filePath;
+                if (type == DescriptorLanguage.CWL) {
+                    filePath = tag.getCwlPath();
+                } else if (type == DescriptorLanguage.WDL) {
+                    filePath = tag.getWdlPath();
+                } else {
+                    throw new UnsupportedOperationException("tool is not a CWL or WDL file");
                 }
-            }
+                updateVersionMetadata(filePath, tag, type, repositoryId);
+            });
         }
-
-        // If entry is a workflow
-
         if (entry instanceof Workflow) {
-            // Find filepath to parse
-            for (WorkflowVersion workflowVersion : ((Workflow)entry).getWorkflowVersions()) {
-                if (workflowVersion.getReference().equals(branch)) {
-                    filePath = workflowVersion.getWorkflowPath();
-                    sourceFiles = workflowVersion.getSourceFiles();
-                    version = workflowVersion;
+            Workflow workflow = (Workflow)entry;
+            workflow.getWorkflowVersions().forEach(workflowVersion -> {
+                String filePath = workflowVersion.getWorkflowPath();
+                updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
+            });
+        }
+        return entry;
+    }
+
+    /**
+     * Sets the default version if there isn't already one present.
+     * This is required because entry-level metadata depends on the default version
+     *
+     * @param entry
+     * @param repositoryId
+     */
+    public void setDefaultBranchIfNotSet(Entry entry, String repositoryId) {
+        if (entry.getDefaultVersion() == null) {
+            String branch = getMainBranch(entry, repositoryId);
+            if (branch == null) {
+                String message = String.format("%s : Error getting the main branch.", repositoryId);
+                LOG.info(message);
+            } else {
+                Set<Version> workflowVersions = entry.getWorkflowVersions();
+                Optional<Version> firstWorkflowVersion = workflowVersions.stream()
+                        .filter(workflowVersion -> {
+                            String reference = workflowVersion.getReference();
+                            return branch.equals(reference);
+                        }).findFirst();
+                firstWorkflowVersion.ifPresent(version -> entry.checkAndSetDefaultVersion(version.getName()));
+            }
+        }
+    }
+
+    private void updateVersionMetadata(String filePath, Version version, DescriptorLanguage type, String repositoryId) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
+        String branch = version.getName();
+        if (Strings.isNullOrEmpty(filePath)) {
+            String message = String.format("%s : No descriptor found for %s.", repositoryId, branch);
+            LOG.info(message);
+        }
+        if (sourceFiles == null || sourceFiles.isEmpty()) {
+            String message = String.format("%s : Error getting descriptor for %s with path %s", repositoryId, branch, filePath);
+            LOG.info(message);
+            if (version.getReference() != null) {
+                String readmeContent = getREADMEContent(repositoryId, version.getReference());
+                if (StringUtils.isNotBlank(readmeContent)) {
+                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
+                }
+            }
+            return;
+        }
+        String fileContent;
+        Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(filePath)).findFirst();
+        if (first.isPresent()) {
+            fileContent = first.get().getContent();
+            LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
+            anInterface.parseWorkflowContent(filePath, fileContent, sourceFiles, version);
+            if ((version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null) {
+                String readmeContent = getREADMEContent(repositoryId, version.getReference());
+                if (StringUtils.isNotBlank(readmeContent)) {
+                    version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);
                 }
             }
         }
-
-        if (Strings.isNullOrEmpty(filePath)) {
-            LOG.info(repositoryId + " : No descriptor found for " + branch + ".");
-            return entry;
-        }
-
-        if (sourceFiles == null || sourceFiles.isEmpty()) {
-            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
-            return entry;
-        }
-
-        String firstFileContent;
-        String finalFilePath = filePath;
-        Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(finalFilePath)).findFirst();
-        if (first.isPresent()) {
-            firstFileContent = first.get().getContent();
-        } else {
-            return entry;
-        }
-
-        // Parse file content and update
-        LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        return anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles, version);
     }
 
     /**

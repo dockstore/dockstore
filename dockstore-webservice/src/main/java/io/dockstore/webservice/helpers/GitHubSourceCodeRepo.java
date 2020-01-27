@@ -90,7 +90,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         this.gitUsername = gitUsername;
         ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
                 new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
-        HttpConnector okHttp3Connector =  new ImpatientHttpConnector(url -> obsoleteUrlFactory.open(url));
+        HttpConnector okHttp3Connector =  new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
             this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {

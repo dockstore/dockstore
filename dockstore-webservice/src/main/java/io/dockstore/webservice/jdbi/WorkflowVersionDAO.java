@@ -27,4 +27,8 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
     public WorkflowVersionDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
     }
+
+    public WorkflowVersion findByAlias(String alias) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
+    }
 }

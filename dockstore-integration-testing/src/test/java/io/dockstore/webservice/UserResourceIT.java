@@ -16,18 +16,29 @@
 
 package io.dockstore.webservice;
 
+import java.util.List;
+import java.util.Objects;
+
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.BioWorkflow;
+import io.swagger.client.model.Collection;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.EntryUpdateTime;
 import io.swagger.client.model.Organization;
+import io.swagger.client.model.OrganizationUpdateTime;
+import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -44,11 +55,13 @@ import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests operations frrom the UserResource
+ * Tests operations from the UserResource
  *
  * @author dyuen
  */
@@ -97,13 +110,14 @@ public class UserResourceIT extends BaseIT {
         // Add hosted workflow, should use new username
         HostedApi userHostedApi = new HostedApi(client);
         Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
-        assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo", hostedWorkflow.getOrganization());
+        assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo",
+            hostedWorkflow.getOrganization());
     }
 
     @Test
     public void testUserTermination() throws ApiException {
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
-        ApiClient userWebClient = getWebClient(USER_2_USERNAME,testingPostgres );
+        ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
 
         UsersApi userUserWebClient = new UsersApi(userWebClient);
         final User user = userUserWebClient.getUser();
@@ -129,22 +143,18 @@ public class UserResourceIT extends BaseIT {
     }
 
     /**
-     * Should not be able to update username after creating an organisation
-     * @throws ApiException
+     * Creates an organization using the given names
+     * @param client
+     * @param name
+     * @param displayName
+     * @return new organization
      */
-    @Test
-    public void testChangeUsernameAfterOrgCreation() throws ApiException {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        UsersApi userApi = new UsersApi(client);
+    private Organization createOrganization(ApiClient client, String name, String displayName) {
         OrganizationsApi organizationsApi = new OrganizationsApi(client);
 
-        // Can change username when not a member of any organisations
-        assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
-
-        // Create organisation
         Organization organization = new Organization();
-        organization.setName("testname");
-        organization.setDisplayName("test name");
+        organization.setName(name);
+        organization.setDisplayName(displayName);
         organization.setLocation("testlocation");
         organization.setLink("https://www.google.com");
         organization.setEmail("test@email.com");
@@ -152,12 +162,28 @@ public class UserResourceIT extends BaseIT {
         organization.setTopic("This is a short topic");
         organization.setAvatarUrl("https://www.lifehardin.net/images/employees/default-logo.png");
 
-        organizationsApi.createOrganization(organization);
+        return organizationsApi.createOrganization(organization);
+    }
+
+    /**
+     * Should not be able to update username after creating an organisation
+     *
+     * @throws ApiException
+     */
+    @Test
+    public void testChangeUsernameAfterOrgCreation() throws ApiException {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+
+        // Can change username when not a member of any organisations
+        assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
+
+        // Create organization
+        createOrganization(client, "testname", "test name");
 
         // Cannot change username now that user is part of an organisation
         assertFalse(userApi.getExtendedUserData().isCanChangeUsername());
     }
-
 
     @Test
     public void testSelfDestruct() throws ApiException {
@@ -180,12 +206,12 @@ public class UserResourceIT extends BaseIT {
 
         final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
 
-
         User user = userApi.getUser();
-        Assert.assertNotNull(user);
+        assertNotNull(user);
         // try to delete with published workflows
         userApi.refreshWorkflows(user.getId());
-        final Workflow workflowByPath = workflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+        final Workflow workflowByPath = workflowsApi
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId());
 
@@ -238,4 +264,167 @@ public class UserResourceIT extends BaseIT {
         }
         assertTrue(expectedFailToGetInfo);
     }
+
+    /**
+     * Tests that the endpoints for the wizard registration work
+     * @throws ApiException
+     */
+    @Test
+    public void testWizardEndpoints() throws ApiException {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        List<String> registries = userApi.getUserRegistries();
+        assertTrue(registries.size() > 0);
+        assertTrue(registries.contains(SourceControl.GITHUB.toString()));
+        assertTrue(registries.contains(SourceControl.GITLAB.toString()));
+        assertTrue(registries.contains(SourceControl.BITBUCKET.toString()));
+
+        // Test GitHub
+        List<String> orgs = userApi.getUserOrganizations(SourceControl.GITHUB.name());
+        assertTrue(orgs.size() > 0);
+        assertTrue(orgs.contains("dockstoretesting"));
+        assertTrue(orgs.contains("DockstoreTestUser"));
+        assertTrue(orgs.contains("DockstoreTestUser2"));
+
+        List<Repository> repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()).findAny().isPresent());
+        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && !repo.isPresent()).findAny().isPresent());
+
+        // Register a workflow
+        BioWorkflow ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
+        assertNotNull("GitHub workflow should be added", ghWorkflow);
+        assertEquals(ghWorkflow.getFullWorkflowPath(), "github.com/dockstoretesting/basic-workflow");
+
+        // dockstoretesting/basic-workflow should be present now
+        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()).findAny().isPresent());
+        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent()).findAny().isPresent());
+
+        // Try deleting a workflow
+        workflowsApi.deleteWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
+        Workflow deletedWorkflow = null;
+        try {
+            deletedWorkflow = workflowsApi.getWorkflow(ghWorkflow.getId(), null);
+            assertFalse("Should not reach here as entry should not exist", false);
+        } catch (ApiException ex) {
+            assertNull("Workflow should be null", deletedWorkflow);
+        }
+
+        // Try making a repo undeletable
+        ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
+        workflowsApi.refresh(ghWorkflow.getId());
+        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()).findAny().isPresent());
+
+        // Test Gitlab
+        orgs = userApi.getUserOrganizations(SourceControl.GITLAB.name());
+        assertTrue(orgs.size() > 0);
+        assertTrue(orgs.contains("dockstore.test.user2"));
+
+        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-md5sum-unified") && !repo.isPresent()).findAny().isPresent());
+        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && !repo.isPresent()).findAny().isPresent());
+
+        // Register a workflow
+        BioWorkflow glWorkflow = workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
+        assertEquals(glWorkflow.getFullWorkflowPath(), "gitlab.com/dockstore.test.user2/dockstore-workflow-example");
+
+        // dockstore.test.user2/dockstore-workflow-example should be present now
+        repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
+        assertTrue(repositories.size() > 0);
+        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && repo.isPresent()).findAny().isPresent());
+
+        // Try registering the workflow again (duplicate) should fail
+        try {
+            workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
+            assertFalse("Should not reach this, should fail", false);
+        } catch (ApiException ex) {
+            assertTrue("Should have error message that workflow already exists.", ex.getMessage().contains("already exists"));
+        }
+
+        // Try registering a hosted workflow
+        try {
+            BioWorkflow dsWorkflow = workflowsApi.addWorkflow(SourceControl.DOCKSTORE.name(), "foo", "bar");
+            assertFalse("Should not reach this, should fail", false);
+        } catch (ApiException ex) {
+            assertTrue("Should have error message that hosted workflows cannot be added this way.", ex.getMessage().contains(WorkflowResource.SC_REGISTRY_ACCESS_MESSAGE));
+        }
+
+    }
+
+    /**
+     * Tests the endpoints used for logged in homepage to retrieve recent entries and organizations
+     */
+    @Test
+    public void testLoggedInHomepageEndpoints() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        User user = userApi.getUser();
+
+        Workflow addedWorkflow = workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
+
+        List<DockstoreTool> tools = userApi.refresh(user.getId());
+        List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
+        assertFalse(entries.isEmpty());
+        assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPath());
+        assertEquals("dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPrettyPath());
+
+        // Update an entry
+        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
+        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId());
+
+        // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
+        Assert.assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));
+
+        // Entry should now be at the top
+        entries = userApi.getUserEntries(10, null);
+        assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(0).getPath());
+        assertEquals("dockstore-workflow-md5sum-unified", entries.get(0).getPrettyPath());
+
+        // Create organizations
+        Organization foobarOrg = createOrganization(client, "Foobar", "Foo Bar");
+        Organization foobarOrgTwo = createOrganization(client, "Foobar2", "Foo Bar the second");
+        Organization tacoOrg = createOrganization(client, "taco", "taco place");
+
+        // taco should be most recent
+        List<OrganizationUpdateTime> organizations = userApi.getUserDockstoreOrganizations(10, null);
+        assertFalse(organizations.isEmpty());
+        assertEquals("taco", organizations.get(0).getName());
+
+        // Add collection to foobar2
+        OrganizationsApi organizationsApi = new OrganizationsApi(client);
+        organizationsApi.createCollection(foobarOrgTwo.getId(), createCollection());
+
+        // foobar2 should be the most recent
+        organizations = userApi.getUserDockstoreOrganizations(10, null);
+        assertFalse(organizations.isEmpty());
+        assertEquals("Foobar2", organizations.get(0).getName());
+
+        // Search for taco organization
+        organizations = userApi.getUserDockstoreOrganizations(10, "tac");
+        assertFalse(organizations.isEmpty());
+        assertEquals("taco", organizations.get(0).getName());
+    }
+
+    /**
+     * Creates a collection (does not save to database)
+     * @return new collection
+     */
+    private Collection createCollection() {
+        Collection collection = new Collection();
+        collection.setDisplayName("cool name");
+        collection.setName("coolname");
+        collection.setTopic("this is the topic");
+        collection.setDescription("this is the description");
+
+        return collection;
+    }
+
 }

@@ -61,7 +61,7 @@ public class OpenApiCRUDClientIT extends BaseIT {
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void testToolCreation(){
+    public void testToolCreation() {
         ApiClient webClient = new ApiClient();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());

@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.7.5-SNAPSHOT</version>
+        <version>1.8.1-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -33,7 +33,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-hibernate5</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.major.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
@@ -53,32 +53,32 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <!-- DOCKSTORE-2428 - demo how to add new workflow language
         <dependency>
@@ -94,7 +94,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-zenodo-client</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -571,7 +571,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -668,7 +668,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.major.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.jsonld-java</groupId>
@@ -933,7 +933,9 @@
                     <!-- skip the swagger generated classes -->
                     <excludes>**/swagger/**/*</excludes>
                     <!-- skip the generated description class -->
-                    <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                    <sourceDirectories>
+                        <directory>${project.build.sourceDirectory}</directory>
+                    </sourceDirectories>
                 </configuration>
             </plugin>
             <plugin>
@@ -1001,7 +1003,7 @@
             <plugin>
                 <groupId>com.github.kongchen</groupId>
                 <artifactId>swagger-maven-plugin</artifactId>
-                <version>3.1.7</version>
+                <version>3.1.8</version>
                 <configuration>
                     <apiSources>
                         <apiSource>
@@ -1021,6 +1023,10 @@
                             <attachSwaggerArtifact>true</attachSwaggerArtifact>
                         </apiSource>
                     </apiSources>
+                    <enabledObjectMapperFeatures>
+                        <feature>com.fasterxml.jackson.databind.MapperFeature.SORT_PROPERTIES_ALPHABETICALLY</feature>
+                        <feature>com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS</feature>
+                    </enabledObjectMapperFeatures>
                 </configuration>
                 <executions>
                     <execution>
@@ -1041,6 +1047,7 @@
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
                     <outputFormat>YAML</outputFormat>
                     <openapiFilePath>${project.basedir}/src/main/resources/configurationFilePath.yaml</openapiFilePath>
+                    <prettyPrint>true</prettyPrint>
                     <resourcePackages>
                         <package>io.swagger.api</package>
                         <package>io.swagger.model</package>
@@ -1049,6 +1056,7 @@
                         <package>io.dockstore.webservice.resources.proposedGA4GH</package>
                     </resourcePackages>
                     <objectMapperProcessorClass>io.swagger.OrderedObjectMapperProcessor</objectMapperProcessorClass>
+                    <readAllResources>false</readAllResources>
                 </configuration>
                 <executions>
                     <execution>

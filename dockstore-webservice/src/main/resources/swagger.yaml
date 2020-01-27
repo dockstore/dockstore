@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.7.1-SNAPSHOT"
+  version: "1.8.0-beta.9-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -16,6 +16,21 @@ info:
     url: "https://github.com/dockstore/dockstore/blob/develop/LICENSE"
 basePath: "/"
 tags:
+- name: "aliases"
+  description: "Create, update list aliases for accessing entries"
+- name: "containers"
+  description: "List and register entries in the dockstore (pairs of images + metadata\
+    \ (CWL and Dockerfile))"
+- name: "containertags"
+  description: "List and modify tags for containers"
+- name: "curation"
+  description: "List and modify notifications for users of Dockstore"
+- name: "entries"
+  description: "Interact with entries in Dockstore regardless of whether they are\
+    \ containers or workflows"
+- name: "events"
+- name: "extendedGA4GH"
+  description: "Optional experimental extensions of the GA4GH API"
 - name: "GA4GH"
   description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories. Implements TRS [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2)\
@@ -25,29 +40,74 @@ tags:
   description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)\
     \ and is considered final (not subject to change)"
-- name: "containers"
-  description: "List and register entries in the dockstore (pairs of images + metadata\
-    \ (CWL and Dockerfile))"
-- name: "containertags"
-  description: "List and modify tags for containers"
-- name: "entries"
-  description: "Interact with entries in Dockstore regardless of whether they are\
-    \ containers or workflows"
-- name: "extendedGA4GH"
-  description: "Optional experimental extensions of the GA4GH API"
 - name: "hosted"
   description: "Created and modify hosted entries in the dockstore"
 - name: "metadata"
   description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
     \ etc."
 - name: "organizations"
+  description: "Operations on Dockstore organizations"
 - name: "tokens"
   description: "List, modify, refresh, and delete tokens for external services"
+- name: "toolTester"
+  description: "Interactions with the Dockstore-support's ToolTester application"
 - name: "users"
   description: "List, modify, and manage end users of the dockstore"
 - name: "workflows"
-  description: "List and register workflows in the dockstore (CWL or WDL)"
+  description: "List and register workflows in the dockstore (CWL, Nextflow, WDL)"
 paths:
+  /aliases/workflow-versions/{alias}:
+    get:
+      tags:
+      - "aliases"
+      summary: "Retrieves workflow version path information by alias."
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
+      operationId: "getWorkflowVersionPathInfoByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/WorkflowVersionPathInfo"
+      security:
+      - BEARER: []
+  /aliases/workflow-versions/{workflowVersionId}:
+    post:
+      tags:
+      - "aliases"
+      summary: "Add aliases linked to a workflow version in Dockstore."
+      description: "Aliases are alphanumerical (case-insensitive and may contain internal\
+        \ hyphens), given in a comma-delimited list."
+      operationId: "addAliases"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowVersionId"
+        in: "path"
+        description: "workflow version to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "aliases"
+        in: "query"
+        description: "Comma-delimited list of aliases."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/WorkflowVersion"
+      security:
+      - BEARER: []
   /api/ga4gh/v1/metadata:
     get:
       tags:
@@ -1448,9 +1508,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/Tag"
+            uniqueItems: true
       security:
       - BEARER: []
   /containers/path/{repository}:
@@ -2204,9 +2264,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
     delete:
@@ -2249,9 +2309,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
   /containers/{containerId}/unstar:
@@ -2275,6 +2335,7 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+      deprecated: true
   /containers/{containerId}/updateTagPaths:
     put:
       tags:
@@ -2328,37 +2389,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/User"
-      security:
-      - BEARER: []
-  /containers/{containerId}/verify/{tagId}:
-    post:
-      tags:
-      - "containertags"
-      summary: "Updates the verification status of a version. ADMIN ONLY"
-      description: ""
-      operationId: "verifyToolTag"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "ID of the tool to update."
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tagId"
-        in: "path"
-        description: "ID of the tag to update."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Tag"
       security:
       - BEARER: []
   /containers/{toolId}/defaultVersion:
@@ -2417,14 +2447,123 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
-  /entries/{id}/aliases:
+  /curation/notifications:
+    get:
+      tags:
+      - "curation"
+      summary: "Return all active notifications"
+      description: "NO Authentication"
+      operationId: "getActiveNotifications"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Notification"
+    post:
+      tags:
+      - "curation"
+      summary: "Create a notification"
+      description: "Curator/admin only"
+      operationId: "createNotification"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Notification to create"
+        required: true
+        schema:
+          $ref: "#/definitions/Notification"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Notification"
+      security:
+      - BEARER: []
+  /curation/notifications/{id}:
+    get:
+      tags:
+      - "curation"
+      summary: "Return the notification with given id"
+      description: "NO Authentication"
+      operationId: "getNotification"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Notification"
     put:
       tags:
+      - "curation"
+      summary: "Update a notification"
+      description: "Curator/admin only"
+      operationId: "updateNotification"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Notification to update"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Updated version of notification"
+        required: true
+        schema:
+          $ref: "#/definitions/Notification"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Notification"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "curation"
+      summary: "Delete a notification"
+      description: "Curator/admin only"
+      operationId: "deleteNotification"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Notification to delete"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
+  /entries/{id}/aliases:
+    post:
+      tags:
       - "entries"
-      summary: "Update the aliases linked to a entry in Dockstore."
+      summary: "Add aliases linked to a entry in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
-      operationId: "updateAliases"
+      operationId: "addAliases"
       produces:
       - "application/json"
       parameters:
@@ -2439,13 +2578,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2497,6 +2629,47 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
+  /events:
+    get:
+      tags:
+      - "events"
+      summary: "Get events based on filters."
+      description: "Optional authentication."
+      operationId: "getEvents"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "event_search_type"
+        in: "query"
+        required: false
+        type: "string"
+        enum:
+        - "STARRED_ENTRIES"
+        - "STARRED_ORGANIZATION"
+        - "ALL_STARRED"
+      - name: "limit"
+        in: "query"
+        required: false
+        type: "integer"
+        default: 10
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      - name: "offset"
+        in: "query"
+        required: false
+        type: "integer"
+        default: 0
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Event"
       security:
       - BEARER: []
   /metadata/config.json:
@@ -2615,7 +2788,7 @@ paths:
         description: "Python version, only relevant for the cwltool runner"
         required: false
         type: "string"
-        default: "2"
+        default: "3"
       - name: "runner"
         in: "query"
         description: "The tool runner"
@@ -2745,7 +2918,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by alias."
+      summary: "Retrieve a collection by alias."
       description: ""
       operationId: "getCollectionByAlias"
       produces:
@@ -2753,7 +2926,7 @@ paths:
       parameters:
       - name: "alias"
         in: "path"
-        description: "Alias"
+        description: "Alias of the collection"
         required: true
         type: "string"
       responses:
@@ -2762,13 +2935,13 @@ paths:
           schema:
             $ref: "#/definitions/Collection"
   /organizations/collections/{collectionId}/aliases:
-    put:
+    post:
       tags:
       - "organizations"
-      summary: "Update the aliases linked to a Collection in Dockstore."
+      summary: "Add aliases linked to a collection in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
-      operationId: "updateCollectionAliases"
+      operationId: "addCollectionAliases"
       produces:
       - "application/json"
       parameters:
@@ -2783,13 +2956,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2801,7 +2967,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves an organization by name."
+      summary: "Retrieve an organization by name."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationByName"
@@ -2824,7 +2990,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves an organization by alias."
+      summary: "Retrieve an organization by alias."
       description: ""
       operationId: "getOrganizationByAlias"
       produces:
@@ -2832,7 +2998,7 @@ paths:
       parameters:
       - name: "alias"
         in: "path"
-        description: "Alias"
+        description: "Alias."
         required: true
         type: "string"
       responses:
@@ -2844,7 +3010,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves an organization by ID."
+      summary: "Retrieve an organization by ID."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationById"
@@ -2894,19 +3060,19 @@ paths:
       security:
       - BEARER: []
   /organizations/{organizationId}/aliases:
-    put:
+    post:
       tags:
       - "organizations"
-      summary: "Update the aliases linked to a listing in Dockstore."
+      summary: "Add aliases linked to a listing in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
-      operationId: "updateOrganizationAliases"
+      operationId: "addOrganizationAliases"
       produces:
       - "application/json"
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Entry to modify."
+        description: "Organization to modify."
         required: true
         type: "integer"
         format: "int64"
@@ -2915,13 +3081,6 @@ paths:
         description: "Comma-delimited list of aliases."
         required: true
         type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2933,7 +3092,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Approves an organization."
+      summary: "Approve an organization."
       description: "Admin/curator only"
       operationId: "approveOrganization"
       produces:
@@ -3015,7 +3174,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by ID."
+      summary: "Retrieve a collection by ID."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getCollectionById"
@@ -3080,7 +3239,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection description by organization ID and collection\
+      summary: "Retrieve a collection description by organization ID and collection\
         \ ID."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
@@ -3118,19 +3277,19 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization ID"
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
       - name: "collectionId"
         in: "path"
-        description: "Collection ID"
+        description: "Collection ID."
         required: true
         type: "integer"
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Collections's description in markdown"
+        description: "Collections's description in markdown."
         required: true
         schema:
           type: "string"
@@ -3214,7 +3373,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves an organization description by organization ID."
+      summary: "Retrieve an organization description by organization ID."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationDescription"
@@ -3245,13 +3404,13 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to update description."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Organization's description in markdown"
+        description: "Organization's description in markdown."
         required: true
         schema:
           type: "string"
@@ -3266,7 +3425,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves all events for an organization."
+      summary: "Retrieve all events for an organization."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationEvents"
@@ -3324,7 +3483,7 @@ paths:
         format: "int64"
       - name: "accept"
         in: "query"
-        description: "Accept or reject"
+        description: "Accept or reject."
         required: true
         type: "boolean"
       responses:
@@ -3336,7 +3495,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves all members for an organization."
+      summary: "Retrieve all members for an organization."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationMembers"
@@ -3354,16 +3513,16 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/OrganizationUser"
+            uniqueItems: true
       security:
       - BEARER: []
   /organizations/{organizationId}/reject:
     post:
       tags:
       - "organizations"
-      summary: "Rejects an organization."
+      summary: "Reject an organization."
       description: "Admin/curator only"
       operationId: "rejectOrganization"
       produces:
@@ -3386,7 +3545,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Request an organization approval."
+      summary: "Re-request an organization approval."
       description: "Only for rejected organizations"
       operationId: "requestOrganizationReview"
       produces:
@@ -3417,13 +3576,13 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to star."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
       - in: "body"
         name: "body"
-        description: "StarRequest to star an organization for a user"
+        description: "StarRequest to star an organization for a user."
         required: true
         schema:
           $ref: "#/definitions/StarRequest"
@@ -3436,7 +3595,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Returns list of users who starred the given approved organization."
+      summary: "Return list of users who starred the given approved organization."
       description: ""
       operationId: "getStarredUsersForApprovedOrganization"
       produces:
@@ -3444,7 +3603,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Get starred users of an approved organization by id."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
@@ -3467,7 +3626,7 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization to unstar."
+        description: "Organization ID."
         required: true
         type: "integer"
         format: "int64"
@@ -3480,7 +3639,7 @@ paths:
     post:
       tags:
       - "organizations"
-      summary: "Updates a user role in an organization."
+      summary: "Update a user role in an organization."
       description: ""
       operationId: "updateUserRole"
       produces:
@@ -3516,7 +3675,7 @@ paths:
     put:
       tags:
       - "organizations"
-      summary: "Adds a user role to an organization."
+      summary: "Add a user role to an organization."
       description: ""
       operationId: "addUserToOrg"
       produces:
@@ -3586,7 +3745,7 @@ paths:
     put:
       tags:
       - "organizations"
-      summary: "Adds a user role to an organization."
+      summary: "Add a user role to an organization."
       description: ""
       operationId: "addUserToOrgByUsername"
       produces:
@@ -3594,7 +3753,7 @@ paths:
       parameters:
       - in: "body"
         name: "body"
-        description: "Role of user. \"MAINTAINER\" or \"MEMBER\""
+        description: "Role of user."
         required: true
         schema:
           type: "string"
@@ -3620,7 +3779,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by ID."
+      summary: "Retrieve a collection by name."
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getCollectionByName"
@@ -3644,6 +3803,71 @@ paths:
             $ref: "#/definitions/Collection"
       security:
       - BEARER: []
+  /toolTester/logs:
+    get:
+      tags:
+      - "toolTester"
+      operationId: "getToolTesterLog"
+      produces:
+      - "text/plain"
+      parameters:
+      - name: "tool_id"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "tool_version_name"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "test_filename"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "runner"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "log_type"
+        in: "query"
+        required: false
+        type: "string"
+        enum:
+        - "FULL"
+        - "SUMMARY"
+      - name: "filename"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "string"
+  /toolTester/logs/search:
+    get:
+      tags:
+      - "toolTester"
+      operationId: "search"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "tool_id"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "tool_version_name"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/ToolTesterLog"
   /users/checkUser/{username}:
     get:
       tags:
@@ -3666,6 +3890,85 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
+  /users/registries:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getUserRegistries"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+              enum:
+              - "dockstore.org"
+              - "github.com"
+              - "bitbucket.org"
+              - "gitlab.com"
+  /users/registries/{gitRegistry}/organizations:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getUserOrganizations"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "gitRegistry"
+        in: "path"
+        required: true
+        type: "string"
+        enum:
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+            uniqueItems: true
+  /users/registries/{gitRegistry}/organizations/{organization}:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getUserOrganizationRepositories"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "gitRegistry"
+        in: "path"
+        required: true
+        type: "string"
+        enum:
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
+      - name: "organization"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Repository"
   /users/services/sync:
     post:
       tags:
@@ -3872,9 +4175,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/OrganizationUser"
+            uniqueItems: true
       security:
       - BEARER: []
   /users/user/updateUserMetadata:
@@ -3998,6 +4301,58 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/users/entries:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getUserEntries"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "count"
+        in: "query"
+        required: false
+        type: "integer"
+        format: "int32"
+      - name: "filter"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/EntryUpdateTime"
+  /users/users/organizations:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getUserDockstoreOrganizations"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "count"
+        in: "query"
+        required: false
+        type: "integer"
+        format: "int32"
+      - name: "filter"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/OrganizationUpdateTime"
   /users/{userId}:
     get:
       tags:
@@ -5053,6 +5408,67 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
+  /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
+    post:
+      tags:
+      - "workflows"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "addWorkflow"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "gitRegistry"
+        in: "path"
+        required: true
+        type: "string"
+        enum:
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
+      - name: "organization"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "repositoryName"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/BioWorkflow"
+    delete:
+      tags:
+      - "workflows"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "deleteWorkflow"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "gitRegistry"
+        in: "path"
+        required: true
+        type: "string"
+        enum:
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
+      - name: "organization"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "repositoryName"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        default:
+          description: "successful operation"
   /workflows/shared:
     get:
       tags:
@@ -5655,9 +6071,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
     delete:
@@ -5692,9 +6108,9 @@ paths:
           description: "successful operation"
           schema:
             type: "array"
-            uniqueItems: true
             items:
               $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
   /workflows/{workflowId}/tools/{workflowVersionId}:
@@ -5748,6 +6164,7 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+      deprecated: true
   /workflows/{workflowId}/users:
     get:
       tags:
@@ -5771,37 +6188,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/User"
-      security:
-      - BEARER: []
-  /workflows/{workflowId}/verify/{workflowVersionId}:
-    post:
-      tags:
-      - "workflows"
-      summary: "Updates the verification status of a version. ADMIN ONLY"
-      description: ""
-      operationId: "verifyWorkflowVersion"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "ID of the workflow to update."
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "workflowVersionId"
-        in: "path"
-        description: "Id of the version to update."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/WorkflowVersion"
       security:
       - BEARER: []
   /workflows/{workflowId}/workflowVersions:
@@ -5875,128 +6261,6 @@ definitions:
     properties:
       content:
         type: "string"
-  Base class for versions of entries in the Dockstore:
-    type: "object"
-    required:
-    - "name"
-    - "reference"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the tag in this web service"
-        readOnly: true
-      workingDirectory:
-        type: "string"
-      reference:
-        type: "string"
-        position: 1
-        description: "git commit/tag/branch"
-      name:
-        type: "string"
-        position: 2
-        description: "Implementation specific, can be a quay.io or docker hub tag\
-          \ name"
-      commitID:
-        type: "string"
-        position: 3
-        description: "This is the commit id for the source control that the files\
-          \ belong to"
-      frozen:
-        type: "boolean"
-        position: 4
-        description: "When true, this version cannot be affected by refreshes to the\
-          \ content or updates to its metadata"
-      referenceType:
-        type: "string"
-        position: 5
-        description: "This indicates the type of git (or other source control) reference"
-        enum:
-        - "COMMIT"
-        - "TAG"
-        - "BRANCH"
-        - "NOT_APPLICABLE"
-        - "UNSET"
-      sourceFiles:
-        type: "array"
-        position: 6
-        description: "Cached files for each version. Includes Dockerfile and Descriptor\
-          \ files"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/SourceFile"
-      valid:
-        type: "boolean"
-        position: 7
-        description: "Implementation specific, whether this tag has valid files from\
-          \ source code repo"
-      dirtyBit:
-        type: "boolean"
-        position: 8
-        description: "True if user has altered the tag"
-      versionEditor:
-        position: 9
-        description: "Particularly for hosted workflows, this records who edited to\
-          \ create a revision"
-        $ref: "#/definitions/User"
-      dbUpdateDate:
-        type: "string"
-        format: "date-time"
-        position: 11
-      input_file_formats:
-        type: "array"
-        position: 12
-        description: "File formats for describing the input file formats of versions\
-          \ (tag/workflowVersion)"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      output_file_formats:
-        type: "array"
-        position: 13
-        description: "File formats for describing the output file formats of versions\
-          \ (tag/workflowVersion)"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      validations:
-        type: "array"
-        position: 14
-        description: "Cached validations for each version."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Validation"
-      verified:
-        type: "boolean"
-        position: 15
-        description: "Whether this version has been verified or not"
-      verifiedSource:
-        type: "string"
-        position: 16
-        description: "Verified source for the version"
-      verifiedSources:
-        type: "array"
-        position: 17
-        description: "Verified source for the version"
-        items:
-          type: "string"
-      hidden:
-        type: "boolean"
-        position: 18
-        description: "Implementation specific, whether this row is visible to other\
-          \ users aside from the owner"
-      doiURL:
-        type: "string"
-        position: 19
-        description: "This is a URL for the DOI for the version of the entry"
-      doiStatus:
-        type: "string"
-        position: 20
-        description: "This indicates the DOI status"
-        enum:
-        - "NOT_REQUESTED"
-        - "REQUESTED"
-        - "CREATED"
   BioWorkflow:
     allOf:
     - $ref: "#/definitions/Workflow"
@@ -6010,23 +6274,22 @@ definitions:
           type: "boolean"
           position: 23
       description: "This describes one workflow in the dockstore"
+  Checksum:
+    type: "object"
+    properties:
+      checksum:
+        type: "string"
+        description: "String representation of the checksum value."
+      type:
+        type: "string"
+        description: "The type of hash algorithm, e.g., SHA256"
+    description: "This describes a checksum that is a associated with a tag or workflow\
+      \ version's image."
   Collection:
     type: "object"
     required:
     - "name"
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the collection in this web service"
-      entries:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Entry"
-      organizationID:
-        type: "integer"
-        format: "int64"
       aliases:
         type: "object"
         description: "aliases can be used as an alternate unique id for collections"
@@ -6038,6 +6301,18 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      entries:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Entry"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the collection in this web service"
+      organizationID:
+        type: "integer"
+        format: "int64"
       organizationName:
         type: "string"
         description: "The name of the organization the collection belongs to"
@@ -6069,28 +6344,40 @@ definitions:
   CollectionOrganization:
     type: "object"
     properties:
+      collectionDisplayName:
+        type: "string"
       collectionId:
         type: "integer"
         format: "int64"
       collectionName:
         type: "string"
-      collectionDisplayName:
+      organizationDisplayName:
         type: "string"
       organizationId:
         type: "integer"
         format: "int64"
       organizationName:
         type: "string"
-      organizationDisplayName:
-        type: "string"
   Config:
     type: "object"
     properties:
-      dnaStackImportUrl:
+      bitBucketAuthUrl:
+        type: "string"
+      bitBucketClientId:
+        type: "string"
+      cwlVisualizerUri:
+        type: "string"
+      discourseUrl:
         type: "string"
       dnaNexusImportUrl:
         type: "string"
-      terraImportUrl:
+      dnaStackImportUrl:
+        type: "string"
+      documentationUrl:
+        type: "string"
+      featuredContentUrl:
+        type: "string"
+      gitHubAppInstallationUrl:
         type: "string"
       gitHubAuthUrl:
         type: "string"
@@ -6098,57 +6385,47 @@ definitions:
         type: "string"
       gitHubScope:
         type: "string"
-      quayIoAuthUrl:
-        type: "string"
-      quayIoRedirectPath:
-        type: "string"
-      quayIoScope:
-        type: "string"
-      bitBucketAuthUrl:
+      githubClientId:
         type: "string"
       gitlabAuthUrl:
+        type: "string"
+      gitlabClientId:
         type: "string"
       gitlabRedirectPath:
         type: "string"
       gitlabScope:
         type: "string"
+      googleClientId:
+        type: "string"
+      googleScope:
+        type: "string"
+      quayIoAuthUrl:
+        type: "string"
+      quayIoClientId:
+        type: "string"
+      quayIoRedirectPath:
+        type: "string"
+      quayIoScope:
+        type: "string"
+      tagManagerId:
+        type: "string"
+      terraImportUrl:
+        type: "string"
       zenodoAuthUrl:
+        type: "string"
+      zenodoClientId:
         type: "string"
       zenodoRedirectPath:
         type: "string"
       zenodoScope:
         type: "string"
-      googleScope:
-        type: "string"
-      cwlVisualizerUri:
-        type: "string"
-      tagManagerId:
-        type: "string"
-      gitHubAppInstallationUrl:
-        type: "string"
-      documentationUrl:
-        type: "string"
-      githubClientId:
-        type: "string"
-      quayIoClientId:
-        type: "string"
-      bitBucketClientId:
-        type: "string"
-      gitlabClientId:
-        type: "string"
-      zenodoClientId:
-        type: "string"
-      googleClientId:
-        type: "string"
-      discourseUrl:
-        type: "string"
     description: "Configuration information for UI clients of the Dockstore webservice."
   DescriptorLanguageBean:
     type: "object"
     properties:
-      value:
-        type: "string"
       friendlyName:
+        type: "string"
+      value:
         type: "string"
   DockstoreTool:
     type: "object"
@@ -6165,43 +6442,28 @@ definitions:
     - "private_access"
     - "registry_string"
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the container in this web service"
       aliases:
         type: "object"
         description: "aliases can be used as an alternate unique id for entries"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      custom_docker_registry_path:
+        type: "string"
+        readOnly: true
       dbCreateDate:
         type: "string"
         format: "date-time"
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      topicId:
-        type: "integer"
-        format: "int64"
-        description: "The Id of the corresponding topic on Dockstore Discuss"
-      tags:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Tag"
-      custom_docker_registry_path:
-        type: "string"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the container in this web service"
       input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -6211,6 +6473,21 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
+      output_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      tags:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Tag"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
       author:
         type: "string"
         position: 1
@@ -6285,6 +6562,11 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       mode:
         type: "string"
         position: 13
@@ -6399,10 +6681,6 @@ definitions:
     required:
     - "gitUrl"
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the container in this web service"
       aliases:
         type: "object"
         description: "aliases can be used as an alternate unique id for entries"
@@ -6414,25 +6692,14 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      topicId:
-        type: "integer"
-        format: "int64"
-        description: "The Id of the corresponding topic on Dockstore Discuss"
-      workflowVersions:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Base class for versions of entries in the Dockstore"
       has_checker:
         type: "boolean"
         readOnly: true
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the container in this web service"
       input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -6442,6 +6709,21 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
+      output_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
+      workflowVersions:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Version"
       author:
         type: "string"
         position: 1
@@ -6516,6 +6798,27 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
+  EntryUpdateTime:
+    type: "object"
+    properties:
+      entryType:
+        type: "string"
+        enum:
+        - "TOOL"
+        - "WORKFLOW"
+        - "SERVICE"
+      lastUpdateDate:
+        type: "string"
+        format: "date-time"
+      path:
+        type: "string"
+      prettyPath:
+        type: "string"
   Error:
     type: "object"
     required:
@@ -6531,16 +6834,16 @@ definitions:
     required:
     - "type"
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the event in this web service"
       dbCreateDate:
         type: "string"
         format: "date-time"
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the event in this web service"
       user:
         position: 1
         description: "User that the event is acting on."
@@ -6585,6 +6888,7 @@ definitions:
         - "MODIFY_COLLECTION"
         - "REMOVE_FROM_COLLECTION"
         - "ADD_TO_COLLECTION"
+        - "ADD_VERSION_TO_ENTRY"
     description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
@@ -6623,6 +6927,28 @@ definitions:
       \ that describes how to build a particular container image. Examples include\
       \ Dockerfiles for creating Docker images and Singularity recipes for Singularity\
       \ images "
+  Image:
+    type: "object"
+    properties:
+      checksums:
+        type: "array"
+        position: 1
+        description: "Checksum(s) associated with this image"
+        items:
+          $ref: "#/definitions/Checksum"
+      repository:
+        type: "string"
+        position: 2
+        description: "Repository image belongs to"
+      tag:
+        type: "string"
+        position: 3
+        description: "Git tag"
+      imageID:
+        type: "string"
+        position: 4
+        description: "Docker ID of the image"
+    description: "Image(s) associated with tags and workflow versions"
   Label:
     type: "object"
     required:
@@ -6654,9 +6980,6 @@ definitions:
     - "api_version"
     - "version"
     properties:
-      version:
-        type: "string"
-        description: "The version of this registry"
       api_version:
         type: "string"
         description: "The version of the GA4GH tool-registry API supported by this\
@@ -6668,19 +6991,65 @@ definitions:
         type: "string"
         description: "A friendly name that can be used in addition to the hostname\
           \ to describe a registry"
+      version:
+        type: "string"
+        description: "The version of this registry"
     description: "Describes this registry to better allow for mirroring and indexing."
   MetadataV1:
     type: "object"
     properties:
-      version:
-        type: "string"
       api-version:
         type: "string"
       country:
         type: "string"
       friendly-name:
         type: "string"
+      version:
+        type: "string"
     description: "Describes this registry to better allow for mirroring and indexing."
+  Notification:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "ID for the notification"
+      message:
+        type: "string"
+        position: 1
+        description: "Text content of the notification to be displayed"
+        minLength: 0
+        maxLength: 280
+      expiration:
+        type: "string"
+        format: "date-time"
+        position: 2
+        description: "Timestamp at which the notification is expired"
+      type:
+        type: "string"
+        position: 3
+        description: "Type of notification, sitewide or newsbody"
+        enum:
+        - "SITEWIDE"
+        - "NEWSBODY"
+      priority:
+        type: "string"
+        position: 4
+        description: "Priority level of the notification"
+        enum:
+        - "LOW"
+        - "MEDIUM"
+        - "CRITICAL"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+        position: 5
+        description: "Timestamp at which the notification was created"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+        position: 6
+        description: "Timestamp at which the notification was last updated"
   Organization:
     type: "object"
     required:
@@ -6688,11 +7057,6 @@ definitions:
     - "status"
     - "users"
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the organization in this web\
-          \ service"
       aliases:
         type: "object"
         description: "aliases can be used as an alternate unique id for organizations"
@@ -6704,6 +7068,11 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the organization in this web\
+          \ service"
       name:
         type: "string"
         example: "OICR"
@@ -6747,6 +7116,11 @@ definitions:
         type: "string"
         position: 8
         description: "Short description of the organization"
+      avatarUrl:
+        type: "string"
+        position: 9
+        description: "Logo URL"
+        pattern: "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
       displayName:
         type: "string"
         position: 9
@@ -6755,11 +7129,6 @@ definitions:
         minLength: 3
         maxLength: 50
         pattern: "[\\w ,_\\-&()']*"
-      avatarUrl:
-        type: "string"
-        position: 9
-        description: "Logo URL"
-        pattern: "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
       starredUsers:
         type: "array"
         position: 10
@@ -6767,24 +7136,22 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
+  OrganizationUpdateTime:
+    type: "object"
+    properties:
+      displayName:
+        type: "string"
+      lastUpdateDate:
+        type: "string"
+        format: "date-time"
+      name:
+        type: "string"
   OrganizationUser:
     type: "object"
     required:
     - "accepted"
     - "role"
     properties:
-      id:
-        $ref: "#/definitions/OrganizationUserId"
-      user:
-        $ref: "#/definitions/User"
-      organization:
-        $ref: "#/definitions/Organization"
-      role:
-        type: "string"
-        description: "The role of the user in the organization"
-        enum:
-        - "MAINTAINER"
-        - "MEMBER"
       accepted:
         type: "boolean"
         description: "Has the user accepted their membership."
@@ -6794,13 +7161,25 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      id:
+        $ref: "#/definitions/OrganizationUserId"
+      organization:
+        $ref: "#/definitions/Organization"
+      role:
+        type: "string"
+        description: "The role of the user in the organization"
+        enum:
+        - "MAINTAINER"
+        - "MEMBER"
+      user:
+        $ref: "#/definitions/User"
   OrganizationUserId:
     type: "object"
     properties:
-      userId:
+      organizationId:
         type: "integer"
         format: "int64"
-      organizationId:
+      userId:
         type: "integer"
         format: "int64"
   Permission:
@@ -6817,17 +7196,17 @@ definitions:
   Profile:
     type: "object"
     properties:
-      name:
-        type: "string"
-      email:
-        type: "string"
       avatarURL:
+        type: "string"
+      bio:
         type: "string"
       company:
         type: "string"
+      email:
+        type: "string"
       location:
         type: "string"
-      bio:
+      name:
         type: "string"
       username:
         type: "string"
@@ -6840,17 +7219,37 @@ definitions:
   RegistryBean:
     type: "object"
     properties:
+      customDockerPath:
+        type: "string"
       dockerPath:
+        type: "string"
+      enum:
         type: "string"
       friendlyName:
         type: "string"
-      url:
-        type: "string"
       privateOnly:
         type: "string"
-      customDockerPath:
+      url:
         type: "string"
-      enum:
+  Repository:
+    type: "object"
+    properties:
+      canDelete:
+        type: "boolean"
+      gitRegistry:
+        type: "string"
+        enum:
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
+      organization:
+        type: "string"
+      path:
+        type: "string"
+      present:
+        type: "boolean"
+      repositoryName:
         type: "string"
   Service:
     allOf:
@@ -6875,9 +7274,9 @@ definitions:
   SourceControlBean:
     type: "object"
     properties:
-      value:
-        type: "string"
       friendlyName:
+        type: "string"
+      value:
         type: "string"
   SourceFile:
     type: "object"
@@ -6886,14 +7285,14 @@ definitions:
     - "path"
     - "type"
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the source file in this web service"
       frozen:
         type: "boolean"
         description: "When true, this version cannot be affected by refreshes to the\
           \ content or updates to its metadata"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the source file in this web service"
       verifiedBySource:
         type: "object"
         description: "maps from platform to whether an entry successfully ran on it\
@@ -7023,25 +7422,32 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Validation"
+      images:
+        type: "array"
+        position: 15
+        description: "The images that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Image"
       verified:
         type: "boolean"
-        position: 15
+        position: 16
         description: "Whether this version has been verified or not"
       verifiedSource:
         type: "string"
-        position: 16
-        description: "Verified source for the version"
-      verifiedSources:
-        type: "array"
         position: 17
         description: "Verified source for the version"
-        items:
-          type: "string"
       hidden:
         type: "boolean"
         position: 18
         description: "Implementation specific, whether this row is visible to other\
           \ users aside from the owner"
+      verifiedSources:
+        type: "array"
+        position: 18
+        description: "Verified source for the version"
+        items:
+          type: "string"
       doiURL:
         type: "string"
         position: 19
@@ -7057,6 +7463,21 @@ definitions:
         - "NOT_REQUESTED"
         - "REQUESTED"
         - "CREATED"
+      author:
+        type: "string"
+        position: 21
+      description:
+        type: "string"
+        position: 22
+      descriptionSource:
+        type: "string"
+        position: 23
+        enum:
+        - "README"
+        - "DESCRIPTOR"
+      email:
+        type: "string"
+        position: 24
       last_built:
         type: "string"
         format: "date-time"
@@ -7092,11 +7513,6 @@ definitions:
   Token:
     type: "object"
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the token in this web service"
-        readOnly: true
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -7104,6 +7520,11 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+        readOnly: true
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the token in this web service"
         readOnly: true
       tokenSource:
         type: "string"
@@ -7142,14 +7563,6 @@ definitions:
     - "url"
     - "versions"
     properties:
-      url:
-        type: "string"
-        example: "http://agora.broadinstitute.org/tools/123456"
-        description: "The URL for this tool in this registry"
-      id:
-        type: "string"
-        example: "123456"
-        description: "A unique identifier of the tool, scoped to this registry"
       aliases:
         type: "array"
         description: "OPTIONAL A list of strings that can be used to identify this\
@@ -7157,25 +7570,14 @@ definitions:
           \ tool for registries. Can be used to match tools across registries."
         items:
           type: "string"
-      organization:
-        type: "string"
-        description: "The organization that published the image."
-      toolname:
-        type: "string"
-        description: "The name of the tool."
-      toolclass:
-        $ref: "#/definitions/ToolClass"
-      description:
-        type: "string"
-        description: "The description of the tool."
       author:
         type: "string"
         description: "Contact information for the author of this tool entry in the\
           \ registry. (More complex authorship information is handled by the descriptor)"
-      meta_version:
+      checker_url:
         type: "string"
-        description: "The version of this tool in the registry. Iterates when fields\
-          \ like the description, author, etc. are updated."
+        description: "Optional url to the checker tool that will exit successfully\
+          \ if this tool produced the expected result given test data."
       contains:
         type: "array"
         example: "\"https://bio.tools/tool/mytum.de/SNAP2/1\""
@@ -7183,13 +7585,35 @@ definitions:
           \ this tool"
         items:
           type: "string"
+      description:
+        type: "string"
+        description: "The description of the tool."
       has_checker:
         type: "boolean"
         description: "Whether this tool has a checker tool associated with it"
-      checker_url:
+      id:
         type: "string"
-        description: "Optional url to the checker tool that will exit successfully\
-          \ if this tool produced the expected result given test data."
+        example: "123456"
+        description: "A unique identifier of the tool, scoped to this registry"
+      meta_version:
+        type: "string"
+        description: "The version of this tool in the registry. Iterates when fields\
+          \ like the description, author, etc. are updated."
+      organization:
+        type: "string"
+        description: "The organization that published the image."
+      signed:
+        type: "boolean"
+        description: "Reports whether this tool has been signed."
+      toolclass:
+        $ref: "#/definitions/ToolClass"
+      toolname:
+        type: "string"
+        description: "The name of the tool."
+      url:
+        type: "string"
+        example: "http://agora.broadinstitute.org/tools/123456"
+        description: "The URL for this tool in this registry"
       verified:
         type: "boolean"
         description: "Reports whether this tool has been verified by a specific organization\
@@ -7198,9 +7622,6 @@ definitions:
         type: "string"
         description: "Source of metadata that can support a verified tool, such as\
           \ an email or URL"
-      signed:
-        type: "boolean"
-        description: "Reports whether this tool has been signed."
       versions:
         type: "array"
         description: "A list of versions for this tool"
@@ -7212,15 +7633,15 @@ definitions:
   ToolClass:
     type: "object"
     properties:
+      description:
+        type: "string"
+        description: "A longer explanation of what this class is and what it can accomplish"
       id:
         type: "string"
         description: "The unique identifier for the class"
       name:
         type: "string"
         description: "A short friendly name for the class"
-      description:
-        type: "string"
-        description: "A longer explanation of what this class is and what it can accomplish"
     description: "Describes a class (type) of tool allowing us to categorize workflows,\
       \ tasks, and maybe even other entities (such as services) separately"
   ToolDescriptor:
@@ -7228,6 +7649,9 @@ definitions:
     required:
     - "type"
     properties:
+      descriptor:
+        type: "string"
+        description: "The descriptor that represents this version of the tool."
       type:
         type: "string"
         enum:
@@ -7235,9 +7659,6 @@ definitions:
         - "WDL"
         - "NFL"
         - "SERVICE"
-      descriptor:
-        type: "string"
-        description: "The descriptor that represents this version of the tool."
       url:
         type: "string"
         example: "https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl"
@@ -7263,10 +7684,6 @@ definitions:
   ToolFile:
     type: "object"
     properties:
-      path:
-        type: "string"
-        description: "Relative path of the file.  A descriptor's path can be used\
-          \ with the GA4GH .../{type}/descriptor/{relative_path} endpoint"
       file_type:
         type: "string"
         enum:
@@ -7275,6 +7692,28 @@ definitions:
         - "SECONDARY_DESCRIPTOR"
         - "CONTAINERFILE"
         - "OTHER"
+      path:
+        type: "string"
+        description: "Relative path of the file.  A descriptor's path can be used\
+          \ with the GA4GH .../{type}/descriptor/{relative_path} endpoint"
+  ToolTesterLog:
+    type: "object"
+    properties:
+      filename:
+        type: "string"
+      logType:
+        type: "string"
+        enum:
+        - "FULL"
+        - "SUMMARY"
+      runner:
+        type: "string"
+      testFilename:
+        type: "string"
+      toolId:
+        type: "string"
+      toolVersionName:
+        type: "string"
   ToolTestsV1:
     type: "object"
     properties:
@@ -7292,32 +7731,32 @@ definitions:
   ToolV1:
     type: "object"
     properties:
-      url:
-        type: "string"
-      id:
-        type: "string"
-      organization:
-        type: "string"
-      toolname:
-        type: "string"
-      toolclass:
-        $ref: "#/definitions/ToolClass"
-      description:
-        type: "string"
       author:
-        type: "string"
-      meta-version:
         type: "string"
       contains:
         type: "array"
         items:
           type: "string"
+      description:
+        type: "string"
+      id:
+        type: "string"
+      meta-version:
+        type: "string"
+      organization:
+        type: "string"
+      signed:
+        type: "boolean"
+      toolclass:
+        $ref: "#/definitions/ToolClass"
+      toolname:
+        type: "string"
+      url:
+        type: "string"
       verified:
         type: "boolean"
       verified-source:
         type: "string"
-      signed:
-        type: "boolean"
       versions:
         type: "array"
         items:
@@ -7331,31 +7770,9 @@ definitions:
     - "id"
     - "url"
     properties:
-      name:
-        type: "string"
-        description: "The name of the version."
-      url:
-        type: "string"
-        example: "http://agora.broadinstitute.org/tools/123456/1"
-        description: "The URL for this tool in this registry"
-      id:
-        type: "string"
-        example: "v1"
-        description: "An identifier of the version of this tool for this particular\
-          \ tool registry"
-      image:
-        type: "string"
-        example: "quay.io/seqware/seqware_full/1.1"
-        description: "The docker path to the image (and version) for this tool"
-      registry_url:
-        type: "string"
-        description: "A URL to a Singularity registry is provided when a specific\
-          \ type of image does not use ids in the Docker format. Used along with image_name\
-          \ to locate a specific image."
-      image_name:
-        type: "string"
-        description: "Used in conjunction with a registry_url if provided to locate\
-          \ images"
+      containerfile:
+        type: "boolean"
+        description: "Reports if this tool has a containerfile available."
       descriptor_type:
         type: "array"
         description: "The type (or types) of descriptors available."
@@ -7366,13 +7783,35 @@ definitions:
           - "WDL"
           - "NFL"
           - "SERVICE"
-      containerfile:
-        type: "boolean"
-        description: "Reports if this tool has a containerfile available."
+      id:
+        type: "string"
+        example: "v1"
+        description: "An identifier of the version of this tool for this particular\
+          \ tool registry"
+      image:
+        type: "string"
+        example: "quay.io/seqware/seqware_full/1.1"
+        description: "The docker path to the image (and version) for this tool"
+      image_name:
+        type: "string"
+        description: "Used in conjunction with a registry_url if provided to locate\
+          \ images"
       meta_version:
         type: "string"
         description: "The version of this tool version in the registry. Iterates when\
           \ fields like the description, author, etc. are updated."
+      name:
+        type: "string"
+        description: "The name of the version."
+      registry_url:
+        type: "string"
+        description: "A URL to a Singularity registry is provided when a specific\
+          \ type of image does not use ids in the Docker format. Used along with image_name\
+          \ to locate a specific image."
+      url:
+        type: "string"
+        example: "http://agora.broadinstitute.org/tools/123456/1"
+        description: "The URL for this tool in this registry"
       verified:
         type: "boolean"
         description: "Reports whether this tool has been verified by a specific organization\
@@ -7386,14 +7825,6 @@ definitions:
   ToolVersionV1:
     type: "object"
     properties:
-      name:
-        type: "string"
-      url:
-        type: "string"
-      id:
-        type: "string"
-      image:
-        type: "string"
       descriptor-type:
         type: "array"
         items:
@@ -7403,7 +7834,15 @@ definitions:
           - "WDL"
       dockerfile:
         type: "boolean"
+      id:
+        type: "string"
+      image:
+        type: "string"
       meta-version:
+        type: "string"
+      name:
+        type: "string"
+      url:
         type: "string"
       verified:
         type: "boolean"
@@ -7423,27 +7862,27 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
         readOnly: true
-      userProfiles:
-        type: "object"
-        description: "Profile information of the user retrieved from 3rd party sites\
-          \ (GitHub, Google, etc)"
-        additionalProperties:
-          $ref: "#/definitions/Profile"
       privacyPolicyVersion:
         type: "string"
         description: "Indicates which version of the privacy policy the user has accepted"
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
+      tosacceptanceDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       tosversion:
         type: "string"
         enum:
         - "NONE"
         - "TOS_VERSION_1"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
+      userProfiles:
+        type: "object"
+        description: "Profile information of the user retrieved from 3rd party sites\
+          \ (GitHub, Google, etc)"
+        additionalProperties:
+          $ref: "#/definitions/Profile"
       username:
         type: "string"
         position: 1
@@ -7514,210 +7953,13 @@ definitions:
   VerificationInformation:
     type: "object"
     properties:
-      verified:
-        type: "boolean"
       metadata:
         type: "string"
       platformVersion:
         type: "string"
-  Workflow:
-    type: "object"
-    required:
-    - "defaultTestParameterFilePath"
-    - "descriptorType"
-    - "gitUrl"
-    - "mode"
-    - "organization"
-    - "repository"
-    - "sourceControl"
-    - "workflow_path"
-    discriminator: "type"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the container in this web service"
-      aliases:
-        type: "object"
-        description: "aliases can be used as an alternate unique id for entries"
-        additionalProperties:
-          $ref: "#/definitions/Alias"
-      dbCreateDate:
-        type: "string"
-        format: "date-time"
-      dbUpdateDate:
-        type: "string"
-        format: "date-time"
-      topicId:
-        type: "integer"
-        format: "int64"
-        description: "The Id of the corresponding topic on Dockstore Discuss"
-      isChecker:
+      verified:
         type: "boolean"
-      parentEntry:
-        $ref: "#/definitions/Entry"
-      has_checker:
-        type: "boolean"
-        readOnly: true
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
-      author:
-        type: "string"
-        position: 1
-        description: "This is the name of the author stated in the Dockstore.cwl"
-      description:
-        type: "string"
-        position: 2
-        description: "This is a human-readable description of this container and what\
-          \ it is trying to accomplish, required GA4GH"
-      labels:
-        type: "array"
-        position: 3
-        description: "Labels (i.e. meta tags) for describing the purpose and contents\
-          \ of containers"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Label"
-      users:
-        type: "array"
-        position: 4
-        description: "This indicates the users that have control over this entry,\
-          \ dockstore specific"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
-      starredUsers:
-        type: "array"
-        position: 5
-        description: "This indicates the users that have starred this entry, dockstore\
-          \ specific"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
-      email:
-        type: "string"
-        position: 6
-        description: "This is the email of the git organization"
-      defaultVersion:
-        type: "string"
-        position: 7
-        description: "This is the default version of the entry"
-      is_published:
-        type: "boolean"
-        position: 8
-        description: "Implementation specific visibility in this web service"
-      last_modified:
-        type: "integer"
-        format: "int32"
-        position: 9
-        description: "Implementation specific timestamp for last modified. Tools->\
-          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
-          \ (new version created). Workflows-> For remote: When refresh is hit, last\
-          \ time GitHub repo was changed. Hosted: Last time a new version was made."
-      lastUpdated:
-        type: "string"
-        format: "date-time"
-        position: 10
-        description: "Implementation specific timestamp for last updated on webservice.\
-          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
-          \ tool info (like changing dockerfile path) updated, or default version\
-          \ selected. For hosted tools: when you created the tool. Workflows-> For\
-          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
-          \ created."
-      gitUrl:
-        type: "string"
-        position: 11
-        description: "This is a link to the associated repo with a descriptor, required\
-          \ GA4GH"
-      checker_id:
-        type: "integer"
-        format: "int64"
-        position: 12
-        description: "The id of the associated checker workflow"
-        readOnly: true
-      mode:
-        type: "string"
-        position: 13
-        description: "This indicates what mode this is in which informs how we do\
-          \ things like refresh, dockstore specific"
-        enum:
-        - "FULL"
-        - "STUB"
-        - "HOSTED"
-        - "SERVICE"
-      workflowName:
-        type: "string"
-        position: 14
-        description: "This is the name of the workflow, not needed when only one workflow\
-          \ in a repo"
-      organization:
-        type: "string"
-        position: 15
-        description: "This is a git organization for the workflow"
-      repository:
-        type: "string"
-        position: 16
-        description: "This is a git repository name"
-      sourceControl:
-        type: "string"
-        position: 17
-        description: "This is a specific source control provider like github or bitbucket\
-          \ or n/a?, required: GA4GH"
-      descriptorType:
-        type: "string"
-        position: 18
-        description: "This is a descriptor type for the workflow, either CWL, WDL,\
-          \ or Nextflow (Defaults to CWL)"
-        enum:
-        - "CWL"
-        - "WDL"
-        - "NFL"
-        - "service"
-      workflow_path:
-        type: "string"
-        position: 19
-        description: "This indicates for the associated git repository, the default\
-          \ path to the primary descriptor document"
-      defaultTestParameterFilePath:
-        type: "string"
-        position: 20
-        description: "This indicates for the associated git repository, the default\
-          \ path to the test parameter file"
-      workflowVersions:
-        type: "array"
-        position: 21
-        description: "Implementation specific tracking of valid build workflowVersions\
-          \ for the docker container"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/WorkflowVersion"
-      full_workflow_path:
-        type: "string"
-        position: 24
-        readOnly: true
-      path:
-        type: "string"
-        position: 25
-      source_control_provider:
-        type: "string"
-        position: 26
-        readOnly: true
-    description: "This describes one workflow in the dockstore"
-  WorkflowVersion:
+  Version:
     type: "object"
     required:
     - "name"
@@ -7808,25 +8050,32 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Validation"
+      images:
+        type: "array"
+        position: 15
+        description: "The images that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Image"
       verified:
         type: "boolean"
-        position: 15
+        position: 16
         description: "Whether this version has been verified or not"
       verifiedSource:
         type: "string"
-        position: 16
-        description: "Verified source for the version"
-      verifiedSources:
-        type: "array"
         position: 17
         description: "Verified source for the version"
-        items:
-          type: "string"
       hidden:
         type: "boolean"
         position: 18
         description: "Implementation specific, whether this row is visible to other\
           \ users aside from the owner"
+      verifiedSources:
+        type: "array"
+        position: 18
+        description: "Verified source for the version"
+        items:
+          type: "string"
       doiURL:
         type: "string"
         position: 19
@@ -7839,6 +8088,373 @@ definitions:
         - "NOT_REQUESTED"
         - "REQUESTED"
         - "CREATED"
+      author:
+        type: "string"
+        position: 21
+      description:
+        type: "string"
+        position: 22
+      descriptionSource:
+        type: "string"
+        position: 23
+        enum:
+        - "README"
+        - "DESCRIPTOR"
+      email:
+        type: "string"
+        position: 24
+    description: "Base class for versions of entries in the Dockstore"
+  Workflow:
+    type: "object"
+    required:
+    - "defaultTestParameterFilePath"
+    - "descriptorType"
+    - "gitUrl"
+    - "mode"
+    - "organization"
+    - "repository"
+    - "sourceControl"
+    - "workflow_path"
+    discriminator: "type"
+    properties:
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      has_checker:
+        type: "boolean"
+        readOnly: true
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the container in this web service"
+      input_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      isChecker:
+        type: "boolean"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
+      output_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      parentEntry:
+        $ref: "#/definitions/Entry"
+      topicId:
+        type: "integer"
+        format: "int64"
+        description: "The Id of the corresponding topic on Dockstore Discuss"
+      author:
+        type: "string"
+        position: 1
+        description: "This is the name of the author stated in the Dockstore.cwl"
+      description:
+        type: "string"
+        position: 2
+        description: "This is a human-readable description of this container and what\
+          \ it is trying to accomplish, required GA4GH"
+      labels:
+        type: "array"
+        position: 3
+        description: "Labels (i.e. meta tags) for describing the purpose and contents\
+          \ of containers"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Label"
+      users:
+        type: "array"
+        position: 4
+        description: "This indicates the users that have control over this entry,\
+          \ dockstore specific"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/User"
+      starredUsers:
+        type: "array"
+        position: 5
+        description: "This indicates the users that have starred this entry, dockstore\
+          \ specific"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/User"
+      email:
+        type: "string"
+        position: 6
+        description: "This is the email of the git organization"
+      defaultVersion:
+        type: "string"
+        position: 7
+        description: "This is the default version of the entry"
+      is_published:
+        type: "boolean"
+        position: 8
+        description: "Implementation specific visibility in this web service"
+      last_modified:
+        type: "integer"
+        format: "int32"
+        position: 9
+        description: "Implementation specific timestamp for last modified. Tools->\
+          \ For automated/manual builds: N/A. For hosted: Last time a file was updated/created\
+          \ (new version created). Workflows-> For remote: When refresh is hit, last\
+          \ time GitHub repo was changed. Hosted: Last time a new version was made."
+      lastUpdated:
+        type: "string"
+        format: "date-time"
+        position: 10
+        description: "Implementation specific timestamp for last updated on webservice.\
+          \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
+          \ tool info (like changing dockerfile path) updated, or default version\
+          \ selected. For hosted tools: when you created the tool. Workflows-> For\
+          \ remote: When refresh all is hit for first time. Hosted: Seems to be time\
+          \ created."
+      gitUrl:
+        type: "string"
+        position: 11
+        description: "This is a link to the associated repo with a descriptor, required\
+          \ GA4GH"
+      checker_id:
+        type: "integer"
+        format: "int64"
+        position: 12
+        description: "The id of the associated checker workflow"
+        readOnly: true
+      conceptDoi:
+        type: "string"
+        position: 13
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
+      mode:
+        type: "string"
+        position: 13
+        description: "This indicates what mode this is in which informs how we do\
+          \ things like refresh, dockstore specific"
+        enum:
+        - "FULL"
+        - "STUB"
+        - "HOSTED"
+        - "SERVICE"
+      workflowName:
+        type: "string"
+        position: 14
+        description: "This is the name of the workflow, not needed when only one workflow\
+          \ in a repo"
+      organization:
+        type: "string"
+        position: 15
+        description: "This is a git organization for the workflow"
+      repository:
+        type: "string"
+        position: 16
+        description: "This is a git repository name"
+      sourceControl:
+        type: "string"
+        position: 17
+        description: "This is a specific source control provider like github or bitbucket\
+          \ or n/a?, required: GA4GH"
+      descriptorType:
+        type: "string"
+        position: 18
+        description: "This is a descriptor type for the workflow, either CWL, WDL,\
+          \ or Nextflow (Defaults to CWL)"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "NFL"
+        - "service"
+      workflow_path:
+        type: "string"
+        position: 19
+        description: "This indicates for the associated git repository, the default\
+          \ path to the primary descriptor document"
+      defaultTestParameterFilePath:
+        type: "string"
+        position: 20
+        description: "This indicates for the associated git repository, the default\
+          \ path to the test parameter file"
+      workflowVersions:
+        type: "array"
+        position: 21
+        description: "Implementation specific tracking of valid build workflowVersions\
+          \ for the docker container"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/WorkflowVersion"
+      full_workflow_path:
+        type: "string"
+        position: 24
+        readOnly: true
+      path:
+        type: "string"
+        position: 25
+      source_control_provider:
+        type: "string"
+        position: 26
+        readOnly: true
+    description: "This describes one workflow in the dockstore"
+  WorkflowVersion:
+    type: "object"
+    required:
+    - "name"
+    - "reference"
+    properties:
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for workflow versions"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the tag in this web service"
+        readOnly: true
+      workingDirectory:
+        type: "string"
+      reference:
+        type: "string"
+        position: 1
+        description: "git commit/tag/branch"
+      name:
+        type: "string"
+        position: 2
+        description: "Implementation specific, can be a quay.io or docker hub tag\
+          \ name"
+      commitID:
+        type: "string"
+        position: 3
+        description: "This is the commit id for the source control that the files\
+          \ belong to"
+      frozen:
+        type: "boolean"
+        position: 4
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
+      referenceType:
+        type: "string"
+        position: 5
+        description: "This indicates the type of git (or other source control) reference"
+        enum:
+        - "COMMIT"
+        - "TAG"
+        - "BRANCH"
+        - "NOT_APPLICABLE"
+        - "UNSET"
+      sourceFiles:
+        type: "array"
+        position: 6
+        description: "Cached files for each version. Includes Dockerfile and Descriptor\
+          \ files"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/SourceFile"
+      valid:
+        type: "boolean"
+        position: 7
+        description: "Implementation specific, whether this tag has valid files from\
+          \ source code repo"
+      dirtyBit:
+        type: "boolean"
+        position: 8
+        description: "True if user has altered the tag"
+      versionEditor:
+        position: 9
+        description: "Particularly for hosted workflows, this records who edited to\
+          \ create a revision"
+        $ref: "#/definitions/User"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+        position: 11
+      input_file_formats:
+        type: "array"
+        position: 12
+        description: "File formats for describing the input file formats of versions\
+          \ (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      output_file_formats:
+        type: "array"
+        position: 13
+        description: "File formats for describing the output file formats of versions\
+          \ (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      validations:
+        type: "array"
+        position: 14
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
+      images:
+        type: "array"
+        position: 15
+        description: "The images that belong to this version"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Image"
+      verified:
+        type: "boolean"
+        position: 16
+        description: "Whether this version has been verified or not"
+      verifiedSource:
+        type: "string"
+        position: 17
+        description: "Verified source for the version"
+      hidden:
+        type: "boolean"
+        position: 18
+        description: "Implementation specific, whether this row is visible to other\
+          \ users aside from the owner"
+      verifiedSources:
+        type: "array"
+        position: 18
+        description: "Verified source for the version"
+        items:
+          type: "string"
+      doiURL:
+        type: "string"
+        position: 19
+        description: "This is a URL for the DOI for the version of the entry"
+      doiStatus:
+        type: "string"
+        position: 20
+        description: "This indicates the DOI status"
+        enum:
+        - "NOT_REQUESTED"
+        - "REQUESTED"
+        - "CREATED"
+      author:
+        type: "string"
+        position: 21
+      description:
+        type: "string"
+        position: 22
+      descriptionSource:
+        type: "string"
+        position: 23
+        enum:
+        - "README"
+        - "DESCRIPTOR"
+      email:
+        type: "string"
+        position: 24
       workflow_path:
         type: "string"
         position: 101
@@ -7859,6 +8475,17 @@ definitions:
         - "KUBERNETES"
         - "HELM"
     description: "This describes one workflow version associated with a workflow."
+  WorkflowVersionPathInfo:
+    type: "object"
+    properties:
+      fullWorkflowPath:
+        type: "string"
+        description: "Dockstore path to workflow."
+      tagName:
+        type: "string"
+        description: "Name of workflow version tag"
+    description: "Object that contains the Dockstore path to the workflow and the\
+      \ version tag name."
 externalDocs:
   description: "Dockstore documentation"
   url: "https://www.dockstore.org/docs/getting-started"

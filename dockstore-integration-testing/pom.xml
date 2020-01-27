@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.7.5-SNAPSHOT</version>
+        <version>1.8.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
@@ -45,30 +45,45 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>${dockstore-client.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.dockstore</groupId>
+                    <artifactId>dockstore-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.dockstore</groupId>
+                    <artifactId>swagger-java-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>swagger-java-client</artifactId>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-client</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
         </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -172,6 +187,10 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

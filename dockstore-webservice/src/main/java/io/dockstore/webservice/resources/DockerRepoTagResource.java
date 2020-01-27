@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -35,11 +34,14 @@ import javax.ws.rs.core.Response;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
@@ -61,16 +63,17 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containertags")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS)
 public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
-    private final ElasticManager elasticManager;
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
+    private final EventDAO eventDAO;
 
-    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO) {
+    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, EventDAO eventDAO) {
         this.tagDAO = tagDAO;
         this.toolDAO = toolDAO;
-        elasticManager = new ElasticManager();
+        this.eventDAO = eventDAO;
     }
 
     @GET
@@ -119,7 +122,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         }
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result.getWorkflowVersions();
     }
 
@@ -134,10 +137,16 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
 
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
 
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
+            String msg = "Only manually added images can add version tags.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+        boolean releaseCreated = false;
         for (Tag tag : tags) {
             final long tagId = tagDAO.create(tag);
             Tag byId = tagDAO.findById(tagId);
-
+            releaseCreated = true;
             // Set dirty bit since this is a manual add
             byId.setDirtyBit(true);
 
@@ -150,7 +159,11 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
 
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
+        if (releaseCreated) {
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
+            eventDAO.create(event);
+        }
         return result.getWorkflowVersions();
     }
 
@@ -164,6 +177,12 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
 
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
+            String msg = "Only manually added images can delete version tags.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         Tag tag = tagDAO.findById(tagId);
         if (tag == null) {
             LOG.error(user.getUsername() + ": could not find tag: " + tool.getToolPath());
@@ -176,7 +195,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             tag.getSourceFiles().clear();
 
             if (tool.getWorkflowVersions().remove(tag)) {
-                elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+                PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
                 return Response.noContent().build();
             } else {
                 return Response.serverError().build();
@@ -185,29 +204,6 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             LOG.error(user.getUsername() + ": could not find tag: " + tagId + " in " + tool.getToolPath());
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
-    }
-
-    @POST
-    @Timed
-    @UnitOfWork
-    @Path("/{containerId}/verify/{tagId}")
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Updates the verification status of a version. ADMIN ONLY", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
-    public Set<Tag> verifyToolTag(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "ID of the tool to update.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "ID of the tag to update.", required = true) @PathParam("tagId") Long tagId) {
-        Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
-        Tag tag = tagDAO.findById(tagId);
-        if (tag == null) {
-            LOG.error(user.getUsername() + ": could not find tag: " + tool.getToolPath());
-            throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
-        }
-        tag.updateVerified();
-        Tool result = toolDAO.findById(containerId);
-        checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result.getWorkflowVersions();
     }
 
     @POST

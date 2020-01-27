@@ -54,6 +54,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -65,13 +66,14 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
-import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -104,6 +106,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
+@io.swagger.v3.oas.annotations.tags.Tag(name = "containers", description = ResourceConstants.CONTAINERS)
 public class DockerRepoResource
     implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {
@@ -125,8 +128,8 @@ public class DockerRepoResource
     private final HttpClient client;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
+    private final EventDAO eventDAO;
     private final ObjectMapper objectMapper;
-    private final ElasticManager elasticManager;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
 
@@ -138,6 +141,7 @@ public class DockerRepoResource
         this.tagDAO = new TagDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
+        this.eventDAO = new EventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.client = client;
 
@@ -148,7 +152,6 @@ public class DockerRepoResource
         this.entryResource = entryResource;
 
         this.toolDAO = new ToolDAO(sessionFactory);
-        elasticManager = new ElasticManager();
     }
 
     List<Tool> refreshToolsForUser(Long userId, String organization) {
@@ -180,7 +183,7 @@ public class DockerRepoResource
 
             updatedTools.addAll(abstractImageRegistry
                 .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken,
-                    organization));
+                    organization, eventDAO));
         }
         return updatedTools;
     }
@@ -231,7 +234,7 @@ public class DockerRepoResource
             workflowResource.refresh(user, refreshedTool.getCheckerWorkflow().getId());
         }
         refreshedTool.getWorkflowVersions().forEach(Version::updateVerified);
-        elasticManager.handleIndexUpdate(refreshedTool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(refreshedTool, StateManagerMode.UPDATE);
         return refreshedTool;
     }
 
@@ -270,7 +273,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
                 HttpStatus.SC_NOT_FOUND);
         }
-        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo);
+        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo, eventDAO);
     }
 
     @GET
@@ -288,7 +291,8 @@ public class DockerRepoResource
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
-
+        tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getImages()));
+        Hibernate.initialize(tool.getAliases());
         return tool;
     }
 
@@ -302,7 +306,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return this.updateLabels(user, containerId, labelStrings, labelDAO, elasticManager);
+        return this.updateLabels(user, containerId, labelStrings, labelDAO);
     }
 
     @PUT
@@ -328,11 +332,24 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        Registry registry = foundTool.getRegistryProvider();
+        if (registry.isPrivateOnly() && !tool.isPrivateAccess()) {
+            throw new CustomWebApplicationException("The registry " + registry.getFriendlyName() + " is private only, cannot set tool to public.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (registry.isPrivateOnly() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
+            throw new CustomWebApplicationException("Private tools require a tool maintainer email.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (!foundTool.isPrivateAccess() && tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && Strings.isNullOrEmpty(tool.getEmail())) {
+            throw new CustomWebApplicationException("A published, private tool must have either an tool author email or tool maintainer email set up.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         updateInfo(foundTool, tool);
 
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
         return result;
 
     }
@@ -346,7 +363,7 @@ public class DockerRepoResource
     public Tool updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("toolId") Long toolId,
         @ApiParam(value = "Tag name to set as default.", required = true) String version) {
-        return (Tool)updateDefaultVersionHelper(version, toolId, user, elasticManager);
+        return (Tool)updateDefaultVersionHelper(version, toolId, user);
     }
 
     /**
@@ -405,7 +422,7 @@ public class DockerRepoResource
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
             }
         }
-        elasticManager.handleIndexUpdate(foundTool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(foundTool, StateManagerMode.UPDATE);
         return toolDAO.findById(containerId);
     }
 
@@ -436,6 +453,7 @@ public class DockerRepoResource
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
+        Hibernate.initialize(tool.getAliases());
         return filterContainersForHiddenTags(tool);
     }
 
@@ -468,6 +486,20 @@ public class DockerRepoResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool registerManual(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
+        // Check for custom docker registries
+        Registry registry = tool.getRegistryProvider();
+        if (registry == null) {
+            throw new CustomWebApplicationException("The provided registry is not valid. If you are using a custom registry please ensure that it matches the allowed paths.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (registry.isPrivateOnly() && !tool.isPrivateAccess()) {
+            throw new CustomWebApplicationException("The registry " + registry.getFriendlyName() + " is a private only registry.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
+            throw new CustomWebApplicationException("Tool maintainer email is required for private tools.", HttpStatus.SC_BAD_REQUEST);
+        }
+        boolean releaseCreated = false;
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
@@ -475,6 +507,7 @@ public class DockerRepoResource
         for (Tag tag : tool.getWorkflowVersions()) {
             final long l = tagDAO.create(tag);
             createdTags.add(tagDAO.findById(l));
+            releaseCreated = true;
         }
         tool.getWorkflowVersions().clear();
         tool.getWorkflowVersions().addAll(createdTags);
@@ -512,7 +545,10 @@ public class DockerRepoResource
         }
 
         long id = toolDAO.create(tool);
-
+        if (releaseCreated) {
+            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
+            eventDAO.create(event);
+        }
         return toolDAO.findById(id);
     }
 
@@ -556,7 +592,7 @@ public class DockerRepoResource
         toolDAO.delete(tool);
         tool = toolDAO.findById(containerId);
         if (tool == null) {
-            elasticManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
+            PublicStateManager.getInstance().handleIndexUpdate(deleteTool, StateManagerMode.DELETE);
             return Response.noContent().build();
         } else {
             return Response.serverError().build();
@@ -617,7 +653,7 @@ public class DockerRepoResource
         long id = toolDAO.create(tool);
         tool = toolDAO.findById(id);
         if (request.getPublish()) {
-            elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+            PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.PUBLISH);
             if (tool.getTopicId() == null) {
                 try {
                     entryResource.createAndSetDiscourseTopic(id);
@@ -626,7 +662,7 @@ public class DockerRepoResource
                 }
             }
         } else {
-            elasticManager.handleIndexUpdate(tool, ElasticMode.DELETE);
+            PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.DELETE);
         }
         return tool;
     }
@@ -696,6 +732,7 @@ public class DockerRepoResource
         if (checkIncludes(include, "validations")) {
             tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
+        Hibernate.initialize(tool.getAliases());
         return tool;
     }
 
@@ -713,6 +750,7 @@ public class DockerRepoResource
             if (checkIncludes(include, "validations")) {
                 tool.getWorkflowVersions().forEach(tag -> Hibernate.initialize(tag.getValidations()));
             }
+            Hibernate.initialize(tool.getAliases());
             filterContainersForHiddenTags(tool);
 
             // for backwards compatibility for 1.6.0 clients, return versions as tags
@@ -874,7 +912,7 @@ public class DockerRepoResource
         FileType fileType =
             (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
         createTestParameters(testParameterPaths, tag, sourceFiles, fileType, fileDAO);
-        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
         return tag.getSourceFiles();
     }
 
@@ -924,8 +962,12 @@ public class DockerRepoResource
         @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
-        starEntryHelper(tool, user, "tool", tool.getToolPath());
-        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        if (request.getStar()) {
+            starEntryHelper(tool, user, "tool", tool.getToolPath());
+        } else {
+            unstarEntryHelper(tool, user, "tool", tool.getToolPath());
+        }
+        PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
     }
 
     @DELETE
@@ -933,11 +975,12 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/unstar")
     @ApiOperation(value = "Unstar a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Deprecated(since = "1.8.0")
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         unstarEntryHelper(tool, user, "tool", tool.getToolPath());
-        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
+        PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
     }
 
     @GET

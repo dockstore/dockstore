@@ -32,10 +32,10 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -55,12 +55,13 @@ public interface LanguageHandlerInterface {
     /**
      * Parses the content of the primary descriptor to get author, email, and description
      *
-     * @param entry    an entry to be updated
      * @param filepath path to file
-     * @param content  a cwl document
-     * @return the updated entry
+     * @param content a descriptor language document
+     * @param sourceFiles
+     * @param version the version to modify
+     * @return
      */
-    Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version);
+    Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version);
 
     /**
      * Validates a workflow set for the workflow described by with primaryDescriptorFilePath
@@ -133,6 +134,10 @@ public interface LanguageHandlerInterface {
             }
         }
         return new VersionTypeValidation(isValid, validationMessageObject);
+    }
+
+    default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
+        return DAGHelper.cleanDAG(getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao));
     }
 
     /**

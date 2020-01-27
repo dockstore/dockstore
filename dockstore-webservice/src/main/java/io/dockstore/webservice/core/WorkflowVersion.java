@@ -17,10 +17,20 @@
 package io.dockstore.webservice.core;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -37,8 +47,22 @@ import org.apache.commons.io.FilenameUtils;
  */
 @ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
 @Entity
+@Table(name = "workflowversion")
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+})
+
 @SuppressWarnings("checkstyle:magicnumber")
-public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion> {
+public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion>, Aliasable {
+
+
+
+    @ElementCollection(targetClass = Alias.class)
+    @JoinTable(name = "workflowversion_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_aliases", columnNames = { "alias" }))
+    @MapKeyColumn(name = "alias", columnDefinition = "text")
+    @ApiModelProperty(value = "aliases can be used as an alternate unique id for workflow versions")
+    private Map<String, Alias> aliases = new HashMap<>();
+
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("workflow_path")
@@ -115,7 +139,9 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public int compareTo(WorkflowVersion that) {
-        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
+        return ComparisonChain.start()
+                .compare(this.getLastModified(), that.getLastModified(), Ordering.natural().reverse().nullsLast())
+                .compare(this.getName(), that.getName(), Ordering.natural().nullsLast())
                 .compare(this.getReference(), that.getReference(), Ordering.natural().nullsLast()).result();
     }
 
@@ -145,4 +171,35 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     public void setLastModified(Date lastModified) {
         this.lastModified = lastModified;
     }
+
+    public Map<String, Alias> getAliases() {
+        return aliases;
+    }
+
+    public void setAliases(Map<String, Alias> aliases) {
+        this.aliases = aliases;
+    }
+
+    @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
+            + "contains the Dockstore path to the workflow and the version tag name.")
+    public static final class WorkflowVersionPathInfo {
+        @ApiModelProperty(value = "Dockstore path to workflow.")
+        private final String fullWorkflowPath;
+        @ApiModelProperty(value = "Name of workflow version tag")
+        private final String tagName;
+
+        public WorkflowVersionPathInfo(String fullWorkflowPath, String tagName) {
+            this.fullWorkflowPath = fullWorkflowPath;
+            this.tagName = tagName;
+        }
+
+        public String getFullWorkflowPath() {
+            return fullWorkflowPath;
+        }
+
+        public String getTagName() {
+            return tagName;
+        }
+    }
+
 }

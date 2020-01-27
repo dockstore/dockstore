@@ -115,7 +115,6 @@ public class ToolsImplCommonTest {
         tool.setRegistry(Registry.QUAY_IO.toString());
         tool.setAuthor("sampleAuthor");
         tool.setGitUrl("git@github.com:test_org/test6.git");
-
         Tag tag = new Tag();
         tag.setImageId("sampleImageId");
         tag.setName("sampleTag");
@@ -125,6 +124,16 @@ public class ToolsImplCommonTest {
         tag.setAutomated(true);
         tag.setReference("sampleReference");
         tag.setValid(true);
+        Tag hiddenTag = new Tag();
+        hiddenTag.setImageId("hiddenImageId");
+        hiddenTag.setName("hiddenName");
+        hiddenTag.setSize(9001);
+        hiddenTag.setDockerfilePath("/Dockerfile");
+        hiddenTag.setCwlPath("HiddenDockstore.cwl");
+        hiddenTag.setAutomated(true);
+        hiddenTag.setReference("hiddenReference");
+        hiddenTag.setValid(true);
+        hiddenTag.setHidden(true);
         SourceFile sourceFile = new SourceFile();
         sourceFile.setId(0);
         sourceFile.setType(DescriptorLanguage.FileType.DOCKERFILE);
@@ -140,7 +149,11 @@ public class ToolsImplCommonTest {
         tag.addSourceFile(sourceFile);
         tag.addSourceFile(sourceFile2);
         tag.updateVerified();
+        hiddenTag.addSourceFile(sourceFile);
+        hiddenTag.addSourceFile(sourceFile2);
+        tag.updateVerified();
         tool.addWorkflowVersion(tag);
+        tool.addWorkflowVersion(hiddenTag);
         tool.setCheckerWorkflow(null);
         Tool expectedTool = new Tool();
         if (toolname != null) {
@@ -188,11 +201,12 @@ public class ToolsImplCommonTest {
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion);
         expectedTool.setVersions(expectedToolVersions);
-        Tool actualTool = ToolsImplCommon.convertEntryToTool(tool, actualConfig);
+        Tool actualTool = ToolsImplCommon.convertEntryToTool(tool, actualConfig, false);
         actualTool.setMetaVersion(null);
         actualTool.getVersions().parallelStream().forEach(version -> version.setMetaVersion(null));
         assertEquals(expectedTool, actualTool);
-
+        Tool actualToolWithHiddenVersions = ToolsImplCommon.convertEntryToTool(tool, actualConfig, true);
+        assertEquals(actualTool.getVersions().size() + 1, actualToolWithHiddenVersions.getVersions().size());
     }
 
     /**
@@ -246,7 +260,6 @@ public class ToolsImplCommonTest {
     private void convertDockstoreWorkflowToTool(String toolname, boolean isService) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        final String TOOLNAME = toolname;
         final String REFERENCE1 = "aaa";
         final String REFERENCE2 = "bbb";
         final String REFERENCE3 = "ccc";
@@ -282,7 +295,7 @@ public class ToolsImplCommonTest {
         // Check that Dockstore version is actually has the right verified source
         String[] expectedVerifiedSource = { "chickenTesterSource", "potatoTesterSource" };
         String[] actualVerifiedSource = actualWorkflowVersion3.getVerifiedSources();
-        Assert.assertEquals(expectedVerifiedSource, actualVerifiedSource);
+        Assert.assertArrayEquals(expectedVerifiedSource, actualVerifiedSource);
         workflow.addWorkflowVersion(actualWorkflowVersion1);
         workflow.addWorkflowVersion(actualWorkflowVersion2);
         workflow.addWorkflowVersion(actualWorkflowVersion3);
@@ -316,13 +329,13 @@ public class ToolsImplCommonTest {
         if (toolname != null) {
 
             if (isService) {
-                expectedToolVersion1.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME + ":" + REFERENCE2);
+                expectedToolVersion1.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ toolname + ":" + REFERENCE2);
                 expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                        + TOOLNAME + "/versions/" + REFERENCE2);
+                        + toolname + "/versions/" + REFERENCE2);
             } else {
-                expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME + ":" + REFERENCE2);
+                expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ toolname + ":" + REFERENCE2);
                 expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                        + TOOLNAME + "/versions/" + REFERENCE2);
+                        + toolname + "/versions/" + REFERENCE2);
             }
         } else {
 
@@ -359,13 +372,13 @@ public class ToolsImplCommonTest {
 
         if (toolname != null) {
             if (isService) {
-                expectedToolVersion2.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME + ":" + REFERENCE3);
+                expectedToolVersion2.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + toolname + ":" + REFERENCE3);
                 expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                        + TOOLNAME + "/versions/" + REFERENCE3);
+                        + toolname + "/versions/" + REFERENCE3);
             } else {
-                expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME + ":" + REFERENCE3);
+                expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + toolname + ":" + REFERENCE3);
                 expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
-                        + TOOLNAME + "/versions/" + REFERENCE3);
+                        + toolname + "/versions/" + REFERENCE3);
             }
         } else {
 
@@ -386,16 +399,16 @@ public class ToolsImplCommonTest {
         if (toolname != null) {
 
             if (isService) {
-                expectedTool.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME);
+                expectedTool.setId("#service/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ toolname);
                 expectedTool
-                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23service%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ toolname);
             } else {
-                expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME);
+                expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ toolname);
                 expectedTool
-                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
+                        .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ toolname);
             }
-            expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME);
-            expectedTool.setCheckerUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
+            expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow/" + toolname);
+            expectedTool.setCheckerUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ toolname);
         } else {
 
             if (isService) {

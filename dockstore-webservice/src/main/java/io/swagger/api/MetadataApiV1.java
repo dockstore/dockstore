@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.resources.ResourceConstants;
 import io.swagger.api.factories.MetadataApiServiceFactory;
 import io.swagger.api.impl.ApiVersionConverter;
 import io.swagger.model.MetadataV1;
@@ -35,12 +36,13 @@ import io.swagger.model.MetadataV1;
 @Produces( { "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the metadata API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1)
 public class MetadataApiV1 {
     private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
 
     @GET
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = MetadataV1.class, tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "metadataGet", value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = MetadataV1.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = MetadataV1.class) })

@@ -42,6 +42,7 @@ import javax.persistence.UniqueConstraint;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -70,6 +71,8 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.countAllPublished", query = "SELECT COUNT(c.id)" + Tool.PUBLISHED_QUERY),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublished", query = "SELECT c" + Tool.PUBLISHED_QUERY + "ORDER BY size(c.starredUsers) DESC"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.ToolPath(c.registry, c.namespace, c.name, c.toolname)" + Tool.PUBLISHED_QUERY),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate", query = "SELECT new io.dockstore.webservice.core.database.RSSToolPath(c.registry, c.namespace, c.name, c.toolname, c.lastUpdated, c.description)" + Tool.PUBLISHED_QUERY + "and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByNamespace", query = "SELECT c FROM Tool c WHERE lower(c.namespace) = lower(:namespace) AND c.isPublished = true ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name"),
@@ -145,6 +148,25 @@ public class Tool extends Entry<Tool, Tag> {
         // this.userId = userId;
         this.name = name;
         workflowVersions = new TreeSet<>();
+    }
+
+    @JsonProperty
+    @Override
+    public String getGitUrl() {
+        if (mode == ToolMode.HOSTED) {
+            // for a dockstore hosted tool, fake a git url. Used by the UI
+            return "git@dockstore.org:" + this.getPath()  + ".git";
+        }
+        return super.getGitUrl();
+    }
+
+    @Override
+    public String getEntryPath() {
+        return this.getToolPath();
+    }
+
+    public EntryType getEntryType() {
+        return EntryType.TOOL;
     }
 
     // compromise: this sucks, but setting the json property to tags allows for backwards compatibility of existing clients
@@ -304,6 +326,9 @@ public class Tool extends Entry<Tool, Tag> {
     @Schema(type = "integer")
     @ApiModelProperty(position = 30)
     public Registry getRegistryProvider() {
+        if (this.registry == null) {
+            return null;
+        }
         for (Registry r : Registry.values()) {
             if (r.toString() != null && r.toString().equals(this.registry)) {
                 return r;
@@ -311,7 +336,7 @@ public class Tool extends Entry<Tool, Tag> {
         }
 
         // Deal with registries with custom registry paths
-        if (this.registry != null && this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+        if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
             return Registry.AMAZON_ECR;
         } else if (this.registry.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
             return Registry.SEVEN_BRIDGES;
@@ -348,6 +373,10 @@ public class Tool extends Entry<Tool, Tag> {
         if (newCustomDockerRegistryString != null) {
             this.setRegistry(newCustomDockerRegistryString);
         }
+    }
+
+    public Event.Builder getEventBuilder() {
+        return new Event.Builder().withTool(this);
     }
 
     /**

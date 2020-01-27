@@ -16,7 +16,7 @@
 package io.dockstore.webservice.languages;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,7 +39,7 @@ import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
@@ -64,7 +64,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
+    public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
@@ -109,7 +109,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 final String finalChoiceForDescription = ObjectUtils.firstNonNull(doc, description, label);
 
                 if (finalChoiceForDescription != null) {
-                    entry.setDescription(finalChoiceForDescription);
+                    version.setDescriptionAndDescriptionSource(finalChoiceForDescription, DescriptionSource.DESCRIPTOR);
                 } else {
                     LOG.info("Description not found!");
                 }
@@ -117,9 +117,9 @@ public class CWLHandler implements LanguageHandlerInterface {
                 String dctKey = "dct:creator";
                 String schemaKey = "s:author";
                 if (map.containsKey(schemaKey)) {
-                    processAuthor(entry, map, schemaKey, "s:name", "s:email", "Author not found!");
+                    processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
                 } else if (map.containsKey(dctKey)) {
-                    processAuthor(entry, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
+                    processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
@@ -139,19 +139,19 @@ public class CWLHandler implements LanguageHandlerInterface {
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_CWL, false, validationMessageObject));
             }
         }
-        return entry;
+        return version;
     }
 
     /**
      * Look at the map of metadata and populate entry with an author and email
-     * @param entry
+     * @param version
      * @param map
      * @param dctKey
      * @param authorKey
      * @param emailKey
      * @param errorMessage
      */
-    private void processAuthor(Entry entry, Map map, String dctKey, String authorKey, String emailKey, String errorMessage) {
+    private void processAuthor(Version version, Map map, String dctKey, String authorKey, String emailKey, String errorMessage) {
         Object o = map.get(dctKey);
         if (o instanceof List) {
             o = ((List)o).get(0);
@@ -159,10 +159,10 @@ public class CWLHandler implements LanguageHandlerInterface {
         map = (Map)o;
         if (map != null) {
             String author = (String)map.get(authorKey);
-            entry.setAuthor(author);
+            version.setAuthor(author);
             String email = (String)map.get(emailKey);
             if (!Strings.isNullOrEmpty(email)) {
-                entry.setEmail(email.replaceFirst("^mailto:", ""));
+                version.setEmail(email.replaceFirst("^mailto:", ""));
             }
         } else {
             LOG.info(errorMessage);
@@ -720,7 +720,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Collections.singletonList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
@@ -752,11 +752,11 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Arrays.asList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
+        List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Collections.singletonList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
-        Boolean isValid = true;
+        boolean isValid = true;
         String validationMessage = null;
         Map<String, String> validationMessageObject = new HashMap<>();
 

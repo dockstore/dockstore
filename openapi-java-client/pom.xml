@@ -22,7 +22,7 @@
     <name>openapi-java-client</name>
 
     <parent>
-        <version>1.7.5-SNAPSHOT</version>
+        <version>1.8.1-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -72,7 +72,7 @@
             <plugin>
                 <groupId>io.swagger.codegen.v3</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
-                <version>3.0.4</version>
+                <version>3.0.11</version>
                 <executions>
                     <execution>
                         <goals>
@@ -293,7 +293,6 @@
                     <artifactId>jackson-annotations</artifactId>
                 </exclusion>
             </exclusions>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -304,12 +303,11 @@
                     <artifactId>jackson-annotations</artifactId>
                 </exclusion>
             </exclusions>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.major.version}</version>
         </dependency>
 
         <dependency>
@@ -325,7 +323,7 @@
             <!-- used just for ordering since this uses the swagger.json created by dockstore-webservice during the build -->
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>

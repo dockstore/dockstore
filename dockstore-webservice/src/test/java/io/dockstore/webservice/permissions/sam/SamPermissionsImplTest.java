@@ -2,6 +2,7 @@ package io.dockstore.webservice.permissions.sam;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,36 +59,29 @@ public class SamPermissionsImplTest {
     private static final String DOCKSTORE_ORG_WORKFLOW_NAME = "dockstore.org/john/myworkflow";
     private static final String JANE_DOE_GMAIL_COM = "jane.doe@gmail.com";
     private static final String JANE_DOE_GITHUB_ID = "jdoe";
-    private AccessPolicyResponseEntry ownerPolicy;
-    private AccessPolicyResponseEntry writerPolicy;
-    private AccessPolicyResponseEntry readerPolicy;
-    private SamPermissionsImpl samPermissionsImpl;
-    private User userMock = Mockito.mock(User.class);
-    private User noGoogleUser = Mockito.mock(User.class);
-    private ResourcesApi resourcesApiMock;
-    private ApiClient apiClient;
-    private Workflow fooWorkflow;
-    private Permission ownerPermission;
-    private Permission writerPermission;
-    private Permission readerPermission;
-    private AccessPolicyMembership readerAccessPolicyMembership;
-    private AccessPolicyResponseEntry readerAccessPolicyResponseEntry;
-
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-
     @Rule
     public TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {
             System.out.println("Starting test: " + description.getMethodName());
         }
     };
+    private AccessPolicyResponseEntry ownerPolicy;
+    private AccessPolicyResponseEntry writerPolicy;
+    private SamPermissionsImpl samPermissionsImpl;
+    private User userMock = Mockito.mock(User.class);
+    private User noGoogleUser = Mockito.mock(User.class);
+    private ResourcesApi resourcesApiMock;
+    private Workflow workflowInstance;
+    private Permission ownerPermission;
+    private Permission writerPermission;
+    private Permission readerPermission;
+    private AccessPolicyResponseEntry readerAccessPolicyResponseEntry;
 
     @Before
     public void setup() {
@@ -105,7 +99,7 @@ public class SamPermissionsImplTest {
         writerMembership.setMemberEmails(Collections.singletonList(JANE_DOE_GMAIL_COM));
         writerPolicy.setPolicy(writerMembership);
 
-        readerPolicy = new AccessPolicyResponseEntry();
+        AccessPolicyResponseEntry readerPolicy = new AccessPolicyResponseEntry();
         readerPolicy.setPolicyName(SamConstants.READ_POLICY);
         AccessPolicyMembership readerMembership = new AccessPolicyMembership();
         readerMembership.setRoles(Collections.singletonList(SamConstants.READ_POLICY));
@@ -119,14 +113,14 @@ public class SamPermissionsImplTest {
         doReturn(Optional.of("my token")).when(samPermissionsImpl).googleAccessToken(userMock);
         doReturn(Mockito.mock(Token.class)).when(samPermissionsImpl).googleToken(userMock);
         resourcesApiMock = Mockito.mock(ResourcesApi.class);
-        apiClient = Mockito.mock(ApiClient.class);
+        ApiClient apiClient = Mockito.mock(ApiClient.class);
         when(apiClient.escapeString(ArgumentMatchers.anyString()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(resourcesApiMock.getApiClient()).thenReturn(apiClient);
         when(samPermissionsImpl.getResourcesApi(userMock)).thenReturn(resourcesApiMock);
 
-        fooWorkflow = Mockito.mock(Workflow.class);
-        when(fooWorkflow.getWorkflowPath()).thenReturn("foo");
+        workflowInstance = Mockito.mock(Workflow.class);
+        when(workflowInstance.getWorkflowPath()).thenReturn("foo");
 
         ownerPermission = new Permission();
         ownerPermission.setEmail("jdoe@ucsc.edu");
@@ -143,7 +137,7 @@ public class SamPermissionsImplTest {
         readerPermission.setEmail(JANE_DOE_GMAIL_COM);
         readerPermission.setRole(Role.READER);
 
-        readerAccessPolicyMembership = new AccessPolicyMembership();
+        AccessPolicyMembership readerAccessPolicyMembership = new AccessPolicyMembership();
         readerAccessPolicyResponseEntry = new AccessPolicyResponseEntry();
         readerAccessPolicyResponseEntry.setPolicy(readerAccessPolicyMembership);
         readerAccessPolicyResponseEntry.setPolicyName(SamConstants.READ_POLICY);
@@ -152,10 +146,9 @@ public class SamPermissionsImplTest {
 
         final User.Profile profile = new User.Profile();
         profile.email = JANE_DOE_GMAIL_COM;
-        final HashMap<String, User.Profile> map = new HashMap<>();
+        final Map<String, User.Profile> map = new HashMap<>();
         map.put(TokenType.GOOGLE_COM.toString(), profile);
         when(userMock.getUserProfiles()).thenReturn(map);
-
     }
 
     @Test
@@ -183,13 +176,8 @@ public class SamPermissionsImplTest {
 
     @Test
     public void testReadValue() {
-        String response = "{\n" +
-                "\"statusCode\": 400,\n" +
-                "\"source\": \"sam\",\n" +
-                "\"causes\": [],\n" +
-                "\"stackTrace\": [],\n" +
-                "\"message\": \"jane_doe@yahoo.com not found\"\n" +
-                "}";
+        String response = "{\n" + "\"statusCode\": 400,\n" + "\"source\": \"sam\",\n" + "\"causes\": [],\n" + "\"stackTrace\": [],\n"
+            + "\"message\": \"jane_doe@yahoo.com not found\"\n" + "}";
         Optional<ErrorReport> errorReport = samPermissionsImpl.readValue(response, ErrorReport.class);
         Assert.assertEquals(errorReport.get().getMessage(), "jane_doe@yahoo.com not found");
 
@@ -205,7 +193,7 @@ public class SamPermissionsImplTest {
         owner.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + GOO_WORKFLOW_NAME);
         owner.setAccessPolicyName(SamConstants.OWNER_POLICY);
         ResourceAndAccessPolicy writer = new ResourceAndAccessPolicy();
-        writer.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + URLEncoder.encode(DOCKSTORE_ORG_WORKFLOW_NAME, "UTF-8"));
+        writer.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + URLEncoder.encode(DOCKSTORE_ORG_WORKFLOW_NAME, StandardCharsets.UTF_8));
         writer.setAccessPolicyName(SamConstants.WRITE_POLICY);
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenReturn(Arrays.asList(reader, owner, writer));
         final Map<Role, List<String>> sharedWithUser = samPermissionsImpl.workflowsSharedWithUser(userMock);
@@ -237,8 +225,8 @@ public class SamPermissionsImplTest {
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + GOO_WORKFLOW_NAME, Role.Action.WRITE.toString())).thenReturn(Boolean.FALSE);
         when(samPermissionsImpl.getResourcesApi(userMock)).thenReturn(resourcesApiMock);
 
-        when(fooWorkflow.getWorkflowPath()).thenReturn(FOO_WORKFLOW_NAME);
-        Assert.assertTrue(samPermissionsImpl.canDoAction(userMock, fooWorkflow, Role.Action.WRITE));
+        when(workflowInstance.getWorkflowPath()).thenReturn(FOO_WORKFLOW_NAME);
+        Assert.assertTrue(samPermissionsImpl.canDoAction(userMock, workflowInstance, Role.Action.WRITE));
         Workflow gooWorkflow = Mockito.mock(Workflow.class);
         when(gooWorkflow.getWorkflowPath()).thenReturn(GOO_WORKFLOW_NAME);
         Assert.assertFalse(samPermissionsImpl.canDoAction(userMock, gooWorkflow, Role.Action.WRITE));
@@ -251,7 +239,7 @@ public class SamPermissionsImplTest {
         Permission permission = new Permission();
         permission.setEmail(JANE_DOE_GMAIL_COM);
         permission.setRole(Role.READER);
-        List<Permission> permissions = samPermissionsImpl.setPermission(userMock, fooWorkflow, permission);
+        List<Permission> permissions = samPermissionsImpl.setPermission(userMock, workflowInstance, permission);
         Assert.assertEquals(permissions.size(), 1);
     }
 
@@ -263,7 +251,7 @@ public class SamPermissionsImplTest {
             permission.setEmail("jdoe@example.com");
             permission.setRole(Role.WRITER);
             thrown.expect(CustomWebApplicationException.class);
-            samPermissionsImpl.setPermission(userMock, fooWorkflow, permission);
+            samPermissionsImpl.setPermission(userMock, workflowInstance, permission);
             Assert.fail("setPermissions did not throw Exception");
         } catch (ApiException e) {
             Assert.fail();
@@ -282,7 +270,7 @@ public class SamPermissionsImplTest {
                     .thenReturn(Collections.singletonList(readerAccessPolicyResponseEntry));
             try {
                 setupInitializePermissionsMocks(SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME);
-                final List<Permission> permissions = samPermissionsImpl.setPermission(userMock, fooWorkflow, permission);
+                final List<Permission> permissions = samPermissionsImpl.setPermission(userMock, workflowInstance, permission);
                 Assert.assertEquals(permissions.size(), 1);
             } catch (CustomWebApplicationException ex) {
                 Assert.fail("setPermissions threw Exception");
@@ -301,14 +289,14 @@ public class SamPermissionsImplTest {
      */
     @Test
     public void setPermissionRemovesExistingPermission() throws ApiException {
-        final Permission readerPermission = new Permission(JANE_DOE_GMAIL_COM, Role.READER);
+        final Permission localReaderPermission = new Permission(JANE_DOE_GMAIL_COM, Role.READER);
         final String encodedPath = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath))
                 .thenReturn(Collections.singletonList(writerPolicy));
         setupInitializePermissionsMocks(encodedPath);
         doNothing().when(resourcesApiMock)
                 .removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.WRITE_POLICY, JANE_DOE_GMAIL_COM);
-        samPermissionsImpl.setPermission(userMock, fooWorkflow, readerPermission);
+        samPermissionsImpl.setPermission(userMock, workflowInstance, localReaderPermission);
         verify(resourcesApiMock, times(1))
                 .removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.WRITE_POLICY, JANE_DOE_GMAIL_COM);
     }
@@ -320,10 +308,10 @@ public class SamPermissionsImplTest {
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX  + FOO_WORKFLOW_NAME))
                 .thenReturn(Collections.singletonList(readerAccessPolicyResponseEntry),
                     Collections.singletonList(readerAccessPolicyResponseEntry), Collections.EMPTY_LIST);
-        final List<Permission> permissions = samPermissionsImpl.getPermissionsForWorkflow(userMock, fooWorkflow);
+        final List<Permission> permissions = samPermissionsImpl.getPermissionsForWorkflow(userMock, workflowInstance);
         Assert.assertEquals(permissions.size(), 1);
         try {
-            samPermissionsImpl.removePermission(userMock, fooWorkflow, JANE_DOE_GMAIL_COM, Role.READER);
+            samPermissionsImpl.removePermission(userMock, workflowInstance, JANE_DOE_GMAIL_COM, Role.READER);
         } catch (CustomWebApplicationException e) {
             Assert.fail();
         }
@@ -342,7 +330,7 @@ public class SamPermissionsImplTest {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
                 .thenReturn(Boolean.TRUE);
-        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, workflowInstance);
         Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
     }
 
@@ -353,7 +341,7 @@ public class SamPermissionsImplTest {
                 .thenReturn(Boolean.FALSE);
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.WRITE)))
                 .thenReturn(Boolean.TRUE);
-        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, workflowInstance);
         Assert.assertEquals(2, actions.size());
         Assert.assertTrue(actions.contains(Role.Action.WRITE) && actions.contains(Role.Action.READ));
     }
@@ -367,15 +355,15 @@ public class SamPermissionsImplTest {
                 .thenReturn(Boolean.FALSE);
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.READ)))
                 .thenReturn(Boolean.TRUE);
-        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, workflowInstance);
         Assert.assertEquals(1, actions.size());
         Assert.assertTrue(actions.contains(Role.Action.READ));
     }
 
     @Test
     public void testDockstoreOwnerNoSamPermissions() {
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
-        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, workflowInstance);
         Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
     }
 
@@ -393,7 +381,7 @@ public class SamPermissionsImplTest {
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.WRITE)))
                 .thenReturn(Boolean.FALSE);
         thrown.expect(CustomWebApplicationException.class);
-        samPermissionsImpl.getPermissionsForWorkflow(userMock, fooWorkflow);
+        samPermissionsImpl.getPermissionsForWorkflow(userMock, workflowInstance);
     }
 
     @Test
@@ -424,10 +412,10 @@ public class SamPermissionsImplTest {
     @Test
     public void testNotOriginalOwnerWithEmailNotUsername() {
         when(userMock.getUsername()).thenReturn(JANE_DOE_GITHUB_ID);
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
+        when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         thrown.expect(CustomWebApplicationException.class);
-        samPermissionsImpl.checkEmailNotOriginalOwner(JANE_DOE_GMAIL_COM, fooWorkflow);
-        samPermissionsImpl.checkEmailNotOriginalOwner("johndoe@example.com", fooWorkflow);
+        samPermissionsImpl.checkEmailNotOriginalOwner(JANE_DOE_GMAIL_COM, workflowInstance);
+        samPermissionsImpl.checkEmailNotOriginalOwner("johndoe@example.com", workflowInstance);
     }
 
     @Test
@@ -440,9 +428,9 @@ public class SamPermissionsImplTest {
     @Test
     public void testIsSharingUserInSam() throws ApiException {
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
-        ResourceAndAccessPolicy reader = resourceAndAccessPolicyHelper(resourceId, SamConstants.READ_POLICY);
-        ResourceAndAccessPolicy writer = resourceAndAccessPolicyHelper(resourceId, SamConstants.WRITE_POLICY);
-        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
+        ResourceAndAccessPolicy reader = resourceAndAccessPolicyHelper(SamConstants.READ_POLICY);
+        ResourceAndAccessPolicy writer = resourceAndAccessPolicyHelper(SamConstants.WRITE_POLICY);
+        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(SamConstants.OWNER_POLICY);
 
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
                 .thenReturn(Collections.emptyList()) // case 1
@@ -475,9 +463,9 @@ public class SamPermissionsImplTest {
         samPermissionsImpl.selfDestruct(noGoogleUser);
 
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
-        ResourceAndAccessPolicy reader = resourceAndAccessPolicyHelper(resourceId, SamConstants.READ_POLICY);
-        ResourceAndAccessPolicy writer = resourceAndAccessPolicyHelper(resourceId, SamConstants.WRITE_POLICY);
-        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
+        ResourceAndAccessPolicy reader = resourceAndAccessPolicyHelper(SamConstants.READ_POLICY);
+        ResourceAndAccessPolicy writer = resourceAndAccessPolicyHelper(SamConstants.WRITE_POLICY);
+        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(SamConstants.OWNER_POLICY);
 
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
                 .thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized")) // case 1
@@ -525,19 +513,19 @@ public class SamPermissionsImplTest {
      */
     @Test
     public void testSetPermissionWhenResourceCreatedWithoutAllPolicies() throws ApiException {
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
+        when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
-        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
+        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(SamConstants.OWNER_POLICY);
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
                 .thenReturn(Collections.singletonList(owner));
         setupInitializePermissionsMocks(resourceId);
-        samPermissionsImpl.setPermission(userMock, fooWorkflow, new Permission("johndoe@example.com", Role.WRITER));
+        samPermissionsImpl.setPermission(userMock, workflowInstance, new Permission("johndoe@example.com", Role.WRITER));
         verify(resourcesApiMock, times(1)).overwritePolicy(eq(SamConstants.RESOURCE_TYPE), anyString(), eq(SamConstants.WRITE_POLICY), any());
     }
 
     @Test
     public void testSamPolicyOwnedbyAnother() throws ApiException {
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
+        when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
                 .thenThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "")); // If you don't have permissions, you get a 404
@@ -545,7 +533,7 @@ public class SamPermissionsImplTest {
                 .when(resourcesApiMock)
                 .createResourceWithDefaults(SamConstants.RESOURCE_TYPE, resourceId);
         try {
-            samPermissionsImpl.setPermission(userMock, fooWorkflow, new Permission("johndoe@example.com", Role.WRITER));
+            samPermissionsImpl.setPermission(userMock, workflowInstance, new Permission("johndoe@example.com", Role.WRITER));
             Assert.fail("Expected setPermission to throw exception");
         } catch (CustomWebApplicationException ex) {
             Assert.assertTrue(ex.getMessage().contains(" 409 "));
@@ -554,12 +542,12 @@ public class SamPermissionsImplTest {
 
     @Test
     public void testAddingOwnerDoesNotCreateSecondOwnerPolicy() throws ApiException { //https://github.com/dockstore/dockstore/issues/1805
-        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
+        when(workflowInstance.getUsers()).thenReturn(new HashSet<>(Collections.singletonList(userMock)));
         final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
-        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
+        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(SamConstants.OWNER_POLICY);
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
                 .thenReturn(Collections.singletonList(owner));
-        samPermissionsImpl.setPermission(userMock, fooWorkflow, new Permission("johndoe@example.com", Role.OWNER));
+        samPermissionsImpl.setPermission(userMock, workflowInstance, new Permission("johndoe@example.com", Role.OWNER));
         verify(resourcesApiMock, times(0)).overwritePolicy(eq(SamConstants.RESOURCE_TYPE), anyString(), eq(SamConstants.OWNER_POLICY), any());
     }
 
@@ -572,9 +560,9 @@ public class SamPermissionsImplTest {
         }
     }
 
-    private ResourceAndAccessPolicy resourceAndAccessPolicyHelper(String resourceId, String policyName) {
+    private ResourceAndAccessPolicy resourceAndAccessPolicyHelper(String policyName) {
         final ResourceAndAccessPolicy policy = new ResourceAndAccessPolicy();
-        policy.setResourceId(resourceId);
+        policy.setResourceId("%23workflow%2Ffoo");
         policy.setAccessPolicyName(policyName);
         return policy;
     }

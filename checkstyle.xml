@@ -48,6 +48,13 @@
 
 <module name="Checker">
 
+    <!-- Checks for Size Violations.                    -->
+    <!-- Turn this on after String contants are cleaned -->
+    <!-- See http://checkstyle.sf.net/config_sizes.html -->
+    <module name="LineLength">
+        <property name="max" value="140"/>
+        <property name="severity" value="ignore"/>
+    </module>
 
     <module name="TreeWalker">
         <module name="SuppressWarningsHolder"/>
@@ -212,13 +219,7 @@
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
 
-        <!-- Checks for Size Violations.                    -->
-        <!-- Turn this on after String contants are cleaned -->
-        <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <property name="max" value="140"/>
-            <property name="severity" value="ignore"/>
-        </module>
+
         <module name="MethodLength">
             <property name="max" value="150"/>
         </module>
@@ -239,9 +240,7 @@
             <property name="allowSamelineParameterizedAnnotation" value="false"/>
         </module>
 
-        <module name="MissingDeprecated">
-            <property name="skipNoJavadoc" value="true"/>
-        </module>
+        <module name="MissingDeprecated"/>
 
         <module name="MissingOverride"/>
         <module name="PackageAnnotation"/>
@@ -275,7 +274,10 @@
         <module name="EmptyCatchBlock">
             <property name="commentFormat" value="This is expected"/>
         </module>
-        <module name="LeftCurly"/>
+        <module name="LeftCurly">
+            <property name="tokens"
+                      value="ANNOTATION_DEF, CLASS_DEF, CTOR_DEF, ENUM_CONSTANT_DEF, ENUM_DEF, INTERFACE_DEF, LITERAL_CASE, LITERAL_CATCH, LITERAL_DEFAULT, LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_FOR, LITERAL_IF, LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_TRY, LITERAL_WHILE, METHOD_DEF, OBJBLOCK, STATIC_INIT"/>
+        </module>
         <module name="NeedBraces"/>
         <module name="RightCurly"/>
 

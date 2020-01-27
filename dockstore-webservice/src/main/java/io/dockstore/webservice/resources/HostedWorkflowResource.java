@@ -72,6 +72,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  */
 @Api("hosted")
 @Path("/workflows")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "hosted", description = ResourceConstants.HOSTED)
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);
     private final WorkflowDAO workflowDAO;
@@ -197,7 +198,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
         Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(version.getWorkflowPath())).findFirst();
         first.ifPresent(sourceFile -> LOG.info("refreshing metadata based on " + sourceFile.getPath() + " from " + version.getName()));
-        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(workflow, sourceFile.getPath(), sourceFile.getContent(), sourceFiles, version));
+        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(sourceFile.getPath(), sourceFile.getContent(), sourceFiles, version));
     }
 
     @Override

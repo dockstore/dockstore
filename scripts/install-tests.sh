@@ -11,9 +11,7 @@ if [ "${TESTING_PROFILE}" = "unit-tests" ] || [ "${TESTING_PROFILE}" == "automat
     exit 0;
 fi
 
-if [ "${TESTING_PROFILE}" = "toil-integration-tests" ]; then
-    pip3 install --user toil[cwl]==3.15.0
-elif [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
+if [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
     pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.6.0/requirements3.txt
 else
     pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.7.0/requirements3.txt

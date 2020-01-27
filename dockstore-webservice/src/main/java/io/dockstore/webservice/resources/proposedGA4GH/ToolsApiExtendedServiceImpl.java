@@ -43,7 +43,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.impl.ToolsApiServiceImpl;
@@ -69,6 +69,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
+    private static PublicStateManager publicStateManager = null;
+
+    public static void setStateManager(PublicStateManager manager) {
+        ToolsApiExtendedServiceImpl.publicStateManager = manager;
+    }
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiExtendedServiceImpl.toolDAO = toolDAO;
@@ -153,9 +158,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response toolsIndexGet(SecurityContext securityContext) {
-        List<Entry> published = getPublished();
-        if (!config.getEsConfiguration().getHostname().isEmpty() && !published.isEmpty()) {
-
+        if (!config.getEsConfiguration().getHostname().isEmpty()) {
+            List<Entry> published = getPublished();
             try (RestClient restClient = RestClient
                     .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
                     .build()) {
@@ -176,9 +180,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 restClient.performRequest("PUT", "/entry", Collections.emptyMap(), mappingEntity);
 
                 // Populate index
-
-                ElasticManager elasticManager = new ElasticManager();
-                elasticManager.bulkUpsert(published);
+                if (!published.isEmpty()) {
+                    publicStateManager.bulkUpsert(published);
+                }
             } catch (IOException e) {
                 LOG.error("Could not create elastic search index", e);
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);

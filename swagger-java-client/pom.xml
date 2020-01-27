@@ -22,7 +22,7 @@
     <name>swagger-java-client</name>
 
     <parent>
-        <version>1.7.5-SNAPSHOT</version>
+        <version>1.8.1-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -103,17 +103,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <systemProperties>
-                        <property>
-                            <name>loggerPath</name>
-                            <value>conf/log4j.properties</value>
-                        </property>
-                    </systemProperties>
-                    <argLine>-Xms512m -Xmx1500m</argLine>
-                    <parallel>methods</parallel>
-                    <forkMode>pertest</forkMode>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -193,7 +182,13 @@
             </plugin>
         </plugins>
     </build>
+
     <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+        </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
@@ -230,7 +225,6 @@
                     <artifactId>jackson-annotations</artifactId>
                 </exclusion>
             </exclusions>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -241,12 +235,11 @@
                     <artifactId>jackson-annotations</artifactId>
                 </exclusion>
             </exclusions>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.major.version}</version>
         </dependency>
 
         <dependency>
@@ -262,7 +255,7 @@
             <!-- used just for ordering since this uses the swagger.json created by dockstore-webservice during the build -->
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.7.5-SNAPSHOT</version>
+            <version>1.8.1-SNAPSHOT</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>

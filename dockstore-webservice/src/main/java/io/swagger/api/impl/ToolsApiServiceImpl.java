@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -59,6 +58,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
@@ -70,6 +70,7 @@ import io.swagger.model.ToolFile;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +95,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static WorkflowDAO workflowDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
+    private static TRSListener trsListener = null;
     private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
 
     public static void setToolDAO(ToolDAO toolDAO) {
@@ -104,6 +106,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static void setWorkflowDAO(WorkflowDAO workflowDAO) {
         ToolsApiServiceImpl.workflowDAO = workflowDAO;
         ToolsApiServiceImpl.workflowHelper = () -> workflowDAO;
+    }
+
+    public static void setTrsListener(TRSListener listener) {
+        ToolsApiServiceImpl.trsListener = listener;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -263,6 +269,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public Response toolsGet(String id, String alias, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
+
+        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(registry).append(organization).append(name)
+            .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
+            .append(user.orElseGet(User::new).getId()).build();
+        final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
+        if (trsResponses.isPresent()) {
+            return trsResponses.get().build();
+        }
+
         final List<Entry> all = new ArrayList<>();
 
         // short circuit id and alias filters, these are a bit weird because they have a max of one result
@@ -403,6 +418,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } catch (URISyntaxException | MalformedURLException e) {
             throw new CustomWebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
+        trsListener.loadTRSResponse(hashcode, responseBuilder);
         return responseBuilder.build();
     }
 
@@ -437,6 +453,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private Response getFileByToolVersionID(String registryId, String versionId, DescriptorLanguage.FileType type, String relativePath,
         boolean unwrap, Optional<User> user) {
+
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
@@ -445,13 +462,20 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             throw new RuntimeException(e);
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
+
         // check whether this is registered
         if (entry == null) {
             Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "incorrect id");
             return Response.status(status).build();
         }
 
-        final io.swagger.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config);
+        boolean showHiddenVersions = false;
+        if (user.isPresent() && !AuthenticatedResourceInterface
+                .userCannotRead(user.get(), entry)) {
+            showHiddenVersions = true;
+        }
+
+        final io.swagger.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config, showHiddenVersions);
 
         String finalVersionId = versionId;
         if (convertedTool == null || convertedTool.getVersions() == null) {
@@ -529,22 +553,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
                 }
             default:
-                Set<String> primaryDescriptors = new HashSet<>();
                 String path;
                 // figure out primary descriptors and use them if no relative path is specified
                 if (entry instanceof Tool) {
                     if (type == DOCKSTORE_WDL) {
                         path = ((Tag)entryVersion.get()).getWdlPath();
-                        primaryDescriptors.add(path);
                     } else if (type == DOCKSTORE_CWL) {
                         path = ((Tag)entryVersion.get()).getCwlPath();
-                        primaryDescriptors.add(path);
                     } else {
                         return Response.status(Status.NOT_FOUND).build();
                     }
                 } else {
                     path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
-                    primaryDescriptors.add(path);
                 }
                 String searchPath;
                 if (relativePath != null) {
@@ -567,9 +587,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
                             .prependIfMissing(relativize.toString(), "/");
                     ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
-                    if (toolDescriptor == null) {
-                        return Response.status(Status.NOT_FOUND).build();
-                    }
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }

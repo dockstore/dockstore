@@ -60,6 +60,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -173,11 +174,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private Map<String, Alias> aliases = new HashMap<>();
 
     // database timestamps
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
 
-    @Column()
+    @Column(nullable = false)
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
@@ -201,6 +202,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
+    @Column
+    @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 13)
+    private String conceptDoi;
+
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
@@ -212,6 +217,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         starredUsers = new TreeSet<>();
     }
 
+    @JsonIgnore
+    public abstract String getEntryPath();
+
+    @JsonIgnore
+    public abstract EntryType getEntryType();
+
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
     public Long getCheckerId() {
@@ -220,6 +231,16 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         } else {
             return checkerWorkflow.getId();
         }
+    }
+
+
+    public void setConceptDoi(String conceptDoi) {
+        this.conceptDoi = conceptDoi;
+    }
+
+    @JsonProperty
+    public String getConceptDoi() {
+        return conceptDoi;
     }
 
     public Map<String, Alias> getAliases() {
@@ -264,6 +285,16 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.description = description;
     }
 
+    /**
+     * Currently unused because too many entries do not have a default version set
+     */
+    public void syncMetadataWithDefault() {
+        T realDefaultVersion = this.getRealDefaultVersion();
+        if (realDefaultVersion != null) {
+            this.setMetadataFromVersion(realDefaultVersion);
+        }
+    }
+
     public String getDefaultVersion() {
         return defaultVersion;
     }
@@ -272,8 +303,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.defaultVersion = defaultVersion;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
+    @JsonIgnore
+    public T getRealDefaultVersion() {
+        return this.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(this.defaultVersion)).findFirst().orElse(null);
+    }
+
+    public void setAuthor(String newAuthor) {
+        this.author = newAuthor;
     }
 
     public Set<Label> getLabels() {
@@ -305,8 +341,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setEmail(String newEmail) {
+        this.email = newEmail;
     }
 
     /**
@@ -369,7 +405,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
-    
+
     public Set<User> getStarredUsers() {
         return starredUsers;
     }
@@ -396,17 +432,26 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
-        this.setDescription(entry.getDescription());
+        setMetadataFromEntry(entry);
         lastModified = entry.getLastModifiedDate();
-        this.setAuthor(entry.getAuthor());
-        this.setEmail(entry.getEmail());
-
         // Only overwrite the giturl if the new git url is not empty (no value)
         // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.
         //  Giturl will only be changed if the git repo from quay has an autobuild
         if (!entry.getGitUrl().isEmpty()) {
             gitUrl = entry.getGitUrl();
         }
+    }
+
+    public void setMetadataFromEntry(S entry) {
+        this.author = entry.getAuthor();
+        this.description = entry.getDescription();
+        this.email = entry.getEmail();
+    }
+
+    public void setMetadataFromVersion(Version version) {
+        this.author = version.getAuthor();
+        this.description = version.getDescription();
+        this.email = version.getEmail();
     }
 
     @JsonProperty("input_file_formats")
@@ -451,6 +496,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         for (Version version : this.getWorkflowVersions()) {
             if (Objects.equals(newDefaultVersion, version.getName())) {
                 this.setDefaultVersion(newDefaultVersion);
+                this.syncMetadataWithDefault();
                 return true;
             }
         }
@@ -499,6 +545,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
             return null;
         }
     }
+
+    @JsonIgnore
+    public abstract Event.Builder getEventBuilder();
 
     public Timestamp getDbCreateDate() {
         return dbCreateDate;

@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.7.5-SNAPSHOT</version>
+        <version>1.8.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-common</artifactId>
@@ -307,7 +307,7 @@
                     </execution>
                 </executions>
             </plugin>
-	    <plugin>
+            <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
@@ -321,7 +321,7 @@
                             <ignoreNonCompile>true</ignoreNonCompile>
 
                             <usedDependencies>
-				    <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
+                                <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

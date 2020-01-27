@@ -40,8 +40,13 @@ import org.junit.experimental.categories.Category;
 /**
  * @author jpatricia on 04/07/16.
  */
-@Category({ConfidentialTest.class, WorkflowTest.class})
+@Category({ ConfidentialTest.class, WorkflowTest.class })
 public class ToolsWorkflowTestIT extends BaseIT {
+
+    @Rule
+    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
     @Before
     @Override
@@ -49,29 +54,22 @@ public class ToolsWorkflowTestIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
-
-    private List<String> getJSON(String repo, String fileName, String descType, String branch)
-            throws ApiException {
-        final String TEST_WORKFLOW_NAME = "test-workflow";
+    private List<String> getJSON(String repo, String fileName, String descType, String branch) throws ApiException {
+        final String testWorkflowName = "test-workflow";
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_1_USERNAME, testingPostgres));
-        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
+        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, testWorkflowName, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
-        Assert.assertEquals(githubWorkflow.getWorkflowName(), TEST_WORKFLOW_NAME);
+        Assert.assertEquals(githubWorkflow.getWorkflowName(), testWorkflowName);
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
-        Assert.assertEquals(refresh.getWorkflowName(), TEST_WORKFLOW_NAME);
+        Assert.assertEquals(refresh.getWorkflowName(), testWorkflowName);
 
         Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch))
-                .findFirst();
+            .findFirst();
 
         //getting the dag json string
         return Lists.newArrayList(workflowApi.getTableToolContent(githubWorkflow.getId(), master.get().getId()));
@@ -109,11 +107,11 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have one tool with docker image, has " + countNode, 1, countNode);
-        Assert.assertTrue("tool should not have untar since it has no docker image", !strings.get(0).contains("untar"));
+        Assert.assertFalse("tool should not have untar since it has no docker image", strings.get(0).contains("untar"));
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(
-                "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\","
-                        + "\"link\":\"https://hub.docker.com/_/java\""));
+            "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\","
+                + "\"link\":\"https://hub.docker.com/_/java\""));
 
     }
 
@@ -132,8 +130,8 @@ public class ToolsWorkflowTestIT extends BaseIT {
         Assert.assertEquals("JSON should have two tools", countNode, 2);
         Assert.assertTrue("tool should have hello as id", strings.get(0).contains("hello"));
         Assert.assertTrue("hello docker and link should not be blank", strings.get(0).contains(
-                "\"id\":\"hello\"," + "\"file\":\"/hello.wdl\"," + "\"docker\":\"ubuntu:latest\","
-                        + "\"link\":\"https://hub.docker.com/_/ubuntu\""));
+            "\"id\":\"hello\"," + "\"file\":\"/hello.wdl\"," + "\"docker\":\"ubuntu:latest\","
+                + "\"link\":\"https://hub.docker.com/_/ubuntu\""));
 
     }
 
@@ -150,9 +148,9 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have no tools", countNode, 0);
-        Assert.assertTrue("ps should not exist", !strings.get(0).contains("\"id\":\"ps\""));
-        Assert.assertTrue("cgrep should not exist", !strings.get(0).contains("\"id\":\"cgrep\","));
-        Assert.assertTrue("wc should not exist", !strings.get(0).contains("\"id\":\"wc\""));
+        Assert.assertFalse("ps should not exist", strings.get(0).contains("\"id\":\"ps\""));
+        Assert.assertFalse("cgrep should not exist", strings.get(0).contains("\"id\":\"cgrep\","));
+        Assert.assertFalse("wc should not exist", strings.get(0).contains("\"id\":\"wc\""));
 
     }
 
@@ -172,7 +170,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
     @Test
     @Ignore("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
-    public void testWorkflowToolWDLMissingTask() throws IOException, ApiException {
+    public void testWorkflowToolWDLMissingTask() throws ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: missing_docker
@@ -197,11 +195,11 @@ public class ToolsWorkflowTestIT extends BaseIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have one tool", 1, countNode );
+        Assert.assertEquals("JSON should have one tool", 1, countNode);
         Assert.assertTrue("tool data should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains(
-                "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\","
-                        + "\"link\":\"https://hub.docker.com/_/java\""));
+            "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\","
+                + "\"link\":\"https://hub.docker.com/_/java\""));
     }
 
     @Test
@@ -220,11 +218,11 @@ public class ToolsWorkflowTestIT extends BaseIT {
         Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
         Assert.assertTrue("pass_filter should have docker link", strings.get(0).contains(
-                "\"id\":\"pass_filter\"," + "\"file\":\"pass-filter.cwl\"," + "\"docker\":\"pancancer/pcawg-oxog-tools\","
-                        + "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
+            "\"id\":\"pass_filter\"," + "\"file\":\"pass-filter.cwl\"," + "\"docker\":\"pancancer/pcawg-oxog-tools\","
+                + "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
         Assert.assertTrue("merge_vcfs should have docker link", strings.get(0).contains(
-                "\"id\":\"merge_vcfs\"," + "\"file\":\"vcf_merge.cwl\"," + "\"docker\":\"pancancer/pcawg-oxog-tools\","
-                        + "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
+            "\"id\":\"merge_vcfs\"," + "\"file\":\"vcf_merge.cwl\"," + "\"docker\":\"pancancer/pcawg-oxog-tools\","
+                + "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
     }
 
     @Test
@@ -236,7 +234,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         // Return: JSON string contains five tools, all have docker requirement, but no link to it since the link is invalid
 
         final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl",
-                "correct_docker_link");
+            "correct_docker_link");
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -244,10 +242,10 @@ public class ToolsWorkflowTestIT extends BaseIT {
         Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
         Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains(
-                "\"id\":\"pass_filter\"," + "\"file\":\"pass-filter.cwl\"," + "\"docker\":\"quay.io/pancancer/pcawg-oxog-tools\","
-                        + "\"link\":\"https://quay.io/repository/pancancer/pcawg-oxog-tools\""));
+            "\"id\":\"pass_filter\"," + "\"file\":\"pass-filter.cwl\"," + "\"docker\":\"quay.io/pancancer/pcawg-oxog-tools\","
+                + "\"link\":\"https://quay.io/repository/pancancer/pcawg-oxog-tools\""));
         Assert.assertTrue("merge_vcfs should not have docker link", strings.get(0).contains(
-                "\"id\":\"merge_vcfs\"," + "\"file\":\"vcf_merge.cwl\"," + "\"docker\":\"pancancer/pcawg-oxog-tools\","
-                        + "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
+            "\"id\":\"merge_vcfs\"," + "\"file\":\"vcf_merge.cwl\"," + "\"docker\":\"pancancer/pcawg-oxog-tools\","
+                + "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
     }
 }

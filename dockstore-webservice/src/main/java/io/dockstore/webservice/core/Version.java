@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -62,7 +63,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author dyuen
  */
 @Entity
-@ApiModel(value = "Base class for versions of entries in the Dockstore")
+@ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
@@ -126,12 +127,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private User versionEditor;
 
     // database timestamps
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     @CreationTimestamp
     @ApiModelProperty(position = 10)
     private Timestamp dbCreateDate;
 
-    @Column()
+    @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
     @ApiModelProperty(position = 11)
@@ -155,6 +156,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OrderBy("type")
     private final SortedSet<Validation> validations;
 
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "The images that belong to this version", position = 15)
+    private Set<Image> images = new HashSet<>();
+
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
@@ -162,18 +168,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         versionMetadata.parent = this;
     }
 
-    @ApiModelProperty(value = "Whether this version has been verified or not", position = 15)
+    @ApiModelProperty(value = "Whether this version has been verified or not", position = 16)
     public boolean isVerified() {
         return this.versionMetadata.verified;
     }
 
-    @ApiModelProperty(value = "Verified source for the version", position = 16)
+    @ApiModelProperty(value = "Verified source for the version", position = 17)
     @Deprecated
     public String getVerifiedSource() {
         return this.getVersionMetadata().verifiedSource;
     }
 
-    @ApiModelProperty(value = "Verified source for the version", position = 17)
+    @ApiModelProperty(value = "Verified source for the version", position = 18)
     public String[] getVerifiedSources() {
         if (this.getVersionMetadata().verifiedSource == null) {
             return new String[0];
@@ -212,6 +218,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         name = version.getName();
         referenceType = version.getReferenceType();
         frozen = version.isFrozen();
+        this.setVersionMetadata(version.getVersionMetadata());
     }
 
     public void clone(T version) {
@@ -285,6 +292,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.name = name;
     }
 
+    public Set<Image> getImages() {
+        return images;
+    }
+
+    public void setImages(Set<Image> images) {
+        this.images = images;
+    }
+
     public void updateVerified() {
         this.getVersionMetadata().verified = calculateVerified(this.getSourceFiles());
         this.getVersionMetadata().verifiedSource = calculateVerifiedSource(this.getSourceFiles());
@@ -332,8 +347,41 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return versionMetadata.doiStatus;
     }
 
+    @ApiModelProperty(position = 21)
+    public String getAuthor() {
+        return this.getVersionMetadata().author;
+    }
+
+    @ApiModelProperty(position = 22)
+    public String getDescription() {
+        return this.getVersionMetadata().description;
+    }
+
+    @ApiModelProperty(position = 23)
+    public DescriptionSource getDescriptionSource() {
+        return this.getVersionMetadata().descriptionSource;
+    }
+
+    @ApiModelProperty(position = 24)
+    public String getEmail() {
+        return this.getVersionMetadata().email;
+    }
+
     public void setDoiStatus(DOIStatus doiStatus) {
         this.getVersionMetadata().doiStatus = doiStatus;
+    }
+
+    public void setDescriptionAndDescriptionSource(String newDescription, DescriptionSource newDescriptionSource) {
+        this.getVersionMetadata().description = newDescription;
+        this.getVersionMetadata().descriptionSource = newDescriptionSource;
+    }
+
+    public void setAuthor(String newAuthor) {
+        this.getVersionMetadata().author = newAuthor;
+    }
+
+    public void setEmail(String newEmail) {
+        this.getVersionMetadata().email = newEmail;
     }
 
     public ReferenceType getReferenceType() {
@@ -415,8 +463,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return versionMetadata;
     }
 
-    public void setVersionMetadata(VersionMetadata versionMetadata) {
-        this.versionMetadata = versionMetadata;
+    /**
+     * Setting each property individually because we don't want the id
+     * @param newVersionMetadata    Newest metadata from source control
+     */
+    public void setVersionMetadata(VersionMetadata newVersionMetadata) {
+        this.setAuthor(newVersionMetadata.author);
+        this.setEmail(newVersionMetadata.email);
+        this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }

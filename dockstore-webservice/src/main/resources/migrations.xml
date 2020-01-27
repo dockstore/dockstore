@@ -27,6 +27,7 @@
     <include file="migrations.1.6.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.7.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.7.0.relinquish.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.1.8.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.samepaths.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.testworkflow.xml" relativeToChangelogFile="true"/>

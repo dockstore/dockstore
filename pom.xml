@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.7.5-SNAPSHOT</version>
+    <version>1.8.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -30,23 +30,27 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
-        <dropwizard.version>1.3.12</dropwizard.version>
+
+        <dropwizard.version>1.3.16</dropwizard.version>
+        <dockstore-client.version>1.8.0-beta.1</dockstore-client.version>
+
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
-        <swagger-annotations-version>1.5.19</swagger-annotations-version>
-        <openapi-annotations-version>2.0.6</openapi-annotations-version>
+        <swagger-annotations-version>1.5.23</swagger-annotations-version>
+        <openapi-annotations-version>2.0.9</openapi-annotations-version>
         <assertj.version>3.9.1</assertj.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.version>2.9.10.20191020</jackson.version>
+        <jackson.major.version>2.9.10</jackson.major.version>
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>2.5.25</aws.version>
         <powermock.version>2.0.0</powermock.version>
         <postgresql.version>42.2.5</postgresql.version>
-        <mockito.version>2.26.0</mockito.version>
+        <mockito.version>2.28.2</mockito.version>
         <cwlavro.version>2.0.4.2</cwlavro.version>
         <okhttp.version>3.14.2</okhttp.version>
         <slf4j.version>1.7.26</slf4j.version>
-        <swagger-ui.version>3.20.5</swagger-ui.version>
+        <swagger-ui.version>3.23.11</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
         <httpcomponents.version>4.5.8</httpcomponents.version>
@@ -57,7 +61,6 @@
         <cromwell.version>41</cromwell.version>
 
         <skipTests>false</skipTests>
-        <skipClientITs>true</skipClientITs>
         <skipITs>true</skipITs>
     </properties>
 
@@ -149,19 +152,16 @@
 
     <modules>
         <module>dockstore-common</module>
-        <module>dockstore-file-plugin-parent</module>
         <module>dockstore-language-plugin-parent</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
         <module>openapi-java-client</module>
         <module>swagger-java-quay-client</module>
         <module>swagger-java-bitbucket-client</module>
-        <module>dockstore-client</module>
         <module>swagger-java-sam-client</module>
         <module>dockstore-integration-testing</module>
         <module>dockstore-event-consumer</module>
         <module>reports</module>
-        <module>openapi-java-wes-client</module>
         <module>swagger-java-discourse-client</module>
         <module>swagger-java-zenodo-client</module>
     </modules>
@@ -249,7 +249,6 @@
                 <artifactId>commons-codec</artifactId>
                 <version>1.11</version>
             </dependency>
-
             <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson/jackson-bom -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
@@ -258,6 +257,12 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.major.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>com.github.jsonld-java</groupId>
@@ -274,11 +279,6 @@
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
                 <version>2.10.1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
             </dependency>
 
             <dependency>
@@ -488,13 +488,13 @@
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
-                <version>1.9.10</version>
+                <version>1.10.1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.9.12</version>
+                <version>1.10.1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -686,7 +686,7 @@
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.9.3</version>
+                <version>1.9.4</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -711,7 +711,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.18</version>
+                <version>1.19</version>
             </dependency>
             <dependency>
                 <groupId>javax.ws.rs</groupId>
@@ -834,7 +834,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.3</version>
+                    <version>0.8.4</version>
                 </plugin>
                 <plugin>
                     <groupId>com.googlecode.maven-download-plugin</groupId>
@@ -876,17 +876,20 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.17</version>
+                    <version>3.1.0</version>
                     <dependencies>
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>8.18</version>
+                            <version>8.24</version>
                         </dependency>
                     </dependencies>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
                         <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <includeTestResources>true</includeTestResources>
+                        <includeResources>true</includeResources>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -967,6 +970,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire.version}</version>
                     <configuration>
+                        <reportFormat>plain</reportFormat>
                         <excludedGroups>${excludeGroups}</excludedGroups>
                         <skipTests>${skipTests}</skipTests>
                         <!-- enforce that tests should be independent -->
@@ -980,6 +984,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-failsafe.version}</version>
                     <configuration>
+                        <reportFormat>plain</reportFormat>
                         <excludedGroups>${excludeGroups}</excludedGroups>
                         <!-- enforce that tests should be independent -->
                         <runOrder>random</runOrder>
@@ -993,12 +998,13 @@
                     <version>2.5.3</version>
                     <configuration>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <releaseProfiles>skipForRelease</releaseProfiles>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
                     <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>3.1.11</version>
+                    <version>3.1.12.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1057,7 +1063,7 @@
                 <plugin>
                     <groupId>io.swagger</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>2.4.5</version>
+                    <version>2.4.8</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1258,7 +1264,7 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest
+                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest
                 </excludeGroups>
             </properties>
 
@@ -1282,21 +1288,11 @@
             </build>
         </profile>
         <profile>
-            <id>toil-integration-tests</id>
-            <!-- run only tests that are relevant for toil (tests that use cwltool, cwlrunner, toil -->
-            <properties>
-                <skipTests>true</skipTests>
-                <skipITs>false</skipITs>
-                <groups>io.dockstore.common.ToilCompatibleTest,io.dockstore.common.ToilOnlyTest</groups>
-            </properties>
-        </profile>
-        <profile>
             <id>regression-integration-tests</id>
             <!-- run only regression tests-->
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <skipClientITs>true</skipClientITs>
                 <groups>io.dockstore.common.RegressionTest</groups>
             </properties>
         </profile>
@@ -1307,7 +1303,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.WorkflowTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1317,16 +1313,16 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.ToolTest</groups>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
-            <id>other-integration-tests</id>
+            <id>integration-tests</id>
             <!-- Only run integration tests not related to only tools or workflows. This is a catch all. -->
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1334,7 +1330,6 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <argLine>-Xmx2048m -Xms2048m</argLine>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
             </properties>
         </profile>
@@ -1344,8 +1339,6 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <skipClientITs>true</skipClientITs>
-                <excludeGroups>io.dockstore.common.MemoryIntensiveTest</excludeGroups>
             </properties>
             <build>
                 <plugins>
@@ -1365,27 +1358,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
-            <id>integration-tests</id>
-            <!-- run all integration tests -->
-            <properties>
-                <skipTests>true</skipTests>
-                <skipITs>false</skipITs>
-                <skipClientITs>false</skipClientITs>
-                <excludeGroups>io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest,io.dockstore.common.NonConfidentialTest</excludeGroups>
-            </properties>
-        </profile>
-        <profile>
-            <id>memory-intensive-unit-tests</id>
-            <!-- run all memory intensive non-integration tests -->
-            <properties>
-                <skipTests>false</skipTests>
-                <skipITs>true</skipITs>
-                <groups>io.dockstore.common.MemoryIntensiveTest</groups>
-                <!-- https://github.com/jasongilman/proto-repl/issues/282 -->
-                <argLine>-XX:+UseContainerSupport</argLine>
-            </properties>
         </profile>
         <profile>
             <id>coverage</id>
@@ -1423,6 +1395,13 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>skipForRelease</id>
+            <properties>
+                <!-- skip swagger kongchen generation on release and rely on checked in yaml -->
+                <swagger.skip>true</swagger.skip>
+            </properties>
         </profile>
     </profiles>
 </project>

@@ -18,11 +18,14 @@ package io.dockstore.webservice.core;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -32,6 +35,10 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(value = "BioWorkflow", description = "This describes one workflow in the dockstore")
 @Entity
 @Table(name = "workflow")
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from BioWorkflow c where c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate", query = "SELECT new io.dockstore.webservice.core.database.RSSWorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) from BioWorkflow c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc")
+})
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {
 
@@ -44,6 +51,10 @@ public class BioWorkflow extends Workflow {
     @JsonProperty("is_checker")
     @ApiModelProperty(position = 23)
     private boolean isChecker = false;
+
+    public EntryType getEntryType() {
+        return EntryType.WORKFLOW;
+    }
 
     @Override
     public Entry getParentEntry() {
@@ -72,5 +83,9 @@ public class BioWorkflow extends Workflow {
         } else {
             return null;
         }
+    }
+
+    public Event.Builder getEventBuilder() {
+        return new Event.Builder().withBioWorkflow(this);
     }
 }

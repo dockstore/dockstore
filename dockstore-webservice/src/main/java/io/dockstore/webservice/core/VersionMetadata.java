@@ -25,6 +25,8 @@ import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * Data about versions of a workflow/tool in Dockstore rather than about the original workflow.
  *
@@ -52,6 +54,22 @@ public class VersionMetadata {
     @Column(columnDefinition = "text default 'NOT_REQUESTED'", nullable = false)
     @Enumerated(EnumType.STRING)
     protected Version.DOIStatus doiStatus;
+
+    @Column
+    @ApiModelProperty(value = "This is the name of the author stated in the descriptor")
+    protected String author;
+
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
+    protected  String description;
+
+    @Column(name = "description_source")
+    @Enumerated(EnumType.STRING)
+    protected DescriptionSource descriptionSource;
+
+    @Column
+    @ApiModelProperty(value = "This is the email of the author stated in the descriptor")
+    protected String email;
 
     @MapsId
     @OneToOne

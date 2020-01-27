@@ -1,0 +1,184 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2020 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.8.0">
+    <changeSet author="waltershands (generated)" id="supportconceptDOI">
+        <addColumn tableName="service">
+            <column name="conceptdoi" type="varchar(255)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="conceptdoi" type="varchar(255)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="conceptdoi" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="frozen join table" author="coverbeck">
+        <sql dbms="postgresql">
+            alter table version_sourcefile enable row level security;
+            alter table version_sourcefile force row level security;
+            /* All users can read the table, but cannot update or delete if frozen */
+            create policy select_frozenfiles on version_sourcefile for select using(true);
+            /* Don't allow new source files to be added to an a frozen version */
+            create policy insert_frozenfiles on version_sourcefile for insert with check( not(select v.frozen from workflowversion v where id = versionid union select t.frozen from tag t where t.id = versionid));
+            /* Don't allow a new file to be added to the version in the join table if any of the source files are already frozen (easier to query this way instead of querying two tables like above) */
+            create policy update_frozenfiles on version_sourcefile for update using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
+            create policy delete_frozenfiles on version_sourcefile for delete using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
+        </sql>
+    </changeSet>
+    <changeSet author="waltershands (generated)" id="supportworkflowalias">
+        <createTable tableName="workflowversion_alias">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="workflowversion_alias_pkey"/>
+            </column>
+            <column name="content" type="TEXT"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="alias" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="workflowversion_alias_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="alias" constraintName="workflow_version_aliases_are_unique" tableName="workflowversion_alias"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="workflowversion_alias" constraintName="fk_workflowversion_alias" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="create_images_checksums">
+        <createTable tableName="entry_version_image">
+            <column name="versionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="entry_version_image_pkey"/>
+            </column>
+            <column name="imageid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="entry_version_image_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="image">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="image_pkey"/>
+            </column>
+            <column name="checksums" type="VARCHAR"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="image_id" type="VARCHAR(255)"/>
+            <column name="repository" type="VARCHAR(255)"/>
+            <column name="tag" type="VARCHAR(255)"/>
+        </createTable>
+        <addUniqueConstraint columnNames="imageid" constraintName="uk_imageid" tableName="entry_version_image"/>
+        <addForeignKeyConstraint baseColumnNames="imageid" baseTableName="entry_version_image" constraintName="fk_entryVersionImage" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="image"/>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="addVersionMetadata">
+        <addColumn tableName="version_metadata">
+            <column name="author" type="varchar(255)"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="description" type="text"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="description_source" type="varchar(255)"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="email" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="remove_all_stubs" author="agduncan">
+        <sql dbms="postgresql">
+            DELETE FROM entry_label WHERE entryid IN (SELECT id FROM workflow WHERE mode='STUB');
+            DELETE FROM entry_blacklistedversionnames WHERE entry_id IN (SELECT id FROM workflow WHERE mode='STUB');
+            DELETE FROM entry_defaultpaths WHERE entry_id IN (SELECT id FROM workflow WHERE mode='STUB');
+            DELETE FROM workflow WHERE mode='STUB' AND NOT ischecker;
+        </sql>
+    </changeSet>
+    <changeSet author="esoth" id="notifications">
+        <createTable tableName="notification">
+            <column name="id" type="bigserial">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="message" type="varchar(280)"/>
+            <column name="expiration" type="timestamp"/>
+            <column name="priority" type="varchar(255)"/>
+            <column name="type" type="varchar(255)"/>
+            <column name="dbcreatedate" type="timestamp"/>
+            <column name="dbupdatedate" type="timestamp"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="set_null_db_times" author="aduncan">
+        <sql dbms="postgresql">
+            UPDATE tool SET dbcreatedate=lastupdated WHERE dbcreatedate IS NULL;
+            UPDATE tool SET dbupdatedate=lastupdated WHERE dbupdatedate IS NULL;
+        </sql>
+        <update tableName="tool">
+            <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbcreatedate is null</where>
+        </update>
+        <update tableName="tool">
+            <column name="dbupdatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbupdatedate is null</where>
+        </update>
+
+        <sql dbms="postgresql">
+            UPDATE tag SET dbcreatedate=lastbuilt WHERE dbcreatedate IS NULL;
+            UPDATE tag SET dbupdatedate=lastbuilt WHERE dbupdatedate IS NULL;
+        </sql>
+        <update tableName="tag">
+            <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbcreatedate is null</where>
+        </update>
+        <update tableName="tag">
+            <column name="dbupdatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbupdatedate is null</where>
+        </update>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET dbcreatedate=lastupdated WHERE dbcreatedate IS NULL;
+            UPDATE workflow SET dbupdatedate=lastupdated WHERE dbupdatedate IS NULL;
+        </sql>
+        <update tableName="workflow">
+            <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbcreatedate is null</where>
+        </update>
+        <update tableName="workflow">
+            <column name="dbupdatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbupdatedate is null</where>
+        </update>
+
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET dbcreatedate=lastmodified WHERE dbcreatedate IS NULL;
+            UPDATE workflowversion SET dbupdatedate=lastmodified WHERE dbupdatedate IS NULL;
+        </sql>
+        <update tableName="workflowversion">
+            <column name="dbcreatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbcreatedate is null</where>
+        </update>
+        <update tableName="workflowversion">
+            <column name="dbupdatedate" value="2015-04-03T21:34:05Z"/>
+            <where>dbupdatedate is null</where>
+        </update>
+    </changeSet>
+    <changeSet id="add-not-null-db-dates" author="aduncan">
+        <addNotNullConstraint tableName="workflow" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="workflow" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="service" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="service" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="tool" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="tool" columnName="dbupdatedate"/>
+        
+        <addNotNullConstraint tableName="workflowversion" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="workflowversion" columnName="dbupdatedate"/>
+        <addNotNullConstraint tableName="tag" columnName="dbcreatedate"/>
+        <addNotNullConstraint tableName="tag" columnName="dbupdatedate"/>
+    </changeSet>
+</databaseChangeLog>
