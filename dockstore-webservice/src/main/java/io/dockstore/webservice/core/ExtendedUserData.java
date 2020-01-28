@@ -33,7 +33,7 @@ public class ExtendedUserData {
     private boolean canChangeUsername;
 
     public ExtendedUserData(User user, PermissionsInterface authorizer, UserDAO userDAO) {
-        Long publishedEntries = userDAO.findPublishedEntries(user.getUsername());
+        long publishedEntries = userDAO.findPublishedEntries(user.getUsername());
         try {
             this.canChangeUsername = publishedEntries == 0 && !authorizer.isSharing(user)
                     && user.getOrganizations().size() == 0;

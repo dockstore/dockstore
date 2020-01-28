@@ -76,9 +76,9 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return (User)query.uniqueResult();
     }
 
-    public Long findPublishedEntries(String username)  {
+    public long findPublishedEntries(String username)  {
         final Query query = namedQuery("io.dockstore.webservice.core.User.countPublishedEntries").setParameter("username", username);
-        return (Long)query.uniqueResult();
+        return (long)query.uniqueResult();
     }
 
     public boolean delete(User user) {
