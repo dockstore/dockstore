@@ -6893,6 +6893,10 @@ definitions:
         - "REMOVE_FROM_COLLECTION"
         - "ADD_TO_COLLECTION"
         - "ADD_VERSION_TO_ENTRY"
+      version:
+        position: 8
+        description: "Version associated with the event."
+        $ref: "#/definitions/Version"
     description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
