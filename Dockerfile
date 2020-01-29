@@ -21,7 +21,7 @@ RUN apt-get update \
 # install java
 RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update \
-    && apt-get install openjdk-11-jdk=11.0.6+10-1ubuntu1.1~18.04.1 -y --no-install-recommends \
+    && apt-get install openjdk-11-jdk -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
