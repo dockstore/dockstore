@@ -196,7 +196,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Get additional information about the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
     public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
-        return new ExtendedUserData(foundUser, this.authorizer);
+        return new ExtendedUserData(foundUser, this.authorizer, userDAO);
     }
 
     @POST
@@ -211,7 +211,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
         User user = userDAO.findById(authUser.getId());
-        if (!new ExtendedUserData(user, this.authorizer).canChangeUsername()) {
+        if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
         user.setUsername(username);
@@ -239,7 +239,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             @ApiParam(hidden = true) @Auth User authUser) {
         checkUser(authUser, authUser.getId());
         User user = userDAO.findById(authUser.getId());
-        if (!new ExtendedUserData(user, this.authorizer).canChangeUsername()) {
+        if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
         // Remove dangling sharing artifacts before getting rid of tokens
