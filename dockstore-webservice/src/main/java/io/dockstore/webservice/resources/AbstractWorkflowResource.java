@@ -295,59 +295,46 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Handle webhooks from GitHub apps (redirected from AWS Lambda)
+     * - Create services and workflows when necessary
+     * - Add or update version for corresponding service and workflow
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param username Username of user that triggered action
      * @param gitReference Tag reference from GitHub (ex. 1.0)
      * @param installationId GitHub App installation ID
-     * @return
+     * @return List of new and updated workflows
      */
     protected List<Workflow> githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (may not exist on Dockstore)
-        User sendingUser = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+        User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
         // Get Installation Access Token
         String installationAccessToken = gitHubAppSetup(installationId);
 
-        // Check that Dockstore.yml exists and is valid
+        // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
+        SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
 
-        // Validate Dockstore.yml and parse
-        SourceFile sourceFile = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
-
-        // Create entries and versions when relevant
-        return handleDockstoreYml(sourceFile, repository, gitReference, gitHubSourceCodeRepo, sendingUser);
-    }
-
-    /**
-     * Determine what action to take on the Dockstore YML file
-     * @param sourceFile Dockstore YAML File
-     * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
-     * @param gitHubSourceCodeRepo Source Code Repo
-     * @param user User that triggered action
-     * @return List of new and updated workflows
-     */
-    private List<Workflow> handleDockstoreYml(SourceFile sourceFile, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+        // Parse Dockstore YML and perform appropriate actions
         Yaml yaml = new Yaml();
         try {
-            Map<String, Object> map = yaml.load(sourceFile.getContent());
+            Map<String, Object> map = yaml.load(dockstoreYml.getContent());
             String classString = (String)map.get("class");
 
             if (Objects.equals("workflow", classString)) {
-                return handleDockstoreYmlWorkflow(sourceFile, repository, gitReference, map, gitHubSourceCodeRepo, user);
+                return createWorkflowsAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
             } else if (Objects.equals("service", classString)) {
-                return handleDockstoreYmlService(sourceFile, repository, gitReference, map, gitHubSourceCodeRepo, user);
+                return createServicesAndVersionsForDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
             }
         } catch (YAMLException | ClassCastException | NullPointerException ex) {
             String msg = "Invalid .dockstore.yml";
             LOG.warn(msg, ex);
         }
-        return null;
+        return new ArrayList<>();
     }
 
     /**
      * Create or retrieve workflows based on Dockstore.yml, add or update tag version
-     * @param sourceFile Dockstore YAML File
+     * @param dockstoreYml Dockstore YAML File
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Tag reference from GitHub (ex. 1.0)
      * @param yml Dockstore YML map
@@ -355,7 +342,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @return List of new and updated workflows
      */
-    private List<Workflow> handleDockstoreYmlWorkflow(SourceFile sourceFile, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+    private List<Workflow> createWorkflowsAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
         List<Map<String, Object>> workflows = (List<Map<String, Object>>)yml.get("workflows");
         List<Workflow> updatedWorkflows = new ArrayList<>();
         for (Map<String, Object> wf : workflows) {
@@ -369,12 +356,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             BioWorkflow workflowToUpdate;
             if (workflow.isEmpty()) {
-                // Create workflow
+                // Create a workflow
                 workflowToUpdate = (BioWorkflow)gitHubSourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
                 workflowToUpdate.setWorkflowName(workflowName);
                 workflowToUpdate.setMode(DOCKSTORE_YML);
-                workflowToUpdate.setDescriptorType(DescriptorLanguage.WDL);
-                // createdWorkflow.setDescriptorType(subclass);
+                if (Objects.equals(DescriptorLanguage.CWL.getLowerShortName(), subclass)) {
+                    workflowToUpdate.setDescriptorType(DescriptorLanguage.CWL);
+                } else if (Objects.equals(DescriptorLanguage.WDL.getLowerShortName(), subclass)) {
+                    workflowToUpdate.setDescriptorType(DescriptorLanguage.WDL);
+                } else if (Objects.equals(DescriptorLanguage.NEXTFLOW.getLowerShortName(), subclass)) {
+                    workflowToUpdate.setDescriptorType(DescriptorLanguage.NEXTFLOW);
+                } else {
+                    LOG.error("Invalid descriptor type " + subclass);
+                }
                 workflowToUpdate.setDefaultWorkflowPath(workflowPath);
                 if (user != null) {
                     workflowToUpdate.getUsers().add(user);
@@ -389,17 +383,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
             }
             try {
-                WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForBioWorkflow(repository, gitReference, workflowToUpdate);
-                SourceFile dockstoreYml = new SourceFile();
-                dockstoreYml.setAbsolutePath(sourceFile.getAbsolutePath());
-                dockstoreYml.setPath(sourceFile.getPath());
-                dockstoreYml.setContent(sourceFile.getContent());
-                dockstoreYml.setType(sourceFile.getType());
-                workflowVersion.addSourceFile(dockstoreYml);
+                WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, workflowToUpdate, dockstoreYml);
+                SourceFile dockstoreYmlClone = cloneSourceFile(dockstoreYml);
+                workflowVersion.addSourceFile(dockstoreYmlClone);
                 workflowToUpdate.addWorkflowVersion(workflowVersion);
                 updatedWorkflows.add(workflowToUpdate);
             } catch (IOException ex) {
-                LOG.info(ex.getLocalizedMessage());
+                LOG.error(ex.getLocalizedMessage());
             }
         }
         return updatedWorkflows;
@@ -407,7 +397,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Create or retrieve service based on Dockstore.yml, add or update tag version
-     * @param sourceFile Dockstore YAML File
+     * @param dockstoreYml Dockstore YAML File
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Tag reference from GitHub (ex. 1.0)
      * @param yml Dockstore YML map
@@ -415,7 +405,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @return List of new and updated services
      */
-    private List<Workflow> handleDockstoreYmlService(SourceFile sourceFile, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+    private List<Workflow> createServicesAndVersionsForDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
         List<Workflow> updatedServices = new ArrayList<>();
 
         String dockstoreWorkflowPath = "github.com/" + repository;
@@ -429,7 +419,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (user != null) {
                 serviceToUpdate.getUsers().add(user);
             }
-
             long serviceId = workflowDAO.create(serviceToUpdate);
             serviceToUpdate = (Service)workflowDAO.findById(serviceId);
         } else {
@@ -440,20 +429,30 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         try {
-            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForBioWorkflow(repository, gitReference, serviceToUpdate);
-            SourceFile dockstoreYml = new SourceFile();
-            dockstoreYml.setAbsolutePath(sourceFile.getAbsolutePath());
-            dockstoreYml.setPath(sourceFile.getPath());
-            dockstoreYml.setContent(sourceFile.getContent());
-            dockstoreYml.setType(sourceFile.getType());
-            workflowVersion.addSourceFile(dockstoreYml);
+            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, serviceToUpdate, dockstoreYml);
+            SourceFile dockstoreYmlClone = cloneSourceFile(dockstoreYml);
+            workflowVersion.addSourceFile(dockstoreYmlClone);
             serviceToUpdate.addWorkflowVersion(workflowVersion);
             updatedServices.add(serviceToUpdate);
         } catch (IOException ex) {
-            LOG.info(ex.getLocalizedMessage());
+            LOG.error(ex.getLocalizedMessage());
         }
 
         return updatedServices;
+    }
+
+    /**
+     * Clone a sourcefile
+     * @param sourceFile Sourcefile to clone
+     * @return Cloned sourcefile
+     */
+    private SourceFile cloneSourceFile(SourceFile sourceFile) {
+        SourceFile clonedSourceFile = new SourceFile();
+        clonedSourceFile.setAbsolutePath(sourceFile.getAbsolutePath());
+        clonedSourceFile.setPath(sourceFile.getPath());
+        clonedSourceFile.setContent(sourceFile.getContent());
+        clonedSourceFile.setType(sourceFile.getType());
+        return clonedSourceFile;
     }
 
     /**
