@@ -454,16 +454,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         DescriptorLanguage.FileType identifiedType = workflow.getFileType();
 
-        if (workflow.getMode() == WorkflowMode.SERVICE) {
-            version = setupServiceFilesForVersion(calculatedPath, ref, repository, version);
-            if (version == null) {
-                // Returning null implies either no yml
-                return null;
+        if (workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
+            // Will need to switch this to handle services as well
+            if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
+                version = setupServiceFilesForGitHubVersion(calculatedPath, ref, repository, version, workflow, existingDefaults);
+            } else {
+                version = setupWorkflowFilesForGitHubVersion(calculatedPath, ref, repository, version, workflow, existingDefaults);
             }
-        } else if (workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
-            version = setupWorkflowFilesForGitHubVersion(calculatedPath, ref, repository, version, workflow, existingDefaults);
             if (version == null) {
-                // Returning null implies either no yml
                 return null;
             }
         } else {
@@ -587,78 +585,95 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    /**
-     * Retrieves the dockstore.yml file from GitHub and pulls all files in the files array
-     * @param calculatedPath Path to dockstore.yml
-     * @param ref Triple containing reference name, branch date, and SHA
-     * @param repository GitHub repository object
-     * @param version Version to update
-     * @return Version with updated sourcefiles
-     */
-    private WorkflowVersion setupWorkflowFilesForGitHubVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults) {
+    private WorkflowVersion setupServiceFilesForGitHubVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults) {
         String dockstoreYmlContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
         if (dockstoreYmlContent != null) {
-            // Create file for .dockstore.yml
-            SourceFile dockstoreYml = new SourceFile();
-            dockstoreYml.setContent(dockstoreYmlContent);
-            dockstoreYml.setPath(calculatedPath);
-            dockstoreYml.setAbsolutePath(calculatedPath);
-            dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
-            version.getSourceFiles().add(dockstoreYml);
-
-            // Parse version specific information from .dockstore.yml
+            // Grab all files from files array
             Yaml yaml = new Yaml();
+            List<String> files;
             try {
                 Map<String, Object> map = yaml.load(dockstoreYmlContent);
-                String classString = (String)map.get("class");
-                if (!Objects.equals(classString, "workflow")) {
-                    String msg = "Expected class workflow but instead found " + classString;
-                    LOG.info(msg);
-                    return version;
-                }
-                List<Map<String, Object>> workflows = (List<Map<String, Object>>)map.get("workflows");
-                DescriptorLanguage.FileType identifiedType;
-                for (Map<String, Object> wf : workflows) {
-                    LOG.info("Workflow name is " + wf.get("name"));
-                    String primaryDescriptorPath = (String)wf.get("path");
-                    String subclass = (String)wf.get("subclass");
-                    String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
-                    if (fileContent != null) {
-                        SourceFile file = new SourceFile();
-                        file.setAbsolutePath(primaryDescriptorPath);
-                        file.setPath(primaryDescriptorPath);
-                        file.setContent(fileContent);
-                        if (Objects.equals(subclass, DescriptorLanguage.CWL.getLowerShortName())) {
-                            identifiedType = DescriptorLanguage.FileType.DOCKSTORE_CWL;
-                        } else if (Objects.equals(subclass, DescriptorLanguage.WDL.getLowerShortName())) {
-                            identifiedType = DescriptorLanguage.FileType.DOCKSTORE_WDL;
-                        } else if (Objects.equals(subclass, DescriptorLanguage.NEXTFLOW.getLowerShortName())) {
-                            identifiedType = DescriptorLanguage.FileType.NEXTFLOW_CONFIG;
-                        } else {
-                            String msg = subclass + " is not a valid subclass";
-                            LOG.info(msg);
-                            return version;
-                        }
-                        file.setType(identifiedType);
-                        version.setWorkflowPath(primaryDescriptorPath);
-
-                        version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
-                    } else {
-                        // File not found or null
-                        LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);
-                    }
-                }
-
+                Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
+                files = (List<String>)serviceObject.get("files");
                 // null catch due to .dockstore.yml files like https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/.dockstore.yml
             } catch (YAMLException | ClassCastException | NullPointerException ex) {
                 String msg = "Invalid .dockstore.yml";
                 LOG.warn(msg, ex);
                 return version;
             }
+            for (String filePath: files) {
+                String fileContent = this.readFileFromRepo(filePath, ref.getLeft(), repository);
+                if (fileContent != null) {
+                    SourceFile file = new SourceFile();
+                    file.setAbsolutePath(filePath);
+                    file.setPath(filePath);
+                    file.setContent(fileContent);
+                    file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
+                    version.getSourceFiles().add(file);
+                } else {
+                    // File not found or null
+                    LOG.info("Could not find file " + filePath + " in repo " + repository);
+                }
+            }
             return version;
         } else {
             return null;
         }
+    }
+
+    /**
+     *
+     * @param primaryDescriptorPath Path to primary descriptor
+     * @param ref Triple containing reference name, branch date, and SHA
+     * @param repository GitHub repository object
+     * @param version Version to update
+     * @return Version with updated sourcefiles
+     */
+    private WorkflowVersion setupWorkflowFilesForGitHubVersion(String primaryDescriptorPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults) {
+        String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
+        if (fileContent != null) {
+            SourceFile file = new SourceFile();
+            file.setAbsolutePath(primaryDescriptorPath);
+            file.setPath(primaryDescriptorPath);
+            file.setContent(fileContent);
+            DescriptorLanguage.FileType identifiedType;
+            if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.CWL)) {
+                identifiedType = DescriptorLanguage.FileType.DOCKSTORE_CWL;
+            } else if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.WDL)) {
+                identifiedType = DescriptorLanguage.FileType.DOCKSTORE_WDL;
+            } else if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.NEXTFLOW)) {
+                identifiedType = DescriptorLanguage.FileType.NEXTFLOW_CONFIG;
+            } else {
+                String msg = "Invalid type";
+                LOG.info(msg);
+                return version;
+            }
+            file.setType(identifiedType);
+            version.setWorkflowPath(primaryDescriptorPath);
+
+            version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
+        } else {
+            // File not found or null
+            LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);
+        }
+        return version;
+    }
+
+    public SourceFile getDockstoreYml(String repositoryId, String gitReference) {
+        String dockstoreYmlPath = "/.dockstore.yml";
+        GHRepository repository = getRepository(repositoryId);
+        String dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
+        if (dockstoreYmlContent != null) {
+            // Create file for .dockstore.yml
+            SourceFile dockstoreYml = new SourceFile();
+            dockstoreYml.setContent(dockstoreYmlContent);
+            dockstoreYml.setPath(dockstoreYmlPath);
+            dockstoreYml.setAbsolutePath(dockstoreYmlPath);
+            dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
+
+            return dockstoreYml;
+        }
+        return null;
     }
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
@@ -859,4 +874,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository);
     }
+
+    public WorkflowVersion createTagVersionForBioWorkflow(String repository, String gitReference, Workflow workflow) throws IOException {
+        GHRepository ghRepository = getRepository(repository);
+        return getTagVersion(ghRepository, gitReference, workflow);
+    }
+
 }

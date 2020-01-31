@@ -5564,6 +5564,46 @@ paths:
               $ref: "#/definitions/SharedWorkflows"
       security:
       - BEARER: []
+  /workflows/webhook/github/release:
+    post:
+      tags:
+      - "workflows"
+      summary: "Handle a release of a repository on GitHub"
+      description: "To be called by a lambda function. Error code 418 is returned\
+        \ to tell lambda not to retry."
+      operationId: "handleGitHubRelease"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "formData"
+        description: "Repository path"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Name of user on GitHub"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "formData"
+        description: "Git reference for new GitHub tag"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/BioWorkflow"
+      security:
+      - BEARER: []
   /workflows/{alias}/aliases:
     get:
       tags:

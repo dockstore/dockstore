@@ -5839,6 +5839,25 @@ paths:
                   $ref: "#/components/schemas/SharedWorkflows"
       security:
         - BEARER: []
+  /workflows/webhook/github/release:
+    post:
+      tags:
+        - workflows
+      summary: Handle a release of a repository on GitHub
+      description: To be called by a lambda function. Error code 418 is returned to tell
+        lambda not to retry.
+      operationId: handleGitHubRelease
+      requestBody:
+        $ref: "#/components/requestBodies/upsertServiceVersion"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BioWorkflow"
+      security:
+        - BEARER: []
   "/workflows/{alias}/aliases":
     get:
       tags:

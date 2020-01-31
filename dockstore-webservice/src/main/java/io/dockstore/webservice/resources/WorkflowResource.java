@@ -1825,6 +1825,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return (BioWorkflow)upsertVersion(repository, username, gitReference, installationId, WorkflowMode.DOCKSTORE_YML);
     }
 
+    @POST
+    @Path("/webhook/github/release")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "Handle a release of a repository on GitHub", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = BioWorkflow.class)
+    public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
+        @ApiParam(value = "Name of user on GitHub", required = true) @FormParam("username") String username,
+        @ApiParam(value = "Git reference for new GitHub tag", required = true) @FormParam("gitReference") String gitReference,
+        @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        return githubWebhookRelease(repository, username, gitReference, installationId);
+    }
+
+
     /**
      * Finds the tool by Id, and then checks that it exists and that the user has access to it
      * @param entryId Id of tool of interest

@@ -1,5 +1,7 @@
 package io.dockstore.webservice.resources;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -40,6 +43,8 @@ import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
@@ -286,6 +291,169 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         return entity;
+    }
+
+    /**
+     * Handle webhooks from GitHub apps (redirected from AWS Lambda)
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param username Username of user that triggered action
+     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param installationId GitHub App installation ID
+     * @return
+     */
+    protected List<Workflow> githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
+        // Retrieve the user who triggered the call (may not exist on Dockstore)
+        User sendingUser = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+
+        // Get Installation Access Token
+        String installationAccessToken = gitHubAppSetup(installationId);
+
+        // Check that Dockstore.yml exists and is valid
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
+
+        // Validate Dockstore.yml and parse
+        SourceFile sourceFile = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
+
+        // Create entries and versions when relevant
+        return handleDockstoreYml(sourceFile, repository, gitReference, gitHubSourceCodeRepo, sendingUser);
+    }
+
+    /**
+     * Determine what action to take on the Dockstore YML file
+     * @param sourceFile Dockstore YAML File
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitHubSourceCodeRepo Source Code Repo
+     * @param user User that triggered action
+     * @return List of new and updated workflows
+     */
+    private List<Workflow> handleDockstoreYml(SourceFile sourceFile, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+        Yaml yaml = new Yaml();
+        try {
+            Map<String, Object> map = yaml.load(sourceFile.getContent());
+            String classString = (String)map.get("class");
+
+            if (Objects.equals("workflow", classString)) {
+                return handleDockstoreYmlWorkflow(sourceFile, repository, gitReference, map, gitHubSourceCodeRepo, user);
+            } else if (Objects.equals("service", classString)) {
+                return handleDockstoreYmlService(sourceFile, repository, gitReference, map, gitHubSourceCodeRepo, user);
+            }
+        } catch (YAMLException | ClassCastException | NullPointerException ex) {
+            String msg = "Invalid .dockstore.yml";
+            LOG.warn(msg, ex);
+        }
+        return null;
+    }
+
+    /**
+     * Create or retrieve workflows based on Dockstore.yml, add or update tag version
+     * @param sourceFile Dockstore YAML File
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param yml Dockstore YML map
+     * @param gitHubSourceCodeRepo Source Code Repo
+     * @param user User that triggered action
+     * @return List of new and updated workflows
+     */
+    private List<Workflow> handleDockstoreYmlWorkflow(SourceFile sourceFile, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+        List<Map<String, Object>> workflows = (List<Map<String, Object>>)yml.get("workflows");
+        List<Workflow> updatedWorkflows = new ArrayList<>();
+        for (Map<String, Object> wf : workflows) {
+            String subclass = (String)wf.get("subclass");
+            String workflowName = (String)wf.get("name");
+            String workflowPath = (String)wf.get("path");
+
+            // Check for existing workflow
+            String dockstoreWorkflowPath = "github.com/" + repository + (!workflowName.isEmpty() ? "/" + workflowName : "");
+            Optional<BioWorkflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, BioWorkflow.class);
+
+            BioWorkflow workflowToUpdate;
+            if (workflow.isEmpty()) {
+                // Create workflow
+                workflowToUpdate = (BioWorkflow)gitHubSourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
+                workflowToUpdate.setWorkflowName(workflowName);
+                workflowToUpdate.setMode(DOCKSTORE_YML);
+                workflowToUpdate.setDescriptorType(DescriptorLanguage.WDL);
+                // createdWorkflow.setDescriptorType(subclass);
+                workflowToUpdate.setDefaultWorkflowPath(workflowPath);
+                if (user != null) {
+                    workflowToUpdate.getUsers().add(user);
+                }
+
+                long workflowId = workflowDAO.create(workflowToUpdate);
+                workflowToUpdate = (BioWorkflow)workflowDAO.findById(workflowId);
+            } else {
+                workflowToUpdate = workflow.get();
+                if (user != null) {
+                    workflowToUpdate.getUsers().add(user);
+                }
+            }
+            try {
+                WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForBioWorkflow(repository, gitReference, workflowToUpdate);
+                SourceFile dockstoreYml = new SourceFile();
+                dockstoreYml.setAbsolutePath(sourceFile.getAbsolutePath());
+                dockstoreYml.setPath(sourceFile.getPath());
+                dockstoreYml.setContent(sourceFile.getContent());
+                dockstoreYml.setType(sourceFile.getType());
+                workflowVersion.addSourceFile(dockstoreYml);
+                workflowToUpdate.addWorkflowVersion(workflowVersion);
+                updatedWorkflows.add(workflowToUpdate);
+            } catch (IOException ex) {
+                LOG.info(ex.getLocalizedMessage());
+            }
+        }
+        return updatedWorkflows;
+    }
+
+    /**
+     * Create or retrieve service based on Dockstore.yml, add or update tag version
+     * @param sourceFile Dockstore YAML File
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param yml Dockstore YML map
+     * @param gitHubSourceCodeRepo Source Code Repo
+     * @param user User that triggered action
+     * @return List of new and updated services
+     */
+    private List<Workflow> handleDockstoreYmlService(SourceFile sourceFile, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+        List<Workflow> updatedServices = new ArrayList<>();
+
+        String dockstoreWorkflowPath = "github.com/" + repository;
+        Optional<Service> service = workflowDAO.findByPath(dockstoreWorkflowPath, false, Service.class);
+
+        Service serviceToUpdate;
+        if (service.isEmpty()) {
+            // Create the service
+            serviceToUpdate = gitHubSourceCodeRepo.initializeService(repository);
+            serviceToUpdate.setMode(DOCKSTORE_YML);
+            if (user != null) {
+                serviceToUpdate.getUsers().add(user);
+            }
+
+            long serviceId = workflowDAO.create(serviceToUpdate);
+            serviceToUpdate = (Service)workflowDAO.findById(serviceId);
+        } else {
+            serviceToUpdate = service.get();
+            if (user != null) {
+                serviceToUpdate.getUsers().add(user);
+            }
+        }
+
+        try {
+            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForBioWorkflow(repository, gitReference, serviceToUpdate);
+            SourceFile dockstoreYml = new SourceFile();
+            dockstoreYml.setAbsolutePath(sourceFile.getAbsolutePath());
+            dockstoreYml.setPath(sourceFile.getPath());
+            dockstoreYml.setContent(sourceFile.getContent());
+            dockstoreYml.setType(sourceFile.getType());
+            workflowVersion.addSourceFile(dockstoreYml);
+            serviceToUpdate.addWorkflowVersion(workflowVersion);
+            updatedServices.add(serviceToUpdate);
+        } catch (IOException ex) {
+            LOG.info(ex.getLocalizedMessage());
+        }
+
+        return updatedServices;
     }
 
     /**
