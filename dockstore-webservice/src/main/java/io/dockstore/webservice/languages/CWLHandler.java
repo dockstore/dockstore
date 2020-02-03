@@ -753,7 +753,6 @@ public class CWLHandler implements LanguageHandlerInterface {
         return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
-    @SuppressWarnings("checkstyle:EmptyBlock")
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Collections.singletonList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
