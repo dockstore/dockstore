@@ -90,7 +90,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
         ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
-                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
+            new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
         HttpConnector okHttp3Connector =  new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
             this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
@@ -248,11 +248,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             final int pageSize = 30;
             return github.getMyself()
-                    .listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL)
-                    .asList()
-                    .stream()
-                    .map((GHRepository repository) -> repository.getFullName().split("/")[0])
-                    .collect(Collectors.toSet());
+                .listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL)
+                .asList()
+                .stream()
+                .map((GHRepository repository) -> repository.getFullName().split("/")[0])
+                .collect(Collectors.toSet());
         } catch (IOException e) {
             LOG.error("could not find organizations due to ", e);
             throw new CustomWebApplicationException("could not read organizations from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -271,7 +271,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException e) {
             throw new CustomWebApplicationException(
                 "Please recreate your GitHub token by unlinking and then relinking your GitHub account through the Accounts page. "
-                        + "We need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
+                    + "We need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
         }
         return true;
     }
@@ -329,7 +329,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults) {
+        Map<String, WorkflowVersion> existingDefaults) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -356,7 +356,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         for (Triple<String, Date, String> ref : references) {
             if (ref != null) {
                 WorkflowVersion version = setupWorkflowVersionsHelper(repositoryId, workflow, ref, existingWorkflow, existingDefaults,
-                        repository, null);
+                    repository, null);
                 if (version != null) {
                     workflow.addWorkflowVersion(version);
                 }
@@ -444,7 +444,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return WorkflowVersion for the given reference
      */
     private WorkflowVersion setupWorkflowVersionsHelper(String repositoryId, Workflow workflow, Triple<String, Date, String> ref, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, GHRepository repository, SourceFile dockstoreYml) {
+        Map<String, WorkflowVersion> existingDefaults, GHRepository repository, SourceFile dockstoreYml) {
         LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
         // Initialize the workflow version
         WorkflowVersion version = initializeWorkflowVersion(ref.getLeft(), existingWorkflow, existingDefaults);
@@ -481,7 +481,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
             return setupServiceFilesForGitHubVersion(ref, repository, version, dockstoreYml);
         } else {
-           return setupWorkflowFilesForGitHubVersion(calculatedPath, ref, repository, version, workflow, existingDefaults, dockstoreYml);
+            return setupWorkflowFilesForGitHubVersion(calculatedPath, ref, repository, version, workflow, existingDefaults, dockstoreYml);
         }
     }
 
@@ -533,7 +533,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                         // Only add test parameter file if it hasn't already been added
                         boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath())
-                                && sf.getType() == testJson.getType());
+                            && sf.getType() == testJson.getType());
                         if (!hasDuplicate) {
                             version.getSourceFiles().add(testJson);
                         }
@@ -600,6 +600,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private WorkflowVersion setupWorkflowFilesForGitHubVersion(String primaryDescriptorPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
         if (fileContent != null) {
+            // Add primary descriptor file and resolve imports
             SourceFile file = new SourceFile();
             file.setAbsolutePath(primaryDescriptorPath);
             file.setPath(primaryDescriptorPath);
@@ -620,6 +621,45 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             version.setWorkflowPath(primaryDescriptorPath);
 
             version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
+
+            // Add test parameter files
+            Yaml yaml = new Yaml();
+            List<String> testParameterPaths = null;
+            try {
+                Map<String, Object> map = yaml.load(dockstoreYml.getContent());
+                testParameterPaths = (List<String>)map.get("testParameterFiles");
+            } catch (YAMLException | ClassCastException | NullPointerException ex) {
+                String msg = "Invalid .dockstore.yml";
+                LOG.warn(msg, ex);
+            }
+
+            if (testParameterPaths != null) {
+                for (String testParameterPath : testParameterPaths) {
+                    String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
+                    if (testJsonContent != null) {
+                        SourceFile testJson = new SourceFile();
+
+                        if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
+                            testJson.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
+                        } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
+                            testJson.setType(DescriptorLanguage.FileType.WDL_TEST_JSON);
+                        } else if (identifiedType.equals(DescriptorLanguage.FileType.NEXTFLOW_CONFIG)) {
+                            testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
+                        }
+
+                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
+                        testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
+                        testJson.setContent(testJsonContent);
+
+                        // Only add test parameter file if it hasn't already been added
+                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch(
+                            (SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
+                        if (!hasDuplicate) {
+                            version.getSourceFiles().add(testJson);
+                        }
+                    }
+                }
+            }
         } else {
             // File not found or null
             LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);

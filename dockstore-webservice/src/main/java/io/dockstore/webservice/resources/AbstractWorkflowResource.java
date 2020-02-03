@@ -383,6 +383,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
             }
             try {
+                // Create version and add to workflow
                 WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, workflowToUpdate, dockstoreYml);
                 SourceFile dockstoreYmlClone = cloneSourceFile(dockstoreYml);
                 workflowVersion.addSourceFile(dockstoreYmlClone);
@@ -429,6 +430,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         try {
+            // Create version and add to service
             WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, serviceToUpdate, dockstoreYml);
             SourceFile dockstoreYmlClone = cloneSourceFile(dockstoreYml);
             workflowVersion.addSourceFile(dockstoreYmlClone);
