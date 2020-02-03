@@ -36,7 +36,7 @@ import javax.ws.rs.*;
 import javax.validation.constraints.*;
 {{/useBeanValidation}}
 
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/{{{baseName}}}")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL + "/{{{baseName}}}")
 {{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/consumes}} }){{/hasConsumes}}
 {{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/produces}} }){{/hasProduces}}
 @io.swagger.annotations.Api(description = "the {{{baseName}}} API")
