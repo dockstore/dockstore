@@ -737,8 +737,8 @@ public class CWLHandler implements LanguageHandlerInterface {
             } else if (!content.contains("class: Workflow")) {
                 isValid = false;
                 validationMessage = "A CWL workflow requires class: Workflow.";
-                if (content.contains("class: CommandLineTool")) {
-                    validationMessage += " This file contains class: CommandLineTool. Did you mean to register a tool?";
+                if (content.contains("class: CommandLineTool") || content.contains("class: ExpressionTool")) {
+                    validationMessage += " This file contains class: CommandLineTool or ExpressionTool. Did you mean to register a tool?";
                 }
             } else if (!this.isValidCwl(content, yaml)) {
                 isValid = false;
