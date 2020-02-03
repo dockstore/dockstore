@@ -1447,6 +1447,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/unstar")
+    @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Deprecated(since = "1.8.0")
+    public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
+        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+    }
+
     @GET
     @Path("/{workflowId}/starredUsers")
     @Timed
@@ -1785,5 +1798,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    /**
+     * Finds the tool by Id, and then checks that it exists and that the user has access to it
+     * @param entryId Id of tool of interest
+     * @param user User to authenticate
+     * @return Tool
+     */
+    private Workflow findWorkflowByIdAndCheckWorkflowAndUser(Long entryId, User user) {
+        Workflow workflow = workflowDAO.findById(entryId);
+        checkEntry(workflow);
+        checkUser(user, workflow);
+        return workflow;
     }
 }
