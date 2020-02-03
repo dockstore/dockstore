@@ -425,23 +425,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return workflow;
     }
 
-    @PUT
-    @Path("/path/workflow/{repository}/upsertVersion/")
-    @Timed
-    @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag to all workflows associated with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
-    public List<Workflow> upsertVersions(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String repository,
-            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        // Call common upsert code
-        String dockstoreWorkflowPath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.FULL, null);
-
-        return findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
-    }
-
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -1795,7 +1778,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     @POST
-    @Path("/webhook/github/release")
+    @Path("/github/release")
     @Timed
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork

@@ -54,67 +54,51 @@ tags:
     repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)
     and is considered final (not subject to change)
 paths:
-  /organizations/{organizationId}/collections/{collectionId}/description:
-    get:
+  /organizations/collections/{collectionId}/aliases:
+    post:
       tags:
       - organizations
-      summary: Retrieve a collection description by organization ID and collection
-        ID.
-      description: Retrieve a collection description by organization ID and collection
-        ID. Supports optional authentication.
-      operationId: getCollectionDescription
+      summary: Add aliases linked to a collection in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: addCollectionAliases_1
       parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
       - name: collectionId
         in: path
-        description: Collection ID.
+        description: Collection to modify.
         required: true
         schema:
           type: integer
           format: int64
+      - name: aliases
+        in: query
+        description: Comma-delimited list of aliases.
+        required: true
+        schema:
+          type: string
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/Aliasable'
       security:
       - bearer: []
-    put:
+  /organizations/collections/{alias}/aliases:
+    get:
       tags:
       - organizations
-      summary: Update a collection's description.
-      description: Update a collection's description. Description in markdown.
-      operationId: updateCollectionDescription
+      summary: Retrieve a collection by alias.
+      description: Retrieve a collection by alias.
+      operationId: getCollectionByAlias
       parameters:
-      - name: organizationId
+      - name: alias
         in: path
-        description: Organization ID.
+        description: Alias of the collection.
         required: true
         schema:
-          type: integer
-          format: int64
-      - name: collectionId
-        in: path
-        description: Collection ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Collections's description in markdown.
-        content:
-          '*/*':
-            schema:
-              type: string
-        required: true
+          type: string
       responses:
         default:
           description: default response
@@ -122,8 +106,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
   /organizations/{organizationId}/collections/{collectionId}:
     get:
       tags:
@@ -193,58 +175,6 @@ paths:
                 $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
-  /organizations/collections/{collectionId}/aliases:
-    post:
-      tags:
-      - organizations
-      summary: Add aliases linked to a collection in Dockstore.
-      description: Aliases are alphanumerical (case-insensitive and may contain internal
-        hyphens), given in a comma-delimited list.
-      operationId: addCollectionAliases_1
-      parameters:
-      - name: collectionId
-        in: path
-        description: Collection to modify.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: aliases
-        in: query
-        description: Comma-delimited list of aliases.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Aliasable'
-      security:
-      - bearer: []
-  /organizations/collections/{alias}/aliases:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve a collection by alias.
-      description: Retrieve a collection by alias.
-      operationId: getCollectionByAlias
-      parameters:
-      - name: alias
-        in: path
-        description: Alias of the collection.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
   /organizations/{organizationName}/collections/{collectionName}/name:
     get:
       tags:
@@ -402,6 +332,76 @@ paths:
           '*/*':
             schema:
               $ref: '#/components/schemas/Collection'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/collections/{collectionId}/description:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection description by organization ID and collection
+        ID.
+      description: Retrieve a collection description by organization ID and collection
+        ID. Supports optional authentication.
+      operationId: getCollectionDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update a collection's description.
+      description: Update a collection's description. Description in markdown.
+      operationId: updateCollectionDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Collections's description in markdown.
+        content:
+          '*/*':
+            schema:
+              type: string
         required: true
       responses:
         default:

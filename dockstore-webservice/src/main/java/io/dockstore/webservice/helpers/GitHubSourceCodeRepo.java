@@ -722,8 +722,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
 
             return dockstoreYml;
+        } else {
+            String msg = "Could not retrieve .dockstore.yml. Does the tag exist with a .dockstore.yml?";
+            LOG.warn(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
-        return null;
     }
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
@@ -869,44 +872,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Updates all the workflows with the new/updated version
-     * @param repository Github repostory name (ex. dockstore/dockstore-ui2)
-     * @param gitReference GitHub reference object
-     * @param workflows Workflows to upsert version
-     * @param workflowMode Mode of workflow
-     * @return workflows with new/updated version
-     */
-    public List<Workflow> upsertVersionForWorkflows(String repository, String gitReference, List<Workflow> workflows, WorkflowMode workflowMode) {
-        GHRepository ghRepository = getRepository(repository);
-        for (Workflow workflow : workflows) {
-
-            WorkflowVersion version;
-            try {
-                version = getTagVersion(ghRepository, gitReference, workflow, null);
-                if (version == null && (workflowMode == WorkflowMode.SERVICE || workflowMode == WorkflowMode.DOCKSTORE_YML)) {
-                    String msg = "Could not create a version. Please ensure that the dockstore.yml is present.";
-                    LOG.error(msg);
-                    throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-                }
-                workflow.addWorkflowVersion(version);
-            } catch (IOException ex) {
-                String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            }
-        }
-        return workflows;
-    }
-
-    /**
-     * Retrieves a tag of a workflow from GitHub
-     * @param ghRepository GitHub repository object
-     * @param gitReference GitHub tag reference (ex. foobar for refs/tags/foobar)
-     * @param workflow Workflow to upsert version to
+     * Retrieves a tag from GitHub and creates a version on Dockstore
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param workflow Workflow to add version to
      * @param dockstoreYml Dockstore YML sourcefile
-     * @return Workflow version corresponding to GitHub tag
+     * @return New or updated version
+     * @throws IOException
      */
-    private WorkflowVersion getTagVersion(GHRepository ghRepository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
+    public WorkflowVersion createTagVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
+        GHRepository ghRepository = getRepository(repository);
         String refName = "tags/" + gitReference;
         GHRef ghRef = ghRepository.getRef(refName);
 
@@ -924,19 +899,5 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml);
-    }
-
-    /**
-     * Retrieves a tag from GitHub and creates a version on Dockstore
-     * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
-     * @param workflow Workflow to add version to
-     * @param dockstoreYml Dockstore YML sourcefile
-     * @return New or updated version
-     * @throws IOException
-     */
-    public WorkflowVersion createTagVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
-        GHRepository ghRepository = getRepository(repository);
-        return getTagVersion(ghRepository, gitReference, workflow, dockstoreYml);
     }
 }

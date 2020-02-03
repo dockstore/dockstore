@@ -4737,6 +4737,49 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+  /workflows/github/release:
+    post:
+      tags:
+      - "workflows"
+      summary: "Handle a release of a repository on GitHub. Will create a workflow/service\
+        \ and version when necessary."
+      description: "To be called by a lambda function. Error code 418 is returned\
+        \ to tell lambda not to retry."
+      operationId: "handleGitHubRelease"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "formData"
+        description: "Repository path (ex. dockstore/dockstore-ui2)"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Name of user on GitHub who triggered action"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "formData"
+        description: "Git reference for a GitHub tag"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/hostedEntry:
     post:
       tags:
@@ -4977,82 +5020,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
-  /workflows/path/service:
-    post:
-      tags:
-      - "workflows"
-      summary: "Create a service for the given repository (ex. dockstore/dockstore-ui2)."
-      description: "To be called by a lambda function. Error code 418 is returned\
-        \ to tell lambda not to retry."
-      operationId: "addService"
-      consumes:
-      - "application/x-www-form-urlencoded"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "repository"
-        in: "formData"
-        description: "Repository path"
-        required: true
-        type: "string"
-      - name: "username"
-        in: "formData"
-        description: "Name of user on GitHub"
-        required: true
-        type: "string"
-      - name: "installationId"
-        in: "formData"
-        description: "GitHub installation ID"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
-  /workflows/path/service/upsertVersion:
-    post:
-      tags:
-      - "workflows"
-      summary: "Add or update a service version for a given GitHub tag for a service\
-        \ with the given repository (ex. dockstore/dockstore-ui2)."
-      description: "To be called by a lambda function. Error code 418 is returned\
-        \ to tell lambda not to retry."
-      operationId: "upsertServiceVersion"
-      consumes:
-      - "application/x-www-form-urlencoded"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "repository"
-        in: "formData"
-        description: "Repository path"
-        required: true
-        type: "string"
-      - name: "username"
-        in: "formData"
-        description: "Name of user on GitHub"
-        required: true
-        type: "string"
-      - name: "gitReference"
-        in: "formData"
-        description: "Git reference for new GitHub tag"
-        required: true
-        type: "string"
-      - name: "installationId"
-        in: "formData"
-        description: "GitHub installation ID"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Service"
-      security:
-      - BEARER: []
   /workflows/path/workflow/{repository}:
     get:
       tags:
@@ -5261,43 +5228,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
-  /workflows/path/workflow/{repository}/upsertVersion:
-    put:
-      tags:
-      - "workflows"
-      summary: "Add or update a workflow version for a given GitHub tag to all workflows\
-        \ associated with the given repository (ex. dockstore/dockstore-ui2)."
-      description: "To be called by a lambda function."
-      operationId: "upsertVersions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "repository"
-        in: "path"
-        description: "repository path"
-        required: true
-        type: "string"
-      - name: "gitReference"
-        in: "query"
-        description: "Git reference for new GitHub tag"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "body"
-        description: "This is here to appease Swagger. It requires PUT methods to\
-          \ have a body, even if it is empty. Please leave it empty."
-        required: false
-        schema:
-          type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /workflows/path/{repository}:
     get:
       tags:
@@ -5486,49 +5416,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SharedWorkflows"
-      security:
-      - BEARER: []
-  /workflows/webhook/github/release:
-    post:
-      tags:
-      - "workflows"
-      summary: "Handle a release of a repository on GitHub. Will create a workflow/service\
-        \ and version when necessary."
-      description: "To be called by a lambda function. Error code 418 is returned\
-        \ to tell lambda not to retry."
-      operationId: "handleGitHubRelease"
-      consumes:
-      - "application/x-www-form-urlencoded"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "repository"
-        in: "formData"
-        description: "Repository path"
-        required: true
-        type: "string"
-      - name: "username"
-        in: "formData"
-        description: "Name of user on GitHub who triggered action"
-        required: true
-        type: "string"
-      - name: "gitReference"
-        in: "formData"
-        description: "Git reference for a GitHub tag"
-        required: true
-        type: "string"
-      - name: "installationId"
-        in: "formData"
-        description: "GitHub installation ID"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/{alias}/aliases:

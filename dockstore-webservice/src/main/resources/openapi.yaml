@@ -5045,6 +5045,49 @@ paths:
                   $ref: "#/components/schemas/Workflow"
       security:
         - BEARER: []
+  /workflows/github/release:
+    post:
+      tags:
+        - workflows
+      summary: Handle a release of a repository on GitHub. Will create a
+        workflow/service and version when necessary.
+      description: To be called by a lambda function. Error code 418 is returned to tell
+        lambda not to retry.
+      operationId: handleGitHubRelease
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                repository:
+                  description: Repository path (ex. dockstore/dockstore-ui2)
+                  type: string
+                username:
+                  description: Name of user on GitHub who triggered action
+                  type: string
+                gitReference:
+                  description: Git reference for a GitHub tag
+                  type: string
+                installationId:
+                  description: GitHub installation ID
+                  type: string
+              required:
+                - repository
+                - username
+                - gitReference
+                - installationId
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER: []
   /workflows/hostedEntry:
     post:
       tags:
@@ -5299,83 +5342,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Entry"
-  /workflows/path/service:
-    post:
-      tags:
-        - workflows
-      summary: Create a service for the given repository (ex. dockstore/dockstore-ui2).
-      description: To be called by a lambda function. Error code 418 is returned to tell
-        lambda not to retry.
-      operationId: addService
-      requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                repository:
-                  description: Repository path
-                  type: string
-                username:
-                  description: Name of user on GitHub
-                  type: string
-                installationId:
-                  description: GitHub installation ID
-                  type: string
-              required:
-                - repository
-                - username
-                - installationId
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Workflow"
-      security:
-        - BEARER: []
-  /workflows/path/service/upsertVersion:
-    post:
-      tags:
-        - workflows
-      summary: Add or update a service version for a given GitHub tag for a service
-        with the given repository (ex. dockstore/dockstore-ui2).
-      description: To be called by a lambda function. Error code 418 is returned to tell
-        lambda not to retry.
-      operationId: upsertServiceVersion
-      requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                repository:
-                  description: Repository path
-                  type: string
-                username:
-                  description: Name of user on GitHub
-                  type: string
-                gitReference:
-                  description: Git reference for new GitHub tag
-                  type: string
-                installationId:
-                  description: GitHub installation ID
-                  type: string
-              required:
-                - repository
-                - username
-                - gitReference
-                - installationId
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Service"
-      security:
-        - BEARER: []
   "/workflows/path/workflow/{repository}":
     get:
       tags:
@@ -5601,40 +5567,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Workflow"
-  "/workflows/path/workflow/{repository}/upsertVersion":
-    put:
-      tags:
-        - workflows
-      summary: Add or update a workflow version for a given GitHub tag to all workflows
-        associated with the given repository (ex. dockstore/dockstore-ui2).
-      description: To be called by a lambda function.
-      operationId: upsertVersions
-      parameters:
-        - name: repository
-          in: path
-          description: repository path
-          required: true
-          schema:
-            type: string
-        - name: gitReference
-          in: query
-          description: Git reference for new GitHub tag
-          required: true
-          schema:
-            type: string
-      requestBody:
-        $ref: "#/components/requestBodies/updateLabelsBody"
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Workflow"
-      security:
-        - BEARER: []
   "/workflows/path/{repository}":
     get:
       tags:
@@ -5836,49 +5768,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SharedWorkflows"
-      security:
-        - BEARER: []
-  /workflows/webhook/github/release:
-    post:
-      tags:
-        - workflows
-      summary: Handle a release of a repository on GitHub. Will create a
-        workflow/service and version when necessary.
-      description: To be called by a lambda function. Error code 418 is returned to tell
-        lambda not to retry.
-      operationId: handleGitHubRelease
-      requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                repository:
-                  description: Repository path
-                  type: string
-                username:
-                  description: Name of user on GitHub who triggered action
-                  type: string
-                gitReference:
-                  description: Git reference for a GitHub tag
-                  type: string
-                installationId:
-                  description: GitHub installation ID
-                  type: string
-              required:
-                - repository
-                - username
-                - gitReference
-                - installationId
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Workflow"
       security:
         - BEARER: []
   "/workflows/{alias}/aliases":
