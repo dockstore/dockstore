@@ -327,6 +327,42 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return service;
     }
 
+    /**
+     * Initialize service object for GitHub repository
+     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     * @return Service
+     */
+    public Service initializeServiceFromGitHub(String repositoryId) {
+        Service service = initializeService(repositoryId);
+        service.setMode(WorkflowMode.DOCKSTORE_YML);
+        return service;
+    }
+
+    /**
+     * Initialize workflow object for GitHub repository
+     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     * @param subclass Subclass of the workflow
+     * @param workflowName Name of the workflow
+     * @param workflowPath Path of the primary descriptor
+     * @return Workflow
+     */
+    public BioWorkflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName, String workflowPath) {
+        BioWorkflow workflow = (BioWorkflow)initializeWorkflow(repositoryId, new BioWorkflow());
+        workflow.setWorkflowName(workflowName);
+        workflow.setMode(WorkflowMode.DOCKSTORE_YML);
+        if (Objects.equals(DescriptorLanguage.CWL.getLowerShortName(), subclass)) {
+            workflow.setDescriptorType(DescriptorLanguage.CWL);
+        } else if (Objects.equals(DescriptorLanguage.WDL.getLowerShortName(), subclass)) {
+            workflow.setDescriptorType(DescriptorLanguage.WDL);
+        } else if (Objects.equals(DescriptorLanguage.NEXTFLOW.getLowerShortName(), subclass)) {
+            workflow.setDescriptorType(DescriptorLanguage.NEXTFLOW);
+        } else {
+            LOG.error("Invalid descriptor type " + subclass);
+        }
+        workflow.setDefaultWorkflowPath(workflowPath);
+        return workflow;
+    }
+
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults) {

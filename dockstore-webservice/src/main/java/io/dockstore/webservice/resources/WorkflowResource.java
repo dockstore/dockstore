@@ -1803,7 +1803,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Repository path", required = true) @FormParam("repository") String repository,
+        @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
         @ApiParam(value = "Name of user on GitHub who triggered action", required = true) @FormParam("username") String username,
         @ApiParam(value = "Git reference for a GitHub tag", required = true) @FormParam("gitReference") String gitReference,
         @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
