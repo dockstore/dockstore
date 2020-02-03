@@ -346,25 +346,6 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
     }
 
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/{organizationId}/unstar")
-    @ApiOperation(value = "Unstar an organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @Operation(operationId = "unstarOrganization", summary = "Unstar an organization.", description = "Unstar an organization.", security = @SecurityRequirement(name = "bearer"))
-    public void unstarOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-                            @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
-        Organization organization = organizationDAO.findApprovedById(organizationId);
-        checkOrganization(organization);
-        Set<User> starredUsers = organization.getStarredUsers();
-        if (starredUsers.contains(user)) {
-            organization.removeStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException(
-                    "You cannot unstar the organization " + organization.getName() + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
     @GET
     @Path("/{organizationId}/starredUsers")
     @Timed

@@ -2318,28 +2318,6 @@ paths:
             uniqueItems: true
       security:
       - BEARER: []
-  /containers/{containerId}/unstar:
-    delete:
-      tags:
-      - "containers"
-      summary: "Unstar a tool."
-      description: ""
-      operationId: "unstarEntry"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "containerId"
-        in: "path"
-        description: "Tool to unstar."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
-      deprecated: true
   /containers/{containerId}/updateTagPaths:
     put:
       tags:
@@ -3618,27 +3596,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/User"
-  /organizations/{organizationId}/unstar:
-    delete:
-      tags:
-      - "organizations"
-      summary: "Unstar an organization."
-      description: ""
-      operationId: "unstarOrganization"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "organizationId"
-        in: "path"
-        description: "Organization ID."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
   /organizations/{organizationId}/user:
     post:
       tags:
@@ -6147,28 +6104,6 @@ paths:
             type: "string"
       security:
       - BEARER: []
-  /workflows/{workflowId}/unstar:
-    delete:
-      tags:
-      - "workflows"
-      summary: "Unstar a workflow."
-      description: ""
-      operationId: "unstarEntry"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "workflowId"
-        in: "path"
-        description: "Workflow to unstar."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
-      deprecated: true
   /workflows/{workflowId}/users:
     get:
       tags:

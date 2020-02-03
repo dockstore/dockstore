@@ -1538,12 +1538,12 @@ public class OrganizationIT extends BaseIT {
             Assert.assertTrue(ex.getMessage().contains("You cannot star the organization"));
         }
 
-        organizationsApi.unstarOrganization(organization.getId());
+        organizationsApi.starOrganization(organization.getId(), new StarRequest().star(false));
         assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
 
         // Should not be able to unstar twice
         try {
-            organizationsApi.unstarOrganization(organization.getId());
+            organizationsApi.starOrganization(organization.getId(), new StarRequest().star(false));
             Assert.fail();
         } catch (ApiException ex) {
             Assert.assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
