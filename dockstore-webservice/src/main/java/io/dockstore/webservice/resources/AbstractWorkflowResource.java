@@ -269,6 +269,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     LOG.warn(msg);
                     throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
                 }
+            } else {
+                String msg = versionString + " is not a valid version";
+                LOG.warn(msg);
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
         } catch (YAMLException | ClassCastException | NullPointerException ex) {
             String msg = "Invalid .dockstore.yml";
