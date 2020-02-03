@@ -736,7 +736,10 @@ public class CWLHandler implements LanguageHandlerInterface {
                 validationMessage = "Primary descriptor is empty.";
             } else if (!content.contains("class: Workflow")) {
                 isValid = false;
-                validationMessage = "Requires class: Workflow.";
+                validationMessage = "A CWL workflow requires class: Workflow.";
+                if (content.contains("class: CommandLineTool")) {
+                    validationMessage += " This file contains class: CommandLineTool. Did you mean to register a tool?";
+                }
             } else if (!this.isValidCwl(content, yaml)) {
                 isValid = false;
                 validationMessage = "Invalid CWL version.";
@@ -750,6 +753,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
+    @SuppressWarnings("checkstyle:EmptyBlock")
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<DescriptorLanguage.FileType> fileTypes = new ArrayList<>(Collections.singletonList(DescriptorLanguage.FileType.DOCKSTORE_CWL));
@@ -768,7 +772,10 @@ public class CWLHandler implements LanguageHandlerInterface {
                 validationMessage = "Primary CWL descriptor is empty.";
             } else if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
                 isValid = false;
-                validationMessage = "Requires class: CommandLineTool or ExpressionTool.";
+                validationMessage = "A CWL tool requires class: CommandLineTool or ExpressionTool.";
+                if (content.contains("class: Workflow")) {
+                    validationMessage += " This file contains class: Workflow. Did you mean to register a workflow?";
+                }
             } else if (!this.isValidCwl(content, yaml)) {
                 isValid = false;
                 validationMessage = "Invalid CWL version.";

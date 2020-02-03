@@ -53,15 +53,36 @@ class WdlBridge {
   }
 
   /**
+   *
+   * Validates that the workflow or tool given by filePath has a workflow declaration
+   * @param filePath absolute path to file
+   */
+  @throws(classOf[WdlParser.SyntaxError])
+  def validateWorkflowDeclaration(filePath: String, sourceFilePath: String) = {
+    val bundle = getBundle(filePath, sourceFilePath)
+
+    if (!bundle.primaryCallable.isDefined) {
+      throw new WdlParser.SyntaxError("Workflow is missing a workflow declaration.")
+    }
+  }
+
+  /**
     * Validates the workflow given by filePath
     * @param filePath absolute path to file
     */
   @throws(classOf[WdlParser.SyntaxError])
   def validateWorkflow(filePath: String, sourceFilePath: String) = {
-    val bundle = getBundle(filePath, sourceFilePath)
+    val executableCallable = convertFilePathToExecutableCallable(filePath, sourceFilePath)
+    val numberOfTaskCalls = executableCallable.taskCallNodes.seq.size
 
-    if (!bundle.primaryCallable.isDefined) {
-      throw new WdlParser.SyntaxError("Workflow is missing a workflow declaration.")
+    validateWorkflowDeclaration(filePath, sourceFilePath)
+
+    if (numberOfTaskCalls <= 1) {
+      val validationMessage = new StringBuilder("A WDL workflow must call more than one task.")
+      if (numberOfTaskCalls == 1) {
+        validationMessage.append(" This file only calls one task. Did you mean to register a tool?")
+      }
+      throw new WdlParser.SyntaxError(validationMessage.toString())
     }
   }
 
@@ -71,11 +92,16 @@ class WdlBridge {
     */
   @throws(classOf[WdlParser.SyntaxError])
   def validateTool(filePath: String, sourceFilePath: String) = {
-    validateWorkflow(filePath, sourceFilePath)
+    validateWorkflowDeclaration(filePath, sourceFilePath)
     val executableCallable = convertFilePathToExecutableCallable(filePath, sourceFilePath)
+    val numberOfTaskCalls = executableCallable.taskCallNodes.seq.size
 
-    if (executableCallable.taskCallNodes.seq.size > 1) {
-      throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
+    if (numberOfTaskCalls > 1 || numberOfTaskCalls == 0) {
+      val validationMessage = new StringBuilder("A WDL tool must call one task.")
+      if (numberOfTaskCalls > 1) {
+        validationMessage.append(" This file calls more than one task. Did you mean to register a workflow?")
+      }
+      throw new WdlParser.SyntaxError(validationMessage.toString())
     }
 
     executableCallable.taskCallNodes

@@ -168,12 +168,12 @@ public class ValidationIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
 
-        // change to valid tool - should be valid
+        // change to valid tool - should be invalid
         workflow.setWorkflowPath("/validTool.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());
-        Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
+        Assert.assertFalse("Should be invalid", isWorkflowVersionValid(workflow, "master"));
 
         // change back to valid workflow - should be valid
         workflow.setWorkflowPath("/validWorkflow.wdl");
