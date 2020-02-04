@@ -1053,7 +1053,9 @@
                     <prettyPrint>true</prettyPrint>
                     <resourcePackages>
                         <package>io.swagger.api</package>
+                        <package>io.openapi.api</package>
                         <package>io.swagger.model</package>
+                        <package>io.openapi.model</package>
                         <package>io.dockstore.webservice.resources</package>
                         <package>io.dockstore.webservice.resources.rss</package>
                         <package>io.dockstore.webservice.resources.proposedGA4GH</package>
@@ -1073,65 +1075,70 @@
             <plugin>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
-                <!-- TODO: this sucks, there's a lot of repeated config here but the plugin doesn't let me override just the parts that changed -->
+                <configuration>
+                    <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
+                    <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5_gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
+                    <language>jaxrs</language>
+                    <configOptions>
+                        <dateLibrary>legacy</dateLibrary>
+                        <java8>true</java8>
+                        <useRuntimeException>true</useRuntimeException>
+                        <modelPackage>io.swagger.model</modelPackage>
+                        <apiPackage>io.swagger.api</apiPackage>
+                    </configOptions>
+                    <generateApis>true</generateApis>
+                    <generateApiTests>false</generateApiTests>
+                    <generateApiDocumentation>false</generateApiDocumentation>
+                    <generateModels>true</generateModels>
+                    <generateModelTests>false</generateModelTests>
+                    <generateModelDocumentation>false</generateModelDocumentation>
+                    <generateSupportingFiles>true</generateSupportingFiles>
+                    <withXml>true</withXml>
+                    <library>jersey2</library>
+                    <ignoreFileOverride>${pom.basedir}/src/main/resources/swagger-templates/swagger-codegen-ignore</ignoreFileOverride>
+                    <templateDirectory>${pom.basedir}/src/main/resources/swagger-templates</templateDirectory>
+                </configuration>
                 <executions>
                     <execution>
                         <id>v2-beta</id>
-                        <configuration>
-                            <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
-                            <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-                            <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5_gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
-                            <language>jaxrs</language>
-                            <configOptions>
-                                <dateLibrary>legacy</dateLibrary>
-                                <java8>true</java8>
-                                <useRuntimeException>true</useRuntimeException>
-                                <modelPackage>io.swagger.model</modelPackage>
-                                <apiPackage>io.swagger.api</apiPackage>
-                            </configOptions>
-                            <generateApis>true</generateApis>
-                            <generateApiTests>false</generateApiTests>
-                            <generateApiDocumentation>false</generateApiDocumentation>
-                            <generateModels>true</generateModels>
-                            <generateModelTests>false</generateModelTests>
-                            <generateModelDocumentation>false</generateModelDocumentation>
-                            <generateSupportingFiles>true</generateSupportingFiles>
-                            <withXml>true</withXml>
-                            <library>jersey2</library>
-                            <ignoreFileOverride>${pom.basedir}/src/main/resources/swagger-templates/swagger-codegen-ignore</ignoreFileOverride>
-                            <templateDirectory>${pom.basedir}/src/main/resources/swagger-templates</templateDirectory>
-                        </configuration>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                     </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.swagger.codegen.v3</groupId>
+                <artifactId>swagger-codegen-maven-plugin</artifactId>
+                <version>3.0.16</version>
+                <configuration>
+                    <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
+                    <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
+                    <inputSpec>https://raw.githubusercontent.com/ga4gh/tool-registry-service-schemas/2.0.0/openapi/ga4gh-tool-discovery.yaml</inputSpec>
+                    <language>jaxrs-jersey</language>
+                    <configOptions>
+                        <dateLibrary>legacy</dateLibrary>
+                        <java8>true</java8>
+                        <useRuntimeException>true</useRuntimeException>
+                        <modelPackage>io.openapi.model</modelPackage>
+                        <apiPackage>io.openapi.api</apiPackage>
+                    </configOptions>
+                    <generateApis>true</generateApis>
+                    <generateApiTests>false</generateApiTests>
+                    <generateApiDocumentation>false</generateApiDocumentation>
+                    <generateModels>true</generateModels>
+                    <generateModelTests>false</generateModelTests>
+                    <generateModelDocumentation>false</generateModelDocumentation>
+                    <generateSupportingFiles>true</generateSupportingFiles>
+                    <withXml>true</withXml>
+                    <library>jersey2</library>
+                    <ignoreFileOverride>${pom.basedir}/src/main/resources/openapi-templates/swagger-codegen-ignore</ignoreFileOverride>
+                    <templateDirectory>${pom.basedir}/src/main/resources/openapi-templates</templateDirectory>
+                </configuration>
+                <executions>
                     <execution>
                         <id>v2-final</id>
-                        <!-- TODO: consider using the v3 version of this, seems glitchy currently -->
-                        <configuration>
-                            <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
-                            <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-                            <inputSpec>https://raw.githubusercontent.com/ga4gh/tool-registry-service-schemas/2.0.0/openapi/ga4gh-tool-discovery.yaml</inputSpec>
-                            <language>jaxrs</language>
-                            <configOptions>
-                                <dateLibrary>legacy</dateLibrary>
-                                <java8>true</java8>
-                                <useRuntimeException>true</useRuntimeException>
-                                <modelPackage>io.openapi.model</modelPackage>
-                                <apiPackage>io.openapi.api</apiPackage>
-                            </configOptions>
-                            <generateApis>true</generateApis>
-                            <generateApiTests>false</generateApiTests>
-                            <generateApiDocumentation>false</generateApiDocumentation>
-                            <generateModels>true</generateModels>
-                            <generateModelTests>false</generateModelTests>
-                            <generateModelDocumentation>false</generateModelDocumentation>
-                            <generateSupportingFiles>true</generateSupportingFiles>
-                            <withXml>true</withXml>
-                            <library>jersey2</library>
-                            <ignoreFileOverride>${pom.basedir}/src/main/resources/openapi-templates/swagger-codegen-ignore</ignoreFileOverride>
-                            <templateDirectory>${pom.basedir}/src/main/resources/openapi-templates</templateDirectory>
-                        </configuration>
                         <goals>
                             <goal>generate</goal>
                         </goals>
@@ -1162,7 +1169,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <file>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</file>
+                    <filesToInclude>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/openapi/api/ToolsApi.java,${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</filesToInclude>
                     <regex>false</regex>
                     <replacements>
                         <replacement>

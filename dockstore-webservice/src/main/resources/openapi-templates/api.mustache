@@ -2,12 +2,27 @@ package {{package}};
 
 import java.util.Optional;
 
-import {{modelPackage}}.*;
+
+{{#hasModel}}import {{modelPackage}}.*;{{/hasModel}}
 import {{package}}.{{classname}}Service;
 import {{package}}.factories.{{classname}}ServiceFactory;
 
+{{#useOas2}}
 import io.swagger.annotations.ApiParam;
 import io.swagger.jaxrs.*;
+{{/useOas2}}
+{{^useOas2}}
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+{{/useOas2}}
 
 {{#imports}}import {{import}};
 {{/imports}}
@@ -26,6 +41,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
+
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -36,11 +52,14 @@ import javax.ws.rs.*;
 import javax.validation.constraints.*;
 {{/useBeanValidation}}
 
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL + "/{{{baseName}}}")
+{{#apiBasePath}}@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL +"/{{{apiBasePath}}}"){{/apiBasePath}}
+{{^apiBasePath}}@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_FINAL +"/{{{baseName}}}"){{/apiBasePath}}
 {{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/consumes}} }){{/hasConsumes}}
 {{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/produces}} }){{/hasProduces}}
+{{#useOas2}}
 @io.swagger.annotations.Api(description = "the {{{baseName}}} API")
-@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV20", description = ResourceConstants.GA4GHV20)
+{{/useOas2}}
+@Tag(name = "GA4GHV20", description = ResourceConstants.GA4GHV20)
 {{>generatedAnnotation}}
 {{#operations}}
 public class {{classname}}  {
@@ -68,25 +87,41 @@ public class {{classname}}  {
    }
 
 {{#operation}}
+{{#contents}}
     @{{httpMethod}}
     @UnitOfWork
     {{#subresourceOperation}}@Path("{{{path}}}"){{/subresourceOperation}}
     {{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/consumes}} }){{/hasConsumes}}
     {{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/produces}} }){{/hasProduces}}
+    {{#useOas2}}
     @io.swagger.annotations.ApiOperation(value = "{{{summary}}}", notes = "{{{notes}}}", response = {{{returnBaseType}}}.class{{#returnContainer}}, responseContainer = "{{{returnContainer}}}"{{/returnContainer}}{{#hasAuthMethods}}, authorizations = {
         {{#authMethods}}@io.swagger.annotations.Authorization(value = "{{name}}"{{#isOAuth}}, scopes = {
             {{#scopes}}@io.swagger.annotations.AuthorizationScope(scope = "{{scope}}", description = "{{description}}"){{#hasMore}},
             {{/hasMore}}{{/scopes}}
         }{{/isOAuth}}){{#hasMore}},
         {{/hasMore}}{{/authMethods}}
-    }{{/hasAuthMethods}}, tags={ {{#vendorExtensions.x-tags}}"{{tag}}",{{/vendorExtensions.x-tags}} })
+    }{{/hasAuthMethods}})
     @io.swagger.annotations.ApiResponses(value = { {{#responses}}
         @io.swagger.annotations.ApiResponse(code = {{{code}}}, message = "{{{message}}}", response = {{{baseType}}}.class{{#containerType}}, responseContainer = "{{{containerType}}}"{{/containerType}}){{#hasMore}},
         {{/hasMore}}{{/responses}} })
-    public Response {{nickname}}({{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}},{{/allParams}}@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext, @ApiParam(hidden = true) @Auth Optional<User> user)
+    {{/useOas2}}
+    {{^useOas2}}
+    @Operation(summary = "{{{summary}}}", description = "{{{notes}}}"{{#hasAuthMethods}}, security = {
+        {{#authMethods}}@SecurityRequirement(name = "{{name}}"{{#isOAuth}}, scopes = {
+            {{#scopes}}"{{scope}}"{{#hasMore}},
+            {{/hasMore}}{{/scopes}}
+        }{{/isOAuth}}){{#hasMore}},
+        {{/hasMore}}{{/authMethods}}
+    }{{/hasAuthMethods}}, tags={"GA4GHV20"})
+    @ApiResponses(value = { {{#responses}}
+        @ApiResponse(responseCode = "{{{code}}}", description = "{{{message}}}"{{^vendorExtensions.x-java-is-response-void}}, content = @Content({{^containerType}}schema = @Schema(implementation = {{{baseType}}}.class)){{/containerType}}{{#containerType}}array = @ArraySchema(schema = @Schema(implementation = {{{baseType}}}.class))){{/containerType}}{{/vendorExtensions.x-java-is-response-void}}){{#hasMore}},
+        {{/hasMore}}{{/responses}} })
+    {{/useOas2}}
+    public Response {{nickname}}({{#parameters}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}}{{>cookieParams}},{{/parameters}}@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext, @Parameter(hidden = true) @Auth Optional<User> user)
     throws NotFoundException {
-        return delegate.{{nickname}}({{#allParams}}{{#isFile}}{{paramName}}InputStream, {{paramName}}Detail{{/isFile}}{{^isFile}}{{paramName}}{{/isFile}},{{/allParams}}securityContext, containerContext, user);
+        return delegate.{{nickname}}({{#parameters}}{{#isBinary}}{{paramName}}InputStream, {{paramName}}Detail{{/isBinary}}{{^isBinary}}{{paramName}}{{/isBinary}},{{/parameters}}securityContext, containerContext, user);
     }
+{{/contents}}
 {{/operation}}
 }
 {{/operations}}

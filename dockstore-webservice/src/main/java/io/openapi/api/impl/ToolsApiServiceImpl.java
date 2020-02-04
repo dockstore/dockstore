@@ -67,6 +67,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         ToolsApiServiceImpl.config = config;
     }
 
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Override
     public Response toolsGet(String id, String alias, String toolClass, String registry, String organization, String name, String toolname,
