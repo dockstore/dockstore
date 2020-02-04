@@ -234,11 +234,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected List<Workflow> githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (must exist on Dockstore)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-        if (user == null) {
-            String msg = "User " + username + " does not have an account on Dockstore.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-        }
 
         // Get Installation Access Token
         String installationAccessToken = gitHubAppSetup(installationId);
@@ -351,6 +346,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         Workflow workflowToUpdate = null;
         // Create workflow if one does not exist
         if (workflow.isEmpty()) {
+            // Ensure that a Dockstore user exists to add to the workflow
+            if (user == null) {
+                String msg = "User does not have an account on Dockstore.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            }
+
             if (workflowType == BioWorkflow.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName, workflowPath);
             } else if (workflowType == Service.class) {
