@@ -45,6 +45,8 @@ import static org.junit.Assert.fail;
 
 @Category(ConfidentialTest.class)
 public class OrganizationIT extends BaseIT {
+    private static final StarRequest STAR_REQUEST = SwaggerUtility.createStarRequest(true);
+    private static final StarRequest UNSTAR_REQUEST = SwaggerUtility.createStarRequest(false);
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -346,7 +348,7 @@ public class OrganizationIT extends BaseIT {
      * @param organization  An organization which is known to have 6 events (create > modify > approve > modify > modify > modify)
      */
     private void testStarredOrganizationEvents(OrganizationsApi organizationsApiUser2, Organization organization) {
-        organizationsApiUser2.starOrganization(organization.getId(), SwaggerUtility.createStarRequest(true));
+        organizationsApiUser2.starOrganization(organization.getId(), STAR_REQUEST);
         final io.dockstore.openapi.client.ApiClient openAPIWebClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         EventsApi eventsApi = new EventsApi(openAPIWebClientUser2);
         List<io.dockstore.openapi.client.model.Event> events = eventsApi
@@ -1517,7 +1519,7 @@ public class OrganizationIT extends BaseIT {
 
         // Should only be able to star approved organizations
         try {
-            organizationsApi.starOrganization(organization.getId(), body);
+            organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
             Assert.assertEquals("Organization not found", ex.getMessage());
@@ -1525,25 +1527,25 @@ public class OrganizationIT extends BaseIT {
 
         // Approve organization and star it
         organizationsApiAdmin.approveOrganization(organization.getId());
-        organizationsApi.starOrganization(organization.getId(), body);
+        organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
 
         assertEquals(1, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
         assertEquals(USER_2_USERNAME, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).get(0).getUsername());
 
         // Should not be able to star twice
         try {
-            organizationsApi.starOrganization(organization.getId(), body);
+            organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
             Assert.assertTrue(ex.getMessage().contains("You cannot star the organization"));
         }
 
-        organizationsApi.unstarOrganization(organization.getId());
+        organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
         assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
 
         // Should not be able to unstar twice
         try {
-            organizationsApi.unstarOrganization(organization.getId());
+            organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
             Assert.assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
