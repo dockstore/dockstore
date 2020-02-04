@@ -679,9 +679,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Add test parameter files
             Yaml yaml = new Yaml();
             List<String> testParameterPaths = null;
+
             try {
+                // Find matching workflow entry in .dockstore.yml and grab test parameter paths
                 Map<String, Object> map = yaml.load(dockstoreYml.getContent());
-                testParameterPaths = (List<String>)map.get("testParameterFiles");
+                List<Map<String, Object>> workflows = (List<Map<String, Object>>)map.get("workflows");
+                for (Map<String, Object> wf : workflows) {
+                    String workflowName = (String)wf.get("name");
+                    String dockstoreWorkflowPath = "github.com/" + repository.getFullName() + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
+                    if (Objects.equals(dockstoreWorkflowPath, workflow.getEntryPath())) {
+                        testParameterPaths = (List<String>)wf.get("testParameterFiles");
+                        break;
+                    }
+                }
             } catch (YAMLException | ClassCastException | NullPointerException ex) {
                 String msg = "Invalid .dockstore.yml";
                 LOG.warn(msg, ex);
