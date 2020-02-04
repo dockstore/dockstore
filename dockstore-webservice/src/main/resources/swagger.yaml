@@ -3639,6 +3639,7 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+      deprecated: true
   /organizations/{organizationId}/user:
     post:
       tags:
