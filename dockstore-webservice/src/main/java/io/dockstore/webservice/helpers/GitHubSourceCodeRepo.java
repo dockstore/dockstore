@@ -376,7 +376,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
-                if (workflow.getMode() != WorkflowMode.SERVICE || ref.getRef().startsWith("refs/tags")) {
+                if (workflow.getMode() != WorkflowMode.DOCKSTORE_YML || ref.getRef().startsWith("refs/tags")) {
                     references.add(getRef(ref, repository));
                 }
             }
@@ -391,8 +391,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
             if (ref != null) {
+                SourceFile dockstoreYml = null;
+                if (workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
+                    try {
+                        dockstoreYml = getDockstoreYml(repository.getFullName(), ref.getLeft());
+                    } catch (CustomWebApplicationException ex) {
+                        LOG.info("No .dockstore.yml present.");
+                        continue;
+                    }
+                }
                 WorkflowVersion version = setupWorkflowVersionsHelper(repositoryId, workflow, ref, existingWorkflow, existingDefaults,
-                    repository, null);
+                    repository, dockstoreYml);
                 if (version != null) {
                     workflow.addWorkflowVersion(version);
                 }
@@ -514,6 +523,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return Updated workflow version
      */
     private WorkflowVersion setupEntryFilesForGitHubVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
+        // Add Dockstore.yml to version
+        SourceFile dockstoreYmlClone = new SourceFile();
+        dockstoreYmlClone.setAbsolutePath(dockstoreYml.getAbsolutePath());
+        dockstoreYmlClone.setPath(dockstoreYml.getPath());
+        dockstoreYmlClone.setContent(dockstoreYml.getContent());
+        dockstoreYmlClone.setType(dockstoreYml.getType());
+        version.addSourceFile(dockstoreYmlClone);
+
         if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
             return setupServiceFilesForGitHubVersion(ref, repository, version, dockstoreYml);
         } else {
@@ -603,7 +620,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (YAMLException | ClassCastException | NullPointerException ex) {
             String msg = "Invalid .dockstore.yml";
             LOG.warn(msg, ex);
-            return version;
+            return null;
         }
         for (String filePath: files) {
             String fileContent = this.readFileFromRepo(filePath, ref.getLeft(), repository);
@@ -619,6 +636,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info("Could not find file " + filePath + " in repo " + repository);
             }
         }
+
         return version;
     }
 
@@ -651,7 +669,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } else {
                 String msg = "Invalid type";
                 LOG.info(msg);
-                return version;
+                return null;
             }
             file.setType(identifiedType);
             version.setWorkflowPath(primaryDescriptorPath);
@@ -700,6 +718,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // File not found or null
             LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);
         }
+
         return version;
     }
 
@@ -711,7 +730,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     public SourceFile getDockstoreYml(String repositoryId, String gitReference) {
         String dockstoreYmlPath = "/.dockstore.yml";
-        GHRepository repository = getRepository(repositoryId);
+        GHRepository repository;
+        try {
+            repository = getRepository(repositoryId);
+        } catch (CustomWebApplicationException ex) {
+            String msg = "Could not find repository " + repositoryId + ".";
+            LOG.warn(msg, ex);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
         String dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
         if (dockstoreYmlContent != null) {
             // Create file for .dockstore.yml

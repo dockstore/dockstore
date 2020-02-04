@@ -46,6 +46,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
 /**
@@ -362,6 +363,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LOG.info("Workflow " + workflowToUpdate.getPath() + " has been created.");
         } else {
             workflowToUpdate = workflow.get();
+            if (!Objects.equals(workflowToUpdate.getMode(), DOCKSTORE_YML)) {
+                String msg = "Workflow with path " + dockstoreWorkflowPath + " exists on Dockstore but does not use .dockstore.yml";
+                LOG.warn(msg);
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            }
         }
 
         if (user != null) {
@@ -371,15 +377,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         try {
             // Create version and pull relevant files
             WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, workflowToUpdate, dockstoreYml);
-
-            // Add Dockstore YML to the workflow version
-            SourceFile dockstoreYmlClone = new SourceFile();
-            dockstoreYmlClone.setAbsolutePath(dockstoreYml.getAbsolutePath());
-            dockstoreYmlClone.setPath(dockstoreYml.getPath());
-            dockstoreYmlClone.setContent(dockstoreYml.getContent());
-            dockstoreYmlClone.setType(dockstoreYml.getType());
-            workflowVersion.addSourceFile(dockstoreYmlClone);
-
             workflowToUpdate.addWorkflowVersion(workflowVersion);
             LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflowToUpdate.getWorkflowPath() + ".");
         } catch (IOException ex) {

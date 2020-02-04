@@ -128,7 +128,7 @@ import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
-import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -388,15 +388,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
-            workflow.setMode(SERVICE);
-        } else {
+        if (!Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
             workflow.setMode(WorkflowMode.FULL);
         }
 
         // look for checker workflows to associate with if applicable
-        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL
-            || workflow.getDescriptorType() == WDL) {
+        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL || workflow.getDescriptorType() == WDL) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
             String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
             BioWorkflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);

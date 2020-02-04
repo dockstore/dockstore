@@ -183,6 +183,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
         targetWorkflow.setIsChecker(isIsChecker());
         targetWorkflow.setConceptDoi(getConceptDoi());
+        targetWorkflow.setMode(getMode());
     }
 
     @JsonProperty
