@@ -723,7 +723,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             return dockstoreYml;
         } else {
-            String msg = "Could not retrieve .dockstore.yml. Does the tag exist with a .dockstore.yml?";
+            String msg = "Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?";
             LOG.warn(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }

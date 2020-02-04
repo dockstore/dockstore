@@ -250,16 +250,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         Yaml yaml = new Yaml();
         try {
             Map<String, Object> map = yaml.load(dockstoreYml.getContent());
-            String versionString = (String)map.get("version");
+            double versionString = (double)map.get("version");
 
-            if (Objects.equals("1.1", versionString)) {
+            if (Objects.equals(1.1, versionString)) {
                 // 1.1 - Only works with services
-                return createServicesAndVersionsForDockstoreYml(dockstoreYml, repository, gitReference, gitHubSourceCodeRepo, user);
-            } else if (Objects.equals("1.2", versionString)) {
+                return createServicesAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, gitHubSourceCodeRepo, user);
+            } else if (Objects.equals(1.2, versionString)) {
                 // 1.2 - Currently only supports workflows, though will eventually support services
                 String classString = (String)map.get("class");
                 if (Objects.equals("workflow", classString)) {
-                    return createWorkflowsAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
+                    return createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
                 } else if (Objects.equals("service", classString)) {
                     String msg = "Services are not yet implemented for version 1.2";
                     LOG.warn(msg);
@@ -291,17 +291,25 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @return List of new and updated workflows
      */
-    private List<Workflow> createWorkflowsAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
-        List<Map<String, Object>> workflows = (List<Map<String, Object>>)yml.get("workflows");
-        List<Workflow> updatedWorkflows = new ArrayList<>();
-        for (Map<String, Object> wf : workflows) {
-            String subclass = (String)wf.get("subclass");
-            String workflowName = (String)wf.get("name");
-            String workflowPath = (String)wf.get("path");
+    private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+        try {
+            List<Map<String, Object>> workflows = (List<Map<String, Object>>)yml.get("workflows");
+            List<Workflow> updatedWorkflows = new ArrayList<>();
+            for (Map<String, Object> wf : workflows) {
+                String subclass = (String)wf.get("subclass");
+                String workflowName = (String)wf.get("name");
+                String workflowPath = (String)wf.get("path");
 
-            updatedWorkflows.add(createWorkflowAndVersionFromDockstoreYml(BioWorkflow.class, repository, gitReference, user, dockstoreYml, workflowName, workflowPath, subclass, gitHubSourceCodeRepo));
+                updatedWorkflows.add(
+                    createWorkflowAndVersionFromDockstoreYml(BioWorkflow.class, repository, gitReference, user, dockstoreYml, workflowName,
+                        workflowPath, subclass, gitHubSourceCodeRepo));
+            }
+            return updatedWorkflows;
+        } catch (ClassCastException ex) {
+            String msg = "Could not parse workflow array from YML.";
+            LOG.warn(msg, ex);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
-        return updatedWorkflows;
     }
 
     /**
@@ -313,7 +321,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @return List of new and updated services
      */
-    private List<Workflow> createServicesAndVersionsForDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+    private List<Workflow> createServicesAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
         List<Workflow> updatedServices = new ArrayList<>();
         // TODO: Currently only supports one service per .dockstore.yml
         updatedServices.add(createWorkflowAndVersionFromDockstoreYml(Service.class, repository, gitReference, user, dockstoreYml, "", "/.dockstore.yml", null, gitHubSourceCodeRepo));
@@ -321,7 +329,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Create or retrieve workflow based on Dockstore.yml, add or update tag version
+     * Create or retrieve workflow or service based on Dockstore.yml, also add or update tag version
      * @param workflowType Either BioWorkflow.class or Service.class
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Tag reference from GitHub (ex. 1.0)
@@ -340,8 +348,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         Optional<Workflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
 
         Workflow workflowToUpdate = null;
+        // Create workflow if one does not exist
         if (workflow.isEmpty()) {
-            // Create a workflow
             if (workflowType == BioWorkflow.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName, workflowPath);
             } else if (workflowType == Service.class) {
@@ -351,8 +359,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
+            LOG.info("Workflow " + workflowToUpdate.getPath() + " has been created.");
         } else {
-            // Retrieve existing workflow
             workflowToUpdate = workflow.get();
         }
 
@@ -361,7 +369,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         try {
-            // Create version and add to workflow
+            // Create version and pull relevant files
             WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, workflowToUpdate, dockstoreYml);
 
             // Add Dockstore YML to the workflow version
@@ -373,6 +381,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflowVersion.addSourceFile(dockstoreYmlClone);
 
             workflowToUpdate.addWorkflowVersion(workflowVersion);
+            LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflowToUpdate.getWorkflowPath() + ".");
         } catch (IOException ex) {
             String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
             LOG.error(msg);
