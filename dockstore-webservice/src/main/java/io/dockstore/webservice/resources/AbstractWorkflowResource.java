@@ -76,8 +76,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private final String bitbucketClientID;
     private final Class<T> entityClass;
 
-    private final double version_1_1 = 1.1;
-    private final double version_1_2 = 1.2;
+    private final double version11 = 1.1;
+    private final double version12 = 1.2;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
         this.client = client;
@@ -251,10 +251,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             Map<String, Object> map = yaml.load(dockstoreYml.getContent());
             double versionString = (double)map.get("version");
 
-            if (Objects.equals(version_1_1, versionString)) {
+            if (Objects.equals(version11, versionString)) {
                 // 1.1 - Only works with services
                 return createServicesAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, gitHubSourceCodeRepo, user);
-            } else if (Objects.equals(version_1_2, versionString)) {
+            } else if (Objects.equals(version12, versionString)) {
                 // 1.2 - Currently only supports workflows, though will eventually support services
                 String classString = (String)map.get("class");
                 if (Objects.equals("workflow", classString)) {
