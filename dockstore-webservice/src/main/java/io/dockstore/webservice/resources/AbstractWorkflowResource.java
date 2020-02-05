@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -47,7 +46,6 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 
 /**
  * Base class for ServiceResource and WorkflowResource.
@@ -392,13 +390,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return workflowToUpdate;
     }
     /**
-     * Does the following:
-     * 1) Add user to any existing Dockstore services they should own
-     *
-     * 2) For all of the users organizations that have the GitHub App installed on all repositories in those organizations,
-     * add any services that should be on Dockstore but are not
-     *
-     * 3) For all of the repositories which have the GitHub App installed, add them to Dockstore if they are missing
+     * Add user to any existing Dockstore services they should own
      * @param user
      * @param organization
      */
@@ -467,7 +459,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      *
      * 1. Finds all repos that have the Dockstore GitHub app installed
      * 2. For existing entities, ensures that <code>user</code> is one of the entity's users
-     * 3. For repos that don't have a corresponding Dockstore entity, creates the entity
      *
      * @param user
      * @param organization
@@ -487,20 +478,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         existingWorkflows.stream()
                 .filter(workflow -> !workflow.getUsers().contains(user))
                 .forEach(workflow -> workflow.getUsers().add(user));
-        final Set<String> existingWorkflowPaths = existingWorkflows.stream()
-                .map(workflow -> workflow.getWorkflowPath()).collect(Collectors.toSet());
 
-        GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
-
-        GitHubHelper.reposToCreateEntitiesFor(repositories, organization, existingWorkflowPaths).stream()
-                .forEach(repositoryName -> {
-                    final T entity = initializeEntity(repositoryName, gitHubSourceCodeRepo);
-                    entity.addUser(user);
-                    final long entityId = workflowDAO.create(entity);
-                    final Workflow createdEntity = workflowDAO.findById(entityId);
-                    final Workflow updatedEntity = gitHubSourceCodeRepo.getWorkflow(repositoryName, Optional.of(createdEntity));
-                    updateDBWorkflowWithSourceControlWorkflow(createdEntity, updatedEntity, user);
-                });
+        // No longer adds stub services, though code could be useful
+        //        final Set<String> existingWorkflowPaths = existingWorkflows.stream()
+        //                .map(workflow -> workflow.getWorkflowPath()).collect(Collectors.toSet());
+        //
+        //        GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
+        //
+        //        GitHubHelper.reposToCreateEntitiesFor(repositories, organization, existingWorkflowPaths).stream()
+        //                .forEach(repositoryName -> {
+        //                    final T entity = initializeEntity(repositoryName, gitHubSourceCodeRepo);
+        //                    entity.addUser(user);
+        //                    final long entityId = workflowDAO.create(entity);
+        //                    final Workflow createdEntity = workflowDAO.findById(entityId);
+        //                    final Workflow updatedEntity = gitHubSourceCodeRepo.getWorkflow(repositoryName, Optional.of(createdEntity));
+        //                    updateDBWorkflowWithSourceControlWorkflow(createdEntity, updatedEntity, user);
+        //                });
     }
 
     /**
@@ -518,7 +511,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 .collect(Collectors.toList());
         return workflowDAO.findByPaths(workflowPaths, false).stream()
                 // TODO: Revisit this when support for workflows added.
-                .filter(workflow -> Objects.equals(workflow.getMode(), SERVICE))
+                .filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML))
                 .collect(Collectors.toList());
     }
 

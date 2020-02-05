@@ -1784,23 +1784,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
-        @ApiParam(value = "Name of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+        @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
         @ApiParam(value = "Git reference for a GitHub tag", required = true) @FormParam("gitReference") String gitReference,
         @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         return githubWebhookRelease(repository, username, gitReference, installationId);
-    }
-
-
-    /**
-     * Finds the tool by Id, and then checks that it exists and that the user has access to it
-     * @param entryId Id of tool of interest
-     * @param user User to authenticate
-     * @return Tool
-     */
-    private Workflow findWorkflowByIdAndCheckWorkflowAndUser(Long entryId, User user) {
-        Workflow workflow = workflowDAO.findById(entryId);
-        checkEntry(workflow);
-        checkUser(user, workflow);
-        return workflow;
     }
 }

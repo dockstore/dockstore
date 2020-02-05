@@ -5064,7 +5064,7 @@ paths:
                   description: Repository path (ex. dockstore/dockstore-ui2)
                   type: string
                 username:
-                  description: Name of user on GitHub who triggered action
+                  description: Username of user on GitHub who triggered action
                   type: string
                 gitReference:
                   description: Git reference for a GitHub tag
