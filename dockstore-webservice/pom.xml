@@ -1111,7 +1111,6 @@
             <plugin>
                 <groupId>io.swagger.codegen.v3</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
-                <version>3.0.16</version>
                 <configuration>
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
                     <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
