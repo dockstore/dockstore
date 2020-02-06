@@ -111,7 +111,7 @@
       filter: true,
       operationsSorter: (a, b) => {
           var methodsOrder = ["get", "post", "put", "delete", "patch", "options", "trace"];
-          var result = result = a.get("path").localeCompare(b.get("path"));
+          var result = a.get("path").localeCompare(b.get("path"));
           // Or if you want to sort the methods alphabetically (delete, get, head, options, ...):
           // var result = a.get("method").localeCompare(b.get("method"));
 
