@@ -3,13 +3,14 @@ swagger: "2.0"
 info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
-    \ used to build those images"
-  version: "1.9.0-alpha.0-SNAPSHOT"
+    \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
+    \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
+  version: "1.9.0-alpha.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
     name: "Dockstore@ga4gh"
-    url: "https://github.com/dockstore/dockstore"
+    url: "https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506"
     email: "theglobalalliance@genomicsandhealth.org"
   license:
     name: "Apache License Version 2.0"
@@ -45,6 +46,9 @@ tags:
 - name: "metadata"
   description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
     \ etc."
+- name: "NIHdatacommons"
+  description: "Needed for SmartAPI compatibility apparantly, might be cargo cult\
+    \ behaviour"
 - name: "organizations"
   description: "Operations on Dockstore organizations"
 - name: "tokens"
@@ -3635,6 +3639,7 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+      deprecated: true
   /organizations/{organizationId}/user:
     post:
       tags:
@@ -6819,6 +6824,10 @@ definitions:
         - "REMOVE_FROM_COLLECTION"
         - "ADD_TO_COLLECTION"
         - "ADD_VERSION_TO_ENTRY"
+      version:
+        position: 8
+        description: "Version associated with the event."
+        $ref: "#/definitions/Version"
     description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
@@ -7246,6 +7255,10 @@ definitions:
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
         - "DOCKSTORE_SERVICE_OTHER"
+        - "DOCKSTORE_GXFORMAT2"
+        - "GXFORMAT2_TEST_FILE"
+        - "DOCKSTORE_SWL"
+        - "SWL_TEST_JSON"
       content:
         type: "string"
         position: 2
@@ -7589,6 +7602,7 @@ definitions:
         - "WDL"
         - "NFL"
         - "SERVICE"
+        - "GXFORMAT2"
       url:
         type: "string"
         example: "https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl"
@@ -7713,6 +7727,7 @@ definitions:
           - "WDL"
           - "NFL"
           - "SERVICE"
+          - "GXFORMAT2"
       id:
         type: "string"
         example: "v1"
@@ -7872,6 +7887,10 @@ definitions:
         - "DOCKSTORE_SERVICE_YML"
         - "DOCKSTORE_SERVICE_TEST_JSON"
         - "DOCKSTORE_SERVICE_OTHER"
+        - "DOCKSTORE_GXFORMAT2"
+        - "GXFORMAT2_TEST_FILE"
+        - "DOCKSTORE_SWL"
+        - "SWL_TEST_JSON"
       valid:
         type: "boolean"
         position: 2
@@ -8039,6 +8058,7 @@ definitions:
     required:
     - "defaultTestParameterFilePath"
     - "descriptorType"
+    - "descriptorTypeSubclass"
     - "gitUrl"
     - "mode"
     - "organization"
@@ -8200,13 +8220,21 @@ definitions:
       descriptorType:
         type: "string"
         position: 18
-        description: "This is a descriptor type for the workflow, either CWL, WDL,\
-          \ or Nextflow (Defaults to CWL)"
+        description: "This is a descriptor type for the workflow, by default either\
+          \ CWL, WDL, NFL, or gxformat2 (Defaults to CWL)."
         enum:
         - "CWL"
         - "WDL"
         - "NFL"
+        - "gxformat2"
         - "service"
+      descriptorTypeSubclass:
+        type: "string"
+        position: 19
+        description: "This is a descriptor type subclass for the workflow. Currently\
+          \ it is only used for services."
+        enum:
+        - "DOCKER_COMPOSE"
       workflow_path:
         type: "string"
         position: 19

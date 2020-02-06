@@ -15,10 +15,13 @@
  */
 package io.dockstore.language;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import io.dockstore.common.DescriptorLanguage;
 import org.apache.commons.lang3.tuple.Pair;
+import org.pf4j.ExtensionPoint;
 
 /**
  * Minimal interface for new workflow languages
@@ -30,15 +33,9 @@ import org.apache.commons.lang3.tuple.Pair;
  * c) What language is your description in (Markdown, HTML, etc.)?
  * d) A short (acronym like CWl, WDL) name for your language and a longer more descriptive name (like "Common Workflow Language")
  */
-public interface MinimalLanguageInterface {
+public interface MinimalLanguageInterface extends ExtensionPoint {
 
-    /**
-     * Identifies whether this language is for services
-     * @return true for things like docker-compose, kubernetes, etc.
-     */
-    default boolean isService() {
-        return false;
-    }
+    DescriptorLanguage getDescriptorLanguage();
 
     /**
      * Validate a filename path that might be entered by your user (i.e. is "/Dockstore.wdl" a valid path to the "first" descriptor).
@@ -85,6 +82,13 @@ public interface MinimalLanguageInterface {
          * @return contents of the file at path
          */
         String readFile(String path);
+
+        /**
+         * Get list of files in a directory (non-recursive) relative to the initial path
+         * TODO: underlying interface should return whether files are directories, but we seem to have gotten away with it so far
+         * @return return list of files
+         */
+        List<String> listFiles(String pathToDirectory);
     }
 
     /**

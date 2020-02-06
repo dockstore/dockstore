@@ -17,13 +17,16 @@ package io.dockstore.webservice.languages;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.core.DescriptionSource;
@@ -130,7 +133,18 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
 
-        MinimalLanguageInterface.FileReader reader = path -> sourceCodeRepoInterface.readFile(repositoryId, path, version.getReference());
+        MinimalLanguageInterface.FileReader reader = new MinimalLanguageInterface.FileReader() {
+
+            @Override
+            public String readFile(String path) {
+                return sourceCodeRepoInterface.readFile(repositoryId, path, version.getReference());
+            }
+
+            @Override
+            public List<String> listFiles(String pathToDirectory) {
+                return sourceCodeRepoInterface.listFiles(repositoryId, pathToDirectory, version.getReference());
+            }
+        };
 
         final Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> stringPairMap = minimalLanguageInterface
             .indexWorkflowFiles(filepath, content, reader);
@@ -139,9 +153,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             final SourceFile sourceFile = new SourceFile();
             sourceFile.setPath(entry.getKey());
             sourceFile.setContent(entry.getValue().getLeft());
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SWL);
-            if (minimalLanguageInterface.isService()) {
+            if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
             }
@@ -154,6 +166,13 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     @Override
     public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
         ToolDAO dao) {
+
+        if (minimalLanguageInterface instanceof CompleteLanguageInterface) {
+            final List<Map<String, Object>> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
+                .loadCytoscapeElements(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            Gson gson = new Gson();
+            return gson.toJson(maps);
+        }
         return "";
     }
 }

@@ -14,7 +14,6 @@ import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -164,8 +163,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflow.removeWorkflowVersion(existingVersionMap.get(version));
         }
 
-        boolean releaseCreated = false;
-
         // Then copy over content that changed
         for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
             // skip frozen versions
@@ -178,8 +175,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             } else {
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
-                releaseCreated = true;
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
+                this.eventDAO.createAddTagToEntryEvent(user, workflow, workflowVersionFromDB);
                 workflow.getWorkflowVersions().add(workflowVersionFromDB);
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
             }
@@ -216,10 +213,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflowVersionFromDB.addOrUpdateValidation(versionValidation);
             }
         }
-        if (releaseCreated) {
-            Event event = workflow.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-            eventDAO.create(event);
-        }
     }
 
     /**
@@ -251,7 +244,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             if (Objects.equals(version11, versionString)) {
                 // 1.1 - Only works with services
-                return createServicesAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, gitHubSourceCodeRepo, user);
+                return createServicesAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, gitHubSourceCodeRepo, user, map);
             } else if (Objects.equals(version12, versionString)) {
                 // 1.2 - Currently only supports workflows, though will eventually support services
                 String classString = (String)map.get("class");
@@ -259,21 +252,21 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     return createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
                 } else if (Objects.equals("service", classString)) {
                     String msg = "Services are not yet implemented for version 1.2";
-                    LOG.warn(msg);
+                    LOG.info(msg);
                     throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
                 } else {
                     String msg = classString + " is not a valid class for version 1.2";
-                    LOG.warn(msg);
+                    LOG.info(msg);
                     throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
                 }
             } else {
                 String msg = versionString + " is not a valid version";
-                LOG.warn(msg);
+                LOG.info(msg);
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
         } catch (YAMLException | ClassCastException | NullPointerException ex) {
             String msg = "Invalid .dockstore.yml";
-            LOG.warn(msg, ex);
+            LOG.info(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
     }
@@ -304,7 +297,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return updatedWorkflows;
         } catch (ClassCastException ex) {
             String msg = "Could not parse workflow array from YML.";
-            LOG.warn(msg, ex);
+            LOG.info(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
     }
@@ -316,12 +309,27 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitReference Tag reference from GitHub (ex. 1.0)
      * @param gitHubSourceCodeRepo Source Code Repo
      * @param user User that triggered action
+     * @param yml Dockstore YML map
      * @return List of new and updated services
      */
-    private List<Workflow> createServicesAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+    private List<Workflow> createServicesAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, Map<String, Object> yml) {
         List<Workflow> updatedServices = new ArrayList<>();
         // TODO: Currently only supports one service per .dockstore.yml
-        updatedServices.add(createWorkflowAndVersionFromDockstoreYml(Service.class, repository, gitReference, user, dockstoreYml, "", "/.dockstore.yml", null, gitHubSourceCodeRepo));
+        String subclass = null;
+        try {
+            Map<String, Object> serviceObject = (Map<String, Object>)yml.get("service");
+            subclass = (String)serviceObject.get("subclass");
+            if (subclass == null) {
+                String msg = "Missing required subclass field.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            }
+        } catch (ClassCastException ex) {
+            String msg = "Could not parse .dockstore.yml";
+            LOG.info(msg, ex);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+        updatedServices.add(createWorkflowAndVersionFromDockstoreYml(Service.class, repository, gitReference, user, dockstoreYml, "", "/.dockstore.yml", subclass, gitHubSourceCodeRepo));
         return updatedServices;
     }
 
@@ -357,7 +365,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (workflowType == BioWorkflow.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName, workflowPath);
             } else if (workflowType == Service.class) {
-                workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
             } else {
                 LOG.error(workflowType.getCanonicalName()  + " is not a valid workflow type.");
             }
@@ -368,7 +376,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflowToUpdate = workflow.get();
             if (!Objects.equals(workflowToUpdate.getMode(), DOCKSTORE_YML)) {
                 String msg = "Workflow with path " + dockstoreWorkflowPath + " exists on Dockstore but does not use .dockstore.yml";
-                LOG.warn(msg);
+                LOG.info(msg);
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
         }
@@ -384,7 +392,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflowToUpdate.getWorkflowPath() + ".");
         } catch (IOException ex) {
             String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
-            LOG.error(msg);
+            LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
         return workflowToUpdate;
@@ -404,54 +412,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } else {
             syncEntities(user, organization, githubByUserId.get(0));
         }
-    }
-    /**
-     * Creates an entity (service or workflow) for a GitHub repository.
-     *
-     * Throws an exception if the entity already exists for that GitHub repo.
-     *
-     * Ideally would return T instead of Workflow, but punting on that for now.
-     *
-     * @param githubRepository
-     * @param username
-     * @param installationId
-     * @return
-     */
-    Workflow addEntityFromGitHubRepository(String githubRepository, String username, String installationId) {
-        // Check for duplicates (currently workflows and services share paths)
-        String entityPath = "github.com/" + githubRepository;
-
-        // Retrieve the user who triggered the call
-        User sendingUser = GitHubHelper.findUserByGitHubUsername(tokenDAO, userDAO, username, true);
-
-        // Determine if service is already in Dockstore
-        workflowDAO.findByPath(entityPath, false, entityClass).ifPresent((entity) -> {
-            // TODO: When we add support for workflows, this message needs to be updated
-            String msg = "A " + entityClass.getCanonicalName() + " already exists for GitHub repository " + githubRepository;
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-        });
-
-        // Get Installation Access Token
-        String installationAccessToken = GitHubHelper.gitHubAppSetup(gitHubAppId, gitHubPrivateKeyFile, installationId);
-
-        // Create a service object
-        final GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
-
-        // Check that repository exists on GitHub
-        try {
-            sourceCodeRepo.getRepository(githubRepository);
-        } catch (CustomWebApplicationException ex) {
-            String msg = "Repository " + githubRepository + " does not exist on GitHub";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-        }
-
-        T entity = initializeEntity(githubRepository, sourceCodeRepo);
-        entity.getUsers().add(sendingUser);
-        long entryId = workflowDAO.create(entity);
-
-        return workflowDAO.findById(entryId);
     }
 
     /**

@@ -34,7 +34,6 @@ import javax.ws.rs.core.Response;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
@@ -142,11 +141,10 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        boolean releaseCreated = false;
         for (Tag tag : tags) {
             final long tagId = tagDAO.create(tag);
             Tag byId = tagDAO.findById(tagId);
-            releaseCreated = true;
+            this.eventDAO.createAddTagToEntryEvent(user, tool, byId);
             // Set dirty bit since this is a manual add
             byId.setDirtyBit(true);
 
@@ -160,10 +158,6 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Tool result = toolDAO.findById(containerId);
         checkEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
-        if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-            eventDAO.create(event);
-        }
         return result.getWorkflowVersions();
     }
 

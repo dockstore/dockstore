@@ -22,7 +22,7 @@ import javax.persistence.Table;
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 
-@ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow")
+@ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
 @Table(name = "service")
 @NamedQuery(name = "io.dockstore.webservice.core.Service.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from Service c where c.isPublished = true")

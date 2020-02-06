@@ -3,7 +3,7 @@ FROM maven:3.6.2-jdk-11 AS maven
 COPY . /
 RUN mvn clean install -DskipTests
 
-FROM ubuntu:18.04
+FROM openjdk:11.0.6-jdk
 
 # Update the APT cache
 # prepare for Java download
@@ -15,13 +15,6 @@ RUN apt-get update \
     wget \
     locales \
     curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# install java
-RUN add-apt-repository ppa:openjdk-r/ppa
-RUN apt-get update \
-    && apt-get install openjdk-11-jdk=11.0.5+10-0ubuntu1.1~18.04 -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
