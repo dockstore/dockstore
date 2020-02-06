@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -330,11 +331,24 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Initialize service object for GitHub repository
      * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     * @param subclass The subclass of the workflow (ex. docker-compose)
      * @return Service
      */
-    public Service initializeServiceFromGitHub(String repositoryId) {
+    public Service initializeServiceFromGitHub(String repositoryId, String subclass) {
         Service service = initializeService(repositoryId);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
+
+        // Validate subclass
+        DescriptorLanguageSubclass descriptorLanguageSubclass;
+        try {
+            descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass);
+        } catch (UnsupportedOperationException ex) {
+            String msg = "Subclass " + subclass + " is not a valid descriptor language subclass.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+
+        service.setDescriptorTypeSubclass(descriptorLanguageSubclass);
         return service;
     }
 
@@ -357,7 +371,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else if (Objects.equals(DescriptorLanguage.NEXTFLOW.getLowerShortName(), subclass)) {
             workflow.setDescriptorType(DescriptorLanguage.NEXTFLOW);
         } else {
-            LOG.error("Invalid descriptor type " + subclass);
+            LOG.info("Invalid descriptor type " + subclass);
         }
         workflow.setDefaultWorkflowPath(workflowPath);
         return workflow;
@@ -528,7 +542,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         dockstoreYmlClone.setAbsolutePath(dockstoreYml.getAbsolutePath());
         dockstoreYmlClone.setPath(dockstoreYml.getPath());
         dockstoreYmlClone.setContent(dockstoreYml.getContent());
-        dockstoreYmlClone.setType(dockstoreYml.getType());
+        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
+            dockstoreYmlClone.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+        } else {
+            dockstoreYmlClone.setType(dockstoreYml.getType());
+        }
         version.addSourceFile(dockstoreYmlClone);
 
         if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
@@ -619,7 +637,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // null catch due to .dockstore.yml files like https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/.dockstore.yml
         } catch (YAMLException | ClassCastException | NullPointerException ex) {
             String msg = "Invalid .dockstore.yml";
-            LOG.warn(msg, ex);
+            LOG.info(msg, ex);
             return null;
         }
         for (String filePath: files) {
@@ -694,7 +712,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             } catch (YAMLException | ClassCastException | NullPointerException ex) {
                 String msg = "Invalid .dockstore.yml";
-                LOG.warn(msg, ex);
+                LOG.info(msg, ex);
             }
 
             if (testParameterPaths != null) {
@@ -924,7 +942,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
         if (ref == null) {
             String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
-            LOG.error(msg);
+            LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 

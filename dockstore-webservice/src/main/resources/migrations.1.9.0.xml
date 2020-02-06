@@ -28,4 +28,12 @@
             <where>type='ADD_VERSION_TO_ENTRY' and versionid is null</where>
         </delete>
     </changeSet>
+    <changeSet author="aduncan" id="1580931394009">
+        <addColumn tableName="service">
+            <column name="descriptortypesubclass" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="descriptortypesubclass" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
