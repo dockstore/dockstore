@@ -69,7 +69,7 @@ public class ToolV1 {
 
             // convert versions now
             versions = new ArrayList<>();
-            for(ToolVersion version : tool.getVersions()) {
+            for (ToolVersion version : tool.getVersions()) {
                 ToolVersionV1 oldVersion = new ToolVersionV1(version);
                 versions.add(oldVersion);
             }

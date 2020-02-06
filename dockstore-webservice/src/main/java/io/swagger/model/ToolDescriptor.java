@@ -49,8 +49,8 @@ public class ToolDescriptor {
         this.type = fileWrapper.getOriginalFile().getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL ? DescriptorType.CWL : DescriptorType.WDL;
     }
 
-    public ToolDescriptor type(DescriptorType type) {
-        this.type = type;
+    public ToolDescriptor type(DescriptorType descriptorType) {
+        this.type = descriptorType;
         return this;
     }
 
@@ -66,12 +66,12 @@ public class ToolDescriptor {
         return type;
     }
 
-    public void setType(DescriptorType type) {
-        this.type = type;
+    public void setType(DescriptorType descriptorType) {
+        this.type = descriptorType;
     }
 
-    public ToolDescriptor descriptor(String descriptor) {
-        this.descriptor = descriptor;
+    public ToolDescriptor descriptor(String descriptorParam) {
+        this.descriptor = descriptorParam;
         return this;
     }
 
@@ -86,12 +86,12 @@ public class ToolDescriptor {
         return descriptor;
     }
 
-    public void setDescriptor(String descriptor) {
-        this.descriptor = descriptor;
+    public void setDescriptor(String descriptorParam) {
+        this.descriptor = descriptorParam;
     }
 
-    public ToolDescriptor url(String url) {
-        this.url = url;
+    public ToolDescriptor url(String urlParam) {
+        this.url = urlParam;
         return this;
     }
 
