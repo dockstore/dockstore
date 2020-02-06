@@ -315,7 +315,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private List<Workflow> createServicesAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, Map<String, Object> yml) {
         List<Workflow> updatedServices = new ArrayList<>();
         // TODO: Currently only supports one service per .dockstore.yml
-        String subclass = null;
+        String subclass;
         try {
             Map<String, Object> serviceObject = (Map<String, Object>)yml.get("service");
             subclass = (String)serviceObject.get("subclass");
@@ -363,7 +363,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
 
             if (workflowType == BioWorkflow.class) {
-                workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName, workflowPath);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName);
             } else if (workflowType == Service.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
             } else {

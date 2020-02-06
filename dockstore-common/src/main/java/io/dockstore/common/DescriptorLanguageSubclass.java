@@ -48,6 +48,9 @@ public enum DescriptorLanguageSubclass {
     }
 
     public static DescriptorLanguageSubclass convertShortNameStringToEnum(String descriptorSubclass) {
+        if (descriptorSubclass == null) {
+            return null;
+        }
         final Optional<DescriptorLanguageSubclass> first = Arrays.stream(DescriptorLanguageSubclass.values())
             .filter(subclass -> subclass.getShortName().equalsIgnoreCase(descriptorSubclass)).findFirst();
         return first.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
