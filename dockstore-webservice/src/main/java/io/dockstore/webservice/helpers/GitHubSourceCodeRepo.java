@@ -324,7 +324,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setLastUpdated(new Date());
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setMode(WorkflowMode.SERVICE);
-        service.setDefaultWorkflowPath(".dockstore.yml");
+        service.setDefaultWorkflowPath("/.dockstore.yml");
         return service;
     }
 
