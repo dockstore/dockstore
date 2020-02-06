@@ -226,7 +226,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return List of new and updated workflows
      */
     protected List<Workflow> githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
-        // Retrieve the user who triggered the call (must exist on Dockstore)
+        // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
         // Get Installation Access Token

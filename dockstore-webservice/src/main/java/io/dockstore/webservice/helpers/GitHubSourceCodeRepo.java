@@ -699,12 +699,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
 
-        if (workflowMap == null) {
-            String msg = "Could not find matching workflow in .dockstore.yml";
-            LOG.info(msg);
-            return null;
-        }
-
         String primaryDescriptorPath = (String)workflowMap.get("primaryDescriptorPath");
         if (primaryDescriptorPath == null)  {
             String msg = ".dockstore.yml is missing the required primaryDescriptorPath field.";
