@@ -32,14 +32,14 @@ public class ChecksumConverterTest {
         Assert.assertNull(cs.convertToDatabaseColumn(listChecksums));
 
         // Can handle multiple checksums
-        for(int i = 0; i < stringTypes.length; i++) {
+        for (int i = 0; i < stringTypes.length; i++) {
             listChecksums.add(new Checksum(stringTypes[i], stringChecksums[i]));
         }
         Assert.assertEquals(validStringChecksums, cs.convertToDatabaseColumn(listChecksums));
 
         // Can handle spaces
         List<Checksum> listChecksumsSpaces = new ArrayList<>();
-        for(int i = 0; i < stringTypes.length; i++) {
+        for (int i = 0; i < stringTypes.length; i++) {
             listChecksumsSpaces.add(new Checksum(stringTypes[i] + " ", "   " + stringChecksums[i]));
         }
         Assert.assertEquals(validStringChecksums, cs.convertToDatabaseColumn(listChecksumsSpaces));

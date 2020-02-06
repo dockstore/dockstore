@@ -43,8 +43,8 @@ public class ToolDockerfile {
         this.url = containerfile.getUrl();
     }
 
-    public ToolDockerfile dockerfile(String dockerfile) {
-        this.dockerfile = dockerfile;
+    public ToolDockerfile dockerfile(String dockerfileParam) {
+        this.dockerfile = dockerfileParam;
         return this;
     }
 
@@ -62,8 +62,8 @@ public class ToolDockerfile {
         this.dockerfile = dockerfile;
     }
 
-    public ToolDockerfile url(String url) {
-        this.url = url;
+    public ToolDockerfile url(String urlParam) {
+        this.url = urlParam;
         return this;
     }
 

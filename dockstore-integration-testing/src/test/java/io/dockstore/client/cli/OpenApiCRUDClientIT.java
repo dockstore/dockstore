@@ -23,8 +23,10 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
 import io.dockstore.openapi.client.ApiClient;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.model.SourceControlBean;
+import io.dockstore.openapi.client.model.ToolClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -68,6 +70,17 @@ public class OpenApiCRUDClientIT extends BaseIT {
         webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         MetadataApi metadataApi = new MetadataApi(webClient);
         final List<SourceControlBean> sourceControlList = metadataApi.getSourceControlList();
-        Assert.assertTrue(!sourceControlList.isEmpty());
+        Assert.assertFalse(sourceControlList.isEmpty());
+    }
+
+    @Test
+    public void testMinimalTRSV2Final() {
+        ApiClient webClient = new ApiClient();
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
+        final List<ToolClass> toolClasses = ga4Ghv20Api.toolClassesGet();
+        Assert.assertTrue(toolClasses.size() >= 2);
     }
 }

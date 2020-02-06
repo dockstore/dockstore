@@ -30,22 +30,24 @@ import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.api.factories.ToolClassesApiServiceFactory;
 import io.swagger.model.ToolClass;
+import org.apache.http.HttpStatus;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/tool-classes")
 
-@Produces( { "application/json", "text/plain" })
+@Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the tool-classes API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1)public class ToolClassesApiV1 {
+@io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1)
+public class ToolClassesApiV1 {
     private final ToolClassesApiService delegate = ToolClassesApiServiceFactory.getToolClassesApi();
 
     @GET
     @UnitOfWork(readOnly = true)
-    @Produces( { "application/json", "text/plain" })
+    @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(nickname = "toolClassesGet", value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
     public Response toolClassesGet(@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
         return delegate.toolClassesGet(securityContext, containerContext, Optional.empty());
     }
