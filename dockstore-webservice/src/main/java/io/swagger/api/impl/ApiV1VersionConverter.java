@@ -36,12 +36,12 @@ import io.swagger.model.ToolVersion;
 import io.swagger.model.ToolVersionV1;
 
 /**
- * Converts between the V2 version of the GA4GH TRS to V1
+ * Converts between the V2-beta version of the GA4GH TRS to V1
  * @author gluu, dyuen
  * @since 21/12/17
  */
-public final class ApiVersionConverter {
-    private ApiVersionConverter() { }
+public final class ApiV1VersionConverter {
+    private ApiV1VersionConverter() { }
 
     public static Response convertToVersion(Response response) {
         Object object = response.getEntity();
@@ -121,7 +121,7 @@ public final class ApiVersionConverter {
                     responseBuilder.header(newString, headers.getFirst(str));
                     break;
                 default:
-                    continue; // Skipping all other headers
+                    // Skipping all other headers
                 }
             }
         }

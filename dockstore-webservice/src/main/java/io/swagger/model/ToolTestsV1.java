@@ -34,7 +34,7 @@ public class ToolTestsV1   {
     @JsonProperty("url")
     private String url = null;
 
-    public ToolTestsV1(FileWrapper containerfile) {
+    public ToolTestsV1(io.openapi.model.FileWrapper containerfile) {
         this.test = containerfile.getContent();
         this.url = containerfile.getUrl();
     }

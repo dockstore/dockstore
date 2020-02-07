@@ -649,6 +649,197 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
+  /organizations:
+    get:
+      tags:
+      - organizations
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/reject:
+    post:
+      tags:
+      - organizations
+      summary: Reject an organization.
+      description: Reject the organization with the given id. Admin/curator only.
+      operationId: rejectOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization
+        to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by ID.
+      description: Retrieve an organization by ID. Supports optional authentication.
+      operationId: getOrganizationById
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update an organization.
+      description: Update an organization. Currently only name, display name, description,
+        topic, email, link, avatarUrl, and location can be updated.
+      operationId: updateOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations/{organizationId}/description:
     get:
       tags:
@@ -783,6 +974,57 @@ paths:
                   $ref: '#/components/schemas/Event'
       security:
       - bearer: []
+  /organizations/{organizationId}/star:
+    put:
+      tags:
+      - organizations
+      summary: Star an organization.
+      description: Star an organization.
+      operationId: starOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: StarRequest to star an organization for a user.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/StarRequest'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
+  /organizations/{organizationId}/unstar:
+    delete:
+      tags:
+      - organizations
+      summary: Unstar an organization.
+      description: Unstar an organization.
+      operationId: unstarOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
   /organizations/{organizationId}/starredUsers:
     get:
       tags:
@@ -837,248 +1079,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations:
-    get:
-      tags:
-      - organizations
-      summary: List all available organizations.
-      description: List all organizations that have been approved by a curator or
-        admin, sorted by number of stars.
-      operationId: getApprovedOrganizations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-    post:
-      tags:
-      - organizations
-      summary: Create an organization.
-      description: Create an organization. Organization requires approval by an admin
-        before being made public.
-      operationId: createOrganization
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by ID.
-      description: Retrieve an organization by ID. Supports optional authentication.
-      operationId: getOrganizationById
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-    put:
-      tags:
-      - organizations
-      summary: Update an organization.
-      description: Update an organization. Currently only name, display name, description,
-        topic, email, link, avatarUrl, and location can be updated.
-      operationId: updateOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/reject:
-    post:
-      tags:
-      - organizations
-      summary: Reject an organization.
-      description: Reject the organization with the given id. Admin/curator only.
-      operationId: rejectOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/request:
-    post:
-      tags:
-      - organizations
-      summary: Re-request an organization review.
-      description: Re-request a review of the given organization. Requires the organization
-        to be rejected.
-      operationId: requestOrganizationReview
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/name/{name}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by name.
-      description: Retrieve an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
-      parameters:
-      - name: name
-        in: path
-        description: Organization name.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/star:
-    put:
-      tags:
-      - organizations
-      summary: Star an organization.
-      description: Star an organization.
-      operationId: starOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: StarRequest to star an organization for a user.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/StarRequest'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-      - bearer: []
-  /organizations/{organizationId}/unstar:
-    delete:
-      tags:
-      - organizations
-      summary: Unstar an organization.
-      description: Unstar an organization.
-      operationId: unstarOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
       security:
       - bearer: []
   /organizations/{organizationId}/users/{username}:
@@ -1293,7 +1293,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
       security:
       - bearer: []
   /organizations/{alias}/aliases:
@@ -1779,6 +1779,131 @@ paths:
                   $ref: '#/components/schemas/Tool'
       security:
       - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get additional tool descriptor files relative to the main file
+      description: Descriptors can often include imports that refer to additional
+        descriptors. This returns additional descriptors for the specified tool in
+        the same or other directories that can be reached as a relative path. This
+        endpoint can be useful for workflow engine implementations like cwltool to
+        programmatically download all the descriptors for a tool and run it. This
+        can optionally include other files described with FileWrappers such as test
+        parameters and containerfiles.
+      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
+      parameters:
+      - name: type
+        in: path
+        description: The output type of the descriptor. If not specified, it is up
+          to the underlying implementation to determine which output type to return.
+          Plain types return the bare descriptor while the "non-plain" types return
+          a descriptor wrapped with metadata. Allowable values are "CWL", "WDL", "NFL",
+          "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL".
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      - name: relative_path
+        in: path
+        description: A relative path to the additional file (same directory or subdirectories),
+          for example 'foo.cwl' would return a 'foo.cwl' from the same directory as
+          the main descriptor. 'nestedDirectory/foo.cwl' would return the file  from
+          a nested subdirectory.  Unencoded paths such 'sampleDirectory/foo.cwl' should
+          also be allowed.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool descriptor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get a list of objects that contain the relative path and file type
+      description: 'Get a list of objects that contain the relative path and file
+        type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path
+        : .+} endpoint.'
+      operationId: toolsIdVersionsVersionIdTypeFilesGet
+      parameters:
+      - name: type
+        in: path
+        description: The output type of the descriptor. Examples of allowable values
+          are "CWL", "WDL", and "NFL".
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The array of File JSON responses.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFile'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFile'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
   /ga4gh/trs/v2/tools/{id}:
     get:
       tags:
@@ -1944,75 +2069,6 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get additional tool descriptor files relative to the main file
-      description: Descriptors can often include imports that refer to additional
-        descriptors. This returns additional descriptors for the specified tool in
-        the same or other directories that can be reached as a relative path. This
-        endpoint can be useful for workflow engine implementations like cwltool to
-        programmatically download all the descriptors for a tool and run it. This
-        can optionally include other files described with FileWrappers such as test
-        parameters and containerfiles.
-      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
-      parameters:
-      - name: type
-        in: path
-        description: The output type of the descriptor. If not specified, it is up
-          to the underlying implementation to determine which output type to return.
-          Plain types return the bare descriptor while the "non-plain" types return
-          a descriptor wrapped with metadata. Allowable values are "CWL", "WDL", "NFL",
-          "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL".
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      - name: relative_path
-        in: path
-        description: A relative path to the additional file (same directory or subdirectories),
-          for example 'foo.cwl' would return a 'foo.cwl' from the same directory as
-          the main descriptor. 'nestedDirectory/foo.cwl' would return the file  from
-          a nested subdirectory.  Unencoded paths such 'sampleDirectory/foo.cwl' should
-          also be allowed.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The tool descriptor.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
@@ -2111,62 +2167,6 @@ paths:
                   $ref: '#/components/schemas/FileWrapper'
         "404":
           description: There are no container specifications for this tool.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get a list of objects that contain the relative path and file type
-      description: 'Get a list of objects that contain the relative path and file
-        type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path
-        : .+} endpoint.'
-      operationId: toolsIdVersionsVersionIdTypeFilesGet
-      parameters:
-      - name: type
-        in: path
-        description: The output type of the descriptor. Examples of allowable values
-          are "CWL", "WDL", and "NFL".
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The array of File JSON responses.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolFile'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolFile'
-        "404":
-          description: The tool can not be output in the specified type.
           content:
             application/json:
               schema:
@@ -3488,6 +3488,8 @@ components:
             - CWL
             - WDL
             - NFL
+            - SERVICE
+            - GXFORMAT2
         id:
           type: string
           description: An identifier of the version of this tool for this particular
@@ -3543,16 +3545,6 @@ components:
               as an email or URL.
       description: A tool version describes a particular iteration of a tool as described
         by a reference to a specific image and/or documents.
-    Error:
-      required:
-      - code
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
     FileWrapper:
       type: object
       properties:
@@ -3578,6 +3570,16 @@ components:
         that describes how to build a particular container image. Examples include
         Dockerfiles for creating Docker images and Singularity recipes for Singularity
         images '
+    Error:
+      required:
+      - code
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
     ToolFile:
       type: object
       properties:

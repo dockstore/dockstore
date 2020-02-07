@@ -129,7 +129,7 @@ public class ElasticListener implements StateListenerInterface {
      * @param command The command that will be used
      * @return Whether or not the entry is valid
      */
-    private boolean checkValid(Entry entry, StateManagerMode command) {
+    private boolean checkValid(Entry<?, ?> entry, StateManagerMode command) {
         boolean published = entry.getIsPublished();
         switch (command) {
         case PUBLISH:
@@ -175,7 +175,7 @@ public class ElasticListener implements StateListenerInterface {
      * @param entry The entry that needs updating
      * @return The entry converted into a json string
      */
-    private String getDocumentValueFromEntry(Entry entry) {
+    private String getDocumentValueFromEntry(Entry<?, ?> entry) {
         ObjectMapper mapper = Jackson.newObjectMapper();
         StringBuilder builder = new StringBuilder();
         Map<String, Object> doc = new HashMap<>();
