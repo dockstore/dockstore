@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Converts between the V2-beta version of the GA4GH TRS to V1
+ * Converts between the V2-final version of the GA4GH TRS to V2-beta.5
  *
  * @author gluu, dyuen
  * @since 21/12/17

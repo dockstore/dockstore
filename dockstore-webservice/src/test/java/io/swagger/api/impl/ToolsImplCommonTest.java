@@ -172,11 +172,11 @@ public class ToolsImplCommonTest {
         expectedTool.setDescription("");
         expectedTool.setAuthor("sampleAuthor");
         expectedTool.setMetaVersion(null);
-        expectedTool.setAliases(Collections.EMPTY_LIST);
-        expectedTool.setContains(Collections.EMPTY_LIST);
+        expectedTool.setAliases(Collections.emptyList());
+        expectedTool.setContains(Collections.emptyList());
         expectedTool.setVerified(false);
         expectedTool.setSigned(false);
-        expectedTool.setVersions(Collections.EMPTY_LIST);
+        expectedTool.setVersions(Collections.emptyList());
         expectedTool.setVerifiedSource("[]");
         ToolVersion expectedToolVersion = new ToolVersion();
         expectedToolVersion.setName("sampleTag");
@@ -451,8 +451,8 @@ public class ToolsImplCommonTest {
         expectedTool.setAuthor("Unknown author");
         // Meta-version dates are currently dependant on the environment, disabling for now
         expectedTool.setMetaVersion(null);
-        expectedTool.setContains(Collections.EMPTY_LIST);
-        expectedTool.setAliases(Collections.EMPTY_LIST);
+        expectedTool.setContains(Collections.emptyList());
+        expectedTool.setAliases(Collections.emptyList());
         expectedTool.setVerified(true);
         expectedTool.setVerifiedSource("[\"chickenTesterSource\",\"potatoTesterSource\"]");
         expectedTool.setSigned(false);
