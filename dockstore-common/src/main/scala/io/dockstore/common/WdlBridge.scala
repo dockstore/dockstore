@@ -61,7 +61,7 @@ class WdlBridge {
     val bundle = getBundle(filePath, sourceFilePath)
 
     if (!bundle.primaryCallable.isDefined) {
-      throw new WdlParser.SyntaxError("Workflow is missing a workflow declaration.")
+      throw new WdlParser.SyntaxError("This file is missing a workflow declaration.")
     }
   }
 
@@ -73,9 +73,10 @@ class WdlBridge {
   def validateTool(filePath: String, sourceFilePath: String) = {
     validateWorkflow(filePath, sourceFilePath)
     val executableCallable = convertFilePathToExecutableCallable(filePath, sourceFilePath)
+    val numberOfTaskCalls = executableCallable.taskCallNodes.seq.size
 
-    if (executableCallable.taskCallNodes.seq.size > 1) {
-      throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
+    if (numberOfTaskCalls > 1) {
+      throw new WdlParser.SyntaxError("A WDL tool can only call one task. This file calls more than one task. Did you mean to register a workflow?")
     }
 
     executableCallable.taskCallNodes
