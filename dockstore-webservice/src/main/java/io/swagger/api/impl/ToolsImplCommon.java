@@ -45,11 +45,11 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
+import io.openapi.model.ExtendedFileWrapper;
 import io.openapi.model.FileWrapper;
 import io.openapi.model.ImageData;
 import io.openapi.model.Tool;
 import io.openapi.model.ToolVersion;
-import io.swagger.model.ExtendedFileWrapper;
 import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -396,6 +396,12 @@ public final class ToolsImplCommon {
 
         // Set description
         tool.setDescription(container.getDescription() != null ? container.getDescription() : "");
+
+        // edge case: in Dockstore, a tool with no versions can still have an author but V2 final moved authors to versions of a tool
+        // append it to description
+        if (container.getWorkflowVersions().isEmpty() && container.getAuthor() != null) {
+            tool.setDescription(tool.getDescription() + '\n' + "Author: " + container.getAuthor());
+        }
         return tool;
     }
 

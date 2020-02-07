@@ -27,12 +27,10 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
 import com.google.common.collect.Lists;
-import io.dockstore.common.DescriptorLanguage;
 import io.openapi.model.Checksum;
 import io.openapi.model.ImageData;
 import io.swagger.model.DescriptorType;
 import io.swagger.model.ExtendedFileWrapper;
-import io.swagger.model.FileWrapper;
 import io.swagger.model.Metadata;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.Tool;
@@ -73,14 +71,8 @@ public final class ApiV2BetaVersionConverter {
                 } else if (innerObject instanceof io.openapi.model.ToolVersion) {
                     io.openapi.model.ToolVersion toolVersion = (io.openapi.model.ToolVersion)innerObject;
                     newArrayList.add(getToolVersion(toolVersion));
-                } else if (innerObject instanceof ExtendedFileWrapper) {
-                    // TODO: this probably is not the case in v2 beta, check it
-                    // v1 annoying expects a 1 Dockerfile list to be returned unwrapped
-                    Object extendedWrapperConverted = getWrapper((ExtendedFileWrapper)innerObject);
-                    if (arrayList.size() == 1
-                        && ((ExtendedFileWrapper)innerObject).getOriginalFile().getType() == DescriptorLanguage.FileType.DOCKERFILE) {
-                        return getResponse(extendedWrapperConverted);
-                    }
+                } else if (innerObject instanceof io.openapi.model.ExtendedFileWrapper) {
+                    Object extendedWrapperConverted = getWrapper((io.openapi.model.ExtendedFileWrapper)innerObject);
                     newArrayList.add(extendedWrapperConverted);
                 } else {
                     newArrayList.add(innerObject);
@@ -100,8 +92,8 @@ public final class ApiV2BetaVersionConverter {
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1);
         } else if (object instanceof io.openapi.model.FileWrapper) {
-            if (object instanceof ExtendedFileWrapper) {
-                return getResponse(getWrapper((ExtendedFileWrapper)object));
+            if (object instanceof io.openapi.model.ExtendedFileWrapper) {
+                return getResponse(getWrapper((io.openapi.model.ExtendedFileWrapper)object));
             }
             return getResponse(object);
         }
@@ -176,15 +168,23 @@ public final class ApiV2BetaVersionConverter {
         return betaToolVersion;
     }
 
-    public static FileWrapper getWrapper(io.openapi.model.FileWrapper wrapper) {
-        FileWrapper oldWrapper = new FileWrapper();
+    public static io.swagger.model.FileWrapper getOldWrapper(io.openapi.model.FileWrapper wrapper) {
+        io.swagger.model.FileWrapper oldWrapper = new io.swagger.model.FileWrapper();
         oldWrapper.setContent(wrapper.getContent());
         oldWrapper.setUrl(wrapper.getUrl());
         return oldWrapper;
     }
 
-    public static FileWrapper getWrapper(ExtendedFileWrapper wrapper) {
-        FileWrapper oldWrapper = new FileWrapper();
+    public static io.swagger.model.FileWrapper getOldWrapper(ExtendedFileWrapper wrapper) {
+        io.swagger.model.FileWrapper oldWrapper = new io.swagger.model.FileWrapper();
+        oldWrapper.setContent(wrapper.getContent());
+        oldWrapper.setUrl(wrapper.getUrl());
+        return oldWrapper;
+    }
+
+    public static io.swagger.model.ExtendedFileWrapper getWrapper(io.openapi.model.ExtendedFileWrapper wrapper) {
+        io.swagger.model.ExtendedFileWrapper oldWrapper = new io.swagger.model.ExtendedFileWrapper();
+        oldWrapper.setOriginalFile(wrapper.getOriginalFile());
         oldWrapper.setContent(wrapper.getContent());
         oldWrapper.setUrl(wrapper.getUrl());
         return oldWrapper;

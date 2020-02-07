@@ -38,7 +38,7 @@ public class ToolDockerfile {
 
     }
 
-    public ToolDockerfile(io.openapi.model.FileWrapper containerfile) {
+    public ToolDockerfile(FileWrapper containerfile) {
         this.dockerfile = containerfile.getContent();
         this.url = containerfile.getUrl();
     }

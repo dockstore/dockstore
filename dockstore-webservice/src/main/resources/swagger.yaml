@@ -7132,7 +7132,7 @@ definitions:
         type: "string"
         position: 9
         description: "Logo URL"
-        pattern: "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
+        pattern: "([^\\s]+)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
       displayName:
         type: "string"
         position: 9
