@@ -75,8 +75,7 @@ class WdlBridge {
     val executableCallable = convertFilePathToExecutableCallable(filePath, sourceFilePath)
     val numberOfTaskCalls = executableCallable.taskCallNodes.seq.size
 
-    // WDL tool with zero task calls are valid
-    if (numberOfTaskCalls != 0 && numberOfTaskCalls > 1) {
+    if (numberOfTaskCalls > 1) {
       throw new WdlParser.SyntaxError("A WDL tool can only call one task. This file calls more than one task. Did you mean to register a workflow?")
     }
 

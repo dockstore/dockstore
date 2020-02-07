@@ -725,7 +725,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
         boolean isValid = true;
-        String validationMessage = null;
+        StringBuilder validationMessage = new StringBuilder();
         Map<String, String> validationMessageObject = new HashMap<>();
 
         if (mainDescriptor.isPresent()) {
@@ -733,25 +733,24 @@ public class CWLHandler implements LanguageHandlerInterface {
             String content = mainDescriptor.get().getContent();
             if (content == null || content.isEmpty()) {
                 isValid = false;
-                validationMessage = "Primary descriptor is empty.";
+                validationMessage.append("Primary descriptor is empty.");
             } else if (!content.contains("class: Workflow")) {
                 isValid = false;
-                validationMessage = "A CWL workflow requires class: Workflow.";
+                validationMessage.append("A CWL workflow requires 'class: Workflow'.");
                 if (content.contains("class: CommandLineTool") || content.contains("class: ExpressionTool")) {
-                    validationMessage += " This file contains class: ";
-                    validationMessage += (content.contains("class: CommandLineTool")) ? "CommandLineTool." : "ExpressionTool.";
-                    validationMessage += " Did you mean to register a tool?";
+                    String cwlClass = content.contains("class: CommandLineTool") ? "CommandLineTool" : "ExpressionTool";
+                    validationMessage.append(" This file contains 'class: ").append(cwlClass).append("'. Did you mean to register a tool?");
                 }
             } else if (!this.isValidCwl(content, yaml)) {
                 isValid = false;
-                validationMessage = "Invalid CWL version.";
+                validationMessage.append("Invalid CWL version.");
             }
         } else {
-            validationMessage = "Primary CWL descriptor is not present.";
+            validationMessage.append("Primary CWL descriptor is not present.");
             isValid = false;
         }
 
-        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
+        validationMessageObject.put(primaryDescriptorFilePath, validationMessage.toString());
         return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
@@ -773,9 +772,9 @@ public class CWLHandler implements LanguageHandlerInterface {
                 validationMessage = "Primary CWL descriptor is empty.";
             } else if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
                 isValid = false;
-                validationMessage = "A CWL tool requires class: CommandLineTool or ExpressionTool.";
+                validationMessage = "A CWL tool requires 'class: CommandLineTool' or 'class: ExpressionTool'.";
                 if (content.contains("class: Workflow")) {
-                    validationMessage += " This file contains class: Workflow. Did you mean to register a workflow?";
+                    validationMessage += " This file contains 'class: Workflow'. Did you mean to register a workflow?";
                 }
             } else if (!this.isValidCwl(content, yaml)) {
                 isValid = false;
