@@ -46,6 +46,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -223,8 +224,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String platformVersion, String relativePath, Boolean verified,
         String metadata) {
 
-        io.openapi.api.impl.ToolsApiServiceImpl impl = new io.openapi.api.impl.ToolsApiServiceImpl();
-        io.openapi.api.impl.ToolsApiServiceImpl.ParsedRegistryID parsedID = new io.openapi.api.impl.ToolsApiServiceImpl.ParsedRegistryID(id);
+        ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
+        ToolsApiServiceImpl.ParsedRegistryID parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
         Entry<?, ?> entry = impl.getEntry(parsedID, Optional.empty());
         Optional<? extends Version<?>> versionOptional;
 

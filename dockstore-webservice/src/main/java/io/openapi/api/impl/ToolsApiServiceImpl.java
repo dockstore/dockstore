@@ -300,25 +300,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (c instanceof Tool) {
                 Tool tool = (Tool)c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && tool.getRegistry() != null) {
-                    if (!tool.getRegistry().contains(registry)) {
-                        continue;
-                    }
+                if (registry != null && tool.getRegistry() != null && !tool.getRegistry().contains(registry)) {
+                    continue;
                 }
-                if (organization != null && tool.getNamespace() != null) {
-                    if (!tool.getNamespace().contains(organization)) {
-                        continue;
-                    }
+                if (organization != null && tool.getNamespace() != null && !tool.getNamespace().contains(organization)) {
+                    continue;
                 }
-                if (name != null && tool.getName() != null) {
-                    if (!tool.getName().contains(name)) {
-                        continue;
-                    }
+                if (name != null && tool.getName() != null && !tool.getName().contains(name)) {
+                    continue;
                 }
-                if (toolname != null && tool.getToolname() != null) {
-                    if (!tool.getToolname().contains(toolname)) {
-                        continue;
-                    }
+                if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
+                    continue;
                 }
                 if (checker != null && checker) {
                     // tools are never checker workflows
@@ -329,42 +321,28 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (c instanceof Workflow) {
                 Workflow workflow = (Workflow)c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && workflow.getSourceControl() != null) {
-                    if (!workflow.getSourceControl().toString().contains(registry)) {
-                        continue;
-                    }
+                if (registry != null && workflow.getSourceControl() != null && !workflow.getSourceControl().toString().contains(registry)) {
+                    continue;
                 }
-                if (organization != null && workflow.getOrganization() != null) {
-                    if (!workflow.getOrganization().contains(organization)) {
-                        continue;
-                    }
+                if (organization != null && workflow.getOrganization() != null && !workflow.getOrganization().contains(organization)) {
+                    continue;
                 }
-                if (name != null && workflow.getRepository() != null) {
-                    if (!workflow.getRepository().contains(name)) {
-                        continue;
-                    }
+                if (name != null && workflow.getRepository() != null && !workflow.getRepository().contains(name)) {
+                    continue;
                 }
-                if (toolname != null && workflow.getWorkflowName() != null) {
-                    if (!workflow.getWorkflowName().contains(toolname)) {
-                        continue;
-                    }
+                if (toolname != null && workflow.getWorkflowName() != null && !workflow.getWorkflowName().contains(toolname)) {
+                    continue;
                 }
-                if (checker != null) {
-                    if (workflow.isIsChecker() != checker) {
-                        continue;
-                    }
+                if (checker != null && workflow.isIsChecker() != checker) {
+                    continue;
                 }
             }
             // common filters between tools and workflows
-            if (description != null && c.getDescription() != null) {
-                if (!c.getDescription().contains(description)) {
-                    continue;
-                }
+            if (description != null && c.getDescription() != null && !c.getDescription().contains(description)) {
+                continue;
             }
-            if (author != null && c.getAuthor() != null) {
-                if (!c.getAuthor().contains(author)) {
-                    continue;
-                }
+            if (author != null && c.getAuthor() != null && !c.getAuthor().contains(author)) {
+                continue;
             }
             // if passing, for each container that matches the criteria, convert to standardised format and return
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
@@ -446,19 +424,20 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     /**
      * @param registryId   registry id
-     * @param versionId    git reference
+     * @param versionIdParam    git reference
      * @param type         type of file
      * @param relativePath if null, return the primary descriptor, if not null, return a specific file
      * @param unwrap       unwrap the file and present the descriptor sans wrapper model
      * @return a specific file wrapped in a response
      */
-    private Response getFileByToolVersionID(String registryId, String versionId, DescriptorLanguage.FileType type, String relativePath,
+    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String relativePath,
         boolean unwrap, Optional<User> user) {
 
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
+        String versionId;
         try {
-            versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
+            versionId = URLDecoder.decode(versionIdParam, StandardCharsets.UTF_8.displayName());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -623,13 +602,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * Return a matching source file
      *
      * @param sourceFiles      files to look through
-     * @param searchPath       file to look for
+     * @param searchPathParam       file to look for
      * @param workingDirectory working directory if relevant
      * @return
      */
-    public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPath, String workingDirectory) {
+    public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory) {
         // ignore leading slashes
-        searchPath = cleanRelativePath(searchPath);
+        String searchPath = cleanRelativePath(searchPathParam);
 
         for (SourceFile sourceFile : sourceFiles) {
             String calculatedPath = sourceFile.getAbsolutePath();
@@ -768,9 +747,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         private String name;
         private String toolName;
 
-        public ParsedRegistryID(String id) {
+        public ParsedRegistryID(String paramId) {
+            String id;
             try {
-                id = URLDecoder.decode(id, StandardCharsets.UTF_8.displayName());
+                id = URLDecoder.decode(paramId, StandardCharsets.UTF_8.displayName());
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
@@ -821,7 +801,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return name;
         }
 
-        String getToolName() {
+        public String getToolName() {
             return toolName;
         }
 

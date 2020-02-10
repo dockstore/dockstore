@@ -682,7 +682,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param user the user to be updated
      * @return Updated user object
      */
-    public io.dockstore.webservice.core.User getUserMetadata(io.dockstore.webservice.core.User user) {
+    public User getUserMetadata(User user) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();

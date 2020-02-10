@@ -32,8 +32,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
+import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.ExpressionTool;
+import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
@@ -262,9 +264,9 @@ public class CWLHandler implements LanguageHandlerInterface {
             // Set up GSON for JSON parsing
             Gson gson;
             try {
-                gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+                gson = CWL.getTypeSafeCWLToolDocument();
 
-                final io.cwl.avro.Workflow workflow = gson.fromJson(cwlJson.toString(), io.cwl.avro.Workflow.class);
+                final Workflow workflow = gson.fromJson(cwlJson.toString(), Workflow.class);
 
                 if (workflow == null) {
                     LOG.error("The workflow does not seem to conform to CWL specs.");
@@ -339,7 +341,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                             stepDockerRequirement);
                         stepToType.put(workflowStepId, toolType);
                     } else if (isWorkflow(runAsJson, yaml)) {
-                        io.cwl.avro.Workflow stepWorkflow = gson.fromJson(runAsJson, io.cwl.avro.Workflow.class);
+                        Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
                         stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
                             stepDockerRequirement);
                         stepToType.put(workflowStepId, workflowType);
@@ -562,15 +564,15 @@ public class CWLHandler implements LanguageHandlerInterface {
             List<Object> cltHints = null;
 
             if (isExpressionTool(secondaryFileContents, yaml)) {
-                final ExpressionTool expressionTool = gson.fromJson(entryJson.toString(), io.cwl.avro.ExpressionTool.class);
+                final ExpressionTool expressionTool = gson.fromJson(entryJson.toString(), ExpressionTool.class);
                 cltRequirements = expressionTool.getRequirements();
                 cltHints = expressionTool.getHints();
             } else if (isTool(secondaryFileContents, yaml)) {
-                final CommandLineTool commandLineTool = gson.fromJson(entryJson.toString(), io.cwl.avro.CommandLineTool.class);
+                final CommandLineTool commandLineTool = gson.fromJson(entryJson.toString(), CommandLineTool.class);
                 cltRequirements = commandLineTool.getRequirements();
                 cltHints = commandLineTool.getHints();
             } else if (isWorkflow(secondaryFileContents, yaml)) {
-                final io.cwl.avro.Workflow workflow = gson.fromJson(entryJson.toString(), io.cwl.avro.Workflow.class);
+                final Workflow workflow = gson.fromJson(entryJson.toString(), Workflow.class);
                 cltRequirements = workflow.getRequirements();
                 cltHints = workflow.getHints();
             }

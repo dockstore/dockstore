@@ -10,9 +10,11 @@ import com.google.common.cache.LoadingCache;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,14 +58,14 @@ public class CacheConfigManager {
 
         Request request = new Request.Builder()
                 .url("https://api.github.com/app/installations/" + installationId + "/access_tokens")
-                .post(RequestBody.create(okhttp3.MediaType.parse(""), "")) // Empty body to appease library
+                .post(RequestBody.create(MediaType.parse(""), "")) // Empty body to appease library
                 .addHeader("Accept", "application/vnd.github.machine-man-preview+json")
                 .addHeader("Authorization", "Bearer " + jsonWebToken)
                 .build();
 
         String errorMsg = "Unable to retrieve installation access token.";
         try {
-            okhttp3.Response response = client.newCall(request).execute();
+            Response response = client.newCall(request).execute();
             JsonElement body = new JsonParser().parse(response.body().string());
             if (body.isJsonObject()) {
                 JsonObject responseBody = body.getAsJsonObject();

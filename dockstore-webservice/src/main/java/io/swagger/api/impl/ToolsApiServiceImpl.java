@@ -25,12 +25,8 @@ import javax.ws.rs.core.SecurityContext;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.swagger.api.ToolsApiService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static io.openapi.api.impl.ToolsApiServiceImpl finalConverterImpl = new io.openapi.api.impl.ToolsApiServiceImpl();
 

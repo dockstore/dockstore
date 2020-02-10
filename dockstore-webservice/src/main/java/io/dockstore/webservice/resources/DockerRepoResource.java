@@ -38,6 +38,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -115,7 +116,7 @@ public class DockerRepoResource
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published tools, authentication can be provided for restricted tools";
 
     @Context
-    private javax.ws.rs.container.ResourceContext rc;
+    private ResourceContext rc;
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;

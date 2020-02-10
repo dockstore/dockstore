@@ -665,6 +665,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
+  /organizations/{organizationId}/starredUsers:
+    get:
+      tags:
+      - organizations
+      summary: Return list of users who starred the given approved organization.
+      description: Return list of users who starred the given approved organization.
+      operationId: getStarredUsersForApprovedOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /organizations/all:
+    get:
+      tags:
+      - organizations
+      summary: List all organizations.
+      description: List all organizations, regardless of organization status. Admin/curator
+        only.
+      operationId: getAllOrganizations
+      parameters:
+      - name: type
+        in: query
+        description: Filter to apply to organizations.
+        required: true
+        schema:
+          type: string
+          enum:
+          - all
+          - pending
+          - rejected
+          - approved
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations:
     get:
       tags:
@@ -696,102 +752,6 @@ paths:
             schema:
               $ref: '#/components/schemas/Organization'
         required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/reject:
-    post:
-      tags:
-      - organizations
-      summary: Reject an organization.
-      description: Reject the organization with the given id. Admin/curator only.
-      operationId: rejectOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/request:
-    post:
-      tags:
-      - organizations
-      summary: Re-request an organization review.
-      description: Re-request a review of the given organization. Requires the organization
-        to be rejected.
-      operationId: requestOrganizationReview
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/name/{name}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by name.
-      description: Retrieve an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
-      parameters:
-      - name: name
-        in: path
-        description: Organization name.
-        required: true
-        schema:
-          type: string
       responses:
         default:
           description: default response
@@ -854,247 +814,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/description:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization description by organization ID.
-      description: Retrieve an organization description by organization ID. Supports
-        optional authentication.
-      operationId: getOrganizationDescription
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
-      security:
-      - bearer: []
-    put:
-      tags:
-      - organizations
-      summary: Update an organization's description.
-      description: Update an organization's description. Expects description in markdown
-        format.
-      operationId: updateOrganizationDescription
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Organization's description in markdown.
-        content:
-          '*/*':
-            schema:
-              type: string
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/members:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve all members for an organization.
-      description: Retrieve all members for an organization. Supports optional authentication.
-      operationId: getOrganizationMembers
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/OrganizationUser'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/events:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve all events for an organization.
-      description: Retrieve all events for an organization. Supports optional authentication.
-      operationId: getOrganizationEvents
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: offset
-        in: query
-        description: Start index of paging.  If this exceeds the current result set
-          return an empty set.  If not specified in the request, this will start at
-          the beginning of the results.
-        required: true
-        schema:
-          type: integer
-          format: int32
-          default: 0
-      - name: limit
-        in: query
-        description: Amount of records to return in a given page, limited to 100
-        required: true
-        schema:
-          maximum: 100
-          minimum: 1
-          type: integer
-          format: int32
-          default: 100
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Event'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/star:
-    put:
-      tags:
-      - organizations
-      summary: Star an organization.
-      description: Star an organization.
-      operationId: starOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: StarRequest to star an organization for a user.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/StarRequest'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-      - bearer: []
-  /organizations/{organizationId}/unstar:
-    delete:
-      tags:
-      - organizations
-      summary: Unstar an organization.
-      description: Unstar an organization.
-      operationId: unstarOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-      - bearer: []
-  /organizations/{organizationId}/starredUsers:
-    get:
-      tags:
-      - organizations
-      summary: Return list of users who starred the given approved organization.
-      description: Return list of users who starred the given approved organization.
-      operationId: getStarredUsersForApprovedOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-  /organizations/all:
-    get:
-      tags:
-      - organizations
-      summary: List all organizations.
-      description: List all organizations, regardless of organization status. Admin/curator
-        only.
-      operationId: getAllOrganizations
-      parameters:
-      - name: type
-        in: query
-        description: Filter to apply to organizations.
-        required: true
-        schema:
-          type: string
-          enum:
-          - all
-          - pending
-          - rejected
-          - approved
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
   /organizations/{organizationId}/users/{username}:
@@ -1280,6 +999,287 @@ paths:
             application/json: {}
       security:
       - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/reject:
+    post:
+      tags:
+      - organizations
+      summary: Reject an organization.
+      description: Reject the organization with the given id. Admin/curator only.
+      operationId: rejectOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization
+        to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/description:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization description by organization ID.
+      description: Retrieve an organization description by organization ID. Supports
+        optional authentication.
+      operationId: getOrganizationDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update an organization's description.
+      description: Update an organization's description. Expects description in markdown
+        format.
+      operationId: updateOrganizationDescription
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Organization's description in markdown.
+        content:
+          '*/*':
+            schema:
+              type: string
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/star:
+    put:
+      tags:
+      - organizations
+      summary: Star an organization.
+      description: Star an organization.
+      operationId: starOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: StarRequest to star an organization for a user.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/StarRequest'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
+  /organizations/{organizationId}/unstar:
+    delete:
+      tags:
+      - organizations
+      summary: Unstar an organization.
+      description: Unstar an organization.
+      operationId: unstarOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - bearer: []
+  /organizations/{organizationId}/members:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve all members for an organization.
+      description: Retrieve all members for an organization. Supports optional authentication.
+      operationId: getOrganizationMembers
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationUser'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/events:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve all events for an organization.
+      description: Retrieve all events for an organization. Supports optional authentication.
+      operationId: getOrganizationEvents
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: offset
+        in: query
+        description: Start index of paging.  If this exceeds the current result set
+          return an empty set.  If not specified in the request, this will start at
+          the beginning of the results.
+        required: true
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: limit
+        in: query
+        description: Amount of records to return in a given page, limited to 100
+        required: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          format: int32
+          default: 100
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+      security:
+      - bearer: []
   /organizations/{organizationId}/aliases:
     post:
       tags:
@@ -1309,7 +1309,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
   /organizations/{alias}/aliases:
@@ -1456,35 +1456,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/users/entries:
-    get:
-      tags:
-      - users
-      description: Get all of the entries for a user, sorted by most recently updated.
-      operationId: getUserEntries
-      parameters:
-      - name: count
-        in: query
-        description: Maximum number of entries to return
-        schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Filter paths with matching text
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EntryUpdateTime'
-      security:
-      - bearer: []
   /users/users/organizations:
     get:
       tags:
@@ -1513,6 +1484,35 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/OrganizationUpdateTime'
+      security:
+      - bearer: []
+  /users/users/entries:
+    get:
+      tags:
+      - users
+      description: Get all of the entries for a user, sorted by most recently updated.
+      operationId: getUserEntries
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of entries to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryUpdateTime'
       security:
       - bearer: []
   /users/registries:
@@ -1868,98 +1868,6 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List all tools
-      description: 'This endpoint returns all tools available or a filtered subset
-        using metadata query parameters. '
-      operationId: toolsGet
-      parameters:
-      - name: id
-        in: query
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        schema:
-          type: string
-      - name: alias
-        in: query
-        description: Support for this parameter is optional for tool registries that
-          support aliases. If provided will only return entries with the given alias.
-        schema:
-          type: string
-      - name: toolClass
-        in: query
-        description: Filter tools by the name of the subclass (#/definitions/ToolClass)
-        schema:
-          type: string
-      - name: registry
-        in: query
-        description: The image registry that contains the image.
-        schema:
-          type: string
-      - name: organization
-        in: query
-        description: The organization in the registry that published the image.
-        schema:
-          type: string
-      - name: name
-        in: query
-        description: The name of the image.
-        schema:
-          type: string
-      - name: toolname
-        in: query
-        description: The name of the tool.
-        schema:
-          type: string
-      - name: description
-        in: query
-        description: The description of the tool.
-        schema:
-          type: string
-      - name: author
-        in: query
-        description: The author of the tool (TODO a thought occurs, are we assuming
-          that the author of the CWL and the image are the same?).
-        schema:
-          type: string
-      - name: checker
-        in: query
-        description: Return only checker workflows.
-        schema:
-          type: boolean
-      - name: offset
-        in: query
-        description: Start index of paging. Pagination results can be based on numbers
-          or other values chosen by the registry implementor (for example, SHA values).
-          If this exceeds the current result set return an empty set.  If not specified
-          in the request, this will start at the beginning of the results.
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: Amount of records to return in a given page.
-        schema:
-          type: integer
-          format: int32
-      responses:
-        "200":
-          description: An array of Tools that match the filter.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-      security:
-      - BEARER: []
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
     get:
       tags:
@@ -2084,6 +1992,98 @@ paths:
             text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List all tools
+      description: 'This endpoint returns all tools available or a filtered subset
+        using metadata query parameters. '
+      operationId: toolsGet
+      parameters:
+      - name: id
+        in: query
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        schema:
+          type: string
+      - name: alias
+        in: query
+        description: Support for this parameter is optional for tool registries that
+          support aliases. If provided will only return entries with the given alias.
+        schema:
+          type: string
+      - name: toolClass
+        in: query
+        description: Filter tools by the name of the subclass (#/definitions/ToolClass)
+        schema:
+          type: string
+      - name: registry
+        in: query
+        description: The image registry that contains the image.
+        schema:
+          type: string
+      - name: organization
+        in: query
+        description: The organization in the registry that published the image.
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: The name of the image.
+        schema:
+          type: string
+      - name: toolname
+        in: query
+        description: The name of the tool.
+        schema:
+          type: string
+      - name: description
+        in: query
+        description: The description of the tool.
+        schema:
+          type: string
+      - name: author
+        in: query
+        description: The author of the tool (TODO a thought occurs, are we assuming
+          that the author of the CWL and the image are the same?).
+        schema:
+          type: string
+      - name: checker
+        in: query
+        description: Return only checker workflows.
+        schema:
+          type: boolean
+      - name: offset
+        in: query
+        description: Start index of paging. Pagination results can be based on numbers
+          or other values chosen by the registry implementor (for example, SHA values).
+          If this exceeds the current result set return an empty set.  If not specified
+          in the request, this will start at the beginning of the results.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Amount of records to return in a given page.
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: An array of Tools that match the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
       security:
       - BEARER: []
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
@@ -3378,6 +3378,16 @@ components:
           type: string
         toolVersionName:
           type: string
+    OrganizationUpdateTime:
+      type: object
+      properties:
+        displayName:
+          type: string
+        lastUpdateDate:
+          type: string
+          format: date-time
+        name:
+          type: string
     EntryUpdateTime:
       type: object
       properties:
@@ -3393,16 +3403,6 @@ components:
         path:
           type: string
         prettyPath:
-          type: string
-    OrganizationUpdateTime:
-      type: object
-      properties:
-        displayName:
-          type: string
-        lastUpdateDate:
-          type: string
-          format: date-time
-        name:
           type: string
     Repository:
       type: object

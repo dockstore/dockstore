@@ -28,8 +28,6 @@ public class ExtendedFileWrapper extends FileWrapper  {
     @JsonIgnore
     private SourceFile originalFile = null;
 
-    public ExtendedFileWrapper() { }
-
     public SourceFile getOriginalFile() {
         return originalFile;
     }

@@ -31,9 +31,11 @@ import io.openapi.model.Checksum;
 import io.openapi.model.ImageData;
 import io.swagger.model.DescriptorType;
 import io.swagger.model.ExtendedFileWrapper;
+import io.swagger.model.FileWrapper;
 import io.swagger.model.Metadata;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.Tool;
+import io.swagger.model.ToolClass;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -51,8 +53,8 @@ public final class ApiV2BetaVersionConverter {
     private static final Logger LOG = LoggerFactory.getLogger(ApiV2BetaVersionConverter.class);
 
     static {
-        ConvertUtils.register(new ToolClassConverter(), io.swagger.model.ToolClass.class);
-        ConvertUtils.register(new DescriptorTypeConverter(), io.swagger.model.DescriptorType.class);
+        ConvertUtils.register(new ToolClassConverter(), ToolClass.class);
+        ConvertUtils.register(new DescriptorTypeConverter(), DescriptorType.class);
     }
 
     private ApiV2BetaVersionConverter() {
@@ -168,22 +170,22 @@ public final class ApiV2BetaVersionConverter {
         return betaToolVersion;
     }
 
-    public static io.swagger.model.FileWrapper getOldWrapper(io.openapi.model.FileWrapper wrapper) {
-        io.swagger.model.FileWrapper oldWrapper = new io.swagger.model.FileWrapper();
+    public static FileWrapper getOldWrapper(io.openapi.model.FileWrapper wrapper) {
+        FileWrapper oldWrapper = new FileWrapper();
         oldWrapper.setContent(wrapper.getContent());
         oldWrapper.setUrl(wrapper.getUrl());
         return oldWrapper;
     }
 
-    public static io.swagger.model.FileWrapper getOldWrapper(ExtendedFileWrapper wrapper) {
-        io.swagger.model.FileWrapper oldWrapper = new io.swagger.model.FileWrapper();
+    public static FileWrapper getOldWrapper(ExtendedFileWrapper wrapper) {
+        FileWrapper oldWrapper = new FileWrapper();
         oldWrapper.setContent(wrapper.getContent());
         oldWrapper.setUrl(wrapper.getUrl());
         return oldWrapper;
     }
 
-    public static io.swagger.model.ExtendedFileWrapper getWrapper(io.openapi.model.ExtendedFileWrapper wrapper) {
-        io.swagger.model.ExtendedFileWrapper oldWrapper = new io.swagger.model.ExtendedFileWrapper();
+    public static ExtendedFileWrapper getWrapper(io.openapi.model.ExtendedFileWrapper wrapper) {
+        ExtendedFileWrapper oldWrapper = new ExtendedFileWrapper();
         oldWrapper.setOriginalFile(wrapper.getOriginalFile());
         oldWrapper.setContent(wrapper.getContent());
         oldWrapper.setUrl(wrapper.getUrl());
@@ -198,7 +200,7 @@ public final class ApiV2BetaVersionConverter {
     public static class DescriptorTypeConverter implements Converter {
         @Override
         public <T> T convert(Class<T> type, Object value) {
-            io.swagger.model.DescriptorType betaToolClass = io.swagger.model.DescriptorType.fromValue(value.toString());
+            DescriptorType betaToolClass = DescriptorType.fromValue(value.toString());
             return (T)betaToolClass;
         }
     }
@@ -206,7 +208,7 @@ public final class ApiV2BetaVersionConverter {
     public static class ToolClassConverter implements Converter {
         @Override
         public <T> T convert(Class<T> type, Object value) {
-            io.swagger.model.ToolClass betaToolClass = new io.swagger.model.ToolClass();
+            ToolClass betaToolClass = new ToolClass();
             try {
                 BeanUtils.copyProperties(betaToolClass, value);
             } catch (IllegalAccessException | InvocationTargetException e) {

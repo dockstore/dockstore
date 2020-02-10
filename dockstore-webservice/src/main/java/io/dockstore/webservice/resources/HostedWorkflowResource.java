@@ -58,6 +58,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.media.multipart.FormDataParam;
@@ -72,7 +73,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  */
 @Api("hosted")
 @Path("/workflows")
-@io.swagger.v3.oas.annotations.tags.Tag(name = "hosted", description = ResourceConstants.HOSTED)
+@Tag(name = "hosted", description = ResourceConstants.HOSTED)
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);
     private final WorkflowDAO workflowDAO;
