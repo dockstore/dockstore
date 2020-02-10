@@ -145,7 +145,8 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM
  * @author dyuen
  */
 public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
-    public static final String GA4GH_API_PATH = "/api/ga4gh/v2";
+    public static final String GA4GH_API_PATH_V2_BETA = "/api/ga4gh/v2";
+    public static final String GA4GH_API_PATH_V2_FINAL = "/ga4gh/trs/v2";
     public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
     public static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
@@ -253,7 +254,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         String portFragment = configuration.getExternalConfig().getPort() == null ? "" : ":" + configuration.getExternalConfig().getPort();
         beanConfig.setHost(configuration.getExternalConfig().getHostname() + portFragment);
         beanConfig.setBasePath(MoreObjects.firstNonNull(configuration.getExternalConfig().getBasePath(), "/"));
-        beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
+        beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api,io.openapi.api");
         beanConfig.setScan(true);
 
         final DefaultPluginManager languagePluginManager = LanguagePluginManager.getInstance(getFilePluginLocation(configuration));
@@ -346,7 +347,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         ToolsApi toolsApi = new ToolsApi(null);
         environment.jersey().register(toolsApi);
+
+        // TODO: attach V2 final properly
+        environment.jersey().register(new io.openapi.api.ToolsApi(null));
+
         environment.jersey().register(new ToolsExtendedApi());
+        environment.jersey().register(new io.openapi.api.ToolClassesApi(null));
         environment.jersey().register(new MetadataApi(null));
         environment.jersey().register(new ToolClassesApi(null));
         environment.jersey().register(new PersistenceExceptionMapper());

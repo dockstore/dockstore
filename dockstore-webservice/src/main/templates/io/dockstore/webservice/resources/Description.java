@@ -33,6 +33,7 @@ import io.swagger.models.Swagger;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.In;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.servers.Server;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -47,7 +48,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("tools")
 @Provider
 //TODO clean this up, preferably by destroying swagger
-@OpenAPIDefinition(tags = {@io.swagger.v3.oas.annotations.tags.Tag (name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS)},
+@OpenAPIDefinition(tags = {@io.swagger.v3.oas.annotations.tags.Tag (name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS)}, servers = {@Server(url = "/api", description = "Current server when hosted on AWS"), @Server(url = "/", description = "When working locally"), @Server(url = "https://dockstore.org/api", description = "Production server"), @Server(url = "https://staging.dockstore.org/api", description = "Staging server"), @Server(url = "https://dev.dockstore.net/api", description = "Nightly build server")},
     info = @io.swagger.v3.oas.annotations.info.Info(description = Description.DESCRIPTION, version = "${project.version}", title = "Dockstore API", contact = @io.swagger.v3.oas.annotations.info.Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @io.swagger.v3.oas.annotations.info.License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = "TBD")
 )
 @SwaggerDefinition(info = @Info(description =
@@ -58,6 +59,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
     @Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS),
     @Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1),
     @Tag(name = "GA4GH", description = ResourceConstants.GA4GH),
+    @Tag(name = "GA4GHV20", description = ResourceConstants.GA4GHV20),
     @Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH),
     @Tag(name = "tokens", description = ResourceConstants.TOKENS),
     @Tag(name = "workflows", description = ResourceConstants.WORKFLOWS),

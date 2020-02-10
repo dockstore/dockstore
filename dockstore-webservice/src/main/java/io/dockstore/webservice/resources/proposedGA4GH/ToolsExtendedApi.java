@@ -51,7 +51,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 /**
  * GET methods for organization related information on path: /api/ga4gh/v2/tools
  */
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/extended")
 @Api("extendedGA4GH")
 @Produces({ "application/json", "text/plain" })
 @io.swagger.v3.oas.annotations.tags.Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH)

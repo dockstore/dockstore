@@ -64,7 +64,7 @@ public class ToolVersionV1  {
             // descriptor type seems to have issues, maybe because nextflow didn't exist
             List<DescriptorType> newTypes = toolVersion.getDescriptorType();
             descriptorType.clear();
-            for(DescriptorType type : newTypes) {
+            for (DescriptorType type : newTypes) {
                 if (type == DescriptorType.CWL) {
                     descriptorType.add(DescriptorTypeEnum.CWL);
                 }

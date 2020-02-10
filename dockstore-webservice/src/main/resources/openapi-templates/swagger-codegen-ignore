@@ -1,0 +1,8 @@
+**/impl/*.java
+**/pom.xml
+**/web.xml
+**/.swagger-codegen-ignore
+**/.swagger-codegen/VERSION
+**/Bootstrap.java
+**/README.md
+**/swagger/api/JacksonJsonProvider.java

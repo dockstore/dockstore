@@ -119,18 +119,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Entry entry = getEntry(parsedID, user);
+        Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, false);
     }
 
     @Override
     public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Entry entry = getEntry(parsedID, user);
+        Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, true);
     }
 
-    private Response buildToolResponse(Entry container, String version, boolean returnJustVersions) {
+    private Response buildToolResponse(Entry<?, ?> container, String version, boolean returnJustVersions) {
         Response response;
         if (container == null) {
             response = Response.status(Status.NOT_FOUND).build();
@@ -264,7 +264,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return getFileByToolVersionID(id, versionId, DOCKERFILE, null, contextContainsPlainText(value), user);
     }
 
-    @SuppressWarnings("CheckStyle")
+    @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
     @Override
     public Response toolsGet(String id, String alias, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
@@ -406,12 +406,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
                         + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH
+                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
                     + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
@@ -648,7 +648,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext containerRequestContext, Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Entry entry = getEntry(parsedID, user);
+        Entry<?, ?> entry = getEntry(parsedID, user);
         List<String> primaryDescriptorPaths = new ArrayList<>();
         if (entry instanceof Workflow) {
             Workflow workflow = (Workflow)entry;
@@ -758,7 +758,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * and services have a "#service" prepended to it.
      */
     public static class ParsedRegistryID {
-        private enum ToolType {TOOL, SERVICE, WORKFLOW};
+        private enum ToolType { TOOL, SERVICE, WORKFLOW };
         private ToolType type = ToolType.TOOL;
         private String registry;
         private String organization;
