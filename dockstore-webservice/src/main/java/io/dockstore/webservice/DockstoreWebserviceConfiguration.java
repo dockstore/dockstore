@@ -614,6 +614,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String dnaStackImportUrl;
         private String dnaNexusImportUrl;
         private String terraImportUrl;
+        private String biodataCatalystWdlUrl;
+        private String biodataCatalystCwlUrl;
 
         private String gitHubAuthUrl;
         private String gitHubRedirectPath;
@@ -667,6 +669,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setTerraImportUrl(String terraImportUrl) {
             this.terraImportUrl = terraImportUrl;
+        }
+
+        public String getBiodataCatalystWdlUrl() {
+            return biodataCatalystWdlUrl;
+        }
+
+        public void setBiodataCatalystWdlUrl(String biodataCatalystWdlUrl) {
+            this.biodataCatalystWdlUrl = biodataCatalystWdlUrl;
+        }
+
+        public String getBiodataCatalystCwlUrl() {
+            return biodataCatalystCwlUrl;
+        }
+
+        public void setBiodataCatalystCwlUrl(String biodataCatalystCwlUrl) {
+            this.biodataCatalystCwlUrl = biodataCatalystCwlUrl;
         }
 
         public String getGitHubAuthUrl() {
