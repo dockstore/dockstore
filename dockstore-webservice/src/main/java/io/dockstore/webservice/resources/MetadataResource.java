@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -67,9 +68,7 @@ import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
-import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApiService;
@@ -115,23 +114,19 @@ public class MetadataResource {
 
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
     private final ToolDAO toolDAO;
-    private final WorkflowDAO workflowDAO;
     private final OrganizationDAO organizationDAO;
     private final CollectionDAO collectionDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
-    private final ServiceDAO serviceDAO;
     private final DockstoreWebserviceConfiguration config;
     private final SitemapListener sitemapListener;
     private final RSSListener rssListener;
 
     public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
         this.toolDAO = new ToolDAO(sessionFactory);
-        this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.config = config;
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
-        this.serviceDAO = new ServiceDAO(sessionFactory);
         this.sitemapListener = PublicStateManager.getInstance().getSitemapListener();
         this.rssListener = PublicStateManager.getInstance().getRSSListener();
     }
@@ -219,7 +214,7 @@ public class MetadataResource {
         List<Workflow> workflows = bioWorkflowDAO.findAllPublishedPathsOrderByDbupdatedate().stream().map(RSSWorkflowPath::getBioWorkflow).collect(
                 Collectors.toList());
 
-        List<Entry> dbEntries =  new ArrayList<>();
+        List<Entry<?, ?>> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
         dbEntries.addAll(workflows);
         dbEntries.sort(Comparator.comparingLong(entry -> entry.getLastUpdated().getTime()));
@@ -228,7 +223,7 @@ public class MetadataResource {
         RSSFeed feed = new RSSFeed();
 
         RSSHeader header = new RSSHeader();
-        header.setCopyright("Copyright 2018 OICR");
+        header.setCopyright("Copyright " + Year.now().getValue() + " OICR");
         header.setTitle("Dockstore");
         header.setDescription("Dockstore, developed by the Cancer Genome Collaboratory, is an open platform used by the GA4GH for sharing Docker-based tools described with either the Common Workflow Language (CWL) or the Workflow Description Language (WDL).");
         header.setLanguage("en");
@@ -238,7 +233,7 @@ public class MetadataResource {
         feed.setHeader(header);
 
         List<RSSEntry> entries = new ArrayList<>();
-        for (Entry dbEntry : dbEntries) {
+        for (Entry<?, ?> dbEntry : dbEntries) {
             RSSEntry entry = new RSSEntry();
             if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
@@ -264,8 +259,7 @@ public class MetadataResource {
         }
         feed.setEntries(entries);
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        try {
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
             RSSWriter.write(feed, byteArrayOutputStream);
             return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
         } catch (Exception e) {
