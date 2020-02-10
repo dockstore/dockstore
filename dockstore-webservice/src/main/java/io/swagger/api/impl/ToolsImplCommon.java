@@ -48,6 +48,7 @@ import io.openapi.model.DescriptorType;
 import io.openapi.model.ExtendedFileWrapper;
 import io.openapi.model.FileWrapper;
 import io.openapi.model.ImageData;
+import io.openapi.model.ImageType;
 import io.openapi.model.Tool;
 import io.openapi.model.ToolVersion;
 import org.apache.commons.lang3.ObjectUtils;
@@ -77,6 +78,8 @@ public final class ToolsImplCommon {
      */
     public static ExtendedFileWrapper sourceFileToToolDescriptor(String url, SourceFile sourceFile) {
         ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
+        //TODO: hook up file checksum here
+        toolDescriptor.setChecksum(Lists.newArrayList());
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
@@ -94,22 +97,19 @@ public final class ToolsImplCommon {
      * @return standardised data object
      */
     public static Tool convertEntryToTool(Entry<?, ?> container, DockstoreWebserviceConfiguration config, boolean showHiddenTags) {
-        String url;
         String newID = getNewId(container);
         boolean isDockstoreTool;
-        url = getUrlFromId(config, newID);
+        String url = getUrlFromId(config, newID);
         if (url == null) {
             return null;
         }
         // TODO: hook this up to a type field in our DB?
         Tool tool = new Tool();
-        tool = setGeneralToolInfo(tool, container);
+        setGeneralToolInfo(tool, container);
         tool.setId(newID);
         tool.setUrl(url);
         String checkerWorkflowPath = getCheckerWorkflowPath(config, container);
-        if (checkerWorkflowPath == null) {
-            checkerWorkflowPath = "";
-        }
+        checkerWorkflowPath = (checkerWorkflowPath == null) ? "" : checkerWorkflowPath;
         tool.setCheckerUrl(checkerWorkflowPath);
         boolean hasChecker = !(tool.getCheckerUrl().isEmpty() || tool.getCheckerUrl() == null);
         tool.setHasChecker(hasChecker);
@@ -143,12 +143,8 @@ public final class ToolsImplCommon {
             LOG.error("Unrecognized container type - neither tool or workflow: " + container.getId());
             return null;
         }
-        //TODO: moved to be version specific
-        //        tool.setContains(new ArrayList<>());
         tool.setAliases(new ArrayList<>(container.getAliases().keySet()));
 
-        // handle verified information
-        tool = setVerified(tool, inputVersions);
         for (Version version : inputVersions) {
             if (shouldHideToolVersion(version, showHiddenTags)) {
                 continue;
@@ -157,6 +153,11 @@ public final class ToolsImplCommon {
             ToolVersion toolVersion = new ToolVersion();
 
             toolVersion.setAuthor(Objects.firstNonNull(toolVersion.getAuthor(), Lists.newArrayList()));
+            //TODO: would hook up identified tools that form workflows here
+            toolVersion.setIncludedApps(Objects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
+            //TODO: hook up snapshot and checksum behaviour here
+            toolVersion.setIsProduction(false);
+            toolVersion.setSigned(false);
             final String author = ObjectUtils.firstNonNull(version.getAuthor(), container.getAuthor());
             if (author != null) {
                 toolVersion.getAuthor().add(author);
@@ -164,16 +165,7 @@ public final class ToolsImplCommon {
 
             toolVersion.setImages(Objects.firstNonNull(toolVersion.getImages(), Lists.newArrayList()));
             if (container instanceof io.dockstore.webservice.core.Tool) {
-                ImageData data = new ImageData();
-                if (((Tag)version).getImageId() != null) {
-                    Checksum checksum = new Checksum();
-                    checksum.setChecksum(((Tag)version).getImageId());
-                    checksum.setType(DOCKSTORE_IMAGEID);
-                    data.setChecksum(Lists.newArrayList(checksum));
-                }
-                data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
-                data.setRegistryHost(castedContainer.getRegistry());
-                toolVersion.getImages().add(data);
+                processImageDataForToolVersion(castedContainer, (Tag)version, toolVersion);
             }
 
             try {
@@ -240,6 +232,36 @@ public final class ToolsImplCommon {
     }
 
     /**
+     * creates image data for tools (in the Dockstore definition specifically)
+     * @param castedContainer Dockstore tool
+     * @param version tag for Dockstore tool
+     * @param toolVersion toolVersion to return in TRS
+     */
+    private static void processImageDataForToolVersion(io.dockstore.webservice.core.Tool castedContainer, Tag version,
+        ToolVersion toolVersion) {
+        ImageData data = new ImageData();
+        if (version.getImageId() != null) {
+            Checksum checksum = new Checksum();
+            checksum.setChecksum(version.getImageId());
+            checksum.setType(DOCKSTORE_IMAGEID);
+            //TODO: hook up snapshot and checksum behaviour here too for tools
+            data.setChecksum(Lists.newArrayList(checksum));
+        } else {
+            //TODO: hook up snapshot and checksum behaviour here too for workflows (or tools without images?)
+            data.setChecksum(Objects.firstNonNull(data.getChecksum(), Lists.newArrayList()));
+        }
+        //TODO: for now, all container images are Docker based
+        data.setImageType(ImageType.DOCKER);
+        //TODO: hook up proper size
+        data.setSize(0);
+        //TODO: hook up proper date
+        data.setUpdated(new Date().toString());
+        data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
+        data.setRegistryHost(castedContainer.getRegistry());
+        toolVersion.getImages().add(data);
+    }
+
+    /**
      * Whether to hide the ToolVersion in TRS or not
      * @param version   Dockstore version
      * @param showHiddenTags    Whether the user has read access to the Dockstore version or not
@@ -302,28 +324,6 @@ public final class ToolsImplCommon {
             String newID = WORKFLOW_PREFIX + "/" + entry.getCheckerWorkflow().getWorkflowPath();
             return getUrlFromId(config, newID);
         }
-    }
-
-    /**
-     * Sets whether the Tool is verified or not based on the version from Dockstore (Tags or WorkflowVersions)
-     *
-     * @param tool     The Tool to be modified
-     * @param versions The Dockstore versions (Tags or WorkflowVersions)
-     * @return The modified Tool with verified set
-     */
-    private static Tool setVerified(Tool tool, Set<? extends Version<?>> versions) {
-        //TODO: need to set this information version by version
-        //        tool.setVerified(versions.stream().anyMatch(Version::isVerified));
-        //        Set<String> verifiedSources = new TreeSet<>();
-        //        versions.stream().filter(Version::isVerified).forEach(e -> {
-        //            if (e.getVerifiedSources() != null) {
-        //                String[] array = e.getVerifiedSources();
-        //                List<String> stringList = Arrays.asList(array);
-        //                verifiedSources.addAll(stringList);
-        //            }
-        //        });
-        //        tool.setVerifiedSource(Strings.nullToEmpty(GSON.toJson(verifiedSources)));
-        return tool;
     }
 
     /**
@@ -436,6 +436,8 @@ public final class ToolsImplCommon {
             LOG.error("This source file is not a recognized test file.");
         }
         ExtendedFileWrapper toolTests = new ExtendedFileWrapper();
+        //TODO: hook up file checksum here
+        toolTests.setChecksum(Lists.newArrayList());
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
         toolTests.setContent(sourceFile.getContent());
         toolTests.setOriginalFile(sourceFile);

@@ -544,6 +544,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     .filter(sourcefile -> sourcefile.getType() == DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
                     ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
+                    //TODO: hook up file checksum here
+                    dockerfile.setChecksum(Lists.newArrayList());
                     dockerfile.setContent(potentialDockerfile.get().getContent());
                     dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
                     dockerfile.setOriginalFile(potentialDockerfile.get());
