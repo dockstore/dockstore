@@ -16,9 +16,6 @@
 
 package io.dockstore.webservice;
 
-import java.util.List;
-import java.util.Optional;
-
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
@@ -29,8 +26,6 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.specto.hoverfly.junit.rule.HoverflyRule;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Workflow;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -41,18 +36,15 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.common.Hoverfly.SERVICES_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.SUFFIX1;
 import static io.dockstore.common.Hoverfly.SUFFIX2;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Tests services endpoints from UserResource
