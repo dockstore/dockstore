@@ -3895,6 +3895,25 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
+  /users/github/sync:
+    post:
+      tags:
+      - "users"
+      summary: "Syncs Dockstore account with ."
+      description: "Currently only works with GitHub"
+      operationId: "syncUserServices"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /users/registries:
     get:
       tags:
@@ -3974,25 +3993,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Repository"
-  /users/services/sync:
-    post:
-      tags:
-      - "users"
-      summary: "Syncs service data with Git accounts."
-      description: "Currently only works with GitHub"
-      operationId: "syncUserServices"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /users/services/{organizationName}/sync:
     post:
       tags:

@@ -744,6 +744,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         User dbuser = userDAO.findById(user.getId());
         if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
+        } else if (source.equals(TokenType.GITHUB_COM)) {
+            syncAndGetServices(user, Optional.empty());
         }
         dbuser.updateUserMetadata(tokenDAO, source);
         return dbuser;
@@ -788,10 +790,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @POST
-    @Path("/services/sync")
+    @Path("/github/sync")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Syncs service data with Git accounts.", notes = "Currently only works with GitHub", authorizations = {
+    @ApiOperation(value = "Syncs Dockstore account with .", notes = "Currently only works with GitHub", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
     public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser) {
