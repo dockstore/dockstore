@@ -135,29 +135,4 @@ public class UserResourceServicesIT {
         fakeGithubToken.setUserId(id);
         return fakeGithubToken;
     }
-
-    @Test
-    public void refreshWithAppInstalledOnOrg() {
-        final UsersApi userApi = new UsersApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME_2, testingPostgres));
-        assertEquals(0, userApi.userServices(GITHUB_USER2_ID).size());
-        userApi.syncUserServices();
-        final List<Workflow> services = userApi.userServices(GITHUB_USER2_ID);
-        assertEquals(2, services.size()); // 2 from fixtures/GitHubUser1Repos.json
-        final Optional<Workflow> jdockerService = services.stream().filter(w -> w.getRepository().equals("jbrowse-docker")).findFirst();
-        assertEquals(0, jdockerService.get().getWorkflowVersions().size());
-        final Optional<Workflow> xenahubService = services.stream().filter(w -> w.getRepository().equals("xenahub")).findFirst();
-        assertEquals(1, xenahubService.get().getWorkflowVersions().size());
-    }
-
-    @Test
-    public void refreshWithAppInstalledOnRepo() {
-        final UsersApi userApi = new UsersApi(getWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres));
-        assertEquals(0, userApi.userServices(GITHUB_USER1_ID).size());
-        userApi.syncUserServices();
-        final List<Workflow> services = userApi.userServices(GITHUB_USER1_ID);
-        assertEquals(1, services.size()); // 1 because only 1 repo has the app installed.
-        final Optional<Workflow> xenahubService = services.stream().filter(w -> w.getRepository().equals("xenahub")).findFirst();
-        assertEquals(1, xenahubService.get().getWorkflowVersions().size());
-    }
-
 }

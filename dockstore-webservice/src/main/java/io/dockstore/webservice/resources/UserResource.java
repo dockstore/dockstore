@@ -745,7 +745,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
         } else if (source.equals(TokenType.GITHUB_COM)) {
-            syncAndGetServices(user, Optional.empty());
+            syncUserWithGitHub(user);
         }
         dbuser.updateUserMetadata(tokenDAO, source);
         return dbuser;
@@ -793,29 +793,12 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/github/sync")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Syncs Dockstore account with .", notes = "Currently only works with GitHub", authorizations = {
+    @ApiOperation(value = "Syncs Dockstore account with GitHub.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
-    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser) {
+    public List<Workflow> syncUserWithGitHub(@ApiParam(hidden = true) @Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
-        return syncAndGetServices(user, Optional.empty());
-    }
-
-    @POST
-    @Path("/services/{organizationName}/sync")
-    @Timed
-    @UnitOfWork
-    @ApiOperation(value = "Syncs services with Git accounts for a specified organization.",
-            authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
-            response = Workflow.class, responseContainer = "List")
-    public List<Workflow> syncUserServicesbyOrganization(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "Organization name", required = true) @PathParam("organizationName") String organization) {
-        final User user = userDAO.findById(authUser.getId());
-        return syncAndGetServices(user, Optional.of(organization));
-    }
-
-    private List<Workflow> syncAndGetServices(User user, Optional<String> organization2) {
-        serviceResource.syncEntitiesForUser(user, organization2);
+        workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
         return getStrippedServices(userDAO.findById(user.getId()));
     }

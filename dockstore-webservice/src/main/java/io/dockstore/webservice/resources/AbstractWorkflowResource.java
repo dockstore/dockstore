@@ -398,11 +398,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return workflowToUpdate;
     }
     /**
-     * Add user to any existing Dockstore services they should own
+     * Add user to any existing Dockstore workflow and services from GitHub apps they should own
      * @param user
-     * @param organization
      */
-    void syncEntitiesForUser(User user, Optional<String> organization) {
+    void syncEntitiesForUser(User user) {
         List<Token> githubByUserId = tokenDAO.findGithubByUserId(user.getId());
 
         if (githubByUserId.isEmpty()) {
@@ -410,7 +409,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         } else {
-            syncEntities(user, organization, githubByUserId.get(0));
+            syncEntities(user, githubByUserId.get(0));
         }
     }
 
@@ -421,17 +420,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * 2. For existing entities, ensures that <code>user</code> is one of the entity's users
      *
      * @param user
-     * @param organization
      * @param gitHubToken
      */
-    private void syncEntities(User user, Optional<String> organization, Token gitHubToken) {
+    private void syncEntities(User user, Token gitHubToken) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken, client);
 
         // Get all GitHub repositories for the user
         final Map<String, String> workflowGitUrl2Name = gitHubSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
 
         // Filter by organization if necessary
-        final Collection<String> repositories = GitHubHelper.filterReposByOrg(workflowGitUrl2Name.values(), organization);
+        final Collection<String> repositories = workflowGitUrl2Name.values();
 
         // Add user to any services they should have access to that already exist on Dockstore
         final List<Workflow> existingWorkflows = findDockstoreWorkflowsForGitHubRepos(repositories);
