@@ -39,10 +39,6 @@ jobs:
           name: run the actual tests
           command: mvn -B clean install -Punit-tests -ntp
       - run:
-          name: run memory intensive unit tests
-          command: |
-              mvn --batch-mode clean install -Pmemory-intensive-unit-tests
-      - run:
           name: run the non-confidential integration tests
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests) 

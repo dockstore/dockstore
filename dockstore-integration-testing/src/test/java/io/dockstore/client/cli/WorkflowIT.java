@@ -148,20 +148,6 @@ public class WorkflowIT extends BaseIT {
     private WorkflowVersionDAO workflowVersionDAO;
     private Session session;
 
-    private WorkflowDAO workflowDAO;
-    private Session session;
-
-    @Before
-    public void setup() {
-        DockstoreWebserviceApplication application = SUPPORT.getApplication();
-        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
-
-        this.workflowDAO = new WorkflowDAO(sessionFactory);
-
-        // used to allow us to use workflowDAO outside of the web service
-        this.session = application.getHibernate().getSessionFactory().openSession();
-        ManagedSessionContext.bind(session);
-    }
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
@@ -1659,24 +1645,6 @@ public class WorkflowIT extends BaseIT {
         Assert.assertFalse("Getting workflow version via published workflow has null alias",
                 MapUtils.isEmpty(workflowVersionByPublshedByPathValidation.getAliases()));
 
-    }
-
-    /**
-     * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
-     */
-    private static class EntryVersionHelperImpl implements EntryVersionHelper {
-
-        @Override
-        public EntryDAO getDAO() {
-            return null;
-        }
-    }
-
-    private Workflow registerGatkSvWorkflow(WorkflowsApi ownerWorkflowApi) {
-        // Register and refresh workflow
-        Workflow workflow = ownerWorkflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl",
-                "test", "wdl", "/test.json");
-        return ownerWorkflowApi.refresh(workflow.getId());
     }
 
     /**
