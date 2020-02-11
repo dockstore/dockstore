@@ -157,7 +157,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
                 Map<String, String> validationMessageObject = new HashMap<>();
-                validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata");
+                validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage());
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
                 version.setAuthor(null);
                 version.setDescriptionAndDescriptionSource(null, null);
