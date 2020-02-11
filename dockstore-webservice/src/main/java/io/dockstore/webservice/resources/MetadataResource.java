@@ -87,6 +87,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import okhttp3.Cache;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -106,7 +107,7 @@ import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SIT
 @Path("/metadata")
 @Api("metadata")
 @Produces({MediaType.TEXT_HTML, MediaType.TEXT_XML})
-@io.swagger.v3.oas.annotations.tags.Tag(name = "metadata", description = ResourceConstants.METADATA)
+@Tag(name = "metadata", description = ResourceConstants.METADATA)
 public class MetadataResource {
 
     public static final int RSS_ENTRY_LIMIT = 50;

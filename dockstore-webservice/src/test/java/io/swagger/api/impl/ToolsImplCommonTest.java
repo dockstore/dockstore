@@ -35,7 +35,6 @@ import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.model.DescriptorType;
-import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolVersion;
@@ -68,7 +67,7 @@ public class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapper actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.wdl", sourceFile);
+        FileWrapper actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.wdl", sourceFile));
         FileWrapper expectedToolDescriptor = new FileWrapper();
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
         expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
@@ -83,7 +82,7 @@ public class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapper actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.cwl", sourceFile);
+        FileWrapper actualToolDescriptor = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolDescriptor("/Dockstore.cwl", sourceFile));
         FileWrapper expectedToolDescriptor = new FileWrapper();
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
         expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
@@ -173,11 +172,11 @@ public class ToolsImplCommonTest {
         expectedTool.setDescription("");
         expectedTool.setAuthor("sampleAuthor");
         expectedTool.setMetaVersion(null);
-        expectedTool.setAliases(Collections.EMPTY_LIST);
-        expectedTool.setContains(Collections.EMPTY_LIST);
+        expectedTool.setAliases(Collections.emptyList());
+        expectedTool.setContains(Collections.emptyList());
         expectedTool.setVerified(false);
         expectedTool.setSigned(false);
-        expectedTool.setVersions(Collections.EMPTY_LIST);
+        expectedTool.setVersions(Collections.emptyList());
         expectedTool.setVerifiedSource("[]");
         ToolVersion expectedToolVersion = new ToolVersion();
         expectedToolVersion.setName("sampleTag");
@@ -201,11 +200,11 @@ public class ToolsImplCommonTest {
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion);
         expectedTool.setVersions(expectedToolVersions);
-        Tool actualTool = ToolsImplCommon.convertEntryToTool(tool, actualConfig, false);
+        Tool actualTool = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(tool, actualConfig, false));
         actualTool.setMetaVersion(null);
         actualTool.getVersions().parallelStream().forEach(version -> version.setMetaVersion(null));
         assertEquals(expectedTool, actualTool);
-        Tool actualToolWithHiddenVersions = ToolsImplCommon.convertEntryToTool(tool, actualConfig, true);
+        Tool actualToolWithHiddenVersions = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(tool, actualConfig, true));
         assertEquals(actualTool.getVersions().size() + 1, actualToolWithHiddenVersions.getVersions().size());
     }
 
@@ -325,7 +324,7 @@ public class ToolsImplCommonTest {
         workflow.setLastUpdated(null);
         workflow.setGitUrl("git@github.com:ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow.git");
         workflow.setCheckerWorkflow(workflow);
-        Tool actualTool = ToolsImplCommon.convertEntryToTool(workflow, actualConfig);
+        Tool actualTool = ApiV2BetaVersionConverter.getTool(ToolsImplCommon.convertEntryToTool(workflow, actualConfig));
         ToolVersion expectedToolVersion1 = new ToolVersion();
         expectedToolVersion1.setName(reference2);
         if (toolname != null) {
@@ -452,8 +451,8 @@ public class ToolsImplCommonTest {
         expectedTool.setAuthor("Unknown author");
         // Meta-version dates are currently dependant on the environment, disabling for now
         expectedTool.setMetaVersion(null);
-        expectedTool.setContains(Collections.EMPTY_LIST);
-        expectedTool.setAliases(Collections.EMPTY_LIST);
+        expectedTool.setContains(Collections.emptyList());
+        expectedTool.setAliases(Collections.emptyList());
         expectedTool.setVerified(true);
         expectedTool.setVerifiedSource("[\"chickenTesterSource\",\"potatoTesterSource\"]");
         expectedTool.setSigned(false);
@@ -475,8 +474,8 @@ public class ToolsImplCommonTest {
         sourceFile.setAbsolutePath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapper actualToolTests = ToolsImplCommon.sourceFileToToolTests("", sourceFile);
-        ExtendedFileWrapper expectedToolTests = new ExtendedFileWrapper();
+        FileWrapper actualToolTests = ApiV2BetaVersionConverter.getOldWrapper(ToolsImplCommon.sourceFileToToolTests("", sourceFile));
+        FileWrapper expectedToolTests = new FileWrapper();
         expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");
         assertEquals(expectedToolTests, actualToolTests);

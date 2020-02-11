@@ -30,7 +30,7 @@ import io.openapi.model.ToolClass;
 
 // TODO: this is copied from v2 beta, make this better
 public class ToolClassesApiServiceImpl extends ToolClassesApiService {
-    static ToolClass getServiceClass() {
+    public static ToolClass getServiceClass() {
         ToolClass type2 = new ToolClass();
         type2.setName("Service");
         type2.setId("2");
@@ -38,7 +38,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
         return type2;
     }
 
-    static ToolClass getWorkflowClass() {
+    public static ToolClass getWorkflowClass() {
         ToolClass type2 = new ToolClass();
         type2.setName("Workflow");
         type2.setId("1");
@@ -46,7 +46,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
         return type2;
     }
 
-    static ToolClass getCommandLineToolClass() {
+    public static ToolClass getCommandLineToolClass() {
         ToolClass type1 = new ToolClass();
         type1.setName("CommandLineTool");
         type1.setId("0");
@@ -56,7 +56,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
 
     @Override
     public Response toolClassesGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) {
-        final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
+        final List<ToolClass> toolTypes = new ArrayList<>();
         toolTypes.add(getCommandLineToolClass());
         toolTypes.add(getWorkflowClass());
         return Response.ok().entity(toolTypes).build();

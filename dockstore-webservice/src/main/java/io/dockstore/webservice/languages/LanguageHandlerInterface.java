@@ -40,6 +40,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,13 +162,13 @@ public interface LanguageHandlerInterface {
      * @param nodeDockerInfo     also looks like a list of node ids mapped to a triple describing where it came from and some docker information?
      * @return Cytoscape compatible JSON with nodes and edges
      */
-    default String setupJSONDAG(List<org.apache.commons.lang3.tuple.Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
+    default String setupJSONDAG(List<Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
         Map<String, String> stepToType, Map<String, Triple<String, String, String>> nodeDockerInfo) {
         List<Map<String, Map<String, String>>> nodes = new ArrayList<>();
         List<Map<String, Map<String, String>>> edges = new ArrayList<>();
 
         // Iterate over steps, make nodes and edges
-        for (org.apache.commons.lang3.tuple.Pair<String, String> node : nodePairs) {
+        for (Pair<String, String> node : nodePairs) {
             String stepId = node.getLeft();
             String dockerUrl = null;
             if (nodeDockerInfo.get(stepId) != null) {
@@ -351,7 +352,7 @@ public interface LanguageHandlerInterface {
         final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
 
         // Initialize data structures for DAG
-        List<org.apache.commons.lang3.tuple.Pair<String, String>> nodePairs = new ArrayList<>();
+        List<Pair<String, String>> nodePairs = new ArrayList<>();
         Map<String, String> callToType = new HashMap<>();
 
         // Initialize data structures for Tool table
@@ -383,7 +384,7 @@ public interface LanguageHandlerInterface {
         }
 
         // Determine start node edges
-        for (org.apache.commons.lang3.tuple.Pair<String, String> node : nodePairs) {
+        for (Pair<String, String> node : nodePairs) {
             ToolInfo toolInfo = toolInfoMap.get(node.getLeft());
             if (toolInfo.toolDependencyList.size() == 0) {
                 toolInfo.toolDependencyList.add("UniqueBeginKey");

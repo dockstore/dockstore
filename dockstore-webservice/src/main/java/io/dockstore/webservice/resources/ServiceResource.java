@@ -19,6 +19,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 
@@ -28,7 +29,7 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
 @Produces(MediaType.APPLICATION_JSON)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "workflows", description = ResourceConstants.WORKFLOWS)
+@Tag(name = "workflows", description = ResourceConstants.WORKFLOWS)
 public class ServiceResource extends AbstractWorkflowResource<Service> {
 
     public ServiceResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration) {

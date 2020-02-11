@@ -55,6 +55,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import wdl.draft3.parser.WdlParser;
 
 /**
  * This class will eventually handle support for understanding WDL
@@ -154,7 +155,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {
                     version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
                 }
-            } catch (wdl.draft3.parser.WdlParser.SyntaxError ex) {
+            } catch (WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
                 Map<String, String> validationMessageObject = new HashMap<>();
                 validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage());
@@ -233,7 +234,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 } else {
                     wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
                 }
-            } catch (wdl.draft3.parser.WdlParser.SyntaxError | IllegalArgumentException e) {
+            } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 return new VersionTypeValidation(false, validationMessageObject);
             } catch (CustomWebApplicationException e) {
@@ -389,7 +390,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
             // Get import files
             namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
-        } catch (IOException | NoSuchElementException | wdl.draft3.parser.WdlParser.SyntaxError e) {
+        } catch (IOException | NoSuchElementException | WdlParser.SyntaxError e) {
             throw new CustomWebApplicationException("could not process wdl into DAG: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);

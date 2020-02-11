@@ -89,6 +89,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
@@ -104,7 +105,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/users")
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "users", description = ResourceConstants.USERS)
+@Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final UserDAO userDAO;

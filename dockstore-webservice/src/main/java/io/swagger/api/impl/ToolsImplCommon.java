@@ -27,12 +27,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.TreeSet;
 
+import avro.shaded.com.google.common.base.Objects;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -43,11 +42,16 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.swagger.model.DescriptorType;
-import io.swagger.model.ExtendedFileWrapper;
-import io.swagger.model.FileWrapper;
-import io.swagger.model.Tool;
-import io.swagger.model.ToolVersion;
+import io.dockstore.webservice.core.WorkflowVersion;
+import io.openapi.model.Checksum;
+import io.openapi.model.DescriptorType;
+import io.openapi.model.ExtendedFileWrapper;
+import io.openapi.model.FileWrapper;
+import io.openapi.model.ImageData;
+import io.openapi.model.ImageType;
+import io.openapi.model.Tool;
+import io.openapi.model.ToolVersion;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,8 +62,8 @@ import org.slf4j.LoggerFactory;
 public final class ToolsImplCommon {
     public static final String WORKFLOW_PREFIX = "#workflow";
     public static final String SERVICE_PREFIX = "#service";
+    public static final String DOCKSTORE_IMAGEID = "dockstore:imageid";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
-    private static final Gson GSON = new Gson();
 
     private ToolsImplCommon() { }
 
@@ -72,15 +76,17 @@ public final class ToolsImplCommon {
      * @param sourceFile The Dockstore SourceFile
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
-    static ExtendedFileWrapper sourceFileToToolDescriptor(String url, SourceFile sourceFile) {
+    public static ExtendedFileWrapper sourceFileToToolDescriptor(String url, SourceFile sourceFile) {
         ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
+        //TODO: hook up file checksum here
+        toolDescriptor.setChecksum(Lists.newArrayList());
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
         return toolDescriptor;
     }
 
-    public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config) {
+    public static Tool convertEntryToTool(Entry<?, ?> container, DockstoreWebserviceConfiguration config) {
         return convertEntryToTool(container, config, false);
     }
 
@@ -90,27 +96,24 @@ public final class ToolsImplCommon {
      * @param container our data object
      * @return standardised data object
      */
-    public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config, boolean showHiddenTags) {
-        String url;
+    public static Tool convertEntryToTool(Entry<?, ?> container, DockstoreWebserviceConfiguration config, boolean showHiddenTags) {
         String newID = getNewId(container);
         boolean isDockstoreTool;
-        url = getUrlFromId(config, newID);
+        String url = getUrlFromId(config, newID);
         if (url == null) {
             return null;
         }
         // TODO: hook this up to a type field in our DB?
-        io.swagger.model.Tool tool = new io.swagger.model.Tool();
-        tool = setGeneralToolInfo(tool, container);
+        Tool tool = new Tool();
+        setGeneralToolInfo(tool, container);
         tool.setId(newID);
         tool.setUrl(url);
         String checkerWorkflowPath = getCheckerWorkflowPath(config, container);
-        if (checkerWorkflowPath == null) {
-            checkerWorkflowPath = "";
-        }
+        checkerWorkflowPath = (checkerWorkflowPath == null) ? "" : checkerWorkflowPath;
         tool.setCheckerUrl(checkerWorkflowPath);
         boolean hasChecker = !(tool.getCheckerUrl().isEmpty() || tool.getCheckerUrl() == null);
         tool.setHasChecker(hasChecker);
-        Set<? extends Version> inputVersions;
+        Set<? extends Version<?>> inputVersions;
         // tool specific
         io.dockstore.webservice.core.Tool castedContainer = null;
         if (container instanceof io.dockstore.webservice.core.Tool) {
@@ -121,7 +124,7 @@ public final class ToolsImplCommon {
             String name = castedContainer.getName();
             String toolName = castedContainer.getToolname();
             String returnName = constructName(Arrays.asList(name, toolName));
-            tool.setToolname(returnName);
+            tool.setName(returnName);
             tool.setOrganization(castedContainer.getNamespace());
             inputVersions = castedContainer.getWorkflowVersions();
         } else if (container instanceof Workflow) {
@@ -133,31 +136,36 @@ public final class ToolsImplCommon {
             String name = workflow.getRepository();
             String workflowName = workflow.getWorkflowName();
             String returnName = constructName(Arrays.asList(name, workflowName));
-            tool.setToolname(returnName);
+            tool.setName(returnName);
             tool.setOrganization(workflow.getOrganization());
             inputVersions = ((Workflow)container).getWorkflowVersions();
         } else {
             LOG.error("Unrecognized container type - neither tool or workflow: " + container.getId());
             return null;
         }
-        tool.setContains(new ArrayList<>());
         tool.setAliases(new ArrayList<>(container.getAliases().keySet()));
 
-        // handle verified information
-        tool = setVerified(tool, inputVersions);
         for (Version version : inputVersions) {
             if (shouldHideToolVersion(version, showHiddenTags)) {
                 continue;
             }
 
             ToolVersion toolVersion = new ToolVersion();
+
+            toolVersion.setAuthor(Objects.firstNonNull(toolVersion.getAuthor(), Lists.newArrayList()));
+            //TODO: would hook up identified tools that form workflows here
+            toolVersion.setIncludedApps(Objects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
+            //TODO: hook up snapshot and checksum behaviour here
+            toolVersion.setIsProduction(false);
+            toolVersion.setSigned(false);
+            final String author = ObjectUtils.firstNonNull(version.getAuthor(), container.getAuthor());
+            if (author != null) {
+                toolVersion.getAuthor().add(author);
+            }
+
+            toolVersion.setImages(Objects.firstNonNull(toolVersion.getImages(), Lists.newArrayList()));
             if (container instanceof io.dockstore.webservice.core.Tool) {
-                toolVersion.setRegistryUrl(castedContainer.getRegistry());
-                toolVersion.setImageName(
-                    constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
-            } else {
-                toolVersion.setRegistryUrl("");
-                toolVersion.setImageName("");
+                processImageDataForToolVersion(castedContainer, (Tag)version, toolVersion);
             }
 
             try {
@@ -201,9 +209,7 @@ public final class ToolsImplCommon {
                 }
             }
 
-            if (toolVersion.getDescriptorType() == null) {
-                toolVersion.setDescriptorType(new ArrayList<>());
-            }
+            toolVersion.setDescriptorType(Objects.firstNonNull(toolVersion.getDescriptorType(), Lists.newArrayList()));
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
@@ -211,7 +217,7 @@ public final class ToolsImplCommon {
                     Tag castedTag = (Tag)version;
                     toolVersion.setMetaVersion(String.valueOf(castedTag.getLastBuilt() != null ? castedTag.getLastBuilt() : new Date(0)));
                 } else {
-                    io.dockstore.webservice.core.WorkflowVersion castedWorkflowVersion = (io.dockstore.webservice.core.WorkflowVersion)version;
+                    WorkflowVersion castedWorkflowVersion = (WorkflowVersion)version;
                     toolVersion.setMetaVersion(String.valueOf(castedWorkflowVersion.getLastModified() != null ? castedWorkflowVersion.getLastModified() : new Date(0)));
                 }
                 final List<DescriptorType> descriptorType = toolVersion.getDescriptorType();
@@ -226,12 +232,42 @@ public final class ToolsImplCommon {
     }
 
     /**
+     * creates image data for tools (in the Dockstore definition specifically)
+     * @param castedContainer Dockstore tool
+     * @param version tag for Dockstore tool
+     * @param toolVersion toolVersion to return in TRS
+     */
+    private static void processImageDataForToolVersion(io.dockstore.webservice.core.Tool castedContainer, Tag version,
+        ToolVersion toolVersion) {
+        ImageData data = new ImageData();
+        if (version.getImageId() != null) {
+            Checksum checksum = new Checksum();
+            checksum.setChecksum(version.getImageId());
+            checksum.setType(DOCKSTORE_IMAGEID);
+            //TODO: hook up snapshot and checksum behaviour here too for tools
+            data.setChecksum(Lists.newArrayList(checksum));
+        } else {
+            //TODO: hook up snapshot and checksum behaviour here too for workflows (or tools without images?)
+            data.setChecksum(Objects.firstNonNull(data.getChecksum(), Lists.newArrayList()));
+        }
+        //TODO: for now, all container images are Docker based
+        data.setImageType(ImageType.DOCKER);
+        //TODO: hook up proper size
+        data.setSize(0);
+        //TODO: hook up proper date
+        data.setUpdated(new Date().toString());
+        data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
+        data.setRegistryHost(castedContainer.getRegistry());
+        toolVersion.getImages().add(data);
+    }
+
+    /**
      * Whether to hide the ToolVersion in TRS or not
      * @param version   Dockstore version
      * @param showHiddenTags    Whether the user has read access to the Dockstore version or not
      * @return
      */
-    private static boolean shouldHideToolVersion(Version version, boolean showHiddenTags) {
+    private static boolean shouldHideToolVersion(Version<?> version, boolean showHiddenTags) {
         // Hide version if no name
         if (version.getName() == null) {
             return true;
@@ -281,7 +317,7 @@ public final class ToolsImplCommon {
      * @param entry     The entry to find its checker workflow path (test_tool_path)
      * @return          The checker workflow's GA4GH Tool ID
      */
-    private static String getCheckerWorkflowPath(DockstoreWebserviceConfiguration config, Entry entry) {
+    private static String getCheckerWorkflowPath(DockstoreWebserviceConfiguration config, Entry<?, ?> entry) {
         if (entry.getCheckerWorkflow() == null) {
             return null;
         } else {
@@ -291,33 +327,12 @@ public final class ToolsImplCommon {
     }
 
     /**
-     * Sets whether the Tool is verified or not based on the version from Dockstore (Tags or WorkflowVersions)
-     *
-     * @param tool     The Tool to be modified
-     * @param versions The Dockstore versions (Tags or WorkflowVersions)
-     * @return The modified Tool with verified set
-     */
-    private static Tool setVerified(Tool tool, Set<? extends Version> versions) {
-        tool.setVerified(versions.stream().anyMatch(Version::isVerified));
-        Set<String> verifiedSources = new TreeSet<>();
-        versions.stream().filter(Version::isVerified).forEach(e -> {
-            if (e.getVerifiedSources() != null) {
-                String[] array = e.getVerifiedSources();
-                List<String> stringList = Arrays.asList(array);
-                verifiedSources.addAll(stringList);
-            }
-        });
-        tool.setVerifiedSource(Strings.nullToEmpty(GSON.toJson(verifiedSources)));
-        return tool;
-    }
-
-    /**
      * Gets the new ID of the Tool
      *
      * @param container The Dockstore Entry (Tool or Workflow)
      * @return The new ID of the Tool
      */
-    private static String getNewId(Entry container) {
+    private static String getNewId(Entry<?, ?> container) {
         if (container instanceof io.dockstore.webservice.core.Tool) {
             return ((io.dockstore.webservice.core.Tool)container).getToolPath();
         } else if (container instanceof Workflow) {
@@ -344,7 +359,7 @@ public final class ToolsImplCommon {
      * @return The modified ToolVersion
      * @throws UnsupportedEncodingException When URL encoding has failed
      */
-    private static ToolVersion setGeneralToolVersionInfo(String url, ToolVersion toolVersion, Version version)
+    private static ToolVersion setGeneralToolVersionInfo(String url, ToolVersion toolVersion, Version<?> version)
         throws UnsupportedEncodingException {
         String globalVersionId;
         globalVersionId = url + "/versions/" + URLEncoder.encode(version.getName(), StandardCharsets.UTF_8.displayName());
@@ -352,18 +367,8 @@ public final class ToolsImplCommon {
         toolVersion.setName(version.getName());
         toolVersion.setVerified(version.isVerified());
         String[] toolVerifiedSources = version.getVerifiedSources();
-        String verifiedSource = GSON.toJson(toolVerifiedSources);
-        toolVersion.setVerifiedSource(Strings.nullToEmpty(verifiedSource));
+        toolVersion.setVerifiedSource(Lists.newArrayList(toolVerifiedSources));
         toolVersion.setContainerfile(false);
-
-        // Set image if it's a DockstoreTool, otherwise make it empty string (for now)
-        if (version instanceof Tag) {
-            Tag tag = (Tag)version;
-            toolVersion.setImage(tag.getImageId());
-        } else {
-            // TODO: Modify mapper to ignore null-value properties during serialization for specific endpoint(s)
-            toolVersion.setImage("");
-        }
         return toolVersion;
     }
 
@@ -375,32 +380,28 @@ public final class ToolsImplCommon {
      * @return The modified Tool
      */
     private static Tool setGeneralToolInfo(Tool tool, Entry container) {
-        // Set author
-        if (container.getAuthor() == null) {
-            tool.setAuthor("Unknown author");
-        } else {
-            tool.setAuthor(container.getAuthor());
-        }
-
         // Set meta-version
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
 
         // Set type
         if (container instanceof io.dockstore.webservice.core.Tool) {
-            tool.setToolclass(ToolClassesApiServiceImpl.getCommandLineToolClass());
+            tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getCommandLineToolClass());
         } else if (container instanceof BioWorkflow) {
-            tool.setToolclass(ToolClassesApiServiceImpl.getWorkflowClass());
+            tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getWorkflowClass());
         } else if (container instanceof Service) {
-            tool.setToolclass(ToolClassesApiServiceImpl.getServiceClass());
+            tool.setToolclass(io.openapi.api.impl.ToolClassesApiServiceImpl.getServiceClass());
         } else {
             throw new UnsupportedOperationException("encountered unknown entry type in TRS");
         }
 
-        // Set signed.  Signed is currently not supported
-        tool.setSigned(false);
-
         // Set description
         tool.setDescription(container.getDescription() != null ? container.getDescription() : "");
+
+        // edge case: in Dockstore, a tool with no versions can still have an author but V2 final moved authors to versions of a tool
+        // append it to description
+        if (container.getWorkflowVersions().isEmpty() && container.getAuthor() != null) {
+            tool.setDescription(tool.getDescription() + '\n' + "Author: " + container.getAuthor());
+        }
         return tool;
     }
 
@@ -428,13 +429,15 @@ public final class ToolsImplCommon {
      * @param sourceFile The Dockstore SourceFile to convert
      * @return The resulting GA4GH ToolTests
      */
-    static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
+    public static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
         DescriptorLanguage.FileType type = sourceFile.getType();
         if (!type.equals(DescriptorLanguage.FileType.WDL_TEST_JSON) && !type.equals(DescriptorLanguage.FileType.CWL_TEST_JSON) && !type.equals(
             DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS)) {
             LOG.error("This source file is not a recognized test file.");
         }
         ExtendedFileWrapper toolTests = new ExtendedFileWrapper();
+        //TODO: hook up file checksum here
+        toolTests.setChecksum(Lists.newArrayList());
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
         toolTests.setContent(sourceFile.getContent());
         toolTests.setOriginalFile(sourceFile);

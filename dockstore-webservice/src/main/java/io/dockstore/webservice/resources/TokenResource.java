@@ -74,6 +74,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.kohsuke.github.GitHub;
@@ -92,7 +93,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/auth/tokens")
 @Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "tokens", description = ResourceConstants.TOKENS)
+@Tag(name = "tokens", description = ResourceConstants.TOKENS)
 public class TokenResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     /**
      * Global instance of the HTTP transport.
