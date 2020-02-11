@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +67,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.FileFormat;
 import io.swagger.client.model.FileWrapper;
+import io.swagger.client.model.Image;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -843,6 +845,47 @@ public class WorkflowIT extends BaseIT {
         thrown.expect(ApiException.class);
         // Publish bitbucket workflow, will fail now since the workflow test case is actually invalid now
         workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
+    }
+
+    //TODO: Fork these workflows onto dockstoretestuser
+    @Test
+    public void testGettingImagesFromQuay() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        // Check image info is grabbed
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore/hello_world", "/hello_world.cwl", "1.0.1");
+        assertEquals("Should only be one image in this workflow", 1, version.getImages().size());
+        verifyChecksumsAreSaved(version);
+
+        // Test that a workflow version containing an unversioned image isn't saved
+        WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "NatalieEO/tools-cwl-workflow-experiments", "/cwl/workflow_docker.cwl", "1.0");
+        assertEquals("Should not have grabbed any images", 0, workflowVersionWithoutVersionedImage.getImages().size());
+
+        // Test that a workflow version that contains duplicate images will not store multiples
+        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "NatalieEO/zhanghj-8555114", "/main.cwl", "1.0");
+        assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());
+        verifyChecksumsAreSaved(versionWithDuplicateImages);
+    }
+
+    private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, String workflowPath, String descriptorPath, String versionName) {
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, workflowPath, "", "cwl", SourceControl.GITHUB, descriptorPath, true);
+        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+        version.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "images");
+        return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
+    }
+
+    private void verifyChecksumsAreSaved(WorkflowVersion version) {
+        for (Image image : version.getImages()) {
+            String hashType = image.getChecksums().get(0).getType();
+            String checksum = image.getChecksums().get(0).getChecksum();
+            assertNotNull(hashType);
+            assertFalse(hashType.isEmpty());
+            assertFalse(checksum.isEmpty());
+            assertNotNull(checksum);
+        }
     }
 
     @Test

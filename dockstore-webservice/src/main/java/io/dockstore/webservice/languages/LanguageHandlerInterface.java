@@ -15,6 +15,9 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,12 +36,15 @@ import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
@@ -51,6 +58,7 @@ import org.yaml.snakeyaml.error.YAMLException;
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
  */
 public interface LanguageHandlerInterface {
+    String QUAY_URL = "https://quay.io/api/v1/";
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
 
     /**
@@ -272,6 +280,7 @@ public interface LanguageHandlerInterface {
      * @param dockerEntry has the docker name
      * @return URL
      */
+    // TODO: Don't assume that it's dockerhub when it's not Quay. Potentially add support for other registries and add message that the registry is unsupported
     default String getURLFromEntry(String dockerEntry, ToolDAO toolDAO) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
@@ -323,6 +332,92 @@ public interface LanguageHandlerInterface {
         }
 
         return url;
+    }
+
+    // TODO: Implement for DockerHub, then gitlab and seven bridges;
+    default Set<Image> getImagesFromRegistry(String toolsJSONTable) {
+        ArrayList<Map<String, String>> dockerTools = new ArrayList<>();
+        Gson gson = new Gson();
+        dockerTools = (ArrayList<Map<String, String>>)gson.fromJson(toolsJSONTable, dockerTools.getClass());
+
+        Set<String> dockerStrings = new HashSet<>();
+
+        // Eliminate duplicate docker strings
+        for (Map<String, String> tool : dockerTools) {
+            dockerStrings.add(tool.get("docker"));
+        }
+
+        Set<Image> dockerImages = new HashSet<>();
+        for (String image : dockerStrings) {
+            String[] parts = image.split("/");
+
+            Optional<String> response;
+            if (image.startsWith("quay.io/")) {
+                String[] splitDocker = image.split("/");
+                String[] splitTag = splitDocker[2].split(":");
+                if (splitTag.length > 1) {
+                    String repo = splitDocker[1] + "/" + splitTag[0];
+                    String tagName = splitTag[1];
+                    response = getImageResponseFromQuay(image);
+
+                    if (response.isPresent()) {
+                        Map<String, ArrayList<Map<String, String>>> map = new HashMap<>();
+                        Map<String, String> errorMap = new HashMap<>();
+                        map = (Map<String, ArrayList<Map<String, String>>>)gson.fromJson(response.get(), map.getClass());
+                        errorMap = (Map<String, String>)gson.fromJson(response.get(), errorMap.getClass());
+                        if (errorMap.get("error_message") != null) {
+                            LOG.error("Error response from Quay: " + errorMap.get("error_message"));
+                        }
+
+                        try {
+                            final List<Map<String, String>> array = map.get("tags");
+
+                            for (Map<String, String> tag : array) {
+                                final String digest = tag.get("manifest_digest");
+                                final String imageID = tag.get("image_id");
+                                List<Checksum> checksums = new ArrayList<>();
+                                checksums.add(new Checksum(digest.split(":")[0], digest.split(":")[1]));
+                                dockerImages.add(new Image(checksums, repo, tagName, imageID));
+                            }
+
+                        } catch (IndexOutOfBoundsException | NullPointerException ex) {
+                            LOG.error("Could not get checksum information for " + splitDocker[1]);
+                        }
+                    }
+                } else {
+                    LOG.error("Could not find image version specified for " + splitDocker[1]);
+                }
+
+            } else if (image.startsWith("images.sbgenomics")) {
+                return dockerImages;
+
+            } else if (image.startsWith("registry.gitlab.com")) {
+                return dockerImages;
+
+            } else if (parts.length == 2) {
+                //dockerhub
+                return dockerImages;
+            }
+        }
+        return dockerImages;
+    }
+
+    default Optional<String> getImageResponseFromQuay(String dockerName) {
+        String[] splitDocker = dockerName.split("/");
+        String[] splitTag = splitDocker[2].split(":");
+        final String tagUrl = QUAY_URL + "repository/" + splitDocker[1] + "/" + splitTag[0] + "/tag/" + "?specificTag=" + splitTag[1];
+        Optional<String> response;
+
+        try {
+            URL url = new URL(tagUrl);
+            response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
+            if (response.isPresent()) {
+                return response;
+            }
+        } catch (IOException ex) {
+            LOG.info("Unable to get response from Quay");
+        }
+        return Optional.empty();
     }
 
     /**

@@ -63,6 +63,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -150,6 +151,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String PAGINATION_LIMIT = "100";
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
+    private static final String IMAGES = "images";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -1305,7 +1307,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     existingTag.setDirtyBit(true);
                 }
 
+                boolean wasFrozen = existingTag.isFrozen();
                 existingTag.updateByUser(version);
+                boolean nowFrozen = existingTag.isFrozen();
+                // If version is snapshotted on this update, grab and store image information
+                if (!wasFrozen && nowFrozen) {
+                    LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
+                    String toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                    Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable);
+                    existingTag.getImages().addAll(images);
+                }
             }
         }
         Workflow result = workflowDAO.findById(workflowId);
@@ -1635,6 +1646,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, ALIASES)) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getAliases()));
+        }
+        if (checkIncludes(include, IMAGES)) {
+            workflow.getWorkflowVersions().stream().filter(v -> v.isFrozen()).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
         }
     }
 
