@@ -614,8 +614,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String dnaStackImportUrl;
         private String dnaNexusImportUrl;
         private String terraImportUrl;
-        private String biodataCatalystWdlUrl;
-        private String biodataCatalystCwlUrl;
+        private String bdCatalystTerraImportUrl;
+        private String bdCatalystSevenBridgesImportUrl;
 
         private String gitHubAuthUrl;
         private String gitHubRedirectPath;
@@ -671,20 +671,20 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.terraImportUrl = terraImportUrl;
         }
 
-        public String getBiodataCatalystWdlUrl() {
-            return biodataCatalystWdlUrl;
+        public String getBdCatalystTerraImportUrl() {
+            return bdCatalystTerraImportUrl;
         }
 
-        public void setBiodataCatalystWdlUrl(String biodataCatalystWdlUrl) {
-            this.biodataCatalystWdlUrl = biodataCatalystWdlUrl;
+        public void setBdCatalystTerraImportUrl(String bdCatalystTerraImportUrl) {
+            this.bdCatalystTerraImportUrl = bdCatalystTerraImportUrl;
         }
 
-        public String getBiodataCatalystCwlUrl() {
-            return biodataCatalystCwlUrl;
+        public String getBdCatalystSevenBridgesImportUrl() {
+            return bdCatalystSevenBridgesImportUrl;
         }
 
-        public void setBiodataCatalystCwlUrl(String biodataCatalystCwlUrl) {
-            this.biodataCatalystCwlUrl = biodataCatalystCwlUrl;
+        public void setBdCatalystSevenBridgesImportUrl(String bdCatalystSevenBridgesImportUrl) {
+            this.bdCatalystSevenBridgesImportUrl = bdCatalystSevenBridgesImportUrl;
         }
 
         public String getGitHubAuthUrl() {

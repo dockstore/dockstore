@@ -54,6 +54,37 @@ tags:
     repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)
     and is considered final (not subject to change)
 paths:
+  /organizations/collections/{collectionId}/aliases:
+    post:
+      tags:
+      - organizations
+      summary: Add aliases linked to a collection in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: addCollectionAliases_1
+      parameters:
+      - name: collectionId
+        in: path
+        description: Collection to modify.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: aliases
+        in: query
+        description: Comma-delimited list of aliases.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
   /organizations/{organizationId}/collections:
     get:
       tags:
@@ -115,37 +146,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
-  /organizations/collections/{collectionId}/aliases:
-    post:
-      tags:
-      - organizations
-      summary: Add aliases linked to a collection in Dockstore.
-      description: Aliases are alphanumerical (case-insensitive and may contain internal
-        hyphens), given in a comma-delimited list.
-      operationId: addCollectionAliases_1
-      parameters:
-      - name: collectionId
-        in: path
-        description: Collection to modify.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: aliases
-        in: query
-        description: Comma-delimited list of aliases.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Aliasable'
       security:
       - bearer: []
   /organizations/collections/{alias}/aliases:
@@ -490,22 +490,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
-  /metadata/dockerRegistryList:
-    get:
-      tags:
-      - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
-      responses:
-        default:
-          description: List of Docker registries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
   /metadata/sitemap:
     get:
       tags:
@@ -644,6 +628,22 @@ paths:
           content:
             text/html: {}
             text/xml: {}
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
+      responses:
+        default:
+          description: List of Docker registries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
   /organizations:
     get:
       tags:
@@ -1394,47 +1394,6 @@ paths:
             text/plain:
               schema:
                 type: string
-  /users/{userId}:
-    get:
-      tags:
-      - users
-      operationId: getSpecificUser
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  /users/user:
-    get:
-      tags:
-      - users
-      operationId: getUser
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
   /users/users/organizations:
     get:
       tags:
@@ -1583,6 +1542,47 @@ paths:
                   $ref: '#/components/schemas/Repository'
       security:
       - bearer: []
+  /users/user:
+    get:
+      tags:
+      - users
+      operationId: getUser
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/{userId}:
+    get:
+      tags:
+      - users
+      operationId: getSpecificUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     post:
       tags:
@@ -1666,6 +1666,13 @@ components:
       properties:
         content:
           type: string
+    Aliasable:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
     Checksum:
       type: object
       properties:
@@ -2044,13 +2051,6 @@ components:
           $ref: '#/components/schemas/User'
         workingDirectory:
           type: string
-    Aliasable:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
     BioWorkflow:
       type: object
       properties:
@@ -2783,9 +2783,9 @@ components:
     Config:
       type: object
       properties:
-        biodataCatalystCwlUrl:
+        bdCatalystSevenBridgesImportUrl:
           type: string
-        biodataCatalystWdlUrl:
+        bdCatalystTerraImportUrl:
           type: string
         bitBucketAuthUrl:
           type: string
@@ -2845,6 +2845,20 @@ components:
           type: string
         zenodoScope:
           type: string
+    SourceControlBean:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+        value:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+        value:
+          type: string
     RegistryBean:
       type: object
       properties:
@@ -2859,20 +2873,6 @@ components:
         privateOnly:
           type: string
         url:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        friendlyName:
-          type: string
-        value:
           type: string
     StarRequest:
       type: object
