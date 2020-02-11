@@ -637,10 +637,6 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-tools</artifactId>
         </dependency>
