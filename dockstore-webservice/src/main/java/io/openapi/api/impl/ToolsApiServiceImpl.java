@@ -136,7 +136,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (container == null) {
             response = Response.status(Status.NOT_FOUND).build();
         } else if (!container.getIsPublished()) {
-            // check whether this is registered
             response = Response.status(Status.UNAUTHORIZED).build();
         } else {
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(container, config);
@@ -486,7 +485,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } else if (gitUrl.startsWith(BITBUCKET_PREFIX)) {
             urlBuilt = extractHTTPPrefix(gitUrl, entryVersion.get().getReference(), BITBUCKET_PREFIX, "https://bitbucket.org/");
         } else {
-            LOG.error("Found a git url neither from BitBucket or GitHub " + gitUrl);
+            LOG.error("Found a git url neither from BitBucket nor GitHub " + gitUrl);
             urlBuilt = "https://unimplemented_git_repository/";
         }
 
