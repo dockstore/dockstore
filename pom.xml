@@ -126,7 +126,7 @@
         <repository>
             <id>sagebionetworks</id>
             <name>sagebionetworks-releases</name>
-            <url>http://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
+            <url>https://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
         </repository>
         <repository>
             <id>mockito</id>
