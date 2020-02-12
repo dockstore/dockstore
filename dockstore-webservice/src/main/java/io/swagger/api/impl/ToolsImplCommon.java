@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
 
-import avro.shaded.com.google.common.base.Objects;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
@@ -152,9 +151,9 @@ public final class ToolsImplCommon {
 
             ToolVersion toolVersion = new ToolVersion();
 
-            toolVersion.setAuthor(Objects.firstNonNull(toolVersion.getAuthor(), Lists.newArrayList()));
+            toolVersion.setAuthor(MoreObjects.firstNonNull(toolVersion.getAuthor(), Lists.newArrayList()));
             //TODO: would hook up identified tools that form workflows here
-            toolVersion.setIncludedApps(Objects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
+            toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
             //TODO: hook up snapshot and checksum behaviour here
             toolVersion.setIsProduction(false);
             toolVersion.setSigned(false);
@@ -163,7 +162,7 @@ public final class ToolsImplCommon {
                 toolVersion.getAuthor().add(author);
             }
 
-            toolVersion.setImages(Objects.firstNonNull(toolVersion.getImages(), Lists.newArrayList()));
+            toolVersion.setImages(MoreObjects.firstNonNull(toolVersion.getImages(), Lists.newArrayList()));
             if (container instanceof io.dockstore.webservice.core.Tool) {
                 processImageDataForToolVersion(castedContainer, (Tag)version, toolVersion);
             }
@@ -209,7 +208,7 @@ public final class ToolsImplCommon {
                 }
             }
 
-            toolVersion.setDescriptorType(Objects.firstNonNull(toolVersion.getDescriptorType(), Lists.newArrayList()));
+            toolVersion.setDescriptorType(MoreObjects.firstNonNull(toolVersion.getDescriptorType(), Lists.newArrayList()));
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
@@ -248,7 +247,7 @@ public final class ToolsImplCommon {
             data.setChecksum(Lists.newArrayList(checksum));
         } else {
             //TODO: hook up snapshot and checksum behaviour here too for workflows (or tools without images?)
-            data.setChecksum(Objects.firstNonNull(data.getChecksum(), Lists.newArrayList()));
+            data.setChecksum(MoreObjects.firstNonNull(data.getChecksum(), Lists.newArrayList()));
         }
         //TODO: for now, all container images are Docker based
         data.setImageType(ImageType.DOCKER);
