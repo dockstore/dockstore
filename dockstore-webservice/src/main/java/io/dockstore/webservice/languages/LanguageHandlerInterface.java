@@ -60,6 +60,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 public interface LanguageHandlerInterface {
     String QUAY_URL = "https://quay.io/api/v1/";
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
+    Gson gson = new Gson();
 
     /**
      * Parses the content of the primary descriptor to get author, email, and description
@@ -336,8 +337,7 @@ public interface LanguageHandlerInterface {
 
     // TODO: Implement for DockerHub, then gitlab and seven bridges;
     default Set<Image> getImagesFromRegistry(String toolsJSONTable) {
-        ArrayList<Map<String, String>> dockerTools = new ArrayList<>();
-        Gson gson = new Gson();
+        List<Map<String, String>> dockerTools = new ArrayList<>();
         dockerTools = (ArrayList<Map<String, String>>)gson.fromJson(toolsJSONTable, dockerTools.getClass());
 
         Set<String> dockerStrings = new HashSet<>();

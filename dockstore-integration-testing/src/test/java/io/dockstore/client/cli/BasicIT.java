@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -46,6 +48,7 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
+import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -83,6 +86,8 @@ public class BasicIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
+        // DO NOT CHECK IN THIS LINE
+        Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE);
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
