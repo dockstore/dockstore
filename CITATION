@@ -1,29 +1,108 @@
 To cite Dockstore in a publication please refer to 
 
-https://zenodo.org/record/2630727
+https://zenodo.org/record/3628791
 
-@misc{denis_yuen_2019_2630727,
-  author       = {Denis Yuen and
-                  Andrew Duncan and
-                  Victor Liu and
-                  Brian O'Connor and
-                  Gary Luu and
-                  Charles Overbeck and
-                  Walter Shands and
-                  oicr-vchung and
-                  Peter Amstutz and
-                  Ryan Bautista and
-                  Kitty Cao and
-                  David Steinberg and
-                  Louise Cabansay and
-                  NatalieEO and
-                  The Gitter Badger and
-                  Codacy Badger and
-                  C. Titus Brown and
-                  Abraham},
-  title        = {ga4gh/dockstore: 1.6.0},
-  month        = apr,
-  year         = 2019,
-  doi          = {10.5281/zenodo.2630727},
-  url          = {https://doi.org/10.5281/zenodo.2630727}
+{
+  "description": "Highlighted new features include:\n<ul>\n<li>New launch-with partners<ul>\n<li>AnVIL</li>\n</ul>\n</li>\n<li>Redesigned logged-in homepage displays more information for returning users including <ul>\n<li>News and updates</li>\n<li>Featured content such as new organizations and workflows</li>\n<li>Recently modified tools, workflows and orgs</li>\n</ul>\n</li>\n<li>Notification system for news such as TOS updates, pending system updates</li>\n<li>Security updates</li>\n<li>Performance improvements</li>\n<li>Usability improvements</li>\n<li>Can source workflow descriptions from README.md if not present in workflow itself</li>\n<li>DOI landing pages hosted at Zenodo will now link to exact versions of workflows</li>\n<li>Preview feature</li>\n<li>Services are now reachable from many parts of the UI</li>\n<li>Behind the scenes work on CI/CD, infrastructure improvements, more frequent releases</li>\n<li>Also some behind the scenes work leading up to the implementation of the final v2 GA4GH TRS standard</li>\n</ul>\n<p>As always, see our full list of changes on <a href=\"https://github.com/dockstore/dockstore/milestone/28\">GitHub </a></p>\nBreaking changes\nMajor\n<p>None intended</p>\nMinor\n<ul>\n<li>If upgrading the Dockstore CLI, our Dockstore script has changed and should be downloaded anew from the onboarding wizard</li>\n</ul>", 
+  "license": "", 
+  "creator": [
+    {
+      "affiliation": "@OICR_news", 
+      "@type": "Person", 
+      "name": "Denis Yuen"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "Andrew Duncan"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "Victor Liu"
+    }, 
+    {
+      "affiliation": "OICR", 
+      "@type": "Person", 
+      "name": "Gary Luu"
+    }, 
+    {
+      "affiliation": "UCSC Genomics Institute & Nimbus Informatics, LLC", 
+      "@type": "Person", 
+      "name": "Brian O'Connor"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "Charles Overbeck"
+    }, 
+    {
+      "affiliation": "UCSC Genomics Institute", 
+      "@type": "Person", 
+      "name": "Walter Shands"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "NatalieEO"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "oicr-vchung"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "Louise Cabansay"
+    }, 
+    {
+      "affiliation": "@CuriiHQ @arvados", 
+      "@type": "Person", 
+      "name": "Peter Amstutz"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "Emily Soth"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "David Steinberg"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "Ryan Bautista"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "Kitty Cao"
+    }, 
+    {
+      "affiliation": "Gitter", 
+      "@type": "Person", 
+      "name": "The Gitter Badger"
+    }, 
+    {
+      "affiliation": "@Snyk", 
+      "@type": "Person", 
+      "name": "Snyk bot"
+    }, 
+    {
+      "affiliation": "Codacy", 
+      "@type": "Person", 
+      "name": "Codacy Badger"
+    }, 
+    {
+      "affiliation": "University of California, Davis", 
+      "@type": "Person", 
+      "name": "C. Titus Brown"
+    }, 
+    {
+      "@type": "Person", 
+      "name": "Abraham"
+    }
+  ], 
+  "url": "https://zenodo.org/record/3628791", 
+  "codeRepository": "https://github.com/dockstore/dockstore/tree/1.8.0", 
+  "datePublished": "2020-01-27", 
+  "version": "1.8.0", 
+  "@context": "https://schema.org/", 
+  "identifier": "https://doi.org/10.5281/zenodo.3628791", 
+  "@id": "https://doi.org/10.5281/zenodo.3628791", 
+  "@type": "SoftwareSourceCode", 
+  "name": "dockstore/dockstore: 1.8.0"
 }
