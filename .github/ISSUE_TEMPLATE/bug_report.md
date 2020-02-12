@@ -35,4 +35,6 @@ If applicable, add screenshots to help explain your problem.
  - Version [e.g. 22]
 
 **Additional context**
-Add any other context about the problem here.
+ - UI version: [e.g. 2.5.0]
+ - Webservice version: [e.g. 1.8.0]
+ - host location: [e.g. staging.dockstore.org]
