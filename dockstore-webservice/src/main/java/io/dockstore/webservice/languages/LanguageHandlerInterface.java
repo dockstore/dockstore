@@ -60,7 +60,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 public interface LanguageHandlerInterface {
     String QUAY_URL = "https://quay.io/api/v1/";
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
-    Gson gson = new Gson();
+    Gson GSON = new Gson();
 
     /**
      * Parses the content of the primary descriptor to get author, email, and description
@@ -256,7 +256,7 @@ public interface LanguageHandlerInterface {
             }
         }
 
-        //call the gson to string transformer
+        //call the GSON to string transformer
         return convertToJSONString(tools);
     }
 
@@ -338,7 +338,7 @@ public interface LanguageHandlerInterface {
     // TODO: Implement for DockerHub, then gitlab and seven bridges;
     default Set<Image> getImagesFromRegistry(String toolsJSONTable) {
         List<Map<String, String>> dockerTools = new ArrayList<>();
-        dockerTools = (ArrayList<Map<String, String>>)gson.fromJson(toolsJSONTable, dockerTools.getClass());
+        dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
 
         Set<String> dockerStrings = new HashSet<>();
 
@@ -364,8 +364,8 @@ public interface LanguageHandlerInterface {
                     if (response.isPresent()) {
                         Map<String, ArrayList<Map<String, String>>> map = new HashMap<>();
                         Map<String, String> errorMap = new HashMap<>();
-                        map = (Map<String, ArrayList<Map<String, String>>>)gson.fromJson(response.get(), map.getClass());
-                        errorMap = (Map<String, String>)gson.fromJson(response.get(), errorMap.getClass());
+                        map = (Map<String, ArrayList<Map<String, String>>>)GSON.fromJson(response.get(), map.getClass());
+                        errorMap = (Map<String, String>)GSON.fromJson(response.get(), errorMap.getClass());
                         if (errorMap.get(errorKey) != null) {
                             LOG.error("Error response from Quay: " + errorMap.get(errorKey));
                         } else {
