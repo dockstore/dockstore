@@ -273,6 +273,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Create or retrieve workflows based on Dockstore.yml, add or update tag version
+     * ONLY WORKS FOR v1.2
      * @param dockstoreYml Dockstore YAML File
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Tag reference from GitHub (ex. 1.0)
@@ -304,6 +305,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Create or retrieve services based on Dockstore.yml, add or update tag version
+     * ONLY WORKS FOR v1.1
      * @param dockstoreYml Dockstore YAML File
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Tag reference from GitHub (ex. 1.0)
@@ -318,7 +320,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         String subclass;
         try {
             Map<String, Object> serviceObject = (Map<String, Object>)yml.get("service");
-            subclass = (String)serviceObject.get("subclass");
+            subclass = (String)serviceObject.get("type");
             if (subclass == null) {
                 String msg = "Missing required subclass field.";
                 LOG.info(msg);
@@ -371,7 +373,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
-            LOG.info("Workflow " + workflowToUpdate.getPath() + " has been created.");
+            LOG.info("Workflow " + dockstoreWorkflowPath + " has been created.");
         } else {
             workflowToUpdate = workflow.get();
             if (!Objects.equals(workflowToUpdate.getMode(), DOCKSTORE_YML)) {
