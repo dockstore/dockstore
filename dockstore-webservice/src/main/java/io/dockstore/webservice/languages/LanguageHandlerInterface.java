@@ -353,6 +353,7 @@ public interface LanguageHandlerInterface {
 
             Optional<String> response;
             if (image.startsWith("quay.io/")) {
+                String error_key = "error_message";
                 String[] splitDocker = image.split("/");
                 String[] splitTag = splitDocker[2].split(":");
                 if (splitTag.length > 1) {
@@ -365,23 +366,23 @@ public interface LanguageHandlerInterface {
                         Map<String, String> errorMap = new HashMap<>();
                         map = (Map<String, ArrayList<Map<String, String>>>)gson.fromJson(response.get(), map.getClass());
                         errorMap = (Map<String, String>)gson.fromJson(response.get(), errorMap.getClass());
-                        if (errorMap.get("error_message") != null) {
-                            LOG.error("Error response from Quay: " + errorMap.get("error_message"));
-                        }
+                        if (errorMap.get(error_key) != null) {
+                            LOG.error("Error response from Quay: " + errorMap.get(error_key));
+                        } else {
+                            try {
+                                final List<Map<String, String>> array = map.get("tags");
 
-                        try {
-                            final List<Map<String, String>> array = map.get("tags");
+                                for (Map<String, String> tag : array) {
+                                    final String digest = tag.get("manifest_digest");
+                                    final String imageID = tag.get("image_id");
+                                    List<Checksum> checksums = new ArrayList<>();
+                                    checksums.add(new Checksum(digest.split(":")[0], digest.split(":")[1]));
+                                    dockerImages.add(new Image(checksums, repo, tagName, imageID));
+                                }
 
-                            for (Map<String, String> tag : array) {
-                                final String digest = tag.get("manifest_digest");
-                                final String imageID = tag.get("image_id");
-                                List<Checksum> checksums = new ArrayList<>();
-                                checksums.add(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-                                dockerImages.add(new Image(checksums, repo, tagName, imageID));
+                            } catch (IndexOutOfBoundsException | NullPointerException ex) {
+                                LOG.error("Could not get checksum information for " + splitDocker[1]);
                             }
-
-                        } catch (IndexOutOfBoundsException | NullPointerException ex) {
-                            LOG.error("Could not get checksum information for " + splitDocker[1]);
                         }
                     }
                 } else {
@@ -411,11 +412,10 @@ public interface LanguageHandlerInterface {
         try {
             URL url = new URL(tagUrl);
             response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
-            if (response.isPresent()) {
-                return response;
-            }
+            return response;
+
         } catch (IOException ex) {
-            LOG.info("Unable to get response from Quay");
+            LOG.error("Unable to get response from Quay", ex);
         }
         return Optional.empty();
     }
