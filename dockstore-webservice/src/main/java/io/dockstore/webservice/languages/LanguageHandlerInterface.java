@@ -353,7 +353,7 @@ public interface LanguageHandlerInterface {
 
             Optional<String> response;
             if (image.startsWith("quay.io/")) {
-                String error_key = "error_message";
+                String errorKey = "error_message";
                 String[] splitDocker = image.split("/");
                 String[] splitTag = splitDocker[2].split(":");
                 if (splitTag.length > 1) {
@@ -366,8 +366,8 @@ public interface LanguageHandlerInterface {
                         Map<String, String> errorMap = new HashMap<>();
                         map = (Map<String, ArrayList<Map<String, String>>>)gson.fromJson(response.get(), map.getClass());
                         errorMap = (Map<String, String>)gson.fromJson(response.get(), errorMap.getClass());
-                        if (errorMap.get(error_key) != null) {
-                            LOG.error("Error response from Quay: " + errorMap.get(error_key));
+                        if (errorMap.get(errorKey) != null) {
+                            LOG.error("Error response from Quay: " + errorMap.get(errorKey));
                         } else {
                             try {
                                 final List<Map<String, String>> array = map.get("tags");
