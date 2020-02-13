@@ -698,70 +698,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
-  /organizations:
-    get:
-      tags:
-      - organizations
-      summary: List all available organizations.
-      description: List all organizations that have been approved by a curator or
-        admin, sorted by number of stars.
-      operationId: getApprovedOrganizations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-    post:
-      tags:
-      - organizations
-      summary: Create an organization.
-      description: Create an organization. Organization requires approval by an admin
-        before being made public.
-      operationId: createOrganization
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/{organizationId}/reject:
     post:
       tags:
@@ -936,6 +872,70 @@ paths:
             schema:
               type: string
         required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations:
+    get:
+      tags:
+      - organizations
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
       responses:
         default:
           description: default response
@@ -1128,46 +1128,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/users/{username}:
-    put:
-      tags:
-      - organizations
-      summary: Add a user role to an organization.
-      description: Add a user role to an organization.
-      operationId: addUserToOrgByUsername
-      parameters:
-      - name: username
-        in: path
-        description: User to add to org.
-        required: true
-        schema:
-          type: string
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Role of user.
-        content:
-          '*/*':
-            schema:
-              type: string
-              enum:
-              - MAINTAINER
-              - MEMBER
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationUser'
       security:
       - bearer: []
   /organizations/{organizationId}/user:
@@ -1366,6 +1326,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
+  /organizations/{organizationId}/users/{username}:
+    put:
+      tags:
+      - organizations
+      summary: Add a user role to an organization.
+      description: Add a user role to an organization.
+      operationId: addUserToOrgByUsername
+      parameters:
+      - name: username
+        in: path
+        description: User to add to org.
+        required: true
+        schema:
+          type: string
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Role of user.
+        content:
+          '*/*':
+            schema:
+              type: string
+              enum:
+              - MAINTAINER
+              - MEMBER
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUser'
+      security:
+      - bearer: []
   /toolTester/logs/search:
     get:
       tags:
@@ -1736,109 +1736,23 @@ paths:
                   $ref: '#/components/schemas/ToolClass'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools:
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
     get:
       tags:
       - GA4GHV20
-      summary: List all tools
-      description: 'This endpoint returns all tools available or a filtered subset
-        using metadata query parameters. '
-      operationId: toolsGet
+      summary: Get a list of objects that contain the relative path and file type
+      description: 'Get a list of objects that contain the relative path and file
+        type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path
+        : .+} endpoint.'
+      operationId: toolsIdVersionsVersionIdTypeFilesGet
       parameters:
-      - name: id
-        in: query
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
+      - name: type
+        in: path
+        description: The output type of the descriptor. Examples of allowable values
+          are "CWL", "WDL", and "NFL".
+        required: true
         schema:
           type: string
-      - name: alias
-        in: query
-        description: Support for this parameter is optional for tool registries that
-          support aliases. If provided will only return entries with the given alias.
-        schema:
-          type: string
-      - name: toolClass
-        in: query
-        description: Filter tools by the name of the subclass (#/definitions/ToolClass)
-        schema:
-          type: string
-      - name: registry
-        in: query
-        description: The image registry that contains the image.
-        schema:
-          type: string
-      - name: organization
-        in: query
-        description: The organization in the registry that published the image.
-        schema:
-          type: string
-      - name: name
-        in: query
-        description: The name of the image.
-        schema:
-          type: string
-      - name: toolname
-        in: query
-        description: The name of the tool.
-        schema:
-          type: string
-      - name: description
-        in: query
-        description: The description of the tool.
-        schema:
-          type: string
-      - name: author
-        in: query
-        description: The author of the tool (TODO a thought occurs, are we assuming
-          that the author of the CWL and the image are the same?).
-        schema:
-          type: string
-      - name: checker
-        in: query
-        description: Return only checker workflows.
-        schema:
-          type: boolean
-      - name: offset
-        in: query
-        description: Start index of paging. Pagination results can be based on numbers
-          or other values chosen by the registry implementor (for example, SHA values).
-          If this exceeds the current result set return an empty set.  If not specified
-          in the request, this will start at the beginning of the results.
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: Amount of records to return in a given page.
-        schema:
-          type: integer
-          format: int32
-      responses:
-        "200":
-          description: An array of Tools that match the filter.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get the container specification(s) for the specified image.
-      description: Returns the container specifications(s) for the specified image.
-        For example, a CWL CommandlineTool can be associated with one specification
-        for a container, a CWL Workflow can be associated with multiple specifications
-        for containers.
-      operationId: toolsIdVersionsVersionIdContainerfileGet
-      parameters:
       - name: id
         in: path
         description: A unique identifier of the tool, scoped to this registry, for
@@ -1855,20 +1769,20 @@ paths:
           type: string
       responses:
         "200":
-          description: The tool payload.
+          description: The array of File JSON responses.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileWrapper'
+                  $ref: '#/components/schemas/ToolFile'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileWrapper'
+                  $ref: '#/components/schemas/ToolFile'
         "404":
-          description: There are no container specifications for this tool.
+          description: The tool can not be output in the specified type.
           content:
             application/json:
               schema:
@@ -1988,6 +1902,98 @@ paths:
             text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List all tools
+      description: 'This endpoint returns all tools available or a filtered subset
+        using metadata query parameters. '
+      operationId: toolsGet
+      parameters:
+      - name: id
+        in: query
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        schema:
+          type: string
+      - name: alias
+        in: query
+        description: Support for this parameter is optional for tool registries that
+          support aliases. If provided will only return entries with the given alias.
+        schema:
+          type: string
+      - name: toolClass
+        in: query
+        description: Filter tools by the name of the subclass (#/definitions/ToolClass)
+        schema:
+          type: string
+      - name: registry
+        in: query
+        description: The image registry that contains the image.
+        schema:
+          type: string
+      - name: organization
+        in: query
+        description: The organization in the registry that published the image.
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: The name of the image.
+        schema:
+          type: string
+      - name: toolname
+        in: query
+        description: The name of the tool.
+        schema:
+          type: string
+      - name: description
+        in: query
+        description: The description of the tool.
+        schema:
+          type: string
+      - name: author
+        in: query
+        description: The author of the tool (TODO a thought occurs, are we assuming
+          that the author of the CWL and the image are the same?).
+        schema:
+          type: string
+      - name: checker
+        in: query
+        description: Return only checker workflows.
+        schema:
+          type: boolean
+      - name: offset
+        in: query
+        description: Start index of paging. Pagination results can be based on numbers
+          or other values chosen by the registry implementor (for example, SHA values).
+          If this exceeds the current result set return an empty set.  If not specified
+          in the request, this will start at the beginning of the results.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Amount of records to return in a given page.
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: An array of Tools that match the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
       security:
       - BEARER: []
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
@@ -2169,23 +2175,17 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
     get:
       tags:
       - GA4GHV20
-      summary: Get a list of objects that contain the relative path and file type
-      description: 'Get a list of objects that contain the relative path and file
-        type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path
-        : .+} endpoint.'
-      operationId: toolsIdVersionsVersionIdTypeFilesGet
+      summary: Get the container specification(s) for the specified image.
+      description: Returns the container specifications(s) for the specified image.
+        For example, a CWL CommandlineTool can be associated with one specification
+        for a container, a CWL Workflow can be associated with multiple specifications
+        for containers.
+      operationId: toolsIdVersionsVersionIdContainerfileGet
       parameters:
-      - name: type
-        in: path
-        description: The output type of the descriptor. Examples of allowable values
-          are "CWL", "WDL", and "NFL".
-        required: true
-        schema:
-          type: string
       - name: id
         in: path
         description: A unique identifier of the tool, scoped to this registry, for
@@ -2202,20 +2202,20 @@ paths:
           type: string
       responses:
         "200":
-          description: The array of File JSON responses.
+          description: The tool payload.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolFile'
+                  $ref: '#/components/schemas/FileWrapper'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolFile'
+                  $ref: '#/components/schemas/FileWrapper'
         "404":
-          description: The tool can not be output in the specified type.
+          description: There are no container specifications for this tool.
           content:
             application/json:
               schema:
@@ -3472,6 +3472,31 @@ components:
           description: A short friendly name for the class.
       description: Describes a class (type) of tool allowing us to categorize workflows,
         tasks, and maybe even other entities (such as services) separately.
+    ToolFile:
+      type: object
+      properties:
+        file_type:
+          type: string
+          enum:
+          - TEST_FILE
+          - PRIMARY_DESCRIPTOR
+          - SECONDARY_DESCRIPTOR
+          - CONTAINERFILE
+          - OTHER
+        path:
+          type: string
+          description: Relative path of the file.  A descriptor's path can be used
+            with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
+    Error:
+      required:
+      - code
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
     ImageData:
       type: object
       properties:
@@ -3619,31 +3644,6 @@ components:
         that describes how to build a particular container image. Examples include
         Dockerfiles for creating Docker images and Singularity recipes for Singularity
         images '
-    Error:
-      required:
-      - code
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
-    ToolFile:
-      type: object
-      properties:
-        file_type:
-          type: string
-          enum:
-          - TEST_FILE
-          - PRIMARY_DESCRIPTOR
-          - SECONDARY_DESCRIPTOR
-          - CONTAINERFILE
-          - OTHER
-        path:
-          type: string
-          description: Relative path of the file.  A descriptor's path can be used
-            with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
   securitySchemes:
     bearer:
       type: http
