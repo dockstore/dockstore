@@ -102,7 +102,7 @@ public abstract class SourceCodeRepoInterface {
      * @param files the files collection we want to add to
      * @param fileType the type of file
      */
-    void readFile(String repositoryId, Version<?> tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
+    public void readFile(String repositoryId, Version<?> tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
         Optional<SourceFile> sourceFile = this.readFile(repositoryId, tag, fileType, path);
         sourceFile.ifPresent(files::add);
     }
@@ -273,7 +273,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry entry to update
      * @param type the type of language to look for
      */
-    void updateEntryMetadata(final Entry<?, ?> entry, final DescriptorLanguage type) {
+    public void updateEntryMetadata(final Entry<?, ?> entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
 
@@ -392,7 +392,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return
      */
-    String getBranchNameFromDefaultVersion(Entry<?, ?> entry) {
+    public String getBranchNameFromDefaultVersion(Entry<?, ?> entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
             for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
@@ -418,7 +418,7 @@ public abstract class SourceCodeRepoInterface {
      * @param existingDefaults
      * @return workflow version
      */
-    WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow,
+    protected WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults) {
         WorkflowVersion version = new WorkflowVersion();
         version.setName(branch);

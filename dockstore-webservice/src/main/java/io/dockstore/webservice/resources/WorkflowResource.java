@@ -1233,10 +1233,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         for (DescriptorLanguage typeItem : DescriptorLanguage.values()) {
             if (typeItem.getShortName().equalsIgnoreCase(descriptorType)) {
                 // check that plugin is active
-                if (typeItem.isPluginLanguage()) {
-                    if (!LanguageHandlerFactory.getPluginMap().containsKey(typeItem)) {
-                        throw new CustomWebApplicationException("plugin for " + typeItem.getShortName() + " is not installed", HttpStatus.SC_BAD_REQUEST);
-                    }
+                if (typeItem.isPluginLanguage() && !LanguageHandlerFactory.getPluginMap().containsKey(typeItem)) {
+                    throw new CustomWebApplicationException("plugin for " + typeItem.getShortName() + " is not installed",
+                        HttpStatus.SC_BAD_REQUEST);
                 }
                 if (typeItem.getDefaultPrimaryDescriptorExtensions().stream().noneMatch(defaultWorkflowPath::endsWith)) {
                     throw new CustomWebApplicationException(
