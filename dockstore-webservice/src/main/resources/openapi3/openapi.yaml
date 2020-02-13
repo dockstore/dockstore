@@ -497,6 +497,39 @@ paths:
                   $ref: '#/components/schemas/Event'
       security:
       - bearer: []
+  /workflows/hostedEntry/{entryId}:
+    post:
+      tags:
+      - hosted
+      summary: Creates a new revision of a hosted workflow from a zip
+      operationId: addZip
+      parameters:
+      - name: entryId
+        in: path
+        description: hosted entry ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      deprecated: true
+      security:
+      - bearer: []
   /metadata/dockerRegistryList:
     get:
       tags:
@@ -665,119 +698,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
-  /organizations:
-    get:
-      tags:
-      - organizations
-      summary: List all available organizations.
-      description: List all organizations that have been approved by a curator or
-        admin, sorted by number of stars.
-      operationId: getApprovedOrganizations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-    post:
-      tags:
-      - organizations
-      summary: Create an organization.
-      description: Create an organization. Organization requires approval by an admin
-        before being made public.
-      operationId: createOrganization
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/reject:
-    post:
-      tags:
-      - organizations
-      summary: Reject an organization.
-      description: Reject the organization with the given id. Admin/curator only.
-      operationId: rejectOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/request:
-    post:
-      tags:
-      - organizations
-      summary: Re-request an organization review.
-      description: Re-request a review of the given organization. Requires the organization
-        to be rejected.
-      operationId: requestOrganizationReview
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/name/{name}:
     get:
       tags:
@@ -1097,6 +1017,46 @@ paths:
                   $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
+  /organizations:
+    get:
+      tags:
+      - organizations
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations/{organizationId}/users/{username}:
     put:
       tags:
@@ -1251,6 +1211,79 @@ paths:
             application/json: {}
       security:
       - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/reject:
+    post:
+      tags:
+      - organizations
+      summary: Reject an organization.
+      description: Reject the organization with the given id. Admin/curator only.
+      operationId: rejectOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization
+        to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations/{organizationId}/invitation:
     post:
       tags:
@@ -1309,7 +1342,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
   /organizations/{alias}/aliases:
@@ -1415,18 +1448,11 @@ paths:
             text/plain:
               schema:
                 type: string
-  /users/{userId}:
+  /users/user:
     get:
       tags:
       - users
-      operationId: getSpecificUser
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -1439,11 +1465,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/user:
+  /users/{userId}:
     get:
       tags:
       - users
-      operationId: getUser
+      operationId: getSpecificUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
       requestBody:
         content:
           '*/*':
@@ -1703,74 +1736,6 @@ paths:
                   $ref: '#/components/schemas/ToolClass'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools/{id}:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List one specific tool, acts as an anchor for self references
-      description: This endpoint returns one specific tool (which has ToolVersions
-        nested inside it).
-      operationId: toolsIdGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: A tool.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Tool'
-        "404":
-          description: The tool can not be found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List versions of a tool
-      description: Returns all versions of the specified tool.
-      operationId: toolsIdVersionsGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: An array of tool versions.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolVersion'
-      security:
-      - BEARER: []
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}:
     get:
       tags:
@@ -1804,6 +1769,93 @@ paths:
             text/plain:
               schema:
                 $ref: '#/components/schemas/ToolVersion'
+        "404":
+          description: The tool can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get the container specification(s) for the specified image.
+      description: Returns the container specifications(s) for the specified image.
+        For example, a CWL CommandlineTool can be associated with one specification
+        for a container, a CWL Workflow can be associated with multiple specifications
+        for containers.
+      operationId: toolsIdVersionsVersionIdContainerfileGet
+      parameters:
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool payload.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: There are no container specifications for this tool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List one specific tool, acts as an anchor for self references
+      description: This endpoint returns one specific tool (which has ToolVersions
+        nested inside it).
+      operationId: toolsIdGet
+      parameters:
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: A tool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Tool'
         "404":
           description: The tool can not be found.
           content:
@@ -1937,6 +1989,63 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get a list of test JSONs
+      description: Get a list of test JSONs (these allow you to execute the tool successfully)
+        suitable for use with this descriptor type.
+      operationId: toolsIdVersionsVersionIdTypeTestsGet
+      parameters:
+      - name: type
+        in: path
+        description: The type of the underlying descriptor. Allowable values include
+          "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example,
+          "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would
+          return a bare JSON list with the content of the tests.
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool test JSON response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
   /ga4gh/trs/v2/tools:
     get:
       tags:
@@ -2029,113 +2138,6 @@ paths:
                   $ref: '#/components/schemas/Tool'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get a list of test JSONs
-      description: Get a list of test JSONs (these allow you to execute the tool successfully)
-        suitable for use with this descriptor type.
-      operationId: toolsIdVersionsVersionIdTypeTestsGet
-      parameters:
-      - name: type
-        in: path
-        description: The type of the underlying descriptor. Allowable values include
-          "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example,
-          "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would
-          return a bare JSON list with the content of the tests.
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The tool test JSON response.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get the container specification(s) for the specified image.
-      description: Returns the container specifications(s) for the specified image.
-        For example, a CWL CommandlineTool can be associated with one specification
-        for a container, a CWL Workflow can be associated with multiple specifications
-        for containers.
-      operationId: toolsIdVersionsVersionIdContainerfileGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The tool payload.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: There are no container specifications for this tool.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
     get:
       tags:
@@ -2192,6 +2194,37 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List versions of a tool
+      description: Returns all versions of the specified tool.
+      operationId: toolsIdVersionsGet
+      parameters:
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: An array of tool versions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersion'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersion'
+      security:
+      - BEARER: []
 components:
   schemas:
     Alias:
@@ -2216,9 +2249,12 @@ components:
             implementors are aware of the issues discussed in https://tools.ietf.org/html/rfc6920#section-9.4[RFC6920].
             GA4GH may provide more explicit guidance for use of non-IANA-registered
             algorithms in the future.
-      description: 'A production (immutable) tool version is required to have a hashcode.
-        Not required otherwise, but might be useful to detect changes. '
-      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+      description: A production (immutable) tool version is required to have a hashcode.
+        Not required otherwise, but might be useful to detect changes.  This exposes
+        the hashcode for specific image versions to verify that the container version
+        pulled is actually the version that was indexed by the registry.
+      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,
+        type=sha256}]'
     Collection:
       required:
       - name
