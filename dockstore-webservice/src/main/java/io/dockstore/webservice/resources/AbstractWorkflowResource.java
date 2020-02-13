@@ -322,7 +322,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             Map<String, Object> serviceObject = (Map<String, Object>)yml.get("service");
             subclass = (String)serviceObject.get("type");
             if (subclass == null) {
-                String msg = "Missing required subclass field.";
+                String msg = "Missing required type field.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
