@@ -247,18 +247,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 return createServicesAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, gitHubSourceCodeRepo, user, map);
             } else if (Objects.equals(version12, versionString)) {
                 // 1.2 - Currently only supports workflows, though will eventually support services
-                String classString = (String)map.get("class");
-                if (Objects.equals("workflow", classString)) {
-                    return createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
-                } else if (Objects.equals("service", classString)) {
-                    String msg = "Services are not yet implemented for version 1.2";
-                    LOG.info(msg);
-                    throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-                } else {
-                    String msg = classString + " is not a valid class for version 1.2";
-                    LOG.info(msg);
-                    throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+                if (map.containsKey("services")) {
+                    LOG.info("Services are not yet implemented for version 1.2");
                 }
+
+                if (map.containsKey("workflows")) {
+                    return createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
+                }
+
+                String msg = "Invalid .dockstore.yml. Missing required f";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             } else {
                 String msg = versionString + " is not a valid version";
                 LOG.info(msg);
