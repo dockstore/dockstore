@@ -102,7 +102,7 @@ public abstract class SourceCodeRepoInterface {
      * @param files the files collection we want to add to
      * @param fileType the type of file
      */
-    void readFile(String repositoryId, Version tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
+    void readFile(String repositoryId, Version<?> tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
         Optional<SourceFile> sourceFile = this.readFile(repositoryId, tag, fileType, path);
         sourceFile.ifPresent(files::add);
     }
@@ -113,7 +113,7 @@ public abstract class SourceCodeRepoInterface {
      * @param tag the version of source control we want to read from
      * @param fileType the type of file
      */
-    public Optional<SourceFile> readFile(String repositoryId, Version tag, DescriptorLanguage.FileType fileType, String path) {
+    public Optional<SourceFile> readFile(String repositoryId, Version<?> tag, DescriptorLanguage.FileType fileType, String path) {
         String fileResponse = this.readGitRepositoryFile(repositoryId, fileType, tag, path);
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
@@ -272,20 +272,19 @@ public abstract class SourceCodeRepoInterface {
      *
      * @param entry entry to update
      * @param type the type of language to look for
-     * @return the entry again
      */
-    Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
+    void updateEntryMetadata(final Entry<?, ?> entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
 
         if (repositoryId == null) {
             LOG.info("Could not find repository information.");
-            return entry;
+            return;
         }
 
         // If no tags or workflow versions, have no metadata
         if (entry.getWorkflowVersions().isEmpty()) {
-            return entry;
+            return;
         }
 
         if (entry instanceof Tool) {
@@ -309,7 +308,6 @@ public abstract class SourceCodeRepoInterface {
                 updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
             });
         }
-        return entry;
     }
 
     /**
@@ -337,7 +335,7 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    private void updateVersionMetadata(String filePath, Version version, DescriptorLanguage type, String repositoryId) {
+    private void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         String branch = version.getName();
         if (Strings.isNullOrEmpty(filePath)) {
@@ -376,7 +374,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return repository id of an entry, now standardised to be organization/repo_name
      */
-    public abstract String getRepositoryId(Entry entry);
+    public abstract String getRepositoryId(Entry<?, ?> entry);
 
     /**
      * Returns the branch of interest used to determine tool and workflow metadata
@@ -385,7 +383,7 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId
      * @return Branch of interest
      */
-    public abstract String getMainBranch(Entry entry, String repositoryId);
+    public abstract String getMainBranch(Entry<?, ?> entry, String repositoryId);
 
     /**
 
@@ -394,7 +392,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return
      */
-    String getBranchNameFromDefaultVersion(Entry entry) {
+    String getBranchNameFromDefaultVersion(Entry<?, ?> entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
             for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
@@ -506,7 +504,7 @@ public abstract class SourceCodeRepoInterface {
      * @param specificPath if specified, look for a specific file, otherwise return the "default" for a fileType
      * @return  a FileResponse instance
      */
-    public String readGitRepositoryFile(String repositoryId, DescriptorLanguage.FileType fileType, Version version, String specificPath) {
+    public String readGitRepositoryFile(String repositoryId, DescriptorLanguage.FileType fileType, Version<?> version, String specificPath) {
 
         final String reference = version.getReference();
 
@@ -555,7 +553,7 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version version, String filepath) {
+    public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version<?> version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
     }
@@ -566,16 +564,11 @@ public abstract class SourceCodeRepoInterface {
 
     public abstract SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type);
 
-    void createTestParameterFiles(Workflow workflow, String id, String branchName, WorkflowVersion version,
+    protected void createTestParameterFiles(Workflow workflow, String id, String branchName, WorkflowVersion version,
         DescriptorLanguage.FileType identifiedType) {
         if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
             // Set Filetype
-            DescriptorLanguage.FileType testJsonType = null;
-            if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
-                testJsonType = DescriptorLanguage.FileType.CWL_TEST_JSON;
-            } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
-                testJsonType = DescriptorLanguage.FileType.WDL_TEST_JSON;
-            }
+            DescriptorLanguage.FileType testJsonType = DescriptorLanguage.getDescriptorLanguage(identifiedType).getTestParamType();
 
             // Check if test parameter file has already been added
             final DescriptorLanguage.FileType finalFileType = testJsonType;
@@ -594,14 +587,14 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId
      * @param version
      */
-    public abstract void updateReferenceType(String repositoryId, Version version);
+    public abstract void updateReferenceType(String repositoryId, Version<?> version);
 
     /**
      * Given a version of a tool or workflow, return the corresponding current commit id
      * @param repositoryId
      * @param version
      */
-    protected abstract String getCommitID(String repositoryId, Version version);
+    protected abstract String getCommitID(String repositoryId, Version<?> version);
 
     /**
      * Returns a workflow version with validation information updated
