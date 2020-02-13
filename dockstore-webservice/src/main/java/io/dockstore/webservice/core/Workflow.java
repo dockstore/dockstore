@@ -125,7 +125,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Column
     @Convert(converter = DescriptorLanguageSubclassConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 19, allowableValues = "DOCKER_COMPOSE, HELM, KUBERNETES, SWARM")
+    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", position = 19)
     private DescriptorLanguageSubclass descriptorTypeSubclass;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)

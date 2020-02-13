@@ -8037,7 +8037,6 @@ definitions:
     required:
     - "defaultTestParameterFilePath"
     - "descriptorType"
-    - "descriptorTypeSubclass"
     - "gitUrl"
     - "mode"
     - "organization"
@@ -8215,8 +8214,8 @@ definitions:
         enum:
         - "DOCKER_COMPOSE"
         - "HELM"
-        - "KUBERNETES"
         - "SWARM"
+        - "KUBERNETES"
       workflow_path:
         type: "string"
         position: 19

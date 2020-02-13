@@ -292,7 +292,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                 updatedWorkflows.add(
                     createWorkflowAndVersionFromDockstoreYml(BioWorkflow.class, repository, gitReference, user, dockstoreYml, workflowName,
-                        workflowPath, subclass, gitHubSourceCodeRepo));
+                        subclass, gitHubSourceCodeRepo));
             }
             return updatedWorkflows;
         } catch (ClassCastException ex) {
@@ -330,7 +330,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LOG.info(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
-        updatedServices.add(createWorkflowAndVersionFromDockstoreYml(Service.class, repository, gitReference, user, dockstoreYml, "", "/.dockstore.yml", subclass, gitHubSourceCodeRepo));
+        updatedServices.add(createWorkflowAndVersionFromDockstoreYml(Service.class, repository, gitReference, user, dockstoreYml, "", subclass, gitHubSourceCodeRepo));
         return updatedServices;
     }
 
@@ -342,13 +342,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @param dockstoreYml Dockstore YAML File
      * @param workflowName User that triggered action
-     * @param workflowPath Primary descriptor path
      * @param subclass Subclass of the workflow
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    private Workflow createWorkflowAndVersionFromDockstoreYml(Class workflowType, String repository, String gitReference, User user, SourceFile dockstoreYml, String workflowName, String workflowPath, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+    private Workflow createWorkflowAndVersionFromDockstoreYml(Class workflowType, String repository, String gitReference, User user, SourceFile dockstoreYml, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
         Optional<Workflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
@@ -402,7 +401,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * Add user to any existing Dockstore workflow and services from GitHub apps they should own
      * @param user
      */
-    void syncEntitiesForUser(User user) {
+    public void syncEntitiesForUser(User user) {
         List<Token> githubByUserId = tokenDAO.findGithubByUserId(user.getId());
 
         if (githubByUserId.isEmpty()) {
