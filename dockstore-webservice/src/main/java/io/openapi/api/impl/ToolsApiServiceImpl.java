@@ -687,6 +687,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
         } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.PRIMARY_DESCRIPTOR) {
             return ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
+        } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.GENERIC_DESCRIPTOR) {
+            return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
         }
         return ToolFile.FileTypeEnum.OTHER;
     }
