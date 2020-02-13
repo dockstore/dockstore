@@ -679,30 +679,16 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @return The ToolFile.FileTypeEnum
      */
     private ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(DescriptorLanguage.FileType fileType) {
-        switch (fileType) {
-        case NEXTFLOW_TEST_PARAMS:
-        case CWL_TEST_JSON:
-        case GXFORMAT2_TEST_FILE:
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // case SWL_TEST_JSON:
-        case DOCKSTORE_SERVICE_TEST_JSON:
-        case WDL_TEST_JSON:
+        if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.TEST_FILE) {
             return ToolFile.FileTypeEnum.TEST_FILE;
-        case DOCKERFILE:
+        } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.CONTAINERFILE) {
             return ToolFile.FileTypeEnum.CONTAINERFILE;
-        case DOCKSTORE_WDL:
-        case DOCKSTORE_CWL:
-        case DOCKSTORE_GXFORMAT2:
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // case DOCKSTORE_SWL:
-        case DOCKSTORE_SERVICE_YML:
-        case NEXTFLOW:
+        } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.SECONDARY_DESCRIPTOR) {
             return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
-        case NEXTFLOW_CONFIG:
+        } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.PRIMARY_DESCRIPTOR) {
             return ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
-        default:
-            return ToolFile.FileTypeEnum.OTHER;
         }
+        return ToolFile.FileTypeEnum.OTHER;
     }
 
     /**

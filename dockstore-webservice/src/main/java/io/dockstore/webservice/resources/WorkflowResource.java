@@ -1150,8 +1150,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotHosted(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
-            String msg = "The workflow \'" + workflow.getWorkflowPath()
-                + "\' is a STUB. Refresh the workflow if you want to add test parameter files";
+            String msg = "The workflow '" + workflow.getWorkflowPath()
+                + "' is a STUB. Refresh the workflow if you want to add test parameter files";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1160,7 +1160,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorfklowVersion.isEmpty()) {
-            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.";
+            String msg = "The version '" + version + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1196,9 +1196,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorkflowVersion.isEmpty()) {
-            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.");
-            throw new CustomWebApplicationException(
-                "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.",
+            LOG.info("The version '" + version + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.");
+            throw new CustomWebApplicationException("The version '" + version + "' for workflow '"
+                + workflow.getWorkflowPath() + "' does not exist.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1230,23 +1230,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
         @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
-        // Validate descriptor path based on type
-        if ("nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith("nextflow.config")) {
-            throw new CustomWebApplicationException(
-                    "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+        for (DescriptorLanguage typeItem : DescriptorLanguage.values()) {
+            if (typeItem.getShortName().equalsIgnoreCase(descriptorType)) {
+                // check that plugin is active
+                if (typeItem.isPluginLanguage()) {
+                    if (!LanguageHandlerFactory.getPluginMap().containsKey(typeItem)) {
+                        throw new CustomWebApplicationException("plugin for " + typeItem.getShortName() + " is not installed", HttpStatus.SC_BAD_REQUEST);
+                    }
+                }
+                if (typeItem.getDefaultPrimaryDescriptorExtensions().stream().noneMatch(defaultWorkflowPath::endsWith)) {
+                    throw new CustomWebApplicationException(
+                        "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
                             + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
-        }
-        // TODO: should also use plugins
-        // DOCKSTORE-2428 - demo how to add new workflow language
-        if ("gxformat2".equals(descriptorType) && !defaultWorkflowPath.endsWith("yml")) {
-            throw new CustomWebApplicationException(
-                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
-                    + " and ends in yml", HttpStatus.SC_BAD_REQUEST);
-        } else if (!"nfl".equals(descriptorType) && !"gxformat2".equals(descriptorType) && !defaultWorkflowPath.endsWith(descriptorType)) {
-            // TODO: ugly
-            throw new CustomWebApplicationException(
-                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
-                    + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
+                }
+            }
         }
 
         // Validate source control registry
@@ -1799,18 +1796,5 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-    }
-
-    /**
-     * Finds the tool by Id, and then checks that it exists and that the user has access to it
-     * @param entryId Id of tool of interest
-     * @param user User to authenticate
-     * @return Tool
-     */
-    private Workflow findWorkflowByIdAndCheckWorkflowAndUser(Long entryId, User user) {
-        Workflow workflow = workflowDAO.findById(entryId);
-        checkEntry(workflow);
-        checkUser(user, workflow);
-        return workflow;
     }
 }

@@ -1377,8 +1377,8 @@ public class BasicIT extends BaseIT {
             Assert.assertEquals("Entry not found", e.getMessage());
         }
     }
-    @Test()
 
+    @Test()
     public void eventResourcePaginationTest() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);

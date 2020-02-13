@@ -480,16 +480,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.getLeft(), repository);
                     if (testJsonContent != null) {
                         SourceFile testJson = new SourceFile();
-
-                        // Set Filetype
-                        if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
-                            testJson.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
-                        } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
-                            testJson.setType(DescriptorLanguage.FileType.WDL_TEST_JSON);
-                        } else if (identifiedType.equals(DescriptorLanguage.FileType.NEXTFLOW_CONFIG)) {
-                            testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
-                        }
-
+                        testJson.setType(DescriptorLanguage.getDescriptorLanguage(identifiedType).getTestParamType());
                         testJson.setPath(workflow.getDefaultTestParameterFilePath());
                         testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
                         testJson.setContent(testJsonContent);
@@ -680,9 +671,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
-     * @return Updated user object
      */
-    public User getUserMetadata(User user) {
+    public void getUserMetadata(User user) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
@@ -700,8 +690,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername());
         }
-
-        return user;
     }
 
     /**
