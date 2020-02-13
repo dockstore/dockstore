@@ -26,13 +26,14 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import avro.shaded.com.google.common.base.Joiner;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
 import io.dockstore.common.LanguagePluginManager;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
@@ -111,17 +112,19 @@ import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.MetadataApi;
 import io.swagger.api.MetadataApiV1;
 import io.swagger.api.ToolClassesApi;
 import io.swagger.api.ToolClassesApiV1;
 import io.swagger.api.ToolsApi;
 import io.swagger.api.ToolsApiV1;
-import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -325,7 +328,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new EventResource(eventDAO, userDAO));
         environment.jersey().register(new ToolTesterResource(configuration));
-        environment.jersey().register(OpenApiResource.class);
+        // disable odd extra endpoints showing up
+        final SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().prettyPrint(true);
+        swaggerConfiguration.setIgnoredRoutes(Lists.newArrayList("/application.wadl", "/pprof"));
+        BaseOpenApiResource openApiResource = new OpenApiResource().openApiConfiguration(swaggerConfiguration);
+        environment.jersey().register(openApiResource);
 
         final AliasResource aliasResource = new AliasResource(hibernate.getSessionFactory(), workflowResource);
         environment.jersey().register(aliasResource);
@@ -365,8 +372,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());
 
-        // swagger stuff
-
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
@@ -376,21 +381,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // final FilterRegistration.Dynamic cors = environment.servlets().addFilter("CORS", CrossOriginFilter.class);
         final FilterHolder filterHolder = environment.getApplicationContext().addFilter(CrossOriginFilter.class, "/*", EnumSet.of(REQUEST));
 
-        // Configure CORS parameters
-        // cors.setInitParameter("allowedOrigins", "*");
-        // cors.setInitParameter("allowedHeaders", "X-Requested-With,Content-Type,Accept,Origin");
-        // cors.setInitParameter("allowedMethods", "OPTIONS,GET,PUT,POST,DELETE,HEAD");
-
         filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
         filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
         filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
         filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
                 "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
-
-        // Add URL mapping
-        // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
-        // cors.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, environment.getApplicationContext().getContextPath() +
-        // "*");
 
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();

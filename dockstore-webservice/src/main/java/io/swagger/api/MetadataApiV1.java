@@ -28,7 +28,7 @@ import javax.ws.rs.core.SecurityContext;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.resources.ResourceConstants;
 import io.swagger.api.factories.MetadataApiServiceFactory;
-import io.swagger.api.impl.ApiVersionConverter;
+import io.swagger.api.impl.ApiV1VersionConverter;
 import io.swagger.model.MetadataV1;
 import org.apache.http.HttpStatus;
 
@@ -48,6 +48,6 @@ public class MetadataApiV1 {
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "A Metadata object describing this service.", response = MetadataV1.class) })
     public Response metadataGet(@Context SecurityContext securityContext, @Context ContainerRequestContext containerRequestContext) throws NotFoundException {
-        return ApiVersionConverter.convertToVersion(delegate.metadataGet(securityContext, containerRequestContext, Optional.empty()));
+        return ApiV1VersionConverter.convertToVersion(delegate.metadataGet(securityContext, containerRequestContext, Optional.empty()));
     }
 }

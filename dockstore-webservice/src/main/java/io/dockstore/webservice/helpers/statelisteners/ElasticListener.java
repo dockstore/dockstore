@@ -45,6 +45,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
+import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
@@ -98,7 +99,7 @@ public class ElasticListener implements StateListenerInterface {
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
             String entryType = entry instanceof Tool ? "tool" : "workflow";
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
-            org.elasticsearch.client.Response post;
+            Response post;
             switch (command) {
             case PUBLISH:
             case UPDATE:
@@ -129,7 +130,7 @@ public class ElasticListener implements StateListenerInterface {
      * @param command The command that will be used
      * @return Whether or not the entry is valid
      */
-    private boolean checkValid(Entry entry, StateManagerMode command) {
+    private boolean checkValid(Entry<?, ?> entry, StateManagerMode command) {
         boolean published = entry.getIsPublished();
         switch (command) {
         case PUBLISH:
@@ -160,7 +161,7 @@ public class ElasticListener implements StateListenerInterface {
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
             String newlineDJSON = getNDJSON(entries);
             HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
-            org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
+            Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
             if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                 throw new CustomWebApplicationException("Could not submit index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
@@ -175,7 +176,7 @@ public class ElasticListener implements StateListenerInterface {
      * @param entry The entry that needs updating
      * @return The entry converted into a json string
      */
-    private String getDocumentValueFromEntry(Entry entry) {
+    private String getDocumentValueFromEntry(Entry<?, ?> entry) {
         ObjectMapper mapper = Jackson.newObjectMapper();
         StringBuilder builder = new StringBuilder();
         Map<String, Object> doc = new HashMap<>();

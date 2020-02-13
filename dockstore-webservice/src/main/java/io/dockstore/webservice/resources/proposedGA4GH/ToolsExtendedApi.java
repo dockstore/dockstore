@@ -44,6 +44,7 @@ import io.swagger.annotations.Authorization;
 import io.swagger.api.NotFoundException;
 import io.swagger.model.Error;
 import io.swagger.model.ToolV1;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
@@ -54,7 +55,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/extended")
 @Api("extendedGA4GH")
 @Produces({ "application/json", "text/plain" })
-@io.swagger.v3.oas.annotations.tags.Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH)
+@Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH)
 public class ToolsExtendedApi {
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 

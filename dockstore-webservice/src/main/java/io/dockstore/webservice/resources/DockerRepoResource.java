@@ -38,6 +38,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -115,7 +116,7 @@ public class DockerRepoResource
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published tools, authentication can be provided for restricted tools";
 
     @Context
-    private javax.ws.rs.container.ResourceContext rc;
+    private ResourceContext rc;
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -1042,26 +1043,26 @@ public class DockerRepoResource
         if (quayToken == null && Objects.equals(tool.getRegistry(), Registry.QUAY_IO.toString())) {
             LOG.info("WARNING: QUAY.IO token not found!");
             throw new CustomWebApplicationException("A valid Quay.io token is required to add this tool.", HttpStatus.SC_BAD_REQUEST);
-        }
+        } else if (quayToken != null) {
+            // set up
+            QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
 
-        // set up
-        QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
+            // get quay username
+            String quayUsername = quayToken.getUsername();
 
-        // get quay username
-        String quayUsername = quayToken.getUsername();
+            // call quay api, check if user owns or is part of owning organization
+            Map<String, Object> map = factory.getQuayInfo(tool);
 
-        // call quay api, check if user owns or is part of owning organization
-        Map<String, Object> map = factory.getQuayInfo(tool);
+            if (map != null) {
+                String namespace = map.get("namespace").toString();
+                boolean isOrg = (Boolean)map.get("is_organization");
 
-        if (map != null) {
-            String namespace = map.get("namespace").toString();
-            boolean isOrg = (Boolean)map.get("is_organization");
-
-            if (isOrg) {
-                List<String> namespaces = factory.getNamespaces();
-                return namespaces.stream().anyMatch(nm -> nm.equals(namespace));
-            } else {
-                return (namespace.equals(quayUsername));
+                if (isOrg) {
+                    List<String> namespaces = factory.getNamespaces();
+                    return namespaces.stream().anyMatch(nm -> nm.equals(namespace));
+                } else {
+                    return (namespace.equals(quayUsername));
+                }
             }
         }
         return false;

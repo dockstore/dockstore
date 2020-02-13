@@ -53,6 +53,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -109,7 +110,7 @@ public final class GitHubHelper {
      */
     public static String makeGitHubAppRequestAndGetRepositorySelection(Request request) {
         try {
-            okhttp3.Response response = DockstoreWebserviceApplication.okHttpClient.newCall(request).execute();
+            Response response = DockstoreWebserviceApplication.okHttpClient.newCall(request).execute();
             JsonElement body = new JsonParser().parse(response.body().string());
             if (body.isJsonObject()) {
                 JsonObject responseBody = body.getAsJsonObject();

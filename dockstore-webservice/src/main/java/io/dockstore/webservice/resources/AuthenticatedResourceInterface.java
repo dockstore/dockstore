@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
 
+import com.github.zafarkhaja.semver.Version;
 import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -228,8 +229,8 @@ public interface AuthenticatedResourceInterface {
             strings.forEach(s -> {
                 final String[] split = s.split("/");
                 if (split[0].equals("Dockstore-CLI")) {
-                    com.github.zafarkhaja.semver.Version clientVersion = com.github.zafarkhaja.semver.Version.valueOf(split[1]);
-                    com.github.zafarkhaja.semver.Version v16 = com.github.zafarkhaja.semver.Version.valueOf("1.6.0");
+                    Version clientVersion = Version.valueOf(split[1]);
+                    Version v16 = Version.valueOf("1.6.0");
                     if (clientVersion.lessThanOrEqualTo(v16)) {
                         m.manipulate(entry);
                     }
