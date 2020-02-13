@@ -23,7 +23,9 @@ import java.util.Optional;
 
 public enum DescriptorLanguageSubclass {
     DOCKER_COMPOSE("Docker Compose", "docker-compose"),
-    HELM("Helm", "helm");
+    HELM("Helm", "helm"),
+    SWARM("Swarm", "swarm"),
+    KUBERNETES("Kubernetes", "kubernetes");
 
     private final String friendlyName;
 

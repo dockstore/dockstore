@@ -8214,6 +8214,9 @@ definitions:
           \ it is only used for services."
         enum:
         - "DOCKER_COMPOSE"
+        - "HELM"
+        - "KUBERNETES"
+        - "SWARM"
       workflow_path:
         type: "string"
         position: 19
