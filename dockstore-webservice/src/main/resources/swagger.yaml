@@ -3902,7 +3902,7 @@ paths:
     post:
       tags:
       - "users"
-      summary: "Syncs Dockstore account with GitHub."
+      summary: "Syncs Dockstore account with GitHub App Installations."
       description: ""
       operationId: "syncUserWithGitHub"
       produces:

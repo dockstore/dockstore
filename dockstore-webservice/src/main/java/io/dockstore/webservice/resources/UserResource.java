@@ -587,6 +587,13 @@ public class UserResource implements AuthenticatedResourceInterface {
         return services;
     }
 
+    private List<Workflow> getStrippedWorkflowsAndServices(User user) {
+        final List<Workflow> workflows = user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
+        EntryVersionHelper.stripContent(workflows, this.userDAO);
+        return workflows;
+
+    }
+
     private List<Tool> getTools(User user) {
         return user.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast).collect(Collectors.toList());
     }
@@ -744,8 +751,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         User dbuser = userDAO.findById(user.getId());
         if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
-        } else if (source.equals(TokenType.GITHUB_COM)) {
-            syncUserWithGitHub(user);
         }
         dbuser.updateUserMetadata(tokenDAO, source);
         return dbuser;
@@ -793,14 +798,14 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/github/sync")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Syncs Dockstore account with GitHub.", authorizations = {
+    @ApiOperation(value = "Syncs Dockstore account with GitHub App Installations.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
     public List<Workflow> syncUserWithGitHub(@ApiParam(hidden = true) @Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
         workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
-        return getStrippedServices(userDAO.findById(user.getId()));
+        return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
     @GET
