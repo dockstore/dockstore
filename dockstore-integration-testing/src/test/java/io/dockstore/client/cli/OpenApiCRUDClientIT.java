@@ -26,6 +26,7 @@ import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.MetadataApi;
 import io.dockstore.openapi.client.model.SourceControlBean;
+import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -39,6 +40,9 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
+
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 
 /**
  * Tests CRUD style operations using OpenApi3
@@ -82,5 +86,21 @@ public class OpenApiCRUDClientIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
         final List<ToolClass> toolClasses = ga4Ghv20Api.toolClassesGet();
         Assert.assertTrue(toolClasses.size() >= 2);
+    }
+
+    @Test
+    public void testGA4GHClassFiltering() {
+        ApiClient webClient = new ApiClient();
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
+        final List<Tool> allStuff = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        final List<Tool> workflows = ga4Ghv20Api.toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        final List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        Assert.assertFalse(workflows.isEmpty());
+        Assert.assertFalse(tools.isEmpty());
+        Assert.assertEquals(workflows.size() + tools.size(), allStuff.size());
+
     }
 }

@@ -82,6 +82,8 @@ import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
 import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS;
 import static io.dockstore.common.DescriptorLanguage.FileType.WDL_TEST_JSON;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
@@ -270,7 +272,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
 
-        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(registry).append(organization).append(name)
+        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(registry).append(organization).append(name)
             .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
             .append(user.orElseGet(User::new).getId()).build();
         final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
@@ -288,8 +290,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } else if (alias != null) {
             all.add(toolDAO.getGenericEntryByAlias(alias));
         } else {
-            all.addAll(toolDAO.findAllPublished());
-            all.addAll(workflowDAO.findAllPublished());
+            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+                all.addAll(toolDAO.findAllPublished());
+            }
+            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+                all.addAll(workflowDAO.findAllPublished());
+            }
             all.sort(Comparator.comparing(Entry::getGitUrl));
         }
 
