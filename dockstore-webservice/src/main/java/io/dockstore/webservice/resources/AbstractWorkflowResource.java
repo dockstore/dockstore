@@ -255,7 +255,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     return createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
                 }
 
-                String msg = "Invalid .dockstore.yml. Missing required f";
+                String msg = "Invalid .dockstore.yml";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             } else {
