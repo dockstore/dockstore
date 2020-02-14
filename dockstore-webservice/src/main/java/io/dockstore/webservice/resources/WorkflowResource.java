@@ -79,7 +79,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -111,6 +110,7 @@ import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
@@ -197,12 +197,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
-
-    @Override
-    protected Workflow initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo) {
-        return sourceCodeRepo.initializeWorkflow(repository);
-    }
-
 
     /**
      * TODO: this should not be a GET either
@@ -1789,9 +1783,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", notes = "To be called by a lambda function. Error code 418 is returned to tell lambda not to retry.", authorizations = {
+    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = "bearer"), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Auth User user,
+    public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
         @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
         @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
         @ApiParam(value = "Git reference for a GitHub tag", required = true) @FormParam("gitReference") String gitReference,

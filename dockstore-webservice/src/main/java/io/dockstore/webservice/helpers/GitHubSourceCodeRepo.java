@@ -297,25 +297,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Initializes a workflow based on GitHub app installation
+     * Initialize service object for GitHub repository
      * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
-     * @return stub workflow based on GitHub repository
+     * @param subclass The subclass of the workflow (ex. docker-compose)
+     * @return Service
      */
-    public Workflow initializeWorkflow(String repositoryId) {
-        Workflow workflow = new BioWorkflow();
-        workflow.setOrganization(repositoryId.split("/")[0]);
-        workflow.setRepository(repositoryId.split("/")[1]);
-        workflow.setSourceControl(SourceControl.GITHUB);
-        workflow.setGitUrl("git@github.com:" + repositoryId + ".git");
-        workflow.setLastUpdated(new Date());
-        workflow.setDescriptorType(DescriptorLanguage.CWL);
-        workflow.setMode(WorkflowMode.DOCKSTORE_YML);
-        workflow.setDefaultWorkflowPath(".dockstore.yml");
-        return workflow;
-    }
-
-    @Override
-    public Service initializeService(String repositoryId) {
+    public Service initializeServiceFromGitHub(String repositoryId, String subclass) {
         Service service = new Service();
         service.setOrganization(repositoryId.split("/")[0]);
         service.setRepository(repositoryId.split("/")[1]);
@@ -323,19 +310,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setGitUrl("git@github.com:" + repositoryId + ".git");
         service.setLastUpdated(new Date());
         service.setDescriptorType(DescriptorLanguage.SERVICE);
-        service.setMode(WorkflowMode.SERVICE);
         service.setDefaultWorkflowPath("/.dockstore.yml");
-        return service;
-    }
-
-    /**
-     * Initialize service object for GitHub repository
-     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
-     * @param subclass The subclass of the workflow (ex. docker-compose)
-     * @return Service
-     */
-    public Service initializeServiceFromGitHub(String repositoryId, String subclass) {
-        Service service = initializeService(repositoryId);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
 
         // Validate subclass
@@ -362,17 +337,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return Workflow
      */
     public BioWorkflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
-        BioWorkflow workflow = (BioWorkflow)initializeWorkflow(repositoryId, new BioWorkflow());
-        workflow.setWorkflowName(workflowName);
+        BioWorkflow workflow = new BioWorkflow();
+        workflow.setOrganization(repositoryId.split("/")[0]);
+        workflow.setRepository(repositoryId.split("/")[1]);
+        workflow.setSourceControl(SourceControl.GITHUB);
+        workflow.setGitUrl("git@github.com:" + repositoryId + ".git");
+        workflow.setLastUpdated(new Date());
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
-        if (Objects.equals(DescriptorLanguage.CWL.getLowerShortName(), subclass)) {
-            workflow.setDescriptorType(DescriptorLanguage.CWL);
-        } else if (Objects.equals(DescriptorLanguage.WDL.getLowerShortName(), subclass)) {
-            workflow.setDescriptorType(DescriptorLanguage.WDL);
-        } else if (Objects.equals(DescriptorLanguage.NEXTFLOW.getLowerShortName(), subclass)) {
-            workflow.setDescriptorType(DescriptorLanguage.NEXTFLOW);
-        } else {
-            LOG.info("Invalid descriptor type " + subclass);
+        workflow.setWorkflowName(workflowName);
+        DescriptorLanguage descriptorLanguage;
+        try {
+            descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
+            workflow.setDescriptorType(descriptorLanguage);
+        } catch (UnsupportedOperationException ex) {
+            String msg = "The given descriptor type is not supported: " + subclass;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
         workflow.setDefaultWorkflowPath("/.dockstore.yml");
         return workflow;
@@ -589,15 +569,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     if (testJsonContent != null) {
                         SourceFile testJson = new SourceFile();
 
-                        // Set Filetype
-                        if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
-                            testJson.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
-                        } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
-                            testJson.setType(DescriptorLanguage.FileType.WDL_TEST_JSON);
-                        } else if (identifiedType.equals(DescriptorLanguage.FileType.NEXTFLOW_CONFIG)) {
-                            testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
-                        }
-
+                        testJson.setType(workflow.getDescriptorType().getTestParamType());
                         testJson.setPath(workflow.getDefaultTestParameterFilePath());
                         testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
                         testJson.setContent(testJsonContent);
@@ -712,18 +684,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             file.setAbsolutePath(primaryDescriptorPath);
             file.setPath(primaryDescriptorPath);
             file.setContent(fileContent);
-            DescriptorLanguage.FileType identifiedType;
-            if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.CWL)) {
-                identifiedType = DescriptorLanguage.FileType.DOCKSTORE_CWL;
-            } else if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.WDL)) {
-                identifiedType = DescriptorLanguage.FileType.DOCKSTORE_WDL;
-            } else if (Objects.equals(workflow.getDescriptorType(), DescriptorLanguage.NEXTFLOW)) {
-                identifiedType = DescriptorLanguage.FileType.NEXTFLOW_CONFIG;
-            } else {
-                String msg = "Invalid type";
-                LOG.info(msg);
-                return null;
-            }
+            DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
             file.setType(identifiedType);
             version.setWorkflowPath(primaryDescriptorPath);
 
@@ -734,15 +695,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
                     if (testJsonContent != null) {
                         SourceFile testJson = new SourceFile();
-
-                        if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
-                            testJson.setType(DescriptorLanguage.FileType.CWL_TEST_JSON);
-                        } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
-                            testJson.setType(DescriptorLanguage.FileType.WDL_TEST_JSON);
-                        } else if (identifiedType.equals(DescriptorLanguage.FileType.NEXTFLOW_CONFIG)) {
-                            testJson.setType(DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
-                        }
-
+                        // find type from file type, then find matching test param type
+                        testJson.setType(workflow.getDescriptorType().getTestParamType());
                         testJson.setPath(workflow.getDefaultTestParameterFilePath());
                         testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
                         testJson.setContent(testJsonContent);

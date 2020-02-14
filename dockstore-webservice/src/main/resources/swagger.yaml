@@ -4727,8 +4727,7 @@ paths:
       - "workflows"
       summary: "Handle a release of a repository on GitHub. Will create a workflow/service\
         \ and version when necessary."
-      description: "To be called by a lambda function. Error code 418 is returned\
-        \ to tell lambda not to retry."
+      description: ""
       operationId: "handleGitHubRelease"
       consumes:
       - "application/x-www-form-urlencoded"
@@ -8037,6 +8036,7 @@ definitions:
     required:
     - "defaultTestParameterFilePath"
     - "descriptorType"
+    - "descriptorTypeSubclass"
     - "gitUrl"
     - "mode"
     - "organization"
@@ -8216,6 +8216,7 @@ definitions:
         - "HELM"
         - "SWARM"
         - "KUBERNETES"
+        - "NOT_APPLICABLE"
       workflow_path:
         type: "string"
         position: 19

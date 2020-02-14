@@ -665,70 +665,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
-  /organizations:
-    get:
-      tags:
-      - organizations
-      summary: List all available organizations.
-      description: List all organizations that have been approved by a curator or
-        admin, sorted by number of stars.
-      operationId: getApprovedOrganizations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-    post:
-      tags:
-      - organizations
-      summary: Create an organization.
-      description: Create an organization. Organization requires approval by an admin
-        before being made public.
-      operationId: createOrganization
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/{organizationId}/reject:
     post:
       tags:
@@ -1066,6 +1002,70 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+  /organizations:
+    get:
+      tags:
+      - organizations
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations/all:
     get:
       tags:
@@ -1680,6 +1680,32 @@ paths:
             application/json: {}
       security:
       - bearer: []
+  /workflows/github/release:
+    post:
+      tags:
+      - workflows
+      description: Handle a release of a repository on GitHub. Will create a workflow/service
+        and version when necessary.
+      operationId: handleGitHubRelease
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                repository:
+                  type: string
+                username:
+                  type: string
+                gitReference:
+                  type: string
+                installationId:
+                  type: string
+      responses:
+        "418":
+          description: This code tells AWS Lambda not to retry.
+      security:
+      - bearer: []
   /ga4gh/trs/v2/toolClasses:
     get:
       tags:
@@ -1701,6 +1727,297 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolClass'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List versions of a tool
+      description: Returns all versions of the specified tool.
+      operationId: toolsIdVersionsGet
+      parameters:
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: An array of tool versions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersion'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersion'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List one specific tool version, acts as an anchor for self references
+      description: This endpoint returns one specific tool version.
+      operationId: toolsIdVersionsVersionIdGet
+      parameters:
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version, scoped to this registry, for
+          example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html  (For
+          example, `1.0.0` instead of `develop`)
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: A tool version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolVersion'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolVersion'
+        "404":
+          description: The tool can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get the tool descriptor for the specified tool
+      description: Returns the descriptor for the specified tool (examples include
+        CWL, WDL, or Nextflow documents).
+      operationId: toolsIdVersionsVersionIdTypeDescriptorGet
+      parameters:
+      - name: type
+        in: path
+        description: The output type of the descriptor. Plain types return the bare
+          descriptor while the "non-plain" types return a descriptor wrapped with
+          metadata. Allowable values include "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL",
+          "PLAIN_NFL".
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version, scoped to this registry, for
+          example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool descriptor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: The tool descriptor can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get additional tool descriptor files relative to the main file
+      description: Descriptors can often include imports that refer to additional
+        descriptors. This returns additional descriptors for the specified tool in
+        the same or other directories that can be reached as a relative path. This
+        endpoint can be useful for workflow engine implementations like cwltool to
+        programmatically download all the descriptors for a tool and run it. This
+        can optionally include other files described with FileWrappers such as test
+        parameters and containerfiles.
+      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
+      parameters:
+      - name: type
+        in: path
+        description: The output type of the descriptor. If not specified, it is up
+          to the underlying implementation to determine which output type to return.
+          Plain types return the bare descriptor while the "non-plain" types return
+          a descriptor wrapped with metadata. Allowable values are "CWL", "WDL", "NFL",
+          "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL".
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      - name: relative_path
+        in: path
+        description: A relative path to the additional file (same directory or subdirectories),
+          for example 'foo.cwl' would return a 'foo.cwl' from the same directory as
+          the main descriptor. 'nestedDirectory/foo.cwl' would return the file  from
+          a nested subdirectory.  Unencoded paths such 'sampleDirectory/foo.cwl' should
+          also be allowed.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool descriptor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get a list of test JSONs
+      description: Get a list of test JSONs (these allow you to execute the tool successfully)
+        suitable for use with this descriptor type.
+      operationId: toolsIdVersionsVersionIdTypeTestsGet
+      parameters:
+      - name: type
+        in: path
+        description: The type of the underlying descriptor. Allowable values include
+          "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example,
+          "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would
+          return a bare JSON list with the content of the tests.
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool test JSON response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List one specific tool, acts as an anchor for self references
+      description: This endpoint returns one specific tool (which has ToolVersions
+        nested inside it).
+      operationId: toolsIdGet
+      parameters:
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: A tool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        "404":
+          description: The tool can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
   /ga4gh/trs/v2/tools:
@@ -1892,297 +2209,6 @@ paths:
                   $ref: '#/components/schemas/ToolFile'
         "404":
           description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get additional tool descriptor files relative to the main file
-      description: Descriptors can often include imports that refer to additional
-        descriptors. This returns additional descriptors for the specified tool in
-        the same or other directories that can be reached as a relative path. This
-        endpoint can be useful for workflow engine implementations like cwltool to
-        programmatically download all the descriptors for a tool and run it. This
-        can optionally include other files described with FileWrappers such as test
-        parameters and containerfiles.
-      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
-      parameters:
-      - name: type
-        in: path
-        description: The output type of the descriptor. If not specified, it is up
-          to the underlying implementation to determine which output type to return.
-          Plain types return the bare descriptor while the "non-plain" types return
-          a descriptor wrapped with metadata. Allowable values are "CWL", "WDL", "NFL",
-          "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL".
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      - name: relative_path
-        in: path
-        description: A relative path to the additional file (same directory or subdirectories),
-          for example 'foo.cwl' would return a 'foo.cwl' from the same directory as
-          the main descriptor. 'nestedDirectory/foo.cwl' would return the file  from
-          a nested subdirectory.  Unencoded paths such 'sampleDirectory/foo.cwl' should
-          also be allowed.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The tool descriptor.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get a list of test JSONs
-      description: Get a list of test JSONs (these allow you to execute the tool successfully)
-        suitable for use with this descriptor type.
-      operationId: toolsIdVersionsVersionIdTypeTestsGet
-      parameters:
-      - name: type
-        in: path
-        description: The type of the underlying descriptor. Allowable values include
-          "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example,
-          "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would
-          return a bare JSON list with the content of the tests.
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The tool test JSON response.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List one specific tool, acts as an anchor for self references
-      description: This endpoint returns one specific tool (which has ToolVersions
-        nested inside it).
-      operationId: toolsIdGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: A tool.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Tool'
-        "404":
-          description: The tool can not be found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List versions of a tool
-      description: Returns all versions of the specified tool.
-      operationId: toolsIdVersionsGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: An array of tool versions.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolVersion'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List one specific tool version, acts as an anchor for self references
-      description: This endpoint returns one specific tool version.
-      operationId: toolsIdVersionsVersionIdGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version, scoped to this registry, for
-          example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html  (For
-          example, `1.0.0` instead of `develop`)
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: A tool version.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ToolVersion'
-        "404":
-          description: The tool can not be found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get the tool descriptor for the specified tool
-      description: Returns the descriptor for the specified tool (examples include
-        CWL, WDL, or Nextflow documents).
-      operationId: toolsIdVersionsVersionIdTypeDescriptorGet
-      parameters:
-      - name: type
-        in: path
-        description: The output type of the descriptor. Plain types return the bare
-          descriptor while the "non-plain" types return a descriptor wrapped with
-          metadata. Allowable values include "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL",
-          "PLAIN_NFL".
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version, scoped to this registry, for
-          example `v1`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The tool descriptor.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: The tool descriptor can not be found.
           content:
             application/json:
               schema:
@@ -2606,139 +2632,15 @@ components:
             $ref: '#/components/schemas/Alias'
     BioWorkflow:
       type: object
-      properties:
-        descriptorType:
-          type: string
-          enum:
-          - CWL
-          - WDL
-          - gxformat2
-          - SWL
-          - NFL
-          - service
-          
-          
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        author:
-          type: string
-        checker_id:
-          type: integer
-          format: int64
-        conceptDoi:
-          type: string
-        dbCreateDate:
-          type: string
-          format: date-time
-        dbUpdateDate:
-          type: string
-          format: date-time
-        defaultTestParameterFilePath:
-          type: string
-        defaultVersion:
-          type: string
-        description:
-          type: string
-        descriptorTypeSubclass:
-          type: string
-          enum:
-          - Docker Compose
-          - Helm
-          - Swarm
-          - Kubernetes
-        email:
-          type: string
-        full_workflow_path:
-          type: string
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        is_checker:
-          type: boolean
-        is_published:
-          type: boolean
-        labels:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-        lastUpdated:
-          type: string
-          format: date-time
-        last_modified:
-          type: integer
-          format: int32
-        last_modified_date:
-          type: string
-          format: date-time
-        metadataFromEntry:
-          $ref: '#/components/schemas/Workflow'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        mode:
-          type: string
-          enum:
-          - FULL
-          - STUB
-          - HOSTED
-          - SERVICE
-          - DOCKSTORE_YML
-        organization:
-          type: string
-        output_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        parent_id:
-          type: integer
-          format: int64
-        path:
-          type: string
-        repository:
-          type: string
-        sourceControl:
-          type: string
-          enum:
-          - dockstore.org
-          - github.com
-          - bitbucket.org
-          - gitlab.com
-        source_control_provider:
-          type: string
-        starredUsers:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        topicId:
-          type: integer
-          format: int64
-        users:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        workflowName:
-          type: string
-        workflowVersions:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkflowVersion'
-        workflow_path:
-          type: string
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+      - type: object
+        properties:
+          is_checker:
+            type: boolean
+          parent_id:
+            type: integer
+            format: int64
     Event:
       type: object
       properties:
@@ -3080,10 +2982,11 @@ components:
         descriptorTypeSubclass:
           type: string
           enum:
-          - Docker Compose
-          - Helm
-          - Swarm
-          - Kubernetes
+          - docker-compose
+          - helm
+          - swarm
+          - kubernetes
+          - n/a
         email:
           type: string
         full_workflow_path:
@@ -3577,6 +3480,16 @@ components:
               as an email or URL.
       description: A tool version describes a particular iteration of a tool as described
         by a reference to a specific image and/or documents.
+    Error:
+      required:
+      - code
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
     FileWrapper:
       type: object
       properties:
@@ -3602,16 +3515,6 @@ components:
         that describes how to build a particular container image. Examples include
         Dockerfiles for creating Docker images and Singularity recipes for Singularity
         images '
-    Error:
-      required:
-      - code
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
     ToolFile:
       type: object
       properties:

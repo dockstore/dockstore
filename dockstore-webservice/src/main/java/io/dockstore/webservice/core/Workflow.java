@@ -123,10 +123,10 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "CWL, WDL, NFL, gxformat2, service")
     private DescriptorLanguage descriptorType;
 
-    @Column
+    @Column(nullable = false)
     @Convert(converter = DescriptorLanguageSubclassConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", position = 19)
-    private DescriptorLanguageSubclass descriptorTypeSubclass;
+    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 19)
+    private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
@@ -334,9 +334,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
         @Override
         public String convertToDatabaseColumn(DescriptorLanguageSubclass attribute) {
-            if (attribute == null) {
-                return null;
-            }
             return attribute.getShortName();
         }
 

@@ -28,7 +28,7 @@
             <where>type='ADD_VERSION_TO_ENTRY' and versionid is null</where>
         </delete>
     </changeSet>
-    <changeSet author="aduncan" id="1580931394009">
+    <changeSet author="aduncan" id="AddSubclassColumnToServicesAndWorkflows">
         <addColumn tableName="service">
             <column name="descriptortypesubclass" type="varchar(255 BYTE)"/>
         </addColumn>

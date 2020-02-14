@@ -73,8 +73,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private final String bitbucketClientID;
     private final Class<T> entityClass;
 
-    private final double version11 = 1.1;
-    private final double version12 = 1.2;
+    private final double dockstoreYMLV11 = 1.1;
+    private final double dockstoreYMLV12 = 1.2;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
         this.client = client;
@@ -106,8 +106,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         return tokenDAO.findByUserId(user.getId());
     }
-
-    protected abstract T initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo);
 
     /**
      * Finds all workflows from a general Dockstore path that are of type FULL
@@ -242,10 +240,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             Map<String, Object> map = yaml.load(dockstoreYml.getContent());
             double versionString = (double)map.get("version");
 
-            if (Objects.equals(version11, versionString)) {
+            if (Objects.equals(dockstoreYMLV11, versionString)) {
                 // 1.1 - Only works with services
                 return createServicesAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, gitHubSourceCodeRepo, user, map);
-            } else if (Objects.equals(version12, versionString)) {
+            } else if (Objects.equals(dockstoreYMLV12, versionString)) {
                 // 1.2 - Currently only supports workflows, though will eventually support services
                 if (map.containsKey("services")) {
                     LOG.info("Services are not yet implemented for version 1.2");
