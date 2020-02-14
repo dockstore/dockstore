@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
  * before it. If testRefreshAfterDeletingAVersion() was run before, eventResource fails. But if you comment out the lines that refresh the
  * tool then in testRefresh, the eventResource will pass. Separating out this test for now.
  */
- @Category({ ConfidentialTest.class, ToolTest.class })
+@Category({ ConfidentialTest.class, ToolTest.class })
 public class EventResourceIT extends BaseIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
