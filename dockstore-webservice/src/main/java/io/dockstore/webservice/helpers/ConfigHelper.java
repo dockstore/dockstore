@@ -19,8 +19,9 @@ public final class ConfigHelper {
      * Reads a properties file with git info and returns abbreviated commitId and build version.
      * If file cannot be read, will log error and set config to "git property not found".
      * @param fileName properties file with git information
+     * @return git commitID and buildVersion
      */
-    public static GitInfo readGitProperties(String fileName) {
+    public static GitInfo readGitProperties(final String fileName) {
         final Properties properties = new Properties();
         LOGGER.info("Retrieving git properties");
         try {
@@ -33,11 +34,11 @@ public final class ConfigHelper {
         }
     }
 
-    public static class GitInfo {
+    public static final class GitInfo {
         public final String commitId;
         public final String buildVersion;
 
-        public GitInfo(String commitId, String buildVersion) {
+        private GitInfo(String commitId, String buildVersion) {
             this.commitId = commitId;
             this.buildVersion = buildVersion;
         }
