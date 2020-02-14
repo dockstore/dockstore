@@ -18,13 +18,9 @@ package io.dockstore.client.cli;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -32,7 +28,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
-import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -48,8 +43,6 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
-import okhttp3.OkHttpClient;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -86,8 +79,6 @@ public class BasicIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
-        // DO NOT CHECK IN THIS LINE
-        Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE);
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -1381,66 +1372,5 @@ public class BasicIT extends BaseIT {
         } catch (ApiException e) {
             Assert.assertEquals("Entry not found", e.getMessage());
         }
-    }
-
-    @Test()
-    public void eventResourcePaginationTest() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
-        ContainersApi toolsApi = new ContainersApi(client);
-        ContainertagsApi toolTagsApi = new ContainertagsApi(client);
-
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
-                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-        EventsApi eventsApi = new EventsApi(client);
-        List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
-        StarRequest starRequest = new StarRequest();
-        starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
-        // Add and update tag 101 times
-        Set<String> randomTagNames = new HashSet<>();
-
-        for (int i = 0; i < EventDAO.MAX_LIMIT + 10; i++) {
-            randomTagNames.add(RandomStringUtils.randomAlphanumeric(255));
-        }
-        randomTagNames.forEach(randomTagName -> {
-            List<Tag> randomTags = getRandomTags(randomTagName);
-            toolTagsApi.addTags(tool.getId(), randomTags);
-        });
-        try {
-            events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT + 1, 0);
-            Assert.fail("Should've failed because it's over the limit");
-        } catch (ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
-        }
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT, 0);
-        Assert.assertEquals("Should have been able to use the max limit", EventDAO.MAX_LIMIT, events.size());
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT - 10, 0);
-        Assert.assertEquals("Should have used a specific limit", EventDAO.MAX_LIMIT  - 10, events.size());
-        events.forEach(event -> Assert.assertNotNull(event.getVersion()));
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 1, 0);
-        Assert.assertEquals("Should have been able to use the min limit", 1, events.size());
-        try {
-            events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 0, 0);
-            Assert.fail("Should've failed because it's under the limit");
-        } catch (ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
-        }
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), null, null);
-        Assert.assertEquals("Should have used the default limit", 10, events.size());
-    }
-
-    private List<Tag> getRandomTags(String name) {
-        Tag tag = new Tag();
-        tag.setName(name);
-        tag.setReference("potato");
-        tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
-        tag.setReferenceType(Tag.ReferenceTypeEnum.TAG);
-        List<Tag> tags = new ArrayList<>();
-        tags.add(tag);
-        return tags;
     }
 }
