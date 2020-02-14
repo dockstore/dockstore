@@ -192,9 +192,9 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Operation(operationId = ZIP_UPLOAD_OPERATION_ID, summary = ZIP_UPLOAD_DESCRIPTION, security = @SecurityRequirement(name = "bearer"), deprecated = true)
     @ApiResponse(responseCode = "200", description = "successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Workflow.class)))
     public Workflow addZip(
-        @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "hosted entry ID") @Parameter(name = "entryId", description = "hosted entry ID") @PathParam("entryId") Long entryId,
-        @Parameter(name = "file", schema = @Schema(type = "string", format = "binary")) @FormDataParam("file") InputStream payload) {
+        @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth final User user,
+        @ApiParam(value = "hosted entry ID") @Parameter(name = "entryId", description = "hosted entry ID") @PathParam("entryId") final Long entryId,
+        @Parameter(name = "file", schema = @Schema(type = "string", format = "binary")) @FormDataParam("file") final InputStream payload) {
         final Workflow workflow = getEntryDAO().findById(entryId);
         checkEntry(workflow);
         checkHosted(workflow);
