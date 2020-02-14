@@ -169,20 +169,35 @@ paths:
                 $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
-  /organizations/collections/{alias}/aliases:
-    get:
+  /organizations/{organizationId}/collections/{collectionId}/entry:
+    post:
       tags:
       - organizations
-      summary: Retrieve a collection by alias.
-      description: Retrieve a collection by alias.
-      operationId: getCollectionByAlias
+      summary: Add an entry to a collection.
+      description: Add an entry to a collection.
+      operationId: addEntryToCollection
       parameters:
-      - name: alias
+      - name: organizationId
         in: path
-        description: Alias of the collection.
+        description: Organization ID.
         required: true
         schema:
-          type: string
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: entryId
+        in: query
+        description: Entry ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
       responses:
         default:
           description: default response
@@ -190,6 +205,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+    delete:
+      tags:
+      - organizations
+      summary: Delete an entry to a collection.
+      description: Delete an entry to a collection.
+      operationId: deleteEntryFromCollection
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: collectionId
+        in: path
+        description: Collection ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: entryId
+        in: query
+        description: Entry ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
   /organizations/{organizationId}/collections/{collectionId}:
     get:
       tags:
@@ -259,6 +313,27 @@ paths:
                 $ref: '#/components/schemas/Collection'
       security:
       - bearer: []
+  /organizations/collections/{alias}/aliases:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection by alias.
+      description: Retrieve a collection by alias.
+      operationId: getCollectionByAlias
+      parameters:
+      - name: alias
+        in: path
+        description: Alias of the collection.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
   /organizations/{organizationName}/collections/{collectionName}/name:
     get:
       tags:
@@ -279,81 +354,6 @@ paths:
         required: true
         schema:
           type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/collections/{collectionId}/entry:
-    post:
-      tags:
-      - organizations
-      summary: Add an entry to a collection.
-      description: Add an entry to a collection.
-      operationId: addEntryToCollection
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: collectionId
-        in: path
-        description: Collection ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: entryId
-        in: query
-        description: Entry ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
-    delete:
-      tags:
-      - organizations
-      summary: Delete an entry to a collection.
-      description: Delete an entry to a collection.
-      operationId: deleteEntryFromCollection
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: collectionId
-        in: path
-        description: Collection ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: entryId
-        in: query
-        description: Entry ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
       responses:
         default:
           description: default response
@@ -530,6 +530,20 @@ paths:
       deprecated: true
       security:
       - bearer: []
+  /metadata/config.json:
+    get:
+      tags:
+      - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
   /metadata/sitemap:
     get:
       tags:
@@ -563,22 +577,6 @@ paths:
             text/xml:
               schema:
                 type: string
-  /metadata/dockerRegistryList:
-    get:
-      tags:
-      - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries
-      responses:
-        default:
-          description: List of Docker registries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
   /metadata/runner_dependencies:
     get:
       tags:
@@ -684,20 +682,205 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/config.json:
+  /metadata/dockerRegistryList:
     get:
       tags:
       - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries
+      responses:
+        default:
+          description: List of Docker registries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
+  /organizations/{organizationId}/aliases:
+    post:
+      tags:
+      - organizations
+      summary: Add aliases linked to a listing in Dockstore.
+      description: Add aliases linked to a listing in Dockstore. Aliases are alphanumerical
+        (case-insensitive and may contain internal hyphens), given in a comma-delimited
+        list.
+      operationId: addOrganizationAliases_1
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization to modify.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: aliases
+        in: query
+        description: Comma-delimited list of aliases.
+        required: true
+        schema:
+          type: string
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Config'
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/reject:
+    post:
+      tags:
+      - organizations
+      summary: Reject an organization.
+      description: Reject the organization with the given id. Admin/curator only.
+      operationId: rejectOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+      - name: name
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization
+        to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve an organization by ID.
+      description: Retrieve an organization by ID. Supports optional authentication.
+      operationId: getOrganizationById
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+    put:
+      tags:
+      - organizations
+      summary: Update an organization.
+      description: Update an organization. Currently only name, display name, description,
+        topic, email, link, avatarUrl, and location can be updated.
+      operationId: updateOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
   /organizations/{organizationId}/description:
     get:
       tags:
@@ -744,6 +927,46 @@ paths:
           '*/*':
             schema:
               type: string
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations:
+    get:
+      tags:
+      - organizations
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
         required: true
       responses:
         default:
@@ -939,101 +1162,6 @@ paths:
                   $ref: '#/components/schemas/Organization'
       security:
       - bearer: []
-  /organizations:
-    get:
-      tags:
-      - organizations
-      summary: List all available organizations.
-      description: List all organizations that have been approved by a curator or
-        admin, sorted by number of stars.
-      operationId: getApprovedOrganizations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-    post:
-      tags:
-      - organizations
-      summary: Create an organization.
-      description: Create an organization. Organization requires approval by an admin
-        before being made public.
-      operationId: createOrganization
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by ID.
-      description: Retrieve an organization by ID. Supports optional authentication.
-      operationId: getOrganizationById
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-    put:
-      tags:
-      - organizations
-      summary: Update an organization.
-      description: Update an organization. Currently only name, display name, description,
-        topic, email, link, avatarUrl, and location can be updated.
-      operationId: updateOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/{organizationId}/users/{username}:
     put:
       tags:
@@ -1217,38 +1345,6 @@ paths:
             application/json: {}
       security:
       - bearer: []
-  /organizations/{organizationId}/aliases:
-    post:
-      tags:
-      - organizations
-      summary: Add aliases linked to a listing in Dockstore.
-      description: Add aliases linked to a listing in Dockstore. Aliases are alphanumerical
-        (case-insensitive and may contain internal hyphens), given in a comma-delimited
-        list.
-      operationId: addOrganizationAliases_1
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization to modify.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: aliases
-        in: query
-        description: Comma-delimited list of aliases.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/{alias}/aliases:
     get:
       tags:
@@ -1270,102 +1366,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/reject:
-    post:
-      tags:
-      - organizations
-      summary: Reject an organization.
-      description: Reject the organization with the given id. Admin/curator only.
-      operationId: rejectOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/request:
-    post:
-      tags:
-      - organizations
-      summary: Re-request an organization review.
-      description: Re-request a review of the given organization. Requires the organization
-        to be rejected.
-      operationId: requestOrganizationReview
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/name/{name}:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve an organization by name.
-      description: Retrieve an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
-      parameters:
-      - name: name
-        in: path
-        description: Organization name.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /toolTester/logs/search:
     get:
       tags:
@@ -1448,23 +1448,6 @@ paths:
             text/plain:
               schema:
                 type: string
-  /users/user:
-    get:
-      tags:
-      - users
-      operationId: getUser
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
   /users/{userId}:
     get:
       tags:
@@ -1489,23 +1472,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/users/organizations:
+  /users/user:
     get:
       tags:
       - users
-      description: Get all of the Dockstore organizations for a user, sorted by most
-        recently updated.
-      operationId: getUserDockstoreOrganizations
+      operationId: getUser
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/registries/{gitRegistry}/organizations/{organization}:
+    get:
+      tags:
+      - users
+      description: Get all of the repositories for an organization for a given git
+        registry accessible to the logged in user.
+      operationId: getUserOrganizationRepositories
       parameters:
-      - name: count
-        in: query
-        description: Maximum number of organizations to return
+      - name: gitRegistry
+        in: path
+        description: Git registry
+        required: true
         schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Filter paths with matching text
+          type: string
+          enum:
+          - dockstore.org
+          - github.com
+          - bitbucket.org
+          - gitlab.com
+      - name: organization
+        in: path
+        description: Git organization
+        required: true
         schema:
           type: string
       responses:
@@ -1516,36 +1522,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/OrganizationUpdateTime'
-      security:
-      - bearer: []
-  /users/users/entries:
-    get:
-      tags:
-      - users
-      description: Get all of the entries for a user, sorted by most recently updated.
-      operationId: getUserEntries
-      parameters:
-      - name: count
-        in: query
-        description: Maximum number of entries to return
-        schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Filter paths with matching text
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EntryUpdateTime'
+                  $ref: '#/components/schemas/Repository'
       security:
       - bearer: []
   /users/registries:
@@ -1601,29 +1578,22 @@ paths:
                   type: string
       security:
       - bearer: []
-  /users/registries/{gitRegistry}/organizations/{organization}:
+  /users/users/entries:
     get:
       tags:
       - users
-      description: Get all of the repositories for an organization for a given git
-        registry accessible to the logged in user.
-      operationId: getUserOrganizationRepositories
+      description: Get all of the entries for a user, sorted by most recently updated.
+      operationId: getUserEntries
       parameters:
-      - name: gitRegistry
-        in: path
-        description: Git registry
-        required: true
+      - name: count
+        in: query
+        description: Maximum number of entries to return
         schema:
-          type: string
-          enum:
-          - dockstore.org
-          - github.com
-          - bitbucket.org
-          - gitlab.com
-      - name: organization
-        in: path
-        description: Git organization
-        required: true
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
         schema:
           type: string
       responses:
@@ -1634,7 +1604,37 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Repository'
+                  $ref: '#/components/schemas/EntryUpdateTime'
+      security:
+      - bearer: []
+  /users/users/organizations:
+    get:
+      tags:
+      - users
+      description: Get all of the Dockstore organizations for a user, sorted by most
+        recently updated.
+      operationId: getUserDockstoreOrganizations
+      parameters:
+      - name: count
+        in: query
+        description: Maximum number of organizations to return
+        schema:
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Filter paths with matching text
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationUpdateTime'
       security:
       - bearer: []
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
@@ -1792,6 +1792,96 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
+  /ga4gh/trs/v2/tools/{id}:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List one specific tool, acts as an anchor for self references
+      description: This endpoint returns one specific tool (which has ToolVersions
+        nested inside it).
+      operationId: toolsIdGet
+      parameters:
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: A tool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        "404":
+          description: The tool can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get the tool descriptor for the specified tool
+      description: Returns the descriptor for the specified tool (examples include
+        CWL, WDL, or Nextflow documents).
+      operationId: toolsIdVersionsVersionIdTypeDescriptorGet
+      parameters:
+      - name: type
+        in: path
+        description: The output type of the descriptor. Plain types return the bare
+          descriptor while the "non-plain" types return a descriptor wrapped with
+          metadata. Allowable values include "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL",
+          "PLAIN_NFL".
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version, scoped to this registry, for
+          example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool descriptor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: The tool descriptor can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
   /ga4gh/trs/v2/tools:
     get:
       tags:
@@ -1884,133 +1974,21 @@ paths:
                   $ref: '#/components/schemas/Tool'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools/{id}:
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
       - GA4GHV20
-      summary: List one specific tool, acts as an anchor for self references
-      description: This endpoint returns one specific tool (which has ToolVersions
-        nested inside it).
-      operationId: toolsIdGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: A tool.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Tool'
-        "404":
-          description: The tool can not be found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List versions of a tool
-      description: Returns all versions of the specified tool.
-      operationId: toolsIdVersionsGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: An array of tool versions.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolVersion'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List one specific tool version, acts as an anchor for self references
-      description: This endpoint returns one specific tool version.
-      operationId: toolsIdVersionsVersionIdGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version, scoped to this registry, for
-          example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html  (For
-          example, `1.0.0` instead of `develop`)
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: A tool version.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ToolVersion'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ToolVersion'
-        "404":
-          description: The tool can not be found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get the tool descriptor for the specified tool
-      description: Returns the descriptor for the specified tool (examples include
-        CWL, WDL, or Nextflow documents).
-      operationId: toolsIdVersionsVersionIdTypeDescriptorGet
+      summary: Get a list of test JSONs
+      description: Get a list of test JSONs (these allow you to execute the tool successfully)
+        suitable for use with this descriptor type.
+      operationId: toolsIdVersionsVersionIdTypeTestsGet
       parameters:
       - name: type
         in: path
-        description: The output type of the descriptor. Plain types return the bare
-          descriptor while the "non-plain" types return a descriptor wrapped with
-          metadata. Allowable values include "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL",
-          "PLAIN_NFL".
+        description: The type of the underlying descriptor. Allowable values include
+          "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example,
+          "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would
+          return a bare JSON list with the content of the tests.
         required: true
         schema:
           type: string
@@ -2023,23 +2001,27 @@ paths:
           type: string
       - name: version_id
         in: path
-        description: An identifier of the tool version, scoped to this registry, for
-          example `v1`.
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
         required: true
         schema:
           type: string
       responses:
         "200":
-          description: The tool descriptor.
+          description: The tool test JSON response.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileWrapper'
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
             text/plain:
               schema:
-                $ref: '#/components/schemas/FileWrapper'
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
         "404":
-          description: The tool descriptor can not be found.
+          description: The tool can not be output in the specified type.
           content:
             application/json:
               schema:
@@ -2118,24 +2100,45 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
+  /ga4gh/trs/v2/tools/{id}/versions:
     get:
       tags:
       - GA4GHV20
-      summary: Get a list of test JSONs
-      description: Get a list of test JSONs (these allow you to execute the tool successfully)
-        suitable for use with this descriptor type.
-      operationId: toolsIdVersionsVersionIdTypeTestsGet
+      summary: List versions of a tool
+      description: Returns all versions of the specified tool.
+      operationId: toolsIdVersionsGet
       parameters:
-      - name: type
+      - name: id
         in: path
-        description: The type of the underlying descriptor. Allowable values include
-          "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example,
-          "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would
-          return a bare JSON list with the content of the tests.
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
         required: true
         schema:
           type: string
+      responses:
+        "200":
+          description: An array of tool versions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersion'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersion'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List one specific tool version, acts as an anchor for self references
+      description: This endpoint returns one specific tool version.
+      operationId: toolsIdVersionsVersionIdGet
+      parameters:
       - name: id
         in: path
         description: A unique identifier of the tool, scoped to this registry, for
@@ -2145,27 +2148,24 @@ paths:
           type: string
       - name: version_id
         in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
+        description: An identifier of the tool version, scoped to this registry, for
+          example `v1`. We recommend that versions use semantic versioning https://semver.org/spec/v2.0.0.html  (For
+          example, `1.0.0` instead of `develop`)
         required: true
         schema:
           type: string
       responses:
         "200":
-          description: The tool test JSON response.
+          description: A tool version.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
+                $ref: '#/components/schemas/ToolVersion'
             text/plain:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
+                $ref: '#/components/schemas/ToolVersion'
         "404":
-          description: The tool can not be output in the specified type.
+          description: The tool can not be found.
           content:
             application/json:
               schema:
@@ -3298,35 +3298,6 @@ components:
           type: string
         workingDirectory:
           type: string
-    RegistryBean:
-      type: object
-      properties:
-        customDockerPath:
-          type: string
-        dockerPath:
-          type: string
-        enum:
-          type: string
-        friendlyName:
-          type: string
-        privateOnly:
-          type: string
-        url:
-          type: string
-    SourceControlBean:
-      type: object
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
     Config:
       type: object
       properties:
@@ -3345,6 +3316,10 @@ components:
         documentationUrl:
           type: string
         featuredContentUrl:
+          type: string
+        gitBuildVersion:
+          type: string
+        gitCommitId:
           type: string
         gitHubAppInstallationUrl:
           type: string
@@ -3388,6 +3363,35 @@ components:
           type: string
         zenodoScope:
           type: string
+    SourceControlBean:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+        value:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+        value:
+          type: string
+    RegistryBean:
+      type: object
+      properties:
+        customDockerPath:
+          type: string
+        dockerPath:
+          type: string
+        enum:
+          type: string
+        friendlyName:
+          type: string
+        privateOnly:
+          type: string
+        url:
+          type: string
     StarRequest:
       type: object
       properties:
@@ -3411,32 +3415,6 @@ components:
           type: string
         toolVersionName:
           type: string
-    OrganizationUpdateTime:
-      type: object
-      properties:
-        displayName:
-          type: string
-        lastUpdateDate:
-          type: string
-          format: date-time
-        name:
-          type: string
-    EntryUpdateTime:
-      type: object
-      properties:
-        entryType:
-          type: string
-          enum:
-          - TOOL
-          - WORKFLOW
-          - SERVICE
-        lastUpdateDate:
-          type: string
-          format: date-time
-        path:
-          type: string
-        prettyPath:
-          type: string
     Repository:
       type: object
       properties:
@@ -3456,6 +3434,32 @@ components:
         present:
           type: boolean
         repositoryName:
+          type: string
+    EntryUpdateTime:
+      type: object
+      properties:
+        entryType:
+          type: string
+          enum:
+          - TOOL
+          - WORKFLOW
+          - SERVICE
+        lastUpdateDate:
+          type: string
+          format: date-time
+        path:
+          type: string
+        prettyPath:
+          type: string
+    OrganizationUpdateTime:
+      type: object
+      properties:
+        displayName:
+          type: string
+        lastUpdateDate:
+          type: string
+          format: date-time
+        name:
           type: string
     ToolClass:
       type: object
