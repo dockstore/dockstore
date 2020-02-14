@@ -82,6 +82,9 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Tag(name = "hosted", description = ResourceConstants.HOSTED)
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);
+    private static final String ZIP_UPLOAD_OPERATION_ID = "addZip";
+    private static final String ZIP_UPLOAD_DESCRIPTION = "Creates a new revision of a hosted workflow from a zip";
+
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
@@ -183,11 +186,11 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(nickname = "addZip", value = "Creates a new revision of a hosted workflow from a zip", authorizations = {
+    @ApiOperation(nickname = ZIP_UPLOAD_OPERATION_ID, value = ZIP_UPLOAD_DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
     @Deprecated(since = "1.9.0")
-    @Operation(operationId = "addZip", summary = "Creates a new revision of a hosted workflow from a zip", security = @SecurityRequirement(name = "bearer"), deprecated = true)
-    @ApiResponse(responseCode = "200", description = "successful operation", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Workflow.class)))
+    @Operation(operationId = ZIP_UPLOAD_OPERATION_ID, summary = ZIP_UPLOAD_DESCRIPTION, security = @SecurityRequirement(name = "bearer"), deprecated = true)
+    @ApiResponse(responseCode = "200", description = "successful operation", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Workflow.class)))
     public Workflow addZip(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "hosted entry ID") @Parameter(name = "entryId", description = "hosted entry ID") @PathParam("entryId") Long entryId,
