@@ -23,7 +23,7 @@ public final class ConfigHelper {
      */
     public static GitInfo readGitProperties(final String fileName) {
         final Properties properties = new Properties();
-        LOGGER.info("Retrieving git properties");
+        LOGGER.debug("Retrieving git properties from file: " + fileName);
         try {
             properties.load(GitInfo.class.getClassLoader().getResourceAsStream(fileName));
             return new GitInfo(String.valueOf(properties.get("git.commit.id.abbrev")), String.valueOf(properties.get("git.build.version")));
