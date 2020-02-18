@@ -6291,6 +6291,10 @@ definitions:
         type: "string"
       featuredContentUrl:
         type: "string"
+      gitBuildVersion:
+        type: "string"
+      gitCommitId:
+        type: "string"
       gitHubAppInstallationUrl:
         type: "string"
       gitHubAuthUrl:
