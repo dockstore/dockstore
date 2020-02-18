@@ -497,6 +497,39 @@ paths:
                   $ref: '#/components/schemas/Event'
       security:
       - bearer: []
+  /workflows/hostedEntry/{entryId}:
+    post:
+      tags:
+      - hosted
+      summary: Creates a new revision of a hosted workflow from a zip
+      operationId: addZip
+      parameters:
+      - name: entryId
+        in: path
+        description: hosted entry ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      deprecated: true
+      security:
+      - bearer: []
   /metadata/dockerRegistryList:
     get:
       tags:
@@ -1798,6 +1831,205 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get a list of test JSONs
+      description: Get a list of test JSONs (these allow you to execute the tool successfully)
+        suitable for use with this descriptor type.
+      operationId: toolsIdVersionsVersionIdTypeTestsGet
+      parameters:
+      - name: type
+        in: path
+        description: The type of the underlying descriptor. Allowable values include
+          "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example,
+          "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would
+          return a bare JSON list with the content of the tests.
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool test JSON response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get the container specification(s) for the specified image.
+      description: Returns the container specifications(s) for the specified image.
+        For example, a CWL CommandlineTool can be associated with one specification
+        for a container, a CWL Workflow can be associated with multiple specifications
+        for containers.
+      operationId: toolsIdVersionsVersionIdContainerfileGet
+      parameters:
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The tool payload.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: There are no container specifications for this tool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
+  /ga4gh/trs/v2/tools:
+    get:
+      tags:
+      - GA4GHV20
+      summary: List all tools
+      description: 'This endpoint returns all tools available or a filtered subset
+        using metadata query parameters. '
+      operationId: toolsGet
+      parameters:
+      - name: id
+        in: query
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        schema:
+          type: string
+      - name: alias
+        in: query
+        description: Support for this parameter is optional for tool registries that
+          support aliases. If provided will only return entries with the given alias.
+        schema:
+          type: string
+      - name: toolClass
+        in: query
+        description: Filter tools by the name of the subclass (#/definitions/ToolClass)
+        schema:
+          type: string
+      - name: registry
+        in: query
+        description: The image registry that contains the image.
+        schema:
+          type: string
+      - name: organization
+        in: query
+        description: The organization in the registry that published the image.
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: The name of the image.
+        schema:
+          type: string
+      - name: toolname
+        in: query
+        description: The name of the tool.
+        schema:
+          type: string
+      - name: description
+        in: query
+        description: The description of the tool.
+        schema:
+          type: string
+      - name: author
+        in: query
+        description: The author of the tool (TODO a thought occurs, are we assuming
+          that the author of the CWL and the image are the same?).
+        schema:
+          type: string
+      - name: checker
+        in: query
+        description: Return only checker workflows.
+        schema:
+          type: boolean
+      - name: offset
+        in: query
+        description: Start index of paging. Pagination results can be based on numbers
+          or other values chosen by the registry implementor (for example, SHA values).
+          If this exceeds the current result set return an empty set.  If not specified
+          in the request, this will start at the beginning of the results.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Amount of records to return in a given page.
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: An array of Tools that match the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+      security:
+      - BEARER: []
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
     get:
       tags:
@@ -1922,98 +2154,6 @@ paths:
                   $ref: '#/components/schemas/ToolVersion'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools:
-    get:
-      tags:
-      - GA4GHV20
-      summary: List all tools
-      description: 'This endpoint returns all tools available or a filtered subset
-        using metadata query parameters. '
-      operationId: toolsGet
-      parameters:
-      - name: id
-        in: query
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        schema:
-          type: string
-      - name: alias
-        in: query
-        description: Support for this parameter is optional for tool registries that
-          support aliases. If provided will only return entries with the given alias.
-        schema:
-          type: string
-      - name: toolClass
-        in: query
-        description: Filter tools by the name of the subclass (#/definitions/ToolClass)
-        schema:
-          type: string
-      - name: registry
-        in: query
-        description: The image registry that contains the image.
-        schema:
-          type: string
-      - name: organization
-        in: query
-        description: The organization in the registry that published the image.
-        schema:
-          type: string
-      - name: name
-        in: query
-        description: The name of the image.
-        schema:
-          type: string
-      - name: toolname
-        in: query
-        description: The name of the tool.
-        schema:
-          type: string
-      - name: description
-        in: query
-        description: The description of the tool.
-        schema:
-          type: string
-      - name: author
-        in: query
-        description: The author of the tool (TODO a thought occurs, are we assuming
-          that the author of the CWL and the image are the same?).
-        schema:
-          type: string
-      - name: checker
-        in: query
-        description: Return only checker workflows.
-        schema:
-          type: boolean
-      - name: offset
-        in: query
-        description: Start index of paging. Pagination results can be based on numbers
-          or other values chosen by the registry implementor (for example, SHA values).
-          If this exceeds the current result set return an empty set.  If not specified
-          in the request, this will start at the beginning of the results.
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: Amount of records to return in a given page.
-        schema:
-          type: integer
-          format: int32
-      responses:
-        "200":
-          description: An array of Tools that match the filter.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-      security:
-      - BEARER: []
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}:
     get:
       tags:
@@ -2102,113 +2242,6 @@ paths:
                 $ref: '#/components/schemas/FileWrapper'
         "404":
           description: The tool descriptor can not be found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get a list of test JSONs
-      description: Get a list of test JSONs (these allow you to execute the tool successfully)
-        suitable for use with this descriptor type.
-      operationId: toolsIdVersionsVersionIdTypeTestsGet
-      parameters:
-      - name: type
-        in: path
-        description: The type of the underlying descriptor. Allowable values include
-          "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example,
-          "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would
-          return a bare JSON list with the content of the tests.
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The tool test JSON response.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get the container specification(s) for the specified image.
-      description: Returns the container specifications(s) for the specified image.
-        For example, a CWL CommandlineTool can be associated with one specification
-        for a container, a CWL Workflow can be associated with multiple specifications
-        for containers.
-      operationId: toolsIdVersionsVersionIdContainerfileGet
-      parameters:
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The tool payload.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: There are no container specifications for this tool.
           content:
             application/json:
               schema:
@@ -3393,21 +3426,6 @@ components:
           format: int32
         message:
           type: string
-    ToolFile:
-      type: object
-      properties:
-        file_type:
-          type: string
-          enum:
-          - TEST_FILE
-          - PRIMARY_DESCRIPTOR
-          - SECONDARY_DESCRIPTOR
-          - CONTAINERFILE
-          - OTHER
-        path:
-          type: string
-          description: Relative path of the file.  A descriptor's path can be used
-            with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
     ImageData:
       type: object
       properties:
@@ -3530,6 +3548,21 @@ components:
               as an email or URL.
       description: A tool version describes a particular iteration of a tool as described
         by a reference to a specific image and/or documents.
+    ToolFile:
+      type: object
+      properties:
+        file_type:
+          type: string
+          enum:
+          - TEST_FILE
+          - PRIMARY_DESCRIPTOR
+          - SECONDARY_DESCRIPTOR
+          - CONTAINERFILE
+          - OTHER
+        path:
+          type: string
+          description: Relative path of the file.  A descriptor's path can be used
+            with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
   securitySchemes:
     bearer:
       type: http

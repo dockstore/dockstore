@@ -30,27 +30,32 @@ import io.openapi.model.ToolClass;
 
 // TODO: this is copied from v2 beta, make this better
 public class ToolClassesApiServiceImpl extends ToolClassesApiService {
+
+    public static final String COMMAND_LINE_TOOL = "CommandLineTool";
+    public static final String WORKFLOW = "Workflow";
+    public static final String SERVICE = "Service";
+
     public static ToolClass getServiceClass() {
         ToolClass type2 = new ToolClass();
-        type2.setName("Service");
+        type2.setName(SERVICE);
         type2.setId("2");
-        type2.setDescription("Service");
+        type2.setDescription(SERVICE);
         return type2;
     }
 
     public static ToolClass getWorkflowClass() {
         ToolClass type2 = new ToolClass();
-        type2.setName("Workflow");
+        type2.setName(WORKFLOW);
         type2.setId("1");
-        type2.setDescription("Workflow");
+        type2.setDescription(WORKFLOW);
         return type2;
     }
 
     public static ToolClass getCommandLineToolClass() {
         ToolClass type1 = new ToolClass();
-        type1.setName("CommandLineTool");
+        type1.setName(COMMAND_LINE_TOOL);
         type1.setId("0");
-        type1.setDescription("CommandLineTool");
+        type1.setDescription(COMMAND_LINE_TOOL);
         return type1;
     }
 

@@ -4834,6 +4834,7 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+      deprecated: true
     delete:
       tags:
       - "hosted"
