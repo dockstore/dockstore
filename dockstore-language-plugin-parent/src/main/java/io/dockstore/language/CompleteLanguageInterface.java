@@ -32,7 +32,7 @@ public interface CompleteLanguageInterface extends RecommendedLanguageInterface 
      * @param initialPath  the path to the primary descriptor
      * @param contents     contents of the primary descriptor
      * @param indexedFiles the set of files indexed from MinimalLanguageInterface
-     * @return cytoscape compatible data structure
+     * @return cytoscape compatible data structure http://manual.cytoscape.org/en/stable/Supported_Network_File_Formats.html#cytoscape-js-json
      */
     Map<String, Object> loadCytoscapeElements(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
 
