@@ -340,22 +340,28 @@ public interface LanguageHandlerInterface {
         List<Map<String, String>> dockerTools = new ArrayList<>();
         dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
 
-        Set<String> dockerStrings = new HashSet<>();
-
         // Eliminate duplicate docker strings
-        for (Map<String, String> tool : dockerTools) {
-            dockerStrings.add(tool.get("docker"));
-        }
+        Set<String> dockerStrings = dockerTools.stream().map(dockertool -> dockertool.get("docker")).filter(Objects::nonNull).collect(Collectors.toSet());
 
         Set<Image> dockerImages = new HashSet<>();
+        String errorKey = "error_message";
         for (String image : dockerStrings) {
             String[] parts = image.split("/");
 
             Optional<String> response;
             if (image.startsWith("quay.io/")) {
-                String errorKey = "error_message";
-                String[] splitDocker = image.split("/");
-                String[] splitTag = splitDocker[2].split(":");
+                String[] splitDocker;
+                String[] splitTag;
+
+                try {
+                    splitDocker = image.split("/");
+                    splitTag = splitDocker[2].split(":");
+                } catch (ArrayIndexOutOfBoundsException ex) {
+                    LOG.error("URL to image on Quay incomplete", ex);
+                    break;
+                }
+
+
                 if (splitTag.length > 1) {
                     String repo = splitDocker[1] + "/" + splitTag[0];
                     String tagName = splitTag[1];
@@ -381,7 +387,7 @@ public interface LanguageHandlerInterface {
                                 }
 
                             } catch (IndexOutOfBoundsException | NullPointerException ex) {
-                                LOG.error("Could not get checksum information for " + splitDocker[1]);
+                                LOG.error("Could not get checksum information for " + splitDocker[1], ex);
                             }
                         }
                     }

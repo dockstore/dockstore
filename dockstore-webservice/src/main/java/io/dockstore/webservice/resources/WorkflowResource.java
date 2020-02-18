@@ -457,7 +457,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return workflow;
     }
@@ -710,7 +710,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return filterContainersForHiddenTags(workflow);
     }
@@ -861,7 +861,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return workflow;
     }
@@ -1047,7 +1047,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         filterContainersForHiddenTags(workflow);
 
@@ -1637,10 +1637,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     /**
      * If include contains validations field, initialize the workflows validations for all of its workflow versions
      * If include contains aliases field, initialize the aliases for all of its workflow versions
+     * If include contains images field, initialize the images for all of its workflow versions
      * @param include
      * @param workflow
      */
-    private void initializeValidations(String include, Workflow workflow) {
+    private void initializeAdditionalFields(String include, Workflow workflow) {
         if (checkIncludes(include, VALIDATIONS)) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
