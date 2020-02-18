@@ -286,7 +286,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             for (Map<String, Object> wf : workflows) {
                 String subclass = (String)wf.get("subclass");
                 String workflowName = (String)wf.get("name");
-                String workflowPath = (String)wf.get("primaryDescriptorPath");
 
                 updatedWorkflows.add(
                     createWorkflowAndVersionFromDockstoreYml(BioWorkflow.class, repository, gitReference, user, dockstoreYml, workflowName,
