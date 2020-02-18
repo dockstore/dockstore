@@ -282,7 +282,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return descriptorTypeSubclass;
     }
 
-    public void setDescriptorTypeSubclass(DescriptorLanguageSubclass descriptorTypeSubclass) {
+    public void setDescriptorTypeSubclass(final DescriptorLanguageSubclass descriptorTypeSubclass) {
         this.descriptorTypeSubclass = descriptorTypeSubclass;
     }
 

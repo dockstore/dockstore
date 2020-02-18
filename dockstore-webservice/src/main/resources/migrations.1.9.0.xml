@@ -32,17 +32,17 @@
     <changeSet author="aduncan (generated)" id="AddSubclassColumnToServicesAndWorkflows">
         <addColumn tableName="service">
             <column name="descriptortypesubclass" type="varchar(255 BYTE)">
-                <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="workflow">
             <column name="descriptortypesubclass" type="varchar(255 BYTE)">
-                <constraints nullable="false"/>
             </column>
         </addColumn>
         <sql dbms="postgresql">
             UPDATE workflow SET descriptortypesubclass='NOT_APPLICABLE' WHERE descriptortypesubclass IS NULL;
             UPDATE service SET descriptortypesubclass='NOT_APPLICABLE' WHERE descriptortypesubclass IS NULL;
         </sql>
+        <addNotNullConstraint tableName="workflow" columnName="descriptortypesubclass"></addNotNullConstraint>
+        <addNotNullConstraint tableName="service" columnName="descriptortypesubclass"></addNotNullConstraint>
     </changeSet>
 </databaseChangeLog>

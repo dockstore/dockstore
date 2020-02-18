@@ -26,16 +26,12 @@ import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.webservice.jdbi.ServiceDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Before;
 import org.junit.Rule;
@@ -55,6 +51,8 @@ import static org.junit.Assert.assertTrue;
  */
 @Category(ConfidentialTest.class)
 public class WebhookIT extends BaseIT {
+    private static final int LAMBDA_ERROR = 418;
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -66,10 +64,7 @@ public class WebhookIT extends BaseIT {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-    private WorkflowDAO workflowDAO;
-    private ServiceDAO serviceDAO;
     private Session session;
-    private UserDAO userDAO;
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String installationId = "1179416";
@@ -77,11 +72,6 @@ public class WebhookIT extends BaseIT {
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
-        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
-
-        this.workflowDAO = new WorkflowDAO(sessionFactory);
-        this.serviceDAO = new ServiceDAO(sessionFactory);
-        this.userDAO = new UserDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -172,7 +162,7 @@ public class WebhookIT extends BaseIT {
         try {
             client.handleGitHubRelease(workflowRepo, "thisisafakeuser", "0.1", installationId);
         } catch (ApiException ex) {
-            assertEquals("Should not be able to add a workflow when user does not exist on Dockstore.", 418, ex.getCode());
+            assertEquals("Should not be able to add a workflow when user does not exist on Dockstore.", LAMBDA_ERROR, ex.getCode());
         }
     }
 }

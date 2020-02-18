@@ -328,9 +328,8 @@ public class ServiceIT extends BaseIT {
         }
 
         // Add version that has invalid dockstore.yml
-        List<io.swagger.client.model.Workflow> updatedServices;
         try {
-            updatedServices = client.handleGitHubRelease(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
@@ -359,7 +358,7 @@ public class ServiceIT extends BaseIT {
 
         // Set default version
         service = client.updateWorkflowDefaultVersion(service.getId(), "1.0");
-        service = client.refresh(service.getId());
+        client.refresh(service.getId());
     }
 
     /**

@@ -44,7 +44,7 @@ public enum DescriptorLanguageSubclass {
         return shortName;
     }
 
-    public static DescriptorLanguageSubclass convertShortNameStringToEnum(String descriptorSubclass) {
+    public static DescriptorLanguageSubclass convertShortNameStringToEnum(final String descriptorSubclass) {
         if (descriptorSubclass == null) {
             return null;
         }
