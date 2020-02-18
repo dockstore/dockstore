@@ -391,7 +391,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     try {
                         dockstoreYml = getDockstoreYml(repository.getFullName(), ref.getLeft());
                     } catch (CustomWebApplicationException ex) {
-                        LOG.info("No .dockstore.yml present.");
+                        LOG.error("No .dockstore.yml present.", ex);
                         continue;
                     }
                 }

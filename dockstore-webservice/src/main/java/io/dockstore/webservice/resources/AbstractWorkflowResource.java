@@ -365,6 +365,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
             } else {
                 LOG.error(workflowType.getCanonicalName()  + " is not a valid workflow type.");
+                throw new CustomWebApplicationException("Currently only workflows and services are supported by GitHub Apps.", LAMBDA_FAILURE);
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
