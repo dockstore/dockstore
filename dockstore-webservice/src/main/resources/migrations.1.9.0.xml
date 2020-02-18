@@ -40,5 +40,9 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <sql dbms="postgresql">
+            UPDATE workflow WHERE descriptortypesubclass IS NULL SET descriptortypesubclass='NOT_APPLICABLE';
+            UPDATE service WHERE descriptortypesubclass IS NULL SET descriptortypesubclass='NOT_APPLICABLE';
+        </sql>
     </changeSet>
 </databaseChangeLog>
