@@ -31,13 +31,13 @@
 
     <changeSet author="aduncan (generated)" id="AddSubclassColumnToServicesAndWorkflows">
         <addColumn tableName="service">
-            <column name="descriptortypesubclass" type="varchar(255 BYTE)" defaultValue="'NOT_APPLICABLE'">
-                <constraints nullable="true"/>
+            <column name="descriptortypesubclass" type="varchar(255)" defaultValue="NOT_APPLICABLE">
+                <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="workflow">
-            <column name="descriptortypesubclass" type="varchar(255 BYTE)" defaultValue="'NOT_APPLICABLE'">
-                <constraints nullable="true"/>
+            <column name="descriptortypesubclass" type="varchar(255)" defaultValue="NOT_APPLICABLE">
+                <constraints nullable="false"/>
             </column>
         </addColumn>
     </changeSet>
