@@ -3,6 +3,7 @@ package io.dockstore.webservice.api;
 import java.lang.reflect.InvocationTargetException;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.helpers.ConfigHelper;
 import io.swagger.annotations.ApiModel;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -20,6 +21,8 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
     private String zenodoClientId;
     private String googleClientId;
     private String discourseUrl;
+    private String gitCommitId;
+    private String gitBuildVersion;
 
 
     private Config() {
@@ -36,6 +39,9 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
         config.googleClientId = webConfig.getGoogleClientID();
         config.discourseUrl = webConfig.getDiscourseUrl();
         BeanUtils.copyProperties(config, webConfig.getUiConfig());
+        final ConfigHelper.GitInfo gitInfo = ConfigHelper.readGitProperties("git.properties");
+        config.gitCommitId = gitInfo.commitId;
+        config.gitBuildVersion = gitInfo.buildVersion;
         return config;
     }
 
@@ -66,4 +72,11 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
     public String getDiscourseUrl() {
         return discourseUrl;
     }
+
+    public String getGitCommitId() {
+        return gitCommitId; }
+
+    public String getGitBuildVersion() {
+        return gitBuildVersion; }
+
 }
