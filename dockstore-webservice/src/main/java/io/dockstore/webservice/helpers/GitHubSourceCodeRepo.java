@@ -499,6 +499,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (version == null) {
                 return null;
             }
+            calculatedPath = version.getWorkflowPath();
         } else {
             version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, repositoryId, existingDefaults);
         }
@@ -677,6 +678,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(msg);
             return null;
         }
+
+        version.setWorkflowPath(primaryDescriptorPath);
+
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports

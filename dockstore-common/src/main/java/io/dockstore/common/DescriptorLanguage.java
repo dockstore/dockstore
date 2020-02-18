@@ -176,7 +176,7 @@ public enum DescriptorLanguage {
     }
 
     public boolean isRelevantFileType(FileType type) {
-        return Objects.equals(type, fileType) || Objects.equals(type, testParamType);
+        return Objects.equals(type, fileType) || Objects.equals(type, testParamType) || Objects.equals(type, FileType.DOCKSTORE_YML);
     }
 
     public boolean isPluginLanguage() {
