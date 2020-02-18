@@ -688,7 +688,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             userProfile.put(TokenType.GITHUB_COM.toString(), profile);
             user.setAvatarUrl(myself.getAvatarUrl());
         } catch (IOException ex) {
-            LOG.info("Could not find user information for user " + user.getUsername());
+            LOG.info("Could not find user information for user " + user.getUsername(), ex);
         }
     }
 

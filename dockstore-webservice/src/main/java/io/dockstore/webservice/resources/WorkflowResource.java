@@ -52,6 +52,7 @@ import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
+import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
@@ -1240,7 +1241,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 if (typeItem.getDefaultPrimaryDescriptorExtensions().stream().noneMatch(defaultWorkflowPath::endsWith)) {
                     throw new CustomWebApplicationException(
                         "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
-                            + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
+                            + " and ends in an extension from" + Joiner.on(",").join(typeItem.getDefaultPrimaryDescriptorExtensions()),
+                        HttpStatus.SC_BAD_REQUEST);
                 }
             }
         }
