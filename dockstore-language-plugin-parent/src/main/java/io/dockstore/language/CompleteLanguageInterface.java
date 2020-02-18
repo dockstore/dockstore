@@ -34,7 +34,7 @@ public interface CompleteLanguageInterface extends RecommendedLanguageInterface 
      * @param indexedFiles the set of files indexed from MinimalLanguageInterface
      * @return cytoscape compatible data structure
      */
-    List<Map<String, Object>> loadCytoscapeElements(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
+    Map<String, Object> loadCytoscapeElements(String initialPath, String contents, Map<String, Pair<String, GenericFileType>> indexedFiles);
 
     /**
      * Generate table containing information on the steps of the workflow, potentially including ids, URLs to more information, Docker containers

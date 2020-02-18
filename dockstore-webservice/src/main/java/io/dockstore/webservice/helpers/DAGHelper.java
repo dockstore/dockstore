@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import io.dockstore.webservice.core.dag.ElementsDefinition;
 
 /**
@@ -39,10 +40,14 @@ public final class DAGHelper {
      * @return The clean DAG without edges that have undefined nodes
      */
     public static String cleanDAG(String dag) {
-        ElementsDefinition elementsDefinition = GSON.fromJson(dag, ElementsDefinition.class);
-        Set<String> nodeIDs = elementsDefinition.nodes.stream().map(nodeDefinition -> nodeDefinition.data.id).collect(Collectors.toSet());
-        elementsDefinition.edges = elementsDefinition.edges.stream().filter(edgeDefinition -> nodeIDs.contains(edgeDefinition.data.source))
-                .collect(Collectors.toList());
-        return GSON.toJson(elementsDefinition);
+        try {
+            ElementsDefinition elementsDefinition = GSON.fromJson(dag, ElementsDefinition.class);
+            Set<String> nodeIDs = elementsDefinition.nodes.stream().map(nodeDefinition -> nodeDefinition.data.id).collect(Collectors.toSet());
+            elementsDefinition.edges = elementsDefinition.edges.stream().filter(edgeDefinition -> nodeIDs.contains(edgeDefinition.data.source)).collect(Collectors.toList());
+            return GSON.toJson(elementsDefinition);
+        } catch (JsonSyntaxException e) {
+            // not awesome, but galaxy dag seems malformed according to GSON
+            return dag;
+        }
     }
 }
