@@ -76,12 +76,9 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.common.DescriptorLanguage.FileType.CWL_TEST_JSON;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
-import static io.dockstore.common.DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS;
-import static io.dockstore.common.DescriptorLanguage.FileType.WDL_TEST_JSON;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
@@ -243,20 +240,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
         boolean plainTextResponse = contextContainsPlainText(value) || type.toLowerCase().contains("plain");
-        switch (fileType.get()) {
-        case CWL_TEST_JSON:
-        case DOCKSTORE_CWL:
-            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, plainTextResponse, user);
-        case WDL_TEST_JSON:
-        case DOCKSTORE_WDL:
-            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, plainTextResponse, user);
-        case NEXTFLOW:
-        case NEXTFLOW_CONFIG:
-        case NEXTFLOW_TEST_PARAMS:
-            return getFileByToolVersionID(id, versionId, NEXTFLOW_TEST_PARAMS, null, plainTextResponse, user);
-        default:
-            return Response.status(Status.BAD_REQUEST).build();
-        }
+
+        final DescriptorLanguage.FileType fileTypeActual = fileType.get();
+        final DescriptorLanguage descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(fileTypeActual);
+        final DescriptorLanguage.FileType testParamType = descriptorLanguage.getTestParamType();
+        return getFileByToolVersionID(id, versionId, testParamType, null, plainTextResponse, user);
     }
 
     @Override
@@ -497,10 +485,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         if (convertedToolVersion.isPresent()) {
             final ToolVersion toolVersion = convertedToolVersion.get();
-            switch (type) {
-            case WDL_TEST_JSON:
-            case CWL_TEST_JSON:
-            case NEXTFLOW_TEST_PARAMS:
+            if (type.getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)) {
                 // this only works for test parameters associated with tools
                 List<SourceFile> testSourceFiles = new ArrayList<>();
                 try {
@@ -523,7 +508,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
                     unwrap ? toolTestsList.stream().map(FileWrapper::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n"))
                         : toolTestsList).build();
-            case DOCKERFILE:
+            }
+            if (type == DOCKERFILE) {
                 Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
                     .filter(sourcefile -> sourcefile.getType() == DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
@@ -539,44 +525,41 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
                 }
-            default:
-                String path;
-                // figure out primary descriptors and use them if no relative path is specified
-                if (entry instanceof Tool) {
-                    if (type == DOCKSTORE_WDL) {
-                        path = ((Tag)entryVersion.get()).getWdlPath();
-                    } else if (type == DOCKSTORE_CWL) {
-                        path = ((Tag)entryVersion.get()).getCwlPath();
-                    } else {
-                        return Response.status(Status.NOT_FOUND).build();
-                    }
+            }
+            String path;
+            // figure out primary descriptors and use them if no relative path is specified
+            if (entry instanceof Tool) {
+                if (type == DOCKSTORE_WDL) {
+                    path = ((Tag)entryVersion.get()).getWdlPath();
+                } else if (type == DOCKSTORE_CWL) {
+                    path = ((Tag)entryVersion.get()).getCwlPath();
                 } else {
-                    path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
+                    return Response.status(Status.NOT_FOUND).build();
                 }
-                String searchPath;
-                if (relativePath != null) {
-                    searchPath = cleanRelativePath(relativePath);
-                } else {
-                    searchPath = path;
-                }
+            } else {
+                path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
+            }
+            String searchPath;
+            if (relativePath != null) {
+                searchPath = cleanRelativePath(relativePath);
+            } else {
+                searchPath = path;
+            }
 
-                final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
+            final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
 
-                Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
-                if (correctSourceFile.isPresent()) {
-                    SourceFile sourceFile = correctSourceFile.get();
-                    // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
-                    // so in this stream we need to standardize relative to the main descriptor
-                    final Path workingPath = Paths.get("/", entryVersion.get().getWorkingDirectory());
-                    final Path relativize = workingPath
-                        .relativize(Paths.get(StringUtils.prependIfMissing(sourceFile.getAbsolutePath(), "/")));
-                    String sourceFileUrl =
-                        urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
-                            .prependIfMissing(relativize.toString(), "/");
-                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
-                    return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
-                }
+            Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
+            if (correctSourceFile.isPresent()) {
+                SourceFile sourceFile = correctSourceFile.get();
+                // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+                // so in this stream we need to standardize relative to the main descriptor
+                final Path workingPath = Paths.get("/", entryVersion.get().getWorkingDirectory());
+                final Path relativize = workingPath.relativize(Paths.get(StringUtils.prependIfMissing(sourceFile.getAbsolutePath(), "/")));
+                String sourceFileUrl = urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
+                    .prependIfMissing(relativize.toString(), "/");
+                ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
+                return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                    .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
             }
         }
         Response.StatusType status = getExtendedStatus(Status.NOT_FOUND,
@@ -679,30 +662,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @return The ToolFile.FileTypeEnum
      */
     private ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(DescriptorLanguage.FileType fileType) {
-        switch (fileType) {
-        case NEXTFLOW_TEST_PARAMS:
-        case CWL_TEST_JSON:
-        case GXFORMAT2_TEST_FILE:
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // case SWL_TEST_JSON:
-        case DOCKSTORE_SERVICE_TEST_JSON:
-        case WDL_TEST_JSON:
+        if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.TEST_FILE) {
             return ToolFile.FileTypeEnum.TEST_FILE;
-        case DOCKERFILE:
+        } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.CONTAINERFILE) {
             return ToolFile.FileTypeEnum.CONTAINERFILE;
-        case DOCKSTORE_WDL:
-        case DOCKSTORE_CWL:
-        case DOCKSTORE_GXFORMAT2:
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // case DOCKSTORE_SWL:
-        case DOCKSTORE_SERVICE_YML:
-        case NEXTFLOW:
+        } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.SECONDARY_DESCRIPTOR) {
             return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
-        case NEXTFLOW_CONFIG:
+        } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.PRIMARY_DESCRIPTOR) {
             return ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
-        default:
-            return ToolFile.FileTypeEnum.OTHER;
+        } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.GENERIC_DESCRIPTOR) {
+            return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
         }
+        return ToolFile.FileTypeEnum.OTHER;
     }
 
     /**

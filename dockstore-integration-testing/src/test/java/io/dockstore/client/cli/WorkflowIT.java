@@ -146,7 +146,6 @@ public class WorkflowIT extends BaseIT {
 
     private WorkflowDAO workflowDAO;
     private WorkflowVersionDAO workflowVersionDAO;
-    private Session session;
 
     @Before
     public void setup() {
@@ -157,7 +156,7 @@ public class WorkflowIT extends BaseIT {
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
 
         // used to allow us to use workflowDAO outside of the web service
-        this.session = application.getHibernate().getSessionFactory().openSession();
+        Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
     }
     @Before
@@ -487,7 +486,7 @@ public class WorkflowIT extends BaseIT {
                 .toolsIdVersionsVersionIdTypeFilesGet("WDL", "#workflow/" + refresh.getFullWorkflowPath(), GATK_SV_TAG);
         Assert.assertEquals(1, files.stream().filter(f -> f.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR).count());
         Assert.assertEquals(sourceFiles.size() - 1, files.stream().filter(f -> f.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR).count());
-        files.stream().forEach(file -> {
+        files.forEach(file -> {
             final String path = file.getPath();
             // TRS paths are relative
             Assert.assertTrue(sourceFiles.stream().anyMatch(sf -> sf.getAbsolutePath().equals("/" + path)));
@@ -1226,7 +1225,6 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-
     public void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
