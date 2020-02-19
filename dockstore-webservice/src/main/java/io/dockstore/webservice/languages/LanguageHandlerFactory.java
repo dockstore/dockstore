@@ -43,9 +43,7 @@ public final class LanguageHandlerFactory {
         for (PluginWrapper wrapper : plugins) {
             List<MinimalLanguageInterface> minimalLanguageInterfaces = manager
                 .getExtensions(MinimalLanguageInterface.class, wrapper.getPluginId());
-            minimalLanguageInterfaces.forEach(inter -> {
-                pluginMap.put(inter.getDescriptorLanguage(), inter);
-            });
+            minimalLanguageInterfaces.forEach(inter -> pluginMap.put(inter.getDescriptorLanguage(), inter));
             minimalLanguageInterfaces.forEach(inter -> {
                 fileTypeMap.put(inter.getDescriptorLanguage().getFileType(), inter);
                 fileTypeMap.put(inter.getDescriptorLanguage().getTestParamType(), inter);
@@ -96,7 +94,7 @@ public final class LanguageHandlerFactory {
 
     /**
      * Get map of activated plugins
-     * @return
+     * @return activated plugins by language
      */
     public static Map<DescriptorLanguage, MinimalLanguageInterface> getPluginMap() {
         return pluginMap;
@@ -104,7 +102,7 @@ public final class LanguageHandlerFactory {
 
     /**
      * Get map of activated plugins by filetype
-     * @return
+     * @return activated plugins by filetype
      */
     public static Map<FileType, MinimalLanguageInterface> getFileTypeMap() {
         return fileTypeMap;

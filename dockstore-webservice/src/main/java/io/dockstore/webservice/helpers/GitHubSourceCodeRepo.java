@@ -569,7 +569,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.getLeft(), repository);
                     if (testJsonContent != null) {
                         SourceFile testJson = new SourceFile();
-
                         testJson.setType(workflow.getDescriptorType().getTestParamType());
                         testJson.setPath(workflow.getDefaultTestParameterFilePath());
                         testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
@@ -874,9 +873,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
-     * @return Updated user object
      */
-    public User getUserMetadata(User user) {
+    public void getUserMetadata(User user) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
@@ -892,10 +890,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             userProfile.put(TokenType.GITHUB_COM.toString(), profile);
             user.setAvatarUrl(myself.getAvatarUrl());
         } catch (IOException ex) {
-            LOG.info("Could not find user information for user " + user.getUsername());
+            LOG.info("Could not find user information for user " + user.getUsername(), ex);
         }
-
-        return user;
     }
 
     /**

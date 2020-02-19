@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -30,38 +31,41 @@ import org.apache.commons.lang3.StringUtils;
  */
 public enum DescriptorLanguage {
     // Add new descriptor language here
-    CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, false, false) {
+    CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, false, false,
+        ImmutableSet.of("cwl", "yaml", "yml")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
         }
     },
-    WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON, false, false) {
+    WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON, false, false, ImmutableSet.of("wdl")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
         }
     },
-    GXFORMAT2("gxformat2", "Galaxy Workflow Format 2", FileType.DOCKSTORE_GXFORMAT2, FileType.GXFORMAT2_TEST_FILE, false, true) {
+    GXFORMAT2("gxformat2", "Galaxy Workflow Format 2", FileType.DOCKSTORE_GXFORMAT2, FileType.GXFORMAT2_TEST_FILE, false, true,
+        ImmutableSet.of("ga", "yaml", "yml")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type);
         }
     },
     // DOCKSTORE-2428 - demo how to add new workflow language
-    SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true) {
+    SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true, ImmutableSet.of("swl")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type);
         }
     },
-    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false) {
+    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, ImmutableSet.of("config")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.NEXTFLOW;
         }
     },
-    SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON, true, false) {
+    SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON, true,
+        false, ImmutableSet.of("yml")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_SERVICE_OTHER;
@@ -69,13 +73,14 @@ public enum DescriptorLanguage {
     },
     // crappy evil hack for 1.6.0 backwards compatibility after all sorts of Jackson annotations failed
     // delete after 1.6.0 CLI users fade out https://github.com/dockstore/dockstore/issues/2860
-    OLD_CWL("cwl", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON) {
+    OLD_CWL("cwl", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, CWL.defaultPrimaryDescriptorExtensions) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
         }
     },
-    OLD_WDL("wdl", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON) {
+    OLD_WDL("wdl", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON,
+        WDL.defaultPrimaryDescriptorExtensions) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
@@ -112,18 +117,21 @@ public enum DescriptorLanguage {
      */
     private final boolean pluginLanguage;
 
+    private final ImmutableSet<String> defaultPrimaryDescriptorExtensions;
 
-    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType) {
-        this(shortName, friendlyName, fileType, testParamType, false, false);
+
+    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final ImmutableSet<String> defaultPrimaryDescriptorExtensions) {
+        this(shortName, friendlyName, fileType, testParamType, false, false, defaultPrimaryDescriptorExtensions);
     }
 
-    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final boolean serviceLanguage, final boolean pluginLanguage) {
+    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final boolean serviceLanguage, final boolean pluginLanguage, final ImmutableSet<String> defaultPrimaryDescriptorExtensions) {
         this.shortName = shortName;
         this.friendlyName = friendlyName;
         this.fileType = fileType;
         this.testParamType = testParamType;
         this.serviceLanguage = serviceLanguage;
         this.pluginLanguage = pluginLanguage;
+        this.defaultPrimaryDescriptorExtensions = defaultPrimaryDescriptorExtensions;
     }
     @Override
     public String toString() {
@@ -183,15 +191,47 @@ public enum DescriptorLanguage {
         return pluginLanguage;
     }
 
+    public ImmutableSet<String> getDefaultPrimaryDescriptorExtensions() {
+        return defaultPrimaryDescriptorExtensions;
+    }
+
+    public enum FileTypeCategory {
+        GENERIC_DESCRIPTOR, // for languages where we don't currently store in the DB whether a descriptor is primary (we should)
+        PRIMARY_DESCRIPTOR,
+        SECONDARY_DESCRIPTOR,
+        TEST_FILE,
+        CONTAINERFILE,
+        OTHER
+    }
+
+    public static DescriptorLanguage getDescriptorLanguage(DescriptorLanguage.FileType fileType) {
+        for (DescriptorLanguage lang : DescriptorLanguage.values()) {
+            if (lang.getFileType() == fileType || lang.getTestParamType() == fileType) {
+                return lang;
+            }
+        }
+        throw new UnsupportedOperationException("Unknown language");
+    }
+
     /**
      * Nextflow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
      *
      */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML, DOCKSTORE_SERVICE_YML, DOCKSTORE_SERVICE_TEST_JSON, DOCKSTORE_SERVICE_OTHER, DOCKSTORE_GXFORMAT2, GXFORMAT2_TEST_FILE,
-        DOCKSTORE_SWL, SWL_TEST_JSON
+        DOCKSTORE_CWL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKSTORE_WDL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKERFILE(FileTypeCategory.CONTAINERFILE), CWL_TEST_JSON(FileTypeCategory.TEST_FILE), WDL_TEST_JSON(FileTypeCategory.TEST_FILE), NEXTFLOW(FileTypeCategory.GENERIC_DESCRIPTOR), NEXTFLOW_CONFIG(FileTypeCategory.PRIMARY_DESCRIPTOR), NEXTFLOW_TEST_PARAMS(FileTypeCategory.TEST_FILE), DOCKSTORE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_TEST_JSON(FileTypeCategory.TEST_FILE), DOCKSTORE_SERVICE_OTHER(FileTypeCategory.OTHER), DOCKSTORE_GXFORMAT2(FileTypeCategory.GENERIC_DESCRIPTOR), GXFORMAT2_TEST_FILE(FileTypeCategory.TEST_FILE),
+        DOCKSTORE_SWL(FileTypeCategory.GENERIC_DESCRIPTOR), SWL_TEST_JSON(FileTypeCategory.TEST_FILE);
         // DOCKSTORE-2428 - demo how to add new workflow language
+
+        private final FileTypeCategory category;
+
+        FileType(FileTypeCategory category) {
+            this.category = category;
+        }
+
+        public FileTypeCategory getCategory() {
+            return category;
+        }
     }
 
     /**

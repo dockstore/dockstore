@@ -80,13 +80,6 @@
             <artifactId>dockstore-language-plugin-parent</artifactId>
             <version>1.9.0-alpha.1-SNAPSHOT</version>
         </dependency>
-        <!-- DOCKSTORE-2428 - demo how to add new workflow language
-        <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>silly-workflow-language-interface</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        -->
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
             <artifactId>java-semver</artifactId>
