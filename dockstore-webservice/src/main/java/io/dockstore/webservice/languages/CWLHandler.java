@@ -238,6 +238,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     @SuppressWarnings("checkstyle:methodlength")
+    //TODO: Occassionally misses dockerpulls. One case is when a dockerPull is nested within a run that's within a step. There are other missed cases though that are TBD.
     public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
         ToolDAO dao) {
         Yaml yaml = new Yaml();
