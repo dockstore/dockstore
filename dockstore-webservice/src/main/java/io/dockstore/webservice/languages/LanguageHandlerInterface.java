@@ -361,11 +361,10 @@ public interface LanguageHandlerInterface {
                     break;
                 }
 
-
                 if (splitTag.length > 1) {
                     String repo = splitDocker[1] + "/" + splitTag[0];
                     String tagName = splitTag[1];
-                    response = getImageResponseFromQuay(image);
+                    response = getImageResponseFromQuay(repo, tagName);
 
                     if (response.isPresent()) {
                         Map<String, ArrayList<Map<String, String>>> map = new HashMap<>();
@@ -390,6 +389,8 @@ public interface LanguageHandlerInterface {
                                 LOG.error("Could not get checksum information for " + splitDocker[1], ex);
                             }
                         }
+                    } else {
+                        LOG.error("Could not get response from Quay for " + repo);
                     }
                 } else {
                     LOG.error("Could not find image version specified for " + splitDocker[1]);
@@ -409,10 +410,8 @@ public interface LanguageHandlerInterface {
         return dockerImages;
     }
 
-    default Optional<String> getImageResponseFromQuay(String dockerName) {
-        String[] splitDocker = dockerName.split("/");
-        String[] splitTag = splitDocker[2].split(":");
-        final String tagUrl = QUAY_URL + "repository/" + splitDocker[1] + "/" + splitTag[0] + "/tag/" + "?specificTag=" + splitTag[1];
+    default Optional<String> getImageResponseFromQuay(String repo, String tag) {
+        final String tagUrl = QUAY_URL + "repository/" + repo + "/tag/" + "?specificTag=" + tag;
         Optional<String> response;
 
         try {
