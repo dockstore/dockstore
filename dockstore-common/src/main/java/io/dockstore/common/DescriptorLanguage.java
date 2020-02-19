@@ -35,13 +35,13 @@ public enum DescriptorLanguage {
         ImmutableSet.of("cwl", "yaml", "yml")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
+            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
         }
     },
     WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON, false, false, ImmutableSet.of("wdl")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
+            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
         }
     },
     GXFORMAT2("gxformat2", "Galaxy Workflow Format 2", FileType.DOCKSTORE_GXFORMAT2, FileType.GXFORMAT2_TEST_FILE, false, true,
@@ -61,7 +61,7 @@ public enum DescriptorLanguage {
     NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, ImmutableSet.of("config")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.NEXTFLOW;
+            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.NEXTFLOW || type == FileType.DOCKSTORE_YML;
         }
     },
     SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON, true,
@@ -184,7 +184,7 @@ public enum DescriptorLanguage {
     }
 
     public boolean isRelevantFileType(FileType type) {
-        return Objects.equals(type, fileType) || Objects.equals(type, testParamType) || Objects.equals(type, FileType.DOCKSTORE_YML);
+        return Objects.equals(type, fileType) || Objects.equals(type, testParamType);
     }
 
     public boolean isPluginLanguage() {
@@ -219,7 +219,7 @@ public enum DescriptorLanguage {
      */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKSTORE_WDL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKERFILE(FileTypeCategory.CONTAINERFILE), CWL_TEST_JSON(FileTypeCategory.TEST_FILE), WDL_TEST_JSON(FileTypeCategory.TEST_FILE), NEXTFLOW(FileTypeCategory.GENERIC_DESCRIPTOR), NEXTFLOW_CONFIG(FileTypeCategory.PRIMARY_DESCRIPTOR), NEXTFLOW_TEST_PARAMS(FileTypeCategory.TEST_FILE), DOCKSTORE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_TEST_JSON(FileTypeCategory.TEST_FILE), DOCKSTORE_SERVICE_OTHER(FileTypeCategory.OTHER), DOCKSTORE_GXFORMAT2(FileTypeCategory.GENERIC_DESCRIPTOR), GXFORMAT2_TEST_FILE(FileTypeCategory.TEST_FILE),
+        DOCKSTORE_CWL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKSTORE_WDL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKERFILE(FileTypeCategory.CONTAINERFILE), CWL_TEST_JSON(FileTypeCategory.TEST_FILE), WDL_TEST_JSON(FileTypeCategory.TEST_FILE), NEXTFLOW(FileTypeCategory.GENERIC_DESCRIPTOR), NEXTFLOW_CONFIG(FileTypeCategory.PRIMARY_DESCRIPTOR), NEXTFLOW_TEST_PARAMS(FileTypeCategory.TEST_FILE), DOCKSTORE_YML(FileTypeCategory.OTHER), DOCKSTORE_SERVICE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_TEST_JSON(FileTypeCategory.TEST_FILE), DOCKSTORE_SERVICE_OTHER(FileTypeCategory.OTHER), DOCKSTORE_GXFORMAT2(FileTypeCategory.GENERIC_DESCRIPTOR), GXFORMAT2_TEST_FILE(FileTypeCategory.TEST_FILE),
         DOCKSTORE_SWL(FileTypeCategory.GENERIC_DESCRIPTOR), SWL_TEST_JSON(FileTypeCategory.TEST_FILE);
         // DOCKSTORE-2428 - demo how to add new workflow language
 
