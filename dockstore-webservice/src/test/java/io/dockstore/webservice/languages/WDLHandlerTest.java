@@ -34,7 +34,6 @@ import org.mockito.Mockito;
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
 import static org.mockito.Mockito.when;
 
-@Category(MemoryIntensiveTest.class)
 public class WDLHandlerTest {
 
     public static final String MAIN_WDL = "/GATKSVPipelineClinical.wdl";
