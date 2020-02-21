@@ -31,7 +31,6 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
-import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -90,7 +89,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     protected String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parentid", nullable = false, foreignKey = @ForeignKey(name = "parentid_constraint"))
+    @JoinColumn(name = "parentid", nullable = false)
     @ApiModelProperty(value = "parent entry id", required = true, position = 0, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
     private Entry<?, ?> parent;
 

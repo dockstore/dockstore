@@ -207,10 +207,14 @@
     </changeSet>
 
     <changeSet author="dyuen" id="cleanup invalid content">
+        <!-- need to investigate whether too much content is being dropped and whether the right content is being dropped -->
+        <comment>some orphaned versions are protected by security</comment>
         <sql dbms="postgresql">
             alter table workflowversion disable row level security;
+            alter table tag disable row level security;
         </sql>
 
+        <comment>delete the versions that are orphaned already</comment>
         <delete tableName="tag">
             <where>parentid is null</where>
         </delete>
@@ -218,13 +222,13 @@
             <where>parentid is null</where>
         </delete>
 
+        <comment>migrate content from join tables into tag and workflowversion tables</comment>
         <sql dbms="postgresql">
             delete from tag t where t.id in (select min(t.id) id from tag t group by t.name,t.parentid having count(t.name) > 1);
         </sql>
         <sql dbms="postgresql">
             delete from workflowversion wv where wv.id in (select min(wv.id) id from workflowversion wv group by wv.name,wv.parentid having count(wv.name) > 1);
         </sql>
-
         <sql dbms="postgresql">
             delete from workflowversion where parentid not in (select id from workflow);
         </sql>
@@ -234,11 +238,12 @@
 
         <sql dbms="postgresql">
             alter table workflowversion enable row level security;
+            alter table tag enable row level security;
         </sql>
     </changeSet>
 
     <changeSet author="dyuen" id="lock_versions_down">
-        <!-- not sure why this needs to happen twice -->
+        <!-- deletion can fail if row level security is not disabled properly in previous migration -->
         <preConditions onFail="HALT">
             <sqlCheck expectedResult="0">select count(*) from tag where parentid is null</sqlCheck>
             <sqlCheck expectedResult="0">select count(*) from workflowversion where parentid is null</sqlCheck>
@@ -248,7 +253,9 @@
         <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="workflowversion" />
         <addUniqueConstraint columnNames="parentid, name" constraintName="unique_tag_names" tableName="tag"/>
         <addUniqueConstraint columnNames="parentid, name" constraintName="unique_workflowversion_names" tableName="workflowversion"/>
+        <!-- this one would be nice, but I could not figure out a constraint that that says the parent id can come from either workflow or services
         <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="workflowversion" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+        -->
         <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="tag" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
     </changeSet>
 

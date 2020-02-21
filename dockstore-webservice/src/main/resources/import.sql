@@ -37,5 +37,4 @@ ALTER TABLE tag ADD CONSTRAINT fk_tagVersionMetadata FOREIGN KEY(id) REFERENCES 
 ALTER TABLE workflowversion ADD CONSTRAINT fk_workflowVersionMetadata FOREIGN KEY(id) REFERENCES public.version_metadata (id) DEFERRABLE INITIALLY DEFERRED;
 
 -- cannot seem to define these due to inheritance
-ALTER TABLE workflowversion ADD CONSTRAINT parentid_constraint FOREIGN KEY(parentid) REFERENCES workflow (id);
 ALTER TABLE tag ADD CONSTRAINT parentid_constraint FOREIGN KEY(parentid) REFERENCES tool (id);
