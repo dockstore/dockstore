@@ -193,20 +193,9 @@
         </addColumn>
         <!-- migrate data -->
         <sql dbms="postgresql">
-            update workflowversion set parentid = wwv.workflowid from workflowversion as wv join workflow_workflowversion as wwv on wv.id = wwv.workflowversionid;
-            update tag set parentid = tt.toolid from tag as t join tool_tag as tt on t.id = tt.tagid;
+            update workflowversion set parentid = wwv.workflowid from workflowversion as wv join workflow_workflowversion as wwv on wv.id = wwv.workflowversionid where workflowversion.id = wv.id;
+            update tag set parentid = tt.toolid from tag as t join tool_tag as tt on t.id = tt.tagid where tag.id = t.id;
         </sql>
-
-        <!-- workaround known workflow orphans -->
-
-
-        <!-- add constraints -->
-        <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="tag" />
-        <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="workflowversion" />
-        <addUniqueConstraint columnNames="parentid, name" constraintName="unique_tag_names" tableName="tag"/>
-        <addUniqueConstraint columnNames="parentid, name" constraintName="unique_workflowversion_names" tableName="workflowversion"/>
-        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="workflowversion" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
-        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="tag" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
 
         <!-- clean-up -->
         <dropForeignKeyConstraint baseTableName="tool_tag" constraintName="fkjkn6qubuvn25bun52eqjleyl6"/>
@@ -215,6 +204,52 @@
         <dropUniqueConstraint constraintName="uk_encl8hnebnkcaxj9tlugr9cxh" tableName="workflow_workflowversion"/>
         <dropTable tableName="workflow_workflowversion"/>
         <dropTable tableName="tool_tag"/>
+    </changeSet>
+
+    <changeSet author="dyuen" id="cleanup invalid content">
+        <sql dbms="postgresql">
+            alter table workflowversion disable row level security;
+        </sql>
+
+        <delete tableName="tag">
+            <where>parentid is null</where>
+        </delete>
+        <delete tableName="workflowversion">
+            <where>parentid is null</where>
+        </delete>
+
+        <sql dbms="postgresql">
+            delete from tag t where t.id in (select min(t.id) id from tag t group by t.name,t.parentid having count(t.name) > 1);
+        </sql>
+        <sql dbms="postgresql">
+            delete from workflowversion wv where wv.id in (select min(wv.id) id from workflowversion wv group by wv.name,wv.parentid having count(wv.name) > 1);
+        </sql>
+
+        <sql dbms="postgresql">
+            delete from workflowversion where parentid not in (select id from workflow);
+        </sql>
+        <sql dbms="postgresql">
+            delete from tag where parentid not in (select id from tool);
+        </sql>
+
+        <sql dbms="postgresql">
+            alter table workflowversion enable row level security;
+        </sql>
+    </changeSet>
+
+    <changeSet author="dyuen" id="lock_versions_down">
+        <!-- not sure why this needs to happen twice -->
+        <preConditions onFail="HALT">
+            <sqlCheck expectedResult="0">select count(*) from tag where parentid is null</sqlCheck>
+            <sqlCheck expectedResult="0">select count(*) from workflowversion where parentid is null</sqlCheck>
+        </preConditions>
+        <!-- add constraints -->
+        <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="tag" />
+        <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="workflowversion" />
+        <addUniqueConstraint columnNames="parentid, name" constraintName="unique_tag_names" tableName="tag"/>
+        <addUniqueConstraint columnNames="parentid, name" constraintName="unique_workflowversion_names" tableName="workflowversion"/>
+        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="workflowversion" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="tag" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
     </changeSet>
 
 </databaseChangeLog>
