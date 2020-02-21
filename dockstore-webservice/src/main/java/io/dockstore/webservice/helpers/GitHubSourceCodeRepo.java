@@ -319,6 +319,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             try {
                 descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass);
             } catch (UnsupportedOperationException ex) {
+                // TODO: https://github.com/dockstore/dockstore/issues/3239
                 String msg = "Subclass " + subclass + " is not a valid descriptor language subclass.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
@@ -603,6 +604,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         Yaml yaml = new Yaml();
         List<String> files;
         try {
+            // TODO: Should use classes to validate and retrieve fields from the dockstore.yml - https://github.com/dockstore/dockstore/issues/3241
             Map<String, Object> map = yaml.load(dockstoreYml.getContent());
             Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
             files = (List<String>)serviceObject.get("files");
@@ -647,6 +649,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             Yaml yaml = new Yaml();
 
+            // TODO: Should use classes to validate and retrieve fields from the dockstore.yml - https://github.com/dockstore/dockstore/issues/3241
             // Find matching workflow entry in .dockstore.yml and grab information
             Map<String, Object> map = yaml.load(dockstoreYml.getContent());
             List<Map<String, Object>> workflows = (List<Map<String, Object>>)map.get("workflows");
@@ -667,14 +670,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
         } catch (YAMLException | ClassCastException | NullPointerException ex) {
             String msg = "Invalid .dockstore.yml";
-            LOG.info(msg, ex);
+            LOG.error(msg, ex);
             return null;
         }
 
         String primaryDescriptorPath = (String)workflowMap.get("primaryDescriptorPath");
         if (primaryDescriptorPath == null)  {
             String msg = ".dockstore.yml is missing the required primaryDescriptorPath field.";
-            LOG.info(msg);
+            LOG.error(msg);
             return null;
         }
 
@@ -749,6 +752,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             return dockstoreYml;
         } else {
+            // TODO: https://github.com/dockstore/dockstore/issues/3239
             String msg = "Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?";
             LOG.warn(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);

@@ -287,9 +287,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 String subclass = (String)wf.get("subclass");
                 String workflowName = (String)wf.get("name");
 
-                updatedWorkflows.add(
-                    createWorkflowAndVersionFromDockstoreYml(BioWorkflow.class, repository, gitReference, user, dockstoreYml, workflowName,
-                        subclass, gitHubSourceCodeRepo));
+                Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
+                workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+                updatedWorkflows.add(workflow);
             }
             return updatedWorkflows;
         } catch (ClassCastException ex) {
@@ -327,24 +327,24 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LOG.info(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
-        updatedServices.add(createWorkflowAndVersionFromDockstoreYml(Service.class, repository, gitReference, user, dockstoreYml, "", subclass, gitHubSourceCodeRepo));
+        Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass, gitHubSourceCodeRepo);
+        workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+        updatedServices.add(workflow);
+
         return updatedServices;
     }
 
     /**
-     * Create or retrieve workflow or service based on Dockstore.yml, also add or update tag version
+     * Create or retrieve workflow or service based on Dockstore.yml
      * @param workflowType Either BioWorkflow.class or Service.class
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
      * @param user User that triggered action
-     * @param dockstoreYml Dockstore YAML File
      * @param workflowName User that triggered action
      * @param subclass Subclass of the workflow
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow
      */
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
-    private Workflow createWorkflowAndVersionFromDockstoreYml(Class workflowType, String repository, String gitReference, User user, SourceFile dockstoreYml, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+    private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
         Optional<Workflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
@@ -383,23 +383,36 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflowToUpdate.getUsers().add(user);
         }
 
+        return  workflowToUpdate;
+    }
+
+    /**
+     * Add versions to a service or workflow based on Dockstore.yml
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param dockstoreYml Dockstore YAML File
+     * @param gitHubSourceCodeRepo Source Code Repo
+     * @return New or updated workflow
+     */
+    private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml, GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow) {
         try {
             // Create version and pull relevant files
-            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, workflowToUpdate, dockstoreYml);
-            workflowToUpdate.addWorkflowVersion(workflowVersion);
-            LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflowToUpdate.getWorkflowPath() + ".");
+            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
+            workflow.addWorkflowVersion(workflowVersion);
+            LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
             String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
-        return workflowToUpdate;
+        return workflow;
     }
+
     /**
      * Add user to any existing Dockstore workflow and services from GitHub apps they should own
      * @param user
      */
-    public void syncEntitiesForUser(User user) {
+    protected void syncEntitiesForUser(User user) {
         List<Token> githubByUserId = tokenDAO.findGithubByUserId(user.getId());
 
         if (githubByUserId.isEmpty()) {
