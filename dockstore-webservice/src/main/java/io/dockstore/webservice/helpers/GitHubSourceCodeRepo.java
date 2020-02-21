@@ -672,7 +672,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
      */
-    public void getUserMetadata(User user) {
+    public void syncUserMetadataFromGitHub(User user) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
