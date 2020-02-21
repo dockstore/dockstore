@@ -230,7 +230,7 @@
             delete from workflowversion wv where wv.id in (select min(wv.id) id from workflowversion wv group by wv.name,wv.parentid having count(wv.name) > 1);
         </sql>
         <sql dbms="postgresql">
-            delete from workflowversion where parentid not in (select id from workflow);
+            delete from workflowversion where parentid not in (select id from workflow union select id from service);
         </sql>
         <sql dbms="postgresql">
             delete from tag where parentid not in (select id from tool);
@@ -247,12 +247,15 @@
         <preConditions onFail="HALT">
             <sqlCheck expectedResult="0">select count(*) from tag where parentid is null</sqlCheck>
             <sqlCheck expectedResult="0">select count(*) from workflowversion where parentid is null</sqlCheck>
+            <!-- would not need this check if we can make a multi table constraint below -->
+            <sqlCheck expectedResult="0">select count(*) from workflowversion where parentid not in (select id from workflow union select id from service)</sqlCheck>
         </preConditions>
         <!-- add constraints -->
         <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="tag" />
         <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="workflowversion" />
         <addUniqueConstraint columnNames="parentid, name" constraintName="unique_tag_names" tableName="tag"/>
         <addUniqueConstraint columnNames="parentid, name" constraintName="unique_workflowversion_names" tableName="workflowversion"/>
+        <!-- deletion can fail if row level security is not disabled properly in previous migration -->
         <!-- this one would be nice, but I could not figure out a constraint that that says the parent id can come from either workflow or services
         <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="workflowversion" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
         -->
