@@ -109,6 +109,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return tags;
     }
 
+    //TODO: If the repo has a lot of tags, then it needs to be paged through. Can get tag info individually, but then that's more API calls.
     public Set<Image> getImagesForTag(Tool tool, Tag tag, Map<String, Map<String, Map<String, String>>> map) {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
 

@@ -6275,6 +6275,10 @@ definitions:
   Config:
     type: "object"
     properties:
+      bdCatalystSevenBridgesImportUrl:
+        type: "string"
+      bdCatalystTerraImportUrl:
+        type: "string"
       bitBucketAuthUrl:
         type: "string"
       bitBucketClientId:
