@@ -108,6 +108,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
+    private static final String ORCID_URL = "https://orcid.org/";
     private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_1;
     private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
@@ -129,6 +130,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String zenodoClientSecret;
     private final String googleClientID;
     private final String googleClientSecret;
+    private final String orcidClientID;
+    private final String orcidClientSecret;
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
@@ -150,6 +153,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.zenodoAuthUrl = configuration.getUiConfig().getZenodoAuthUrl();
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
+        this.orcidClientID = configuration.getOrcidClientID();
+        this.orcidClientSecret = configuration.getOrcidClientSecret();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -618,6 +623,28 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
+//    @POST
+//    @Timed
+//    @UnitOfWork
+//    @Path("/orcid.org")
+//    @ApiOperation(value = "Add a new orcid.org token", authorizations = {
+//            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
+//            + "Once a user has approved permissions for Collaboratory"
+//            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+//    public String addOrcidToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) throws IOException {
+//        if (code.isEmpty()) {
+//            throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
+//        }
+//
+//        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+//                JSON_FACTORY, new GenericUrl(ORCID_URL + "oauth/token"),
+//                new ClientParametersAuthentication(orcidClientID, orcidClientSecret), orcidClientID,
+//                ORCID_URL + "/authorize").build();
+//
+//        AuthorizationCodeTokenRequest tokenRequest = flow.newTokenRequest(code);
+//        TokenResponse response = tokenRequest.execute();
+//        return response.getAccessToken();
+//    }
 
 
     @GET

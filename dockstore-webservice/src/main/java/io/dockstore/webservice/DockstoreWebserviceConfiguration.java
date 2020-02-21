@@ -75,6 +75,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String bitbucketClientSecret;
 
     @NotEmpty
+    private String orcidClientID;
+
+    @NotEmpty
+    private String orcidClientSecret;
+
+    @NotEmpty
     private String quayRedirectURI;
 
     @NotEmpty
@@ -362,6 +368,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setZenodoClientSecret(String zenodoClientSecret) {
         this.zenodoClientSecret = zenodoClientSecret;
+    }
+
+    public String getOrcidClientID() {
+        return orcidClientID;
+    }
+
+    public void setOrcidClientID(String orcidClientID) {
+        this.orcidClientID = orcidClientID;
+    }
+
+    public String getOrcidClientSecret() {
+        return orcidClientSecret;
+    }
+
+    public void setOrcidClientSecret(String orcidClientSecret) {
+        this.orcidClientSecret = orcidClientSecret;
     }
 
     public String getDiscourseUrl() {
