@@ -28,8 +28,6 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.NamedNativeQueries;
 import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQueries;
@@ -122,8 +120,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18, allowableValues = "CWL, WDL, NFL, service")
     private DescriptorLanguage descriptorType;
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
-    @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })

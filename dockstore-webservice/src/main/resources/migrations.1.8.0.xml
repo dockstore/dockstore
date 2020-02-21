@@ -181,4 +181,40 @@
         <addNotNullConstraint tableName="tag" columnName="dbcreatedate"/>
         <addNotNullConstraint tableName="tag" columnName="dbupdatedate"/>
     </changeSet>
+
+    <changeSet author="dyuen" id="restructure_workflowversions">
+        <addColumn tableName="tag">
+            <column name="parentid" type="int8">
+            </column>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="parentid" type="int8">
+            </column>
+        </addColumn>
+        <!-- migrate data -->
+        <sql dbms="postgresql">
+            update workflowversion set parentid = wwv.workflowid from workflowversion as wv join workflow_workflowversion as wwv on wv.id = wwv.workflowversionid;
+            update tag set parentid = tt.toolid from tag as t join tool_tag as tt on t.id = tt.tagid;
+        </sql>
+
+        <!-- workaround known workflow orphans -->
+
+
+        <!-- add constraints -->
+        <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="tag" />
+        <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="workflowversion" />
+        <addUniqueConstraint columnNames="parentid, name" constraintName="unique_tag_names" tableName="tag"/>
+        <addUniqueConstraint columnNames="parentid, name" constraintName="unique_workflowversion_names" tableName="workflowversion"/>
+        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="workflowversion" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="tag" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
+
+        <!-- clean-up -->
+        <dropForeignKeyConstraint baseTableName="tool_tag" constraintName="fkjkn6qubuvn25bun52eqjleyl6"/>
+        <dropForeignKeyConstraint baseTableName="tool_tag" constraintName="fkjtsjg6jdnwxoeicd27ujmeeaj"/>
+        <dropForeignKeyConstraint baseTableName="workflow_workflowversion" constraintName="fkibmeux3552ua8dwnqdb8w6991"/>
+        <dropUniqueConstraint constraintName="uk_encl8hnebnkcaxj9tlugr9cxh" tableName="workflow_workflowversion"/>
+        <dropTable tableName="workflow_workflowversion"/>
+        <dropTable tableName="tool_tag"/>
+    </changeSet>
+
 </databaseChangeLog>

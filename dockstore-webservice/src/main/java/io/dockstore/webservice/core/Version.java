@@ -31,6 +31,7 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -39,6 +40,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
@@ -86,6 +88,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2)
     protected String name;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parentid", nullable = false, foreignKey = @ForeignKey(name = "parentid_constraint"))
+    @ApiModelProperty(value = "parent entry id", required = true, position = 0, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    private Entry<?, ?> parent;
+
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 3)
@@ -471,6 +479,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.setAuthor(newVersionMetadata.author);
         this.setEmail(newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
+    }
+
+    public void setParent(Entry<?, ?> parent) {
+        this.parent = parent;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
