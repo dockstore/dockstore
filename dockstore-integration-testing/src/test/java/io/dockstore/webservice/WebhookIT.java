@@ -33,6 +33,7 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -161,6 +162,7 @@ public class WebhookIT extends BaseIT {
 
         try {
             client.handleGitHubRelease(workflowRepo, "thisisafakeuser", "0.1", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should not be able to add a workflow when user does not exist on Dockstore.", LAMBDA_ERROR, ex.getCode());
         }

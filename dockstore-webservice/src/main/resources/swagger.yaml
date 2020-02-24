@@ -8215,17 +8215,6 @@ definitions:
         - "NFL"
         - "gxformat2"
         - "service"
-      descriptorTypeSubclass:
-        type: "string"
-        position: 19
-        description: "This is a descriptor type subclass for the workflow. Currently\
-          \ it is only used for services."
-        enum:
-        - "DOCKER_COMPOSE"
-        - "HELM"
-        - "SWARM"
-        - "KUBERNETES"
-        - "NOT_APPLICABLE"
       workflow_path:
         type: "string"
         position: 19
@@ -8244,6 +8233,17 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
+      descriptorTypeSubclass:
+        type: "string"
+        position: 22
+        description: "This is a descriptor type subclass for the workflow. Currently\
+          \ it is only used for services."
+        enum:
+        - "DOCKER_COMPOSE"
+        - "HELM"
+        - "SWARM"
+        - "KUBERNETES"
+        - "NOT_APPLICABLE"
       full_workflow_path:
         type: "string"
         position: 24

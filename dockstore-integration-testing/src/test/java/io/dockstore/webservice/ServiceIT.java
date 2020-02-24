@@ -237,6 +237,7 @@ public class ServiceIT extends BaseIT {
         // Add service
         try {
             client.handleGitHubRelease(serviceRepo, "iamnotarealuser", "1.0", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
@@ -303,6 +304,7 @@ public class ServiceIT extends BaseIT {
         // Add version that doesn't exist
         try {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "1.0-fake", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
@@ -323,6 +325,7 @@ public class ServiceIT extends BaseIT {
         // Add version that has no dockstore.yml
         try {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "no-yml", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
@@ -330,6 +333,7 @@ public class ServiceIT extends BaseIT {
         // Add version that has invalid dockstore.yml
         try {
             client.handleGitHubRelease(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
@@ -376,6 +380,7 @@ public class ServiceIT extends BaseIT {
         // Add service
         try {
             List<io.swagger.client.model.Workflow> service = client.handleGitHubRelease(serviceRepo, "admin@admin.com", "1.0", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
