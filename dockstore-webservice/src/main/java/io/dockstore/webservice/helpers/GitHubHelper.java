@@ -282,16 +282,6 @@ public final class GitHubHelper {
 
     }
 
-    public static Collection<String> filterReposByOrg(Collection<String> repos, Optional<String> organization) {
-        if (organization.isPresent()) {
-            final String orgName = organization.get();
-            return repos.stream()
-                    .filter(repositoryName -> Objects.equals(orgFromRepo(repositoryName), orgName))
-                    .collect(Collectors.toList());
-        }
-        return repos;
-    }
-
     /**
      * Based on GitHub username, find the corresponding user
      * @param tokenDAO

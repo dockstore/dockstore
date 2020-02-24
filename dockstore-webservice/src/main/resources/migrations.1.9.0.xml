@@ -28,4 +28,17 @@
             <where>type='ADD_VERSION_TO_ENTRY' and versionid is null</where>
         </delete>
     </changeSet>
+
+    <changeSet author="aduncan (generated)" id="AddSubclassColumnToServicesAndWorkflows">
+        <addColumn tableName="service">
+            <column name="descriptortypesubclass" type="varchar(255)" defaultValue="n/a">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="descriptortypesubclass" type="varchar(255)" defaultValue="n/a">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

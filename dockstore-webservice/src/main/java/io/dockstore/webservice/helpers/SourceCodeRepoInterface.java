@@ -229,9 +229,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (Objects.equals(existingWorkflow.get().getDescriptorType(), DescriptorLanguage.SERVICE)) {
-            workflow.setMode(WorkflowMode.SERVICE);
-        } else {
+        if (!Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
             workflow.setMode(WorkflowMode.FULL);
         }
 

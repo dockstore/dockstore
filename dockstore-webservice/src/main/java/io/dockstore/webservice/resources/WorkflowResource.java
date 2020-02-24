@@ -34,8 +34,10 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -78,7 +80,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -110,6 +111,7 @@ import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
@@ -128,7 +130,7 @@ import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
-import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -197,12 +199,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
-
-    @Override
-    protected Workflow initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo) {
-        return sourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
-    }
-
 
     /**
      * TODO: this should not be a GET either
@@ -389,15 +385,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
-            workflow.setMode(SERVICE);
-        } else {
+        if (!Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
             workflow.setMode(WorkflowMode.FULL);
         }
 
         // look for checker workflows to associate with if applicable
-        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL
-            || workflow.getDescriptorType() == WDL) {
+        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL || workflow.getDescriptorType() == WDL) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
             String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
             BioWorkflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
@@ -424,23 +417,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
         return workflow;
-    }
-
-    @PUT
-    @Path("/path/workflow/{repository}/upsertVersion/")
-    @Timed
-    @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag to all workflows associated with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
-    public List<Workflow> upsertVersions(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String repository,
-            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        // Call common upsert code
-        String dockstoreWorkflowPath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.FULL, null);
-
-        return findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
     }
 
     @GET
@@ -1811,5 +1787,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @POST
+    @Path("/github/release")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = "bearer"), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+        @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
+        @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+        @ApiParam(value = "Git reference for a GitHub tag", required = true) @FormParam("gitReference") String gitReference,
+        @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        return githubWebhookRelease(repository, username, gitReference, installationId);
     }
 }
