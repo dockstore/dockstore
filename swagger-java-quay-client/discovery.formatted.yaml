@@ -81,10 +81,10 @@ definitions:
     properties:
       color:
         description: TBD
-        type: boolean
+        type: string
       kind:
         description: TBD
-        type: boolean
+        type: string
       hash:
         description: TBD
         type: string
@@ -362,7 +362,7 @@ definitions:
         type: string
       avatar:
         $ref: "#/definitions/Avatar"
-      type: object
+    type: object
   PrototypeUpdate:
     description: Description of a the new prototype role
     properties:
