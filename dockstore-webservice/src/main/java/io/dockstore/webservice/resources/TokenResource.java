@@ -656,7 +656,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful");
-            throw new CustomWebApplicationException(e.getMessage() , HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
         if (user != null) {
