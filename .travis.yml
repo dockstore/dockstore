@@ -4,6 +4,8 @@ services:
 
 addons:
   postgresql: "9.6"
+  snaps:
+    - yq
 
 cache:
   directories:
