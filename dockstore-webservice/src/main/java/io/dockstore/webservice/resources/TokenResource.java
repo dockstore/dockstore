@@ -623,28 +623,62 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
-//    @POST
-//    @Timed
-//    @UnitOfWork
-//    @Path("/orcid.org")
-//    @ApiOperation(value = "Add a new orcid.org token", authorizations = {
-//            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
-//            + "Once a user has approved permissions for Collaboratory"
-//            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-//    public String addOrcidToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) throws IOException {
-//        if (code.isEmpty()) {
-//            throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
-//        }
-//
-//        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-//                JSON_FACTORY, new GenericUrl(ORCID_URL + "oauth/token"),
-//                new ClientParametersAuthentication(orcidClientID, orcidClientSecret), orcidClientID,
-//                ORCID_URL + "/authorize").build();
-//
-//        AuthorizationCodeTokenRequest tokenRequest = flow.newTokenRequest(code);
-//        TokenResponse response = tokenRequest.execute();
-//        return response.getAccessToken();
-//    }
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/orcid.org")
+    @ApiOperation(value = "Add a new orcid.org token", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
+            + "Once a user has approved permissions for Collaboratory"
+            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    public Token addOrcidToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) throws IOException {
+        String accessToken;
+        String refreshToken;
+
+        if (code.isEmpty()) {
+            throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                JSON_FACTORY, new GenericUrl(ORCID_URL + "oauth/token"),
+                new ClientParametersAuthentication(orcidClientID, orcidClientSecret), orcidClientID,
+                ORCID_URL + "/authorize").build();
+
+        try {
+            TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList("/authenticate"))
+                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+            accessToken = tokenResponse.getAccessToken();
+            refreshToken = tokenResponse.getRefreshToken();
+        } catch (IOException e) {
+            LOG.error("Retrieving accessToken was unsuccessful");
+            throw new CustomWebApplicationException(e.getMessage() , HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (user != null) {
+            String username = user.getUsername();
+            List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
+
+            if (tokens.isEmpty()) {
+                Token token = new Token();
+                token.setTokenSource(TokenType.ORCID_ORG);
+                token.setContent(accessToken);
+                token.setRefreshToken(refreshToken);
+                token.setUserId(user.getId());
+
+                token.setUsername(username);
+
+                long create = tokenDAO.create(token);
+                LOG.info("ORCID token created for {}", username);
+                return tokenDAO.findById(create);
+            } else {
+                LOG.info("ORCID token already exists for {}", username);
+                throw new CustomWebApplicationException("ORCID token already exists for " + username, HttpStatus.SC_CONFLICT);
+            }
+        } else {
+            LOG.info("Could not find user");
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+        }
+    }
 
 
     @GET
