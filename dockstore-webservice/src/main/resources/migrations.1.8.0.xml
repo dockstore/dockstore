@@ -259,7 +259,7 @@
         <!-- this one would be nice, but I could not figure out a constraint that that says the parent id can come from either workflow or services
         <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="workflowversion" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
         -->
-        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="tag" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
+        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="tag" constraintName="parentid_constraint" deferrable="true" initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
     </changeSet>
 
 </databaseChangeLog>

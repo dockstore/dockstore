@@ -47,6 +47,7 @@ import javax.ws.rs.core.StreamingOutput;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
@@ -485,12 +486,40 @@ public class DockerRepoResource
     @ApiOperation(value = "Register a tool manually, along with tags.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool registerManual(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
+        @ApiParam(value = "Tool to be registered", required = true) Tool toolParam) {
         // Check for custom docker registries
-        Registry registry = tool.getRegistryProvider();
+        Registry registry = toolParam.getRegistryProvider();
         if (registry == null) {
             throw new CustomWebApplicationException("The provided registry is not valid. If you are using a custom registry please ensure that it matches the allowed paths.", HttpStatus.SC_BAD_REQUEST);
         }
+        Tool duplicate = toolDAO.findByPath(toolParam.getToolPath(), false);
+
+        if (duplicate != null) {
+            LOG.info(user.getUsername() + ": duplicate tool found: {}" + toolParam.getToolPath());
+            throw new CustomWebApplicationException("Tool " + toolParam.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check if tool has tags
+        if (toolParam.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkContainerForTags(toolParam, user.getId())) {
+            LOG.info(user.getUsername() + ": tool has no tags.");
+            throw new CustomWebApplicationException(
+                "Tool " + toolParam.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check if user owns repo, or if user is in the organization which owns the tool
+        if (toolParam.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkIfUserOwns(toolParam, user.getId())) {
+            LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
+            throw new CustomWebApplicationException("User does not own the tool " + toolParam.getPath()
+                + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        final Set<Tag> workflowVersionsFromParam = Sets.newHashSet(toolParam.getWorkflowVersions());
+        toolParam.setWorkflowVersions(Sets.newHashSet());
+        // cannot create tool with a transient version hanging on it
+        long id = toolDAO.create(toolParam);
+        Tool tool = toolDAO.findById(id);
+        // put the hanging versions back
+        toolParam.setWorkflowVersions(workflowVersionsFromParam);
 
         if (registry.isPrivateOnly() && !tool.isPrivateAccess()) {
             throw new CustomWebApplicationException("The registry " + registry.getFriendlyName() + " is a private only registry.", HttpStatus.SC_BAD_REQUEST);
@@ -504,7 +533,8 @@ public class DockerRepoResource
         tool.addUser(user);
         // create dependent Tags before creating tool
         Set<Tag> createdTags = new HashSet<>();
-        for (Tag tag : tool.getWorkflowVersions()) {
+        for (Tag tag : toolParam.getWorkflowVersions()) {
+            tag.setParent(tool);
             final long l = tagDAO.create(tag);
             createdTags.add(tagDAO.findById(l));
             releaseCreated = true;
@@ -523,28 +553,7 @@ public class DockerRepoResource
         if (!isGit(tool.getGitUrl())) {
             tool.setGitUrl(convertHttpsToSsh(tool.getGitUrl()));
         }
-        Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
 
-        if (duplicate != null) {
-            LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
-            throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        // Check if tool has tags
-        if (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkContainerForTags(tool, user.getId())) {
-            LOG.info(user.getUsername() + ": tool has no tags.");
-            throw new CustomWebApplicationException(
-                "Tool " + tool.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        // Check if user owns repo, or if user is in the organization which owns the tool
-        if (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkIfUserOwns(tool, user.getId())) {
-            LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
-            throw new CustomWebApplicationException("User does not own the tool " + tool.getPath()
-                + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        long id = toolDAO.create(tool);
         if (releaseCreated) {
             Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
             eventDAO.create(event);

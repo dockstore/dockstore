@@ -236,6 +236,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         validatedVersion.setValid(true); // Hosted entry versions must be valid to save
         validatedVersion.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, validatedVersion);
+        validatedVersion.setParent(entry);
         long l = getVersionDAO().create(validatedVersion);
         entry.getWorkflowVersions().add(getVersionDAO().findById(l));
         entry.checkAndSetDefaultVersion(validatedVersion.getName());
