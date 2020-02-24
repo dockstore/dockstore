@@ -13,6 +13,8 @@ import java.util.zip.ZipFile;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.yaml.DockstoreYaml10;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import org.apache.commons.io.FileUtils;
@@ -20,10 +22,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.introspector.Property;
-import org.yaml.snakeyaml.introspector.PropertyUtils;
 
 /**
  * Converts the contents of a zip file into a <code>SourceFiles</code> object, ensuring that
@@ -122,7 +120,7 @@ public final class ZipSourceFileHelper {
      * @return
      */
     protected static SourceFiles sourceFilesFromZip(ZipFile zipFile, DescriptorLanguage.FileType workflowFileType) {
-        DockstoreYaml dockstoreYml = readAndPrevalidateDockstoreYml(zipFile);
+        DockstoreYaml10 dockstoreYml = readAndPrevalidateDockstoreYml(zipFile);
         final String primaryDescriptor = dockstoreYml.primaryDescriptor;
         List<String> testParameterFiles = dockstoreYml.testParameterFiles;
         if (primaryDescriptor != null) {
@@ -210,7 +208,7 @@ public final class ZipSourceFileHelper {
         }
     }
 
-    private static DockstoreYaml readAndPrevalidateDockstoreYml(ZipFile zipFile) {
+    private static DockstoreYaml10 readAndPrevalidateDockstoreYml(ZipFile zipFile) {
         ZipEntry dockstoreYml = zipFile.stream().filter(zipEntry -> ".dockstore.yml".equals(zipEntry.getName())).findFirst()
                 .orElseThrow(() -> new CustomWebApplicationException("Missing .dockstore.yml", HttpStatus.SC_BAD_REQUEST));
         try {
@@ -222,29 +220,15 @@ public final class ZipSourceFileHelper {
     }
 
     // Should move this out of here when other components use dockstore.yml
-    protected static DockstoreYaml readAndPrevalidateDockstoreYml(InputStream inputStream) {
-        Constructor constructor = new Constructor(DockstoreYaml.class);
-        constructor.setPropertyUtils(new PropertyUtils() {
-            @Override
-            public Property getProperty(Class<?> type, String name) {
-                return super.getProperty(type, "class".equals(name) ? "clazz" : name);
-            }
-
-        });
-        final Yaml yaml = new Yaml(constructor);
+    protected static DockstoreYaml10 readAndPrevalidateDockstoreYml(InputStream inputStream) {
         try {
-            DockstoreYaml dockstoreYaml = yaml.load(inputStream);
-            if (!DockstoreYaml.VERSION.equals(dockstoreYaml.dockstoreVersion)) {
-                throw  new CustomWebApplicationException("Invalid or missing dockstoreVersion in .dockstore.yml, expecting \"1.0\"", HttpStatus.SC_BAD_REQUEST);
-            } else if (!DockstoreYaml.CLAZZ.equals(dockstoreYaml.clazz)) {
-                throw new CustomWebApplicationException("Invalid or missing class in .dockstore.yml; expecting \"workflow\"", HttpStatus.SC_BAD_REQUEST);
-            }
-            return dockstoreYaml;
-        } catch (CustomWebApplicationException ex) {
-            throw ex;
-        } catch (Exception e) {
-            LOG.error("Error reading .dockstore.yml", e);
-            throw new CustomWebApplicationException("Invalid syntax in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
+            final String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            return DockstoreYamlHelper.readDockstoreYaml10(content);
+
+        } catch (Exception ex) {
+            final String msg = "Error reading .dockstore.yml: " + ex.getMessage();
+            LOG.error(msg, ex);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
     }
 

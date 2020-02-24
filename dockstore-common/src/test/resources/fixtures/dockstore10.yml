@@ -1,0 +1,10 @@
+dockstoreVersion: 1.0
+class: workflow
+primaryDescriptor: SmartSeq2SingleSample.wdl
+testParameterFiles:
+  - test.wdl.json
+  - test2.wdl.json
+metadata:
+  gitSha: 123456
+  gitRelease: 1.3.0
+  publisher: HCA
