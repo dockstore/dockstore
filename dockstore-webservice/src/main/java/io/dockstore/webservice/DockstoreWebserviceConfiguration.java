@@ -666,6 +666,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String zenodoRedirectPath;
         private String zenodoScope;
 
+        private String orcidAuthUrl;
+        private String orcidRedirectPath;
+        private String orcidScope;
+
         private String googleScope;
 
         private String cwlVisualizerUri;
@@ -807,6 +811,30 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.zenodoScope = zenodoScope;
         }
 
+
+        public String getOrcidAuthUrl() {
+            return orcidAuthUrl;
+        }
+
+        public void setOrcidAuthUrl(String orcidAuthUrl) {
+            this.orcidAuthUrl = orcidAuthUrl;
+        }
+
+        public String getOrcidRedirectPath() {
+            return orcidRedirectPath;
+        }
+
+        public void setOrcidRedirectPath(String orcidRedirectPath) {
+            this.orcidRedirectPath = orcidRedirectPath;
+        }
+
+        public String getOrcidScope() {
+            return orcidScope;
+        }
+
+        public void setOrcidScope(String orcidScope) {
+            this.orcidScope = orcidScope;
+        }
 
         public String getGoogleScope() {
             return googleScope;
