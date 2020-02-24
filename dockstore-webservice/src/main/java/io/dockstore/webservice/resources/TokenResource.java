@@ -634,6 +634,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     public Token addOrcidToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) throws IOException {
         String accessToken;
         String refreshToken;
+        String username;
 
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
@@ -649,13 +650,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                     .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();
+
+            // ORCID API returns the user's ORCID username in the "name" property
+            username = tokenResponse.get("name").toString();
+
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException(e.getMessage() , HttpStatus.SC_BAD_REQUEST);
         }
 
         if (user != null) {
-            String username = user.getUsername();
             List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
 
             if (tokens.isEmpty()) {
@@ -664,15 +668,14 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 token.setContent(accessToken);
                 token.setRefreshToken(refreshToken);
                 token.setUserId(user.getId());
-
                 token.setUsername(username);
 
                 long create = tokenDAO.create(token);
-                LOG.info("ORCID token created for {}", username);
+                LOG.info("ORCID token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
-                LOG.info("ORCID token already exists for {}", username);
-                throw new CustomWebApplicationException("ORCID token already exists for " + username, HttpStatus.SC_CONFLICT);
+                LOG.info("ORCID token already exists for {}", user.getUsername());
+                throw new CustomWebApplicationException("ORCID token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
             }
         } else {
             LOG.info("Could not find user");
