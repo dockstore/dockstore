@@ -86,7 +86,7 @@ before_install:
 # codacy hookup
 - sudo apt-get install jq
 - wget --no-verbose -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
-- pyenv global 3.6.9
+- pyenv global 3.6.10
 
 install:
 - docker version
