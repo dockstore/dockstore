@@ -118,8 +118,8 @@ public class ExtendedTRSIT extends BaseIT {
             workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
 
             // refresh and publish the workflow
-            final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-            workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
+            workflowApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         }
 
         // create verification data as the verifyingUser
@@ -159,7 +159,7 @@ public class ExtendedTRSIT extends BaseIT {
             // refresh as the owner
             WorkflowsApi workflowApi = new WorkflowsApi(registeringUser);
             // refresh should not destroy verification data
-            workflowApi.refresh(workflowByPathGithub.getId());
+            workflowApi.refreshWorkflow(workflowByPathGithub.getId());
             Map<String, Object> stringObjectMap = extendedGa4GhApi
                 .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0",
                     "new metadata", true);
@@ -204,11 +204,11 @@ public class ExtendedTRSIT extends BaseIT {
         tool.setDefaultCWLTestParameterFile("/examples/cgpmap/bamOut/bam_input.json");
 
         DockstoreTool registeredTool = toolApi.registerManual(tool);
-        registeredTool = toolApi.refresh(registeredTool.getId());
+        registeredTool = toolApi.refreshTool(registeredTool.getId());
 
         // Make publish request (true)
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        toolApi.publish(registeredTool.getId(), publishRequest);
+        toolApi.publishTool(registeredTool.getId(), publishRequest);
 
         // check on URLs for workflows via ga4gh calls
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
@@ -219,7 +219,7 @@ public class ExtendedTRSIT extends BaseIT {
         Assert.assertEquals(1, stringObjectMap.size());
 
         // see if refresh destroys verification metadata
-        registeredTool = toolApi.refresh(registeredTool.getId());
+        registeredTool = toolApi.refreshTool(registeredTool.getId());
         final Long toolId = registeredTool.getId();
         final Long tagId = getSpecificVersion(registeredTool).getId();
         stringObjectMap = extendedGa4GhApi

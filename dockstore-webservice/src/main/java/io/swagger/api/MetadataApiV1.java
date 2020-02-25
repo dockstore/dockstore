@@ -43,7 +43,7 @@ public class MetadataApiV1 {
 
     @GET
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(nickname = "metadataGet", value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = MetadataV1.class, tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "metadataGetV1", value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = MetadataV1.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "A Metadata object describing this service.", response = MetadataV1.class) })

@@ -96,12 +96,12 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
 
         // Refresh
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
         assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
 
         // Publish
         if (toPublish) {
-            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
             assertTrue(workflow.isIsPublished());
         }
         return workflow;
@@ -121,7 +121,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // check that valid is valid and full
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
@@ -134,13 +134,13 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("there should be 4 versions, there are " + count4, 4, count4);
 
         // attempt to publish it
-        workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 1 published entry, there are " + count5, 1, count5);
 
         // unpublish
-        workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
@@ -186,14 +186,14 @@ public class GeneralWorkflowIT extends BaseIT {
             SourceControl.GITHUB, "/Dockstore.wdl", true);
 
         // add labels
-        workflow = workflowsApi.updateLabels(workflow.getId(), "test1,test2", "");
+        workflow = workflowsApi.updateWorkflowLabels(workflow.getId(), "test1,test2", "");
         assertEquals(2, workflow.getLabels().size());
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label", long.class);
         assertEquals("there should be 2 labels, there are " + count, 2, count);
 
         // remove labels
-        workflow = workflowsApi.updateLabels(workflow.getId(), "test2,test3", "");
+        workflow = workflowsApi.updateWorkflowLabels(workflow.getId(), "test2,test3", "");
         assertEquals(2, workflow.getLabels().size());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from entry_label", long.class);
@@ -288,7 +288,7 @@ public class GeneralWorkflowIT extends BaseIT {
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         // Restub
         try {
@@ -312,7 +312,7 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype = 'wdl'", long.class);
         assertEquals("there should be 1 wdl workflow, there are " + count, 1, count);
 
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.CWL);
         try {
             workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
@@ -346,7 +346,7 @@ public class GeneralWorkflowIT extends BaseIT {
         updateWorkflowVersion.setWorkflowPath("/newdescriptor.cwl");
         workflowVersions.add(updateWorkflowVersion);
         workflowVersions = workflowsApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where name = 'master' and workflowpath = '/newdescriptor.cwl'",
@@ -395,10 +395,10 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
 
         // Refresh workflow
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // Publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
     }
 
     @Test
@@ -418,12 +418,12 @@ public class GeneralWorkflowIT extends BaseIT {
                 "/test.json");
 
         // Publish github workflow
-        Workflow workflow = workflowsApi.refresh(githubWorkflow.getId());
+        Workflow workflow = workflowsApi.refreshWorkflow(githubWorkflow.getId());
 
         //update the default workflow path to be hello.cwl , the workflow path in workflow versions should also be changes
         workflow.setWorkflowPath("/hello.cwl");
         workflowsApi.updateWorkflowPath(githubWorkflow.getId(), workflow);
-        workflowsApi.refresh(githubWorkflow.getId());
+        workflowsApi.refreshWorkflow(githubWorkflow.getId());
 
         //check if the workflow versions have the same workflow path or not in the database
         final String masterpath = testingPostgres
@@ -447,7 +447,7 @@ public class GeneralWorkflowIT extends BaseIT {
             .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/wrongpath.wdl", "test-update-workflow", "wdl",
                 "/wrong-test.json");
 
-        Workflow workflowBeforeFreezing = workflowsApi.refresh(githubWorkflow.getId());
+        Workflow workflowBeforeFreezing = workflowsApi.refreshWorkflow(githubWorkflow.getId());
         WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst()
             .get();
         master.setFrozen(true);
@@ -476,7 +476,7 @@ public class GeneralWorkflowIT extends BaseIT {
             .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
 
         // Publish github workflow
-        Workflow workflowBeforeFreezing = workflowsApi.refresh(githubWorkflow.getId());
+        Workflow workflowBeforeFreezing = workflowsApi.refreshWorkflow(githubWorkflow.getId());
         WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst()
             .get();
         master.setFrozen(true);
@@ -488,7 +488,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // try various operations that should be disallowed
 
         // cannot modify version properties, like unfreezing for now
-        workflowBeforeFreezing = workflowsApi.refresh(githubWorkflow.getId());
+        workflowBeforeFreezing = workflowsApi.refreshWorkflow(githubWorkflow.getId());
         master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
         master.setFrozen(false);
         List<WorkflowVersion> workflowVersions = workflowsApi
@@ -506,7 +506,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // refresh should skip over the frozen version
-        final Workflow refresh = workflowsApi.refresh(githubWorkflow.getId());
+        final Workflow refresh = workflowsApi.refreshWorkflow(githubWorkflow.getId());
         master = refresh.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
 
         // cannot modify sourcefiles for a frozen version
@@ -547,13 +547,13 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // cannot add or delete test files for frozen versions
         try {
-            workflowsApi.deleteTestParameterFiles(githubWorkflow.getId(), Lists.newArrayList("foo"), "master");
+            workflowsApi.deleteWorkflowTestParameterFiles(githubWorkflow.getId(), Lists.newArrayList("foo"), "master");
             fail("could delete test parameter file");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
         }
         try {
-            workflowsApi.addTestParameterFiles(githubWorkflow.getId(), Lists.newArrayList("foo"), "", "master");
+            workflowsApi.addWorkflowTestParameterFiles(githubWorkflow.getId(), Lists.newArrayList("foo"), "", "master");
             fail("could add test parameter file");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
@@ -586,7 +586,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Update workflow with version with metadata
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // Assert default version is updated and author and email are set
         final long count3 = testingPostgres
@@ -599,14 +599,14 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("The given workflow should have contact info", 1, count4);
 
         // Unpublish
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
         // Alter workflow so that it has no valid tags
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET valid='f'");
 
         // Now you shouldn't be able to publish the workflow
         try {
-            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
@@ -633,7 +633,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Change path for each version so that it is invalid
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.cwl', dirtybit=true");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // Workflow has no valid versions so you cannot publish
 
@@ -648,17 +648,17 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow.setWorkflowPath("/Dockstore.wdl");
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // Can now publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         // unpublish
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
         // Set paths to invalid
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.wdl', dirtybit=true");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // Check that versions are invalid
         final long count5 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", long.class);
@@ -666,7 +666,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // should now not be able to publish
         try {
-            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
@@ -701,7 +701,7 @@ public class GeneralWorkflowIT extends BaseIT {
         updateWorkflowVersion.setWorkflowPath("/Dockstoredirty.cwl");
         workflowVersions.add(updateWorkflowVersion);
         workflowVersions = workflowsApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // There should be on dirty bit
         final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
@@ -710,7 +710,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Update default cwl
         workflow.setWorkflowPath("/Dockstoreclean.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId());
+        workflowsApi.refreshWorkflow(workflow.getId());
 
         // There should be 3 versions with new cwl
         final long count2 = testingPostgres
@@ -753,7 +753,7 @@ public class GeneralWorkflowIT extends BaseIT {
         updateWorkflowVersion.setWorkflowPath("/Dockstoredirty.cwl");
         workflowVersions.add(updateWorkflowVersion);
         workflowVersions = workflowsApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // There should be on dirty bit
         final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
@@ -762,7 +762,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Update default cwl
         workflow.setWorkflowPath("/Dockstoreclean.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId());
+        workflowsApi.refreshWorkflow(workflow.getId());
 
         // There should be 3 versions with new cwl
         final long count2 = testingPostgres
@@ -804,7 +804,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("there should be 1 workflow, there are " + count3, 1, count3);
 
         // publish
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         final long count4 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
@@ -812,7 +812,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("there should be 1 published workflow, there are " + count4, 1, count4);
 
         // unpublish
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(false));
         final long count5 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
@@ -827,7 +827,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("The given workflow shouldn't have any contact info", 1, count6);
 
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "test");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         final long count7 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null",
@@ -977,11 +977,11 @@ public class GeneralWorkflowIT extends BaseIT {
         toAdd.add("test.cwl.json");
         toAdd.add("test2.cwl.json");
         toAdd.add("fake.cwl.json");
-        workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "master");
+        workflowsApi.addWorkflowTestParameterFiles(workflow.getId(), toAdd, "", "master");
         List<String> toDelete = new ArrayList<>();
         toDelete.add("notreal.cwl.json");
-        workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflowsApi.deleteWorkflowTestParameterFiles(workflow.getId(), toDelete, "master");
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals("there should be two sourcefiles that are test parameter files, there are " + count2, 2, count2);
@@ -989,19 +989,19 @@ public class GeneralWorkflowIT extends BaseIT {
         // Update version with test parameters
         toAdd.clear();
         toAdd.add("test.cwl.json");
-        workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "master");
+        workflowsApi.addWorkflowTestParameterFiles(workflow.getId(), toAdd, "", "master");
         toDelete.clear();
         toDelete.add("test2.cwl.json");
-        workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflowsApi.deleteWorkflowTestParameterFiles(workflow.getId(), toDelete, "master");
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 1, count3);
 
         // Update other version with test parameters
         toAdd.clear();
         toAdd.add("test.wdl.json");
-        workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "wdltest");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflowsApi.addWorkflowTestParameterFiles(workflow.getId(), toAdd, "", "wdltest");
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
         assertEquals("there should be two sourcefiles that are cwl test parameter files, there are " + count4, 2, count4);
 
@@ -1012,7 +1012,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
         workflow.setWorkflowPath("Dockstore.wdl");
         workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId());
+        workflowsApi.refreshWorkflow(workflow.getId());
 
         // Should be no sourcefiles
         final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
@@ -1021,8 +1021,8 @@ public class GeneralWorkflowIT extends BaseIT {
         // Update version wdltest with test parameters
         toAdd.clear();
         toAdd.add("test.wdl.json");
-        workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "wdltest");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflowsApi.addWorkflowTestParameterFiles(workflow.getId(), toAdd, "", "wdltest");
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
         final long count6 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
         assertEquals("there should be one sourcefile that is a wdl test parameter file, there are " + count6, 1, count6);
     }
@@ -1056,7 +1056,7 @@ public class GeneralWorkflowIT extends BaseIT {
         Workflow githubWorkflow = workflowsApi
             .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/hello.wdl", "test-update-workflow", "wdl", "/test.json");
 
-        Workflow workflowBeforeFreezing = workflowsApi.refresh(githubWorkflow.getId());
+        Workflow workflowBeforeFreezing = workflowsApi.refreshWorkflow(githubWorkflow.getId());
         WorkflowVersion master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst()
             .get();
 

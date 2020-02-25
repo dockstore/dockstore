@@ -118,11 +118,11 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = containersApi.registerManual(newTool);
 
         // Refresh
-        tool = containersApi.refresh(tool.getId());
+        tool = containersApi.refreshTool(tool.getId());
 
         // Publish
         if (toPublish) {
-            tool = containersApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+            tool = containersApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(true));
             assertTrue(tool.isIsPublished());
         }
         return tool;
@@ -189,14 +189,14 @@ public class BasicIT extends BaseIT {
         // refresh a specific workflow
         Workflow workflow = workflowsApi
             .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // artificially create an invalid version
         testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
         testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
 
         // refresh individual workflow
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
 
         // check that the version was deleted
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
@@ -220,7 +220,7 @@ public class BasicIT extends BaseIT {
 
         // refresh without github token
         try {
-            workflow = workflowsApi.refresh(workflow.getId());
+            workflow = workflowsApi.refreshWorkflow(workflow.getId());
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("No GitHub or Google token found"));
         }
@@ -243,7 +243,7 @@ public class BasicIT extends BaseIT {
         Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
+        toolsApi.starTool(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
         // Add a tag
@@ -271,7 +271,7 @@ public class BasicIT extends BaseIT {
         tags = new ArrayList<>();
         tags.add(tag);
         toolTagsApi.updateTags(tool.getId(), tags);
-        toolsApi.refresh(tool.getId());
+        toolsApi.refreshTool(tool.getId());
 
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from tag t, version_metadata vm where name = 'masterTest' and vm.hidden='t' and t.id = vm.id", long.class);
@@ -434,20 +434,20 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandbitbucket", "");
-        toolsApi.refresh(tool.getId());
+        toolsApi.refreshTool(tool.getId());
 
         // Register BitBucket tool
         DockstoreTool bitbucketTool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandbitbucket", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-        bitbucketTool = toolsApi.refresh(bitbucketTool.getId());
+        bitbucketTool = toolsApi.refreshTool(bitbucketTool.getId());
         assertTrue(bitbucketTool.isIsPublished());
 
         // Register GitHub tool
         DockstoreTool githubTool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-        githubTool = toolsApi.refresh(githubTool.getId());
+        githubTool = toolsApi.refreshTool(githubTool.getId());
         assertTrue(githubTool.isIsPublished());
     }
 
@@ -486,7 +486,7 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
-        toolsApi.refresh(tool.getId());
+        toolsApi.refreshTool(tool.getId());
 
         // Check how many tags there are after the refresh
         final long afterRefreshTags = testingPostgres
@@ -541,7 +541,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
         try {
-            toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+            toolsApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
@@ -564,14 +564,14 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
 
         // Publish
-        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+        tool = toolsApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(true));
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where name = '" + toolPath.split("/")[2] + "' and ispublished='t'", long.class);
         Assert.assertEquals("there should be 1 registered", 1, count);
 
         // Unpublish
-        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        tool = toolsApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(false));
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where name = '" + toolPath.split("/")[2] + "' and ispublished='t'", long.class);
@@ -605,7 +605,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entries, there are " + count, 1, count);
 
         // Unpublish
-        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        tool = toolsApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 
@@ -645,8 +645,8 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
-        tool = toolsApi.refresh(tool.getId());
-        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+        tool = toolsApi.refreshTool(tool.getId());
+        tool = toolsApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(true));
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and ispublished = 't'", long.class);
         Assert.assertEquals("the given entry should be published", 1, count);
@@ -677,7 +677,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entries", 1, count);
 
         // Unpublish
-        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        toolsApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
 
@@ -711,7 +711,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entries", 1, count);
 
         // Unpublish
-        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        toolsApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 
@@ -752,14 +752,14 @@ public class BasicIT extends BaseIT {
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
         Assert.assertEquals("there should be 2 entries", 2, count2);
-        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        toolsApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(false));
 
         final long count3 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'regular2' and ispublished='t'", long.class);
 
         Assert.assertEquals("there should be 1 entry", 1, count3);
 
-        toolsApi.publish(duplicateTool.getId(), SwaggerUtility.createPublishRequest(false));
+        toolsApi.publishTool(duplicateTool.getId(), SwaggerUtility.createPublishRequest(false));
         final long count4 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
 
@@ -804,7 +804,7 @@ public class BasicIT extends BaseIT {
         // Update tool with default version that has metadata
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
         Long toolId = existingTool.getId();
-        DockstoreTool refresh = toolsApi.refresh(toolId);
+        DockstoreTool refresh = toolsApi.refreshTool(toolId);
         refresh.setDefaultVersion("master");
         existingTool = toolsApi.updateContainer(toolId, refresh);
 
@@ -822,7 +822,7 @@ public class BasicIT extends BaseIT {
 
         // Shouldn't be able to publish
         try {
-            toolsApi.publish(toolId, SwaggerUtility.createPublishRequest(true));
+            toolsApi.publishTool(toolId, SwaggerUtility.createPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
@@ -897,7 +897,7 @@ public class BasicIT extends BaseIT {
         existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
         existingTool.setDefaultCwlPath("/Dockstoreclean.cwl");
         existingTool = toolsApi.updateContainer(existingTool.getId(), existingTool);
-        toolsApi.refresh(existingTool.getId());
+        toolsApi.refreshTool(existingTool.getId());
 
         // There should only be one tag with /Dockstoreclean.cwl (both tag with new cwl and new wdl should be dirty and not changed)
         final long count2 = testingPostgres
@@ -916,7 +916,7 @@ public class BasicIT extends BaseIT {
 
         // Refresh
         DockstoreTool existingTool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json", "");
-        toolsApi.refresh(existingTool.getId());
+        toolsApi.refreshTool(existingTool.getId());
 
         // Check that no WDL or CWL test files
         final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
@@ -931,9 +931,9 @@ public class BasicIT extends BaseIT {
         List<String> toRemove = new ArrayList<>();
         toRemove.add("notreal.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
-        toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
-        toolsApi.refresh(existingTool.getId());
+        toolsApi.addToolTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
+        toolsApi.deleteToolTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+        toolsApi.refreshTool(existingTool.getId());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         Assert.assertEquals("there should be two sourcefiles that are test parameter files, there are " + count2, 2, count2);
@@ -945,9 +945,9 @@ public class BasicIT extends BaseIT {
         toRemove = new ArrayList<>();
         toRemove.add("test2.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
-        toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
-        toolsApi.refresh(existingTool.getId());
+        toolsApi.addToolTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
+        toolsApi.deleteToolTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+        toolsApi.refreshTool(existingTool.getId());
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         Assert.assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 1, count3);
@@ -956,8 +956,8 @@ public class BasicIT extends BaseIT {
         toAdd = new ArrayList<>();
         toAdd.add("test.wdl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "wdl", "", "wdltest");
-        toolsApi.refresh(existingTool.getId());
+        toolsApi.addToolTestParameterFiles(existingTool.getId(), toAdd, "wdl", "", "wdltest");
+        toolsApi.refreshTool(existingTool.getId());
 
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", long.class);
         Assert.assertEquals("there should be one sourcefile that is a wdl test parameter file, there are " + count4, 1, count4);
@@ -965,8 +965,8 @@ public class BasicIT extends BaseIT {
         toAdd = new ArrayList<>();
         toAdd.add("test.cwl.json");
 
-        toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "wdltest");
-        toolsApi.refresh(existingTool.getId());
+        toolsApi.addToolTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "wdltest");
+        toolsApi.refreshTool(existingTool.getId());
         final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", long.class);
         assertEquals("there should be two sourcefiles that are test parameter files, there are " + count5, 2, count5);
 
@@ -975,7 +975,7 @@ public class BasicIT extends BaseIT {
         existingTool.setDefaultCWLTestParameterFile("test.cwl.json");
         existingTool.setDefaultWDLTestParameterFile("test.wdl.json");
         toolsApi.updateContainer(existingTool.getId(), existingTool);
-        toolsApi.refresh(existingTool.getId());
+        toolsApi.refreshTool(existingTool.getId());
         final List<Long> testJsonCounts = testingPostgres.runSelectListStatement(
             "select count(*) from sourcefile s, version_sourcefile vs where (s.type = 'CWL_TEST_JSON' or s.type = 'WDL_TEST_JSON') and s.id = vs.sourcefileid group by vs.versionid",
             long.class);
@@ -992,20 +992,20 @@ public class BasicIT extends BaseIT {
 
         ContainersApi containersApi = new ContainersApi(correctWebClient);
         final DockstoreTool containerByToolPath = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json", null);
-        containersApi.refresh(containerByToolPath.getId());
+        containersApi.refreshTool(containerByToolPath.getId());
 
         // Check that no WDL or CWL test files
         final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
         Assert.assertEquals("there should be no sourcefiles that are test parameter files, there are " + count, 0, count);
 
         containersApi
-            .addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(), "",
+            .addToolTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(), "",
                 "master");
 
         boolean shouldFail = false;
         try {
             final ContainersApi containersApi1 = new ContainersApi(otherWebClient);
-            containersApi1.addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
+            containersApi1.addToolTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
                 DescriptorType.CWL.toString(), "", "master");
         } catch (Exception e) {
             shouldFail = true;
@@ -1013,7 +1013,7 @@ public class BasicIT extends BaseIT {
         assertTrue(shouldFail);
 
         containersApi
-            .addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"), DescriptorType.CWL.toString(),
+            .addToolTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"), DescriptorType.CWL.toString(),
                 "", "master");
 
         final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
@@ -1023,16 +1023,16 @@ public class BasicIT extends BaseIT {
         shouldFail = false;
         try {
             final ContainersApi containersApi1 = new ContainersApi(otherWebClient);
-            containersApi1.deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
+            containersApi1.deleteToolTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
                 DescriptorType.CWL.toString(), "master");
         } catch (Exception e) {
             shouldFail = true;
         }
         assertTrue(shouldFail);
         containersApi
-            .deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(),
+            .deleteToolTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(),
                 "master");
-        containersApi.deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
+        containersApi.deleteToolTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"),
             DescriptorType.CWL.toString(), "master");
 
         final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
@@ -1139,7 +1139,7 @@ public class BasicIT extends BaseIT {
         // Make the tool private
         tool.setPrivateAccess(true);
         tool = toolsApi.updateContainer(tool.getId(), tool);
-        tool = toolsApi.refresh(tool.getId());
+        tool = toolsApi.refreshTool(tool.getId());
 
         // The tool should be private, published and not have a maintainer email
         final long count = testingPostgres
@@ -1150,7 +1150,7 @@ public class BasicIT extends BaseIT {
         // Convert the tool back to public
         tool.setPrivateAccess(false);
         tool = toolsApi.updateContainer(tool.getId(), tool);
-        tool = toolsApi.refresh(tool.getId());
+        tool = toolsApi.refreshTool(tool.getId());
 
         // Check that the tool is no longer private
         final long count2 = testingPostgres.runSelectStatement(
@@ -1162,7 +1162,7 @@ public class BasicIT extends BaseIT {
         tool.setPrivateAccess(true);
         tool.setToolMaintainerEmail("testemail2@domain.com");
         tool = toolsApi.updateContainer(tool.getId(), tool);
-        tool = toolsApi.refresh(tool.getId());
+        tool = toolsApi.refreshTool(tool.getId());
 
         // Check that the tool is no longer private
         final long count3 = testingPostgres.runSelectStatement(
@@ -1354,7 +1354,7 @@ public class BasicIT extends BaseIT {
 
         // Refresh a tool
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandbitbucket", "");
-        toolsApi.refresh(tool.getId());
+        toolsApi.refreshTool(tool.getId());
 
         // Check that user has been updated
         // TODO: bizarrely, the new GitHub Java API library doesn't seem to handle bio

@@ -208,7 +208,7 @@ public class DockerRepoResource
     @Path("/{containerId}/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh one particular tool.", authorizations = {
+    @ApiOperation(nickname = "refreshTool", value = "Refresh one particular tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool refresh(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
@@ -300,7 +300,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/labels")
-    @ApiOperation(value = "Update the labels linked to a tool.", authorizations = {
+    @ApiOperation(nickname = "updateToolLabels", value = "Update the labels linked to a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
     public Tool updateLabels(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -430,7 +430,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{containerId}/users")
-    @ApiOperation(value = "Get users of a tool.", authorizations = {
+    @ApiOperation(nickname = "getToolUsers", value = "Get users of a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
     public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
@@ -599,7 +599,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/publish")
-    @ApiOperation(value = "Publish or unpublish a tool.", authorizations = {
+    @ApiOperation(nickname = "publishTool", value = "Publish or unpublish a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool publish(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
@@ -793,7 +793,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{containerId}/primaryDescriptor")
-    @ApiOperation(value = "Get the primary descriptor file.", tags = {
+    @ApiOperation(nickname = "primaryToolDescriptor", value = "Get the primary descriptor file.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -806,7 +806,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{containerId}/descriptor/{relative-path}")
-    @ApiOperation(value = "Get the corresponding descriptor file.", tags = {
+    @ApiOperation(nickname = "toolSecondaryDescriptorPath", value = "Get the corresponding descriptor file.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -820,7 +820,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{containerId}/secondaryDescriptors")
-    @ApiOperation(value = "Get a list of secondary descriptor files.", tags = {
+    @ApiOperation(nickname = "secondaryToolDescriptors", value = "Get a list of secondary descriptor files.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -833,7 +833,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{containerId}/testParameterFiles")
-    @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
+    @ApiOperation(nickname = "getToolTestParameterFiles", value = "Get the corresponding test parameter files.", tags = {
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -871,7 +871,7 @@ public class DockerRepoResource
     @GET
     @Timed
     @Path("/dockerRegistryList")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
+    @ApiOperation(nickname = "getToolDockerRegistries", value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
         return rc.getResource(MetadataResource.class).getDockerRegistries();
     }
@@ -880,7 +880,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
-    @ApiOperation(value = "Add test parameter files to a tag.", authorizations = {
+    @ApiOperation(nickname = "addToolTestParameterFiles", value = "Add test parameter files to a tag.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -916,7 +916,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
-    @ApiOperation(value = "Delete test parameter files to a tag.", authorizations = {
+    @ApiOperation(nickname = "deleteToolTestParameterFiles", value = "Delete test parameter files to a tag.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -953,7 +953,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/star")
-    @ApiOperation(value = "Star a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(nickname = "starTool", value = "Star a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
@@ -970,7 +970,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/unstar")
-    @ApiOperation(value = "Unstar a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(nickname = "unstarTool", value = "Unstar a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @Deprecated(since = "1.8.0")
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
@@ -983,7 +983,7 @@ public class DockerRepoResource
     @Path("/{containerId}/starredUsers")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "Returns list of users who starred a tool.", response = User.class, responseContainer = "List")
+    @ApiOperation(nickname = "getToolStarredUsers", value = "Returns list of users who starred a tool.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsers(
         @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);

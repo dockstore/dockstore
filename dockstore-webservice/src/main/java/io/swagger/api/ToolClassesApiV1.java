@@ -44,7 +44,7 @@ public class ToolClassesApiV1 {
     @GET
     @UnitOfWork(readOnly = true)
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(nickname = "toolClassesGet", value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(nickname = "toolClassesGetV1", value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })

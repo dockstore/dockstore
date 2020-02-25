@@ -152,8 +152,8 @@ public class ServiceIT extends BaseIT {
             .allMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
 
         // try some standard things we would like services to be able to do
-        client.starEntry(invoke.getServiceID(), new StarRequest().star(true));
-        client.updateLabels(invoke.getServiceID(), "foo,batman,chicken", "");
+        client.starWorkflow(invoke.getServiceID(), new StarRequest().star(true));
+        client.updateWorkflowLabels(invoke.getServiceID(), "foo,batman,chicken", "");
 
         // did it happen?
         final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
@@ -347,22 +347,22 @@ public class ServiceIT extends BaseIT {
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
-        WorkflowsApi client = new WorkflowsApi(webClient);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
 
         // Add service
-        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "1.0", installationId);
+        List<io.swagger.client.model.Workflow> services = workflowsApi.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "1.0", installationId);
         assertEquals("Should only have one service", 1, services.size());
         io.swagger.client.model.Workflow service = services.get(0);
-        service = client.refresh(service.getId());
+        service = workflowsApi.refreshWorkflow(service.getId());
         assertNotNull(service);
         assertEquals("Should have one new version (one release has no yaml, another has invalid yaml)", 1, service.getWorkflowVersions().size());
 
         // Set default version
-        service = client.updateWorkflowDefaultVersion(service.getId(), "1.0");
-        client.refresh(service.getId());
+        service = workflowsApi.updateWorkflowDefaultVersion(service.getId(), "1.0");
+        workflowsApi.refreshWorkflow(service.getId());
     }
 
     /**

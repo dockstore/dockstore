@@ -189,12 +189,12 @@ public class WorkflowIT extends BaseIT {
         assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
 
         // Refresh
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refreshWorkflow(workflow.getId());
         assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
 
         // Publish
         if (toPublish) {
-            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            workflow = workflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         }
         assertTrue(workflow.isIsPublished() == toPublish);
         return workflow;
@@ -237,9 +237,9 @@ public class WorkflowIT extends BaseIT {
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow refreshGithub = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
         final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, null, false);
-        final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId());
+        final Workflow refreshBitbucket = workflowApi.refreshWorkflow(workflowByPathBitbucket.getId());
 
         // tests for reference type for bitbucket workflows
         assertTrue("should see at least 4 branches", refreshBitbucket.getWorkflowVersions().stream()
@@ -283,7 +283,7 @@ public class WorkflowIT extends BaseIT {
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
         assertTrue("could not get content via optional auth", adminToolDescriptor != null && !adminToolDescriptor.getContent().isEmpty());
 
-        workflowApi.publish(refreshGithub.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publishWorkflow(refreshGithub.getId(), SwaggerUtility.createPublishRequest(true));
         // check on URLs for workflows via ga4gh calls
         FileWrapper toolDescriptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
@@ -337,7 +337,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
                 "test", "cwl", null);
-        Workflow refresh = workflowApi.refresh(workflow.getId());
+        Workflow refresh = workflowApi.refreshWorkflow(workflow.getId());
         Long workflowId = refresh.getId();
         WorkflowVersion workflowVersion = refresh.getWorkflowVersions().get(0);
         Long versionId = workflowVersion.getId();
@@ -364,7 +364,7 @@ public class WorkflowIT extends BaseIT {
         tempZip.deleteOnExit();
 
         // Download published workflow version
-        workflowApi.publish(workflowId, SwaggerUtility.createPublishRequest(true));
+        workflowApi.publishWorkflow(workflowId, SwaggerUtility.createPublishRequest(true));
         arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, CommonTestUtilities.getWebClient(false, null, testingPostgres));
         File tempZip2 = File.createTempFile("temp", "zip");
@@ -393,7 +393,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflow = ownerWorkflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
                 "test", "cwl", null);
-        Workflow refresh = ownerWorkflowApi.refresh(workflow.getId());
+        Workflow refresh = ownerWorkflowApi.refreshWorkflow(workflow.getId());
         Long workflowId = refresh.getId();
         Long versionId = refresh.getWorkflowVersions().get(0).getId();
 
@@ -421,7 +421,7 @@ public class WorkflowIT extends BaseIT {
 
         // Publish
         PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        ownerWorkflowApi.publish(workflowId, publishRequest);
+        ownerWorkflowApi.publishWorkflow(workflowId, publishRequest);
 
         // Try downloading published
         // Owner: Should pass
@@ -481,7 +481,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
         Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
-        ownerWorkflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(true));
+        ownerWorkflowApi.publishWorkflow(refresh.getId(), SwaggerUtility.createPublishRequest(true));
         final List<SourceFile> sourceFiles = refresh.getWorkflowVersions().stream()
                 .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getSourceFiles();
         final Ga4GhApi ga4GhApi = new Ga4GhApi(ownerWebClient);
@@ -511,10 +511,10 @@ public class WorkflowIT extends BaseIT {
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
                 "test", "cwl", null);
-        Workflow refresh = workflowApi.refresh(workflow.getId());
+        Workflow refresh = workflowApi.refreshWorkflow(workflow.getId());
         assertFalse(refresh.isIsPublished());
         workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", workflow.getId(), "cwl", "checker-input-cwl.json");
-        workflowApi.refresh(workflow.getId());
+        workflowApi.refreshWorkflow(workflow.getId());
 
         final String fileWithIncorrectCredentials = ResourceHelpers.resourceFilePath("config_file.txt");
         final String fileWithCorrectCredentials = ResourceHelpers.resourceFilePath("config_file2.txt");
@@ -525,7 +525,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.getWorkflowZip(refresh.getId(), versionId);
 
         // Publish the workflow
-        workflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publishWorkflow(refresh.getId(), SwaggerUtility.createPublishRequest(true));
 
         // Owner should still have access
         workflowApiNoAccess.getWorkflowZip(refresh.getId(), versionId);
@@ -534,7 +534,7 @@ public class WorkflowIT extends BaseIT {
         workflowApiNoAccess.getWorkflowZip(refresh.getId(), versionId);
 
         // Unpublish the workflow
-        workflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(false));
+        workflowApi.publishWorkflow(refresh.getId(), SwaggerUtility.createPublishRequest(false));
 
         // should not be able to download properly with incorrect credentials because the entry is not published
         try {
@@ -558,7 +558,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null, false);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow refreshGithub = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
 
@@ -607,7 +607,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null, false);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow refreshGithub = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
 
         assertEquals("workflow does not include expected config included files", 3,
             refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("master")).findFirst().get()
@@ -628,7 +628,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null, false);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow refreshGithub = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
         Optional<WorkflowVersion> first = refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("1.0"))
@@ -681,9 +681,9 @@ public class WorkflowIT extends BaseIT {
         mtaNf.setWorkflowPath("/nextflow.config");
         mtaNf.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
-        workflowApi.refresh(mtaNf.getId());
+        workflowApi.refreshWorkflow(mtaNf.getId());
         // publish this way? (why is the auto-generated variable private?)
-        workflowApi.publish(mtaNf.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publishWorkflow(mtaNf.getId(), SwaggerUtility.createPublishRequest(true));
         mtaNf = workflowApi.getWorkflow(mtaNf.getId(), null);
         Assert.assertTrue("a workflow lacks a date", mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0);
         assertNotNull("Nextflow workflow not found after update", mtaNf);
@@ -760,11 +760,11 @@ public class WorkflowIT extends BaseIT {
 
         final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted
-        workflowApi.refresh(workflowByPath.getId());
+        workflowApi.refreshWorkflow(workflowByPath.getId());
 
         // publish one
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        workflowApi.publish(workflowByPath.getId(), publishRequest);
+        workflowApi.publishWorkflow(workflowByPath.getId(), publishRequest);
         assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(),
             1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size());
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId(), null);
@@ -778,8 +778,8 @@ public class WorkflowIT extends BaseIT {
             "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "github.com/DockstoreTestUser2/parameter_test_workflow")
             .forEach(path -> {
                 Workflow workflow = workflowApi.getWorkflowByPath(path, null, false);
-                workflowApi.refresh(workflow.getId());
-                workflowApi.publish(workflow.getId(), publishRequest);
+                workflowApi.refreshWorkflow(workflow.getId());
+                workflowApi.publishWorkflow(workflow.getId(), publishRequest);
             });
         List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null, false);
         // test offset
@@ -830,8 +830,8 @@ public class WorkflowIT extends BaseIT {
         assertEquals("There should be two workflows with name altname, there are " + count2, 2, count2);
 
         // Publish github workflow
-        workflowApi.refresh(githubWorkflow.getId());
-        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+        workflowApi.refreshWorkflow(githubWorkflow.getId());
+        workflowApi.publishWorkflow(githubWorkflow.getId(), publishRequest);
 
         // Assert some things
         assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(),
@@ -842,10 +842,10 @@ public class WorkflowIT extends BaseIT {
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid = 't'", long.class);
         assertEquals("There should be 2 valid version tags, there are " + count4, 2, count4);
 
-        workflowApi.refresh(bitbucketWorkflow.getId());
+        workflowApi.refreshWorkflow(bitbucketWorkflow.getId());
         thrown.expect(ApiException.class);
         // Publish bitbucket workflow, will fail now since the workflow test case is actually invalid now
-        workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
+        workflowApi.publishWorkflow(bitbucketWorkflow.getId(), publishRequest);
     }
 
     //TODO: Fork these workflows onto dockstoretestuser
@@ -983,7 +983,7 @@ public class WorkflowIT extends BaseIT {
         assertEquals("No workflows are in full mode", 0, count);
 
         // Refresh the workflow
-        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.refreshWorkflow(githubWorkflow.getId());
 
         // Confirm that correct number of sourcefiles are found
         githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId(), null);
@@ -1019,8 +1019,8 @@ public class WorkflowIT extends BaseIT {
                 "/examples/chksum_seqval_wf_interleaved_fq.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, null, false);
 
-        workflowApi.refresh(workflowByPathGithub.getId());
-        workflowApi.publish(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.refreshWorkflow(workflowByPathGithub.getId());
+        workflowApi.publishWorkflow(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
 
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
@@ -1058,11 +1058,11 @@ public class WorkflowIT extends BaseIT {
         tool.setDefaultVersion("symbolic.v1");
 
         DockstoreTool registeredTool = toolApi.registerManual(tool);
-        registeredTool = toolApi.refresh(registeredTool.getId());
+        registeredTool = toolApi.refreshTool(registeredTool.getId());
 
         // Make publish request (true)
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        toolApi.publish(registeredTool.getId(), publishRequest);
+        toolApi.publishTool(registeredTool.getId(), publishRequest);
 
         // look that branches and tags are typed correctly for tools
         assertTrue("should see at least 6 branches",
@@ -1169,21 +1169,21 @@ public class WorkflowIT extends BaseIT {
         // This checks if a workflow whose default name was manually registered as an empty string would become null
         assertNull(workflowByPathGithub.getWorkflowName());
 
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
 
         // This checks if a workflow whose default name is null would remain as null after refresh
         assertNull(workflow.getWorkflowName());
 
         // test out methods to access secondary files
         final List<SourceFile> masterImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+            .secondaryWorkflowDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
         assertEquals("should find 2 imports, found " + masterImports.size(), 2, masterImports.size());
-        final SourceFile master = workflowApi.primaryDescriptor(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+        final SourceFile master = workflowApi.primaryWorkflowDescriptor(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
         assertTrue("master content incorrect", master.getContent().contains("untar") && master.getContent().contains("compile"));
 
         // get secondary files by path
         SourceFile argumentsTool = workflowApi
-            .secondaryDescriptorPath(workflow.getId(), "arguments.cwl", "master", DescriptorLanguage.CWL.toString());
+            .workflowSecondaryDescriptorPath(workflow.getId(), "arguments.cwl", "master", DescriptorLanguage.CWL.toString());
         assertTrue("argumentstool content incorrect", argumentsTool.getContent().contains("Example trivial wrapper for Java 7 compiler"));
     }
 
@@ -1197,7 +1197,7 @@ public class WorkflowIT extends BaseIT {
         // This checks if a workflow whose default name was manually registered as an empty string would become null
         assertNull(workflowByPathGithub.getWorkflowName());
 
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
 
         // Test that the secondary file's input file formats are recognized (secondary file is varscan_cnv.cwl)
         List<FileFormat> fileFormats = workflow.getInputFileFormats();
@@ -1222,25 +1222,25 @@ public class WorkflowIT extends BaseIT {
         // test out methods to access secondary files
 
         final List<SourceFile> masterImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+            .secondaryWorkflowDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
         assertEquals("should find 3 imports, found " + masterImports.size(), 3, masterImports.size());
         final List<SourceFile> rootImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
+            .secondaryWorkflowDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
         assertEquals("should find 0 imports, found " + rootImports.size(), 0, rootImports.size());
 
         // next, change a path for the root imports version
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
         workflowVersions.stream().filter(v -> v.getName().equals("rootTest")).findFirst().get().setWorkflowPath("/cnv.cwl");
         workflowApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
-        workflowApi.refresh(workflowByPathGithub.getId());
+        workflowApi.refreshWorkflow(workflowByPathGithub.getId());
         final List<SourceFile> newMasterImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
+            .secondaryWorkflowDescriptors(workflow.getId(), "master", DescriptorLanguage.CWL.toString());
         assertEquals("should find 3 imports, found " + newMasterImports.size(), 3, newMasterImports.size());
         final List<SourceFile> newRootImports = workflowApi
-            .secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
+            .secondaryWorkflowDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
         assertEquals("should find 3 imports, found " + newRootImports.size(), 3, newRootImports.size());
 
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
         FileWrapper toolDescriptor = ga4Ghv2Api
@@ -1273,7 +1273,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
-        workflowApi.refresh(workflowByPathGithub.getId());
+        workflowApi.refreshWorkflow(workflowByPathGithub.getId());
 
         // should not be able to get content normally
         Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(CommonTestUtilities.getWebClient(false, null, testingPostgres));
@@ -1344,17 +1344,17 @@ public class WorkflowIT extends BaseIT {
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
+        workflowApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         Workflow md5workflow = workflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker",
             "/checker-workflow-wrapping-workflow.cwl", "test", "cwl", null);
-        workflowApi.refresh(md5workflow.getId());
-        workflowApi.publish(md5workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.refreshWorkflow(md5workflow.getId());
+        workflowApi.publishWorkflow(md5workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         // give the workflow a few aliases
         EntriesApi genericApi = new EntriesApi(webClient);
-        Entry entry = genericApi.addAliases(workflow.getId(), "awesome workflow, spam, test workflow");
+        Entry entry = genericApi.addEntryAliases(workflow.getId(), "awesome workflow, spam, test workflow");
         Assert.assertTrue("entry is missing expected aliases",
             entry.getAliases().containsKey("awesome workflow") && entry.getAliases().containsKey("spam") && entry.getAliases()
                 .containsKey("test workflow"));
@@ -1371,7 +1371,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue("workflow was not found or didn't have expected aliases",
             awesomeWorkflow.size() == 1 && awesomeWorkflow.get(0).getAliases().size() == 3);
         // add a few new aliases
-        entry = genericApi.addAliases(workflow.getId(), "foobar, another workflow");
+        entry = genericApi.addEntryAliases(workflow.getId(), "foobar, another workflow");
         Assert.assertTrue("entry is missing expected aliases",
             entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 5);
 
@@ -1379,7 +1379,7 @@ public class WorkflowIT extends BaseIT {
         boolean throwsError = false;
         try {
             // add a few new aliases
-            entry = genericApi.addAliases(workflow.getId(), "another workflow");
+            entry = genericApi.addEntryAliases(workflow.getId(), "another workflow");
         } catch (ApiException ex) {
             throwsError = true;
         }
@@ -1403,7 +1403,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl",
             "/workflows/dnaseq/transform.cwl.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW, null, false);
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
 
         Assert.assertEquals("should have 2 version", 2, workflow.getWorkflowVersions().size());
         Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
@@ -1456,10 +1456,10 @@ public class WorkflowIT extends BaseIT {
                 "/workflows/dnaseq/transform.cwl.json");
         final Workflow workflowByPathGithub = userWorkflowsApi
             .getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW + "/" + workflowName, null, false);
-        final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflow = userWorkflowsApi.refreshWorkflow(workflowByPathGithub.getId());
 
         // Publish workflow, which will also add a topic
-        userWorkflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        userWorkflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         // Should not be able to create a topic for the same workflow
         try {
@@ -1470,8 +1470,8 @@ public class WorkflowIT extends BaseIT {
         }
 
         // Unpublish and publish, should not throw error
-        Workflow unpublishedWf = userWorkflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
-        Workflow publishedWf = userWorkflowsApi.publish(unpublishedWf.getId(), SwaggerUtility.createPublishRequest(true));
+        Workflow unpublishedWf = userWorkflowsApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        Workflow publishedWf = userWorkflowsApi.publishWorkflow(unpublishedWf.getId(), SwaggerUtility.createPublishRequest(true));
         assertEquals("Topic id should remain the same.", unpublishedWf.getTopicId(), publishedWf.getTopicId());
     }
 
@@ -1490,7 +1490,7 @@ public class WorkflowIT extends BaseIT {
             "/cwl/v1.1/cat-job.json");
         final Workflow workflowByPathGithub = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", null, false);
-        final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflow = userWorkflowsApi.refreshWorkflow(workflowByPathGithub.getId());
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
             Assert.assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
             Assert.assertEquals("Peter Amstutz", workflow.getAuthor());
@@ -1518,7 +1518,7 @@ public class WorkflowIT extends BaseIT {
                 "/cwl/v1.1/wc-job.json");
         final Workflow workflowByPathGithub2 = userWorkflowsApi
             .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", null, false);
-        final Workflow workflow2 = userWorkflowsApi.refresh(workflowByPathGithub2.getId());
+        final Workflow workflow2 = userWorkflowsApi.refreshWorkflow(workflowByPathGithub2.getId());
         Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         Optional<WorkflowVersion> optionalWorkflowVersion2 = workflow2.getWorkflowVersions().stream()
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
@@ -1526,14 +1526,14 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion workflowVersion2 = optionalWorkflowVersion2.get();
         // Check validation works.  It should be valid
         Assert.assertTrue(workflowVersion2.isValid());
-        userWorkflowsApi.publish(workflowByPathGithub2.getId(), SwaggerUtility.createPublishRequest(true));
+        userWorkflowsApi.publishWorkflow(workflowByPathGithub2.getId(), SwaggerUtility.createPublishRequest(true));
     }
 
     private Workflow registerGatkSvWorkflow(WorkflowsApi ownerWorkflowApi) {
         // Register and refresh workflow
         Workflow workflow = ownerWorkflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/gatk-sv-clinical", "/GATKSVPipelineClinical.wdl",
                 "test", "wdl", "/test.json");
-        return ownerWorkflowApi.refresh(workflow.getId());
+        return ownerWorkflowApi.refreshWorkflow(workflow.getId());
     }
     
     @Test
@@ -1544,8 +1544,8 @@ public class WorkflowIT extends BaseIT {
                 "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
+        workflowApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
@@ -1555,14 +1555,14 @@ public class WorkflowIT extends BaseIT {
 
         // give the workflow version a few aliases
         AliasesApi aliasesApi = new AliasesApi(webClient);
-        WorkflowVersion workflowVersionWithAliases = aliasesApi.addAliases(workflowVersion.getId(), "awesome workflowversion, spam, test workflowversion");
+        WorkflowVersion workflowVersionWithAliases = aliasesApi.addWorkflowVersionAliases(workflowVersion.getId(), "awesome workflowversion, spam, test workflowversion");
         Assert.assertTrue("entry is missing expected aliases",
                 workflowVersionWithAliases.getAliases().containsKey("awesome workflowversion")
                         && workflowVersionWithAliases.getAliases().containsKey("spam")
                         && workflowVersionWithAliases.getAliases().containsKey("test workflowversion"));
 
         // add a few new aliases
-        workflowVersion = aliasesApi.addAliases(workflowVersion.getId(), "foobar, another workflowversion");
+        workflowVersion = aliasesApi.addWorkflowVersionAliases(workflowVersion.getId(), "foobar, another workflowversion");
         Assert.assertTrue("entry is missing expected aliases",
                 workflowVersion.getAliases().containsKey("foobar")
                         && workflowVersion.getAliases().containsKey("test workflowversion")
@@ -1572,7 +1572,7 @@ public class WorkflowIT extends BaseIT {
         boolean throwsError = false;
         try {
             // add a few new aliases
-            workflowVersion = aliasesApi.addAliases(workflow.getId(), "another workflowversion");
+            workflowVersion = aliasesApi.addWorkflowVersionAliases(workflow.getId(), "another workflowversion");
         } catch (ApiException ex) {
             throwsError = true;
         }
@@ -1594,8 +1594,8 @@ public class WorkflowIT extends BaseIT {
                 "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
+        workflowApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
@@ -1606,7 +1606,7 @@ public class WorkflowIT extends BaseIT {
         // give the workflow version a few aliases
         AliasesApi aliasesApi = new AliasesApi(webClient);
         WorkflowVersion workflowVersionWithAliases = aliasesApi
-                .addAliases(workflowVersion.getId(), "awesome workflowversion, spam, test workflowversion");
+                .addWorkflowVersionAliases(workflowVersion.getId(), "awesome workflowversion, spam, test workflowversion");
         Assert.assertTrue("entry is missing expected aliases",
                 workflowVersionWithAliases.getAliases().containsKey("awesome workflowversion") && workflowVersionWithAliases.getAliases().containsKey("spam")
                         && workflowVersionWithAliases.getAliases().containsKey("test workflowversion"));

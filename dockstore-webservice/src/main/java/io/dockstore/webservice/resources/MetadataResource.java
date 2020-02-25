@@ -325,7 +325,7 @@ public class MetadataResource {
     @ApiResponse(description = "List of Docker registries", content = @Content(
         mediaType = "application/json",
         array = @ArraySchema(schema = @Schema(implementation = Registry.RegistryBean.class))))
-    @ApiOperation(nickname = "getDockerRegistries", value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
+    @ApiOperation(nickname = "getDockerMetadataRegistries", value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
         List<Registry.RegistryBean> registryList = new ArrayList<>();
         Arrays.asList(Registry.values()).forEach(registry -> registryList.add(new Registry.RegistryBean(registry)));

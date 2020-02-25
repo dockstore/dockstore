@@ -1154,7 +1154,7 @@ public class OrganizationIT extends BaseIT {
         long entryId = 2;
         ContainersApi containersApi = new ContainersApi(webClientUser2);
         PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        containersApi.publish(entryId, publishRequest);
+        containersApi.publishTool(entryId, publishRequest);
 
         // Able to retrieve the collection and organization an entry is part of, even if there aren't any
         EntriesApi entriesApi = new EntriesApi(webClientUser2);
@@ -1190,7 +1190,7 @@ public class OrganizationIT extends BaseIT {
 
         // Publish another tool
         entryId = 1;
-        containersApi.publish(entryId, publishRequest);
+        containersApi.publishTool(entryId, publishRequest);
 
         // Add tool to collection
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId);
@@ -1206,14 +1206,14 @@ public class OrganizationIT extends BaseIT {
 
         // Unpublish tool
         PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
-        containersApi.publish(entryId, unpublishRequest);
+        containersApi.publishTool(entryId, unpublishRequest);
 
         // Collection should have one tool returned
         long entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();
         assertEquals("There should be one entry with the collection, there are " + entryCount, 1, entryCount);
 
         // Publish tool
-        containersApi.publish(entryId, publishRequest);
+        containersApi.publishTool(entryId, publishRequest);
 
         // Collection should have two tools returned
         entryCount = organizationsApi.getCollectionById(organization.getId(), collectionId).getEntries().size();

@@ -439,12 +439,12 @@ public class GeneralRegressionIT extends BaseIT {
         //register tool
         DockstoreTool c = getContainer();
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //change the default cwl path and refresh
         toolTest.setDefaultCwlPath("/test1.cwl");
         toolsApi.updateTagContainerPath(toolTest.getId(), toolTest);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //check if the tag's dockerfile path have the same cwl path or not in the database
         final String path = getPathfromDB("cwlpath");
@@ -464,12 +464,12 @@ public class GeneralRegressionIT extends BaseIT {
         //register tool
         DockstoreTool c = getContainer();
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //change the default wdl path and refresh
         toolTest.setDefaultWdlPath("/test1.wdl");
         toolsApi.updateTagContainerPath(toolTest.getId(), toolTest);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //check if the tag's wdl path have the same wdl path or not in the database
         final String path = getPathfromDB("wdlpath");
@@ -489,12 +489,12 @@ public class GeneralRegressionIT extends BaseIT {
         //register tool
         DockstoreTool c = getContainer();
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //change the default dockerfile and refresh
         toolTest.setDefaultDockerfilePath("/test1/Dockerfile");
         toolsApi.updateTagContainerPath(toolTest.getId(), toolTest);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //check if the tag's dockerfile path have the same dockerfile path or not in the database
         final String path = getPathfromDB("dockerfilepath");

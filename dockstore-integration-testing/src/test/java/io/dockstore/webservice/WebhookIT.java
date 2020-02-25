@@ -137,7 +137,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
 
         // Refresh
-        workflow = client.refresh(workflow.getId());
+        workflow = client.refreshWorkflow(workflow.getId());
         assertNotNull(workflow);
         assertEquals("Should have two workflow versions: 0.1, 0.2 and 0.3", 3, workflow.getWorkflowVersions().size());
 

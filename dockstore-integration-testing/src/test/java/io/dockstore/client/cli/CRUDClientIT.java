@@ -165,7 +165,7 @@ public class CRUDClientIT extends BaseIT {
         ContainersApi otherUserApi = new ContainersApi(getWebClient(USER_1_USERNAME, testingPostgres));
         boolean thrownException = false;
         try {
-            otherUserApi.getTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile);
+            otherUserApi.getToolTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile);
         } catch (ApiException e) {
             thrownException = true;
         }
@@ -174,11 +174,11 @@ public class CRUDClientIT extends BaseIT {
         // Publish tool
         ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         PublishRequest pub = SwaggerUtility.createPublishRequest(true);
-        containersApi.publish(dockstoreTool.getId(), pub);
+        containersApi.publishTool(dockstoreTool.getId(), pub);
 
         // files should be visible afterwards
         List<SourceFile> files = otherUserApi
-            .getTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile);
+            .getToolTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile);
         assertTrue(!files.isEmpty() && !files.get(0).getContent().isEmpty());
     }
 
@@ -271,7 +271,7 @@ public class CRUDClientIT extends BaseIT {
         WorkflowsApi otherUserApi = new WorkflowsApi(getWebClient(USER_1_USERNAME, testingPostgres));
         boolean thrownException = false;
         try {
-            otherUserApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
+            otherUserApi.primaryWorkflowDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
         } catch (ApiException e) {
             thrownException = true;
         }
@@ -280,10 +280,10 @@ public class CRUDClientIT extends BaseIT {
         // Publish workflow
         WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         PublishRequest pub = SwaggerUtility.createPublishRequest(true);
-        workflowsApi.publish(dockstoreWorkflow.getId(), pub);
+        workflowsApi.publishWorkflow(dockstoreWorkflow.getId(), pub);
 
         // files should be visible afterwards
-        file = otherUserApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
+        file = otherUserApi.primaryWorkflowDescriptor(dockstoreWorkflow.getId(), first.get().getName(), DescriptorLanguage.CWL.toString());
         assertFalse(file.getContent().isEmpty());
 
         // Check that absolute file gets set if not explicity set
@@ -360,7 +360,7 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool hostedTool = hostedApi
             .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         thrown.expect(ApiException.class);
-        DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
+        DockstoreTool refreshedTool = containersApi.refreshTool(hostedTool.getId());
         assertTrue("There should be at least one user of the workflow", refreshedTool.getUsers().size() > 0);
         refreshedTool.getUsers()
             .forEach(entryUser -> assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles()));
@@ -450,7 +450,7 @@ public class CRUDClientIT extends BaseIT {
             .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         thrown.expect(ApiException.class);
         containersApi
-            .addTestParameterFiles(hostedTool.getId(), new ArrayList<>(), DescriptorLanguage.CWL.toString().toLowerCase(), "", "1");
+            .addToolTestParameterFiles(hostedTool.getId(), new ArrayList<>(), DescriptorLanguage.CWL.toString().toLowerCase(), "", "1");
     }
 
     /**
@@ -464,7 +464,7 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool hostedTool = hostedApi
             .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         thrown.expect(ApiException.class);
-        containersApi.deleteTestParameterFiles(hostedTool.getId(), new ArrayList<>(), DescriptorLanguage.CWL.toString(), "1");
+        containersApi.deleteToolTestParameterFiles(hostedTool.getId(), new ArrayList<>(), DescriptorLanguage.CWL.toString(), "1");
     }
 
     /**
@@ -491,7 +491,7 @@ public class CRUDClientIT extends BaseIT {
         Workflow hostedWorkflow = hostedApi
             .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
-        workflowApi.refresh(hostedWorkflow.getId());
+        workflowApi.refreshWorkflow(hostedWorkflow.getId());
     }
 
     /**
@@ -549,7 +549,7 @@ public class CRUDClientIT extends BaseIT {
         Workflow hostedWorkflow = hostedApi
             .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
-        workflowApi.addTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "", "1");
+        workflowApi.addWorkflowTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "", "1");
     }
 
     /**
@@ -563,6 +563,6 @@ public class CRUDClientIT extends BaseIT {
         Workflow hostedWorkflow = hostedApi
             .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
-        workflowApi.deleteTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "1");
+        workflowApi.deleteWorkflowTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "1");
     }
 }

@@ -102,7 +102,7 @@ public class CheckerWorkflowIT extends BaseIT {
         DockstoreTool githubTool = containersApi.registerManual(newTool);
 
         // Refresh the workflow
-        DockstoreTool refresh = containersApi.refresh(githubTool.getId());
+        DockstoreTool refresh = containersApi.refreshTool(githubTool.getId());
 
         // Check if the output file format is added to the file_formats property
         assertTrue(refresh.getWorkflowVersions().stream().anyMatch(tag -> tag.getOutputFileFormats().stream()
@@ -117,7 +117,7 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-tool.cwl", githubTool.getId(), "cwl", null);
 
         // Refresh workflow
-        DockstoreTool refreshedEntry = containersApi.refresh(githubTool.getId());
+        DockstoreTool refreshedEntry = containersApi.refreshTool(githubTool.getId());
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile
         assertTrue("There should be at least one user of the workflow", refreshedEntry.getUsers().size() > 0);
@@ -148,7 +148,7 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count5 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished = true", long.class);
         assertEquals("No tools should be published, there are " + count5, 0, count5);
 
-        containersApi.publish(githubTool.getId(), publishRequest);
+        containersApi.publishTool(githubTool.getId(), publishRequest);
 
         // Checker workflow should publish
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
@@ -158,7 +158,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertEquals("the tool should be published, there are " + count7, 1, count7);
 
         // Unpublish workflow
-        containersApi.publish(githubTool.getId(), unpublishRequest);
+        containersApi.publishTool(githubTool.getId(), unpublishRequest);
 
         // Checker workflow should unpublish
         final long count8 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
@@ -169,7 +169,7 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Should not be able to directly publish the checker
         try {
-            workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
+            workflowApi.publishWorkflow(refreshedEntry.getCheckerId(), publishRequest);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
@@ -214,7 +214,7 @@ public class CheckerWorkflowIT extends BaseIT {
             Workflow githubWorkflow = workflowApi
                 .manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "", "cwl", "/testcwl.json");
             // Refresh the workflow
-            baseEntryId = workflowApi.refresh(githubWorkflow.getId()).getId();
+            baseEntryId = workflowApi.refreshWorkflow(githubWorkflow.getId()).getId();
         } else {
             // Manually register a tool
             DockstoreTool newTool = new DockstoreTool();
@@ -231,7 +231,7 @@ public class CheckerWorkflowIT extends BaseIT {
             DockstoreTool githubTool = containersApi.registerManual(newTool);
 
             // Refresh the workflow
-            DockstoreTool refresh = containersApi.refresh(githubTool.getId());
+            DockstoreTool refresh = containersApi.refreshTool(githubTool.getId());
             baseEntryId = refresh.getId();
         }
 
@@ -278,7 +278,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertEquals("No workflows are in full mode, there are " + count, 0, count);
 
         // Refresh the workflow
-        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.refreshWorkflow(githubWorkflow.getId());
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
@@ -288,7 +288,7 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
 
         // Refresh workflow
-        Workflow refreshedEntry = workflowApi.refresh(githubWorkflow.getId());
+        Workflow refreshedEntry = workflowApi.refreshWorkflow(githubWorkflow.getId());
 
         // Should be able to download zip for first version
         Workflow checkerWorkflow = workflowApi.getWorkflow(refreshedEntry.getCheckerId(), null);
@@ -319,7 +319,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Publish workflow
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
         assertEquals("No workflows should be published, there are " + count6, 0, count6);
-        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+        workflowApi.publishWorkflow(githubWorkflow.getId(), publishRequest);
 
         // Checker workflow should publish
         final long count7 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
@@ -329,7 +329,7 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.getWorkflowZip(checkerWorkflow.getId(), checkerWorkflow.getWorkflowVersions().get(0).getId());
 
         // Unpublish workflow
-        workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
+        workflowApi.publishWorkflow(githubWorkflow.getId(), unpublishRequest);
 
         // Checker workflow should unpublish
         final long count8 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
@@ -337,7 +337,7 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Should not be able to directly publish the checker
         try {
-            workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
+            workflowApi.publishWorkflow(refreshedEntry.getCheckerId(), publishRequest);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
@@ -371,7 +371,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertEquals("No workflows are in full mode, there are " + count, 0, count);
 
         // Refresh the workflow
-        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.refreshWorkflow(githubWorkflow.getId());
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
@@ -381,7 +381,7 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.wdl", githubWorkflow.getId(), "wdl", null);
 
         // Refresh workflow
-        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.refreshWorkflow(githubWorkflow.getId());
 
         // Checker workflow should refresh
         final long count3 = testingPostgres
@@ -403,14 +403,14 @@ public class CheckerWorkflowIT extends BaseIT {
         // Publish workflow
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
         assertEquals("No workflows should be published, there are " + count6, 0, count6);
-        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+        workflowApi.publishWorkflow(githubWorkflow.getId(), publishRequest);
 
         // Checker workflow should publish
         final long count7 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);
         assertEquals("Two workflows should be published (one being the checker), there are " + count7, 2, count7);
 
         // Unpublish workflow
-        workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
+        workflowApi.publishWorkflow(githubWorkflow.getId(), unpublishRequest);
 
         // Checker workflow should unpublish
         final long count8 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = true", long.class);

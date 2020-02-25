@@ -171,7 +171,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         try {
-            toolApi.updateLabels(tool.getId(), "docker-hub,quay.io", "");
+            toolApi.updateToolLabels(tool.getId(), "docker-hub,quay.io", "");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Invalid label format"));
         }
@@ -187,10 +187,10 @@ public class GeneralIT extends BaseIT {
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
 
         // Test adding/removing labels for different containers
-        toolApi.updateLabels(tool.getId(), "quay,github", "");
-        toolApi.updateLabels(tool.getId(), "github,dockerhub", "");
-        toolApi.updateLabels(tool.getId(), "alternate,github,dockerhub", "");
-        toolApi.updateLabels(tool.getId(), "alternate,dockerhub", "");
+        toolApi.updateToolLabels(tool.getId(), "quay,github", "");
+        toolApi.updateToolLabels(tool.getId(), "github,dockerhub", "");
+        toolApi.updateToolLabels(tool.getId(), "alternate,github,dockerhub", "");
+        toolApi.updateToolLabels(tool.getId(), "alternate,dockerhub", "");
 
         final long count = testingPostgres.runSelectStatement("select count(*) from entry_label where entryid = '2'", long.class);
         assertEquals("there should be 2 labels for the given container, there are " + count, 2, count);
@@ -223,7 +223,7 @@ public class GeneralIT extends BaseIT {
         updatedTag.setDockerfilePath("/testDir/Dockerfile");
         tags.add(updatedTag);
         toolTagsApi.updateTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
@@ -242,7 +242,7 @@ public class GeneralIT extends BaseIT {
         updatedTag.setDockerfilePath("/Dockerfile");
         tags.add(updatedTag);
         toolTagsApi.updateTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
 
         final long count2 = testingPostgres.runSelectStatement(
             "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
@@ -352,7 +352,7 @@ public class GeneralIT extends BaseIT {
         tool.setDefaultDockerfilePath("/testDir/Dockerfile");
         tool.setDefaultCwlPath("/testDir/Dockstore.cwl");
         tool = toolApi.registerManual(tool);
-        toolApi.refresh(tool.getId());
+        toolApi.refreshTool(tool.getId());
 
         // Add tag
         tool = addTag(tool, toolTagsApi, toolApi);
@@ -384,7 +384,7 @@ public class GeneralIT extends BaseIT {
         updatedTag.setHidden(true);
         tags.add(updatedTag);
         toolTagsApi.updateTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
@@ -399,7 +399,7 @@ public class GeneralIT extends BaseIT {
         updatedTag.setHidden(false);
         tags.add(updatedTag);
         toolTagsApi.updateTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
@@ -425,7 +425,7 @@ public class GeneralIT extends BaseIT {
         updatedTag.setWdlPath("/randomDir/Dockstore.wdl");
         tags.add(updatedTag);
         toolTagsApi.updateTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
 
         // should now be invalid
 
@@ -444,7 +444,7 @@ public class GeneralIT extends BaseIT {
         updatedTag.setWdlPath("/Dockstore.wdl");
         tags.add(updatedTag);
         toolTagsApi.updateTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
 
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
@@ -463,7 +463,7 @@ public class GeneralIT extends BaseIT {
         tag.setReference("master");
         tags.add(tag);
         toolTagsApi.addTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
         return tool;
     }
 
@@ -474,7 +474,7 @@ public class GeneralIT extends BaseIT {
         tag.setReference("master");
         tags.add(tag);
         toolTagsApi.addTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
         return tool;
     }
 
@@ -485,7 +485,7 @@ public class GeneralIT extends BaseIT {
         tag.setReference("master");
         tags.add(tag);
         toolTagsApi.addTags(tool.getId(), tags);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
         return tool;
     }
 
@@ -504,7 +504,7 @@ public class GeneralIT extends BaseIT {
         tool.setDefaultWdlPath("/testDir/Dockstore.wdl");
         tool.setGitUrl("git@github.com:dockstoretestuser2/quayandgithubalternate.git");
         tool = toolApi.registerManual(tool);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
 
         // Add tag
         tool = addTag(tool, toolTagsApi, toolApi);
@@ -562,7 +562,7 @@ public class GeneralIT extends BaseIT {
         tool.setDefaultDockerfilePath("/testDir/Dockerfile");
         tool.setDefaultCwlPath("/testDir/Dockstore.cwl");
         tool = toolApi.registerManual(tool);
-        tool = toolApi.refresh(tool.getId());
+        tool = toolApi.refreshTool(tool.getId());
 
         // Repo user has access to
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
@@ -576,7 +576,7 @@ public class GeneralIT extends BaseIT {
         tool2.setNamespace("dockstore2");
         tool2.setGitUrl("git@github.com:dockstoretestuser2/quayandgithub.git");
         tool2 = toolApi.registerManual(tool2);
-        tool2 = toolApi.refresh(tool2.getId());
+        tool2 = toolApi.refreshTool(tool2.getId());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
             + "' and namespace = 'dockstore2' and name = 'testrepo2' and toolname = 'testOrg'", long.class);
@@ -609,12 +609,12 @@ public class GeneralIT extends BaseIT {
         //register tool
         DockstoreTool c = getContainer();
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //change the default cwl path and refresh
         toolTest.setDefaultCwlPath("/test1.cwl");
         toolsApi.updateTagContainerPath(toolTest.getId(), toolTest);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //check if the tag's dockerfile path have the same cwl path or not in the database
         final String path = getPathfromDB("cwlpath");
@@ -650,7 +650,7 @@ public class GeneralIT extends BaseIT {
             .filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size == size2 && size >= 1);
         // individual refresh should update image ids
-        containersApi.refresh(c.getId());
+        containersApi.refreshTool(c.getId());
         DockstoreTool container = containersApi.getContainer(c.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
@@ -734,7 +734,7 @@ public class GeneralIT extends BaseIT {
         // Check that the new imageid and checksums are grabbed on refresh. Also check the old images have been deleted.
         refreshAfterDeletedTag(toolApi, tool, tags);
         testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where giturl = 'git@bitbucket.org:dockstoretestuser2/dockstore-whalesay-2.git'");
-        toolApi.refresh(tool.getId());
+        toolApi.refreshTool(tool.getId());
         List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         verifyChecksumsAreSaved(updatedTags);
     }
@@ -745,7 +745,7 @@ public class GeneralIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement("select count(*) from image", long.class);
         testingPostgres.runUpdateStatement("update image set image_id = 'dummyid'");
         assertEquals("dummyid", toolApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
-        toolApi.refresh(tool.getId());
+        toolApi.refreshTool(tool.getId());
         final long count2 = testingPostgres.runSelectStatement("select count(*) from image", long.class);
         assertEquals(imageID, toolApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
         assertEquals(count, count2);
@@ -770,7 +770,7 @@ public class GeneralIT extends BaseIT {
 
         // mimic getting an registry being slow/now responsding and verify we do not delete the image information we already have by going to an invalid url.
         testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where giturl = 'git@gitlab.com:NatalieEO/dockstore-tool-bamstats.git'");
-        toolApi.refresh(tool.getId());
+        toolApi.refreshTool(tool.getId());
         List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         verifyChecksumsAreSaved(updatedTags);
     }
@@ -799,7 +799,7 @@ public class GeneralIT extends BaseIT {
         DockstoreTool tool = getContainer();
         tool.setDefaultVersion("1.0");
         DockstoreTool toolTest = toolsApi.registerManual(tool);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId(), null);
         assertNotNull("Author should be set, even if tag name and tag reference are mismatched.", refreshedTool.getAuthor());
@@ -818,12 +818,12 @@ public class GeneralIT extends BaseIT {
         //register tool
         DockstoreTool c = getContainer();
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //change the default wdl path and refresh
         toolTest.setDefaultWdlPath("/test1.wdl");
         toolsApi.updateTagContainerPath(toolTest.getId(), toolTest);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //check if the tag's wdl path have the same wdl path or not in the database
         final String path = getPathfromDB("wdlpath");
@@ -847,7 +847,7 @@ public class GeneralIT extends BaseIT {
             tag.setDockerfilePath("foo");
         });
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        DockstoreTool refresh = toolsApi.refreshTool(toolTest.getId());
         assertFalse(refresh.getWorkflowVersions().isEmpty());
         Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
         master.setFrozen(true);
@@ -871,7 +871,7 @@ public class GeneralIT extends BaseIT {
         //register tool
         DockstoreTool c = getContainer();
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        DockstoreTool refresh = toolsApi.refreshTool(toolTest.getId());
 
         assertFalse(refresh.getWorkflowVersions().isEmpty());
         Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
@@ -937,13 +937,13 @@ public class GeneralIT extends BaseIT {
 
         // cannot add or delete test files for frozen versions
         try {
-            toolsApi.deleteTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "1.0");
+            toolsApi.deleteToolTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "1.0");
             fail("could delete test parameter file");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
         }
         try {
-            toolsApi.addTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "", "1.0");
+            toolsApi.addToolTestParameterFiles(refresh.getId(), Lists.newArrayList("foo"), "cwl", "", "1.0");
             fail("could add test parameter file");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
@@ -964,12 +964,12 @@ public class GeneralIT extends BaseIT {
         //register tool
         DockstoreTool c = getContainer();
         DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //change the default dockerfile and refresh
         toolTest.setDefaultDockerfilePath("/test1/Dockerfile");
         toolsApi.updateTagContainerPath(toolTest.getId(), toolTest);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         //check if the tag's dockerfile path have the same dockerfile path or not in the database
         final String path = getPathfromDB("dockerfilepath");
@@ -1006,7 +1006,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
         DockstoreTool toolTest = toolsApi.registerManual(tool);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '"
@@ -1024,7 +1024,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
         DockstoreTool toolTest = toolsApi.registerManual(tool);
-        toolsApi.refresh(toolTest.getId());
+        toolsApi.refreshTool(toolTest.getId());
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl
@@ -1076,10 +1076,10 @@ public class GeneralIT extends BaseIT {
 
         // Add tool
         DockstoreTool tool = containersApi.registerManual(getContainer());
-        DockstoreTool refresh = containersApi.refresh(tool.getId());
+        DockstoreTool refresh = containersApi.refreshTool(tool.getId());
 
         // Add alias
-        Entry entry = entryApi.addAliases(refresh.getId(), "foobar");
+        Entry entry = entryApi.addEntryAliases(refresh.getId(), "foobar");
         Assert.assertTrue("Should have alias foobar", entry.getAliases().containsKey("foobar"));
 
         // Get unpublished tool by alias as owner
@@ -1104,7 +1104,7 @@ public class GeneralIT extends BaseIT {
 
         // Publish tool
         PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        containersApi.publish(refresh.getId(), publishRequest);
+        containersApi.publishTool(refresh.getId(), publishRequest);
 
         // Get published tool by alias as owner
         DockstoreTool publishedAliasTool = containersApi.getToolByAlias("foobar");
@@ -1136,7 +1136,7 @@ public class GeneralIT extends BaseIT {
 
         // Register and refresh tool
         DockstoreTool tool = ownerContainersApi.registerManual(getContainer());
-        DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
+        DockstoreTool refresh = ownerContainersApi.refreshTool(tool.getId());
         Long toolId = refresh.getId();
         Tag tag = refresh.getWorkflowVersions().get(0);
         Long versionId = tag.getId();
@@ -1165,7 +1165,7 @@ public class GeneralIT extends BaseIT {
 
         // Publish
         PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        ownerContainersApi.publish(toolId, publishRequest);
+        ownerContainersApi.publishTool(toolId, publishRequest);
 
         // Try downloading published
         // Owner: Should pass

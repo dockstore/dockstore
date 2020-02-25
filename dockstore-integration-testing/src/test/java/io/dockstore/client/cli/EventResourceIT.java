@@ -92,11 +92,11 @@ public class EventResourceIT extends BaseIT {
         DockstoreTool tool = containersApi.registerManual(newTool);
 
         // Refresh
-        tool = containersApi.refresh(tool.getId());
+        tool = containersApi.refreshTool(tool.getId());
 
         // Publish
         if (toPublish) {
-            tool = containersApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+            tool = containersApi.publishTool(tool.getId(), SwaggerUtility.createPublishRequest(true));
             assertTrue(tool.isIsPublished());
         }
         return tool;
@@ -126,7 +126,7 @@ public class EventResourceIT extends BaseIT {
         Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
+        toolsApi.starTool(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
         // Add and update tag 101 times

@@ -109,10 +109,10 @@ public class SearchResourceIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-        entriesApi.addAliases(workflow.getId(), "potatoAlias");
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
+        entriesApi.addEntryAliases(workflow.getId(), "potatoAlias");
+        workflowApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflowApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         waitForIndexRefresh(1, extendedGa4GhApi,  0);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
@@ -154,9 +154,9 @@ public class SearchResourceIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflow = workflowApi.refreshWorkflow(workflowByPathGithub.getId());
 
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publishWorkflow(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         waitForIndexRefresh(1, extendedGa4GhApi,  0);
 
