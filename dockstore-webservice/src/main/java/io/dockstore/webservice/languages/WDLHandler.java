@@ -226,6 +226,16 @@ public class WDLHandler implements LanguageHandlerInterface {
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 checkForRecursiveHTTPImports(content, new HashSet<>());
 
+                // Check for local recursive imports in the WDL files
+                try {
+                    String parent = primaryDescriptorFilePath.startsWith("/") ? new File(primaryDescriptorFilePath).getParent() : "/";
+                    checkForRecursiveLocalImports(content, sourcefiles, new HashSet<>(), parent);
+                } catch (ParseException e) {
+                    LOG.error("Recursive local imports found: ", e);
+                    validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
+                    return new VersionTypeValidation(false, validationMessageObject);
+                }
+
                 WdlBridge wdlBridge = new WdlBridge();
                 wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
 
