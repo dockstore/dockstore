@@ -90,6 +90,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.model.DescriptorType;
+import io.swagger.quay.client.model.QuayRepo;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
@@ -1051,11 +1052,11 @@ public class DockerRepoResource
             String quayUsername = quayToken.getUsername();
 
             // call quay api, check if user owns or is part of owning organization
-            Map<String, Object> map = factory.getQuayInfo(tool);
+            final QuayRepo quayInfo = factory.getQuayInfo(tool);
 
-            if (map != null) {
-                String namespace = map.get("namespace").toString();
-                boolean isOrg = (Boolean)map.get("is_organization");
+            if (quayInfo != null) {
+                String namespace = quayInfo.getNamespace();
+                boolean isOrg = quayInfo.isIsOrganization();
 
                 if (isOrg) {
                     List<String> namespaces = factory.getNamespaces();
