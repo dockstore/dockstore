@@ -224,10 +224,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 releaseCreated = true;
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
                 workflow.getWorkflowVersions().add(workflowVersionFromDB);
-                // create a new one and replace the old one if it exists
-                if (existingVersionMap.containsKey(workflowVersionFromDB.getName())) {
-                    workflowVersionDAO.delete(existingVersionMap.get(workflowVersionFromDB.getName()));
-                }
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
             }
 
