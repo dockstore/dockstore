@@ -1736,6 +1736,62 @@ paths:
                   $ref: '#/components/schemas/ToolClass'
       security:
       - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
+    get:
+      tags:
+      - GA4GHV20
+      summary: Get a list of objects that contain the relative path and file type
+      description: 'Get a list of objects that contain the relative path and file
+        type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path
+        : .+} endpoint.'
+      operationId: toolsIdVersionsVersionIdTypeFilesGet
+      parameters:
+      - name: type
+        in: path
+        description: The output type of the descriptor. Examples of allowable values
+          are "CWL", "WDL", and "NFL".
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: A unique identifier of the tool, scoped to this registry, for
+          example `123456`.
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        description: An identifier of the tool version for this particular tool registry,
+          for example `v1`.
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The array of File JSON responses.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFile'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFile'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - BEARER: []
   /ga4gh/trs/v2/tools:
     get:
       tags:
@@ -2169,62 +2225,6 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
-    get:
-      tags:
-      - GA4GHV20
-      summary: Get a list of objects that contain the relative path and file type
-      description: 'Get a list of objects that contain the relative path and file
-        type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path
-        : .+} endpoint.'
-      operationId: toolsIdVersionsVersionIdTypeFilesGet
-      parameters:
-      - name: type
-        in: path
-        description: The output type of the descriptor. Examples of allowable values
-          are "CWL", "WDL", and "NFL".
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        description: A unique identifier of the tool, scoped to this registry, for
-          example `123456`.
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        description: An identifier of the tool version for this particular tool registry,
-          for example `v1`.
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: The array of File JSON responses.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolFile'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolFile'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-      - BEARER: []
 components:
   schemas:
     Alias:
@@ -2649,8 +2649,8 @@ components:
           - SWL
           - NFL
           - service
-          - cwl
-          - wdl
+          
+          
         aliases:
           type: object
           additionalProperties:
@@ -3077,8 +3077,8 @@ components:
           - SWL
           - NFL
           - service
-          - cwl
-          - wdl
+          
+          
         aliases:
           type: object
           additionalProperties:
@@ -3343,6 +3343,14 @@ components:
           type: string
         googleScope:
           type: string
+        orcidAuthUrl:
+          type: string
+        orcidClientId:
+          type: string
+        orcidRedirectPath:
+          type: string
+        orcidScope:
+          type: string
         quayIoAuthUrl:
           type: string
         quayIoClientId:
@@ -3476,6 +3484,31 @@ components:
           description: A short friendly name for the class.
       description: Describes a class (type) of tool allowing us to categorize workflows,
         tasks, and maybe even other entities (such as services) separately.
+    ToolFile:
+      type: object
+      properties:
+        file_type:
+          type: string
+          enum:
+          - TEST_FILE
+          - PRIMARY_DESCRIPTOR
+          - SECONDARY_DESCRIPTOR
+          - CONTAINERFILE
+          - OTHER
+        path:
+          type: string
+          description: Relative path of the file.  A descriptor's path can be used
+            with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
+    Error:
+      required:
+      - code
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
     ImageData:
       type: object
       properties:
@@ -3598,16 +3631,6 @@ components:
               as an email or URL.
       description: A tool version describes a particular iteration of a tool as described
         by a reference to a specific image and/or documents.
-    Error:
-      required:
-      - code
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
     FileWrapper:
       type: object
       properties:
@@ -3633,21 +3656,6 @@ components:
         that describes how to build a particular container image. Examples include
         Dockerfiles for creating Docker images and Singularity recipes for Singularity
         images '
-    ToolFile:
-      type: object
-      properties:
-        file_type:
-          type: string
-          enum:
-          - TEST_FILE
-          - PRIMARY_DESCRIPTOR
-          - SECONDARY_DESCRIPTOR
-          - CONTAINERFILE
-          - OTHER
-        path:
-          type: string
-          description: Relative path of the file.  A descriptor's path can be used
-            with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
   securitySchemes:
     bearer:
       type: http

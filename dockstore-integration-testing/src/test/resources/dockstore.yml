@@ -125,6 +125,10 @@ uiConfig:
   zenodoRedirectPath: /auth/zenodo.org
   zenodoScope: deposit:write deposit:actions
 
+  orcidAuthUrl: https://orcid.org/oauth/authorize
+  orcidRedirectPath: /auth/orcid.org
+  orcidScope: /authorize
+
   googleScope: profile email
 
   cwlVisualizerUri: https://view.commonwl.org
