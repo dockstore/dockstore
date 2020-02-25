@@ -96,23 +96,23 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 13)
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
     private WorkflowMode mode = WorkflowMode.STUB;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 14)
+    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo")
     private String workflowName;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a git organization for the workflow", required = true, position = 15)
+    @ApiModelProperty(value = "This is a git organization for the workflow", required = true)
     private String organization;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a git repository name", required = true, position = 16)
+    @ApiModelProperty(value = "This is a git repository name", required = true)
     private String repository;
 
     @Column(nullable = false, columnDefinition = "text")
-    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 17, dataType = "string")
+    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, dataType = "string")
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
@@ -120,17 +120,17 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
     @Convert(converter = DescriptorLanguageConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "CWL, WDL, NFL, gxformat2, service")
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, allowableValues = "CWL, WDL, NFL, gxformat2, service")
     private DescriptorLanguage descriptorType;
 
     @Column(nullable = false, columnDefinition = "varchar(255) default 'n/a'")
     @Convert(converter = DescriptorLanguageSubclassConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 22)
+    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true)
     private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
+    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container")
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     private final SortedSet<WorkflowVersion> workflowVersions;
@@ -221,7 +221,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     // Add for new descriptor types
     @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the primary descriptor document", required = true, position = 19)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the primary descriptor document", required = true)
     public String getDefaultWorkflowPath() {
         return getDefaultPaths().getOrDefault(this.getDescriptorType().getFileType(), "/Dockstore.cwl");
     }
@@ -250,12 +250,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @JsonProperty("full_workflow_path")
-    @ApiModelProperty(position = 24)
+    @ApiModelProperty()
     public String getWorkflowPath() {
         return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
 
-    @ApiModelProperty(position = 25)
+    @ApiModelProperty()
     public String getPath() {
         return sourceControl.toString() + '/' + organization + '/' + repository;
     }
@@ -264,7 +264,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
      * @return
      */
     @JsonProperty("source_control_provider")
-    @ApiModelProperty(position = 26)
+    @ApiModelProperty()
     public String getSourceControlProvider() {
         return this.sourceControl.name();
     }
@@ -297,7 +297,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @JsonProperty("defaultTestParameterFilePath")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 20)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true)
     public String getDefaultTestParameterFilePath() {
         return getDefaultPaths().getOrDefault(this.getDescriptorType().getTestParamType(), "/test.json");
     }

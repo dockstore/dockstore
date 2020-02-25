@@ -87,15 +87,15 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
-    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0, readOnly = true)
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", readOnly = true)
     private long id;
 
     @Column(nullable = false, unique = true)
-    @ApiModelProperty(value = "Username on dockstore", position = 1)
+    @ApiModelProperty(value = "Username on dockstore")
     private String username;
 
     @Column
-    @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
+    @ApiModelProperty(value = "Indicates whether this user is an admin", required = true)
     private boolean isAdmin;
 
     @Column(columnDefinition = "boolean default false")
@@ -113,7 +113,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private SortedMap<String, Profile> userProfiles = new TreeMap<>();
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "URL of user avatar on GitHub/Google that can be selected by the user", position = 7)
+    @ApiModelProperty(value = "URL of user avatar on GitHub/Google that can be selected by the user")
     private String avatarUrl;
 
     // database timestamps
@@ -127,24 +127,24 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
+    @ApiModelProperty(value = "Entries in the dockstore that this user manages")
     @OrderBy("id")
     @JsonIgnore
     private final SortedSet<Entry> entries;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
+    @ApiModelProperty(value = "Entries in the dockstore that this user starred")
     @OrderBy("id")
     @JsonIgnore
     private final SortedSet<Entry> starredEntries;
 
     @Column(columnDefinition = "boolean default 'false'")
-    @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
+    @ApiModelProperty(value = "Indicates whether this user is a curator", required = true)
     private boolean curator;
 
     @Column(columnDefinition = "boolean default 'false'")
-    @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
+    @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true)
     private boolean setupComplete = false;
 
     @Column(columnDefinition = "Text default 'NONE'")
@@ -153,7 +153,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private TOSVersion tosVersion =  TOSVersion.NONE;
 
     @Column
-    @ApiModelProperty(value = "Time TOS was accepted", position = 15)
+    @ApiModelProperty(value = "Time TOS was accepted")
     private Date tosVersionAcceptanceDate;
 
     @Column(columnDefinition = "Text default 'NONE'")
@@ -162,18 +162,18 @@ public class User implements Principal, Comparable<User>, Serializable {
     private PrivacyPolicyVersion privacyPolicyVersion =  PrivacyPolicyVersion.NONE;
 
     @Column
-    @ApiModelProperty(value = "Time privacy policy was accepted", position = 16)
+    @ApiModelProperty(value = "Time privacy policy was accepted")
     private Date privacyPolicyVersionAcceptanceDate;
 
     @Column
-    @ApiModelProperty(value = "Set of organizations the user belongs to", required = true, position = 13)
+    @ApiModelProperty(value = "Set of organizations the user belongs to", required = true)
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<OrganizationUser> organizations;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Organizations in Dockstore that this user starred", position = 14)
+    @ApiModelProperty(value = "Organizations in Dockstore that this user starred")
     @OrderBy("id")
     @JsonIgnore
     private final Set<Organization> starredOrganizations;
@@ -357,7 +357,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     }
 
     @Override
-    @ApiModelProperty(position = 8)
+    @ApiModelProperty()
     public String getName() {
         return getUsername();
     }

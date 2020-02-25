@@ -49,11 +49,11 @@ public class Label implements Comparable<Label> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service")
     private long id;
 
     @Column(unique = true)
-    @ApiModelProperty(value = "String representation of the tag", required = true, position = 1)
+    @ApiModelProperty(value = "String representation of the tag", required = true)
     private String value;
 
     // database timestamps

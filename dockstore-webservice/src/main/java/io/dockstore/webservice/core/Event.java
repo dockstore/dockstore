@@ -44,51 +44,51 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the event in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the event in this web service")
     private long id;
 
     @ManyToOne
     @JoinColumn(name = "userId", referencedColumnName = "id")
-    @ApiModelProperty(value = "User that the event is acting on.", position = 1)
+    @ApiModelProperty(value = "User that the event is acting on.")
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "organizationId", referencedColumnName = "id")
-    @ApiModelProperty(value = "Organization that the event is acting on.", position = 2)
+    @ApiModelProperty(value = "Organization that the event is acting on.")
     private Organization organization;
 
     @ManyToOne
     @JoinColumn(name = "toolId", referencedColumnName = "id")
-    @ApiModelProperty(value = "Tool that the event is acting on.", position = 3)
+    @ApiModelProperty(value = "Tool that the event is acting on.")
     @JsonIgnoreProperties({ "workflowVersions" })
     private Tool tool;
 
     @ManyToOne
     @JoinColumn(name = "workflowId", referencedColumnName = "id")
-    @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
+    @ApiModelProperty(value = "Workflow that the event is acting on.")
     @JsonIgnoreProperties({ "workflowVersions" })
     private BioWorkflow workflow;
 
     @ManyToOne
     @JoinColumn(name = "collectionId", referencedColumnName = "id")
-    @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
+    @ApiModelProperty(value = "Collection that the event is acting on.")
     @JsonIgnoreProperties({ "entries" })
     private Collection collection;
 
     @ManyToOne
     @JoinColumn(name = "initiatorUserId", referencedColumnName = "id")
-    @ApiModelProperty(value = "User initiating the event.", position = 6)
+    @ApiModelProperty(value = "User initiating the event.")
     private User initiatorUser;
 
     @ManyToOne
     @JoinColumn(name = "versionId", referencedColumnName = "id")
-    @ApiModelProperty(value = "Version associated with the event.", position = 8)
+    @ApiModelProperty(value = "Version associated with the event.")
     @JsonIgnoreProperties({"sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images", "versionEditor"})
     private Version version;
 
     @Column
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "The event type.", required = true, position = 7)
+    @ApiModelProperty(value = "The event type.", required = true)
     private EventType type;
 
     // database timestamps

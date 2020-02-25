@@ -68,23 +68,23 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the source file in this web service")
     private long id;
 
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
+    @ApiModelProperty(value = "Enumerates the type of file", required = true)
     private DescriptorLanguage.FileType type;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
+    @ApiModelProperty(value = "Cache for the contents of the target file")
     private String content;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
+    @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true)
     private String path;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
+    @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true)
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")

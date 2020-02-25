@@ -47,11 +47,11 @@ public class FileFormat implements Comparable<FileFormat> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for file format in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for file format in this web service")
     private long id;
 
     @Column(unique = true, columnDefinition = "text")
-    @ApiModelProperty(value = "String representation of the file format", required = true, position = 1)
+    @ApiModelProperty(value = "String representation of the file format", required = true)
     private String value;
 
     // database timestamps

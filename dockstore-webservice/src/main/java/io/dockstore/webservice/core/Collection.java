@@ -53,30 +53,30 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Collection implements Serializable, Aliasable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the collection in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the collection in this web service")
     @Schema(description = "Implementation specific ID for the collection in this web service")
     private long id;
 
     @Column(nullable = false)
     @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
-    @ApiModelProperty(value = "Name of the collection.", required = true, example = "Alignment", position = 1)
+    @ApiModelProperty(value = "Name of the collection.", required = true, example = "Alignment")
     @Schema(description = "Name of the collection", required = true, example = "Alignment")
     private String name;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "Description of the collection", position = 2)
+    @ApiModelProperty(value = "Description of the collection")
     @Schema(description = "Description of the collection")
     private String description;
 
     @Column(nullable = false, unique = true)
     @Pattern(regexp = "[\\w ,_\\-&()']*")
     @Size(min = 3, max = 50)
-    @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.", position = 3)
+    @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.")
     private String displayName;
 
     @Column
-    @ApiModelProperty(value = "Short description of the collection", position = 4)
+    @ApiModelProperty(value = "Short description of the collection")
     @Schema(description = "Short description of the collection", required = true, example = "A collection of alignment algorithms")
     private String topic;
 

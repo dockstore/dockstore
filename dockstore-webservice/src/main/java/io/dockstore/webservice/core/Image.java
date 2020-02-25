@@ -41,24 +41,24 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the image in this webservice", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the image in this webservice")
     private long id;
 
     @Column(columnDefinition = "varchar")
     @Convert(converter = ChecksumConverter.class)
-    @ApiModelProperty(value = "Checksum(s) associated with this image", position = 1)
+    @ApiModelProperty(value = "Checksum(s) associated with this image")
     private List<Checksum> checksums = new ArrayList<>();
 
     @Column()
-    @ApiModelProperty(value = "Repository image belongs to", position = 2)
+    @ApiModelProperty(value = "Repository image belongs to")
     private String repository;
 
     @Column()
-    @ApiModelProperty(value = "Git tag", position = 3)
+    @ApiModelProperty(value = "Git tag")
     private String tag;
 
     @Column(name = "image_id")
-    @ApiModelProperty(value = "Docker ID of the image", position = 4)
+    @ApiModelProperty(value = "Docker ID of the image")
     private String imageID;
 
     @Column(updatable = false)

@@ -52,20 +52,20 @@ public class Validation implements Comparable<Validation> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", required = true, position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", required = true)
     private long id;
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
+    @ApiModelProperty(value = "Enumerates the type of file", required = true)
     private DescriptorLanguage.FileType type;
 
     @Column
-    @ApiModelProperty(value = "Is the file type valid", required = true, position = 2)
+    @ApiModelProperty(value = "Is the file type valid", required = true)
     private boolean valid = false;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "Mapping of filepath to validation message", required = true, position = 3)
+    @ApiModelProperty(value = "Mapping of filepath to validation message", required = true)
     private String message;
 
     // database timestamps

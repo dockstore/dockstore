@@ -44,12 +44,12 @@ public class BioWorkflow extends Workflow {
 
     @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
     @JsonIgnore
-    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
+    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.")
     private Entry parentEntry;
 
     @Column(columnDefinition = "boolean default false")
     @JsonProperty("is_checker")
-    @ApiModelProperty(position = 23)
+    @ApiModelProperty()
     private boolean isChecker = false;
 
     public EntryType getEntryType() {

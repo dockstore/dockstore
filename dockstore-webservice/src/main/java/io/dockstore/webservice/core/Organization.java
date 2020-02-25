@@ -62,54 +62,54 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Organization implements Serializable, Aliasable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the organization in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the organization in this web service")
     private long id;
 
     @Column(nullable = false)
     @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
-    @ApiModelProperty(value = "Name of the organization (ex. OICR)", required = true, example = "OICR", position = 1)
+    @ApiModelProperty(value = "Name of the organization (ex. OICR)", required = true, example = "OICR")
     private String name;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "Description of the organization", position = 2)
+    @ApiModelProperty(value = "Description of the organization")
     private String description;
 
     @Column
-    @ApiModelProperty(value = "Link to the organization website", position = 3)
+    @ApiModelProperty(value = "Link to the organization website")
     private String link;
 
     @Column
-    @ApiModelProperty(value = "Location of the organization", position = 4)
+    @ApiModelProperty(value = "Location of the organization")
     private String location;
 
     @Column
-    @ApiModelProperty(value = "Contact email for the organization", position = 5)
+    @ApiModelProperty(value = "Contact email for the organization")
     private String email;
 
     @Column(columnDefinition = "text default 'PENDING'", nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "Is the organization approved, pending, or rejected", required = true, position = 6)
+    @ApiModelProperty(value = "Is the organization approved, pending, or rejected", required = true)
     private ApplicationState status = ApplicationState.PENDING;
 
     @Column
-    @ApiModelProperty(value = "Set of users in the organization", required = true, position = 7)
+    @ApiModelProperty(value = "Set of users in the organization", required = true)
     @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
     private Set<OrganizationUser> users = new HashSet<>();
 
     @Column
-    @ApiModelProperty(value = "Short description of the organization", position = 8)
+    @ApiModelProperty(value = "Short description of the organization")
     private String topic;
 
     @Column(nullable = false, unique = true)
     @Pattern(regexp = "[\\w ,_\\-&()']*")
     @Size(min = 3, max = 50)
-    @ApiModelProperty(value = "Display name for an organization (Ex. Ontario Institute for Cancer Research). Not used for links.", position = 9)
+    @ApiModelProperty(value = "Display name for an organization (Ex. Ontario Institute for Cancer Research). Not used for links.")
     private String displayName;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
     @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "This indicates the users that have starred this organization", required = false, position = 10)
+    @ApiModelProperty(value = "This indicates the users that have starred this organization", required = false)
     @JsonSerialize(using = EntryStarredSerializer.class)
     @OrderBy("id")
     private Set<User> starredUsers;
@@ -134,7 +134,7 @@ public class Organization implements Serializable, Aliasable {
 
     @Column
     @Pattern(regexp = "([^\\s]+)(\\.jpg|\\.jpeg|\\.png|\\.gif)")
-    @ApiModelProperty(value = "Logo URL", position = 9)
+    @ApiModelProperty(value = "Logo URL")
     private String avatarUrl;
 
     public Organization() {

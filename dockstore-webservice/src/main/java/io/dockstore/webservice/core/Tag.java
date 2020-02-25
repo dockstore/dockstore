@@ -45,36 +45,36 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Column
     @JsonProperty("last_built")
-    @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 101)
+    @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A")
     Date lastBuilt;
 
     @Column
     @JsonProperty("image_id")
-    @ApiModelProperty(value = "Tag for this image in quay.io/docker hub", required = true, position = 102)
+    @ApiModelProperty(value = "Tag for this image in quay.io/docker hub", required = true)
     private String imageId;
 
     @Column
-    @ApiModelProperty(value = "Size of the image", position = 103)
+    @ApiModelProperty(value = "Size of the image")
     private long size;
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("dockerfile_path")
-    @ApiModelProperty(value = "Path for the Dockerfile", position = 104)
+    @ApiModelProperty(value = "Path for the Dockerfile")
     private String dockerfilePath = "/Dockerfile";
 
     // Add for new descriptor types
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("cwl_path")
-    @ApiModelProperty(value = "Path for the CWL document", position = 105)
+    @ApiModelProperty(value = "Path for the CWL document")
     private String cwlPath = "/Dockstore.cwl";
 
     @Column(columnDefinition = "text default '/Dockstore.wdl'", nullable = false)
     @JsonProperty("wdl_path")
-    @ApiModelProperty(value = "Path for the WDL document", position = 106)
+    @ApiModelProperty(value = "Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io", position = 107)
+    @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io")
     private boolean automated;
 
     public Tag() {
@@ -82,7 +82,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     @Override
-    @ApiModelProperty(position = 108)
+    @ApiModelProperty()
     public String getWorkingDirectory() {
         if (!cwlPath.isEmpty()) {
             return FilenameUtils.getPathNoEndSeparator(cwlPath);
@@ -141,7 +141,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     @JsonProperty
-    @ApiModelProperty(position = 19)
+    @ApiModelProperty()
     public String getImageId() {
         return imageId;
     }

@@ -103,62 +103,62 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "container_id_seq")
     @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq")
-    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service")
     private long id;
 
     @Column
-    @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl", position = 1)
+    @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl")
     private String author;
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
+    @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     private String description;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
+    @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers")
     @OrderBy("id")
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
+    @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
     @OrderBy("id")
     private SortedSet<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
+    @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false)
     @JsonSerialize(using = EntryStarredSerializer.class)
     @OrderBy("id")
     private SortedSet<User> starredUsers;
 
     @Column
-    @ApiModelProperty(value = "This is the email of the git organization", position = 6)
+    @ApiModelProperty(value = "This is the email of the git organization")
     private String email;
 
     @Column
-    @ApiModelProperty(value = "This is the default version of the entry", position = 7)
+    @ApiModelProperty(value = "This is the default version of the entry")
     private String defaultVersion;
 
     @Column
     @JsonProperty("is_published")
-    @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
+    @ApiModelProperty(value = "Implementation specific visibility in this web service")
     private boolean isPublished;
 
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last modified. "
             + "Tools-> For automated/manual builds: N/A. For hosted: Last time a file was updated/created (new version created). "
-            + "Workflows-> For remote: When refresh is hit, last time GitHub repo was changed. Hosted: Last time a new version was made.", position = 9)
+            + "Workflows-> For remote: When refresh is hit, last time GitHub repo was changed. Hosted: Last time a new version was made.")
     private Date lastModified;
 
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice. "
             + "Tools-> For automated builds: last time tool/namespace was refreshed Dockstore, tool info (like changing dockerfile path) updated, or default version selected. For hosted tools: when you created the tool. "
-            + "Workflows-> For remote: When refresh all is hit for first time. Hosted: Seems to be time created.", position = 10)
+            + "Workflows-> For remote: When refresh all is hit for first time. Hosted: Seems to be time created.")
     private Date lastUpdated;
 
     @Column
-    @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
+    @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
     private String gitUrl;
 
     @JsonIgnore
@@ -203,7 +203,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
     @Column
-    @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 13)
+    @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow")
     private String conceptDoi;
 
     public Entry() {
@@ -224,7 +224,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public abstract EntryType getEntryType();
 
     @JsonProperty("checker_id")
-    @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
+    @ApiModelProperty(value = "The id of the associated checker workflow")
     public Long getCheckerId() {
         if (checkerWorkflow == null) {
             return null;

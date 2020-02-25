@@ -65,28 +65,28 @@ public class Token implements Comparable<Token> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0, readOnly = true)
+    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", readOnly = true)
     private long id;
 
     @Column(nullable = false)
     @Convert(converter = TokenTypeConverter.class)
-    @ApiModelProperty(value = "Source website for this token", position = 1, dataType = "string")
+    @ApiModelProperty(value = "Source website for this token", dataType = "string")
     private TokenType tokenSource;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Contents of the access token", position = 2)
+    @ApiModelProperty(value = "Contents of the access token")
     private String content;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it", position = 3)
+    @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it")
     private String username;
 
     @Column
-    @ApiModelProperty(position = 4)
+    @ApiModelProperty()
     private String refreshToken;
 
     @Column
-    @ApiModelProperty(position = 5)
+    @ApiModelProperty()
     private long userId;
 
     // database timestamps
@@ -124,7 +124,7 @@ public class Token implements Comparable<Token> {
     }
 
     @JsonProperty
-    @ApiModelProperty(value = "Contents of the access token", position = 6)
+    @ApiModelProperty(value = "Contents of the access token")
     public String getToken() {
         return content;
     }

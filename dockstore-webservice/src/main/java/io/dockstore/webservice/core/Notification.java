@@ -39,37 +39,37 @@ public class Notification {
     @Id
     @Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // id is auto incremented by the database
-    @ApiModelProperty(value = "ID for the notification", position = 0)
+    @ApiModelProperty(value = "ID for the notification")
     private long id;
 
     @Column
     @Size(max = 280)
-    @ApiModelProperty(value = "Text content of the notification to be displayed", position = 1)
+    @ApiModelProperty(value = "Text content of the notification to be displayed")
     private String message;
 
     @Column
-    @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2)
+    @ApiModelProperty(value = "Timestamp at which the notification is expired")
     private Timestamp expiration;
 
     @Column
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "Type of notification, sitewide or newsbody", position = 3)
+    @ApiModelProperty(value = "Type of notification, sitewide or newsbody")
     private Type type;
 
     @Column
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "Priority level of the notification", position = 4)
+    @ApiModelProperty(value = "Priority level of the notification")
     private Priority priority;  // LOW, MEDIUM, HIGH, or CRITICAL
 
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
-    @ApiModelProperty(value = "Timestamp at which the notification was created", position = 5)
+    @ApiModelProperty(value = "Timestamp at which the notification was created")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
-    @ApiModelProperty(value = "Timestamp at which the notification was last updated", position = 6)
+    @ApiModelProperty(value = "Timestamp at which the notification was last updated")
     private Timestamp dbUpdateDate;
 
     public Notification() { }  // blank constructor called by POST request
