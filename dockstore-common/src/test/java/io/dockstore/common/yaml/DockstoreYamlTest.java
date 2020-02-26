@@ -136,4 +136,22 @@ public class DockstoreYamlTest {
         }
     }
 
+    @Test
+    public void testMissingSubclass()  {
+        // Replace:
+        // ...
+        // - subclass: DOCKER_COMPOSE
+        //   name: UCSC...
+        //
+        // With:
+        // ...
+        // - name: UCSC...
+        final String content = DOCKSTORE12_YAML.replaceFirst("(?m)^\\s*- subclass.*\\n", "").replaceFirst("    name: U", "  - name: U");
+        try {
+            DockstoreYamlHelper.readAsDockstoreYaml12(content);
+        } catch (DockstoreYamlHelper.DockstoreYamlException e) {
+            assertEquals(Service12.MISSING_SUBCLASS, e.getMessage());
+        }
+    }
+
 }

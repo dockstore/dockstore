@@ -26,9 +26,11 @@ import io.dockstore.common.DescriptorLanguageSubclass;
  */
 public class Service12 extends AbstractYamlService {
 
+    public static final String MISSING_SUBCLASS = "Missing property \"subclass\"";
+
     private DescriptorLanguageSubclass subclass;
 
-    @NotNull(message = "Missing property \"subclass\"")
+    @NotNull(message = MISSING_SUBCLASS)
     public DescriptorLanguageSubclass getSubclass() {
         return subclass;
     }
