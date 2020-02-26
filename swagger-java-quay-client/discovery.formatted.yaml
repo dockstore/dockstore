@@ -348,7 +348,7 @@ definitions:
       - config
       - eventConfig
     type: object
-  Organization:
+  QuayOrganization:
     description: Dockstore observed return object for organization
     properties:
       public:
@@ -375,6 +375,75 @@ definitions:
         type: string
     required:
       - role
+    type: object
+  QuayRepo:
+    description: Dockstore observed return object
+    properties:
+      trust_enabled:
+        description: TBD
+        type: boolean
+      description:
+        description: TBD
+        type: string
+      tags:
+        type: object
+        additionalProperties:
+          $ref: "#/definitions/QuayTag"
+      tag_expiration_s:
+        description: TBD
+        type: integer
+      is_public:
+        description: TBD
+        type: boolean
+      is_starred:
+        description: TBD
+        type: boolean
+      is_free_account:
+        description: TBD
+        type: boolean
+      kind:
+        description: TBD
+        type: string
+      name:
+        description: TBD
+        type: string
+      namespace:
+        description: TBD
+        type: string
+      is_organization:
+        description: TBD
+        type: boolean
+      state:
+        description: TBD
+        type: string
+      can_write:
+        description: TBD
+        type: boolean
+      status_token:
+        description: TBD
+        type: string
+      can_admin:
+        description: TBD
+        type: boolean
+    type: object
+  QuayTag:
+    description: Dockstore observed return object
+    properties:
+      image_id:
+        description: TBD
+        type: string
+      last_modified:
+        description: TBD
+        type: string
+      name:
+        description: TBD
+        type: string
+      manifest_digest:
+        description: TBD
+        type: string
+      size:
+        description: TBD
+        type: integer
     type: object
   RepoUpdate:
     description: Fields which can be updated in a repository.
@@ -616,7 +685,7 @@ definitions:
       organizations:
         description: Information about the organizations in which the user is a member
         items:
-          $ref: "#/definitions/Organization"
+          $ref: "#/definitions/QuayOrganization"
         type: array
       preferred_namespace:
         description: 'If true, the user''s namespace is the preferred namespace to display'
@@ -2713,6 +2782,8 @@ paths:
       responses:
         '200':
           description: Successful invocation
+          schema:
+            $ref: '#/definitions/QuayRepo'
         '400':
           description: Bad Request
           schema:
