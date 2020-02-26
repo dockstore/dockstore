@@ -23,11 +23,12 @@ import javax.validation.ConstraintValidatorContext;
  */
 public class Dockstore12Validator implements ConstraintValidator<ValidDockstore12, DockstoreYaml12> {
     @Override
-    public void initialize(ValidDockstore12 constraintAnnotation) {
+    public void initialize(final ValidDockstore12 constraintAnnotation) {
+        // Intentionally empty
     }
 
     @Override
-    public boolean isValid(DockstoreYaml12 value, ConstraintValidatorContext context) {
-        return value.getServices().size() > 0 || value.getWorkflows().size() > 0;
+    public boolean isValid(final DockstoreYaml12 value, final ConstraintValidatorContext context) {
+        return !value.getServices().isEmpty() || !value.getWorkflows().isEmpty();
     }
 }

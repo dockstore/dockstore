@@ -34,7 +34,7 @@ public class DockstoreYaml12 implements DockstoreYaml {
     private List<YamlWorkflow> workflows = new ArrayList<>();
     private List<Service12> services = new ArrayList<>();
 
-    public void setVersion(String version) {
+    public void setVersion(final String version) {
         this.version = version;
     }
 
@@ -44,7 +44,7 @@ public class DockstoreYaml12 implements DockstoreYaml {
         return workflows;
     }
 
-    public void setWorkflows(List<YamlWorkflow> workflows) {
+    public void setWorkflows(final List<YamlWorkflow> workflows) {
         this.workflows = workflows;
     }
 
@@ -54,7 +54,7 @@ public class DockstoreYaml12 implements DockstoreYaml {
         return services;
     }
 
-    public void setServices(List<Service12> services) {
+    public void setServices(final List<Service12> services) {
         this.services = services;
     }
 

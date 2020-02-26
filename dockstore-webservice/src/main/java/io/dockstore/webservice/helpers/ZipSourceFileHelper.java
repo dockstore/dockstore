@@ -208,7 +208,7 @@ public final class ZipSourceFileHelper {
         }
     }
 
-    private static DockstoreYaml10 readAndPrevalidateDockstoreYml(ZipFile zipFile) {
+    private static DockstoreYaml10 readAndPrevalidateDockstoreYml(final ZipFile zipFile) {
         ZipEntry dockstoreYml = zipFile.stream().filter(zipEntry -> ".dockstore.yml".equals(zipEntry.getName())).findFirst()
                 .orElseThrow(() -> new CustomWebApplicationException("Missing .dockstore.yml", HttpStatus.SC_BAD_REQUEST));
         try {
@@ -220,7 +220,7 @@ public final class ZipSourceFileHelper {
     }
 
     // Should move this out of here when other components use dockstore.yml
-    protected static DockstoreYaml10 readAndPrevalidateDockstoreYml(InputStream inputStream) {
+    protected static DockstoreYaml10 readAndPrevalidateDockstoreYml(final InputStream inputStream) {
         try {
             final String content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
             return DockstoreYamlHelper.readDockstoreYaml10(content);

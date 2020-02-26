@@ -22,7 +22,7 @@ public class DockstoreYaml11 implements DockstoreYaml {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(final String version) {
         this.version = version;
     }
 
@@ -31,7 +31,7 @@ public class DockstoreYaml11 implements DockstoreYaml {
         return service;
     }
 
-    public void setService(YamlService11 service) {
+    public void setService(final YamlService11 service) {
         this.service = service;
     }
 

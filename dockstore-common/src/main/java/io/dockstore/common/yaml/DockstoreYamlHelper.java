@@ -14,6 +14,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
+import io.dockstore.common.DescriptorLanguageSubclass;
 import org.apache.commons.beanutils.BeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +25,12 @@ import org.yaml.snakeyaml.introspector.PropertyUtils;
 
 public final class DockstoreYamlHelper {
 
+    public static final String ERROR_READING_DOCKSTORE_YML = "Error reading .dockstore.yml: ";
+
     enum Version {
         ONE_ZERO("1.0") {
             @Override
-            public DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException {
+            public DockstoreYaml readAndValidateDockstoreYaml(final String content) throws DockstoreYamlException {
                 final DockstoreYaml10 dockstoreYaml10 = readDockstoreYaml10(content);
                 validate(dockstoreYaml10);
                 return dockstoreYaml10;
@@ -58,7 +61,7 @@ public final class DockstoreYamlHelper {
 
         public abstract DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException;
 
-        public static Optional<Version> findVersion(String versionString) {
+        public static Optional<Version> findVersion(final String versionString) {
             return Stream.of(values()).filter(v -> v.version.equals(versionString)).findFirst();
         }
     }
@@ -66,7 +69,8 @@ public final class DockstoreYamlHelper {
     public static final String DOCKSTORE_YML_MISSING_VALID_VERSION = ".dockstore.yml missing valid version";
 
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreYamlHelper.class);
-    private static final Pattern VERSION_PATTERN = Pattern.compile("^\\s*((dockstoreVersion)|(version))\\s*:\\s*(?<version>\\S+)$", Pattern.MULTILINE);
+    private static final Pattern VERSION_PATTERN =
+            Pattern.compile("^\\s*((dockstoreVersion)|(version))\\s*:\\s*(?<version>\\S+)$", Pattern.MULTILINE);
 
     private DockstoreYamlHelper() {
     }
@@ -78,7 +82,7 @@ public final class DockstoreYamlHelper {
      * @return a DockstoreYaml12
      * @throws DockstoreYamlException
      */
-    public static DockstoreYaml12 readAsDockstoreYaml12(String content) throws DockstoreYamlException {
+    public static DockstoreYaml12 readAsDockstoreYaml12(final String content) throws DockstoreYamlException {
         final DockstoreYaml dockstoreYaml = readDockstoreYaml(content);
         if (dockstoreYaml instanceof DockstoreYaml12) {
             return (DockstoreYaml12)dockstoreYaml;
@@ -95,7 +99,7 @@ public final class DockstoreYamlHelper {
      * @return a DockstoreYaml10
      * @throws DockstoreYamlException
      */
-    public static DockstoreYaml10 readDockstoreYaml10(String content) throws DockstoreYamlException {
+    public static DockstoreYaml10 readDockstoreYaml10(final String content) throws DockstoreYamlException {
         Constructor constructor = new Constructor(DockstoreYaml10.class);
         constructor.setPropertyUtils(new PropertyUtils() {
             @Override
@@ -104,18 +108,10 @@ public final class DockstoreYamlHelper {
             }
 
         });
-        final Yaml yaml = new Yaml(constructor);
-        try {
-            DockstoreYaml10 dockstoreYaml = yaml.load(content);
-            return dockstoreYaml;
-        } catch (Exception e) {
-            final String msg = "Error reading .dockstore.yml: " + e.getMessage();
-            LOG.error(msg, e);
-            throw new DockstoreYamlException(msg);
-        }
+        return readContent(content, constructor);
     }
 
-    static DockstoreYaml readDockstoreYaml(String content) throws DockstoreYamlException {
+    static DockstoreYaml readDockstoreYaml(final String content) throws DockstoreYamlException {
         final Optional<Version> maybeVersion = findValidVersion(content);
         if (maybeVersion.isPresent()) {
             return maybeVersion.get().readAndValidateDockstoreYaml(content);
@@ -129,14 +125,16 @@ public final class DockstoreYamlHelper {
      * @return a DockstoreYaml11
      * @throws DockstoreYamlException
      */
-    private static DockstoreYaml12 convert11To12(DockstoreYaml11 dockstoreYaml11) throws DockstoreYamlException {
+    private static DockstoreYaml12 convert11To12(final DockstoreYaml11 dockstoreYaml11) throws DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml12 = new DockstoreYaml12();
         dockstoreYaml12.setVersion(Version.ONE_TWO.version);
         final Service12 service12 = new Service12();
         try {
             final YamlService11 service11 = dockstoreYaml11.getService();
             BeanUtils.copyProperties(service12, service11);
-            service12.setSubclass(service11.getType());
+            final DescriptorLanguageSubclass descriptorLanguageSubclass = DescriptorLanguageSubclass
+                    .convertShortNameStringToEnum(service11.getType());
+            service12.setSubclass(descriptorLanguageSubclass);
             dockstoreYaml12.setServices(Collections.singletonList(service12));
             validate(dockstoreYaml12);
             return dockstoreYaml12;
@@ -150,9 +148,9 @@ public final class DockstoreYamlHelper {
     /**
      * Searches content for a version at the start of a line, ensuring the value is a recognized version.
      * @param content
-     * @return
+     * @return an optional version
      */
-    static Optional<Version> findValidVersion(String content) {
+    static Optional<Version> findValidVersion(final String content) {
         final Matcher matcher = VERSION_PATTERN.matcher(content);
         if (matcher.find()) {
             final String version = matcher.group("version");
@@ -162,19 +160,26 @@ public final class DockstoreYamlHelper {
     }
 
 
-    private static DockstoreYaml11 readDockstoreYaml11(String content) {
-        final Constructor constructor = new Constructor(DockstoreYaml11.class);
-        final Yaml yaml = new Yaml(constructor);
-        return yaml.load(content);
+    private static DockstoreYaml11 readDockstoreYaml11(final String content) throws DockstoreYamlException {
+        return readContent(content, new Constructor(DockstoreYaml11.class));
     }
 
-    private static DockstoreYaml12 readDockstoreYaml12(String content) {
-        final Constructor constructor = new Constructor(DockstoreYaml12.class);
-        final Yaml yaml = new Yaml(constructor);
-        return yaml.load(content);
+    private static DockstoreYaml12 readDockstoreYaml12(final String content) throws DockstoreYamlException {
+        return readContent(content, new Constructor(DockstoreYaml12.class));
     }
 
-    private static <T> void validate(T validatee) throws DockstoreYamlException {
+    private static <T> T readContent(final String content, final Constructor constructor) throws DockstoreYamlException {
+        try {
+            final Yaml yaml = new Yaml(constructor);
+            return yaml.load(content);
+        } catch (Exception e) {
+            final String msg = ERROR_READING_DOCKSTORE_YML + e.getMessage();
+            LOG.error(msg, e);
+            throw new DockstoreYamlException(msg);
+        }
+    }
+
+    private static <T> void validate(final T validatee) throws DockstoreYamlException {
         final Validator validator = createValidator();
         final Set<ConstraintViolation<T>> violations = validator.validate(validatee);
         if (!violations.isEmpty()) {
@@ -191,7 +196,7 @@ public final class DockstoreYamlHelper {
     }
 
     public static class DockstoreYamlException extends Exception {
-        public DockstoreYamlException(String msg) {
+        public DockstoreYamlException(final String msg) {
             super(msg);
         }
     }

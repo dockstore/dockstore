@@ -36,7 +36,7 @@ public abstract class AbstractYamlService {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(final String author) {
         this.author = author;
     }
 
@@ -44,7 +44,7 @@ public abstract class AbstractYamlService {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -52,7 +52,7 @@ public abstract class AbstractYamlService {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(final String description) {
         this.description = description;
     }
 
@@ -60,7 +60,7 @@ public abstract class AbstractYamlService {
         return files;
     }
 
-    public void setFiles(List<String> files) {
+    public void setFiles(final List<String> files) {
         this.files = files;
     }
 
@@ -68,7 +68,7 @@ public abstract class AbstractYamlService {
         return scripts;
     }
 
-    public void setScripts(Scripts scripts) {
+    public void setScripts(final Scripts scripts) {
         this.scripts = scripts;
     }
 
@@ -76,7 +76,7 @@ public abstract class AbstractYamlService {
         return environment;
     }
 
-    public void setEnvironment(Map<String, EnvironmentVariable> environment) {
+    public void setEnvironment(final Map<String, EnvironmentVariable> environment) {
         this.environment = environment;
     }
 
@@ -84,7 +84,7 @@ public abstract class AbstractYamlService {
         return data;
     }
 
-    public void setData(Map<String, DataSet> data) {
+    public void setData(final Map<String, DataSet> data) {
         this.data = data;
     }
 
@@ -103,7 +103,7 @@ public abstract class AbstractYamlService {
             return port;
         }
 
-        public void setPort(String port) {
+        public void setPort(final String port) {
             this.port = port;
         }
 
@@ -111,7 +111,7 @@ public abstract class AbstractYamlService {
             return postprovision;
         }
 
-        public void setPostprovision(String postprovision) {
+        public void setPostprovision(final String postprovision) {
             this.postprovision = postprovision;
         }
 
@@ -119,7 +119,7 @@ public abstract class AbstractYamlService {
             return poststart;
         }
 
-        public void setPoststart(String poststart) {
+        public void setPoststart(final String poststart) {
             this.poststart = poststart;
         }
 
@@ -127,7 +127,7 @@ public abstract class AbstractYamlService {
             return preprovision;
         }
 
-        public void setPreprovision(String preprovision) {
+        public void setPreprovision(final String preprovision) {
             this.preprovision = preprovision;
         }
 
@@ -135,7 +135,7 @@ public abstract class AbstractYamlService {
             return prestart;
         }
 
-        public void setPrestart(String prestart) {
+        public void setPrestart(final String prestart) {
             this.prestart = prestart;
         }
 
@@ -143,7 +143,7 @@ public abstract class AbstractYamlService {
             return start;
         }
 
-        public void setStart(String start) {
+        public void setStart(final String start) {
             this.start = start;
         }
 
@@ -151,7 +151,7 @@ public abstract class AbstractYamlService {
             return stop;
         }
 
-        public void setStop(String stop) {
+        public void setStop(final String stop) {
             this.stop = stop;
         }
     }
@@ -165,7 +165,7 @@ public abstract class AbstractYamlService {
             return defaultValue;
         }
 
-        public void setDefault(String newDefault) {
+        public void setDefault(final String newDefault) {
             this.defaultValue = newDefault;
         }
 
@@ -173,7 +173,7 @@ public abstract class AbstractYamlService {
             return description;
         }
 
-        public void setDescription(String description) {
+        public void setDescription(final String description) {
             this.description = description;
         }
     }
@@ -187,7 +187,7 @@ public abstract class AbstractYamlService {
             return targetDirectory;
         }
 
-        public void setTargetDirectory(String targetDirectory) {
+        public void setTargetDirectory(final String targetDirectory) {
             this.targetDirectory = targetDirectory;
         }
 
@@ -195,7 +195,7 @@ public abstract class AbstractYamlService {
             return files;
         }
 
-        public void setFiles(Map<String, YamlService11.FileDesc> files) {
+        public void setFiles(final Map<String, YamlService11.FileDesc> files) {
             this.files = files;
         }
     }
@@ -210,7 +210,7 @@ public abstract class AbstractYamlService {
             return description;
         }
 
-        public void setDescription(String description) {
+        public void setDescription(final String description) {
             this.description = description;
         }
 
@@ -218,7 +218,7 @@ public abstract class AbstractYamlService {
             return targetDirectory;
         }
 
-        public void setTargetDirectory(String targetDirectory) {
+        public void setTargetDirectory(final String targetDirectory) {
             this.targetDirectory = targetDirectory;
         }
     }

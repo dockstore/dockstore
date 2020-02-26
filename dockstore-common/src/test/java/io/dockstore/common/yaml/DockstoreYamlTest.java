@@ -97,12 +97,12 @@ public class DockstoreYamlTest {
 
     @Test
     public void testInvalidSubclass() {
-        final String content = DOCKSTORE12_YAML.replace("docker-compose", "invalid sub class");
+        final String content = DOCKSTORE12_YAML.replace("DOCKER_COMPOSE", "invalid sub class");
         try {
-            final DockstoreYaml12 dockstoreYaml = (DockstoreYaml12)DockstoreYamlHelper.readDockstoreYaml(content);
+            DockstoreYamlHelper.readDockstoreYaml(content);
             fail("Did not catch invalid subclass");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertEquals(Service12.SUBCLASS_ERROR, e.getMessage());
+            assertTrue(e.getMessage().startsWith(DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML));
         }
     }
 
@@ -125,9 +125,9 @@ public class DockstoreYamlTest {
 
     @Test
     public void testMalformedDockstoreYaml() throws IOException {
-        final String content = IOUtils.toString(
-                new URL("https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/.dockstore.yml"),
-                StandardCharsets.UTF_8);
+        final String spec = "https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/"
+                + ".dockstore.yml";
+        final String content = IOUtils.toString(new URL(spec), StandardCharsets.UTF_8);
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(content);
             fail("expected malformed dockstore.yml to fail");

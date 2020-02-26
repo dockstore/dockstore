@@ -28,7 +28,7 @@ public class YamlService11 extends AbstractYamlService {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final String type) {
         this.type = type;
     }
 

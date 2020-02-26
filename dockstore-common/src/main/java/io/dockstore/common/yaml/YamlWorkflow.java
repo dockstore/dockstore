@@ -37,7 +37,7 @@ public class YamlWorkflow {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -45,7 +45,7 @@ public class YamlWorkflow {
         return subclass;
     }
 
-    public void setSubclass(String subclass) {
+    public void setSubclass(final String subclass) {
         this.subclass = subclass;
     }
 
@@ -53,7 +53,7 @@ public class YamlWorkflow {
         return primaryDescriptorPath;
     }
 
-    public void setPrimaryDescriptorPath(String primaryDescriptorPath) {
+    public void setPrimaryDescriptorPath(final String primaryDescriptorPath) {
         this.primaryDescriptorPath = primaryDescriptorPath;
     }
 
@@ -61,7 +61,7 @@ public class YamlWorkflow {
         return testParameterFiles;
     }
 
-    public void setTestParameterFiles(List<String> testParameterFiles) {
+    public void setTestParameterFiles(final List<String> testParameterFiles) {
         this.testParameterFiles = testParameterFiles;
     }
 }

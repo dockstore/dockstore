@@ -11,7 +11,7 @@ workflows:
      testParameterFiles:
        - /dockstore.cwl.json
 services:
-  - subclass: docker-compose
+  - subclass: DOCKER_COMPOSE
     name: UCSC Xena Browser
     author: UCSC Genomics Institute
     description: |
