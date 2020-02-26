@@ -20,10 +20,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -35,6 +38,7 @@ import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.languages.WDLHandler;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -131,6 +135,49 @@ public class WDLParseTest {
 
 
     /**
+     * Tests that Dockstore can handle a workflow with locally recursive imports
+     */
+    @Test
+    public void testLocallyRecursiveImport() {
+        String type = "workflow";
+        File recursiveWDL = new File(ResourceHelpers.resourceFilePath("local-recursive-import/localrecursive.wdl"));
+        //String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
+        String primaryDescriptorFilePath = "localrecursive.wdl";
+        SourceFile sourceFile = new SourceFile();
+
+        File recursiveimportWDL = new File(ResourceHelpers.resourceFilePath("local-recursive-import/first-import.wdl"));
+        SourceFile importsourceFile = new SourceFile();
+
+        try {
+            sourceFile.setContent(FileUtils.readFileToString(recursiveWDL, StandardCharsets.UTF_8));
+            sourceFile.setAbsolutePath("/localrecursive.wdl");
+            sourceFile.setPath("localrecursive.wdl");
+            sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+
+            importsourceFile.setContent(FileUtils.readFileToString(recursiveimportWDL, StandardCharsets.UTF_8));
+            importsourceFile.setAbsolutePath("/first-import.wdl");
+            importsourceFile.setPath("first-import.wdl");
+            importsourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
+
+            Set<SourceFile> sourceFileSet = new HashSet<>();
+            sourceFileSet.add(sourceFile);
+
+            sourceFileSet.add(importsourceFile);
+
+            WDLHandler wdlHandler = new WDLHandler();
+            VersionTypeValidation validation = wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
+            Assert.assertFalse(validation.isValid());
+            // Go through message part and verify it says 'Recursive local import detected'
+            Optional<Map.Entry<String, String>> validationEntryMap = validation.getMessage().entrySet().stream()
+                    .filter(msg -> StringUtils.contains(msg.getValue(), "Recursive local import detected")).findAny();
+            Assert.assertTrue(validationEntryMap.isPresent());
+        } catch (IOException e) {
+            Assert.fail();
+        }
+    }
+
+
+    /**
      * Tests that Dockstore can handle a workflow with recursive imports
      */
     @Test
@@ -152,7 +199,7 @@ public class WDLParseTest {
         } catch (IOException e) {
             Assert.fail();
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT, e.getErrorMessage());
+            assertTrue(StringUtils.contains(e.getErrorMessage(), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
         }
     }
 
