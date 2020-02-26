@@ -115,9 +115,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String orcidClientSecret;
 
     @NotEmpty
-    private String orcidRedirectURI;
-
-    @NotEmpty
     private String discourseUrl;
 
     @NotEmpty
@@ -387,14 +384,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setOrcidClientSecret(String orcidClientSecret) {
         this.orcidClientSecret = orcidClientSecret;
-    }
-
-    public String getOrcidRedirectURI() {
-        return orcidRedirectURI;
-    }
-
-    public void setOrcidRedirectURI(String orcidRedirectURI) {
-        this.orcidRedirectURI = orcidRedirectURI;
     }
 
     public String getDiscourseUrl() {
