@@ -1801,7 +1801,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
         @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
         @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @ApiParam(value = "Git reference for a GitHub tag", required = true) @FormParam("gitReference") String gitReference,
+        @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
         @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         return githubWebhookRelease(repository, username, gitReference, installationId);
     }

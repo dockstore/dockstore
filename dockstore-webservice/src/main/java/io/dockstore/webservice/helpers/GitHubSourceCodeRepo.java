@@ -86,6 +86,7 @@ import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
+    private static final int GIT_REF_SIZE = 3;
     private final GitHub github;
 
     GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
@@ -728,7 +729,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Retrieve the Dockstore YML from a given repository tag
      * @param repositoryId Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @return dockstore YML file
      */
     public SourceFile getDockstoreYml(String repositoryId, String gitReference) {
@@ -901,7 +902,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Retrieves a tag from GitHub and creates a version on Dockstore
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitReference Branch/tag reference from GitHub (ex. refs/tags/1.0)
      * @param workflow Workflow to add version to
      * @param dockstoreYml Dockstore YML sourcefile
      * @return New or updated version
@@ -909,18 +910,31 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     public WorkflowVersion createTagVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
         GHRepository ghRepository = getRepository(repository);
-        String refName = "tags/" + gitReference;
-        GHRef ghRef = ghRepository.getRef(refName);
+
+        String[] splitReference = gitReference.split("/");
+        if (splitReference.length != GIT_REF_SIZE) {
+            String msg = "Reference " + gitReference + " is not of the valid form";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+        String gitBranchType = splitReference[1];
+        String gitBranchName = splitReference[2];
+
+        GHRef ghRef = ghRepository.getRef(gitBranchType + "/" + gitBranchName);
 
         Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
         if (ref == null) {
-            String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
+            String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
-        // Find existing version if it exists
-        Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
+        // Delete existing version if it exists
+        Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitBranchName)).findFirst();
+        if (existingVersion.isPresent()) {
+            workflow.removeWorkflowVersion(existingVersion.get());
+        }
+
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
         existingVersion.ifPresent(workflowVersion -> existingDefaults.put(gitReference, workflowVersion));
 
