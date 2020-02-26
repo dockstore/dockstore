@@ -48,6 +48,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -848,16 +850,24 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
     }
 
-    //TODO: Fork these workflows onto dockstoretestuser
+    /**
+     * Tests that the info for quay images included in CWL workflows are grabbed and that the trs endpoints convert this info correctly
+     */
     @Test
     public void testGettingImagesFromQuay() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
 
         // Check image info is grabbed
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", "/hello_world.cwl", "1.0.1");
         assertEquals("Should only be one image in this workflow", 1, version.getImages().size());
         verifyChecksumsAreSaved(version);
+
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world");
+        testTRSConversion(versions, "1.0.1", 1);
+        ToolVersion snapshottedVersion = versions.stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
 
         // Test that a workflow version containing an unversioned image isn't saved
         WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", "/cwl/workflow_docker.cwl", "1.0");
@@ -867,6 +877,20 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", "/main.cwl", "1.0");
         assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());
         verifyChecksumsAreSaved(versionWithDuplicateImages);
+        versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
+        testTRSConversion(versions, "1.0", 3);
+    }
+
+    private void testTRSConversion(final List<ToolVersion> versions, String snapShottedVersionName, int numImages) {
+        for (ToolVersion trsVersion : versions) {
+            if (trsVersion.getName().equals(snapShottedVersionName)) {
+                assertTrue(trsVersion.isIsProduction());
+                assertEquals("Should only be one image in this workflow", numImages, trsVersion.getImages().size());
+            } else {
+                assertFalse(trsVersion.isIsProduction());
+                assertEquals("Shouldn't be any images for versions that aren't production ready/snapshotted", 0, trsVersion.getImages().size());
+            }
+        }
     }
 
     private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, String workflowPath, String descriptorPath, String versionName) {
