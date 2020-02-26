@@ -133,7 +133,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     /**
      * Return map of JSON response from Quay that describes the tool. Each level of the JSON response is mapped to another map of Strings.
      */
-    private Optional<QuayRepo> getToolFromQuay(Tool tool) {
+    public Optional<QuayRepo> getToolFromQuay(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
 
         RepositoryApi api = new RepositoryApi(apiClient);
@@ -346,17 +346,6 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             }
         }
 
-    }
-
-    /**
-     * Get the given Quay tool
-     *
-     * @param tool
-     * @return
-     */
-    public QuayRepo getQuayInfo(final Tool tool) {
-        final Optional<QuayRepo> toolFromQuay = this.getToolFromQuay(tool);
-        return toolFromQuay.orElse(null);
     }
 
     /**

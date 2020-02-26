@@ -1052,9 +1052,10 @@ public class DockerRepoResource
             String quayUsername = quayToken.getUsername();
 
             // call quay api, check if user owns or is part of owning organization
-            final QuayRepo quayInfo = factory.getQuayInfo(tool);
+            final Optional<QuayRepo> toolFromQuay = factory.getToolFromQuay(tool);
 
-            if (quayInfo != null) {
+            if (toolFromQuay.isPresent()) {
+                final QuayRepo quayInfo = toolFromQuay.get();
                 String namespace = quayInfo.getNamespace();
                 boolean isOrg = quayInfo.isIsOrganization();
 
