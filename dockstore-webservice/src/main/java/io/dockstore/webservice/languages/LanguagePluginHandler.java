@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
@@ -43,6 +44,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
     public static final Logger LOG = LoggerFactory.getLogger(LanguagePluginHandler.class);
     private final MinimalLanguageInterface minimalLanguageInterface;
+    private final Gson gson = new Gson();
 
     LanguagePluginHandler(Class<? extends MinimalLanguageInterface> workflowLanguagePluginClass) {
         try {
@@ -167,11 +169,23 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
         ToolDAO dao) {
 
-        if (minimalLanguageInterface instanceof CompleteLanguageInterface) {
-            final List<Map<String, Object>> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
+        if (type == Type.DAG && minimalLanguageInterface instanceof CompleteLanguageInterface) {
+            final Map<String, Object> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
                 .loadCytoscapeElements(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
-            Gson gson = new Gson();
             return gson.toJson(maps);
+        } else if (type == Type.TOOLS &&  minimalLanguageInterface instanceof CompleteLanguageInterface) {
+            // TODO: hook up tools here for Galaxy
+            final List<CompleteLanguageInterface.RowData> rowData = ((CompleteLanguageInterface)minimalLanguageInterface)
+                .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            final List<Map<String, String>> collect = rowData.stream().map(row -> {
+                Map<String, String> oldRow = new HashMap();
+                oldRow.put("id", row.toolid);
+                oldRow.put("file", row.filename);
+                oldRow.put("docker", row.dockerContainer);
+                oldRow.put("link", row.link == null ? "" : row.link.toString());
+                return oldRow;
+            }).collect(Collectors.toList());
+            return gson.toJson(collect);
         }
         return "";
     }

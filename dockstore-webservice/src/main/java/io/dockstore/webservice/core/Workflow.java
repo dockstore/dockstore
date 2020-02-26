@@ -44,6 +44,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -122,6 +123,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "CWL, WDL, NFL, gxformat2, service")
     private DescriptorLanguage descriptorType;
 
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'n/a'")
+    @Convert(converter = DescriptorLanguageSubclassConverter.class)
+    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 22)
+    private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
+
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
@@ -178,11 +184,13 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setRepository(getRepository());
         targetWorkflow.setGitUrl(getGitUrl());
         targetWorkflow.setDescriptorType(getDescriptorType());
+        targetWorkflow.setDescriptorTypeSubclass(getDescriptorTypeSubclass());
         targetWorkflow.setDefaultVersion(getDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
         targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
         targetWorkflow.setIsChecker(isIsChecker());
         targetWorkflow.setConceptDoi(getConceptDoi());
+        targetWorkflow.setMode(getMode());
     }
 
     @JsonProperty
@@ -270,6 +278,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return Objects.requireNonNullElse(this.descriptorType, DescriptorLanguage.CWL);
     }
 
+    public DescriptorLanguageSubclass getDescriptorTypeSubclass() {
+        return descriptorTypeSubclass;
+    }
+
+    public void setDescriptorTypeSubclass(final DescriptorLanguageSubclass descriptorTypeSubclass) {
+        this.descriptorTypeSubclass = descriptorTypeSubclass;
+    }
+
     @JsonIgnore
     public DescriptorLanguage.FileType getFileType() {
         return this.getDescriptorType().getFileType();
@@ -311,6 +327,19 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         @Override
         public DescriptorLanguage convertToEntityAttribute(String dbData) {
             return DescriptorLanguage.convertShortStringToEnum(dbData);
+        }
+    }
+
+    public static class DescriptorLanguageSubclassConverter implements AttributeConverter<DescriptorLanguageSubclass, String> {
+
+        @Override
+        public String convertToDatabaseColumn(DescriptorLanguageSubclass attribute) {
+            return attribute.getShortName();
+        }
+
+        @Override
+        public DescriptorLanguageSubclass convertToEntityAttribute(String dbData) {
+            return DescriptorLanguageSubclass.convertShortNameStringToEnum(dbData);
         }
     }
 }

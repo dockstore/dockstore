@@ -276,7 +276,7 @@ public class User implements Principal, Comparable<User>, Serializable {
             Token githubToken = githubByUserId.get(0);
             GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
             sourceCodeRepo.checkSourceCodeValidity();
-            sourceCodeRepo.getUserMetadata(this);
+            sourceCodeRepo.syncUserMetadataFromGitHub(this);
             return true;
         }
     }
