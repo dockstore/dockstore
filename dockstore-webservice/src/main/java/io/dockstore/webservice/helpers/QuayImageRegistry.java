@@ -114,7 +114,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     }
 
     //TODO: If the repo has a lot of tags, then it needs to be paged through. Can get tag info individually, but then that's more API calls.
-    private Set<Image> getImagesForTag(Tool tool, Tag tag, QuayTag quayTag) {
+    private Set<Image> getImagesForTag(final Tool tool, final Tag tag, final QuayTag quayTag) {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
 
         final String repo = tool.getNamespace() + '/' + tool.getName();
@@ -131,9 +131,11 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     }
 
     /**
-     * Return map of JSON response from Quay that describes the tool. Each level of the JSON response is mapped to another map of Strings.
+     * Return information from Quay that describes a tool.
+     * @param tool a tool from Dockstore
+     * @return corresponding QuayRepo information from quay.io
      */
-    public Optional<QuayRepo> getToolFromQuay(Tool tool) {
+    public Optional<QuayRepo> getToolFromQuay(final Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
 
         RepositoryApi api = new RepositoryApi(apiClient);
