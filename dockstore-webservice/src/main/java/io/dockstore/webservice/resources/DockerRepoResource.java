@@ -46,7 +46,6 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
@@ -130,13 +129,11 @@ public class DockerRepoResource
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final EventDAO eventDAO;
-    private final ObjectMapper objectMapper;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
 
-    public DockerRepoResource(ObjectMapper mapper, HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
+    public DockerRepoResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
         String bitbucketClientSecret, WorkflowResource workflowResource, EntryResource entryResource) {
-        objectMapper = mapper;
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.tagDAO = new TagDAO(sessionFactory);
@@ -173,7 +170,7 @@ public class DockerRepoResource
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         // Get a list of all image registries
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
         final List<AbstractImageRegistry> allRegistries = factory.getAllRegistries();
 
         // Get a list of all namespaces from all image registries
@@ -267,7 +264,7 @@ public class DockerRepoResource
                 gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
 
         // Get all registries
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
         final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
 
         if (abstractImageRegistry == null) {
@@ -564,7 +561,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
                 HttpStatus.SC_NOT_FOUND);
         }
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
 
         final AbstractImageRegistry imageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
         final List<Tag> tags = imageRegistry.getTags(tool);
@@ -1046,7 +1043,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("A valid Quay.io token is required to add this tool.", HttpStatus.SC_BAD_REQUEST);
         } else if (quayToken != null) {
             // set up
-            QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
+            QuayImageRegistry factory = new QuayImageRegistry(quayToken);
 
             // get quay username
             String quayUsername = quayToken.getUsername();
