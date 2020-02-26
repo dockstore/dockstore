@@ -588,6 +588,13 @@ public class UserResource implements AuthenticatedResourceInterface {
         return services;
     }
 
+    private List<Workflow> getStrippedWorkflowsAndServices(User user) {
+        final List<Workflow> workflows = user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
+        EntryVersionHelper.stripContent(workflows, this.userDAO);
+        return workflows;
+
+    }
+
     private List<Tool> getTools(User user) {
         return user.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast).collect(Collectors.toList());
     }
@@ -789,34 +796,17 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @POST
-    @Path("/services/sync")
+    @Path("/github/sync")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Syncs service data with Git accounts.", notes = "Currently only works with GitHub", authorizations = {
+    @ApiOperation(value = "Syncs Dockstore account with GitHub App Installations.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
-    public List<Workflow> syncUserServices(@ApiParam(hidden = true) @Auth User authUser) {
+    public List<Workflow> syncUserWithGitHub(@ApiParam(hidden = true) @Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
-        return syncAndGetServices(user, Optional.empty());
-    }
-
-    @POST
-    @Path("/services/{organizationName}/sync")
-    @Timed
-    @UnitOfWork
-    @ApiOperation(value = "Syncs services with Git accounts for a specified organization.",
-            authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
-            response = Workflow.class, responseContainer = "List")
-    public List<Workflow> syncUserServicesbyOrganization(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "Organization name", required = true) @PathParam("organizationName") String organization) {
-        final User user = userDAO.findById(authUser.getId());
-        return syncAndGetServices(user, Optional.of(organization));
-    }
-
-    private List<Workflow> syncAndGetServices(User user, Optional<String> organization2) {
-        serviceResource.syncEntitiesForUser(user, organization2);
+        workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
-        return getStrippedServices(userDAO.findById(user.getId()));
+        return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
     @GET

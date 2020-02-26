@@ -34,8 +34,10 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -63,6 +65,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -77,7 +80,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -109,6 +111,7 @@ import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
@@ -127,7 +130,7 @@ import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
-import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -150,6 +153,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String PAGINATION_LIMIT = "100";
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
+    private static final String IMAGES = "images";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -195,12 +199,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     + "Error is " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
-
-    @Override
-    protected Workflow initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo) {
-        return sourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
-    }
-
 
     /**
      * TODO: this should not be a GET either
@@ -387,15 +385,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
-            workflow.setMode(SERVICE);
-        } else {
+        if (!Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
             workflow.setMode(WorkflowMode.FULL);
         }
 
         // look for checker workflows to associate with if applicable
-        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL
-            || workflow.getDescriptorType() == WDL) {
+        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL || workflow.getDescriptorType() == WDL) {
             String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
             String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
             BioWorkflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
@@ -424,23 +419,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return workflow;
     }
 
-    @PUT
-    @Path("/path/workflow/{repository}/upsertVersion/")
-    @Timed
-    @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag to all workflows associated with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
-    public List<Workflow> upsertVersions(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String repository,
-            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        // Call common upsert code
-        String dockstoreWorkflowPath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.FULL, null);
-
-        return findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
-    }
-
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -455,7 +433,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return workflow;
     }
@@ -708,7 +686,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return filterContainersForHiddenTags(workflow);
     }
@@ -859,7 +837,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return workflow;
     }
@@ -1045,7 +1023,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         filterContainersForHiddenTags(workflow);
 
@@ -1305,7 +1283,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     existingTag.setDirtyBit(true);
                 }
 
+                boolean wasFrozen = existingTag.isFrozen();
                 existingTag.updateByUser(version);
+                boolean nowFrozen = existingTag.isFrozen();
+                // If version is snapshotted on this update, grab and store image information
+                if (!wasFrozen && nowFrozen) {
+                    LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
+                    String toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                    Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable);
+                    existingTag.getImages().addAll(images);
+                }
             }
         }
         Workflow result = workflowDAO.findById(workflowId);
@@ -1626,15 +1613,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     /**
      * If include contains validations field, initialize the workflows validations for all of its workflow versions
      * If include contains aliases field, initialize the aliases for all of its workflow versions
+     * If include contains images field, initialize the images for all of its workflow versions
      * @param include
      * @param workflow
      */
-    private void initializeValidations(String include, Workflow workflow) {
+    private void initializeAdditionalFields(String include, Workflow workflow) {
         if (checkIncludes(include, VALIDATIONS)) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
         if (checkIncludes(include, ALIASES)) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getAliases()));
+        }
+        if (checkIncludes(include, IMAGES)) {
+            workflow.getWorkflowVersions().stream().filter(v -> v.isFrozen()).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
         }
     }
 
@@ -1796,5 +1787,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @POST
+    @Path("/github/release")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = "bearer"), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+        @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
+        @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+        @ApiParam(value = "Git reference for a GitHub tag", required = true) @FormParam("gitReference") String gitReference,
+        @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        return githubWebhookRelease(repository, username, gitReference, installationId);
     }
 }

@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
@@ -48,6 +49,7 @@ import io.swagger.quay.client.ApiClient;
 import io.swagger.quay.client.ApiException;
 import io.swagger.quay.client.Configuration;
 import io.swagger.quay.client.api.UserApi;
+import io.swagger.quay.client.model.Organization;
 import io.swagger.quay.client.model.UserView;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
@@ -109,6 +111,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return tags;
     }
 
+    //TODO: If the repo has a lot of tags, then it needs to be paged through. Can get tag info individually, but then that's more API calls.
     public Set<Image> getImagesForTag(Tool tool, Tag tag, Map<String, Map<String, Map<String, String>>> map) {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
 
@@ -164,11 +167,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         UserApi api = new UserApi(apiClient);
         try {
             final UserView loggedInUser = api.getLoggedInUser();
-            final List organizations = loggedInUser.getOrganizations();
-            for (Object organization : organizations) {
-                Map<String, String> organizationMap = (Map)organization;
-                namespaces.add(organizationMap.get("name"));
-            }
+            final List<Organization> organizations = loggedInUser.getOrganizations();
+            namespaces = organizations.stream().map(Organization::getName).collect(Collectors.toList());
         } catch (ApiException e) {
             LOG.warn(quayToken.getUsername() + " Exception: {}", e);
         }

@@ -535,7 +535,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             tokenDAO.create(githubToken);
             user = userDAO.findById(userID);
             GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
-            gitHubSourceCodeRepo.getUserMetadata(user);
+            gitHubSourceCodeRepo.syncUserMetadataFromGitHub(user);
         }
         return dockstoreToken;
     }
