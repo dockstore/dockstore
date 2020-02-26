@@ -24,12 +24,33 @@ import javax.validation.constraints.NotNull;
  * Abstract base class for services defined in .dockstore.yml
  */
 public abstract class AbstractYamlService {
+    /**
+     * The name of the service
+     */
     private String name;
+    /**
+     * The service's author
+     */
     private String author;
+    /**
+     * The service's description
+     */
     private String description;
+    /**
+     * A list of files that Dockstore should index
+     */
     private List<String> files;
+    /**
+     * A scripts object for the service's lifecycle
+     */
     private Scripts scripts;
+    /**
+     * A map where the keys are environment variable names and the values are <code>EnvironmentVariable</code>s
+     */
     private Map<String, EnvironmentVariable> environment;
+    /**
+     * A map where the keys are the dataset names and the values are <code>DataSet</code>s
+     */
     private Map<String, DataSet> data;
 
     public String getAuthor() {
@@ -88,15 +109,42 @@ public abstract class AbstractYamlService {
         this.data = data;
     }
 
+    /**
+     * Scripts is essentially a map, but with a known set of keys. The values are scripts that should be run at different stages
+     * in the lifecycle of a service
+     */
     public static class Scripts {
+        /**
+         * Associated script should return the port the service is exposing
+         */
         private String port;
+        /**
+         * Associated script will run after the platform launcher has provisioned data
+         */
         private String postprovision;
+        /**
+         * Associated script will run after the service has started
+         */
         private String poststart;
+        /**
+         * Associated script will run before the platform launcher provisions data for the service
+         */
         private String preprovision;
+        /**
+         * Associated script to run just before starting the service
+         */
         private String prestart;
+
         @NotNull
+        /**
+         * The script to run to start up the service
+         */
         private String start;
+
         @NotNull
+        /**
+         * The script to run to start the service
+         */
         private String stop;
 
         public String getPort() {
@@ -156,6 +204,9 @@ public abstract class AbstractYamlService {
         }
     }
 
+    /**
+     * Describes an environment variable.
+     */
     public static class EnvironmentVariable {
         private String defaultValue; // default is a key word
         @NotNull
@@ -178,9 +229,15 @@ public abstract class AbstractYamlService {
         }
     }
 
+    /**
+     * Describes a dataset. A dataset has a targetDirectory, where files should be downloaded to, and a map of file descriptors
+     */
     public static class DataSet {
         @NotNull
         private String targetDirectory;
+        /**
+         * A map of name to FileDesc. The name is an arbitrary value, used to map values in an input.json type file
+         */
         private Map<String, YamlService11.FileDesc> files;
 
         public String getTargetDirectory() {
@@ -200,6 +257,10 @@ public abstract class AbstractYamlService {
         }
     }
 
+    /**
+     * Describes a file. The targetDirectory is optional and will only be specified if the DataSet#targetDirectory needs to be
+     * overridden.
+     */
     public static class FileDesc {
         @NotNull
         private String description;
