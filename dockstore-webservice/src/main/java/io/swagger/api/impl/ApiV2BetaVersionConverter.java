@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import com.google.common.collect.Lists;
@@ -80,24 +81,24 @@ public final class ApiV2BetaVersionConverter {
                     newArrayList.add(innerObject);
                 }
             }
-            return getResponse(newArrayList);
+            return getResponse(newArrayList, response.getHeaders());
         } else if (object instanceof io.openapi.model.ToolVersion) {
             io.openapi.model.ToolVersion toolVersion = (io.openapi.model.ToolVersion)object;
             ToolVersion betaToolVersion = getToolVersion(toolVersion);
-            return getResponse(betaToolVersion);
+            return getResponse(betaToolVersion, response.getHeaders());
         } else if (object instanceof io.openapi.model.Tool) {
             io.openapi.model.Tool tool = (io.openapi.model.Tool)object;
             Tool betaTool = getTool(tool);
-            return getResponse(betaTool);
+            return getResponse(betaTool, response.getHeaders());
         } else if (object instanceof Metadata) {
             Metadata metadata = (Metadata)object;
             MetadataV1 metadataV1 = new MetadataV1(metadata);
-            return getResponse(metadataV1);
+            return getResponse(metadataV1, response.getHeaders());
         } else if (object instanceof io.openapi.model.FileWrapper) {
             if (object instanceof io.openapi.model.ExtendedFileWrapper) {
-                return getResponse(getWrapper((io.openapi.model.ExtendedFileWrapper)object));
+                return getResponse(getWrapper((io.openapi.model.ExtendedFileWrapper)object), response.getHeaders());
             }
-            return getResponse(object);
+            return getResponse(object, response.getHeaders());
         }
         return response;
     }
@@ -141,9 +142,7 @@ public final class ApiV2BetaVersionConverter {
             BeanUtils.copyProperties(betaToolVersion, toolVersion);
             // look like it has issues converting enums
             betaToolVersion.setDescriptorType(Lists.newArrayList());
-            toolVersion.getDescriptorType().forEach(type -> {
-                betaToolVersion.getDescriptorType().add(DescriptorType.fromValue(type.name()));
-            });
+            toolVersion.getDescriptorType().forEach(type -> betaToolVersion.getDescriptorType().add(DescriptorType.fromValue(type.name())));
 
             // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
             betaToolVersion.setVerified(toolVersion.isVerified());
@@ -177,13 +176,6 @@ public final class ApiV2BetaVersionConverter {
         return oldWrapper;
     }
 
-    public static FileWrapper getOldWrapper(ExtendedFileWrapper wrapper) {
-        FileWrapper oldWrapper = new FileWrapper();
-        oldWrapper.setContent(wrapper.getContent());
-        oldWrapper.setUrl(wrapper.getUrl());
-        return oldWrapper;
-    }
-
     public static ExtendedFileWrapper getWrapper(io.openapi.model.ExtendedFileWrapper wrapper) {
         ExtendedFileWrapper oldWrapper = new ExtendedFileWrapper();
         oldWrapper.setOriginalFile(wrapper.getOriginalFile());
@@ -192,8 +184,21 @@ public final class ApiV2BetaVersionConverter {
         return oldWrapper;
     }
 
-    private static Response getResponse(Object object) {
+    private static Response getResponse(Object object, MultivaluedMap<String, Object> headers) {
         Response.ResponseBuilder responseBuilder = Response.ok(object);
+        if (!headers.isEmpty()) {
+            for (String str : headers.keySet()) {
+                switch (str) {
+                case "next_page":
+                case "last_page":
+                case "current_offset":
+                case "current_limit":
+                    responseBuilder.header(str, headers.getFirst(str));
+                default:
+                    // Skipping all other headers
+                }
+            }
+        }
         return responseBuilder.build();
     }
 
