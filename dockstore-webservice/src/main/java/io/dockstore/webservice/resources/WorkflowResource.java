@@ -332,6 +332,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                         continue;
                     }
 
+                    logFullWorkflowRefresh(workflow);
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
                     final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow));
@@ -349,6 +350,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
+                    logFullWorkflowRefresh(newWorkflow);
                     final long workflowID = workflowDAO.create(newWorkflow);
 
                     // need to create nested data models
@@ -360,6 +362,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     alreadyProcessed.add(workflowFromDB.getId());
                 }
             }
+        }
+    }
+
+    /**
+     * Logs a refresh statement with the workflow's descriptor language if workflow is a FULL workflow
+     * @param workflow                workflow that is being refreshed
+     */
+    private void logFullWorkflowRefresh(final Workflow workflow) {
+        if (workflow.getMode() == WorkflowMode.FULL) {
+            LOG.info("Refreshing " + workflow.getDescriptorType() + " workflow");
         }
     }
 
@@ -400,6 +412,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // new workflow is the workflow as found on github (source control)
+        logFullWorkflowRefresh(workflow);
         final Workflow newWorkflow = sourceCodeRepo
             .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);

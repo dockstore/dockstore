@@ -182,6 +182,8 @@ public abstract class AbstractImageRegistry {
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
+            logToolRefresh(tool);
+
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
@@ -204,6 +206,8 @@ public abstract class AbstractImageRegistry {
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
         List<Tool> apiTools = new ArrayList<>();
+
+        logToolRefresh(tool);
 
         // Find a tool with the given tool's path and is not manual
         // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
@@ -274,6 +278,17 @@ public abstract class AbstractImageRegistry {
         updatedTool.syncMetadataWithDefault();
         // Return the updated tool
         return updatedTool;
+    }
+
+    /**
+     * Logs a refresh statement with the tool's descriptor language(s)
+     * @param tool                tool that is being refreshed
+     */
+    private void logToolRefresh(final Tool tool) {
+        List<String> descriptorTypes = tool.getDescriptorType();
+        for (String descriptorType : descriptorTypes) {
+            LOG.info("Refreshing " + descriptorType + " tool");
+        }
     }
 
     public List<Tag> getTagsDockerHub(Tool tool) {
