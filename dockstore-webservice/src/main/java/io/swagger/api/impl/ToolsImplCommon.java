@@ -158,7 +158,7 @@ public final class ToolsImplCommon {
             //TODO: hook up snapshot and checksum behaviour here
             toolVersion.setIsProduction(version.isFrozen());
             if (toolVersion.isIsProduction()) {
-                List<ImageData> trsImages = processImageDataForWorkflowVersions(version, toolVersion);
+                List<ImageData> trsImages = processImageDataForWorkflowVersions(version);
                 toolVersion.setImages(trsImages);
             }
 
@@ -236,7 +236,7 @@ public final class ToolsImplCommon {
         return tool;
     }
 
-    private static List<ImageData> processImageDataForWorkflowVersions(final Version version, final ToolVersion toolVersion) {
+    private static List<ImageData> processImageDataForWorkflowVersions(final Version version) {
         Set<Image> images = version.getImages();
         List<ImageData> trsImages = new ArrayList<>();
 
