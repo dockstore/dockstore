@@ -897,7 +897,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Retrieves a tag from GitHub and creates a version on Dockstore
+     * Retrieves a tag/branch from GitHub and creates a version on Dockstore
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Branch/tag reference from GitHub (ex. refs/tags/1.0)
      * @param workflow Workflow to add version to
@@ -905,7 +905,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return New or updated version
      * @throws IOException
      */
-    public WorkflowVersion createTagVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
+    public WorkflowVersion createVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
         GHRepository ghRepository = getRepository(repository);
 
         // Match the github reference (ex. refs/heads/feature/foobar or refs/tags/1.0)

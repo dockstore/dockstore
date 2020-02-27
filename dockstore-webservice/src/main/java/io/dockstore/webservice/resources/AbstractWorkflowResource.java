@@ -398,7 +398,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml, GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow) {
         try {
             // Create version and pull relevant files
-            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
+            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             workflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
             workflow.addWorkflowVersion(workflowVersion);
             LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
