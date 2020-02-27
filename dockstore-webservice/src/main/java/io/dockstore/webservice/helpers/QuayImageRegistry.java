@@ -74,7 +74,6 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
         apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Authorization", "Bearer " + quayToken.getContent());
-        // apiClient.setBasePath(QUAY_URL);
     }
 
     @Override
@@ -215,7 +214,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 // Initialize giturl
                 String gitUrl = null;
 
-                final List<QuayBuild> builds = api.getRepoBuilds(repo, null, Integer.MAX_VALUE).getBuilds();
+                final List<QuayBuild> builds = api.getRepoBuilds(repo, null, 1).getBuilds();
                 // Check result of API call
                 if (builds != null && !builds.isEmpty()) {
                     // Look at the latest build for the git url
