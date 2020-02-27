@@ -187,15 +187,10 @@ public final class ApiV2BetaVersionConverter {
     private static Response getResponse(Object object, MultivaluedMap<String, Object> headers) {
         Response.ResponseBuilder responseBuilder = Response.ok(object);
         if (!headers.isEmpty()) {
+            final List<String> relevantHeaders = List.of("next_page", "last_page", "current_offset", "current_limit");
             for (String str : headers.keySet()) {
-                switch (str) {
-                case "next_page":
-                case "last_page":
-                case "current_offset":
-                case "current_limit":
+                if (relevantHeaders.contains(str)) {
                     responseBuilder.header(str, headers.getFirst(str));
-                default:
-                    // Skipping all other headers
                 }
             }
         }
