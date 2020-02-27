@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -168,8 +167,8 @@ public class WDLParseTest {
             VersionTypeValidation validation = wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
             Assert.assertFalse(validation.isValid());
             // Go through message part and verify it says 'Recursive local import detected'
-            Optional<Map.Entry<String, String>> validationEntryMap = validation.getMessage().entrySet().stream()
-                    .filter(msg -> StringUtils.contains(msg.getValue(), "Recursive local import detected")).findAny();
+            Optional<String> validationEntryMap = validation.getMessage().values().stream()
+                    .filter(msg -> StringUtils.contains(msg, "Recursive local import detected")).findAny();
             Assert.assertTrue(validationEntryMap.isPresent());
         } catch (IOException e) {
             Assert.fail();
