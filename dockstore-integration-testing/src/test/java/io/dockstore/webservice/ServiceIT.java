@@ -199,7 +199,7 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add version
-        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "1.0", installationId);
+        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/tags/1.0", installationId);
         assertEquals("Should have added one service", 1, services.size());
         io.swagger.client.model.Workflow service = services.get(0);
 
@@ -236,7 +236,7 @@ public class ServiceIT extends BaseIT {
 
         // Add service
         try {
-            client.handleGitHubRelease(serviceRepo, "iamnotarealuser", "1.0", installationId);
+            client.handleGitHubRelease(serviceRepo, "iamnotarealuser", "refs/tags/1.0", installationId);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
@@ -264,7 +264,7 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, BasicIT.USER_2_USERNAME, "1.0", installationId);
+        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
         assertEquals("Should only have one service", 1, services.size());
 
         // Add workflow with same path as service
@@ -303,7 +303,7 @@ public class ServiceIT extends BaseIT {
 
         // Add version that doesn't exist
         try {
-            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "1.0-fake", installationId);
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0-fake", installationId);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
@@ -324,7 +324,7 @@ public class ServiceIT extends BaseIT {
 
         // Add version that has no dockstore.yml
         try {
-            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "no-yml", installationId);
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/no-yml", installationId);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
@@ -332,7 +332,7 @@ public class ServiceIT extends BaseIT {
 
         // Add version that has invalid dockstore.yml
         try {
-            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/invalid-yml", installationId);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
@@ -353,16 +353,15 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "1.0", installationId);
+        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/tags/1.0", installationId);
         assertEquals("Should only have one service", 1, services.size());
         io.swagger.client.model.Workflow service = services.get(0);
         service = client.refresh(service.getId());
         assertNotNull(service);
-        assertEquals("Should have one new version (one release has no yaml, another has invalid yaml)", 1, service.getWorkflowVersions().size());
+        assertEquals("Should have two new versions master and 1.0", 2, service.getWorkflowVersions().size());
 
         // Set default version
-        service = client.updateWorkflowDefaultVersion(service.getId(), "1.0");
-        client.refresh(service.getId());
+        client.updateWorkflowDefaultVersion(service.getId(), "1.0");
     }
 
     /**
@@ -379,7 +378,7 @@ public class ServiceIT extends BaseIT {
 
         // Add service
         try {
-            List<io.swagger.client.model.Workflow> service = client.handleGitHubRelease(serviceRepo, "admin@admin.com", "1.0", installationId);
+            List<io.swagger.client.model.Workflow> service = client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0", installationId);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
