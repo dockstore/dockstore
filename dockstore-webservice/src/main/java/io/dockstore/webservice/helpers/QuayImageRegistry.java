@@ -48,7 +48,6 @@ import io.swagger.quay.client.Configuration;
 import io.swagger.quay.client.api.BuildApi;
 import io.swagger.quay.client.api.RepositoryApi;
 import io.swagger.quay.client.api.UserApi;
-import io.swagger.quay.client.model.InlineResponse200;
 import io.swagger.quay.client.model.QuayBuild;
 import io.swagger.quay.client.model.QuayBuildTriggerMetadata;
 import io.swagger.quay.client.model.QuayOrganization;
@@ -177,7 +176,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
         for (String namespace : namespaces) {
             try {
-                final List<QuayRepo> quayRepos = repositoryApi.listRepos(null, null, null, null, null, null, namespace);
+                final List<QuayRepo> quayRepos = repositoryApi.listRepos(null, null, null, null, null, null, namespace).getRepositories();
                 List<Tool> tools = Lists.newArrayList();
                 for (QuayRepo repo : quayRepos) {
                     Tool tool = new Tool();
@@ -216,8 +215,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 // Initialize giturl
                 String gitUrl = null;
 
-                final InlineResponse200 repoBuilds = api.getRepoBuilds(repo, null, Integer.MAX_VALUE);
-                final List<QuayBuild> builds = repoBuilds.getBuilds();
+                final List<QuayBuild> builds = api.getRepoBuilds(repo, null, Integer.MAX_VALUE).getBuilds();
                 // Check result of API call
                 if (builds != null && !builds.isEmpty()) {
                     // Look at the latest build for the git url
@@ -279,8 +277,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         // List of builds for a tool
         BuildApi api = new BuildApi(apiClient);
         try {
-            final InlineResponse200 repoBuilds = api.getRepoBuilds(repository, null, Integer.MAX_VALUE);
-            final List<QuayBuild> builds = repoBuilds.getBuilds();
+            final List<QuayBuild> builds = api.getRepoBuilds(repository, null, Integer.MAX_VALUE).getBuilds();
 
             // Set up tags with build information
             for (Tag tag : tags) {
@@ -348,8 +345,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         // Grab build information for given repository
         BuildApi api = new BuildApi(apiClient);
         try {
-            final InlineResponse200 repoBuilds = api.getRepoBuilds(repo, null, Integer.MAX_VALUE);
-            final List<QuayBuild> builds = repoBuilds.getBuilds();
+            final List<QuayBuild> builds = api.getRepoBuilds(repo, null, Integer.MAX_VALUE).getBuilds();
             if (!builds.isEmpty()) {
                 for (QuayBuild build : builds) {
                     final QuayBuildTriggerMetadata triggerMetadata = build.getTriggerMetadata();
@@ -365,18 +361,5 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             LOG.error(quayToken.getUsername() + ": could not process builds to determine mode");
         }
         return false;
-    }
-
-    public static class RepoList {
-
-        private List<Tool> repositories;
-
-        public List<Tool> getRepositories() {
-            return repositories;
-        }
-
-        public void setRepositories(List<Tool> repositories) {
-            this.repositories = repositories;
-        }
     }
 }

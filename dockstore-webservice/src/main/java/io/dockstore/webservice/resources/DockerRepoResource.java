@@ -132,8 +132,8 @@ public class DockerRepoResource
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
 
-    public DockerRepoResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
-        String bitbucketClientSecret, WorkflowResource workflowResource, EntryResource entryResource) {
+    public DockerRepoResource(final HttpClient client, final SessionFactory sessionFactory, final String bitbucketClientID,
+        final String bitbucketClientSecret, final WorkflowResource workflowResource, final EntryResource entryResource) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.tagDAO = new TagDAO(sessionFactory);

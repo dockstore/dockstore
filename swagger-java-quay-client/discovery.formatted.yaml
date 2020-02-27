@@ -2807,9 +2807,12 @@ paths:
         '200':
           description: Successful invocation
           schema:
-            type: array
-            items:
-              $ref: "#/definitions/QuayRepo"
+            type: object
+            properties:
+              repositories:
+                type: array
+                items:
+                  $ref: '#/definitions/QuayRepo'
         '400':
           description: Bad Request
           schema:
