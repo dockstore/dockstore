@@ -881,7 +881,7 @@ public class WorkflowIT extends BaseIT {
         testTRSConversion(versions, "1.0", 3);
     }
 
-    private void testTRSConversion(final List<ToolVersion> versions, String snapShottedVersionName, final int numImages) {
+    private void testTRSConversion(final List<ToolVersion> versions, final String snapShottedVersionName, final int numImages) {
         assertFalse("Should have at least one version", versions.isEmpty());
         boolean snapshotInList = false;
         for (ToolVersion trsVersion : versions) {
@@ -891,7 +891,7 @@ public class WorkflowIT extends BaseIT {
                 snapshotInList = true;
             } else {
                 assertFalse(trsVersion.isIsProduction());
-                assertEquals("There shouldn't be any images for versions that aren't production ready/snapshotted", 0, trsVersion.getImages().size());
+                assertEquals("Non-snapshotted versions should have 0 images ", 0, trsVersion.getImages().size());
             }
         }
         assertTrue("Snapshotted version should be in the list", snapshotInList);
