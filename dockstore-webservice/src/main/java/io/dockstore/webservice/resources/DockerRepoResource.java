@@ -52,6 +52,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Entry;
@@ -128,13 +129,14 @@ public class DockerRepoResource
     private final HttpClient client;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
+    private final String dashboardPrefix;
     private final EventDAO eventDAO;
     private final ObjectMapper objectMapper;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
 
-    public DockerRepoResource(ObjectMapper mapper, HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
-        String bitbucketClientSecret, WorkflowResource workflowResource, EntryResource entryResource) {
+    public DockerRepoResource(ObjectMapper mapper, HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration,
+        WorkflowResource workflowResource, EntryResource entryResource) {
         objectMapper = mapper;
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
@@ -145,8 +147,9 @@ public class DockerRepoResource
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.client = client;
 
-        this.bitbucketClientID = bitbucketClientID;
-        this.bitbucketClientSecret = bitbucketClientSecret;
+        this.bitbucketClientID = configuration.getBitbucketClientID();
+        this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
+        this.dashboardPrefix = configuration.getDashboard();
 
         this.workflowResource = workflowResource;
         this.entryResource = entryResource;
@@ -183,7 +186,7 @@ public class DockerRepoResource
 
             updatedTools.addAll(abstractImageRegistry
                 .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken,
-                    organization, eventDAO));
+                    organization, eventDAO, dashboardPrefix));
         }
         return updatedTools;
     }
@@ -273,7 +276,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
                 HttpStatus.SC_NOT_FOUND);
         }
-        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo, eventDAO);
+        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo, eventDAO, dashboardPrefix);
     }
 
     @GET

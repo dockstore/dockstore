@@ -145,7 +145,7 @@ public abstract class AbstractImageRegistry {
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
-            String organization, final EventDAO eventDAO) {
+            String organization, final EventDAO eventDAO, final String dashboardPrefix) {
         // Get all the namespaces for the given registry
         List<String> namespaces;
         if (organization != null) {
@@ -182,7 +182,7 @@ public abstract class AbstractImageRegistry {
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
-            logToolRefresh(tool);
+            logToolRefresh(dashboardPrefix, tool);
 
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
@@ -201,13 +201,13 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO) {
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO, String dashboardPrefix) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
         List<Tool> apiTools = new ArrayList<>();
 
-        logToolRefresh(tool);
+        logToolRefresh(dashboardPrefix, tool);
 
         // Find a tool with the given tool's path and is not manual
         // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
@@ -281,13 +281,17 @@ public abstract class AbstractImageRegistry {
     }
 
     /**
-     * Logs a refresh statement with the tool's descriptor language(s)
+     * Logs a refresh statement with the tool's descriptor language(s).
+     * These logs will be monitored by CloudWatch and displayed on Grafana.
+     * @param dashboardPrefix     dashboard string that will prefix the log
      * @param tool                tool that is being refreshed
      */
-    private void logToolRefresh(final Tool tool) {
+    private void logToolRefresh(final String dashboardPrefix, final Tool tool) {
         List<String> descriptorTypes = tool.getDescriptorType();
+        String name = tool.getToolPath();
+
         for (String descriptorType : descriptorTypes) {
-            LOG.info("Refreshing " + descriptorType + " tool");
+            LOG.info(String.format("%s: Refreshing %s tool named %s", dashboardPrefix, descriptorType, name));
         }
     }
 

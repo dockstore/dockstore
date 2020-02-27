@@ -166,6 +166,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String zenodoUrl;
     private final String zenodoClientID;
     private final String zenodoClientSecret;
+    private final String dashboardPrefix;
 
     private final String dockstoreUrl;
     private final String dockstoreGA4GHBaseUrl;
@@ -187,6 +188,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
+        dashboardPrefix = configuration.getDashboard();
 
         dockstoreUrl = URIHelper.createBaseUrl(configuration.getExternalConfig().getScheme(),
                 configuration.getExternalConfig().getHostname(), configuration.getExternalConfig().getUiPort());
@@ -366,12 +368,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     /**
-     * Logs a refresh statement with the workflow's descriptor language if workflow is a FULL workflow
+     * Logs a refresh statement with the workflow's descriptor language if workflow is a FULL workflow.
+     * These logs will be monitored by CloudWatch and displayed on Grafana.
      * @param workflow                workflow that is being refreshed
      */
     private void logFullWorkflowRefresh(final Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.FULL) {
-            LOG.info("Refreshing " + workflow.getDescriptorType() + " workflow");
+            LOG.info(String.format("%s: Refreshing %s workflow named %s", dashboardPrefix, workflow.getDescriptorType(), workflow.getWorkflowPath()));
         }
     }
 
