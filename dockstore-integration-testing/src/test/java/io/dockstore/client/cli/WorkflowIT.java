@@ -882,15 +882,19 @@ public class WorkflowIT extends BaseIT {
     }
 
     private void testTRSConversion(final List<ToolVersion> versions, String snapShottedVersionName, final int numImages) {
+        assertFalse("Should have at least one version", versions.isEmpty());
+        boolean snapshotInList = false;
         for (ToolVersion trsVersion : versions) {
             if (trsVersion.getName().equals(snapShottedVersionName)) {
                 assertTrue(trsVersion.isIsProduction());
-                assertEquals("Should only be one image in this workflow", numImages, trsVersion.getImages().size());
+                assertEquals("There should be" + numImages + "image(s) in this workflow", numImages, trsVersion.getImages().size());
+                snapshotInList = true;
             } else {
                 assertFalse(trsVersion.isIsProduction());
-                assertEquals("Shouldn't be any images for versions that aren't production ready/snapshotted", 0, trsVersion.getImages().size());
+                assertEquals("There shouldn't be any images for versions that aren't production ready/snapshotted", 0, trsVersion.getImages().size());
             }
         }
+        assertTrue("Snapshotted version should be in the list", snapshotInList);
     }
 
     private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, String workflowPath, String descriptorPath, String versionName) {
