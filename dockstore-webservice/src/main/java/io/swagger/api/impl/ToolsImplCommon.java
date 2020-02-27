@@ -156,12 +156,12 @@ public final class ToolsImplCommon {
             //TODO: would hook up identified tools that form workflows here
             toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
             //TODO: hook up snapshot and checksum behaviour here
-            if (version.isFrozen()) {
+            toolVersion.setIsProduction(version.isFrozen());
+            if (toolVersion.isIsProduction()) {
                 List<ImageData> trsImages = processImageDataForWorkflowVersions(version, toolVersion);
-                toolVersion.setImages(MoreObjects.firstNonNull(trsImages, Lists.newArrayList()));
-            } else {
-                toolVersion.setIsProduction(false);
+                toolVersion.setImages(trsImages);
             }
+
             toolVersion.setSigned(false);
             final String author = ObjectUtils.firstNonNull(version.getAuthor(), container.getAuthor());
             if (author != null) {
@@ -237,7 +237,6 @@ public final class ToolsImplCommon {
     }
 
     private static List<ImageData> processImageDataForWorkflowVersions(final Version version, final ToolVersion toolVersion) {
-        toolVersion.setIsProduction(true);
         Set<Image> images = version.getImages();
         List<ImageData> trsImages = new ArrayList<>();
 

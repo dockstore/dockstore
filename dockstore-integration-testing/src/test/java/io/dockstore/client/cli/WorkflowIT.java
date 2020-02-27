@@ -881,7 +881,7 @@ public class WorkflowIT extends BaseIT {
         testTRSConversion(versions, "1.0", 3);
     }
 
-    private void testTRSConversion(final List<ToolVersion> versions, String snapShottedVersionName, int numImages) {
+    private void testTRSConversion(final List<ToolVersion> versions, String snapShottedVersionName, final int numImages) {
         for (ToolVersion trsVersion : versions) {
             if (trsVersion.getName().equals(snapShottedVersionName)) {
                 assertTrue(trsVersion.isIsProduction());
