@@ -86,7 +86,6 @@ import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
-    private static final int GIT_REF_SIZE = 3;
     private final GitHub github;
 
     GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
@@ -909,14 +908,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public WorkflowVersion createTagVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
         GHRepository ghRepository = getRepository(repository);
 
-        String[] splitReference = gitReference.split("/");
-        if (splitReference.length != GIT_REF_SIZE) {
+        // Match the github reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
+        Pattern pattern = Pattern.compile("^refs/(tags|heads)/([a-zA-Z0-9]+([./_-]?[a-zA-Z0-9]+)*)$");
+        Matcher matcher = pattern.matcher(gitReference);
+
+        if (!matcher.find()) {
             String msg = "Reference " + gitReference + " is not of the valid form";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
-        String gitBranchType = splitReference[1];
-        String gitBranchName = splitReference[2];
+        String gitBranchType = matcher.group(1);
+        String gitBranchName = matcher.group(2);
 
         GHRef ghRef = ghRepository.getRef(gitBranchType + "/" + gitBranchName);
 
