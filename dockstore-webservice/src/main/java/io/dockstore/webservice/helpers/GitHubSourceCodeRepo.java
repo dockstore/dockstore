@@ -373,9 +373,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
-                if (workflow.getMode() != WorkflowMode.DOCKSTORE_YML || ref.getRef().startsWith("refs/tags")) {
-                    references.add(getRef(ref, repository));
-                }
+                references.add(getRef(ref, repository));
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
