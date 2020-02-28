@@ -99,7 +99,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                     insertQuayLastModifiedIntoLastBuilt(tagItem, tag);
                     tags.add(tag);
                 } catch (IllegalAccessException | InvocationTargetException ex) {
-                    LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
+                    LOG.error(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
 
@@ -165,7 +165,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             final List<QuayOrganization> organizations = loggedInUser.getOrganizations();
             namespaces = organizations.stream().map(QuayOrganization::getName).collect(Collectors.toList());
         } catch (ApiException e) {
-            LOG.warn(quayToken.getUsername() + " Exception: {}", e);
+            LOG.error(quayToken.getUsername() + " Exception: {}", e);
         }
 
         namespaces.add(quayToken.getUsername());
