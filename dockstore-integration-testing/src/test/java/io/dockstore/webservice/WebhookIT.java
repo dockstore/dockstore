@@ -115,6 +115,16 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should be a CWL workflow", Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
         assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
+
+        // Branch master on GitHub - updates two existing workflows
+        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/heads/master", installationId);
+        assertEquals("Should only have two services", 2, workflows.size());
+
+        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        assertEquals("Should have three versions 0.1, 0.2, and master", 3, workflow.getWorkflowVersions().size());
+
+        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
+        assertEquals("Should have two versions 0.2 and master", 2, workflow2.getWorkflowVersions().size());
     }
 
     /**
