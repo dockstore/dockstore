@@ -130,22 +130,23 @@ public abstract class AbstractImageRegistry {
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
-     * @param userId         The ID of the user
-     * @param userDAO        ...
-     * @param toolDAO        ...
-     * @param tagDAO         ...
-     * @param fileDAO        ...
-     * @param client         An HttpClient used by source code repositories
-     * @param githubToken    The user's GitHub token
-     * @param bitbucketToken The user's Bitbucket token
-     * @param gitlabToken    The user's GitLab token
-     * @param organization   If not null, only refresh tools belonging to the specific organization. Otherwise, refresh all.
+     * @param userId            The ID of the user
+     * @param userDAO           ...
+     * @param toolDAO           ...
+     * @param tagDAO            ...
+     * @param fileDAO           ...
+     * @param client            An HttpClient used by source code repositories
+     * @param githubToken       The user's GitHub token
+     * @param bitbucketToken    The user's Bitbucket token
+     * @param gitlabToken       The user's GitLab token
+     * @param organization      If not null, only refresh tools belonging to the specific organization. Otherwise, refresh all.
+     * @param dashboardPrefix   A string that prefixes logging statements to indicate that it will be used for Cloudwatch & Grafana.
      * @return The list of tools that have been updated
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
-            String organization, final EventDAO eventDAO) {
+            String organization, final EventDAO eventDAO, final String dashboardPrefix) {
         // Get all the namespaces for the given registry
         List<String> namespaces;
         if (organization != null) {
@@ -182,6 +183,8 @@ public abstract class AbstractImageRegistry {
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
+            logToolRefresh(dashboardPrefix, tool);
+
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
@@ -199,11 +202,13 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO) {
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO, String dashboardPrefix) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
         List<Tool> apiTools = new ArrayList<>();
+
+        logToolRefresh(dashboardPrefix, tool);
 
         // Find a tool with the given tool's path and is not manual
         // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
@@ -274,6 +279,21 @@ public abstract class AbstractImageRegistry {
         updatedTool.syncMetadataWithDefault();
         // Return the updated tool
         return updatedTool;
+    }
+
+    /**
+     * Logs a refresh statement with the tool's descriptor language(s).
+     * These logs will be monitored by CloudWatch and displayed on Grafana.
+     * @param dashboardPrefix     dashboard string that will prefix the log
+     * @param tool                tool that is being refreshed
+     */
+    private void logToolRefresh(final String dashboardPrefix, final Tool tool) {
+        List<String> descriptorTypes = tool.getDescriptorType();
+        String name = tool.getEntryPath();
+
+        for (String descriptorType : descriptorTypes) {
+            LOG.info(String.format("%s: Refreshing %s tool named %s", dashboardPrefix, descriptorType, name));
+        }
     }
 
     public List<Tag> getTagsDockerHub(Tool tool) {
