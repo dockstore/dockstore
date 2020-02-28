@@ -94,8 +94,8 @@ install:
 - scripts/install-tests.sh
 - sudo apt-get install -y postgresql-client-11
 - DOCKERIZE_VERSION=v0.3.0 bash -c 'wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz'
-- docker pull postgres:11.6-alpine-ram
-- docker run -p 5432:5432 --env POSTGRES_HOST_AUTH_METHOD=trust -d postgres:11.6-alpine-ram
+- docker pull postgres:11.6-alpine
+- docker run -p 5432:5432 --env POSTGRES_HOST_AUTH_METHOD=trust -d postgres:11.6-alpine
 - dockerize -wait tcp://localhost:5432 -timeout 1m
 
 before_script:
