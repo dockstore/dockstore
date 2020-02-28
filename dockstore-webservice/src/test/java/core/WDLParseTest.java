@@ -46,6 +46,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -165,11 +166,11 @@ public class WDLParseTest {
 
             WDLHandler wdlHandler = new WDLHandler();
             VersionTypeValidation validation = wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
-            Assert.assertFalse(validation.isValid());
+            assertFalse(validation.isValid());
             // Go through message part and verify it says 'Recursive local import detected'
             Optional<String> validationEntryMap = validation.getMessage().values().stream()
                     .filter(msg -> StringUtils.contains(msg, "Recursive local import detected")).findAny();
-            Assert.assertTrue(validationEntryMap.isPresent());
+            assertTrue(validationEntryMap.isPresent());
         } catch (IOException e) {
             Assert.fail();
         }
