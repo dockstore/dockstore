@@ -68,12 +68,18 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
     private final Token quayToken;
     private final ApiClient apiClient;
+    private final BuildApi buildApi;
+    private final RepositoryApi repositoryApi;
+    private final UserApi userApi;
 
     public QuayImageRegistry(final Token quayToken) {
         this.quayToken = quayToken;
 
         apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Authorization", "Bearer " + quayToken.getContent());
+        this.buildApi = new BuildApi(apiClient);
+        this.repositoryApi = new RepositoryApi(apiClient);
+        this.userApi = new UserApi(apiClient);
     }
 
     @Override
@@ -130,9 +136,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     public Optional<QuayRepo> getToolFromQuay(final Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
 
-        RepositoryApi api = new RepositoryApi(apiClient);
         try {
-            final QuayRepo quayRepo = api.getRepo(repo, false);
+            final QuayRepo quayRepo = repositoryApi.getRepo(repo, false);
             return Optional.of(quayRepo);
         } catch (ApiException e) {
             LOG.error(quayToken.getUsername() + " could not read from " + repo, e);
@@ -155,9 +160,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     public List<String> getNamespaces() {
         List<String> namespaces = new ArrayList<>();
 
-        UserApi api = new UserApi(apiClient);
         try {
-            final UserView loggedInUser = api.getLoggedInUser();
+            final UserView loggedInUser = userApi.getLoggedInUser();
             final List<QuayOrganization> organizations = loggedInUser.getOrganizations();
             namespaces = organizations.stream().map(QuayOrganization::getName).collect(Collectors.toList());
         } catch (ApiException e) {
@@ -171,7 +175,6 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     @Override
     public List<Tool> getToolsFromNamespace(List<String> namespaces) {
         List<Tool> toolList = new ArrayList<>(0);
-        RepositoryApi repositoryApi = new RepositoryApi(apiClient);
 
         for (String namespace : namespaces) {
             try {
@@ -205,7 +208,6 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         final SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
         // Grab build information for given repository
-        BuildApi api = new BuildApi(apiClient);
         try {
             for (Tool tool : apiTools) {
                 // Set path information (not sure why we have to do this here)
@@ -214,7 +216,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 // Initialize giturl
                 String gitUrl = null;
 
-                final List<QuayBuild> builds = api.getRepoBuilds(repo, null, 1).getBuilds();
+                final List<QuayBuild> builds = buildApi.getRepoBuilds(repo, null, 1).getBuilds();
                 // Check result of API call
                 if (builds != null && !builds.isEmpty()) {
                     // Look at the latest build for the git url
@@ -274,9 +276,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     private void updateTagsWithBuildInformation(String repository, List<Tag> tags, Tool tool) {
         // Grab build information for given repository
         // List of builds for a tool
-        BuildApi api = new BuildApi(apiClient);
         try {
-            final List<QuayBuild> builds = api.getRepoBuilds(repository, null, Integer.MAX_VALUE).getBuilds();
+            final List<QuayBuild> builds = buildApi.getRepoBuilds(repository, null, Integer.MAX_VALUE).getBuilds();
 
             // Set up tags with build information
             for (Tag tag : tags) {
@@ -342,9 +343,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     public boolean canConvertToAuto(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
         // Grab build information for given repository
-        BuildApi api = new BuildApi(apiClient);
         try {
-            final List<QuayBuild> builds = api.getRepoBuilds(repo, null, Integer.MAX_VALUE).getBuilds();
+            final List<QuayBuild> builds = buildApi.getRepoBuilds(repo, null, Integer.MAX_VALUE).getBuilds();
             if (!builds.isEmpty()) {
                 for (QuayBuild build : builds) {
                     final QuayBuildTriggerMetadata triggerMetadata = build.getTriggerMetadata();
