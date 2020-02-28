@@ -136,6 +136,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private List<String> externalGoogleClientIdPrefixes = new ArrayList<>();
 
+    private String dashboard = "dashboard.dockstore.org";
+
     @Valid
     @NotNull
     private UIConfig uiConfig;
@@ -479,6 +481,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setExternalGoogleClientIdPrefixes(List<String> externalGoogleClientIdPrefixes) {
         this.externalGoogleClientIdPrefixes = externalGoogleClientIdPrefixes;
+    }
+
+    @JsonProperty("dashboard")
+    public String getDashboard() {
+        return dashboard;
+    }
+
+    public void setDashboard(String dashboard) {
+        this.dashboard = dashboard;
     }
 
     @JsonProperty

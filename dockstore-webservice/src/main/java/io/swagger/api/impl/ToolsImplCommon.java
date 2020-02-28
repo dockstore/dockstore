@@ -36,6 +36,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -155,7 +156,12 @@ public final class ToolsImplCommon {
             //TODO: would hook up identified tools that form workflows here
             toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
             //TODO: hook up snapshot and checksum behaviour here
-            toolVersion.setIsProduction(false);
+            toolVersion.setIsProduction(version.isFrozen());
+            if (toolVersion.isIsProduction()) {
+                List<ImageData> trsImages = processImageDataForWorkflowVersions(version);
+                toolVersion.setImages(trsImages);
+            }
+
             toolVersion.setSigned(false);
             final String author = ObjectUtils.firstNonNull(version.getAuthor(), container.getAuthor());
             if (author != null) {
@@ -228,6 +234,31 @@ public final class ToolsImplCommon {
             }
         }
         return tool;
+    }
+
+    private static List<ImageData> processImageDataForWorkflowVersions(final Version version) {
+        Set<Image> images = version.getImages();
+        List<ImageData> trsImages = new ArrayList<>();
+
+        for (Image image : images) {
+            ImageData imageData = new ImageData();
+            imageData.setImageType(ImageType.DOCKER);
+            //TODO: For workflows, it's just quay for now, but that'll change. Should add column in image table to store registry.
+            imageData.setRegistryHost("quay.io");
+            imageData.setImageName(constructName(Arrays.asList(image.getRepository(), image.getTag())));
+            List<Checksum> trsChecksums = new ArrayList<>();
+            List<io.dockstore.webservice.core.Checksum> checksumList = image.getChecksums();
+
+            for (io.dockstore.webservice.core.Checksum checksum : checksumList) {
+                Checksum trsChecksum = new Checksum();
+                trsChecksum.setType(checksum.getType());
+                trsChecksum.setChecksum(checksum.getChecksum());
+                trsChecksums.add(trsChecksum);
+            }
+            imageData.setChecksum(trsChecksums);
+            trsImages.add(imageData);
+        }
+        return trsImages;
     }
 
     /**
