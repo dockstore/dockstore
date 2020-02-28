@@ -378,7 +378,7 @@ public class ServiceIT extends BaseIT {
 
         // Add service
         try {
-            List<io.swagger.client.model.Workflow> service = client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0", installationId);
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0", installationId);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
