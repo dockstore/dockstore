@@ -374,7 +374,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     private void logFullWorkflowRefresh(final Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.FULL) {
-            LOG.info(String.format("%s: Refreshing %s workflow named %s", dashboardPrefix, workflow.getDescriptorType(), workflow.getWorkflowPath()));
+            LOG.info(String.format("%s: Refreshing %s workflow named %s", dashboardPrefix, workflow.getDescriptorType(), workflow.getEntryPath()));
         }
     }
 

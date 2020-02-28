@@ -130,16 +130,17 @@ public abstract class AbstractImageRegistry {
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
-     * @param userId         The ID of the user
-     * @param userDAO        ...
-     * @param toolDAO        ...
-     * @param tagDAO         ...
-     * @param fileDAO        ...
-     * @param client         An HttpClient used by source code repositories
-     * @param githubToken    The user's GitHub token
-     * @param bitbucketToken The user's Bitbucket token
-     * @param gitlabToken    The user's GitLab token
-     * @param organization   If not null, only refresh tools belonging to the specific organization. Otherwise, refresh all.
+     * @param userId            The ID of the user
+     * @param userDAO           ...
+     * @param toolDAO           ...
+     * @param tagDAO            ...
+     * @param fileDAO           ...
+     * @param client            An HttpClient used by source code repositories
+     * @param githubToken       The user's GitHub token
+     * @param bitbucketToken    The user's Bitbucket token
+     * @param gitlabToken       The user's GitLab token
+     * @param organization      If not null, only refresh tools belonging to the specific organization. Otherwise, refresh all.
+     * @param dashboardPrefix   A string that prefixes logging statements to indicate that it will be used for Cloudwatch & Grafana.
      * @return The list of tools that have been updated
      */
     @SuppressWarnings("checkstyle:parameternumber")
@@ -288,7 +289,7 @@ public abstract class AbstractImageRegistry {
      */
     private void logToolRefresh(final String dashboardPrefix, final Tool tool) {
         List<String> descriptorTypes = tool.getDescriptorType();
-        String name = tool.getToolPath();
+        String name = tool.getEntryPath();
 
         for (String descriptorType : descriptorTypes) {
             LOG.info(String.format("%s: Refreshing %s tool named %s", dashboardPrefix, descriptorType, name));
