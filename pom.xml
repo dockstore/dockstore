@@ -331,6 +331,12 @@
                 <version>5.4.3.Final</version>
             </dependency>
 
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>1.1.0.Final</version>
+            </dependency>
+
             <!-- jersey -->
             <dependency>
                 <groupId>org.glassfish.jersey</groupId>
