@@ -438,7 +438,7 @@ public abstract class AbstractImageRegistry {
                 // create and add a tag if it does not already exist
                 if (!tool.getWorkflowVersions().contains(tag)) {
                     LOG.info(tool.getToolPath() + " : Updating tag {}", tag.getName());
-
+                    tag.setParent(tool);
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
                     releaseCreated = true;

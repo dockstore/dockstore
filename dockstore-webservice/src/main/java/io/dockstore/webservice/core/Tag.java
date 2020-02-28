@@ -21,6 +21,8 @@ import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -41,6 +43,7 @@ import org.apache.commons.io.FilenameUtils;
 @ApiModel(value = "Tag", description = "This describes one tag associated with a container.")
 @Entity
 @SuppressWarnings("checkstyle:magicnumber")
+@Table(name = "tag", uniqueConstraints = @UniqueConstraint(name = "unique_tag_names", columnNames = { "parentid", "name" }))
 public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Column
