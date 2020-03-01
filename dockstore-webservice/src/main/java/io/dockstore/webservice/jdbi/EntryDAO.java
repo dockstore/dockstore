@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -48,7 +49,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author dyuen
  */
-public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> {
+public class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryDAO.class);
 
@@ -59,7 +60,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     private Class<T> typeOfT;
 
-    EntryDAO(SessionFactory factory) {
+    public EntryDAO(SessionFactory factory) {
         super(factory);
         /*
           ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class
@@ -147,6 +148,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public T findPublishedById(long id) {
         return (T)uniqueResult(
             namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
+    }
+
+    public List<Map<String, Object>> findEntryVersions(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getVersionInfoById").setParameter("id", userId));
     }
 
     public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {

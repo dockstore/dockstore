@@ -63,6 +63,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.UserEntriesLite;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -661,8 +662,8 @@ public class UserResource implements AuthenticatedResourceInterface {
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
         final List<EntryUpdateTime> entryUpdateTimes = new ArrayList<>();
-        final User fetchedUser = this.userDAO.findById(authUser.getId());
-
+        //        final User fetchedUser = this.userDAO.findById(authUser.getId());
+        final User fetchedUser = this.userDAO.findById(3L);
         Set<Entry> entries = fetchedUser.getEntries();
         entries.forEach(entry -> {
             Timestamp timestamp = entry.getDbUpdateDate();
@@ -688,6 +689,20 @@ public class UserResource implements AuthenticatedResourceInterface {
             return sortedEntries.subList(0, Math.min(count, sortedEntries.size()));
         }
         return sortedEntries;
+    }
+
+    @GET
+    @Path("/users/entriesLite")
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Operation(operationId = "userEntriesLite", description = "Get relevant columns all of the entries for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<EntryUpdateTime> userEntriesLite(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count) {
+
+        //        User fetchedUser = this.userDAO.findById(authUser.getId());
+        UserEntriesLite userEntriesLite = new UserEntriesLite(authUser.getId(), this.toolDAO, this.workflowDAO, count);
+        return userEntriesLite.getEntryUpdateTimes();
     }
 
     @GET

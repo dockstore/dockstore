@@ -4311,6 +4311,28 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/EntryUpdateTime"
+  /users/users/entriesLite:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "userEntriesLite"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "count"
+        in: "query"
+        required: false
+        type: "integer"
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/EntryUpdateTime"
   /users/users/organizations:
     get:
       tags:

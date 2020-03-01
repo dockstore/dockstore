@@ -80,7 +80,12 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true") })
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getVersionInfoById", query = "SELECT new map(c.id as id, 'tool' as entry_type, c.dbUpdateDate as edbUpdateDate, MAX(v.dbUpdateDate) as vdbUpdateDate) FROM Tool c LEFT JOIN c.workflowVersions v WHERE c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :id) GROUP BY c.id, c.dbUpdateDate")
+        //        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getVersionInfoById", query = "SELECT c FROM Tool c INNER JOIN c.workflowVersions v WHERE c.id in (SELECT c.id FROM User u INNER JOIN u.entries c where u.id = :id) GROUP BY c ORDER BY MAX(v.dbUpdateDate) desc")
+})
+
+
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tool extends Entry<Tool, Tag> {
