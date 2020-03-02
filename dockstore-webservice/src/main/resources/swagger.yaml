@@ -6821,6 +6821,10 @@ definitions:
         type: "string"
         position: 4
         description: "Docker ID of the image"
+      imageRegistry:
+        type: "string"
+        position: 5
+        description: "Registry image belongs to"
     description: "Image(s) associated with tags and workflow versions"
   Label:
     type: "object"

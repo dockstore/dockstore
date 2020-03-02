@@ -359,6 +359,8 @@ components:
           type: array
         imageID:
           type: string
+        imageRegistry:
+          type: string
         repository:
           type: string
         tag:

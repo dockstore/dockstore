@@ -49,6 +49,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.ImageData;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -894,6 +895,10 @@ public class WorkflowIT extends BaseIT {
                 assertTrue(trsVersion.isIsProduction());
                 assertEquals("There should be" + numImages + "image(s) in this workflow", numImages, trsVersion.getImages().size());
                 snapshotInList = true;
+                for (ImageData imageData :trsVersion.getImages()) {
+                    assertNotNull(imageData.getChecksum());
+                    assertNotNull(imageData.getRegistryHost());
+                }
             } else {
                 assertFalse(trsVersion.isIsProduction());
                 assertEquals("Non-snapshotted versions should have 0 images ", 0, trsVersion.getImages().size());

@@ -121,7 +121,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             final String imageID = quayTag.getImageId();
             List<Checksum> checksums = new ArrayList<>();
             checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-            return Collections.singleton(new Image(checksums, repo, tag.getName(), imageID));
+            return Collections.singleton(new Image(checksums, repo, tag.getName(), imageID, tool.getRegistry()));
         } catch (IndexOutOfBoundsException | NullPointerException ex) {
             LOG.error("Could not get checksum information for " + repo, ex);
             return Collections.emptySet();

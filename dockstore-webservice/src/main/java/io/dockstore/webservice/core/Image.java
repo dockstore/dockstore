@@ -61,6 +61,10 @@ public class Image {
     @ApiModelProperty(value = "Docker ID of the image", position = 4)
     private String imageID;
 
+    @Column()
+    @ApiModelProperty(value = "Registry image belongs to", position = 5)
+    private String imageRegistry;
+
     @Column(updatable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
@@ -73,11 +77,12 @@ public class Image {
 
     }
 
-    public Image(List<Checksum> checksums, String repository, String tag, String imageID) {
+    public Image(List<Checksum> checksums, String repository, String tag, String imageID, String imageRegistry) {
         this.checksums = checksums;
         this.repository = repository;
         this.tag = tag;
         this.imageID = imageID;
+        this.imageRegistry = imageRegistry;
     }
 
     public String getTag() {
@@ -104,13 +109,20 @@ public class Image {
         return this.repository;
     }
 
-
     public void setChecksums(List<Checksum> checksums) {
         this.checksums = checksums;
     }
 
     public List<Checksum> getChecksums() {
         return this.checksums;
+    }
+
+    public String getImageRegistry() {
+        return imageRegistry;
+    }
+
+    public void setImageRegistry(final String imageRegistry) {
+        this.imageRegistry = imageRegistry;
     }
 
 }
