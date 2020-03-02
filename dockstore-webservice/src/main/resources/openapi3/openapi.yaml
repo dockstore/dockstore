@@ -776,18 +776,36 @@ components:
       - versions
       type: object
     ToolClass:
-      description: Describes a class (type) of tool allowing us to categorize workflows,
-        tasks, and maybe even other entities (such as services) separately.
       properties:
         description:
-          description: A longer explanation of what this class is and what it can
-            accomplish.
           type: string
         id:
-          description: The unique identifier for the class.
           type: string
         name:
-          description: A short friendly name for the class.
+          type: string
+      type: object
+    ToolDescriptor:
+      properties:
+        descriptor:
+          type: string
+        type:
+          enum:
+          - CWL
+          - WDL
+          - NFL
+          - SERVICE
+          - GXFORMAT2
+          type: string
+        url:
+          type: string
+      required:
+      - type
+      type: object
+    ToolDockerfile:
+      properties:
+        dockerfile:
+          type: string
+        url:
           type: string
       type: object
     ToolFile:
@@ -822,6 +840,46 @@ components:
           type: string
         toolVersionName:
           type: string
+      type: object
+    ToolTestsV1:
+      properties:
+        test:
+          type: string
+        url:
+          type: string
+      type: object
+    ToolV1:
+      properties:
+        author:
+          type: string
+        contains:
+          items:
+            type: string
+          type: array
+        description:
+          type: string
+        id:
+          type: string
+        meta-version:
+          type: string
+        organization:
+          type: string
+        signed:
+          type: boolean
+        toolclass:
+          $ref: '#/components/schemas/ToolClass'
+        toolname:
+          type: string
+        url:
+          type: string
+        verified:
+          type: boolean
+        verified-source:
+          type: string
+        versions:
+          items:
+            $ref: '#/components/schemas/ToolVersionV1'
+          type: array
       type: object
     ToolVersion:
       description: A tool version describes a particular iteration of a tool as described
@@ -909,6 +967,32 @@ components:
       required:
       - id
       - url
+      type: object
+    ToolVersionV1:
+      properties:
+        descriptor-type:
+          items:
+            enum:
+            - CWL
+            - WDL
+            type: string
+          type: array
+        dockerfile:
+          type: boolean
+        id:
+          type: string
+        image:
+          type: string
+        meta-version:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        verified:
+          type: boolean
+        verified-source:
+          type: string
       type: object
     User:
       properties:
@@ -1112,8 +1196,8 @@ components:
           - SWL
           - NFL
           - service
-          
-          
+          - cwl
+          - wdl
           type: string
         descriptorTypeSubclass:
           enum:
@@ -1342,6 +1426,252 @@ info:
   version: 1.9.0-alpha.4-SNAPSHOT
 openapi: 3.0.1
 paths:
+  /api/ga4gh/v1/tools:
+    get:
+      description: This endpoint returns all tools available or a filtered subset
+        using metadata query parameters.
+      operationId: toolsGetV1
+      parameters:
+      - in: query
+        name: id
+        schema:
+          type: string
+      - in: query
+        name: registry
+        schema:
+          type: string
+      - in: query
+        name: organization
+        schema:
+          type: string
+      - in: query
+        name: name
+        schema:
+          type: string
+      - in: query
+        name: toolname
+        schema:
+          type: string
+      - in: query
+        name: description
+        schema:
+          type: string
+      - in: query
+        name: author
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          format: int32
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+                type: array
+          description: An array of Tools that match the filter.
+      summary: List all tools
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tools/{id}:
+    get:
+      description: This endpoint returns one specific tool (which has ToolVersions
+        nested inside it)
+      operationId: toolsIdGetV1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolV1'
+          description: A tool.
+      summary: List one specific tool, acts as an anchor for self references
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tools/{id}/versions:
+    get:
+      description: Returns all versions of the specified tool
+      operationId: toolsIdVersionGetV1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolVersionV1'
+                type: array
+          description: An array of tool versions
+      summary: List versions of a tool
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}:
+    get:
+      description: This endpoint returns one specific tool version
+      operationId: versionIdGetV1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolVersionV1'
+          description: A tool version.
+      summary: List one specific tool version, acts as an anchor for self references
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/dockerfile:
+    get:
+      description: Returns the dockerfile for the specified image.
+      operationId: dockerfileGetV1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDockerfile'
+          description: The tool payload.
+      summary: Get the dockerfile for the specified image.
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor:
+    get:
+      description: Returns the CWL or WDL descriptor for the specified tool.
+      operationId: descriptorGetV1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+          description: The tool descriptor.
+      summary: Get the tool descriptor (CWL/WDL) for the specified tool.
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
+    get:
+      description: Returns additional CWL or WDL descriptors for the specified tool
+        in the same or subdirectories
+      operationId: relativeDescriptorGetV1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: relative_path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+          description: The tool descriptor.
+      summary: Get additional tool descriptor files (CWL/WDL) relative to the main
+        file
+      tags:
+      - GA4GHV1
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/tests:
+    get:
+      operationId: testsGetV1
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolTestsV1'
+                type: array
+          description: The tool test JSON response.
+      summary: Get an array of test JSONs suitable for use with this descriptor type.
+      tags:
+      - GA4GHV1
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.
@@ -2202,7 +2532,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []

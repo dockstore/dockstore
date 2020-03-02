@@ -155,7 +155,7 @@ paths:
       - "GA4GHV1"
       summary: "List all tools"
       description: "This endpoint returns all tools available or a filtered subset\
-        \ using metadata query parameters. "
+        \ using metadata query parameters."
       operationId: "toolsGet"
       produces:
       - "application/json"
