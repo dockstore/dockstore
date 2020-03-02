@@ -33,7 +33,7 @@ public final class ResourceConstants {
     public static final String ORGANIZATIONS = "Operations on Dockstore organizations";
     public static final String CURATION = "List and modify notifications for users of Dockstore";
     public static final String NIHDATACOMMONS = "Needed for SmartAPI compatibility apparantly, might be cargo cult behaviour";
-
+    public static final String OPENAPI_JWT_SECURITY_DEFINITION_NAME = "bearer";
     private ResourceConstants() {
         // utility class
     }
