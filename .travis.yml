@@ -94,6 +94,9 @@ install:
 - scripts/install-tests.sh
 - sudo apt-get install -y postgresql-client-11
 - DOCKERIZE_VERSION=v0.3.0 bash -c 'wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz'
+# Postgres 11 needs to be explicitly configured to trust local connections.
+# It was easier to run PG as a Docker container and take advantage of the POSTGRES_HOST_AUTH_METHOD env
+# variable, rather than modifying the conf file for the one installed via Travis addon and then restarting it.
 - docker pull postgres:11.6-alpine
 - docker run -p 5432:5432 --env POSTGRES_HOST_AUTH_METHOD=trust -d postgres:11.6-alpine
 - dockerize -wait tcp://localhost:5432 -timeout 1m
