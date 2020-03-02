@@ -20,12 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 
 /**
  * Create image registries
@@ -34,13 +32,9 @@ import org.apache.http.client.HttpClient;
  */
 public class ImageRegistryFactory {
 
-    private final HttpClient client;
     private final Token quayToken;
-    private final ObjectMapper objectMapper;
 
-    public ImageRegistryFactory(final HttpClient client, final ObjectMapper objectMapper, final Token quayToken) {
-        this.client = client;
-        this.objectMapper = objectMapper;
+    public ImageRegistryFactory(final Token quayToken) {
         this.quayToken = quayToken;
     }
 
@@ -62,7 +56,7 @@ public class ImageRegistryFactory {
             if (quayToken == null) {
                 return null;
             }
-            return new QuayImageRegistry(client, objectMapper, quayToken);
+            return new QuayImageRegistry(quayToken);
         } else if (validRegistry) {
             return new ManualRegistry(registry);
         } else {

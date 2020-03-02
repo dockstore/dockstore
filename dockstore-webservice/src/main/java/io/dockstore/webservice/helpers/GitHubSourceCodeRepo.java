@@ -38,6 +38,10 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.yaml.DockstoreYaml12;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
+import io.dockstore.common.yaml.Service12;
+import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -74,8 +78,6 @@ import org.kohsuke.github.RateLimitHandler;
 import org.kohsuke.github.extras.ImpatientHttpConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.error.YAMLException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
@@ -601,17 +603,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private WorkflowVersion setupServiceFilesForGitHubVersion(Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, SourceFile dockstoreYml) {
         // Grab all files from files array
-        Yaml yaml = new Yaml();
         List<String> files;
         try {
-            // TODO: Should use classes to validate and retrieve fields from the dockstore.yml - https://github.com/dockstore/dockstore/issues/3241
-            Map<String, Object> map = yaml.load(dockstoreYml.getContent());
-            Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
-            files = (List<String>)serviceObject.get("files");
+            final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
+            final List<Service12> services = dockstoreYaml12.getServices();
+            if (services.isEmpty()) {
+                LOG.error(".dockstore.yml has no services");
+                return null;
+            }
+            // TODO: Handle more than one service.
+            files = services.get(0).getFiles();
             // null catch due to .dockstore.yml files like https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/.dockstore.yml
-        } catch (YAMLException | ClassCastException | NullPointerException ex) {
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "Invalid .dockstore.yml";
-            LOG.info(msg, ex);
+            LOG.error(msg, ex);
             return null;
         }
         for (String filePath: files) {
@@ -644,42 +649,31 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private WorkflowVersion setupWorkflowFilesForGitHubVersion(Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, Workflow workflow, Map<String, WorkflowVersion> existingDefaults, SourceFile dockstoreYml) {
         // Determine version information from dockstore.yml
-        Map<String, Object> workflowMap = null;
+        YamlWorkflow theWf = null;
         List<String> testParameterPaths = null;
         try {
-            Yaml yaml = new Yaml();
+            final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
+            // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
+            final Optional<YamlWorkflow> maybeWorkflow = dockstoreYaml12.getWorkflows().stream().filter(wf -> {
+                final String wfName = wf.getName();
+                final String dockstoreWorkflowPath =
+                        "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");
 
-            // TODO: Should use classes to validate and retrieve fields from the dockstore.yml - https://github.com/dockstore/dockstore/issues/3241
-            // Find matching workflow entry in .dockstore.yml and grab information
-            Map<String, Object> map = yaml.load(dockstoreYml.getContent());
-            List<Map<String, Object>> workflows = (List<Map<String, Object>>)map.get("workflows");
-            for (Map<String, Object> wf : workflows) {
-                String wfName = (String)wf.get("name");
-                String dockstoreWorkflowPath = "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");
-
-                if (Objects.equals(dockstoreWorkflowPath, workflow.getEntryPath())) {
-                    workflowMap = wf;
-                    testParameterPaths = (List<String>)wf.get("testParameterFiles");
-                    break;
-                }
-            }
-
-            // If no matching workflow found, ignore version
-            if (workflowMap == null) {
+                return (Objects.equals(dockstoreWorkflowPath, workflow.getEntryPath()));
+            }).findFirst();
+            if (!maybeWorkflow.isPresent()) {
                 return null;
             }
-        } catch (YAMLException | ClassCastException | NullPointerException ex) {
-            String msg = "Invalid .dockstore.yml";
+            theWf = maybeWorkflow.get();
+            testParameterPaths = theWf.getTestParameterFiles();
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            String msg = "Invalid .dockstore.yml: " + ex.getMessage();
             LOG.error(msg, ex);
             return null;
         }
 
-        String primaryDescriptorPath = (String)workflowMap.get("primaryDescriptorPath");
-        if (primaryDescriptorPath == null)  {
-            String msg = ".dockstore.yml is missing the required primaryDescriptorPath field.";
-            LOG.error(msg);
-            return null;
-        }
+        // No need to check for null, has been validated
+        String primaryDescriptorPath = theWf.getPrimaryDescriptorPath();
 
         version.setWorkflowPath(primaryDescriptorPath);
 
