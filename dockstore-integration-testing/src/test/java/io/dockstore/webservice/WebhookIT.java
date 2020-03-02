@@ -108,7 +108,6 @@ public class WebhookIT extends BaseIT {
 
         // Ensure that existing workflow is updated
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
-        assertEquals("Should have two versions 0.1 and 0.2", 2, workflow.getWorkflowVersions().size());
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
@@ -121,10 +120,13 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should only have two services", 2, workflows.size());
 
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
-        assertEquals("Should have three versions 0.1, 0.2, and master", 3, workflow.getWorkflowVersions().size());
+        assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
+        assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
+        assertTrue("Should have a 0.2 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
         workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
-        assertEquals("Should have two versions 0.2 and master", 2, workflow2.getWorkflowVersions().size());
+        assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
+        assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
     }
 
     /**
@@ -144,16 +146,20 @@ public class WebhookIT extends BaseIT {
         Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
-        assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
+        assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
 
         // Refresh
         workflow = client.refresh(workflow.getId());
         assertNotNull(workflow);
         assertEquals("Should have four workflow versions: 0.1, 0.2 and 0.3, and master", 4, workflow.getWorkflowVersions().size());
 
+        Optional<WorkflowVersion> versionOne = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.1")).findFirst();
         Optional<WorkflowVersion> versionTwo = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.2")).findFirst();
         Optional<WorkflowVersion> versionThree = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.3")).findFirst();
         Optional<WorkflowVersion> versionMaster = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "master")).findFirst();
+
+        assertTrue("Version 0.1 should exist", versionOne.isPresent());
+        assertEquals("", "/Dockstore.wdl", versionOne.get().getWorkflowPath());
 
         assertTrue("Version 0.2 should exist", versionTwo.isPresent());
         assertEquals("", "/Dockstore.wdl", versionTwo.get().getWorkflowPath());

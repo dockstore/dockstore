@@ -17,6 +17,7 @@ package io.dockstore.webservice;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.MultivaluedMap;
@@ -45,6 +46,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -358,8 +360,10 @@ public class ServiceIT extends BaseIT {
         io.swagger.client.model.Workflow service = services.get(0);
         service = client.refresh(service.getId());
         assertNotNull(service);
-        assertEquals("Should have two new versions master and 1.0", 2, service.getWorkflowVersions().size());
-
+        assertTrue("Should have at least the versions master and 1.0", service.getWorkflowVersions().size() >= 2);
+        assertTrue("Should have a master version.", service.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
+        assertTrue("Should have a 1.0 version.", service.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "1.0")));
+        
         // Set default version
         client.updateWorkflowDefaultVersion(service.getId(), "1.0");
     }

@@ -908,7 +908,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         if (!matcher.find()) {
             String msg = "Reference " + gitReference + " is not of the valid form";
-            LOG.info(msg);
+            LOG.error(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
         String gitBranchType = matcher.group(1);
