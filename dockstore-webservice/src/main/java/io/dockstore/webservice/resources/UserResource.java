@@ -155,7 +155,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}")
     @Operation(operationId = "getSpecificUser")
     @ApiOperation(nickname = "getSpecificUser", value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
+    public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(authUser, userId);
         User user = userDAO.findById(userId);
         if (user == null) {
@@ -170,7 +170,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/user")
     @Operation(operationId = "getUser")
     @ApiOperation(nickname = "getUser", value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth User user) {
+    public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         Hibernate.initialize(foundUser.getUserProfiles());
         return foundUser;
