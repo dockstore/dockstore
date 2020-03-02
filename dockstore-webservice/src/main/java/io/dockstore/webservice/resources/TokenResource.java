@@ -74,6 +74,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -629,9 +631,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/orcid.org")
     @ApiOperation(value = "Add a new orcid.org token", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
-            + "Once a user has approved permissions for Collaboratory"
-            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addOrcidToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) throws IOException {
+            + "Once a user has approved permissions for ORCID, "
+            + "their browser will load the redirect URI which should resolve here", response = Token.class)
+    @Operation(operationId = "addOrcidToken", summary = "Request and store tokens from ORCID API", security = @SecurityRequirement(name = "bearer"))
+    public Token addOrcidToken(@ApiParam(hidden = true) @Auth final User user, @QueryParam("code") final String code) {
         String accessToken;
         String refreshToken;
         String username;
@@ -655,7 +658,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             username = tokenResponse.get("name").toString();
 
         } catch (IOException e) {
-            LOG.error("Retrieving accessToken was unsuccessful");
+            LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage());
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
