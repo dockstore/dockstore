@@ -6824,7 +6824,13 @@ definitions:
       imageRegistry:
         type: "string"
         position: 5
-        description: "Registry image belongs to"
+        description: "Registry the image belongs to"
+        enum:
+        - "QUAY_IO"
+        - "DOCKER_HUB"
+        - "GITLAB"
+        - "AMAZON_ECR"
+        - "SEVEN_BRIDGES"
     description: "Image(s) associated with tags and workflow versions"
   Label:
     type: "object"

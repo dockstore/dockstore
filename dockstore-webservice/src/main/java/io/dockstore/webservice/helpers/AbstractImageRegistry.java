@@ -330,8 +330,7 @@ public abstract class AbstractImageRegistry {
                         final String manifestDigest = i.getDigest();
                         checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
                     }
-                    Set<Image> images = Collections.singleton(new Image(checksums, repo, tag.getName(), r.getImageID(), tool.getRegistry()));
-                    tag.getImages().addAll(images);
+                    tag.getImages().add(new Image(checksums, repo, tag.getName(), r.getImageID(), Registry.DOCKER_HUB));
                     tags.add(tag);
                 }
 
@@ -595,8 +594,7 @@ public abstract class AbstractImageRegistry {
                                 List<Checksum> checksums = new ArrayList<>();
 
                                 checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-                                Set<Image> images = Collections.singleton(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null, tool.getRegistry()));
-                                tag.getImages().addAll(images);
+                                tag.getImages().add(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null, Registry.GITLAB));
                                 tags.add(tag);
                             }
                         }

@@ -23,11 +23,14 @@ import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -62,8 +65,9 @@ public class Image {
     private String imageID;
 
     @Column()
-    @ApiModelProperty(value = "Registry image belongs to", position = 5)
-    private String imageRegistry;
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Registry the image belongs to", position = 5)
+    private Registry imageRegistry;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -77,7 +81,7 @@ public class Image {
 
     }
 
-    public Image(List<Checksum> checksums, String repository, String tag, String imageID, String imageRegistry) {
+    public Image(List<Checksum> checksums, String repository, String tag, String imageID, Registry imageRegistry) {
         this.checksums = checksums;
         this.repository = repository;
         this.tag = tag;
@@ -117,11 +121,11 @@ public class Image {
         return this.checksums;
     }
 
-    public String getImageRegistry() {
+    public Registry getImageRegistry() {
         return imageRegistry;
     }
 
-    public void setImageRegistry(final String imageRegistry) {
+    public void setImageRegistry(final Registry imageRegistry) {
         this.imageRegistry = imageRegistry;
     }
 

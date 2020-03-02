@@ -873,7 +873,6 @@ public class WorkflowIT extends BaseIT {
 
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world");
         testTRSConversion(versions, "1.0.1", 1);
-        ToolVersion snapshottedVersion = versions.stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
 
         // Test that a workflow version containing an unversioned image isn't saved
         WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", "/cwl/workflow_docker.cwl", "1.0");
@@ -895,6 +894,7 @@ public class WorkflowIT extends BaseIT {
                 assertTrue(trsVersion.isIsProduction());
                 assertEquals("There should be" + numImages + "image(s) in this workflow", numImages, trsVersion.getImages().size());
                 snapshotInList = true;
+                assertFalse(trsVersion.getImages().isEmpty());
                 for (ImageData imageData :trsVersion.getImages()) {
                     assertNotNull(imageData.getChecksum());
                     assertNotNull(imageData.getRegistryHost());

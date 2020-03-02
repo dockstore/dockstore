@@ -69,7 +69,7 @@ public enum Registry {
 
     @Override
     public String toString() {
-        return dockerPath;
+        return (dockerPath != null) ? dockerPath : friendlyName;
     }
 
     public String getFriendlyName() {

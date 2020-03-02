@@ -360,6 +360,12 @@ components:
         imageID:
           type: string
         imageRegistry:
+          enum:
+          - quay.io
+          - registry.hub.docker.com
+          - registry.gitlab.com
+          - Amazon ECR
+          - Seven Bridges
           type: string
         repository:
           type: string
