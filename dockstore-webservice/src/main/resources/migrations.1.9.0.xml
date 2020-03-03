@@ -41,4 +41,13 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="aduncan (generated)" id="addLegacyVersionColumn">
+        <addColumn tableName="workflowversion">
+            <column name="islegacyversion" type="bool"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET islegacyversion = false;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

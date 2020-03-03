@@ -1267,6 +1267,8 @@ components:
         last_modified:
           format: date-time
           type: string
+        legacyVersion:
+          type: boolean
         name:
           type: string
         output_file_formats:
@@ -2330,7 +2332,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
