@@ -1193,8 +1193,8 @@ components:
           - SWL
           - NFL
           - service
-          
-          
+          - cwl
+          - wdl
           type: string
         descriptorTypeSubclass:
           enum:
@@ -1598,6 +1598,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ToolDescriptor'
           description: The tool descriptor.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+          description: The tool can not be output in the specified type.
       summary: Get the tool descriptor (CWL/WDL) for the specified tool.
       tags:
       - GA4GHV1
@@ -1634,6 +1640,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ToolDescriptor'
           description: The tool descriptor.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+          description: The tool can not be output in the specified type.
       summary: Get additional tool descriptor files (CWL/WDL) relative to the main
         file
       tags:
@@ -1666,6 +1678,14 @@ paths:
                   $ref: '#/components/schemas/ToolTestsV1'
                 type: array
           description: The tool test JSON response.
+        "404":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolTestsV1'
+                type: array
+          description: The tool can not be output in the specified type.
       summary: Get an array of test JSONs suitable for use with this descriptor type.
       tags:
       - GA4GHV1
