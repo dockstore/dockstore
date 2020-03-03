@@ -4746,7 +4746,8 @@ paths:
         type: "string"
       - name: "gitReference"
         in: "formData"
-        description: "Git reference for a GitHub tag"
+        description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
+          \ or refs/tags/v1.0"
         required: true
         type: "string"
       - name: "installationId"

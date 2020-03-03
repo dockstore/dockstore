@@ -93,7 +93,7 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "0.1", installationId);
+        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
         assertEquals("Should only have one service", 1, workflows.size());
 
         // Ensure that new workflow is created and is what is expected
@@ -103,18 +103,30 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
-        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "0.2", installationId);
+        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.2", installationId);
         assertEquals("Should only have two services", 2, workflows.size());
 
         // Ensure that existing workflow is updated
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
-        assertEquals("Should have two versions 0.1 and 0.2", 2, workflow.getWorkflowVersions().size());
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
         assertEquals("Should be a CWL workflow", Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
         assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
+
+        // Branch master on GitHub - updates two existing workflows
+        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/heads/master", installationId);
+        assertEquals("Should only have two services", 2, workflows.size());
+
+        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
+        assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
+        assertTrue("Should have a 0.2 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+
+        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
+        assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
+        assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
     }
 
     /**
@@ -127,28 +139,35 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "0.1", installationId);
+        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
         assertEquals("Should only have one service", 1, workflows.size());
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
-        assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
+        assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
 
         // Refresh
         workflow = client.refresh(workflow.getId());
         assertNotNull(workflow);
-        assertEquals("Should have two workflow versions: 0.1, 0.2 and 0.3", 3, workflow.getWorkflowVersions().size());
 
+        Optional<WorkflowVersion> versionOne = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.1")).findFirst();
         Optional<WorkflowVersion> versionTwo = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.2")).findFirst();
         Optional<WorkflowVersion> versionThree = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.3")).findFirst();
+        Optional<WorkflowVersion> versionMaster = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "master")).findFirst();
+
+        assertTrue("Version 0.1 should exist", versionOne.isPresent());
+        assertEquals("", "/Dockstore.wdl", versionOne.get().getWorkflowPath());
 
         assertTrue("Version 0.2 should exist", versionTwo.isPresent());
         assertEquals("", "/Dockstore.wdl", versionTwo.get().getWorkflowPath());
 
         assertTrue("Version 0.3 should exist", versionThree.isPresent());
         assertEquals("", "/Dockstore2.wdl", versionThree.get().getWorkflowPath());
+
+        assertTrue("Version master should exist", versionMaster.isPresent());
+        assertEquals("", "/Dockstore2.wdl", versionMaster.get().getWorkflowPath());
     }
 
     /**
@@ -161,7 +180,7 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         try {
-            client.handleGitHubRelease(workflowRepo, "thisisafakeuser", "0.1", installationId);
+            client.handleGitHubRelease(workflowRepo, "thisisafakeuser", "refs/tags/0.1", installationId);
             Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should not be able to add a workflow when user does not exist on Dockstore.", LAMBDA_ERROR, ex.getCode());
