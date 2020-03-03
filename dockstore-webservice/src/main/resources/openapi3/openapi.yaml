@@ -2199,7 +2199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -3338,6 +3338,11 @@ paths:
         schema:
           format: int32
           type: integer
+      - description: Filter paths with matching text
+        in: query
+        name: filter
+        schema:
+          type: string
       responses:
         default:
           content:

@@ -76,7 +76,10 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
         //        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getVersionInfoById", query = "SELECT c FROM Workflow c INNER JOIN c.workflowVersions v WHERE c.id in (SELECT c.id FROM User u INNER JOIN u.entries c where u.id = :id) GROUP BY c ORDER BY MAX(v.dbUpdateDate) desc")
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getVersionInfoById", query = "SELECT new map(c.id as id, 'workflow' as entry_type, c.dbUpdateDate as edbUpdateDate, MAX(v.dbUpdateDate) as vdbUpdateDate) FROM Workflow c LEFT JOIN c.workflowVersions v WHERE c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :id) GROUP BY c.id, c.dbUpdateDate")
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntryLiteByUserId", query = "SELECT new map(c.id as id, 'WORKFLOW' as entry_type, c.sourceControl as sourceControl, c.organization as organization, c.repository as repository, c.workflowName as workflowName, c.dbUpdateDate as edbUpdateDate, MAX(v.dbUpdateDate) as vdbUpdateDate) "
+                + "FROM Workflow c LEFT JOIN c.workflowVersions v "
+                + "WHERE c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
+                + "GROUP BY c.id, c.dbUpdateDate, c.sourceControl, c.organization, c.repository, c.workflowName")
 })
 
 // TODO: Replace this with JPA when possible
@@ -161,6 +164,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Override
     public String getEntryPath() {
         return this.getWorkflowPath();
+
     }
 
     public abstract Entry getParentEntry();
@@ -260,6 +264,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(position = 25)
     public String getPath() {
         return sourceControl.toString() + '/' + organization + '/' + repository;
+    }
+
+    public static String getWorkflowPathFromFields(String sourceControl, String organization, String repository, String workflowName) {
+        return getParentPath(sourceControl, organization, repository) + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
+    }
+
+    private static String getParentPath(String sourceControl, String organization, String repository) {
+        return sourceControl + '/' + organization + '/' + repository;
     }
 
     /**

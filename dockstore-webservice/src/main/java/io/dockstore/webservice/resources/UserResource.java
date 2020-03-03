@@ -662,8 +662,8 @@ public class UserResource implements AuthenticatedResourceInterface {
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
         final List<EntryUpdateTime> entryUpdateTimes = new ArrayList<>();
-        //        final User fetchedUser = this.userDAO.findById(authUser.getId());
-        final User fetchedUser = this.userDAO.findById(3L);
+        final User fetchedUser = this.userDAO.findById(authUser.getId());
+        //        final User fetchedUser = this.userDAO.findById(3L);
         Set<Entry> entries = fetchedUser.getEntries();
         entries.forEach(entry -> {
             Timestamp timestamp = entry.getDbUpdateDate();
@@ -698,11 +698,25 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Operation(operationId = "userEntriesLite", description = "Get relevant columns all of the entries for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
     public List<EntryUpdateTime> userEntriesLite(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
-                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count) {
+                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
+                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
 
         //        User fetchedUser = this.userDAO.findById(authUser.getId());
-        UserEntriesLite userEntriesLite = new UserEntriesLite(authUser.getId(), this.toolDAO, this.workflowDAO, count);
-        return userEntriesLite.getEntryUpdateTimes();
+        //UserEntriesLite userEntriesLite = new UserEntriesLite(authUser.getId(), this.toolDAO, this.workflowDAO);
+        UserEntriesLite userEntriesLite = new UserEntriesLite(authUser.getId(), this.toolDAO, this.workflowDAO);
+
+        List<EntryUpdateTime> sortedEntries = userEntriesLite.getEntryUpdateTimes();
+
+        List<EntryUpdateTime> filteredEntries = sortedEntries
+                .stream()
+                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
+                .collect(Collectors.toList());
+
+        if (count != null) {
+            return filteredEntries.subList(0, Math.min(count, filteredEntries.size()));
+        }
+        return filteredEntries;
+
     }
 
     @GET

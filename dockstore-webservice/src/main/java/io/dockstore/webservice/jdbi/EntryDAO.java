@@ -151,7 +151,7 @@ public class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> {
     }
 
     public List<Map<String, Object>> findEntryVersions(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getVersionInfoById").setParameter("id", userId));
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId").setParameter("userId", userId));
     }
 
     public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {

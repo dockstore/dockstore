@@ -4326,6 +4326,10 @@ paths:
         required: false
         type: "integer"
         format: "int32"
+      - name: "filter"
+        in: "query"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"

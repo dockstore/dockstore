@@ -81,10 +81,6 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return (long)query.uniqueResult();
     }
 
-    public List<Long> findUserEntries(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.User.findUserEntries").setParameter("id", userId));
-    }
-
 
     public boolean delete(User user) {
         try {

@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import io.dockstore.common.EntryType;
 import io.dockstore.common.EntryUpdateTime;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -18,10 +19,10 @@ public class UserEntriesLite {
     private List<Map<String, Object>> entryMaps;
     //private List<Entry> entries;
     private List<EntryUpdateTime> entryUpdateTimes;
-    private int count;
+    //  private int count;
 
-    public UserEntriesLite(long userId, ToolDAO toolDAO, WorkflowDAO workflowDAO, int count) {
-        this.count = count;
+    public UserEntriesLite(long userId, ToolDAO toolDAO, WorkflowDAO workflowDAO) {
+        //        this.count = count;
         this.entryMaps = new ArrayList<>();
         EntryDAO entryDAO;
         entryDAO = toolDAO;
@@ -38,24 +39,28 @@ public class UserEntriesLite {
             }
         }
         Collections.sort(this.entryMaps, (e1, e2) -> ((Timestamp)e2.get("lastUpdate")).compareTo((Timestamp)e1.get("lastUpdate")));
-        this.entryMaps = this.entryMaps.subList(0, this.count);
+        // this.entryMaps = this.entryMaps.subList(0, this.count);
         //this.entries = new ArrayList<>();
         this.entryUpdateTimes = new ArrayList<>();
+        String entryPath = null;
         for (Map<String, Object> entryMap: entryMaps) {
             Long id = (Long) entryMap.get("id");
-            String type = (String) entryMap.get("entry_type");
+            EntryType entryType = EntryType.valueOf((String) entryMap.get("entry_type"));
             Timestamp timestamp = (Timestamp) entryMap.get("lastUpdate");
 
-            if (("workflow").equals(type)) {
-                entryDAO = workflowDAO;
-            } else if (("tool").equals(type)) {
-                entryDAO = toolDAO;
+            if (entryType == EntryType.WORKFLOW) {
+                entryPath = Workflow.getWorkflowPathFromFields(entryMap.get("sourceControl").toString(), (String) entryMap.get("organization"),
+                        (String) entryMap.get("repository"), (String) entryMap.get("workflowName"));
+            } else if (entryType == EntryType.TOOL) {
+                entryPath = Tool.getPathFromFields((String) entryMap.get("registry"), (String) entryMap.get("namespace"),
+                        (String) entryMap.get("name"), (String) entryMap.get("toolname"));
             }
-
-            Entry entry = entryDAO.getGenericEntryById(id);
-            List<String> pathElements = Arrays.asList(entry.getEntryPath().split("/"));
+            //            String entryPath = entryDAO.getGenericEntryById(id).getEntryPath();
+            //            Entry entry = entryDAO.getGenericEntryById(id);
+            //            EntryType entryType = entryDAO.getGenericEntryById(id).getEntryType();
+            List<String> pathElements = Arrays.asList(entryPath.split("/"));
             String prettyPath = String.join("/", pathElements.subList(2, pathElements.size()));
-            entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), prettyPath, entry.getEntryType(), timestamp));
+            entryUpdateTimes.add(new EntryUpdateTime(entryPath, prettyPath, entryType, timestamp));
 
             //this.entries.add(entry);
 
