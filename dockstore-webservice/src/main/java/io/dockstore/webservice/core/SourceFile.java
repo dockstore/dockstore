@@ -83,7 +83,7 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
     private String path;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
     private String absolutePath;
 

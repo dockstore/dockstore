@@ -44,5 +44,6 @@
     <changeSet author="gluu (generated)" id="changeFilePathsToText">
         <modifyDataType columnName="path" newDataType="clob" tableName="entry_defaultpaths"/>
         <modifyDataType columnName="path" newDataType="clob" tableName="sourcefile"/>
+        <modifyDataType columnName="absolutepath" newDataType="clob" tableName="sourcefile"/>
     </changeSet>
 </databaseChangeLog>
