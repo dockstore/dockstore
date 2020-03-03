@@ -348,6 +348,139 @@ definitions:
       - config
       - eventConfig
     type: object
+  QuayBuild:
+    description: Dockstore observed return object for builds
+    properties:
+      status:
+        description: TBD
+        type: object
+      error:
+        description: TBD
+        type: object
+      display_name:
+        description: TBD
+        type: string
+      repository:
+        description: TBD
+        type: object
+        properties:
+          namespace:
+            description: TBD
+            type: string
+          name:
+            description: TBD
+            type: string
+      subdirectory:
+        description: TBD
+        type: string
+      started:
+        description: TBD
+        type: string
+      tags:
+        description: TBD
+        type: array
+        items:
+          type: string
+      pull_robot:
+        description: TBD
+        type: string
+      trigger:
+        description: TBD
+        type: object
+        properties:
+          disabled_reason:
+            description: TBD
+            type: object
+          service:
+            description: TBD
+            type: string
+          can_invoke:
+            description: TBD
+            type: boolean
+          repository_url:
+            description: TBD
+            type: string
+          build_source:
+            description: TBD
+            type: string
+          config:
+            description: TBD
+            type: object
+          is_active:
+            description: TBD
+            type: boolean
+          id:
+            description: TBD
+            type: string
+          enabled:
+            description: TBD
+            type: string
+      trigger_metadata:
+        description: TBD
+        type: object
+        properties:
+          default_branch:
+            description: TBD
+            type: string
+          commit:
+            description: TBD
+            type: string
+          ref:
+            description: TBD
+            type: string
+          git_url:
+            description: TBD
+            type: string
+          commit_info:
+            description: TBD
+            type: object
+            properties:
+              url:
+                description: TBD
+                type: string
+              date:
+                description: TBD
+                type: string
+              message:
+                description: TBD
+                type: string
+              author:
+                description: TBD
+                type: object
+                properties:
+                  username:
+                    description: TBD
+                    type: string
+              committer:
+                description: TBD
+                type: object
+                properties:
+                  username:
+                    description: TBD
+                    type: string
+      context:
+        description: TBD
+        type: string
+      is_writer:
+        description: TBD
+        type: boolean
+      phase:
+        description: TBD
+        type: string
+      resource_key:
+        description: TBD
+        type: object
+      manual_user:
+        description: TBD
+        type: object
+      id:
+        description: TBD
+        type: string
+      dockerfile_path:
+        description: TBD
+        type: string
+
+    type: object
   QuayOrganization:
     description: Dockstore observed return object for organization
     properties:
@@ -2673,6 +2806,13 @@ paths:
       responses:
         '200':
           description: Successful invocation
+          schema:
+            type: object
+            properties:
+              repositories:
+                type: array
+                items:
+                  $ref: '#/definitions/QuayRepo'
         '400':
           description: Bad Request
           schema:
@@ -2929,6 +3069,14 @@ paths:
       responses:
         '200':
           description: Successful invocation
+          schema:
+            type: object
+            properties:
+              builds:
+                type: array
+                items:
+                  $ref: '#/definitions/QuayBuild'
+
         '400':
           description: Bad Request
           schema:
