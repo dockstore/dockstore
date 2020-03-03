@@ -79,7 +79,7 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
     private String content;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
     private String path;
 
