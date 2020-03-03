@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -44,6 +43,7 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
+import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT;
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -167,10 +167,8 @@ public class WDLParseTest {
             WDLHandler wdlHandler = new WDLHandler();
             VersionTypeValidation validation = wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
             assertFalse(validation.isValid());
-            // Go through message part and verify it says 'Recursive local import detected'
-            Optional<String> validationEntryMap = validation.getMessage().values().stream()
-                    .filter(msg -> StringUtils.contains(msg, "Recursive local import detected")).findAny();
-            assertTrue(validationEntryMap.isPresent());
+            assertTrue(validation.getMessage().values().stream()
+                    .anyMatch(msg -> StringUtils.contains(msg, ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT)));
         } catch (IOException e) {
             Assert.fail();
         }
