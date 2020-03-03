@@ -16,6 +16,11 @@ jobs:
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
       - run:
+          name: Validate openapi.yaml
+          command: |
+            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.2.3/openapi-generator-cli-4.2.3.jar -O openapi-generator-cli.jar
+            java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+      - run:
           name: install dockerize
           command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
           environment:
