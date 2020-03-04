@@ -377,8 +377,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflowToUpdate = workflow.get();
 
             if (Objects.equals(workflowToUpdate.getMode(), FULL) || Objects.equals(workflowToUpdate.getMode(), STUB)) {
+                LOG.info("Converting workflow to DOCKSTORE_YML");
                 workflowToUpdate.setMode(DOCKSTORE_YML);
-                // Update existing versions with new field
+                workflowToUpdate.setDefaultWorkflowPath("/.dockstore.yml");
             }
         }
 
