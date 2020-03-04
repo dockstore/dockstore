@@ -1215,8 +1215,8 @@ paths:
       - "tokens"
       summary: "Add a new orcid.org token"
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
-        \ approved permissions for CollaboratoryTheir browser will load the redirect\
-        \ URI which should resolve here"
+        \ approved permissions for ORCID, their browser will load the redirect URI\
+        \ which should resolve here"
       operationId: "addOrcidToken"
       produces:
       - "application/json"

@@ -24,12 +24,9 @@ components:
         type: object
       type: object
     Checksum:
-      description: A production (immutable) tool version is required to have a hashcode.
-        Not required otherwise, but might be useful to detect changes.  This exposes
-        the hashcode for specific image versions to verify that the container version
-        pulled is actually the version that was indexed by the registry.
-      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,
-        type=sha256}]'
+      description: 'A production (immutable) tool version is required to have a hashcode.
+        Not required otherwise, but might be useful to detect changes. '
+      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -143,6 +140,14 @@ components:
         googleClientId:
           type: string
         googleScope:
+          type: string
+        orcidAuthUrl:
+          type: string
+        orcidClientId:
+          type: string
+        orcidRedirectPath:
+          type: string
+        orcidScope:
           type: string
         quayIoAuthUrl:
           type: string
@@ -712,6 +717,40 @@ components:
         wdl_path:
           type: string
         workingDirectory:
+          type: string
+      type: object
+    Token:
+      properties:
+        content:
+          type: string
+        dbCreateDate:
+          format: date-time
+          type: string
+        dbUpdateDate:
+          format: date-time
+          type: string
+        id:
+          format: int64
+          type: integer
+        refreshToken:
+          type: string
+        token:
+          type: string
+        tokenSource:
+          enum:
+          - quay.io
+          - github.com
+          - dockstore
+          - bitbucket.org
+          - gitlab.com
+          - zenodo.org
+          - google.com
+          - orcid.org
+          type: string
+        userId:
+          format: int64
+          type: integer
+        username:
           type: string
       type: object
     Tool:
@@ -1342,6 +1381,31 @@ info:
   version: 1.9.0-alpha.4-SNAPSHOT
 openapi: 3.0.1
 paths:
+  /auth/tokens/orcid.org:
+    post:
+      operationId: addOrcidToken
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: default response
+      security:
+      - bearer: []
+      summary: Request and store tokens from ORCID API
+      tags:
+      - tokens
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.
@@ -2202,7 +2266,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -2333,7 +2397,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
       security:
       - bearer: []
