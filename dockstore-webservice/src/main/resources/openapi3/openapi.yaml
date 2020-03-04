@@ -1391,11 +1391,6 @@ paths:
         name: code
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
