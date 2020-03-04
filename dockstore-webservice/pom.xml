@@ -1221,6 +1221,7 @@
                 </executions>
             </plugin>
             <plugin>
+                <!-- This is to validate the openapi.yaml. The generated code is ignored -->
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>4.2.3</version>
