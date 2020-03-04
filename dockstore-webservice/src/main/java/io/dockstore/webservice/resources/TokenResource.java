@@ -137,6 +137,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
+    private final String orcidSummary = "Add a new orcid.org token";
+    private final String orcidDescription = "Using OAuth code from ORCID, request and store tokens from ORCID API";
+
     public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
             DockstoreWebserviceConfiguration configuration) {
         this.tokenDAO = tokenDAO;
@@ -625,16 +628,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
-    final String ORCID_SUMMARY = "Add a new orcid.org token";
-    final String ORCID_DESCRIPTION = "Using OAuth code from ORCID, request and store tokens from ORCID API";
-
     @POST
     @Timed
     @UnitOfWork
     @Path("/orcid.org")
-    @ApiOperation(value = ORCID_SUMMARY, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
-            notes = ORCID_DESCRIPTION, response = Token.class)
-    @Operation(operationId = "addOrcidToken", summary = ORCID_SUMMARY, description = ORCID_DESCRIPTION,
+    @ApiOperation(value = orcidSummary, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
+            notes = orcidDescription, response = Token.class)
+    @Operation(operationId = "addOrcidToken", summary = orcidSummary, description = orcidDescription,
             security = @SecurityRequirement(name = "bearer"))
     public Token addOrcidToken(@ApiParam(hidden = true) @Auth final User user, @QueryParam("code") final String code) {
         String accessToken;
