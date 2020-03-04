@@ -75,6 +75,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -636,7 +637,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             notes = orcidDescription, response = Token.class)
     @Operation(operationId = "addOrcidToken", summary = orcidSummary, description = orcidDescription,
             security = @SecurityRequirement(name = "bearer"))
-    public Token addOrcidToken(@ApiParam(hidden = true) @Auth final User user, @QueryParam("code") final String code) {
+    public Token addOrcidToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth final User user,
+                               @QueryParam("code") final String code) {
         String accessToken;
         String refreshToken;
         String username;
