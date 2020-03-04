@@ -75,7 +75,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     private Date lastModified;
 
     @Column
-    @ApiModelProperty(value = "Whether or not the version existed before a migration", position = 103)
+    @ApiModelProperty(value = "Whether or not the version was added using the legacy refresh process.", position = 104)
     private boolean isLegacyVersion = true;
 
     /**
