@@ -625,15 +625,17 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
+    final String ORCID_SUMMARY = "Add a new orcid.org token";
+    final String ORCID_DESCRIPTION = "Using OAuth code from ORCID, request and store tokens from ORCID API";
+
     @POST
     @Timed
     @UnitOfWork
     @Path("/orcid.org")
-    @ApiOperation(value = "Add a new orcid.org token", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
-            + "Once a user has approved permissions for ORCID, "
-            + "their browser will load the redirect URI which should resolve here", response = Token.class)
-    @Operation(operationId = "addOrcidToken", summary = "Request and store tokens from ORCID API", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = ORCID_SUMMARY, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
+            notes = ORCID_DESCRIPTION, response = Token.class)
+    @Operation(operationId = "addOrcidToken", summary = ORCID_SUMMARY, description = ORCID_DESCRIPTION,
+            security = @SecurityRequirement(name = "bearer"))
     public Token addOrcidToken(@ApiParam(hidden = true) @Auth final User user, @QueryParam("code") final String code) {
         String accessToken;
         String refreshToken;
