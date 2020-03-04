@@ -175,7 +175,7 @@
         <addNotNullConstraint tableName="service" columnName="dbupdatedate"/>
         <addNotNullConstraint tableName="tool" columnName="dbcreatedate"/>
         <addNotNullConstraint tableName="tool" columnName="dbupdatedate"/>
-        
+
         <addNotNullConstraint tableName="workflowversion" columnName="dbcreatedate"/>
         <addNotNullConstraint tableName="workflowversion" columnName="dbupdatedate"/>
         <addNotNullConstraint tableName="tag" columnName="dbcreatedate"/>
@@ -234,6 +234,34 @@
         </sql>
         <sql dbms="postgresql">
             delete from tag where parentid not in (select id from tool);
+        </sql>
+
+        <comment>Delete the source files of deleted tags and versions.</comment>
+        <sql dbms="postgresql">
+            delete from version_sourcefile vs where vs.versionid not in (select wv.id from workflowversion wv union select tag.id from tag);
+            delete from sourcefile_verified sv where sv.id not in (select vs.sourcefileid from version_sourcefile vs);
+            delete from sourcefile s where s.id not in (select vs.sourcefileid from version_sourcefile vs);
+        </sql>
+
+        <comment>Delete references from version_input_fileformat to deleted tags and versions.</comment>
+        <sql dbms="postgresql">
+            delete from version_input_fileformat v where v.versionid not in (select wv.id from workflowversion wv union select tag.id from tag);
+        </sql>
+
+        <comment>Delete references from version_output_fileformat to deleted tags and versions</comment>
+        <sql dbms="postgresql">
+            delete from version_output_fileformat v where v.versionid not in (select wv.id from workflowversion wv union select tag.id from tag);
+        </sql>
+
+        <comment>Delete the version validations of deleted tags and versions.</comment>
+        <sql dbms="postgresql">
+            delete from version_validation vv where vv.versionid not in (select wv.id from workflowversion wv union select tag.id from tag);
+            delete from validation v where v.id not in (select vv.validationid from version_validation vv);
+        </sql>
+
+        <comment>Delete workflow version aliases. There are no tag aliases</comment>
+        <sql dbms="postgresql">
+            delete from workflowversion_alias wa where wa.id not in (select wv.id from workflowversion wv);
         </sql>
 
         <sql dbms="postgresql">
