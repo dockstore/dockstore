@@ -1214,9 +1214,8 @@ paths:
       tags:
       - "tokens"
       summary: "Add a new orcid.org token"
-      description: "This is used as part of the OAuth 2 web flow. Once a user has\
-        \ approved permissions for ORCID, their browser will load the redirect URI\
-        \ which should resolve here"
+      description: "Using OAuth code from ORCID, request and store tokens from ORCID\
+        \ API"
       operationId: "addOrcidToken"
       produces:
       - "application/json"

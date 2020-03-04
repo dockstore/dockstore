@@ -1383,6 +1383,8 @@ openapi: 3.0.1
 paths:
   /auth/tokens/orcid.org:
     post:
+      description: Using OAuth code from ORCID, request and store tokens from ORCID
+        API
       operationId: addOrcidToken
       parameters:
       - in: query
@@ -1403,7 +1405,7 @@ paths:
           description: default response
       security:
       - bearer: []
-      summary: Request and store tokens from ORCID API
+      summary: Add a new orcid.org token
       tags:
       - tokens
   /entries/{id}/topic:
@@ -2397,7 +2399,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
