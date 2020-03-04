@@ -100,10 +100,12 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
-        Optional<Map<String, String>> optValidationMessageObject = reportValidationForLocalRecursiveImports(content,
-                sourceFiles, filepath, null);
+        Optional<String> optValidationMessageObject = reportValidationForLocalRecursiveImports(content,
+                sourceFiles, filepath);
         if (optValidationMessageObject.isPresent()) {
-            version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, optValidationMessageObject.get()));
+            Map<String, String> validationMessageObject = new HashMap<>();
+            validationMessageObject.put(filepath, optValidationMessageObject.get());
+            version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
             return version;
         }
 
@@ -177,21 +179,16 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @param primaryDescriptorContent content of primary descriptor
      * @param sourcefiles Set of sourcefiles to validate
      * @param primaryDescriptorFilePath Path of primary descriptor
-     * @param validationMessageObject Object in which to store messages
      * @return an optional validationMessageObject
      */
-    public Optional<Map<String, String>>  reportValidationForLocalRecursiveImports(String primaryDescriptorContent, Set<SourceFile> sourcefiles,
-            String primaryDescriptorFilePath, Map<String, String> validationMessageObject) {
+    public Optional<String>  reportValidationForLocalRecursiveImports(String primaryDescriptorContent, Set<SourceFile> sourcefiles,
+            String primaryDescriptorFilePath) {
         try {
             String parent = primaryDescriptorFilePath.startsWith("/") ? new File(primaryDescriptorFilePath).getParent() : "/";
             checkForRecursiveLocalImports(primaryDescriptorContent, sourcefiles, new HashSet<>(), parent);
         } catch (ParseException e) {
             LOG.error("Recursive local imports found: ", e);
-            if (validationMessageObject == null) {
-                validationMessageObject = new HashMap<>();
-            }
-            validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
-            return Optional.of(validationMessageObject);
+            return Optional.of(e.getMessage());
         }
         return Optional.empty();
     }
@@ -249,10 +246,11 @@ public class WDLHandler implements LanguageHandlerInterface {
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 checkForRecursiveHTTPImports(content, new HashSet<>());
 
-                Optional<Map<String, String>> optValidationMessageObject = reportValidationForLocalRecursiveImports(content,
-                        sourcefiles, primaryDescriptorFilePath, validationMessageObject);
-                if (optValidationMessageObject.isPresent()) {
-                    return new VersionTypeValidation(false, optValidationMessageObject.get());
+                Optional<String> optValidationMessage = reportValidationForLocalRecursiveImports(content,
+                        sourcefiles, primaryDescriptorFilePath);
+                if (optValidationMessage.isPresent()) {
+                    validationMessageObject.put(primaryDescriptorFilePath, optValidationMessage.get());
+                    return new VersionTypeValidation(false, validationMessageObject);
                 }
 
                 WdlBridge wdlBridge = new WdlBridge();
