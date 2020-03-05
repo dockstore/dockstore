@@ -231,7 +231,7 @@ public abstract class SourceCodeRepoInterface {
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        
+
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
             // when there is an existing stub workflow, just return the new stub as well
             return workflow;

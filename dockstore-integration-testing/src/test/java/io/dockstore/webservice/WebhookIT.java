@@ -45,6 +45,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -99,7 +100,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(workflowVersion -> workflowVersion.isLegacyVersion()));
 
         // Webhook call should convert workflow to DOCKSTORE_YML
-        List<Workflow> workflows = workflowApi.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        workflowApi.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
         workflow = workflowApi.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertEquals("Workflow should be DOCKSTORE_YML mode", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertTrue("One version should be not legacy", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> !workflowVersion.isLegacyVersion()));
@@ -182,7 +183,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.isLegacyVersion());
-        assertTrue("Workflow should not have any legacy refresh versions.", !hasLegacyVersion);
+        assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
 
         // Refresh
         try {
