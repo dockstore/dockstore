@@ -63,17 +63,19 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.UserEntriesLite;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -117,6 +119,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
+    private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
@@ -129,6 +133,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
+        this.serviceDAO = new ServiceDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -663,7 +669,6 @@ public class UserResource implements AuthenticatedResourceInterface {
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
         final List<EntryUpdateTime> entryUpdateTimes = new ArrayList<>();
         final User fetchedUser = this.userDAO.findById(authUser.getId());
-        //        final User fetchedUser = this.userDAO.findById(3L);
         Set<Entry> entries = fetchedUser.getEntries();
         entries.forEach(entry -> {
             Timestamp timestamp = entry.getDbUpdateDate();
@@ -701,22 +706,22 @@ public class UserResource implements AuthenticatedResourceInterface {
                                                  @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                  @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
 
-        //        User fetchedUser = this.userDAO.findById(authUser.getId());
-        //UserEntriesLite userEntriesLite = new UserEntriesLite(authUser.getId(), this.toolDAO, this.workflowDAO);
-        UserEntriesLite userEntriesLite = new UserEntriesLite(authUser.getId(), this.toolDAO, this.workflowDAO);
+        final List<EntryLite> entriesLite = new ArrayList<>();
+        final long userId = authUser.getId();
+        entriesLite.addAll(toolDAO.findEntryVersions(userId));
+        entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
+        entriesLite.addAll(serviceDAO.findEntryVersions(userId));
 
-        List<EntryUpdateTime> sortedEntries = userEntriesLite.getEntryUpdateTimes();
-
-        List<EntryUpdateTime> filteredEntries = sortedEntries
-                .stream()
+        List<EntryUpdateTime> filteredEntries = entriesLite
+                .stream().map(e -> new EntryUpdateTime(e.getEntryPath(), e.makePrettyPath(e.getEntryPath()), e.getEntryType(), new Timestamp(e.getLastUpdated().getTime())))
                 .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
+                .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
         if (count != null) {
             return filteredEntries.subList(0, Math.min(count, filteredEntries.size()));
         }
         return filteredEntries;
-
     }
 
     @GET

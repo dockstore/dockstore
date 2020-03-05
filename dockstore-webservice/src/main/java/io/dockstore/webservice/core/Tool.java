@@ -81,10 +81,10 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteByUserId", query = "SELECT new map(c.id as id, 'TOOL' as entry_type, c.registry as registry, c.namespace as namespace, c.name as name, c.toolname as toolname, c.dbUpdateDate as edbUpdateDate, MAX(v.dbUpdateDate) as vdbUpdateDate) "
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteTool(c.registry, c.namespace, c.name, c.toolname, c.dbUpdateDate as edbUpdateDate, MAX(v.dbUpdateDate) as vdbUpdatedate) "
                 + "FROM Tool c LEFT JOIN c.workflowVersions v "
                 + "WHERE c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
-                + "GROUP BY c.id, c.dbUpdateDate, c.registry, c.namespace, c.name, c.toolname")
+                + "GROUP BY c.registry, c.namespace, c.name, c.toolname, c.dbUpdateDate")
         //        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getVersionInfoById", query = "SELECT c FROM Tool c INNER JOIN c.workflowVersions v WHERE c.id in (SELECT c.id FROM User u INNER JOIN u.entries c where u.id = :id) GROUP BY c ORDER BY MAX(v.dbUpdateDate) desc")
 })
 
