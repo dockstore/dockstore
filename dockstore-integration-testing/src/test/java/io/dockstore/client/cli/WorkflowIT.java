@@ -233,6 +233,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
         final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+        workflows.addAll(usersApi.refreshWorkflowsByOrganization(user.getId(), "dockstore_testuser2"));
 
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
