@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,19 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
                 if (files == null) {
                     validationMessageObject.put(initialPath, "The key 'files' does not exist.");
                     isValid = false;
+                } else {
+                    // check that files in .dockstore.yml exist
+                    ArrayList<String> missingFiles = new ArrayList<String>();
+                    for (String file : files) {
+                        String absolutePath = "/" + file;
+                        if (indexedFiles.get(absolutePath) == null) {
+                            missingFiles.add(String.format("'%s'", file));
+                        }
+                    }
+                    if (!missingFiles.isEmpty()) {
+                        validationMessageObject.put(initialPath, String.format("The following file(s) are missing: %s.", String.join(", ", missingFiles)));
+                        isValid = false;
+                    }
                 }
             }
         } catch (YAMLException | ClassCastException ex) {
