@@ -127,6 +127,9 @@ public class WebhookIT extends BaseIT {
         workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
         assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
         assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+
+        boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.isLegacyVersion());
+        assertTrue("Workflow should not have any legacy refresh versions.", !hasLegacyVersion);
     }
 
     /**
@@ -147,6 +150,8 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
+        boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.isLegacyVersion());
+        assertTrue("Workflow should not have any legacy refresh versions.", !hasLegacyVersion);
 
         // Refresh
         workflow = client.refresh(workflow.getId());
@@ -158,16 +163,16 @@ public class WebhookIT extends BaseIT {
         Optional<WorkflowVersion> versionMaster = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "master")).findFirst();
 
         assertTrue("Version 0.1 should exist", versionOne.isPresent());
-        assertEquals("", "/Dockstore.wdl", versionOne.get().getWorkflowPath());
+        assertEquals("Should have the correct workflow path", "/Dockstore.wdl", versionOne.get().getWorkflowPath());
 
         assertTrue("Version 0.2 should exist", versionTwo.isPresent());
-        assertEquals("", "/Dockstore.wdl", versionTwo.get().getWorkflowPath());
+        assertEquals("Should have the correct workflow path", "/Dockstore.wdl", versionTwo.get().getWorkflowPath());
 
         assertTrue("Version 0.3 should exist", versionThree.isPresent());
-        assertEquals("", "/Dockstore2.wdl", versionThree.get().getWorkflowPath());
+        assertEquals("Should have the correct workflow path", "/Dockstore2.wdl", versionThree.get().getWorkflowPath());
 
         assertTrue("Version master should exist", versionMaster.isPresent());
-        assertEquals("", "/Dockstore2.wdl", versionMaster.get().getWorkflowPath());
+        assertEquals("Should have the correct workflow path", "/Dockstore2.wdl", versionMaster.get().getWorkflowPath());
     }
 
     /**

@@ -530,6 +530,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             dockstoreYmlClone.setType(dockstoreYml.getType());
         }
         version.addSourceFile(dockstoreYmlClone);
+        version.setLegacyVersion(false);
 
         if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
             return setupServiceFilesForGitHubVersion(ref, repository, version, dockstoreYml);

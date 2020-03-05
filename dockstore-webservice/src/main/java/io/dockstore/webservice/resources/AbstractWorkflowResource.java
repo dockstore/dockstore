@@ -403,7 +403,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Create version and pull relevant files
             WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             workflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
-            workflowVersion.setLegacyVersion(false);
             workflow.addWorkflowVersion(workflowVersion);
             LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
