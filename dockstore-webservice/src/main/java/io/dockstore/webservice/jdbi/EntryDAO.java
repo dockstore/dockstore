@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author dyuen
  */
-public class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> {
+public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryDAO.class);
 
@@ -60,7 +60,7 @@ public class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> {
 
     private Class<T> typeOfT;
 
-    public EntryDAO(SessionFactory factory) {
+    EntryDAO(SessionFactory factory) {
         super(factory);
         /*
           ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class

@@ -159,7 +159,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Override
     public String getEntryPath() {
         return this.getWorkflowPath();
-
     }
 
     public abstract Entry getParentEntry();
@@ -259,14 +258,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(position = 25)
     public String getPath() {
         return sourceControl.toString() + '/' + organization + '/' + repository;
-    }
-
-    public static String getWorkflowPathFromFields(String sourceControl, String organization, String repository, String workflowName) {
-        return getParentPath(sourceControl, organization, repository) + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
-    }
-
-    private static String getParentPath(String sourceControl, String organization, String repository) {
-        return sourceControl + '/' + organization + '/' + repository;
     }
 
     /**

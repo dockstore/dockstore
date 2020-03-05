@@ -38,7 +38,7 @@ import io.swagger.annotations.ApiModelProperty;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from BioWorkflow c where c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate", query = "SELECT new io.dockstore.webservice.core.database.RSSWorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) from BioWorkflow c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
-        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteWorkflow(c.sourceControl, c.organization, c.repository, c.workflowName, c.dbUpdateDate as edbUpdateDate, MAX(v.dbUpdateDate) as vdbUpdateDate) "
+        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteWorkflow(c.sourceControl, c.organization, c.repository, c.workflowName, c.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
                 + "FROM Workflow c LEFT JOIN c.workflowVersions v "
                 + "WHERE c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
                 + "GROUP BY c.sourceControl, c.organization, c.repository, c.workflowName, c.dbUpdateDate")

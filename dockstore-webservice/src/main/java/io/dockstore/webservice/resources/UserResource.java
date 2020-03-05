@@ -19,7 +19,6 @@ package io.dockstore.webservice.resources;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,7 +62,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.EntryLite;
@@ -667,51 +665,14 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
-        final List<EntryUpdateTime> entryUpdateTimes = new ArrayList<>();
-        final User fetchedUser = this.userDAO.findById(authUser.getId());
-        Set<Entry> entries = fetchedUser.getEntries();
-        entries.forEach(entry -> {
-            Timestamp timestamp = entry.getDbUpdateDate();
-            Set<Version> versions = entry.getWorkflowVersions();
-            Optional<Version> mostRecentTag = versions.stream().max(Comparator.comparing(Version::getDbUpdateDate));
-            if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
-                timestamp = mostRecentTag.get().getDbUpdateDate();
-            }
-            List<String> pathElements = Arrays.asList(entry.getEntryPath().split("/"));
-            String prettyPath = String.join("/", pathElements.subList(2, pathElements.size()));
-            entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), prettyPath, entry.getEntryType(), timestamp));
-        });
-
-        // Sort all entryUpdateTimes by timestamp
-        List<EntryUpdateTime> sortedEntries = entryUpdateTimes
-                .stream()
-                .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
-                .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
-
-        // Grab subset if necessary
-        if (count != null) {
-            return sortedEntries.subList(0, Math.min(count, sortedEntries.size()));
-        }
-        return sortedEntries;
-    }
-
-    @GET
-    @Path("/users/entriesLite")
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Operation(operationId = "userEntriesLite", description = "Get relevant columns all of the entries for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
-    @ApiOperation(value = "See OpenApi for details")
-    public List<EntryUpdateTime> userEntriesLite(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
-                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
-                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
-
+        //get entries with only minimal columns from database
         final List<EntryLite> entriesLite = new ArrayList<>();
         final long userId = authUser.getId();
         entriesLite.addAll(toolDAO.findEntryVersions(userId));
         entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
         entriesLite.addAll(serviceDAO.findEntryVersions(userId));
 
+        //cleanup fields for UI, filter, and sort
         List<EntryUpdateTime> filteredEntries = entriesLite
                 .stream().map(e -> new EntryUpdateTime(e.getEntryPath(), e.makePrettyPath(e.getEntryPath()), e.getEntryType(), new Timestamp(e.getLastUpdated().getTime())))
                 .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))

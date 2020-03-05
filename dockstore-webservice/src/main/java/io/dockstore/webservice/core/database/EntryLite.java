@@ -10,11 +10,17 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 
-public abstract class EntryLite implements Comparable<EntryLite> {
+/**
+ * This class describes lightweight entry objects that are used for making type-safe named queries
+ * @author ldcabansay
+ * @since 1.9.0
+ */
+public abstract class EntryLite {
     private final Date lastUpdated;
 
-    EntryLite(Date edbUpdatedate, Date vdbUpdatedate) {
-        this.lastUpdated = vdbUpdatedate == null ? edbUpdatedate : (edbUpdatedate.getTime() > vdbUpdatedate.getTime() ? edbUpdatedate : vdbUpdatedate);
+    EntryLite(Date entryUpdated, Date versionUpdated) {
+        //choose the greater update time between overall entry and most recently updated version
+        this.lastUpdated = versionUpdated == null ? entryUpdated : (entryUpdated.getTime() > versionUpdated.getTime() ? entryUpdated : versionUpdated);
     }
 
     public Date getLastUpdated() {
@@ -23,24 +29,19 @@ public abstract class EntryLite implements Comparable<EntryLite> {
 
     public abstract String getEntryPath();
 
-
     public abstract EntryType getEntryType();
-
-    @Override
-    public int compareTo(final EntryLite o) {
-        return this.lastUpdated.compareTo(o.lastUpdated);
-    }
 
     public String makePrettyPath(String path) {
         List<String> pathElements = Arrays.asList(path.split("/"));
         return String.join("/", pathElements.subList(2, pathElements.size()));
     }
 
+
     public static class EntryLiteTool extends EntryLite {
         private final Tool tool = new Tool();
 
-        public EntryLiteTool(final String registry, final String namespace, final String name, final String toolname, final Date edbUpdatedate, final Date vdbUpdatedate) {
-            super(edbUpdatedate, vdbUpdatedate);
+        public EntryLiteTool(final String registry, final String namespace, final String name, final String toolname, final Date entryUpdated, final Date versionUpdated) {
+            super(entryUpdated, versionUpdated);
             this.tool.setRegistry(registry);
             this.tool.setNamespace(namespace);
             this.tool.setName(name);
@@ -59,11 +60,12 @@ public abstract class EntryLite implements Comparable<EntryLite> {
         }
     }
 
+
     public static class EntryLiteWorkflow extends EntryLite {
         private final BioWorkflow workflow = new BioWorkflow();
 
-        public EntryLiteWorkflow(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date edbUpdatedate, final Date vdbUpdatedate) {
-            super(edbUpdatedate, vdbUpdatedate);
+        public EntryLiteWorkflow(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date entryUpdated, final Date versionUpdated) {
+            super(entryUpdated, versionUpdated);
             this.workflow.setSourceControl(sourceControl);
             this.workflow.setOrganization(organization);
             this.workflow.setRepository(repository);
@@ -85,8 +87,8 @@ public abstract class EntryLite implements Comparable<EntryLite> {
     public static class EntryLiteService extends EntryLite {
         private final Service service = new Service();
 
-        public EntryLiteService(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date edbUpdatedate, final Date vdbUpdatedate) {
-            super(edbUpdatedate, vdbUpdatedate);
+        public EntryLiteService(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date entryUpdated, final Date versionUpdated) {
+            super(entryUpdated, versionUpdated);
             this.service.setSourceControl(sourceControl);
             this.service.setOrganization(organization);
             this.service.setRepository(repository);

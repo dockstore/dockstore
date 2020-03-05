@@ -81,11 +81,10 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteTool(c.registry, c.namespace, c.name, c.toolname, c.dbUpdateDate as edbUpdateDate, MAX(v.dbUpdateDate) as vdbUpdatedate) "
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteTool(c.registry, c.namespace, c.name, c.toolname, c.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
                 + "FROM Tool c LEFT JOIN c.workflowVersions v "
                 + "WHERE c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
                 + "GROUP BY c.registry, c.namespace, c.name, c.toolname, c.dbUpdateDate")
-        //        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getVersionInfoById", query = "SELECT c FROM Tool c INNER JOIN c.workflowVersions v WHERE c.id in (SELECT c.id FROM User u INNER JOIN u.entries c where u.id = :id) GROUP BY c ORDER BY MAX(v.dbUpdateDate) desc")
 })
 
 
@@ -247,13 +246,6 @@ public class Tool extends Entry<Tool, Tag> {
         return registry + '/' + namespace + '/' + name;
     }
 
-    public static String getPathFromFields(String registry, String namespace, String name, String toolname) {
-        return getParentPath(registry, namespace, name) + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
-    }
-
-    private static String getParentPath(String registry, String namespace, String name) {
-        return registry + '/' + namespace + '/' + name;
-    }
     /**
      * Calculated property for demonstrating search by language, inefficient
      *
