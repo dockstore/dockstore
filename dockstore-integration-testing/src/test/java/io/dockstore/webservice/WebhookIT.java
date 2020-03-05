@@ -161,7 +161,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.isLegacyVersion());
-        assertTrue("Workflow should not have any legacy refresh versions.", !hasLegacyVersion);
+        assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
     }
 
     /**
