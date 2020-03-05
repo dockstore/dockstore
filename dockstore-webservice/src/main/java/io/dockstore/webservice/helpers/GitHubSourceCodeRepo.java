@@ -387,17 +387,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
             if (ref != null) {
-                SourceFile dockstoreYml = null;
-                if (workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
-                    try {
-                        dockstoreYml = getDockstoreYml(repository.getFullName(), ref.getLeft());
-                    } catch (CustomWebApplicationException ex) {
-                        LOG.error("No .dockstore.yml present.", ex);
-                        continue;
-                    }
-                }
                 WorkflowVersion version = setupWorkflowVersionsHelper(repositoryId, workflow, ref, existingWorkflow, existingDefaults,
-                    repository, dockstoreYml);
+                    repository, null);
                 if (version != null) {
                     workflow.addWorkflowVersion(version);
                 }

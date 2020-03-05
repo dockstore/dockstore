@@ -20,7 +20,6 @@ package io.dockstore.webservice;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BasicIT;
@@ -31,6 +30,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
@@ -44,8 +44,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author agduncan
@@ -154,25 +154,12 @@ public class WebhookIT extends BaseIT {
         assertTrue("Workflow should not have any legacy refresh versions.", !hasLegacyVersion);
 
         // Refresh
-        workflow = client.refresh(workflow.getId());
-        assertNotNull(workflow);
-
-        Optional<WorkflowVersion> versionOne = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.1")).findFirst();
-        Optional<WorkflowVersion> versionTwo = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.2")).findFirst();
-        Optional<WorkflowVersion> versionThree = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "0.3")).findFirst();
-        Optional<WorkflowVersion> versionMaster = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), "master")).findFirst();
-
-        assertTrue("Version 0.1 should exist", versionOne.isPresent());
-        assertEquals("Should have the correct workflow path", "/Dockstore.wdl", versionOne.get().getWorkflowPath());
-
-        assertTrue("Version 0.2 should exist", versionTwo.isPresent());
-        assertEquals("Should have the correct workflow path", "/Dockstore.wdl", versionTwo.get().getWorkflowPath());
-
-        assertTrue("Version 0.3 should exist", versionThree.isPresent());
-        assertEquals("Should have the correct workflow path", "/Dockstore2.wdl", versionThree.get().getWorkflowPath());
-
-        assertTrue("Version master should exist", versionMaster.isPresent());
-        assertEquals("Should have the correct workflow path", "/Dockstore2.wdl", versionMaster.get().getWorkflowPath());
+        try {
+            client.refresh(workflow.getId());
+            fail("Should fail on refresh and not reach this point");
+        } catch (ApiException ex) {
+            assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
     }
 
     /**
