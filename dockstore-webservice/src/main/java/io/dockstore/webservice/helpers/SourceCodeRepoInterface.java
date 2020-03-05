@@ -217,12 +217,6 @@ public abstract class SourceCodeRepoInterface {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
 
-        if (Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
-            String msg = "Cannot refresh .dockstore.yml workflows";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
         // Nextflow and (future) dockstore.yml workflow can be detected and handled without stubs
 
         // Determine if workflow should be returned as a STUB or FULL
@@ -231,6 +225,13 @@ public abstract class SourceCodeRepoInterface {
             workflow.setDescriptorType(DescriptorLanguage.CWL);
             return workflow;
         }
+
+        if (Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
+            String msg = "Cannot refresh .dockstore.yml workflows";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+        
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
             // when there is an existing stub workflow, just return the new stub as well
             return workflow;
