@@ -25,6 +25,7 @@ import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
@@ -81,6 +82,36 @@ public class WebhookIT extends BaseIT {
         // used to allow us to use tokenDAO outside of the web service
         this.session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
+    }
+
+    @Test
+    public void testWorkflowMigration() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow workflow = workflowApi
+            .manualRegister(SourceControl.GITHUB.getFriendlyName(), workflowRepo, "/Dockstore.wdl",
+                "foobar", "wdl", "/test.json");
+        
+        // Refresh should work
+        workflow = workflowApi.refresh(workflow.getId());
+        assertEquals("Workflow should be FULL mode", Workflow.ModeEnum.FULL, workflow.getMode());
+        assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(workflowVersion -> workflowVersion.isLegacyVersion()));
+
+        // Webhook call should convert workflow to DOCKSTORE_YML
+        List<Workflow> workflows = workflowApi.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        workflow = workflowApi.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        assertEquals("Workflow should be DOCKSTORE_YML mode", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
+        assertTrue("One version should be not legacy", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> !workflowVersion.isLegacyVersion()));
+
+        // Refresh should now no longer work
+        try {
+            workflowApi.refresh(workflow.getId());
+            fail("Should fail on refresh and not reach this point");
+        } catch (ApiException ex) {
+            assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
+
     }
 
     /**
