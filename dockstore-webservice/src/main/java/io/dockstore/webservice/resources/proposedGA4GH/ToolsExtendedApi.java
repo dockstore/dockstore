@@ -194,7 +194,6 @@ public class ToolsExtendedApi {
         public static final String OK_RESPONSE = "The tool test JSON response.";
         public static final String NOT_FOUND_RESPONSE = "The tool test cannot be found to annotate.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
-        private VerifyTestParameterFilePost() { }
     }
     private static final class ToolsIndexGet {
         public static final String SUMMARY = "Update the index of tools";
