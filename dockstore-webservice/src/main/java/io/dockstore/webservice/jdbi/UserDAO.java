@@ -81,7 +81,6 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return (long)query.uniqueResult();
     }
 
-
     public boolean delete(User user) {
         try {
             // user.getUserProfiles().values().forEach(profile -> currentSession().delete(profile));
