@@ -672,16 +672,13 @@ public class UserResource implements AuthenticatedResourceInterface {
         entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
         entriesLite.addAll(serviceDAO.findEntryVersions(userId));
 
-        //cleanup fields for UI, filter, and sort
+        //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
         List<EntryUpdateTime> filteredEntries = entriesLite
-                .stream().map(e -> new EntryUpdateTime(e.getEntryPath(), e.makePrettyPath(e.getEntryPath()), e.getEntryType(), new Timestamp(e.getLastUpdated().getTime())))
+                .stream().map(e -> new EntryUpdateTime(e.getEntryPath(), e.getPrettyPath(), e.getEntryType(), new Timestamp(e.getLastUpdated().getTime())))
                 .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(count != null ? count : Integer.MAX_VALUE)
                 .collect(Collectors.toList());
-
-        if (count != null) {
-            return filteredEntries.subList(0, Math.min(count, filteredEntries.size()));
-        }
         return filteredEntries;
     }
 

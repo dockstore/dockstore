@@ -31,8 +31,8 @@ public abstract class EntryLite {
 
     public abstract EntryType getEntryType();
 
-    public String makePrettyPath(String path) {
-        List<String> pathElements = Arrays.asList(path.split("/"));
+    public String getPrettyPath() {
+        List<String> pathElements = Arrays.asList(getEntryPath().split("/"));
         return String.join("/", pathElements.subList(2, pathElements.size()));
     }
 
