@@ -209,7 +209,7 @@ public class UserResourceIT extends BaseIT {
         assertNotNull(user);
         // try to delete with published workflows
         userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
-        userApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
+        userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser2");
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted
@@ -382,8 +382,8 @@ public class UserResourceIT extends BaseIT {
 
         List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
         assertFalse(entries.isEmpty());
-        assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPath());
-        assertEquals("dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPrettyPath());
+        assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified")));
+        assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
 
         // Update an entry
         Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);

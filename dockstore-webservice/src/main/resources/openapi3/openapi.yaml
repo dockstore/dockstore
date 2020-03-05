@@ -1196,8 +1196,8 @@ components:
           - SWL
           - NFL
           - service
-          - cwl
-          - wdl
+          
+          
           type: string
         descriptorTypeSubclass:
           enum:
@@ -2683,7 +2683,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []

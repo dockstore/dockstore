@@ -664,6 +664,8 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+        workflows.addAll(usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser"));
+        workflows.addAll(usersApi.refreshWorkflowsByOrganization(userId, "dockstoretesting"));
 
         // Check that there are multiple workflows
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
@@ -725,8 +727,8 @@ public class WorkflowIT extends BaseIT {
                 .equalsIgnoreCase("dockstore-whalesay-2")));
 
         // Check that for a repo from my organization that I forked to DockstoreTestUser2, that it along with the original repo are present
-        assertEquals("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.", 2,
-            workflows.stream().filter((Workflow workflow) ->
+        assertTrue("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.",
+            2 <= workflows.stream().filter((Workflow workflow) ->
                 (workflow.getOrganization().equalsIgnoreCase("dockstoretesting") || workflow.getOrganization()
                     .equalsIgnoreCase("DockstoreTestUser2")) && workflow.getRepository().equalsIgnoreCase("basic-workflow")).count());
 
