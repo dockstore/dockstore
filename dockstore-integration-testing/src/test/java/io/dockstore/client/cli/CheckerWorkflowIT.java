@@ -245,7 +245,7 @@ public class CheckerWorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         final Long id = usersApi.getUser().getId();
         if (all) {
-            usersApi.refreshWorkflows(id);
+            usersApi.refreshWorkflowsByOrganization(id, "DockstoreTestUser2");
         } else {
             usersApi.refreshWorkflowsByOrganization(id, stubCheckerWorkflow.getOrganization());
         }

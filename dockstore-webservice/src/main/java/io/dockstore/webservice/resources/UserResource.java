@@ -475,31 +475,6 @@ public class UserResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{userId}/containers/refresh")
-    @ApiOperation(nickname =  "refresh", value = "Refresh all tools owned by the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
-    public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-
-        checkUser(authUser, userId);
-
-        // Checks if the user has the tokens for their current tools
-        checkToolTokens(authUser, userId, null);
-
-        dockerRepoResource.refreshToolsForUser(userId, null);
-        userDAO.clearCache();
-        // TODO: Only update the ones that have changed
-        authUser = userDAO.findById(authUser.getId());
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
-
-        List<Tool> finalTools = getTools(authUser);
-        bulkUpsertTools(authUser);
-        return finalTools;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/{userId}/workflows/{organization}/refresh")
     @ApiOperation(value = "Refresh all workflows owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
@@ -516,27 +491,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         // Update user data
         authUser.updateUserMetadata(tokenDAO);
 
-        List<Workflow> finalWorkflows = getWorkflows(authUser);
-        bulkUpsertWorkflows(authUser);
-        return finalWorkflows;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{userId}/workflows/refresh")
-    @ApiOperation(value = "Refresh all workflows owned by the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-
-        checkUser(authUser, userId);
-
-        // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser, null, new HashSet<>());
-        // Refresh the user
-        authUser = userDAO.findById(authUser.getId());
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
         List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
         return finalWorkflows;

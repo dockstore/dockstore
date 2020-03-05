@@ -34,7 +34,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.BioWorkflow;
 import io.swagger.client.model.Collection;
-import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.EntryUpdateTime;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
@@ -209,7 +208,8 @@ public class UserResourceIT extends BaseIT {
         User user = userApi.getUser();
         assertNotNull(user);
         // try to delete with published workflows
-        userApi.refreshWorkflows(user.getId());
+        userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
+        userApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted
@@ -378,7 +378,8 @@ public class UserResourceIT extends BaseIT {
 
         Workflow addedWorkflow = workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
-        List<DockstoreTool> tools = userApi.refresh(user.getId());
+        userApi.refreshToolsByOrganization((long)1, "dockstore.test.user2");
+
         List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
         assertFalse(entries.isEmpty());
         assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPath());

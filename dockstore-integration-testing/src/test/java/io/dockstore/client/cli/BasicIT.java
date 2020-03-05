@@ -150,7 +150,8 @@ public class BasicIT extends BaseIT {
 
         final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         // should have 0 tools to start with
-        usersApi.refresh((long)1);
+        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser");
+        usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2");
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
@@ -160,7 +161,8 @@ public class BasicIT extends BaseIT {
 
         // refresh
         try {
-            usersApi.refresh((long)1);
+            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser");
+            usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2");
             fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message since user has Quay tools but no Quay token.",
@@ -181,7 +183,8 @@ public class BasicIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // Refresh all
-        usersApi.refreshWorkflows((long)1);
+        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
+        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);

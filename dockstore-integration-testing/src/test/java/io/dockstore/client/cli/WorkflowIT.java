@@ -198,7 +198,7 @@ public class WorkflowIT extends BaseIT {
         if (toPublish) {
             workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         }
-        assertTrue(workflow.isIsPublished() == toPublish);
+        assertEquals(workflow.isIsPublished(), toPublish);
         return workflow;
     }
 
@@ -208,7 +208,8 @@ public class WorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
 
-        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
         }
@@ -231,7 +232,7 @@ public class WorkflowIT extends BaseIT {
         User user = usersApi.getUser();
         Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
-        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
 
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
@@ -662,7 +663,7 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
-        final List<Workflow> workflows = usersApi.refreshWorkflows(userId);
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
 
         // Check that there are multiple workflows
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
@@ -747,7 +748,8 @@ public class WorkflowIT extends BaseIT {
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
-        usersApi.refreshWorkflows(userId);
+        usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+
         assertTrue("should remain with nothing published ",
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
         // ensure that sorting or filtering don't expose unpublished workflows
@@ -1164,7 +1166,7 @@ public class WorkflowIT extends BaseIT {
         final Long userId = usersApi.getUser().getId();
 
         // Get workflows
-        usersApi.refreshWorkflows(userId);
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
 
         // Manually register workflow
         boolean success = true;
