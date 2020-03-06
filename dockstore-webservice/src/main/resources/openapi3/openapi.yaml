@@ -1689,6 +1689,193 @@ paths:
       summary: Get an array of test JSONs suitable for use with this descriptor type.
       tags:
       - GA4GHV1
+  /api/ga4gh/v2/extended/containers/{organization}:
+    get:
+      description: This endpoint returns entries of an organization.
+      operationId: entriesOrgGet
+      parameters:
+      - in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+                type: array
+          description: An array of Tools of the input organization.
+      summary: List entries of an organization
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/organizations:
+    get:
+      description: This endpoint returns list of all organizations.
+      operationId: entriesOrgsGet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: An array of organizations' names.
+      summary: List all organizations
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/tools/entry/_search:
+    post:
+      description: This endpoint searches the index for all published tools and workflows.
+        Used by utilities that expect to talk to an elastic search endpoint.
+      operationId: toolsIndexSearch
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: An elastic search result.
+      security:
+      - bearer: []
+      summary: Search the index of tools
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/tools/index:
+    post:
+      description: This endpoint updates the index for all published tools and workflows.
+      operationId: Update the index of tools
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: integer
+          description: An array of Tools of the input organization.
+      security:
+      - bearer: []
+      summary: Update the index of tools
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/tools/{organization}:
+    get:
+      description: This endpoint returns tools of an organization.
+      operationId: toolsOrgGet
+      parameters:
+      - in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+                type: array
+          description: An array of Tools of the input organization.
+      summary: List tools of an organization
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/workflows/{organization}:
+    get:
+      description: This endpoint returns workflows of an organization.
+      operationId: workflowsOrgGet
+      parameters:
+      - in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+                type: array
+          description: An array of Tools of the input organization.
+      summary: List workflows of an organization
+      tags:
+      - extendedGA4GH
+  /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
+    post:
+      description: Test JSON can be annotated with whether they ran correctly keyed
+        by platform and associated with some metadata.
+      operationId: verifyTestParameterFilePost
+      parameters:
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: version_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: relative_path
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: platform
+        schema:
+          type: string
+      - in: query
+        name: platform_version
+        schema:
+          type: string
+      - in: query
+        name: verified
+        schema:
+          type: boolean
+      - in: query
+        name: metadata
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: The tool test JSON response.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credentials not provided or incorrect.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: The tool test cannot be found to annotate.
+      security:
+      - bearer: []
+      summary: Annotate test JSON with information on whether it ran successfully
+        on particular platforms plus metadata
+      tags:
+      - extendedGA4GH
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.
@@ -2680,7 +2867,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []

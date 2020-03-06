@@ -480,11 +480,10 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "List entries of an organization"
-      description: "This endpoint returns entries of an organization. "
+      description: "This endpoint returns entries of an organization."
       operationId: "entriesOrgGet"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "organization"
         in: "path"
@@ -503,11 +502,10 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "List all organizations"
-      description: "This endpoint returns list of all organizations. "
+      description: "This endpoint returns list of all organizations."
       operationId: "entriesOrgsGet"
       produces:
       - "application/json"
-      - "text/plain"
       parameters: []
       responses:
         200:
@@ -522,7 +520,7 @@ paths:
       - "extendedGA4GH"
       summary: "Search the index of tools"
       description: "This endpoint searches the index for all published tools and workflows.\
-        \ Used by utilities that expect to talk to an elastic search endpoint"
+        \ Used by utilities that expect to talk to an elastic search endpoint."
       operationId: "toolsIndexSearch"
       produces:
       - "application/json"
@@ -543,7 +541,7 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "Update the index of tools"
-      description: "This endpoint updates the index for all published tools and workflows. "
+      description: "This endpoint updates the index for all published tools and workflows."
       operationId: "toolsIndexGet"
       produces:
       - "text/plain"
@@ -558,11 +556,10 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "List tools of an organization"
-      description: "This endpoint returns tools of an organization. "
+      description: "This endpoint returns tools of an organization."
       operationId: "toolsOrgGet"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "organization"
         in: "path"
@@ -581,11 +578,10 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "List workflows of an organization"
-      description: "This endpoint returns workflows of an organization. "
+      description: "This endpoint returns workflows of an organization."
       operationId: "workflowsOrgGet"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "organization"
         in: "path"
@@ -606,7 +602,7 @@ paths:
       summary: "Annotate test JSON with information on whether it ran successfully\
         \ on particular platforms plus metadata"
       description: "Test JSON can be annotated with whether they ran correctly keyed\
-        \ by platform and associated with some metadata "
+        \ by platform and associated with some metadata."
       operationId: "toolsIdVersionsVersionIdTypeTestsPost"
       produces:
       - "application/json"
@@ -664,7 +660,7 @@ paths:
             additionalProperties:
               type: "object"
         401:
-          description: "Credentials not provided or incorrect"
+          description: "Credentials not provided or incorrect."
           schema:
             $ref: "#/definitions/Error"
         404:
