@@ -19,7 +19,6 @@ package io.dockstore.webservice.resources;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,16 +62,18 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -116,6 +117,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
+    private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
@@ -128,6 +131,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
+        this.serviceDAO = new ServiceDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -614,34 +619,21 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
-        final List<EntryUpdateTime> entryUpdateTimes = new ArrayList<>();
-        final User fetchedUser = this.userDAO.findById(authUser.getId());
+        //get entries with only minimal columns from database
+        final List<EntryLite> entriesLite = new ArrayList<>();
+        final long userId = authUser.getId();
+        entriesLite.addAll(toolDAO.findEntryVersions(userId));
+        entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
+        entriesLite.addAll(serviceDAO.findEntryVersions(userId));
 
-        Set<Entry> entries = fetchedUser.getEntries();
-        entries.forEach(entry -> {
-            Timestamp timestamp = entry.getDbUpdateDate();
-            Set<Version> versions = entry.getWorkflowVersions();
-            Optional<Version> mostRecentTag = versions.stream().max(Comparator.comparing(Version::getDbUpdateDate));
-            if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
-                timestamp = mostRecentTag.get().getDbUpdateDate();
-            }
-            List<String> pathElements = Arrays.asList(entry.getEntryPath().split("/"));
-            String prettyPath = String.join("/", pathElements.subList(2, pathElements.size()));
-            entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), prettyPath, entry.getEntryType(), timestamp));
-        });
-
-        // Sort all entryUpdateTimes by timestamp
-        List<EntryUpdateTime> sortedEntries = entryUpdateTimes
-                .stream()
+        //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
+        List<EntryUpdateTime> filteredEntries = entriesLite
+                .stream().map(e -> new EntryUpdateTime(e.getEntryPath(), e.getPrettyPath(), e.getEntryType(), new Timestamp(e.getLastUpdated().getTime())))
                 .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(count != null ? count : Integer.MAX_VALUE)
                 .collect(Collectors.toList());
-
-        // Grab subset if necessary
-        if (count != null) {
-            return sortedEntries.subList(0, Math.min(count, sortedEntries.size()));
-        }
-        return sortedEntries;
+        return filteredEntries;
     }
 
     @GET
