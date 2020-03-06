@@ -41,6 +41,13 @@
             </column>
         </addColumn>
     </changeSet>
+
+    <changeSet author="gluu (generated)" id="changeFilePathsToText">
+        <modifyDataType columnName="path" newDataType="clob" tableName="entry_defaultpaths"/>
+        <modifyDataType columnName="path" newDataType="clob" tableName="sourcefile"/>
+        <modifyDataType columnName="absolutepath" newDataType="clob" tableName="sourcefile"/>
+    </changeSet>
+    
     <changeSet author="aduncan (generated)" id="addLegacyVersionColumn">
         <addColumn tableName="workflowversion">
             <column name="islegacyversion" type="bool"/>
@@ -50,5 +57,4 @@
             UPDATE workflowversion SET islegacyversion=false WHERE id IN (SELECT wv.id FROM workflowversion wv JOIN workflow_workflowversion wwv ON wv.id=wwv.workflowversionid WHERE wwv.workflowid IN (SELECT id FROM workflow WHERE mode='DOCKSTORE_YML'));
         </sql>
     </changeSet>
-
 </databaseChangeLog>
