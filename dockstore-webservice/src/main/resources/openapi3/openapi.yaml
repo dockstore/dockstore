@@ -24,9 +24,12 @@ components:
         type: object
       type: object
     Checksum:
-      description: 'A production (immutable) tool version is required to have a hashcode.
-        Not required otherwise, but might be useful to detect changes. '
-      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+      description: A production (immutable) tool version is required to have a hashcode.
+        Not required otherwise, but might be useful to detect changes.  This exposes
+        the hashcode for specific image versions to verify that the container version
+        pulled is actually the version that was indexed by the registry.
+      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,
+        type=sha256}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -1351,6 +1354,8 @@ components:
         last_modified:
           format: date-time
           type: string
+        legacyVersion:
+          type: boolean
         name:
           type: string
         output_file_formats:

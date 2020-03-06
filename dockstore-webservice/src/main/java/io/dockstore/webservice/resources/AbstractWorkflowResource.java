@@ -46,6 +46,8 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.core.WorkflowMode.FULL;
+import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 /**
  * Base class for ServiceResource and WorkflowResource.
@@ -373,10 +375,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LOG.info("Workflow " + dockstoreWorkflowPath + " has been created.");
         } else {
             workflowToUpdate = workflow.get();
-            if (!Objects.equals(workflowToUpdate.getMode(), DOCKSTORE_YML)) {
-                String msg = "Workflow with path " + dockstoreWorkflowPath + " exists on Dockstore but does not use .dockstore.yml";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+
+            if (Objects.equals(workflowToUpdate.getMode(), FULL) || Objects.equals(workflowToUpdate.getMode(), STUB)) {
+                LOG.info("Converting workflow to DOCKSTORE_YML");
+                workflowToUpdate.setMode(DOCKSTORE_YML);
+                workflowToUpdate.setDefaultWorkflowPath("/.dockstore.yml");
             }
         }
 

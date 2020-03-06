@@ -17,7 +17,6 @@ package io.dockstore.webservice;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.MultivaluedMap;
@@ -46,7 +45,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
-import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -68,6 +66,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author dyuen
@@ -358,14 +357,12 @@ public class ServiceIT extends BaseIT {
         List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/tags/1.0", installationId);
         assertEquals("Should only have one service", 1, services.size());
         io.swagger.client.model.Workflow service = services.get(0);
-        service = client.refresh(service.getId());
-        assertNotNull(service);
-        assertTrue("Should have at least the versions master and 1.0", service.getWorkflowVersions().size() >= 2);
-        assertTrue("Should have a master version.", service.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
-        assertTrue("Should have a 1.0 version.", service.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "1.0")));
-        
-        // Set default version
-        client.updateWorkflowDefaultVersion(service.getId(), "1.0");
+        try {
+            client.refresh(service.getId());
+            fail("Should fail on refresh and not reach this point");
+        } catch (ApiException ex) {
+            assertEquals("Should not be able to refresh a dockstore.yml service.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
     }
 
     /**

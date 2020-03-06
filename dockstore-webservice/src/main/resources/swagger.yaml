@@ -8269,6 +8269,8 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      legacyVersion:
+        type: "boolean"
       workingDirectory:
         type: "string"
       reference:
