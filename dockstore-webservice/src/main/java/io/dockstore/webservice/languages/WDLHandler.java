@@ -179,7 +179,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @param primaryDescriptorContent content of primary descriptor
      * @param sourcefiles Set of sourcefiles to validate
      * @param primaryDescriptorFilePath Path of primary descriptor
-     * @return an optional validationMessageObject
+     * @return an optional String
      */
     public Optional<String>  reportValidationForLocalRecursiveImports(String primaryDescriptorContent, Set<SourceFile> sourcefiles,
             String primaryDescriptorFilePath) {
