@@ -1196,8 +1196,8 @@ components:
           - SWL
           - NFL
           - service
-          - cwl
-          - wdl
+          
+          
           type: string
         descriptorTypeSubclass:
           enum:
