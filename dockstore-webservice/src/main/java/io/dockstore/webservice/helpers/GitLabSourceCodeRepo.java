@@ -153,6 +153,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         // Initialize workflow version
         WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
         String calculatedPath = version.getWorkflowPath();
+        // Need to remove root slash form path
+        calculatedPath = calculatedPath.startsWith("/") ? calculatedPath.substring(1) : calculatedPath;
 
         // Now grab source files
         DescriptorLanguage.FileType identifiedType = workflow.getFileType();
