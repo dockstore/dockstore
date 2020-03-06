@@ -141,7 +141,6 @@ public class WDLParseTest {
     public void testLocallyRecursiveImport() {
         String type = "workflow";
         File recursiveWDL = new File(ResourceHelpers.resourceFilePath("local-recursive-import/localrecursive.wdl"));
-        //String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
         String primaryDescriptorFilePath = "localrecursive.wdl";
         SourceFile sourceFile = new SourceFile();
 
