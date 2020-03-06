@@ -20,6 +20,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -219,7 +220,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * - Add or update version for corresponding service and workflow
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param username Username of GitHub user that triggered action
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId GitHub App installation ID
      * @return List of new and updated workflows
      */
@@ -273,7 +274,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * ONLY WORKS FOR v1.2
      * @param dockstoreYml Dockstore YAML File
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param yml Dockstore YML map
      * @param gitHubSourceCodeRepo Source Code Repo
      * @param user User that triggered action
@@ -304,7 +305,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * ONLY WORKS FOR v1.1
      * @param dockstoreYml Dockstore YAML File
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param gitHubSourceCodeRepo Source Code Repo
      * @param user User that triggered action
      * @param yml Dockstore YML map
@@ -389,7 +390,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     /**
      * Add versions to a service or workflow based on Dockstore.yml
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param dockstoreYml Dockstore YAML File
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow
@@ -397,7 +398,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml, GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow) {
         try {
             // Create version and pull relevant files
-            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createTagVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
+            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
+            workflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
             workflow.addWorkflowVersion(workflowVersion);
             LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
@@ -406,6 +408,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
         return workflow;
+    }
+
+    private Version.ReferenceType getReferenceTypeFromGitRef(String gitRef) {
+        if (gitRef.startsWith("refs/heads/")) {
+            return Version.ReferenceType.BRANCH;
+        } else if (gitRef.startsWith("refs/tags/")) {
+            return Version.ReferenceType.TAG;
+        } else {
+            return Version.ReferenceType.NOT_APPLICABLE;
+        }
     }
 
     /**

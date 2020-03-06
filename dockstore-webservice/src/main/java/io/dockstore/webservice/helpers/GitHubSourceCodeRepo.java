@@ -374,9 +374,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
-                if (workflow.getMode() != WorkflowMode.DOCKSTORE_YML || ref.getRef().startsWith("refs/tags")) {
-                    references.add(getRef(ref, repository));
-                }
+                references.add(getRef(ref, repository));
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
@@ -722,7 +720,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Retrieve the Dockstore YML from a given repository tag
      * @param repositoryId Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @return dockstore YML file
      */
     public SourceFile getDockstoreYml(String repositoryId, String gitReference) {
@@ -893,28 +891,44 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Retrieves a tag from GitHub and creates a version on Dockstore
+     * Retrieves a tag/branch from GitHub and creates a version on Dockstore
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Tag reference from GitHub (ex. 1.0)
+     * @param gitReference Branch/tag reference from GitHub (ex. refs/tags/1.0)
      * @param workflow Workflow to add version to
      * @param dockstoreYml Dockstore YML sourcefile
      * @return New or updated version
      * @throws IOException
      */
-    public WorkflowVersion createTagVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
+    public WorkflowVersion createVersionForWorkflow(String repository, String gitReference, Workflow workflow, SourceFile dockstoreYml) throws IOException {
         GHRepository ghRepository = getRepository(repository);
-        String refName = "tags/" + gitReference;
-        GHRef ghRef = ghRepository.getRef(refName);
+
+        // Match the github reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
+        Pattern pattern = Pattern.compile("^refs/(tags|heads)/([a-zA-Z0-9]+([./_-]?[a-zA-Z0-9]+)*)$");
+        Matcher matcher = pattern.matcher(gitReference);
+
+        if (!matcher.find()) {
+            String msg = "Reference " + gitReference + " is not of the valid form";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+        String gitBranchType = matcher.group(1);
+        String gitBranchName = matcher.group(2);
+
+        GHRef ghRef = ghRepository.getRef(gitBranchType + "/" + gitBranchName);
 
         Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
         if (ref == null) {
-            String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
+            String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
-        // Find existing version if it exists
-        Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitReference)).findFirst();
+        // Delete existing version if it exists
+        Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitBranchName)).findFirst();
+        if (existingVersion.isPresent()) {
+            workflow.removeWorkflowVersion(existingVersion.get());
+        }
+
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
         existingVersion.ifPresent(workflowVersion -> existingDefaults.put(gitReference, workflowVersion));
 

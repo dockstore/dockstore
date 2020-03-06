@@ -155,7 +155,7 @@ paths:
       - "GA4GHV1"
       summary: "List all tools"
       description: "This endpoint returns all tools available or a filtered subset\
-        \ using metadata query parameters. "
+        \ using metadata query parameters."
       operationId: "toolsGet"
       produces:
       - "application/json"
@@ -4746,7 +4746,8 @@ paths:
         type: "string"
       - name: "gitReference"
         in: "formData"
-        description: "Git reference for a GitHub tag"
+        description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
+          \ or refs/tags/v1.0"
         required: true
         type: "string"
       - name: "installationId"
