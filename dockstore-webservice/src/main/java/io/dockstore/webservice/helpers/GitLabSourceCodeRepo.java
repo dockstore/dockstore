@@ -227,7 +227,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
      */
     @Override
     public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
-        // Need to remove root slash form path
+        // Need to remove root slash from path
         String convertedPath = path.startsWith("/") ? path.substring(1) : path;
         try {
             GitlabProject project = gitlabAPI.getProject(id.split("/")[0], id.split("/")[1]);
