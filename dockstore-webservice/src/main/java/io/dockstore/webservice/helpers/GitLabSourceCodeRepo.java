@@ -153,8 +153,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         // Initialize workflow version
         WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
         String calculatedPath = version.getWorkflowPath();
-        // Need to remove root slash form path
-        calculatedPath = calculatedPath.startsWith("/") ? calculatedPath.substring(1) : calculatedPath;
 
         // Now grab source files
         DescriptorLanguage.FileType identifiedType = workflow.getFileType();
@@ -229,9 +227,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
      */
     @Override
     public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
+        // Need to remove root slash form path
+        String convertedPath = path.startsWith("/") ? path.substring(1) : path;
         try {
             GitlabProject project = gitlabAPI.getProject(id.split("/")[0], id.split("/")[1]);
-            GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, path, branch);
+            GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, convertedPath, branch);
             if (repositoryFile != null) {
                 SourceFile file = new SourceFile();
                 file.setType(type);
