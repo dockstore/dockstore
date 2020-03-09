@@ -109,6 +109,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String zenodoClientSecret;
 
     @NotEmpty
+    private String orcidClientID;
+
+    @NotEmpty
+    private String orcidClientSecret;
+
+    @NotEmpty
     private String discourseUrl;
 
     @NotEmpty
@@ -364,6 +370,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setZenodoClientSecret(String zenodoClientSecret) {
         this.zenodoClientSecret = zenodoClientSecret;
+    }
+
+    public String getOrcidClientID() {
+        return orcidClientID;
+    }
+
+    public void setOrcidClientID(String orcidClientID) {
+        this.orcidClientID = orcidClientID;
+    }
+
+    public String getOrcidClientSecret() {
+        return orcidClientSecret;
+    }
+
+    public void setOrcidClientSecret(String orcidClientSecret) {
+        this.orcidClientSecret = orcidClientSecret;
     }
 
     public String getDiscourseUrl() {
@@ -657,6 +679,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String zenodoRedirectPath;
         private String zenodoScope;
 
+        private String orcidAuthUrl;
+        private String orcidRedirectPath;
+        private String orcidScope;
+
         private String googleScope;
 
         private String cwlVisualizerUri;
@@ -814,6 +840,29 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.zenodoScope = zenodoScope;
         }
 
+        public String getOrcidAuthUrl() {
+            return orcidAuthUrl;
+        }
+
+        public void setOrcidAuthUrl(String orcidAuthUrl) {
+            this.orcidAuthUrl = orcidAuthUrl;
+        }
+
+        public String getOrcidRedirectPath() {
+            return orcidRedirectPath;
+        }
+
+        public void setOrcidRedirectPath(String orcidRedirectPath) {
+            this.orcidRedirectPath = orcidRedirectPath;
+        }
+
+        public String getOrcidScope() {
+            return orcidScope;
+        }
+
+        public void setOrcidScope(String orcidScope) {
+            this.orcidScope = orcidScope;
+        }
 
         public String getGoogleScope() {
             return googleScope;

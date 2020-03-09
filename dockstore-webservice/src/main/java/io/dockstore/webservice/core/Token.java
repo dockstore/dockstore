@@ -48,16 +48,28 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "token", uniqueConstraints = @UniqueConstraint(name = "one_token_link_per_identify", columnNames = { "username", "tokenSource" }))
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findDockstoreByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'dockstore'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findGithubByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'github.com'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findGoogleByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'google.com'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findZenodoByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'zenodo.org'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findGitlabByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'gitlab.com'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByGitHubUsername", query = "SELECT t FROM Token t WHERE t.username = :username AND t.tokenSource = 'github.com'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent",
+            query = "SELECT t FROM Token t WHERE t.content = :content"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findDockstoreByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'dockstore'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findGithubByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'github.com'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findGoogleByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'google.com'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findZenodoByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'zenodo.org'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findGitlabByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'gitlab.com'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findOrcidByUserId",
+            query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'orcid.org'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByGitHubUsername",
+            query = "SELECT t FROM Token t WHERE t.username = :username AND t.tokenSource = 'github.com'")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")

@@ -17,6 +17,8 @@ zenodoClientID: <fill me in>
 zenodoClientSecret: <fill me in>
 zenodoRedirectURI: http://<fill me in>:8080/auth/zenodo.org
 zenodoUrl: https://zenodo.org
+orcidClientID: <fill me in>
+orcidClientSecret: <fill me in>
 gitHubAppId: <fill me in>
 gitHubAppPrivateKeyFile: <fill me in>
 
@@ -122,6 +124,10 @@ uiConfig:
   zenodoAuthUrl: https://zenodo.org/oauth/authorize
   zenodoRedirectPath: /auth/zenodo.org
   zenodoScope: deposit:write deposit:actions
+
+  orcidAuthUrl: https://sandbox.orcid.org/oauth/authorize
+  orcidRedirectPath: /auth/orcid.org
+  orcidScope: /authorize
 
   googleScope: profile email
 
