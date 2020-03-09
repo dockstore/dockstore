@@ -1232,7 +1232,8 @@
                         </goals>
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/resources/openapi3/openapi.yaml</inputSpec>
-                            <generatorName>java</generatorName>
+                            <generatorName>powershell</generatorName>
+                            <!-- the following options don't seem to work, but might work someday -->
                             <generateApis>false</generateApis>
                             <generateModels>false</generateModels>
                             <generateSupportingFiles>false</generateSupportingFiles>
