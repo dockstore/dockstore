@@ -556,7 +556,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 file.setPath(calculatedPath);
                 file.setAbsolutePath(calculatedPath);
                 file.setType(identifiedType);
-                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, FileFormatHelper.calcSHA1(file.getContent())));
+                Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+
                 version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
 
                 // Use default test parameter file if either new version or existing version that hasn't been edited
@@ -620,7 +622,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 file.setPath(filePath);
                 file.setContent(fileContent);
                 file.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_OTHER);
-                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, FileFormatHelper.calcSHA1(file.getContent())));
+                Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+                if (sha.isPresent()) {
+                    file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                }
                 version.getSourceFiles().add(file);
             } else {
                 // File not found or null
@@ -680,7 +685,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             file.setContent(fileContent);
             DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
             file.setType(identifiedType);
-            file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, FileFormatHelper.calcSHA1(file.getContent())));
+            Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+            if (sha.isPresent()) {
+                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+            }
             version.setWorkflowPath(primaryDescriptorPath);
 
             version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
@@ -738,7 +746,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             dockstoreYml.setPath(dockstoreYmlPath);
             dockstoreYml.setAbsolutePath(dockstoreYmlPath);
             dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
-            dockstoreYml.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, FileFormatHelper.calcSHA1(dockstoreYml.getContent())));
+            Optional<String> sha = FileFormatHelper.calcSHA1(dockstoreYml.getContent());
+            if (sha.isPresent()) {
+                dockstoreYml.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+            }
 
             return dockstoreYml;
         } else {

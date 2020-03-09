@@ -83,8 +83,7 @@
         <addNotNullConstraint tableName="workflowversion" columnName="islegacyversion"/>
     </changeSet>
 
-
-    <changeSet author="natalieperez (generated)" id="1583371295490-1">
+    <changeSet author="natalieperez (generated)" id="addChecksumColumntoSourceFile">
         <addColumn tableName="sourcefile">
             <column name="checksums" type="varchar"/>
         </addColumn>

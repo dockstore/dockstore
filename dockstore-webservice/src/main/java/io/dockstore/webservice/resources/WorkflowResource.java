@@ -21,7 +21,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1315,8 +1314,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     // Grab checksum for file descriptors if not already available.
                     for (SourceFile sourceFile : existingTag.getSourceFiles()) {
                         if (sourceFile.getChecksums() == null || sourceFile.getChecksums().isEmpty()) {
-                            String sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
-                            sourceFile.setChecksums(Collections.singletonList(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha)));
+                            Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
+                            if (sha.isPresent()) {
+                                List<Checksum> checksums = new ArrayList<>();
+                                checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                                sourceFile.setChecksums(checksums);
+                            }
                         }
                     }
                 }

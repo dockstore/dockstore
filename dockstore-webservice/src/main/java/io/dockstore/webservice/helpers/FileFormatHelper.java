@@ -1,9 +1,10 @@
 package io.dockstore.webservice.helpers;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -16,7 +17,6 @@ import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.CWLHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * @since 1.5.0
  */
 public final class FileFormatHelper {
-    private static final Logger LOG = LoggerFactory.getLogger(UserDAO.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileFormatHelper.class);
     private FileFormatHelper() { }
 
     /**
@@ -76,15 +76,19 @@ public final class FileFormatHelper {
         return fileFormatsFromDB;
     }
 
-    public static String calcSHA1(String content) {
-        String sha1 = null;
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-            messageDigest.update(content.getBytes("UTF-8"), 0, content.length());
-            sha1 = DatatypeConverter.printHexBinary(messageDigest.digest());
-        } catch (UnsupportedOperationException | NoSuchAlgorithmException | UnsupportedEncodingException ex) {
-            LOG.error("Unable to calculate sha1", ex);
+    public static Optional<String> calcSHA1(String content) {
+        if (content != null) {
+            try {
+                MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
+                messageDigest.update(content.getBytes(StandardCharsets.UTF_8), 0, content.length());
+                String sha1 = DatatypeConverter.printHexBinary(messageDigest.digest()).toLowerCase();
+                return Optional.of(sha1);
+            } catch (UnsupportedOperationException | NoSuchAlgorithmException ex) {
+                LOG.error("Unable to calculate sha1", ex);
+            }
+        } else {
+            LOG.error("File descriptor content is null");
         }
-        return sha1.toLowerCase();
+        return Optional.empty();
     }
 }

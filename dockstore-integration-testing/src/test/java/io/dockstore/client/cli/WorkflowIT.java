@@ -942,17 +942,17 @@ public class WorkflowIT extends BaseIT {
         for (WorkflowVersion workflowVersion : workflowVersions) {
             if (workflowVersion.getName().equals("testBoth") || workflowVersion.getName().equals("testWDL")) {
                 testedWDL = true;
-                assertTrue(testedWDL);
                 assertNotNull(workflowVersion.getSourceFiles());
-                workflowVersion.getSourceFiles().stream().forEach(sourceFile -> assertNotNull("Should have checksums", sourceFile.getChecksums()));
+                workflowVersion.getSourceFiles().stream().forEach(sourceFile -> assertFalse("Source file should have a checksum", sourceFile.getChecksums().get(0).toString().isEmpty()));
             }
             workflowVersion.getSourceFiles();
         }
+        assertTrue(testedWDL);
 
         // Test grabbing checksum on snapshot
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", "/hello_world.cwl", "1.0.1");
         assertNotNull(version.getSourceFiles());
-        version.getSourceFiles().stream().forEach(sourceFile -> assertNotNull("Should have checksums", sourceFile.getChecksums()));
+        version.getSourceFiles().stream().forEach(sourceFile -> assertFalse("Source File should have a checksum", sourceFile.getChecksums().get(0).toString().isEmpty()));
     }
 
     @Test
