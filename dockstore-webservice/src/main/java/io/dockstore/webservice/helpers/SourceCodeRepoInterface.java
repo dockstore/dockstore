@@ -35,6 +35,7 @@ import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
@@ -50,6 +51,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -223,15 +225,20 @@ public abstract class SourceCodeRepoInterface {
             workflow.setDescriptorType(DescriptorLanguage.CWL);
             return workflow;
         }
+
+        if (Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
+            String msg = "Cannot refresh .dockstore.yml workflows";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
             // when there is an existing stub workflow, just return the new stub as well
             return workflow;
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (!Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
-            workflow.setMode(WorkflowMode.FULL);
-        }
+        workflow.setMode(WorkflowMode.FULL);
 
         // if it exists, extract paths from the previous workflow entry
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();

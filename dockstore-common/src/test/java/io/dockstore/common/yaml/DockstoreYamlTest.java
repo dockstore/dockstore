@@ -23,7 +23,10 @@ import java.util.Optional;
 
 import io.dropwizard.testing.FixtureHelpers;
 import org.apache.commons.io.IOUtils;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -33,6 +36,12 @@ public class DockstoreYamlTest {
     private static final String DOCKSTORE10_YAML = FixtureHelpers.fixture("fixtures/dockstore10.yml");
     private static final String DOCKSTORE11_YAML = FixtureHelpers.fixture("fixtures/dockstore11.yml");
     private static final String DOCKSTORE12_YAML = FixtureHelpers.fixture("fixtures/dockstore12.yml");
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Test
     public void testFindVersion() {

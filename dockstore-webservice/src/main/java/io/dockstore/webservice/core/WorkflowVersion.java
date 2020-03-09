@@ -74,6 +74,10 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102)
     private Date lastModified;
 
+    @Column
+    @ApiModelProperty(value = "Whether or not the version was added using the legacy refresh process.", position = 104)
+    private boolean isLegacyVersion = true;
+
     /**
      * In theory, this should be in a ServiceVersion.
      * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
@@ -180,6 +184,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.aliases = aliases;
     }
 
+    public boolean isLegacyVersion() {
+        return isLegacyVersion;
+    }
+
+    public void setLegacyVersion(boolean legacyVersion) {
+        isLegacyVersion = legacyVersion;
+    }
+
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
             + "contains the Dockstore path to the workflow and the version tag name.")
     public static final class WorkflowVersionPathInfo {
@@ -201,5 +213,4 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return tagName;
         }
     }
-
 }

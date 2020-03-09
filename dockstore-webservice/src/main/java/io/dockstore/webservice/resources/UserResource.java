@@ -19,7 +19,6 @@ package io.dockstore.webservice.resources;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,16 +62,18 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -116,6 +117,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
+    private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
@@ -128,6 +131,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
+        this.serviceDAO = new ServiceDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -155,7 +160,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}")
     @Operation(operationId = "getSpecificUser")
     @ApiOperation(nickname = "getSpecificUser", value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
+    public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(authUser, userId);
         User user = userDAO.findById(userId);
         if (user == null) {
@@ -170,7 +175,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/user")
     @Operation(operationId = "getUser")
     @ApiOperation(nickname = "getUser", value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth User user) {
+    public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         Hibernate.initialize(foundUser.getUserProfiles());
         return foundUser;
@@ -475,31 +480,6 @@ public class UserResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{userId}/containers/refresh")
-    @ApiOperation(nickname =  "refresh", value = "Refresh all tools owned by the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
-    public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-
-        checkUser(authUser, userId);
-
-        // Checks if the user has the tokens for their current tools
-        checkToolTokens(authUser, userId, null);
-
-        dockerRepoResource.refreshToolsForUser(userId, null);
-        userDAO.clearCache();
-        // TODO: Only update the ones that have changed
-        authUser = userDAO.findById(authUser.getId());
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
-
-        List<Tool> finalTools = getTools(authUser);
-        bulkUpsertTools(authUser);
-        return finalTools;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/{userId}/workflows/{organization}/refresh")
     @ApiOperation(value = "Refresh all workflows owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
@@ -516,27 +496,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         // Update user data
         authUser.updateUserMetadata(tokenDAO);
 
-        List<Workflow> finalWorkflows = getWorkflows(authUser);
-        bulkUpsertWorkflows(authUser);
-        return finalWorkflows;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{userId}/workflows/refresh")
-    @ApiOperation(value = "Refresh all workflows owned by the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-
-        checkUser(authUser, userId);
-
-        // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser, null, new HashSet<>());
-        // Refresh the user
-        authUser = userDAO.findById(authUser.getId());
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
         List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
         return finalWorkflows;
@@ -660,34 +619,21 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
-        final List<EntryUpdateTime> entryUpdateTimes = new ArrayList<>();
-        final User fetchedUser = this.userDAO.findById(authUser.getId());
+        //get entries with only minimal columns from database
+        final List<EntryLite> entriesLite = new ArrayList<>();
+        final long userId = authUser.getId();
+        entriesLite.addAll(toolDAO.findEntryVersions(userId));
+        entriesLite.addAll(bioWorkflowDAO.findEntryVersions(userId));
+        entriesLite.addAll(serviceDAO.findEntryVersions(userId));
 
-        Set<Entry> entries = fetchedUser.getEntries();
-        entries.forEach(entry -> {
-            Timestamp timestamp = entry.getDbUpdateDate();
-            Set<Version> versions = entry.getWorkflowVersions();
-            Optional<Version> mostRecentTag = versions.stream().max(Comparator.comparing(Version::getDbUpdateDate));
-            if (mostRecentTag.isPresent() && timestamp.before(mostRecentTag.get().getDbUpdateDate())) {
-                timestamp = mostRecentTag.get().getDbUpdateDate();
-            }
-            List<String> pathElements = Arrays.asList(entry.getEntryPath().split("/"));
-            String prettyPath = String.join("/", pathElements.subList(2, pathElements.size()));
-            entryUpdateTimes.add(new EntryUpdateTime(entry.getEntryPath(), prettyPath, entry.getEntryType(), timestamp));
-        });
-
-        // Sort all entryUpdateTimes by timestamp
-        List<EntryUpdateTime> sortedEntries = entryUpdateTimes
-                .stream()
+        //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
+        List<EntryUpdateTime> filteredEntries = entriesLite
+                .stream().map(e -> new EntryUpdateTime(e.getEntryPath(), e.getPrettyPath(), e.getEntryType(), new Timestamp(e.getLastUpdated().getTime())))
                 .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(count != null ? count : Integer.MAX_VALUE)
                 .collect(Collectors.toList());
-
-        // Grab subset if necessary
-        if (count != null) {
-            return sortedEntries.subList(0, Math.min(count, sortedEntries.size()));
-        }
-        return sortedEntries;
+        return filteredEntries;
     }
 
     @GET

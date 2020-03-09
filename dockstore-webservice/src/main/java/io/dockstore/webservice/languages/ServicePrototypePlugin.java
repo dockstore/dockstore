@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
@@ -63,6 +64,14 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
                 if (files == null) {
                     validationMessageObject.put(initialPath, "The key 'files' does not exist.");
                     isValid = false;
+                } else {
+                    // check that files in .dockstore.yml exist
+                    String missingFiles = files.stream().filter(file -> indexedFiles.get("/" + file) == null).map(file -> String.format("'%s'", file))
+                        .collect(Collectors.joining(", "));
+                    if (!missingFiles.isEmpty()) {
+                        validationMessageObject.put(initialPath, String.format("The following file(s) are missing: %s.", missingFiles));
+                        isValid = false;
+                    }
                 }
             }
         } catch (YAMLException | ClassCastException ex) {
