@@ -77,16 +77,14 @@ public final class FileFormatHelper {
     }
 
     public static String calcSHA1(String content) {
-        //return org.apache.commons.codec.digest.DigestUtils.sha1Hex(content);
         String sha1 = null;
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
             messageDigest.update(content.getBytes("UTF-8"), 0, content.length());
             sha1 = DatatypeConverter.printHexBinary(messageDigest.digest());
-            sha1.toLowerCase();
         } catch (UnsupportedOperationException | NoSuchAlgorithmException | UnsupportedEncodingException ex) {
             LOG.error("Unable to calculate sha1", ex);
         }
-        return sha1;
+        return sha1.toLowerCase();
     }
 }
