@@ -31,7 +31,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
@@ -117,7 +116,7 @@ public class GeneralWorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
 
         // refresh all
-        usersApi.refreshWorkflows((long)1);
+        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser2");
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
@@ -281,7 +280,6 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testRestubError() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        UsersApi usersApi = new UsersApi(client);
 
         // refresh all and individual
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
@@ -381,7 +379,7 @@ public class GeneralWorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
 
         // refresh all
-        usersApi.refreshWorkflows((long)1);
+        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi
@@ -408,10 +406,7 @@ public class GeneralWorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        usersApi.getUser();
 
         Workflow githubWorkflow = workflowsApi
             .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl",
@@ -1037,7 +1032,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Refresh all workflows
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
-        usersApi.refreshWorkflows((long)1);
+        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
 
         // Check that user has been updated
         // TODO: bizarrely, the new GitHub Java API library doesn't seem to handle bio
