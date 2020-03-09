@@ -45,7 +45,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -127,6 +126,8 @@ public abstract class AbstractImageRegistry {
      */
     public abstract boolean canConvertToAuto(Tool tool);
 
+    public abstract Tool getToolFromNamespaceAndRepo(String organization, String repository);
+
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
@@ -158,28 +159,19 @@ public abstract class AbstractImageRegistry {
         // Get all the tools based on the found namespaces
         List<Tool> apiTools = getToolsFromNamespace(namespaces);
 
+        String registryString = getRegistry().toString();
+
         // Add manual tools to list of api tools
         User user = userDAO.findById(userId);
-        List<Tool> manualTools = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
-
-        // Get all tools in the db for the given registry
-        List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO, toolDAO));
-
-        // Filter DB tools and API tools to only include relevant tools
-        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry().getDockerPath()));
-
-        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry().getDockerPath()));
+        List<Tool> manualTools = toolDAO.findByModeRegistryNamespace(ToolMode.MANUAL_IMAGE_PATH, registryString, organization);
+        List<Tool> notManualTools = toolDAO.findByNotModeRegistryNamespace(ToolMode.MANUAL_IMAGE_PATH, registryString, organization);
         apiTools.addAll(manualTools);
 
-        // Remove tools that can't be updated (Manual tools)
-        dbTools.removeIf(tool1 -> tool1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
-        apiTools.removeIf(tool -> !namespaces.contains(tool.getNamespace()));
-        dbTools.removeIf(tool -> !namespaces.contains(tool.getNamespace()));
         // Update api tools with build information
         updateAPIToolsWithBuildInformation(apiTools);
 
         // Update db tools by copying over from api tools
-        List<Tool> newDBTools = updateTools(apiTools, dbTools, user, toolDAO);
+        List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
@@ -189,6 +181,48 @@ public abstract class AbstractImageRegistry {
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
                     gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
+            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+        }
+
+        return newDBTools;
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public List<Tool> refreshTool(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
+            String organization, final EventDAO eventDAO, final String dashboardPrefix, String repository) {
+
+        // Get all the tools based on the found namespaces
+        List<Tool> apiTools;
+        if (repository != null) {
+            apiTools = new ArrayList<>(Collections.singletonList(getToolFromNamespaceAndRepo(organization, repository)));
+        } else {
+            throw new CustomWebApplicationException("Trying to refresh/register a tool without a repository name", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Add manual tools to list of api tools
+        String registryString = getRegistry().toString();
+        
+        User user = userDAO.findById(userId);
+        List<Tool> manualTools = toolDAO.findByModeRegistryNamespaceRepository(ToolMode.MANUAL_IMAGE_PATH, registryString, organization, repository);
+        List<Tool> notManualTools = toolDAO.findByNotModeRegistryNamespaceRepository(ToolMode.MANUAL_IMAGE_PATH, registryString, organization, repository);
+
+        apiTools.addAll(manualTools);
+
+        // Update api tools with build information
+        updateAPIToolsWithBuildInformation(apiTools);
+
+        // Update db tools by copying over from api tools
+        List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
+
+        // Get tags and update for each tool
+        for (Tool tool : newDBTools) {
+            logToolRefresh(dashboardPrefix, tool);
+
+            List<Tag> toolTags = getTags(tool);
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                    .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                            gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
             updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
 
@@ -809,23 +843,6 @@ public abstract class AbstractImageRegistry {
         sourcefile.setAbsolutePath(path);
         sourcefile.setType(type);
         return sourcefile;
-    }
-
-    /**
-     * Gets tools for the current user
-     *
-     * @param userId
-     * @param userDAO
-     * @return
-     */
-    private List<Tool> getToolsFromUser(Long userId, UserDAO userDAO, ToolDAO toolDAO) {
-        final Set<Entry> entries = userDAO.findById(userId).getEntries();
-        List<Tool> toolList = new ArrayList<>();
-        // getting tools indirectly via the user seems to retrieve shallow tools that cause lazy load issues during deletion
-        // optimize post 1.5.0, see #1779
-        entries.stream().filter(entry -> entry instanceof Tool).map(tool -> toolDAO.findById(tool.getId())).filter(Objects::nonNull)
-            .forEach(toolList::add);
-        return toolList;
     }
 
     /**
