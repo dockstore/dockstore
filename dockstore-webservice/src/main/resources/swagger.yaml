@@ -6537,11 +6537,11 @@ definitions:
         type: "string"
         position: 30
         enum:
-        - "QUAY_IO"
-        - "DOCKER_HUB"
-        - "GITLAB"
-        - "AMAZON_ECR"
-        - "SEVEN_BRIDGES"
+        - "quay.io"
+        - "registry.hub.docker.com"
+        - "registry.gitlab.com"
+        - "Amazon ECR"
+        - "Seven Bridges"
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
       \ name, and toolname which can be\n * associated with CWL and Dockerfile documents"
@@ -6826,11 +6826,11 @@ definitions:
         position: 5
         description: "Registry the image belongs to"
         enum:
-        - "QUAY_IO"
-        - "DOCKER_HUB"
-        - "GITLAB"
-        - "AMAZON_ECR"
-        - "SEVEN_BRIDGES"
+        - "quay.io"
+        - "registry.hub.docker.com"
+        - "registry.gitlab.com"
+        - "Amazon ECR"
+        - "Seven Bridges"
     description: "Image(s) associated with tags and workflow versions"
   Label:
     type: "object"

@@ -120,7 +120,7 @@ public class EventResourceIT extends BaseIT {
 
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+                DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());

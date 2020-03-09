@@ -240,7 +240,7 @@ public class BasicIT extends BaseIT {
 
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
@@ -442,14 +442,14 @@ public class BasicIT extends BaseIT {
         // Register BitBucket tool
         DockstoreTool bitbucketTool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandbitbucket", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
         bitbucketTool = toolsApi.refresh(bitbucketTool.getId());
         assertTrue(bitbucketTool.isIsPublished());
 
         // Register GitHub tool
         DockstoreTool githubTool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
         githubTool = toolsApi.refresh(githubTool.getId());
         assertTrue(githubTool.isIsPublished());
     }
@@ -672,7 +672,7 @@ public class BasicIT extends BaseIT {
 
         // Manual publish
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "regular", gitUrl, "/Dockstore.cwl", "/Dockstore.wdl",
-            "/Dockerfile", DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            "/Dockerfile", DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
@@ -706,7 +706,7 @@ public class BasicIT extends BaseIT {
 
         // Manual publish
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "alternate", gitUrl, "/testDir/Dockstore.cwl",
-            "/testDir/Dockstore.wdl", "/testDir/Dockerfile", DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            "/testDir/Dockstore.wdl", "/testDir/Dockerfile", DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
@@ -741,7 +741,7 @@ public class BasicIT extends BaseIT {
 
         // Manual publish
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, namespace, name, "regular", gitUrl, "/Dockstore.cwl", "/Dockstore.wdl",
-            "/Dockerfile", DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            "/Dockerfile", DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
@@ -749,7 +749,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entry", 1, count);
 
         DockstoreTool duplicateTool = manualRegisterAndPublish(toolsApi, namespace, name, "regular2", gitUrl, "/Dockstore.cwl",
-            "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
 
         // Unpublish the duplicate entry
         final long count2 = testingPostgres
@@ -847,7 +847,7 @@ public class BasicIT extends BaseIT {
         try {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithubalternate", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "", "", "/testDir/Dockerfile",
-                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+                DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
@@ -1053,7 +1053,7 @@ public class BasicIT extends BaseIT {
         // Manual publish private repo with tool maintainer email
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "tool1",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true, true, "testemail@domain.com", null);
+            DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true, true, "testemail@domain.com", null);
 
         // The tool should be private, published and have the correct email
         final long count = testingPostgres.runSelectStatement(
@@ -1064,7 +1064,7 @@ public class BasicIT extends BaseIT {
         // Manual publish public repo
         DockstoreTool publicTool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "tool2",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
 
         // NOTE: The tool should not have an associated email
 
@@ -1097,7 +1097,7 @@ public class BasicIT extends BaseIT {
         // Manual publish public repo
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "tool1",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
 
         // NOTE: The tool should not have an associated email
 
@@ -1135,7 +1135,7 @@ public class BasicIT extends BaseIT {
         // Manual publish public repo
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "tool1",
             "git@github.com:DockstoreTestUser/dockstore-whalesay-2.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+            DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true);
 
         // NOTE: The tool should have an associated email
 
@@ -1186,7 +1186,7 @@ public class BasicIT extends BaseIT {
         try {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "private_test_repo", "",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true, true, null, null);
+                DockstoreTool.RegistryEnum.REGISTRY_HUB_DOCKER_COM, "master", "latest", true, true, null, null);
             fail("Should not be able to manually register due to missing email");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Tool maintainer email is required for private tools"));
@@ -1206,7 +1206,7 @@ public class BasicIT extends BaseIT {
         // Manual publish
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.GITLAB, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
+            DockstoreTool.RegistryEnum.REGISTRY_GITLAB_COM, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
 
         // Check that tool exists and is published
         final long count = testingPostgres
