@@ -928,6 +928,34 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testChecksumsForSourceFiles() {
+        // Test grabbing checksum on refresh
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        Workflow workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "", "wdl", "/test.json");
+
+        workflow = workflowsApi.refresh(workflow.getId());
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        assertFalse(workflowVersions.isEmpty());
+        boolean testedWDL = false;
+
+        for (WorkflowVersion workflowVersion : workflowVersions) {
+            if (workflowVersion.getName().equals("testBoth") || workflowVersion.getName().equals("testWDL")) {
+                testedWDL = true;
+                assertTrue(testedWDL);
+                assertNotNull(workflowVersion.getSourceFiles());
+                workflowVersion.getSourceFiles().stream().forEach(sourceFile -> assertNotNull("Should have checksums", sourceFile.getChecksums()));
+            }
+            workflowVersion.getSourceFiles();
+        }
+
+        // Test grabbing checksum on snapshot
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", "/hello_world.cwl", "1.0.1");
+        assertNotNull(version.getSourceFiles());
+        version.getSourceFiles().stream().forEach(sourceFile -> assertNotNull("Should have checksums", sourceFile.getChecksums()));
+    }
+
+    @Test
     public void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);

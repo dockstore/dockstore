@@ -18,11 +18,14 @@ package io.dockstore.webservice.core;
 
 import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
@@ -91,6 +94,11 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
     private boolean frozen = false;
 
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = ChecksumConverter.class)
+    @ApiModelProperty(position = 5)
+    private List<Checksum> checksums = new ArrayList<>();
+
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -152,6 +160,14 @@ public class SourceFile implements Comparable<SourceFile> {
             return null;
         }
         return Paths.get(absolutePath).normalize().toString();
+    }
+
+    public List<Checksum> getChecksums() {
+        return checksums;
+    }
+
+    public void setChecksums(final List<Checksum> checksums) {
+        this.checksums = checksums;
     }
 
     public void setAbsolutePath(String absolutePath) {

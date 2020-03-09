@@ -1,17 +1,25 @@
 package io.dockstore.webservice.helpers;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import javax.xml.bind.DatatypeConverter;
+
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.CWLHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class helps resolve file formats in versions
@@ -19,6 +27,7 @@ import io.dockstore.webservice.languages.CWLHandler;
  * @since 1.5.0
  */
 public final class FileFormatHelper {
+    private static final Logger LOG = LoggerFactory.getLogger(UserDAO.class);
     private FileFormatHelper() { }
 
     /**
@@ -65,5 +74,19 @@ public final class FileFormatHelper {
             }
         });
         return fileFormatsFromDB;
+    }
+
+    public static String calcSHA1(String content) {
+        //return org.apache.commons.codec.digest.DigestUtils.sha1Hex(content);
+        String sha1 = null;
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
+            messageDigest.update(content.getBytes("UTF-8"), 0, content.length());
+            sha1 = DatatypeConverter.printHexBinary(messageDigest.digest());
+            sha1.toLowerCase();
+        } catch (UnsupportedOperationException | NoSuchAlgorithmException | UnsupportedEncodingException ex) {
+            LOG.error("Unable to calculate sha1", ex);
+        }
+        return sha1;
     }
 }

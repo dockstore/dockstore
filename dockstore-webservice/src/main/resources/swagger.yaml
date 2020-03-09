@@ -7245,6 +7245,11 @@ definitions:
         type: "string"
         position: 4
         description: "Absolute path of sourcefile in git repo"
+      checksums:
+        type: "array"
+        position: 5
+        items:
+          $ref: "#/definitions/Checksum"
   StarRequest:
     type: "object"
     properties:

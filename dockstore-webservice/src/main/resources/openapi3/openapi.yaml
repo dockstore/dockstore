@@ -586,6 +586,10 @@ components:
       properties:
         absolutePath:
           type: string
+        checksums:
+          items:
+            $ref: '#/components/schemas/Checksum'
+          type: array
         content:
           type: string
         frozen:
