@@ -64,7 +64,7 @@ public class ExtendedNextflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
 
-        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser");
 
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
@@ -102,7 +102,8 @@ public class ExtendedNextflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
         // get workflow stubs
-        usersApi.refreshWorkflows(user.getId());
+        usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser");
+        usersApi.refreshWorkflowsByOrganization(user.getId(), "dockstore_testuser2");
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
         Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
@@ -169,7 +170,8 @@ public class ExtendedNextflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
         // get workflow stubs
-        usersApi.refreshWorkflows(user.getId());
+        usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser");
+        usersApi.refreshWorkflowsByOrganization(user.getId(), "dockstore_testuser2");
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null, false);

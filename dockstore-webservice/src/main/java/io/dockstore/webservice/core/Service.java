@@ -16,6 +16,7 @@
 package io.dockstore.webservice.core;
 
 import javax.persistence.Entity;
+import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
@@ -25,7 +26,13 @@ import io.swagger.annotations.ApiModel;
 @ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
 @Table(name = "service")
-@NamedQuery(name = "io.dockstore.webservice.core.Service.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from Service c where c.isPublished = true")
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Service.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from Service c where c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Service.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteService(s.sourceControl, s.organization, s.repository, s.workflowName, s.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
+                + "FROM Service s LEFT JOIN s.workflowVersions v "
+                + "WHERE s.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
+                + "GROUP BY s.sourceControl, s.organization, s.repository, s.workflowName, s.dbUpdateDate")
+})
 public class Service extends Workflow {
 
     public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM }

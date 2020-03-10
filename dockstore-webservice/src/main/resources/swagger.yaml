@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.9.0-alpha.3"
+  version: "1.9.0-alpha.4-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -155,7 +155,7 @@ paths:
       - "GA4GHV1"
       summary: "List all tools"
       description: "This endpoint returns all tools available or a filtered subset\
-        \ using metadata query parameters. "
+        \ using metadata query parameters."
       operationId: "toolsGet"
       produces:
       - "application/json"
@@ -480,11 +480,10 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "List entries of an organization"
-      description: "This endpoint returns entries of an organization. "
+      description: "This endpoint returns entries of an organization."
       operationId: "entriesOrgGet"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "organization"
         in: "path"
@@ -503,11 +502,10 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "List all organizations"
-      description: "This endpoint returns list of all organizations. "
+      description: "This endpoint returns list of all organizations."
       operationId: "entriesOrgsGet"
       produces:
       - "application/json"
-      - "text/plain"
       parameters: []
       responses:
         200:
@@ -522,7 +520,7 @@ paths:
       - "extendedGA4GH"
       summary: "Search the index of tools"
       description: "This endpoint searches the index for all published tools and workflows.\
-        \ Used by utilities that expect to talk to an elastic search endpoint"
+        \ Used by utilities that expect to talk to an elastic search endpoint."
       operationId: "toolsIndexSearch"
       produces:
       - "application/json"
@@ -543,7 +541,7 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "Update the index of tools"
-      description: "This endpoint updates the index for all published tools and workflows. "
+      description: "This endpoint updates the index for all published tools and workflows."
       operationId: "toolsIndexGet"
       produces:
       - "text/plain"
@@ -558,11 +556,10 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "List tools of an organization"
-      description: "This endpoint returns tools of an organization. "
+      description: "This endpoint returns tools of an organization."
       operationId: "toolsOrgGet"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "organization"
         in: "path"
@@ -581,11 +578,10 @@ paths:
       tags:
       - "extendedGA4GH"
       summary: "List workflows of an organization"
-      description: "This endpoint returns workflows of an organization. "
+      description: "This endpoint returns workflows of an organization."
       operationId: "workflowsOrgGet"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "organization"
         in: "path"
@@ -606,7 +602,7 @@ paths:
       summary: "Annotate test JSON with information on whether it ran successfully\
         \ on particular platforms plus metadata"
       description: "Test JSON can be annotated with whether they ran correctly keyed\
-        \ by platform and associated with some metadata "
+        \ by platform and associated with some metadata."
       operationId: "toolsIdVersionsVersionIdTypeTestsPost"
       produces:
       - "application/json"
@@ -664,7 +660,7 @@ paths:
             additionalProperties:
               type: "object"
         401:
-          description: "Credentials not provided or incorrect"
+          description: "Credentials not provided or incorrect."
           schema:
             $ref: "#/definitions/Error"
         404:
@@ -1202,6 +1198,28 @@ paths:
         required: false
         schema:
           type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Token"
+      security:
+      - BEARER: []
+  /auth/tokens/orcid.org:
+    post:
+      tags:
+      - "tokens"
+      summary: "Add a new orcid.org token"
+      description: "Using OAuth code from ORCID, request and store tokens from ORCID\
+        \ API"
+      operationId: "addOrcidToken"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "code"
+        in: "query"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -4410,31 +4428,6 @@ paths:
               $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
-  /users/{userId}/containers/refresh:
-    get:
-      tags:
-      - "users"
-      summary: "Refresh all tools owned by the authenticated user."
-      description: ""
-      operationId: "refresh"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User ID"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/DockstoreTool"
-      security:
-      - BEARER: []
   /users/{userId}/containers/{organization}/refresh:
     get:
       tags:
@@ -4665,31 +4658,6 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /users/{userId}/workflows/refresh:
-    get:
-      tags:
-      - "users"
-      summary: "Refresh all workflows owned by the authenticated user."
-      description: ""
-      operationId: "refreshWorkflows"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User ID"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /users/{userId}/workflows/{organization}/refresh:
     get:
       tags:
@@ -4746,7 +4714,8 @@ paths:
         type: "string"
       - name: "gitReference"
         in: "formData"
-        description: "Git reference for a GitHub tag"
+        description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
+          \ or refs/tags/v1.0"
         required: true
         type: "string"
       - name: "installationId"
@@ -6320,6 +6289,14 @@ definitions:
       googleClientId:
         type: "string"
       googleScope:
+        type: "string"
+      orcidAuthUrl:
+        type: "string"
+      orcidClientId:
+        type: "string"
+      orcidRedirectPath:
+        type: "string"
+      orcidScope:
         type: "string"
       quayIoAuthUrl:
         type: "string"
@@ -8272,6 +8249,8 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      legacyVersion:
+        type: "boolean"
       workingDirectory:
         type: "string"
       reference:

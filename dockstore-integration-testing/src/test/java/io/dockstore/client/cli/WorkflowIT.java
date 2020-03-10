@@ -48,6 +48,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -196,7 +198,7 @@ public class WorkflowIT extends BaseIT {
         if (toPublish) {
             workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         }
-        assertTrue(workflow.isIsPublished() == toPublish);
+        assertEquals(workflow.isIsPublished(), toPublish);
         return workflow;
     }
 
@@ -206,7 +208,8 @@ public class WorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
 
-        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
         }
@@ -229,7 +232,8 @@ public class WorkflowIT extends BaseIT {
         User user = usersApi.getUser();
         Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
-        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+        workflows.addAll(usersApi.refreshWorkflowsByOrganization(user.getId(), "dockstore_testuser2"));
 
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
@@ -660,7 +664,9 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
-        final List<Workflow> workflows = usersApi.refreshWorkflows(userId);
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+        workflows.addAll(usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser"));
+        workflows.addAll(usersApi.refreshWorkflowsByOrganization(userId, "dockstoretesting"));
 
         // Check that there are multiple workflows
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
@@ -722,8 +728,8 @@ public class WorkflowIT extends BaseIT {
                 .equalsIgnoreCase("dockstore-whalesay-2")));
 
         // Check that for a repo from my organization that I forked to DockstoreTestUser2, that it along with the original repo are present
-        assertEquals("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.", 2,
-            workflows.stream().filter((Workflow workflow) ->
+        assertTrue("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.",
+            2 <= workflows.stream().filter((Workflow workflow) ->
                 (workflow.getOrganization().equalsIgnoreCase("dockstoretesting") || workflow.getOrganization()
                     .equalsIgnoreCase("DockstoreTestUser2")) && workflow.getRepository().equalsIgnoreCase("basic-workflow")).count());
 
@@ -745,7 +751,8 @@ public class WorkflowIT extends BaseIT {
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
-        usersApi.refreshWorkflows(userId);
+        usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+
         assertTrue("should remain with nothing published ",
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
         // ensure that sorting or filtering don't expose unpublished workflows
@@ -848,16 +855,24 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
     }
 
-    //TODO: Fork these workflows onto dockstoretestuser
+    /**
+     * Tests that the info for quay images included in CWL workflows are grabbed and that the trs endpoints convert this info correctly
+     */
     @Test
     public void testGettingImagesFromQuay() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
 
         // Check image info is grabbed
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", "/hello_world.cwl", "1.0.1");
         assertEquals("Should only be one image in this workflow", 1, version.getImages().size());
         verifyChecksumsAreSaved(version);
+
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world");
+        testTRSConversion(versions, "1.0.1", 1);
+        ToolVersion snapshottedVersion = versions.stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
 
         // Test that a workflow version containing an unversioned image isn't saved
         WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", "/cwl/workflow_docker.cwl", "1.0");
@@ -867,6 +882,24 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", "/main.cwl", "1.0");
         assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());
         verifyChecksumsAreSaved(versionWithDuplicateImages);
+        versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
+        testTRSConversion(versions, "1.0", 3);
+    }
+
+    private void testTRSConversion(final List<ToolVersion> versions, final String snapShottedVersionName, final int numImages) {
+        assertFalse("Should have at least one version", versions.isEmpty());
+        boolean snapshotInList = false;
+        for (ToolVersion trsVersion : versions) {
+            if (trsVersion.getName().equals(snapShottedVersionName)) {
+                assertTrue(trsVersion.isIsProduction());
+                assertEquals("There should be" + numImages + "image(s) in this workflow", numImages, trsVersion.getImages().size());
+                snapshotInList = true;
+            } else {
+                assertFalse(trsVersion.isIsProduction());
+                assertEquals("Non-snapshotted versions should have 0 images ", 0, trsVersion.getImages().size());
+            }
+        }
+        assertTrue("Snapshotted version should be in the list", snapshotInList);
     }
 
     private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, String workflowPath, String descriptorPath, String versionName) {
@@ -1136,7 +1169,7 @@ public class WorkflowIT extends BaseIT {
         final Long userId = usersApi.getUser().getId();
 
         // Get workflows
-        usersApi.refreshWorkflows(userId);
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
 
         // Manually register workflow
         boolean success = true;

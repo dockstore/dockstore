@@ -40,7 +40,9 @@ public enum TokenType {
     @JsonProperty("zenodo.org")
     ZENODO_ORG("zenodo.org", null),
     @JsonProperty("google.com")
-    GOOGLE_COM("google.com", null);
+    GOOGLE_COM("google.com", null),
+    @JsonProperty("orcid.org")
+    ORCID_ORG("orcid.org", null);
     private final String friendlyName;
     private final SourceControl sourceControl;
 

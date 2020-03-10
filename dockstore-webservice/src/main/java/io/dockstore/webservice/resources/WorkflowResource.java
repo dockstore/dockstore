@@ -166,6 +166,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final String zenodoUrl;
     private final String zenodoClientID;
     private final String zenodoClientSecret;
+    private final String dashboardPrefix;
 
     private final String dockstoreUrl;
     private final String dockstoreGA4GHBaseUrl;
@@ -187,6 +188,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
+        dashboardPrefix = configuration.getDashboard();
 
         dockstoreUrl = URIHelper.createBaseUrl(configuration.getExternalConfig().getScheme(),
                 configuration.getExternalConfig().getHostname(), configuration.getExternalConfig().getUiPort());
@@ -332,6 +334,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                         continue;
                     }
 
+                    logFullWorkflowRefresh(workflow);
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
                     final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow));
@@ -349,6 +352,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
+                    logFullWorkflowRefresh(newWorkflow);
                     final long workflowID = workflowDAO.create(newWorkflow);
 
                     // need to create nested data models
@@ -360,6 +364,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     alreadyProcessed.add(workflowFromDB.getId());
                 }
             }
+        }
+    }
+
+    /**
+     * Logs a refresh statement with the workflow's descriptor language if workflow is a FULL workflow.
+     * These logs will be monitored by CloudWatch and displayed on Grafana.
+     * @param workflow                workflow that is being refreshed
+     */
+    private void logFullWorkflowRefresh(final Workflow workflow) {
+        if (workflow.getMode() == WorkflowMode.FULL) {
+            LOG.info(String.format("%s: Refreshing %s workflow named %s", dashboardPrefix, workflow.getDescriptorType(), workflow.getEntryPath()));
         }
     }
 
@@ -400,6 +415,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // new workflow is the workflow as found on github (source control)
+        logFullWorkflowRefresh(workflow);
         final Workflow newWorkflow = sourceCodeRepo
             .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
@@ -1801,7 +1817,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
         @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
         @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @ApiParam(value = "Git reference for a GitHub tag", required = true) @FormParam("gitReference") String gitReference,
+        @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
         @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         return githubWebhookRelease(repository, username, gitReference, installationId);
     }
