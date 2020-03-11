@@ -361,11 +361,11 @@ components:
           type: string
         imageRegistry:
           enum:
-          - quay.io
-          - registry.hub.docker.com
-          - registry.gitlab.com
-          - Amazon ECR
-          - Seven Bridges
+          - QUAY_IO
+          - DOCKER_HUB
+          - GITLAB
+          - AMAZON_ECR
+          - SEVEN_BRIDGES
           type: string
         repository:
           type: string
@@ -2746,7 +2746,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -2877,7 +2877,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []

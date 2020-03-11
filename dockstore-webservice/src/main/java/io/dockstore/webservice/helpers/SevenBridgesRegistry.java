@@ -32,7 +32,7 @@ public class SevenBridgesRegistry extends AbstractImageRegistry {
     @Override
     public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
         for (Tool tool : apiTools) {
-            tool.setRegistry(Registry.SEVEN_BRIDGES.toString());
+            tool.setRegistry(Registry.SEVEN_BRIDGES.getDockerPath());
         }
     }
 

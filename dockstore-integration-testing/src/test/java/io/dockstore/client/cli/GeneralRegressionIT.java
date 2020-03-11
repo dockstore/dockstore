@@ -102,7 +102,7 @@ public class GeneralRegressionIT extends BaseIT {
         c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.toString());
+        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         c.setIsPublished(false);
         c.setNamespace("testPath");
         c.setToolname("test5");
@@ -201,7 +201,7 @@ public class GeneralRegressionIT extends BaseIT {
                 "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
             long.class);
         assertEquals("there should now be an invalid tag, found " + count, 1, count);
@@ -216,7 +216,7 @@ public class GeneralRegressionIT extends BaseIT {
                 "quay.io/dockstoretestuser2/quayandgithub", "--script" });
 
         final long count2 = testingPostgres.runSelectStatement(
-            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
             long.class);
         assertEquals("the invalid tag should now be valid, found " + count2, 0, count2);
@@ -280,7 +280,7 @@ public class GeneralRegressionIT extends BaseIT {
         // should now be invalid
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
             long.class);
 
@@ -291,7 +291,7 @@ public class GeneralRegressionIT extends BaseIT {
                 "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/Dockstore.wdl", "--script" });
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
-            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
             long.class);
         assertEquals("the tag should now be valid", 0, count2);
@@ -345,7 +345,7 @@ public class GeneralRegressionIT extends BaseIT {
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });
 
         boolean published = testingPostgres.runSelectStatement(
-            "select ispublished from tool where registry = '" + Registry.QUAY_IO.toString()
+            "select ispublished from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';", boolean.class);
         assertTrue("tool not published", published);
 
@@ -353,14 +353,14 @@ public class GeneralRegressionIT extends BaseIT {
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl", "--entryname", "foo" });
 
-        long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+        long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';", long.class);
         assertEquals("should be two after republishing", 2, count);
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--unpub", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });
 
-        published = testingPostgres.runSelectStatement("select ispublished from tool where registry = '" + Registry.QUAY_IO.toString()
+        published = testingPostgres.runSelectStatement("select ispublished from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;", boolean.class);
         assertTrue("tool not unpublished", !published);
     }

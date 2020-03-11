@@ -91,7 +91,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         assertEquals("Should have git URL set", "git@dockstore.org:quay.io/coolNamespace/awesomeTool.git", hostedTool.getGitUrl());
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
@@ -118,7 +118,7 @@ public class CRUDClientIT extends BaseIT {
     public void testToolEditing() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         DockstoreTool hostedTool = api
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         SourceFile descriptorFile = new SourceFile();
         descriptorFile
             .setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
@@ -338,15 +338,15 @@ public class CRUDClientIT extends BaseIT {
     public void testToolCreationInvalidDescriptorType() {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
-        api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
-        api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace",
+        api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+        api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace",
             "anotherName");
-        api.createHostedTool("awesomeToolWdl", Registry.QUAY_IO.toString().toLowerCase(), WDL.getLowerShortName(), "coolNamespace", null);
-        api.createHostedTool("awesomeToolWdl", Registry.QUAY_IO.toString().toLowerCase(), WDL.getLowerShortName(), "coolNamespace",
+        api.createHostedTool("awesomeToolWdl", Registry.QUAY_IO.getDockerPath().toLowerCase(), WDL.getLowerShortName(), "coolNamespace", null);
+        api.createHostedTool("awesomeToolWdl", Registry.QUAY_IO.getDockerPath().toLowerCase(), WDL.getLowerShortName(), "coolNamespace",
             "anotherName");
 
         // Invalid descriptor type does not matter for tools
-        api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.toString().toLowerCase(), "cwll", "coolNamespace", null);
+        api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), "cwll", "coolNamespace", null);
     }
 
     /**
@@ -358,7 +358,7 @@ public class CRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         thrown.expect(ApiException.class);
         DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
         assertTrue("There should be at least one user of the workflow", refreshedTool.getUsers().size() > 0);
@@ -375,7 +375,7 @@ public class CRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         DockstoreTool newTool = new DockstoreTool();
         thrown.expect(ApiException.class);
         containersApi.updateContainer(hostedTool.getId(), newTool);
@@ -392,7 +392,7 @@ public class CRUDClientIT extends BaseIT {
 
         // Add a tool with a version
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         SourceFile descriptorFile = new SourceFile();
         descriptorFile
             .setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
@@ -447,7 +447,7 @@ public class CRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         thrown.expect(ApiException.class);
         containersApi
             .addTestParameterFiles(hostedTool.getId(), new ArrayList<>(), DescriptorLanguage.CWL.toString().toLowerCase(), "", "1");
@@ -462,7 +462,7 @@ public class CRUDClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi
-            .createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+            .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
         thrown.expect(ApiException.class);
         containersApi.deleteTestParameterFiles(hostedTool.getId(), new ArrayList<>(), DescriptorLanguage.CWL.toString(), "1");
     }

@@ -191,7 +191,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                     tools.add(tool);
                 }
                 // tag all of these with where they came from
-                tools.forEach(container -> container.setRegistry(Registry.QUAY_IO.toString()));
+                tools.forEach(container -> container.setRegistry(Registry.QUAY_IO.getDockerPath()));
                 // not quite correct, they could be mixed but how can we tell from quay?
                 tools.forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                 toolList.addAll(tools);
@@ -265,7 +265,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
                 // Set some attributes if not manual
                 if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
-                    tool.setRegistry(Registry.QUAY_IO.toString());
+                    tool.setRegistry(Registry.QUAY_IO.getDockerPath());
                     tool.setGitUrl(gitUrl);
                 }
             }

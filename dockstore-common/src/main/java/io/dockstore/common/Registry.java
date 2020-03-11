@@ -25,19 +25,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public enum Registry {
     // Add new registries here
-    @JsonProperty("quay.io")
     QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/", false, false),
-
-    @JsonProperty("registry.hub.docker.com")
     DOCKER_HUB("registry.hub.docker.com", "Docker Hub", "https://hub.docker.com/", false, false),
-
-    @JsonProperty("registry.gitlab.com")
     GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/", false, false),
-
-    @JsonProperty("Amazon ECR")
     AMAZON_ECR(null, "Amazon ECR", null, true, true),
-
-    @JsonProperty("Seven Bridges")
     SEVEN_BRIDGES(null, "Seven Bridges", null, true, true);
 
     /**
@@ -76,17 +67,16 @@ public enum Registry {
         this.customDockerPath = customDockerPath;
     }
 
-    @Override
-    public String toString() {
-        return (dockerPath != null) ? dockerPath : friendlyName;
-    }
-
     public String getFriendlyName() {
         return friendlyName;
     }
 
     public String getUrl() {
         return url;
+    }
+
+    public String getDockerPath() {
+        return dockerPath;
     }
 
     public boolean isPrivateOnly() {

@@ -133,7 +133,7 @@ public class WorkflowIT extends BaseIT {
     // workflow with includeConfig in config file directory
     private static final String DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/vipr";
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL =
-        Registry.QUAY_IO.toString() + "/dockstoretestuser2/dockstore-cgpmap";
+        Registry.QUAY_IO.getDockerPath() + "/dockstoretestuser2/dockstore-cgpmap";
     private static final String DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
     private static final String GATK_SV_TAG = "dockstore-test";
@@ -948,9 +948,9 @@ public class WorkflowIT extends BaseIT {
     public void testDuplicateHostedToolCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.toString(), DescriptorType.CWL.toString(), "namespace", null);
+        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
         thrown.expectMessage("already exists");
-        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.toString(), DescriptorType.CWL.toString(), "namespace", null);
+        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
     }
 
     @Test
@@ -1092,7 +1092,7 @@ public class WorkflowIT extends BaseIT {
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
         tool.setNamespace("dockstoretestuser2");
         tool.setName("dockstore-cgpmap");
-        tool.setRegistryString(Registry.QUAY_IO.toString());
+        tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         tool.setDefaultVersion("symbolic.v1");
 
         DockstoreTool registeredTool = toolApi.registerManual(tool);

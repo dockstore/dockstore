@@ -79,7 +79,7 @@ public class ValidationIT extends BaseIT {
         c.setGitUrl("https://github.com/DockstoreTestUser2/TestEntryValidation");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/validTool.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.toString());
+        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         c.setIsPublished(false);
         c.setNamespace("DockstoreTestUser2");
         c.setToolname("test5");

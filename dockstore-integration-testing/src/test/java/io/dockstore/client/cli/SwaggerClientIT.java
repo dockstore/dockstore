@@ -219,7 +219,7 @@ public class SwaggerClientIT extends BaseIT {
         c.setGitUrl("https://github.com/denis-yuen/test1");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.toString());
+        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         c.setIsPublished(true);
         c.setNamespace("seqware");
         c.setToolname("test5");
@@ -316,9 +316,9 @@ public class SwaggerClientIT extends BaseIT {
         // test a few constraints
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
         assertEquals(1, tools.size());
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.toString(), null, null, null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(1, tools.size());
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.toString(), null, null, null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(0, tools.size());
     }
 
@@ -782,10 +782,10 @@ public class SwaggerClientIT extends BaseIT {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
         thrown.expect(ApiException.class);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
     }
 
     @Test
