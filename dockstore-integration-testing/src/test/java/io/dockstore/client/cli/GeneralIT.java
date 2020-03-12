@@ -92,7 +92,7 @@ public class GeneralIT extends BaseIT {
         c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/dockstore.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.toString());
+        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         c.setIsPublished(false);
         c.setNamespace("testPath");
         c.setToolname("test5");
@@ -226,7 +226,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
             long.class);
         assertEquals("there should now be an invalid tag, found " + count, 1, count);
@@ -245,7 +245,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         final long count2 = testingPostgres.runSelectStatement(
-            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
             long.class);
         assertEquals("the invalid tag should now be valid, found " + count2, 0, count2);
@@ -295,7 +295,7 @@ public class GeneralIT extends BaseIT {
         tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         tool.setName("quayandgithub");
         tool.setNamespace("dockstoretestuser2");
-        tool.setRegistryString(Registry.QUAY_IO.toString());
+        tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         tool.setDefaultDockerfilePath("/Dockerfile");
         tool.setDefaultCwlPath("/Dockstore.cwl");
         tool.setDefaultWdlPath("/Dockstore.wdl");
@@ -313,7 +313,7 @@ public class GeneralIT extends BaseIT {
         tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         tool.setName("dockstore-whalesay-2");
         tool.setNamespace("dockstoretestuser");
-        tool.setRegistryString(Registry.DOCKER_HUB.toString());
+        tool.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         tool.setDefaultDockerfilePath("/Dockerfile");
         tool.setDefaultCwlPath("/Dockstore.cwl");
         tool.setDefaultWdlPath("/Dockstore.wdl");
@@ -334,7 +334,7 @@ public class GeneralIT extends BaseIT {
         tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         tool.setName("dockstore-tool-bamstats");
         tool.setNamespace("NatalieEO");
-        tool.setRegistryString(Registry.GITLAB.toString());
+        tool.setRegistryString(Registry.GITLAB.getDockerPath());
         tool.setGitUrl("git@gitlab.com:NatalieEO/dockstore-tool-bamstats.git");
         tool.setPrivateAccess(false);
         return tool;
@@ -430,7 +430,7 @@ public class GeneralIT extends BaseIT {
         // should now be invalid
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
             long.class);
 
@@ -448,7 +448,7 @@ public class GeneralIT extends BaseIT {
 
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
-            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
             long.class);
         assertEquals("the tag should now be valid", 0, count2);
@@ -565,7 +565,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         // Repo user has access to
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithub' and toolname = 'testTool'", long.class);
         assertEquals("the container should exist", 1, count);
 
@@ -578,7 +578,7 @@ public class GeneralIT extends BaseIT {
         tool2 = toolApi.registerManual(tool2);
         tool2 = toolApi.refresh(tool2.getId());
 
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstore2' and name = 'testrepo2' and toolname = 'testOrg'", long.class);
         assertEquals("the container should exist", 1, count2);
 
@@ -989,7 +989,7 @@ public class GeneralIT extends BaseIT {
         tool.setGitUrl(gitUrl);
         tool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         tool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
-        tool.setRegistryString(Registry.QUAY_IO.toString());
+        tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         tool.setNamespace("dockstoretestuser2");
         tool.setToolname("altname");
         tool.setPrivateAccess(false);

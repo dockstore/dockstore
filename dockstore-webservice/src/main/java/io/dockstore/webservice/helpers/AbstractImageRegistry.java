@@ -166,9 +166,9 @@ public abstract class AbstractImageRegistry {
         List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO, toolDAO));
 
         // Filter DB tools and API tools to only include relevant tools
-        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry().toString()));
+        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry().getDockerPath()));
 
-        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry().toString()));
+        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry().getDockerPath()));
         apiTools.addAll(manualTools);
 
         // Remove tools that can't be updated (Manual tools)
@@ -224,12 +224,12 @@ public abstract class AbstractImageRegistry {
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
         if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null && tool.getRegistry()
-                .equals(Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
+                .equals(Registry.QUAY_IO.getDockerPath()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
         }
 
         // Check if manual Quay repository can be changed to automatic
-        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && tool.getRegistry().equals(Registry.QUAY_IO.toString())) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath())) {
             if (canConvertToAuto(tool)) {
                 tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
             }
@@ -263,9 +263,9 @@ public abstract class AbstractImageRegistry {
 
         List<Tag> toolTags;
         // Get tags and update for each tool
-        if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
+        if (tool.getRegistry().equals(Registry.DOCKER_HUB.getDockerPath())) {
             toolTags = getTagsDockerHub(tool);
-        } else if (tool.getRegistry().equals(Registry.GITLAB.toString())) {
+        } else if (tool.getRegistry().equals(Registry.GITLAB.getDockerPath())) {
             toolTags = getTagsGitLab(tool);
         } else {
             toolTags = getTags(tool);
@@ -330,8 +330,7 @@ public abstract class AbstractImageRegistry {
                         final String manifestDigest = i.getDigest();
                         checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
                     }
-                    Set<Image> images = Collections.singleton(new Image(checksums, repo, tag.getName(), r.getImageID()));
-                    tag.getImages().addAll(images);
+                    tag.getImages().add(new Image(checksums, repo, tag.getName(), r.getImageID(), Registry.DOCKER_HUB));
                     tags.add(tag);
                 }
 
@@ -381,7 +380,7 @@ public abstract class AbstractImageRegistry {
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO, final User user) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
                 LOG.info(tool.getToolPath() + " : Tags for tool {} did not get updated because new tags were not found",
@@ -481,7 +480,7 @@ public abstract class AbstractImageRegistry {
         }
 
         // For tools from dockerhub, grab/update the image and checksum information
-        if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString()) || tool.getRegistry().equals(Registry.GITLAB.toString())) {
+        if (tool.getRegistry().equals(Registry.DOCKER_HUB.getDockerPath()) || tool.getRegistry().equals(Registry.GITLAB.getDockerPath())) {
             updateNonQuayImageInformation(newTags, tool, existingTags);
         }
 
@@ -547,7 +546,7 @@ public abstract class AbstractImageRegistry {
     private void updateImageInformation(Tool tool, Tag newTag, Tag oldTag) {
         // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
         // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
-        if (oldTag.getImages().isEmpty() && tool.getRegistry().equals(Registry.QUAY_IO.toString())) {
+        if (oldTag.getImages().isEmpty() && tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath())) {
             oldTag.getImages().addAll(newTag.getImages());
         } else {
             oldTag.getImages().removeAll(oldTag.getImages());
@@ -595,8 +594,7 @@ public abstract class AbstractImageRegistry {
                                 List<Checksum> checksums = new ArrayList<>();
 
                                 checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-                                Set<Image> images = Collections.singleton(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null));
-                                tag.getImages().addAll(images);
+                                tag.getImages().add(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null, Registry.GITLAB));
                                 tags.add(tag);
                             }
                         }

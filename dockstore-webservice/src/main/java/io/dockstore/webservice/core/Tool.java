@@ -337,7 +337,7 @@ public class Tool extends Entry<Tool, Tag> {
             return null;
         }
         for (Registry r : Registry.values()) {
-            if (r.toString() != null && r.toString().equals(this.registry)) {
+            if (r.getDockerPath() != null && r.getDockerPath().equals(this.registry)) {
                 return r;
             }
         }
@@ -361,7 +361,7 @@ public class Tool extends Entry<Tool, Tag> {
         case GITLAB:
         case QUAY_IO:
         case DOCKER_HUB:
-            this.setRegistry(registryThing.toString());
+            this.setRegistry(registryThing.getDockerPath());
             break;
         case SEVEN_BRIDGES:
         case AMAZON_ECR:

@@ -35,6 +35,7 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LanguageHandlerHelper;
+import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
@@ -382,7 +383,7 @@ public interface LanguageHandlerInterface {
                                     final String imageID = tag.get("image_id");
                                     List<Checksum> checksums = new ArrayList<>();
                                     checksums.add(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-                                    dockerImages.add(new Image(checksums, repo, tagName, imageID));
+                                    dockerImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO));
                                 }
 
                             } catch (IndexOutOfBoundsException | NullPointerException ex) {

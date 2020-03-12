@@ -67,17 +67,16 @@ public enum Registry {
         this.customDockerPath = customDockerPath;
     }
 
-    @Override
-    public String toString() {
-        return dockerPath;
-    }
-
     public String getFriendlyName() {
         return friendlyName;
     }
 
     public String getUrl() {
         return url;
+    }
+
+    public String getDockerPath() {
+        return dockerPath;
     }
 
     public boolean isPrivateOnly() {

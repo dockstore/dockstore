@@ -155,12 +155,6 @@ public final class ToolsImplCommon {
             toolVersion.setAuthor(MoreObjects.firstNonNull(toolVersion.getAuthor(), Lists.newArrayList()));
             //TODO: would hook up identified tools that form workflows here
             toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Lists.newArrayList()));
-            //TODO: hook up snapshot and checksum behaviour here
-            toolVersion.setIsProduction(version.isFrozen());
-            if (toolVersion.isIsProduction()) {
-                List<ImageData> trsImages = processImageDataForWorkflowVersions(version);
-                toolVersion.setImages(trsImages);
-            }
 
             toolVersion.setSigned(false);
             final String author = ObjectUtils.firstNonNull(version.getAuthor(), container.getAuthor());
@@ -171,6 +165,12 @@ public final class ToolsImplCommon {
             toolVersion.setImages(MoreObjects.firstNonNull(toolVersion.getImages(), Lists.newArrayList()));
             if (container instanceof io.dockstore.webservice.core.Tool) {
                 processImageDataForToolVersion(castedContainer, (Tag)version, toolVersion);
+            }
+
+            toolVersion.setIsProduction(version.isFrozen());
+            if (toolVersion.isIsProduction()) {
+                List<ImageData> trsImages = processImageDataForWorkflowVersions(version);
+                toolVersion.getImages().addAll(trsImages);
             }
 
             try {
@@ -243,8 +243,7 @@ public final class ToolsImplCommon {
         for (Image image : images) {
             ImageData imageData = new ImageData();
             imageData.setImageType(ImageType.DOCKER);
-            //TODO: For workflows, it's just quay for now, but that'll change. Should add column in image table to store registry.
-            imageData.setRegistryHost("quay.io");
+            imageData.setRegistryHost(image.getImageRegistry().toString());
             imageData.setImageName(constructName(Arrays.asList(image.getRepository(), image.getTag())));
             List<Checksum> trsChecksums = new ArrayList<>();
             List<io.dockstore.webservice.core.Checksum> checksumList = image.getChecksums();

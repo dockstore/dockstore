@@ -533,14 +533,14 @@ public class DockerRepoResource
         }
 
         // Check if tool has tags
-        if (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkContainerForTags(tool, user.getId())) {
+        if (tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && !checkContainerForTags(tool, user.getId())) {
             LOG.info(user.getUsername() + ": tool has no tags.");
             throw new CustomWebApplicationException(
                 "Tool " + tool.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Check if user owns repo, or if user is in the organization which owns the tool
-        if (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkIfUserOwns(tool, user.getId())) {
+        if (tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && !checkIfUserOwns(tool, user.getId())) {
             LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
             throw new CustomWebApplicationException("User does not own the tool " + tool.getPath()
                 + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
@@ -1042,7 +1042,7 @@ public class DockerRepoResource
         // get quay token
         Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
 
-        if (quayToken == null && Objects.equals(tool.getRegistry(), Registry.QUAY_IO.toString())) {
+        if (quayToken == null && Objects.equals(tool.getRegistry(), Registry.QUAY_IO.getDockerPath())) {
             LOG.info("WARNING: QUAY.IO token not found!");
             throw new CustomWebApplicationException("A valid Quay.io token is required to add this tool.", HttpStatus.SC_BAD_REQUEST);
         } else if (quayToken != null) {

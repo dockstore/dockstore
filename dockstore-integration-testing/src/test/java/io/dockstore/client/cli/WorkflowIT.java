@@ -49,6 +49,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.ImageData;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -132,7 +133,7 @@ public class WorkflowIT extends BaseIT {
     // workflow with includeConfig in config file directory
     private static final String DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/vipr";
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL =
-        Registry.QUAY_IO.toString() + "/dockstoretestuser2/dockstore-cgpmap";
+        Registry.QUAY_IO.getDockerPath() + "/dockstoretestuser2/dockstore-cgpmap";
     private static final String DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
     private static final String GATK_SV_TAG = "dockstore-test";
@@ -872,7 +873,6 @@ public class WorkflowIT extends BaseIT {
 
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world");
         testTRSConversion(versions, "1.0.1", 1);
-        ToolVersion snapshottedVersion = versions.stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
 
         // Test that a workflow version containing an unversioned image isn't saved
         WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", "/cwl/workflow_docker.cwl", "1.0");
@@ -894,6 +894,11 @@ public class WorkflowIT extends BaseIT {
                 assertTrue(trsVersion.isIsProduction());
                 assertEquals("There should be" + numImages + "image(s) in this workflow", numImages, trsVersion.getImages().size());
                 snapshotInList = true;
+                assertFalse(trsVersion.getImages().isEmpty());
+                for (ImageData imageData :trsVersion.getImages()) {
+                    assertNotNull(imageData.getChecksum());
+                    assertNotNull(imageData.getRegistryHost());
+                }
             } else {
                 assertFalse(trsVersion.isIsProduction());
                 assertEquals("Non-snapshotted versions should have 0 images ", 0, trsVersion.getImages().size());
@@ -943,9 +948,9 @@ public class WorkflowIT extends BaseIT {
     public void testDuplicateHostedToolCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
-        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.toString(), DescriptorType.CWL.toString(), "namespace", null);
+        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
         thrown.expectMessage("already exists");
-        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.toString(), DescriptorType.CWL.toString(), "namespace", null);
+        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
     }
 
     @Test
@@ -1087,7 +1092,7 @@ public class WorkflowIT extends BaseIT {
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
         tool.setNamespace("dockstoretestuser2");
         tool.setName("dockstore-cgpmap");
-        tool.setRegistryString(Registry.QUAY_IO.toString());
+        tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         tool.setDefaultVersion("symbolic.v1");
 
         DockstoreTool registeredTool = toolApi.registerManual(tool);

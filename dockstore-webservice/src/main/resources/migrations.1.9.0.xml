@@ -47,7 +47,7 @@
         <modifyDataType columnName="path" newDataType="clob" tableName="sourcefile"/>
         <modifyDataType columnName="absolutepath" newDataType="clob" tableName="sourcefile"/>
     </changeSet>
-    
+
     <changeSet author="aduncan (generated)" id="addLegacyVersionColumn">
         <addColumn tableName="workflowversion">
             <column name="islegacyversion" type="bool"/>
@@ -56,5 +56,11 @@
             UPDATE workflowversion SET islegacyversion=true;
             UPDATE workflowversion SET islegacyversion=false WHERE id IN (SELECT wv.id FROM workflowversion wv JOIN workflow_workflowversion wwv ON wv.id=wwv.workflowversionid WHERE wwv.workflowid IN (SELECT id FROM workflow WHERE mode='DOCKSTORE_YML'));
         </sql>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="addImageRegistryColumnToImageTable">
+        <addColumn tableName="image">
+            <column name="imageregistry" type="varchar(255 BYTE)"/>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

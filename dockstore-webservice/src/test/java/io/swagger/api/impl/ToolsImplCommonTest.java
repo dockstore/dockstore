@@ -111,7 +111,7 @@ public class ToolsImplCommonTest {
         tool.setPrivateAccess(false);
         tool.setToolname(toolname);
         tool.setNamespace("test_org");
-        tool.setRegistry(Registry.QUAY_IO.toString());
+        tool.setRegistry(Registry.QUAY_IO.getDockerPath());
         tool.setAuthor("sampleAuthor");
         tool.setGitUrl("git@github.com:test_org/test6.git");
         Tag tag = new Tag();

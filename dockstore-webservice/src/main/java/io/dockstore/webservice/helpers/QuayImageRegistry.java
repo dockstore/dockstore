@@ -20,13 +20,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -95,7 +93,10 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 try {
                     final Tag tag = new Tag();
                     BeanUtils.copyProperties(tag, tagItem);
-                    tag.getImages().addAll(getImagesForTag(tool, tag, tagItem));
+                    Optional<Image> tagImage = getImageForTag(tool, tag, tagItem);
+                    if (tagImage.isPresent()) {
+                        tag.getImages().add(tagImage.get());
+                    }
                     insertQuayLastModifiedIntoLastBuilt(tagItem, tag);
                     tags.add(tag);
                 } catch (IllegalAccessException | InvocationTargetException ex) {
@@ -112,7 +113,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     }
 
     //TODO: If the repo has a lot of tags, then it needs to be paged through. Can get tag info individually, but then that's more API calls.
-    private Set<Image> getImagesForTag(final Tool tool, final Tag tag, final QuayTag quayTag) {
+    private Optional<Image> getImageForTag(final Tool tool, final Tag tag, final QuayTag quayTag) {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", tag.getName());
 
         final String repo = tool.getNamespace() + '/' + tool.getName();
@@ -121,10 +122,10 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             final String imageID = quayTag.getImageId();
             List<Checksum> checksums = new ArrayList<>();
             checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-            return Collections.singleton(new Image(checksums, repo, tag.getName(), imageID));
+            return Optional.of((new Image(checksums, repo, tag.getName(), imageID, Registry.QUAY_IO)));
         } catch (IndexOutOfBoundsException | NullPointerException ex) {
             LOG.error("Could not get checksum information for " + repo, ex);
-            return Collections.emptySet();
+            return Optional.empty();
         }
     }
 
@@ -190,7 +191,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                     tools.add(tool);
                 }
                 // tag all of these with where they came from
-                tools.forEach(container -> container.setRegistry(Registry.QUAY_IO.toString()));
+                tools.forEach(container -> container.setRegistry(Registry.QUAY_IO.getDockerPath()));
                 // not quite correct, they could be mixed but how can we tell from quay?
                 tools.forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                 toolList.addAll(tools);
@@ -264,7 +265,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
                 // Set some attributes if not manual
                 if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
-                    tool.setRegistry(Registry.QUAY_IO.toString());
+                    tool.setRegistry(Registry.QUAY_IO.getDockerPath());
                     tool.setGitUrl(gitUrl);
                 }
             }
