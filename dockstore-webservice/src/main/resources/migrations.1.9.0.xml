@@ -50,11 +50,10 @@
 
     <changeSet author="aduncan (generated)" id="addLegacyVersionColumn">
         <addColumn tableName="workflowversion">
-            <column name="islegacyversion" type="bool" defaultValue="true">
-                <constraints nullable="false"/>
-            </column>
+            <column name="islegacyversion" type="bool"/>
         </addColumn>
         <sql dbms="postgresql">
+            UPDATE workflowversion SET islegacyversion=true;
             UPDATE workflowversion SET islegacyversion=false WHERE id IN (SELECT wv.id FROM workflowversion wv JOIN workflow_workflowversion wwv ON wv.id=wwv.workflowversionid WHERE wwv.workflowid IN (SELECT id FROM workflow WHERE mode='DOCKSTORE_YML'));
         </sql>
     </changeSet>
@@ -64,4 +63,24 @@
             <column name="imageregistry" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="Charles Overbeck" id="makeIsLegacyVersionNotNullable">
+        <comment>Frozen versions are protected by security</comment>
+        <sql dbms="postgresql">
+            alter table workflowversion disable row level security;
+        </sql>
+
+        <comment>Because of row-level security, line 57 left nulls in frozen versions</comment>
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET islegacyversion=false WHERE islegacyversion is null;
+        </sql>
+
+        <sql dbms="postgresql">
+            alter table workflowversion enable row level security;
+        </sql>
+
+        <addDefaultValue tableName="workflowversion" columnName="islegacyversion" defaultValueBoolean="true"/>
+        <addNotNullConstraint tableName="workflowversion" columnName="islegacyversion"/>
+    </changeSet>
+
 </databaseChangeLog>
