@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.GET;
@@ -28,9 +29,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.AbstractImageRegistry;
+import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.auth.Auth;
@@ -40,6 +44,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +68,11 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
         this.tokenDAO = new TokenDAO(sessionFactory);
     }
 
-
+    /**
+     * This endpoint is currently unused because only Quay.io has the APIs necessary to automatically register. The frontend is hard-coded to only use Quay.io.
+     * @param authUser  The authorized user
+     * @return  The list of image registries strings like "quay.io", "gitlab.com"
+     */
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -83,14 +92,22 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
     @Path("/dockerRegistries/{dockerRegistry}/organizations")
     @Operation(operationId = "getDockerRegistriesOrganization", description = "Get all of the organizations/namespaces of the Docker registry accessible to the logged-in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public List<String> getDockerRegistryOrganization(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
-            @Parameter(name = "dockerRegistry", description = DOCKER_REGISTRY_PARAM_DESCRIPTION, required = true, in = ParameterIn.PATH) String dockerRegistry) {
+            @Parameter(name = "dockerRegistry", description = DOCKER_REGISTRY_PARAM_DESCRIPTION, required = true, in = ParameterIn.PATH) @PathParam("dockerRegistry") String dockerRegistry) {
         List<Token> tokens = tokenDAO.findQuayByUserId(authUser.getId());
         if (!tokens.isEmpty()) {
             Token token = tokens.get(0);
-            QuayImageRegistry quayImageRegistry = new QuayImageRegistry(token);
-            return quayImageRegistry.getNamespaces();
+            ImageRegistryFactory imageRegistryFactory = new ImageRegistryFactory(token);
+            final List<AbstractImageRegistry> allRegistries = imageRegistryFactory.getAllRegistries();
+            Optional<AbstractImageRegistry> first = allRegistries.stream()
+                    .filter((abstractImageRegistry -> dockerRegistry.equals(abstractImageRegistry.getRegistry().getDockerPath()))).findFirst();
+            if (first.isPresent()) {
+                AbstractImageRegistry abstractImageRegistry = first.get();
+                return abstractImageRegistry.getNamespaces();
+            } else {
+                throw new CustomWebApplicationException("Unrecognized Docker registry", HttpStatus.SC_BAD_REQUEST);
+            }
         } else {
-            return new ArrayList<>();
+            throw new CustomWebApplicationException("Could not retrieve Quay.io token", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
