@@ -378,7 +378,7 @@ public class UserResourceIT extends BaseIT {
 
         Workflow addedWorkflow = workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
-        userApi.refreshToolsByOrganization((long)1, "dockstore.test.user2");
+        userApi.refreshToolsByOrganization((long)1, "dockstore.test.user2", null);
 
         List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
         assertFalse(entries.isEmpty());

@@ -159,7 +159,7 @@ public abstract class AbstractImageRegistry {
         // Get all the tools based on the found namespaces
         List<Tool> apiTools = getToolsFromNamespace(namespaces);
 
-        String registryString = getRegistry().toString();
+        String registryString = getRegistry().getDockerPath();
 
         // Add manual tools to list of api tools
         User user = userDAO.findById(userId);
