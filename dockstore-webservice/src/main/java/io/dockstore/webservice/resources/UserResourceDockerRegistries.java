@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -54,6 +56,7 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
     private static final Logger LOG = LoggerFactory.getLogger(UserResourceDockerRegistries.class);
     private static final String DOCKER_REGISTRY_PARAM_DESCRIPTION = "Name of Docker registry";
     private static final String ORGANIZATION_PARAM_DESCRIPTION = "Name of organization or namespace";
+    private static final List<TokenType> DOCKER_REGISTRY_TOKENS = Arrays.asList(TokenType.QUAY_IO, TokenType.GITLAB_COM);
     private final TokenDAO tokenDAO;
 
     public UserResourceDockerRegistries(SessionFactory sessionFactory) {
@@ -69,7 +72,7 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
     public List<String> getUserDockerRegistries(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
         return tokenDAO.findByUserId(authUser.getId())
                 .stream()
-                .filter(token -> !token.getTokenSource().isSourceControlToken())
+                .filter(token -> DOCKER_REGISTRY_TOKENS.contains(token.getTokenSource()))
                 .map(token -> token.getTokenSource().toString())
                 .collect(Collectors.toList());
     }
@@ -95,7 +98,7 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/dockerRegistries/{dockerRegistry}/organizations/{organization}/repositories")
-    @Operation(operationId = "getDockerRegistryOrganizationRepositories", description = "Get all of the organizations/namespaces of the Docker registry accessible to the logged-in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getDockerRegistryOrganizationRepositories", description = "Get names of repositories associated with a specific namespace and Docker registry of the logged-in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public List<String> getDockerRegistryOrganizationRepositories(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
             @PathParam("dockerRegistry") @Parameter(name = "dockerRegistry", description = DOCKER_REGISTRY_PARAM_DESCRIPTION, required = true, in = ParameterIn.PATH) String dockerRegistry,
             @PathParam("organization") @Parameter(name = "organization", description = ORGANIZATION_PARAM_DESCRIPTION, required = true, in = ParameterIn.PATH) String organization) {
