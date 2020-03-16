@@ -74,7 +74,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102)
     private Date lastModified;
 
-    @Column
+    @Column(nullable = false, columnDefinition = "boolean default true")
     @ApiModelProperty(value = "Whether or not the version was added using the legacy refresh process.", position = 104)
     private boolean isLegacyVersion = true;
 
