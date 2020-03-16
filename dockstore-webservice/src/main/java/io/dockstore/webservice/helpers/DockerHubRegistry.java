@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import org.apache.http.HttpStatus;
 
 /**
  * A no-op interface intended as a place-holder for where we will implement docker hub functionality when they get around to exposing and
@@ -65,6 +67,6 @@ public class DockerHubRegistry extends AbstractImageRegistry {
 
     @Override
     public Tool getToolFromNamespaceAndRepo(final String organization, final String repository) {
-        return null;
+        throw new CustomWebApplicationException("Unsupported operation, only Quay.io is supported for now", HttpStatus.SC_BAD_REQUEST);
     }
 }
