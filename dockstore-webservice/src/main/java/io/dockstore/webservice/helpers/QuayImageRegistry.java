@@ -235,7 +235,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             return tool;
         } catch (ApiException ex) {
             LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
-            throw new CustomWebApplicationException("Could not refresh tool", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Could not get repository from Quay.io", HttpStatus.SC_BAD_REQUEST);
         }
     }
 

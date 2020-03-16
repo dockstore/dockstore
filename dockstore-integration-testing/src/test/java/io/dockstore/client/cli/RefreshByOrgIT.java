@@ -155,7 +155,7 @@ public class RefreshByOrgIT {
      */
     @Test
     public void testRefreshToolByOrgAndRepo() {
-        final String exceptionMessage = "Could not refresh tool";
+        final String exceptionMessage = "Could not get repository from Quay.io";
         final String knownValidOrganization = "dockstoretestuser2";
         final String knownValidRepository = "md5sum";
         ApiClient apiClient = getWebClient(true, "DockstoreTestUser2", testingPostgres);
