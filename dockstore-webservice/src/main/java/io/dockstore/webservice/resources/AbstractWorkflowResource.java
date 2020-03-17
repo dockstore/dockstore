@@ -191,20 +191,21 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             for (SourceFile file : version.getSourceFiles()) {
                 String fileKey = file.getType().toString() + file.getAbsolutePath();
+                SourceFile existingFile = existingFileMap.get(fileKey);
                 if (existingFileMap.containsKey(fileKey)) {
                     List<Checksum> checksums = new ArrayList<>();
                     Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
                     if (sha.isPresent()) {
                         checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                        if (existingFileMap.get(fileKey).getChecksums() == null) {
-                            existingFileMap.get(fileKey).setChecksums(checksums);
+                        if (existingFile.getChecksums() == null) {
+                            existingFile.setChecksums(checksums);
                         } else {
-                            existingFileMap.get(fileKey).getChecksums().clear();
+                            existingFile.getChecksums().clear();
                             existingFileMap.get(fileKey).getChecksums().addAll(checksums);
 
                         }
                     }
-                    existingFileMap.get(file.getType().toString() + file.getAbsolutePath()).setContent(file.getContent());
+                    existingFile.setContent(file.getContent());
                 } else {
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);

@@ -91,12 +91,12 @@ public class SourceFile implements Comparable<SourceFile> {
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")
-    @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
+    @ApiModelProperty(value = "When true, this version cannot be affected by refreshes to the content or updates to its metadata", position = 5)
     private boolean frozen = false;
 
     @Column(columnDefinition = "varchar")
     @Convert(converter = ChecksumConverter.class)
-    @ApiModelProperty(position = 5)
+    @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
     private List<Checksum> checksums = new ArrayList<>();
 
     // database timestamps
