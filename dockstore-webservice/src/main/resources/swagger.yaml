@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.9.0-alpha.4-SNAPSHOT"
+  version: "1.9.0-alpha.5-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -7198,10 +7198,6 @@ definitions:
     - "path"
     - "type"
     properties:
-      frozen:
-        type: "boolean"
-        description: "When true, this version cannot be affected by refreshes to the\
-          \ content or updates to its metadata"
       id:
         type: "integer"
         format: "int64"
@@ -7245,6 +7241,17 @@ definitions:
         type: "string"
         position: 4
         description: "Absolute path of sourcefile in git repo"
+      frozen:
+        type: "boolean"
+        position: 5
+        description: "When true, this version cannot be affected by refreshes to the\
+          \ content or updates to its metadata"
+      checksums:
+        type: "array"
+        position: 6
+        description: "The checksum(s) of the sourcefile's content"
+        items:
+          $ref: "#/definitions/Checksum"
   StarRequest:
     type: "object"
     properties:

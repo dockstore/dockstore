@@ -64,6 +64,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Service;
@@ -154,6 +155,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
+    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -1308,6 +1310,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     String toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
                     Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable);
                     existingTag.getImages().addAll(images);
+
+                    // Grab checksum for file descriptors if not already available.
+                    for (SourceFile sourceFile : existingTag.getSourceFiles()) {
+                        Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
+                        if (sha.isPresent()) {
+                            List<Checksum> checksums = new ArrayList<>();
+                            checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                            if (sourceFile.getChecksums() == null) {
+                                sourceFile.setChecksums(checksums);
+                            } else {
+                                sourceFile.getChecksums().addAll(checksums);
+                            }
+                        }
+
+                    }
                 }
             }
         }

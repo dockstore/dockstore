@@ -586,6 +586,10 @@ components:
       properties:
         absolutePath:
           type: string
+        checksums:
+          items:
+            $ref: '#/components/schemas/Checksum'
+          type: array
         content:
           type: string
         frozen:
@@ -1472,31 +1476,9 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.0-alpha.4-SNAPSHOT
+  version: 1.9.0-alpha.5-SNAPSHOT
 openapi: 3.0.1
 paths:
-  /auth/tokens/orcid.org:
-    post:
-      description: Using OAuth code from ORCID, request and store tokens from ORCID
-        API
-      operationId: addOrcidToken
-      parameters:
-      - in: query
-        name: code
-        schema:
-          type: string
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Token'
-          description: default response
-      security:
-      - bearer: []
-      summary: Add a new orcid.org token
-      tags:
-      - tokens
   /api/ga4gh/v1/tools:
     get:
       description: This endpoint returns all tools available or a filtered subset
@@ -1950,6 +1932,28 @@ paths:
         on particular platforms plus metadata
       tags:
       - extendedGA4GH
+  /auth/tokens/orcid.org:
+    post:
+      description: Using OAuth code from ORCID, request and store tokens from ORCID
+        API
+      operationId: addOrcidToken
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: default response
+      security:
+      - bearer: []
+      summary: Add a new orcid.org token
+      tags:
+      - tokens
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.

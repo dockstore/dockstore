@@ -886,6 +886,40 @@ public class WorkflowIT extends BaseIT {
         testTRSConversion(versions, "1.0", 3);
     }
 
+    @Test
+    public void testChecksumsForSourceFiles() {
+        // Test grabbing checksum on refresh
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        Workflow workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "", "wdl", "/test.json");
+
+        workflow = workflowsApi.refresh(workflow.getId());
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        assertFalse(workflowVersions.isEmpty());
+        boolean testedWDL = false;
+
+        for (WorkflowVersion workflowVersion : workflowVersions) {
+            if (workflowVersion.getName().equals("testBoth") || workflowVersion.getName().equals("testWDL")) {
+                testedWDL = true;
+                assertNotNull(workflowVersion.getSourceFiles());
+                workflowVersion.getSourceFiles().stream().forEach(sourceFile -> assertFalse("Source file should have a checksum", sourceFile.getChecksums().get(0).toString().isEmpty()));
+            }
+        }
+        assertTrue(testedWDL);
+
+        // Test grabbing checksum on snapshot
+        Workflow workflow2 = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", "cwl", SourceControl.GITHUB, "/hello_world.cwl", true);
+        WorkflowVersion snapshotVersion = workflow2.getWorkflowVersions().stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
+        assertNotNull(snapshotVersion.getSourceFiles());
+        snapshotVersion.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(workflow2.getId(), Collections.singletonList(snapshotVersion));
+        snapshotVersion.getSourceFiles().stream().forEach(sourceFile -> assertFalse("Source File should have a checksum", sourceFile.getChecksums().get(0).toString().isEmpty()));
+
+        // Make sure refresh does not error.
+        workflowsApi.refresh(workflow2.getId());
+
+    }
+
     private void testTRSConversion(final List<ToolVersion> versions, final String snapShottedVersionName, final int numImages) {
         assertFalse("Should have at least one version", versions.isEmpty());
         boolean snapshotInList = false;

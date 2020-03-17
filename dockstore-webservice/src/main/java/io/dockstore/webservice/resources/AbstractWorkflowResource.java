@@ -14,6 +14,7 @@ import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -25,6 +26,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -60,6 +62,7 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 @Api("workflows")
 public abstract class AbstractWorkflowResource<T extends Workflow> implements SourceControlResourceInterface, AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractWorkflowResource.class);
+    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     protected final HttpClient client;
     protected final TokenDAO tokenDAO;
@@ -187,11 +190,30 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getAbsolutePath(), file));
 
             for (SourceFile file : version.getSourceFiles()) {
-                if (existingFileMap.containsKey(file.getType().toString() + file.getAbsolutePath())) {
-                    existingFileMap.get(file.getType().toString() + file.getAbsolutePath()).setContent(file.getContent());
+                String fileKey = file.getType().toString() + file.getAbsolutePath();
+                SourceFile existingFile = existingFileMap.get(fileKey);
+                if (existingFileMap.containsKey(fileKey)) {
+                    List<Checksum> checksums = new ArrayList<>();
+                    Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+                    if (sha.isPresent()) {
+                        checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                        if (existingFile.getChecksums() == null) {
+                            existingFile.setChecksums(checksums);
+                        } else {
+                            existingFile.getChecksums().clear();
+                            existingFileMap.get(fileKey).getChecksums().addAll(checksums);
+
+                        }
+                    }
+                    existingFile.setContent(file.getContent());
                 } else {
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);
+
+                    Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+                    if (sha.isPresent()) {
+                        fileFromDB.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                    }
                     workflowVersionFromDB.getSourceFiles().add(fileFromDB);
                 }
             }
