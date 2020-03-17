@@ -155,7 +155,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
-    private static final String SHA_TYPE_FOR_SOURCEFILES = "sha1";
+    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
