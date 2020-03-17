@@ -80,11 +80,12 @@ public final class FileFormatHelper {
         if (content != null) {
             try {
                 MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-                messageDigest.update(content.getBytes(StandardCharsets.UTF_8), 0, content.length());
+                final byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+                messageDigest.update(bytes, 0, bytes.length);
                 String sha1 = DatatypeConverter.printHexBinary(messageDigest.digest()).toLowerCase();
                 return Optional.of(sha1);
             } catch (UnsupportedOperationException | NoSuchAlgorithmException ex) {
-                LOG.error("Unable to calculate sha1", ex);
+                LOG.error("Unable to calculate SHA-1", ex);
             }
         } else {
             LOG.error("File descriptor content is null");

@@ -1313,14 +1313,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                     // Grab checksum for file descriptors if not already available.
                     for (SourceFile sourceFile : existingTag.getSourceFiles()) {
-                        if (sourceFile.getChecksums() == null || sourceFile.getChecksums().isEmpty()) {
-                            Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
-                            if (sha.isPresent()) {
-                                List<Checksum> checksums = new ArrayList<>();
-                                checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                        Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
+                        if (sha.isPresent()) {
+                            List<Checksum> checksums = new ArrayList<>();
+                            checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                            if (sourceFile.getChecksums() == null) {
                                 sourceFile.setChecksums(checksums);
+                            } else {
+                                sourceFile.getChecksums().addAll(checksums);
                             }
                         }
+
                     }
                 }
             }
