@@ -201,7 +201,7 @@ public abstract class AbstractImageRegistry {
         }
 
         // Add manual tools to list of api tools
-        String registryString = getRegistry().toString();
+        String registryString = getRegistry().getDockerPath();
         
         User user = userDAO.findById(userId);
         List<Tool> manualTools = toolDAO.findByModeRegistryNamespaceRepository(ToolMode.MANUAL_IMAGE_PATH, registryString, organization, repository);

@@ -229,7 +229,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             tool.setName(repo.getName());
             tool.setNamespace(repo.getNamespace());
             // tag all of these with where they came from
-            tool.setRegistry(Registry.QUAY_IO.toString());
+            tool.setRegistry(Registry.QUAY_IO.getDockerPath());
             // not quite correct, they could be mixed but how can we tell from quay?
             tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
             return tool;
