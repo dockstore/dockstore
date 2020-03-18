@@ -246,12 +246,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * Handle webhooks from GitHub apps after branch deletion (redirected from AWS Lambda)
      * - Delete version for corresponding service and workflow
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param username Username of GitHub user that triggered action
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
-     * @param installationId GitHub App installation ID
      * @return List of updated workflows
      */
-    protected List<Workflow> githubWebhookDelete(String repository, String username, String gitReference, String installationId) {
+    protected List<Workflow> githubWebhookDelete(String repository, String gitReference) {
         // Retrieve name from gitReference
         Pair<String, String> referencePair = parseGitHubReference(gitReference);
 

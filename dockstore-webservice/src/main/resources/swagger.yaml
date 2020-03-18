@@ -4689,14 +4689,14 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/github/release:
+  /workflows/github/delete:
     post:
       tags:
       - "workflows"
-      summary: "Handle a release of a repository on GitHub. Will create a workflow/service\
-        \ and version when necessary."
+      summary: "Handles the deletion of a branch on GitHub. Will delete all workflow\
+        \ versions that match."
       description: ""
-      operationId: "handleGitHubRelease"
+      operationId: "handleGitHubBranchDeletion"
       consumes:
       - "application/x-www-form-urlencoded"
       produces:
@@ -4707,20 +4707,10 @@ paths:
         description: "Repository path (ex. dockstore/dockstore-ui2)"
         required: true
         type: "string"
-      - name: "username"
-        in: "formData"
-        description: "Username of user on GitHub who triggered action"
-        required: true
-        type: "string"
       - name: "gitReference"
         in: "formData"
         description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
           \ or refs/tags/v1.0"
-        required: true
-        type: "string"
-      - name: "installationId"
-        in: "formData"
-        description: "GitHub installation ID"
         required: true
         type: "string"
       responses:
@@ -4732,13 +4722,14 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-    delete:
+  /workflows/github/release:
+    post:
       tags:
       - "workflows"
-      summary: "Handles the deletion of a branch on GitHub. Will delete all workflows\
-        \ versions that match."
+      summary: "Handle a release of a repository on GitHub. Will create a workflow/service\
+        \ and version when necessary."
       description: ""
-      operationId: "handleGitHubBranchDeletion"
+      operationId: "handleGitHubRelease"
       consumes:
       - "application/x-www-form-urlencoded"
       produces:
