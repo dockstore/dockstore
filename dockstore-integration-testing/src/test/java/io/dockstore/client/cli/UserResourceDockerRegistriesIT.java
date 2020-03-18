@@ -1,7 +1,6 @@
 package io.dockstore.client.cli;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -64,8 +63,8 @@ public class UserResourceDockerRegistriesIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
         List<String> actualRepositories = usersApi.getDockerRegistryOrganizationRepositories("quay.io", "dockstoretestuser");
         List<String> expectedRepositories = Arrays.asList("noautobuild", "nobuildsatall", "quayandbitbucket", "quayandbitbucketalternate", "quayandgithub", "quayandgithubalternate", "quayandgithubwdl", "quayandgitlab", "quayandgitlabalternate", "test_input_json");
-        Collections.sort(actualRepositories);
-        Collections.sort(expectedRepositories);
-        Assert.assertEquals("Should have the expected repositories", expectedRepositories, actualRepositories);
+        expectedRepositories.forEach(repository -> {
+            Assert.assertTrue("Should have the expected repositories", actualRepositories.contains(repository));
+        });
     }
 }
