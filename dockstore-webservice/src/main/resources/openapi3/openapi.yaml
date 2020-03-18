@@ -1476,7 +1476,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.0-alpha.5-SNAPSHOT
+  version: 1.9.0-alpha.6-SNAPSHOT
 openapi: 3.0.1
 paths:
   /api/ga4gh/v1/tools:
@@ -2945,7 +2945,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
       security:
       - bearer: []

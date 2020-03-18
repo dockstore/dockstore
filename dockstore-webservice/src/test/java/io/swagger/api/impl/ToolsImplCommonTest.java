@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +30,8 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.ToolMode;
@@ -123,6 +126,9 @@ public class ToolsImplCommonTest {
         tag.setAutomated(true);
         tag.setReference("sampleReference");
         tag.setValid(true);
+        List<Checksum> checksums = Collections.singletonList(new Checksum("SHA-1", "fakeChecksum"));
+        Set<Image> image = Collections.singleton(new Image(checksums, "sampleRepo", "sampleTag", "SampleImageId", Registry.QUAY_IO));
+        tag.setImages(image);
         Tag hiddenTag = new Tag();
         hiddenTag.setImageId("hiddenImageId");
         hiddenTag.setName("hiddenName");
@@ -187,7 +193,8 @@ public class ToolsImplCommonTest {
             expectedToolVersion.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6/versions/sampleTag");
             expectedToolVersion.setId("quay.io/test_org/test6:sampleTag");
         }
-        expectedToolVersion.setImage("sampleImageId");
+        // Images are grabbed on refresh, so
+        expectedToolVersion.setImage("fakeChecksum");
         List<DescriptorType> descriptorTypeList = new ArrayList<>();
         descriptorTypeList.add(DescriptorType.CWL);
         expectedToolVersion.setDescriptorType(descriptorTypeList);

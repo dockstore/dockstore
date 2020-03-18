@@ -102,7 +102,7 @@ public enum Registry {
 
         public RegistryBean(Registry registry) {
             this.value = registry.name();
-            this.dockerPath = registry.toString();
+            this.dockerPath = registry.getDockerPath();
             this.friendlyName = registry.getFriendlyName();
             this.url = registry.url;
             this.privateOnly = Boolean.toString(registry.isPrivateOnly());

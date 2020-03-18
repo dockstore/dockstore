@@ -153,7 +153,7 @@ public final class ApiV2BetaVersionConverter {
                 toolVersion.getImages().stream().filter(Objects::nonNull).map(ImageData::getImageName).collect(Collectors.joining()));
             // this is a bit weird, but seems to be current behaviour, also need to get rid of the double lambda
             final Optional<Optional<String>> first = toolVersion.getImages().stream().filter(Objects::nonNull).map(
-                item -> item.getChecksum().stream().filter(check -> check.getType().equals(ToolsImplCommon.DOCKSTORE_IMAGEID))
+                item -> item.getChecksum().stream().filter(check -> check.getType().equals(ToolsImplCommon.DOCKER_IMAGE_SHA_TYPE_FOR_TRS))
                     .map(Checksum::getChecksum).findFirst()).findFirst();
             if (first.isPresent() && first.get().isPresent()) {
                 betaToolVersion.setImage(first.get().get());

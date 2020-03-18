@@ -269,12 +269,17 @@ public final class ToolsImplCommon {
     private static void processImageDataForToolVersion(io.dockstore.webservice.core.Tool castedContainer, Tag version,
         ToolVersion toolVersion) {
         ImageData data = new ImageData();
-        if (version.getImageId() != null) {
-            Checksum checksum = new Checksum();
-            checksum.setChecksum(version.getImageId());
-            checksum.setType(DOCKSTORE_IMAGEID);
-            //TODO: hook up snapshot and checksum behaviour here too for tools
-            data.setChecksum(Lists.newArrayList(checksum));
+        List<Checksum> trsChecksums = new ArrayList<>();
+        if (version.getImages() != null) {
+            version.getImages().forEach(image -> {
+                image.getChecksums().forEach(checksum -> {
+                    Checksum trsChecksum = new Checksum();
+                    trsChecksum.setType(DOCKER_IMAGE_SHA_TYPE_FOR_TRS);
+                    trsChecksum.setChecksum(checksum.getChecksum());
+                    trsChecksums.add(trsChecksum);
+                });
+            });
+            data.setChecksum(trsChecksums);
         } else {
             //TODO: hook up snapshot and checksum behaviour here too for workflows (or tools without images?)
             data.setChecksum(MoreObjects.firstNonNull(data.getChecksum(), Lists.newArrayList()));
