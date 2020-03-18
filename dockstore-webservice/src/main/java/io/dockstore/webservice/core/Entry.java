@@ -223,6 +223,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     public abstract EntryType getEntryType();
 
+    @JsonIgnore
+    public abstract boolean isHosted();
+
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
     public Long getCheckerId() {

@@ -198,6 +198,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return mode;
     }
 
+    @Override
+    public boolean isHosted() {
+        return getMode().equals(WorkflowMode.HOSTED);
+    }
+
     public void setMode(WorkflowMode mode) {
         this.mode = mode;
     }

@@ -273,6 +273,11 @@ public class Tool extends Entry<Tool, Tag> {
         return mode;
     }
 
+    @Override
+    public boolean isHosted() {
+        return getMode().equals(ToolMode.HOSTED);
+    }
+
     public void setMode(ToolMode mode) {
         this.mode = mode;
     }

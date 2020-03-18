@@ -119,7 +119,6 @@ public final class ToolsImplCommon {
         if (container instanceof io.dockstore.webservice.core.Tool) {
             isDockstoreTool = true;
             castedContainer = (io.dockstore.webservice.core.Tool)container;
-
             // The name is composed of the repository name and then the optional toolname split with a '/'
             String name = castedContainer.getName();
             String toolName = castedContainer.getToolname();
@@ -146,7 +145,7 @@ public final class ToolsImplCommon {
         tool.setAliases(new ArrayList<>(container.getAliases().keySet()));
 
         for (Version version : inputVersions) {
-            if (shouldHideToolVersion(version, showHiddenTags)) {
+            if (shouldHideToolVersion(version, showHiddenTags, container.isHosted())) {
                 continue;
             }
 
@@ -296,7 +295,7 @@ public final class ToolsImplCommon {
      * @param showHiddenTags    Whether the user has read access to the Dockstore version or not
      * @return
      */
-    private static boolean shouldHideToolVersion(Version<?> version, boolean showHiddenTags) {
+    private static boolean shouldHideToolVersion(Version<?> version, boolean showHiddenTags, boolean isHosted) {
         // Hide version if no name
         if (version.getName() == null) {
             return true;
@@ -305,8 +304,8 @@ public final class ToolsImplCommon {
         if (version.isHidden() && !showHiddenTags) {
             return true;
         }
-        // Hide tags with no image ID
-        return version instanceof Tag && ((Tag)version).getImageId() == null;
+        // Hide tags with no image ID (except hosted tools which do not have image IDs)
+        return version instanceof Tag && ((Tag)version).getImageId() == null && !isHosted;
     }
 
     /**
