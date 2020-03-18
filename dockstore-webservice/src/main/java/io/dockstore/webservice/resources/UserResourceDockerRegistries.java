@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2020 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -52,7 +53,9 @@ import org.slf4j.LoggerFactory;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
- * @author xliu
+ * This class is only used to get Docker registries, namespaces, and repository of a user
+ * @author gluu
+ * @since 1.9.0
  */
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -102,7 +105,9 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
                     .filter((abstractImageRegistry -> dockerRegistry.equals(abstractImageRegistry.getRegistry().getDockerPath()))).findFirst();
             if (first.isPresent()) {
                 AbstractImageRegistry abstractImageRegistry = first.get();
-                return abstractImageRegistry.getNamespaces();
+                List<String> namespaces = abstractImageRegistry.getNamespaces();
+                Collections.sort(namespaces);
+                return namespaces;
             } else {
                 throw new CustomWebApplicationException("Unrecognized Docker registry", HttpStatus.SC_BAD_REQUEST);
             }
@@ -123,7 +128,9 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
         if (!tokens.isEmpty()) {
             Token token = tokens.get(0);
             QuayImageRegistry quayImageRegistry = new QuayImageRegistry(token);
-            return quayImageRegistry.getRepositoryNamesFromNamespace(organization);
+            List<String> repositoryNamesFromNamespace = quayImageRegistry.getRepositoryNamesFromNamespace(organization);
+            Collections.sort(repositoryNamesFromNamespace);
+            return repositoryNamesFromNamespace;
         } else {
             return new ArrayList<>();
         }
