@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -38,6 +40,8 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.swagger.annotations.Api;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
@@ -236,6 +240,26 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflowVersionFromDB.addOrUpdateValidation(versionValidation);
             }
         }
+    }
+
+    /**
+     * Handle webhooks from GitHub apps after branch deletion (redirected from AWS Lambda)
+     * - Delete version for corresponding service and workflow
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param username Username of GitHub user that triggered action
+     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
+     * @param installationId GitHub App installation ID
+     * @return List of updated workflows
+     */
+    protected List<Workflow> githubWebhookDelete(String repository, String username, String gitReference, String installationId) {
+        // Retrieve name from gitReference
+        Pair<String, String> referencePair = parseGitHubReference(gitReference);
+
+        // Find all workflows and services that are github apps and use the given repo
+        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).collect(
+                Collectors.toList());
+        workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), referencePair.getRight())));
+        return workflows;
     }
 
     /**
@@ -535,5 +559,25 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return installationAccessToken;
+    }
+
+    /**
+     * Parse git references (ex. refs/heads/feature/foobar) and returns a pair of the branch type and name
+     * @param gitReference Git Reference of the form refs/tags/name or refs/heads/name
+     * @return Pair of reference information
+     */
+    private Pair<String, String> parseGitHubReference(String gitReference) {
+        // Match the github reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
+        Pattern pattern = Pattern.compile("^refs/(tags|heads)/([a-zA-Z0-9]+([./_-]?[a-zA-Z0-9]+)*)$");
+        Matcher matcher = pattern.matcher(gitReference);
+
+        if (!matcher.find()) {
+            String msg = "Reference " + gitReference + " is not of the valid form";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+        String gitBranchType = matcher.group(1);
+        String gitBranchName = matcher.group(2);
+        return new MutablePair(gitBranchType, gitBranchName);
     }
 }

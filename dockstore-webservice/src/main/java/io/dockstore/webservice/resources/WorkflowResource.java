@@ -1838,4 +1838,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         return githubWebhookRelease(repository, username, gitReference, installationId);
     }
+
+    @DELETE
+    @Path("/github/release")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflows versions that match.", security = @SecurityRequirement(name = "bearer"), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handles the deletion of a branch on GitHub. Will delete all workflows versions that match.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
+            @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+            @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
+            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        return githubWebhookDelete(repository, username, gitReference, installationId);
+    }
 }

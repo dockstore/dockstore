@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.9.0-alpha.5-SNAPSHOT"
+  version: "1.9.0-alpha.6-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -4697,6 +4697,48 @@ paths:
         \ and version when necessary."
       description: ""
       operationId: "handleGitHubRelease"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "formData"
+        description: "Repository path (ex. dockstore/dockstore-ui2)"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Username of user on GitHub who triggered action"
+        required: true
+        type: "string"
+      - name: "gitReference"
+        in: "formData"
+        description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
+          \ or refs/tags/v1.0"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "workflows"
+      summary: "Handles the deletion of a branch on GitHub. Will delete all workflows\
+        \ versions that match."
+      description: ""
+      operationId: "handleGitHubBranchDeletion"
       consumes:
       - "application/x-www-form-urlencoded"
       produces:
