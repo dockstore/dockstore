@@ -51,8 +51,10 @@ import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.ImageData;
 import io.dockstore.openapi.client.model.ToolVersion;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -1758,6 +1760,53 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion workflowVersionByPublshedByPathValidation = optionalWorkflowVersionByPublishedByPathValidation.get();
         Assert.assertFalse("Getting workflow version via published workflow has null alias",
                 MapUtils.isEmpty(workflowVersionByPublshedByPathValidation.getAliases()));
+
+    }
+
+    @Test
+    public void testGitReferenceParsing() {
+        String reference = GitHelper.parseGitHubReference("refs/heads/foobar");
+        assertEquals("foobar", reference);
+
+        reference = GitHelper.parseGitHubReference("refs/heads/feature/foobar");
+        assertEquals("feature/foobar", reference);
+
+        reference = GitHelper.parseGitHubReference("refs/tags/foobar");
+        assertEquals("foobar", reference);
+
+        reference = GitHelper.parseGitHubReference("refs/tags/feature/foobar");
+        assertEquals("feature/foobar", reference);
+
+        reference = GitHelper.parseGitHubReference("refs/heads/foo_bar");
+        assertEquals("foo_bar", reference);
+
+        reference = GitHelper.parseGitHubReference("refs/tags/feature/foo-bar");
+        assertEquals("feature/foo-bar", reference);
+
+        reference = GitHelper.parseGitHubReference("refs/tags/feature/foobar12");
+        assertEquals("feature/foobar12", reference);
+
+        try {
+            GitHelper.parseGitHubReference("refs/fake/foobar");
+            fail("Should throw exception");
+        } catch (CustomWebApplicationException ex) {
+            assertEquals(ex.getResponse().getStatus(), 418);
+        }
+
+        try {
+            GitHelper.parseGitHubReference("refs/fake/feature/foobar");
+            fail("Should throw exception");
+        } catch (CustomWebApplicationException ex) {
+            assertEquals(ex.getResponse().getStatus(), 418);
+        }
+
+        try {
+            GitHelper.parseGitHubReference("feature/foobar");
+            fail("Should throw exception");
+        } catch (CustomWebApplicationException ex) {
+            assertEquals(ex.getResponse().getStatus(), 418);
+        }
+
 
     }
 

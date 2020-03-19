@@ -4689,12 +4689,12 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /workflows/github/delete:
-    post:
+  /workflows/github:
+    delete:
       tags:
       - "workflows"
       summary: "Handles the deletion of a branch on GitHub. Will delete all workflow\
-        \ versions that match."
+        \ versions from all workflows that match."
       description: ""
       operationId: "handleGitHubBranchDeletion"
       consumes:
@@ -4703,23 +4703,19 @@ paths:
       - "application/json"
       parameters:
       - name: "repository"
-        in: "formData"
+        in: "query"
         description: "Repository path (ex. dockstore/dockstore-ui2)"
         required: true
         type: "string"
       - name: "gitReference"
-        in: "formData"
+        in: "query"
         description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
           \ or refs/tags/v1.0"
         required: true
         type: "string"
       responses:
-        200:
+        default:
           description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/github/release:

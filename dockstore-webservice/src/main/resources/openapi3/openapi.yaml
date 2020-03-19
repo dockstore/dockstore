@@ -2775,7 +2775,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       summary: Add aliases linked to a collection in Dockstore.
       tags:
@@ -3867,21 +3867,20 @@ paths:
           description: default response
       tags:
       - users
-  /workflows/github/delete:
-    post:
+  /workflows/github:
+    delete:
       description: Handles the deletion of a branch on GitHub. Will delete all workflow
-        versions that match.
+        versions from all workflows that match.
       operationId: handleGitHubBranchDeletion
-      requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              properties:
-                gitReference:
-                  type: string
-                repository:
-                  type: string
-              type: object
+      parameters:
+      - in: query
+        name: repository
+        schema:
+          type: string
+      - in: query
+        name: gitReference
+        schema:
+          type: string
       responses:
         "418":
           description: This code tells AWS Lambda not to retry.
