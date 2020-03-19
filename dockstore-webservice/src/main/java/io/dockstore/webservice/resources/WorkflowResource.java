@@ -1846,8 +1846,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflow versions from all workflows that match.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
-    @ApiOperation(value = "Handles the deletion of a branch on GitHub. Will delete all workflow versions from all workflows that match.", authorizations = {
+    @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", security = @SecurityRequirement(name = JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Response.class)
     public Response handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,

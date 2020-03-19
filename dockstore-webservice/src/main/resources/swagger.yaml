@@ -4694,7 +4694,7 @@ paths:
       tags:
       - "workflows"
       summary: "Handles the deletion of a branch on GitHub. Will delete all workflow\
-        \ versions from all workflows that match."
+        \ versions that match in all workflows that share the same repository."
       description: ""
       operationId: "handleGitHubBranchDeletion"
       consumes:
