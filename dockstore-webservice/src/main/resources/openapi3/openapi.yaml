@@ -3998,7 +3998,7 @@ paths:
         "418":
           description: This code tells AWS Lambda not to retry.
       security:
-      - BEARER: []
+      - bearer: []
       tags:
       - workflows
   /workflows/github/release:
@@ -4024,7 +4024,7 @@ paths:
         "418":
           description: This code tells AWS Lambda not to retry.
       security:
-      - BEARER: []
+      - bearer: []
       tags:
       - workflows
   /workflows/hostedEntry/{entryId}:
