@@ -232,10 +232,30 @@ public class ElasticListener implements StateListenerInterface {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
+        removeIrrelevantProperties(entry);
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         return jsonNode;
+    }
+
+    /**
+     * Remove some stuff that should not be indexed by ES.
+     * This is not ideal, we should be including things we want indexed, not removing.
+     * @param entry
+     */
+    private static void removeIrrelevantProperties(Entry entry) {
+        String defaultVersion = entry.getDefaultVersion();
+        // If the tool/workflow has a default version, only keep the default version (and its sourcefiles)
+        if (defaultVersion != null) {
+            Set<Version> newWorkflowVersions = entry.getWorkflowVersions();
+            newWorkflowVersions.removeIf(version -> !version.getName().equals(defaultVersion));
+            entry.setWorkflowVersions(newWorkflowVersions);
+        }
+        entry.setUsers(null);
+        entry.setDefaultVersion(null);
+        entry.setCheckerWorkflow(null);
+        entry.setLastModified(null);
     }
 
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
