@@ -126,8 +126,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                     throw new CustomWebApplicationException("Could not get QuayTag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             } else {
-                List<QuayTag> values = (List<QuayTag>)tagsFromRepo.values();
-                for (QuayTag tagItem : values) {
+                for (QuayTag tagItem : tagsFromRepo.values()) {
                     try {
                         final Tag tag = convertQuayTagToTag(tagItem, tool);
                         tags.add(tag);
