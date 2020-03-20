@@ -204,9 +204,8 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("Missing required Quay.io token", HttpStatus.SC_BAD_REQUEST);
         }
         QuayImageRegistry registry = new QuayImageRegistry(quayToken);
-        return new ArrayList<>(
-                registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
-                        gitlabToken, organization, eventDAO, dashboardPrefix, repository));
+        return registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
+            gitlabToken, organization, eventDAO, dashboardPrefix, repository);
     }
 
     private void refreshBitbucketToken(long userId) {

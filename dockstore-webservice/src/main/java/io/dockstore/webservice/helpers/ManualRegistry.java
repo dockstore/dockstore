@@ -20,10 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.dockstore.common.Registry;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
-import org.apache.http.HttpStatus;
 
 /**
  * Created by aduncan on 09/12/16.
@@ -66,6 +64,6 @@ public class ManualRegistry extends AbstractImageRegistry {
 
     @Override
     public Tool getToolFromNamespaceAndRepo(final String organization, final String repository) {
-        throw new CustomWebApplicationException("Unsupported operation, only Quay.io is supported for now", HttpStatus.SC_BAD_REQUEST);
+        return unsupportedOperation();
     }
 }

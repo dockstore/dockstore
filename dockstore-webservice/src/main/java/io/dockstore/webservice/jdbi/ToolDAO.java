@@ -19,7 +19,6 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.ToolPath;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
@@ -36,24 +35,12 @@ public class ToolDAO extends EntryDAO<Tool> {
         super(factory);
     }
 
-    public List<Tool> findByMode(final ToolMode mode) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findByMode").setParameter("mode", mode));
+    public List<Tool> findByUserRegistryNamespace(final long userId, final String registry, final String namespace) {
+        return list(namedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace));
     }
 
-    public List<Tool> findByModeRegistryNamespace(final ToolMode mode, final String registry, final String namespace) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findByModeRegistryNamespace").setParameter("mode", mode).setParameter("registry", registry).setParameter("namespace", namespace));
-    }
-
-    public List<Tool> findByNotModeRegistryNamespace(final ToolMode mode, final String registry, final String namespace) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findByNotModeRegistryNamespace").setParameter("mode", mode).setParameter("registry", registry).setParameter("namespace", namespace));
-    }
-
-    public List<Tool> findByModeRegistryNamespaceRepository(final ToolMode mode, final String registry, final String namespace, final String repository) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findByModeRegistryNamespaceRepository").setParameter("mode", mode).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
-    }
-
-    public List<Tool> findByNotModeRegistryNamespaceRepository(final ToolMode mode, final String registry, final String namespace, final String repository) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findByNotModeRegistryNamespaceRepository").setParameter("mode", mode).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
+    public List<Tool> findByUserRegistryNamespaceRepository(final long userId, final String registry, final String namespace, final String repository) {
+        return list(namedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
     }
 
     public List<ToolPath> findAllPublishedPaths() {

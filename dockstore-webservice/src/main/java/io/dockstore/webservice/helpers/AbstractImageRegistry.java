@@ -128,6 +128,10 @@ public abstract class AbstractImageRegistry {
 
     public abstract Tool getToolFromNamespaceAndRepo(String organization, String repository);
 
+    protected Tool unsupportedOperation() throws CustomWebApplicationException {
+        throw new CustomWebApplicationException("Unsupported operation, only Quay.io is supported for now", HttpStatus.SC_BAD_REQUEST);
+    }
+
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
@@ -163,8 +167,16 @@ public abstract class AbstractImageRegistry {
 
         // Add manual tools to list of api tools
         User user = userDAO.findById(userId);
-        List<Tool> manualTools = toolDAO.findByModeRegistryNamespace(ToolMode.MANUAL_IMAGE_PATH, registryString, organization);
-        List<Tool> notManualTools = toolDAO.findByNotModeRegistryNamespace(ToolMode.MANUAL_IMAGE_PATH, registryString, organization);
+        List<Tool> userTools = toolDAO.findByUserRegistryNamespace(userId, registryString, organization);
+        // manualTools:
+        //  - isManualMode
+        //  - isTool
+        //  - belongs to user
+        //  - correct registry
+        //  - correct organization/namespace
+        List<Tool> manualTools = userTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
+        // notManualTools is similar except it's not manualMode
+        List<Tool> notManualTools = userTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
         apiTools.addAll(manualTools);
 
         // Update api tools with build information
@@ -180,7 +192,7 @@ public abstract class AbstractImageRegistry {
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
-                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
+                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
             updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
 
@@ -204,9 +216,14 @@ public abstract class AbstractImageRegistry {
         String registryString = getRegistry().getDockerPath();
         
         User user = userDAO.findById(userId);
-        List<Tool> manualTools = toolDAO.findByModeRegistryNamespaceRepository(ToolMode.MANUAL_IMAGE_PATH, registryString, organization, repository);
-        List<Tool> notManualTools = toolDAO.findByNotModeRegistryNamespaceRepository(ToolMode.MANUAL_IMAGE_PATH, registryString, organization, repository);
-
+        List<Tool> userRegistryNamespaceRepositoryTools = toolDAO
+                .findByUserRegistryNamespaceRepository(userId, registryString, organization, repository);
+        List<Tool> manualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH
+                .equals(tool.getMode())).collect(
+                Collectors.toList());
+        List<Tool> notManualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH
+                .equals(tool.getMode())).collect(
+                Collectors.toList());
         apiTools.addAll(manualTools);
 
         // Update api tools with build information
@@ -221,8 +238,8 @@ public abstract class AbstractImageRegistry {
 
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                    .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
-                            gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
+                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
             updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
 
