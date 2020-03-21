@@ -32,10 +32,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -218,7 +221,9 @@ public class ElasticListener implements StateListenerInterface {
             }
             builder.append('\n');
         });
-        return builder.toString();
+        String s = builder.toString();
+        LOGGER.error(String.valueOf(s.length()));
+        return s;
     }
 
     /**
@@ -232,8 +237,8 @@ public class ElasticListener implements StateListenerInterface {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
-        removeIrrelevantProperties(entry);
-        JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
+        Entry detachedEntry = removeIrrelevantProperties(entry);
+        JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         return jsonNode;
@@ -244,18 +249,57 @@ public class ElasticListener implements StateListenerInterface {
      * This is not ideal, we should be including things we want indexed, not removing.
      * @param entry
      */
-    private static void removeIrrelevantProperties(Entry entry) {
+    private static Entry removeIrrelevantProperties(Entry entry) {
+        Entry detachedEntry;
+        if (entry instanceof Tool) {
+            Tool tool = (Tool) entry;
+            Tool detachedTool = new Tool();
+            tool.getWorkflowVersions().forEach(version -> {
+                Hibernate.initialize(version.getSourceFiles());
+            });
+            // These are for facets
+            detachedTool.setDefaultWdlPath(tool.getDefaultWdlPath());
+            detachedTool.setDefaultCwlPath(tool.getDefaultCwlPath());
+            detachedTool.setNamespace(tool.getNamespace());
+            detachedTool.setRegistry(tool.getRegistry());
+            detachedTool.setPrivateAccess(tool.isPrivateAccess());
+
+            // These are for table
+
+            detachedTool.setGitUrl(tool.getGitUrl());
+            detachedTool.setName(tool.getName());
+            detachedTool.setToolname(tool.getToolname());
+            detachedEntry = detachedTool;
+        } else if (entry instanceof BioWorkflow) {
+            BioWorkflow bioWorkflow = (BioWorkflow) entry;
+            BioWorkflow detachedBioWorkflow = new BioWorkflow();
+            // These are for facets
+            detachedBioWorkflow.setDescriptorType(bioWorkflow.getDescriptorType());
+            detachedBioWorkflow.setSourceControl(bioWorkflow.getSourceControl());
+            detachedBioWorkflow.setOrganization(bioWorkflow.getOrganization());
+
+            // These are for table
+            detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
+            detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
+            detachedEntry = detachedBioWorkflow;
+        } else {
+            return entry;
+        }
+        detachedEntry.setAuthor(entry.getAuthor());
+        detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
+        detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
+        detachedEntry.setWorkflowVersions(entry.getWorkflowVersions());
+        entry.getStarredUsers().forEach(user -> {
+            detachedEntry.addStarredUser((User)user);
+        });
         String defaultVersion = entry.getDefaultVersion();
         // If the tool/workflow has a default version, only keep the default version (and its sourcefiles)
         if (defaultVersion != null) {
-            Set<Version> newWorkflowVersions = entry.getWorkflowVersions();
-            newWorkflowVersions.removeIf(version -> !version.getName().equals(defaultVersion));
-            entry.setWorkflowVersions(newWorkflowVersions);
+            Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
+            detachedEntry.setWorkflowVersions(newWorkflowVersions);
+            detachedEntry.getWorkflowVersions().removeIf(version -> !((Version)version).getName().equals(defaultVersion));
         }
-        entry.setUsers(null);
-        entry.setDefaultVersion(null);
-        entry.setCheckerWorkflow(null);
-        entry.setLastModified(null);
+        return detachedEntry;
     }
 
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
