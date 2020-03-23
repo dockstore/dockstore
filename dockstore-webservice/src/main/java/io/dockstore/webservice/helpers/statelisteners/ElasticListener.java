@@ -286,6 +286,7 @@ public class ElasticListener implements StateListenerInterface {
         } else {
             return entry;
         }
+        detachedEntry.setDescription(entry.getDescription());
         detachedEntry.setAuthor(entry.getAuthor());
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
