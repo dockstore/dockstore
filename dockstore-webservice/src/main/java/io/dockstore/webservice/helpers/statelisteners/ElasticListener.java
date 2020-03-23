@@ -221,9 +221,7 @@ public class ElasticListener implements StateListenerInterface {
             }
             builder.append('\n');
         });
-        String s = builder.toString();
-        LOGGER.error(String.valueOf(s.length()));
-        return s;
+        return builder.toString();
     }
 
     /**
@@ -233,7 +231,7 @@ public class ElasticListener implements StateListenerInterface {
      * @return The Elasticsearch object string to be placed into the index
      * @throws IOException  Mapper problems
      */
-    public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
+    public static JsonNode dockstoreEntryToElasticSearchObject(final Entry entry) throws IOException {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
@@ -257,6 +255,7 @@ public class ElasticListener implements StateListenerInterface {
             tool.getWorkflowVersions().forEach(version -> {
                 Hibernate.initialize(version.getSourceFiles());
             });
+
             // These are for facets
             detachedTool.setDefaultWdlPath(tool.getDefaultWdlPath());
             detachedTool.setDefaultCwlPath(tool.getDefaultCwlPath());
@@ -265,7 +264,6 @@ public class ElasticListener implements StateListenerInterface {
             detachedTool.setPrivateAccess(tool.isPrivateAccess());
 
             // These are for table
-
             detachedTool.setGitUrl(tool.getGitUrl());
             detachedTool.setName(tool.getName());
             detachedTool.setToolname(tool.getToolname());
