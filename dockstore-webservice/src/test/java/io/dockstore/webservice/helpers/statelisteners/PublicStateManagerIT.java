@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -35,6 +36,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -70,7 +72,11 @@ public class PublicStateManagerIT {
         boolean verified = jsonNode.get("verified").booleanValue();
         Assert.assertFalse(verified);
         tool = getFakeTool(true);
+        final ObjectMapper MAPPER = Jackson.newObjectMapper();
+        String beforeString = MAPPER.writeValueAsString(tool);
         jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
+        String afterString = MAPPER.writeValueAsString(tool);
+        Assert.assertEquals("The original tool should not have changed.", beforeString, afterString);
         verified = jsonNode.get("verified").booleanValue();
         Assert.assertTrue(verified);
     }
