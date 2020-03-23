@@ -281,6 +281,7 @@ public class ElasticListener implements StateListenerInterface {
             // These are for table
             detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
             detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
+            detachedBioWorkflow.setGitUrl(bioWorkflow.getGitUrl());
             detachedEntry = detachedBioWorkflow;
         } else {
             return entry;
