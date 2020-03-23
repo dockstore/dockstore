@@ -249,7 +249,7 @@ public class ElasticListener implements StateListenerInterface {
      * This is not ideal, we should be including things we want indexed, not removing.
      * @param entry
      */
-    private static Entry removeIrrelevantProperties(Entry entry) {
+    private static Entry removeIrrelevantProperties(final Entry entry) {
         Entry detachedEntry;
         if (entry instanceof Tool) {
             Tool tool = (Tool) entry;
@@ -289,16 +289,27 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
-        detachedEntry.setWorkflowVersions(entry.getWorkflowVersions());
+        Set<Version> workflowVersions = entry.getWorkflowVersions();
+        detachedEntry.setWorkflowVersions(workflowVersions);
         entry.getStarredUsers().forEach(user -> {
             detachedEntry.addStarredUser((User)user);
         });
         String defaultVersion = entry.getDefaultVersion();
-        // If the tool/workflow has a default version, only keep the default version (and its sourcefiles)
         if (defaultVersion != null) {
-            Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
-            detachedEntry.setWorkflowVersions(newWorkflowVersions);
-            detachedEntry.getWorkflowVersions().removeIf(version -> !((Version)version).getName().equals(defaultVersion));
+            boolean saneDefaultVersion = workflowVersions.stream().anyMatch(version -> defaultVersion.equals(version.getName()) || defaultVersion.equals(version.getReference()));
+            if (saneDefaultVersion) {
+                // If the tool/workflow has a default version, only keep the default version (and its sourcefile contents and description)
+                Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
+                newWorkflowVersions.forEach(version -> {
+                    if (!defaultVersion.equals(version.getReference()) && !defaultVersion.equals(version.getName())) {
+                        version.setDescriptionAndDescriptionSource(null, null);
+                        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+                        sourceFiles.forEach(sourceFile -> sourceFile.setContent(""));
+                    }
+                });
+            } else {
+                LOGGER.error("Entry has a default version that doesn't exist: " + entry.getEntryPath());
+            }
         }
         return detachedEntry;
     }
