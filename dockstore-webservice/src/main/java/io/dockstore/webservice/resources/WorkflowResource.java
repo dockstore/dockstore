@@ -1319,7 +1319,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                             checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
                             if (sourceFile.getChecksums() == null) {
                                 sourceFile.setChecksums(checksums);
-                            } else {
+                            } else if (sourceFile.getChecksums().isEmpty()) {
                                 sourceFile.getChecksums().addAll(checksums);
                             }
                         }

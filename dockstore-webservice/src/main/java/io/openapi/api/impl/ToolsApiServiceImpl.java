@@ -63,6 +63,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
+import io.openapi.model.Checksum;
 import io.openapi.model.Error;
 import io.openapi.model.ExtendedFileWrapper;
 import io.openapi.model.FileWrapper;
@@ -89,6 +90,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
     private static final int DEFAULT_PAGE_SIZE = 1000;
+    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
@@ -515,7 +517,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 if (potentialDockerfile.isPresent()) {
                     ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
                     //TODO: hook up file checksum here
-                    dockerfile.setChecksum(Lists.newArrayList());
+                    dockerfile.setChecksum(convertToTRSChecksums(potentialDockerfile.get()));
                     dockerfile.setContent(potentialDockerfile.get().getContent());
                     dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
                     dockerfile.setOriginalFile(potentialDockerfile.get());
@@ -565,6 +567,19 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         Response.StatusType status = getExtendedStatus(Status.NOT_FOUND,
             "version found, but file not found (bad filename, invalid file, etc.)");
         return Response.status(status).build();
+    }
+
+    public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
+        List<Checksum> trsChecksums = new ArrayList<>();
+        if (sourceFile.getChecksums() != null && !sourceFile.getChecksums().isEmpty()) {
+            sourceFile.getChecksums().stream().forEach(checksum -> {
+                Checksum trsChecksum = new Checksum();
+                trsChecksum.setType(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS);
+                trsChecksum.setChecksum(checksum.getChecksum());
+                trsChecksums.add(trsChecksum);
+            });
+        }
+        return trsChecksums;
     }
 
     private Response.StatusType getExtendedStatus(Status status, String additionalMessage) {
