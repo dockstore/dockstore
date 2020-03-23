@@ -111,32 +111,23 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             final QuayRepo quayRepo = toolFromQuay.get();
             final Map<String, QuayTag> tagsFromRepo = quayRepo.getTags();
             final int maxQuayTagsReturnedByRepo = 500;
+            List<QuayTag> quayTags = new ArrayList<>(tagsFromRepo.values());
             if (tagsFromRepo.size() == maxQuayTagsReturnedByRepo) {
                 try {
-                    List<QuayTag> allQuayTags = getAllQuayTags(repo);
-                    for (QuayTag tagItem : allQuayTags) {
-                        try {
-                            final Tag tag = convertQuayTagToTag(tagItem, tool);
-                            tags.add(tag);
-                        } catch (IllegalAccessException | InvocationTargetException ex) {
-                            LOG.error(quayToken.getUsername() + " Exception: {}", ex);
-                        }
-                    }
+                quayTags = getAllQuayTags(repo);
                 } catch (ApiException e) {
                     throw new CustomWebApplicationException("Could not get QuayTag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
-            } else {
-                for (QuayTag tagItem : tagsFromRepo.values()) {
-                    try {
-                        final Tag tag = convertQuayTagToTag(tagItem, tool);
-                        tags.add(tag);
-                    } catch (IllegalAccessException | InvocationTargetException ex) {
-                        LOG.error(quayToken.getUsername() + " Exception: {}", ex);
-                    }
+            }
+            for (QuayTag tagItem : quayTags) {
+                try {
+                    final Tag tag = convertQuayTagToTag(tagItem, tool);
+                    tags.add(tag);
+                } catch (IllegalAccessException | InvocationTargetException ex) {
+                    LOG.error(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
         }
-
         String repository = tool.getNamespace() + "/" + tool.getName();
         updateTagsWithBuildInformation(repository, tags, tool);
 
