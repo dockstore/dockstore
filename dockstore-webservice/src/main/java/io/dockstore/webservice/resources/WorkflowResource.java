@@ -1844,7 +1844,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @DELETE
     @Path("/github")
     @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))

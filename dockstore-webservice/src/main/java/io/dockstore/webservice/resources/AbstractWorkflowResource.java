@@ -248,14 +248,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     protected List<Workflow> githubWebhookDelete(String repository, String gitReference) {
         // Retrieve name from gitReference
-        String gitReferenceName = GitHelper.parseGitHubReference(gitReference);
+        Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
+        if (gitReferenceName.isEmpty()) {
+            String msg = "Reference " + gitReference + " is not of the valid form";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
 
         // Find all workflows and services that are github apps and use the given repo
         List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).collect(
                 Collectors.toList());
 
         // Delete all non-frozen versions that have the same git reference name
-        workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName) && !workflowVersion.isFrozen()));
+        workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
         return workflows;
     }
 
