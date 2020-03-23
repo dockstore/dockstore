@@ -226,25 +226,31 @@ public abstract class SourceCodeRepoInterface {
             return workflow;
         }
 
-        if (Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
-            String msg = "Cannot refresh .dockstore.yml workflows";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
             // when there is an existing stub workflow, just return the new stub as well
             return workflow;
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        workflow.setMode(WorkflowMode.FULL);
+        if (!Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
+            workflow.setMode(WorkflowMode.FULL);
+        }
 
         // if it exists, extract paths from the previous workflow entry
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
         // Copy over existing workflow versions
         existingWorkflow.get().getWorkflowVersions()
                 .forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
+
+        // Cannot refresh dockstore.yml workflow version unless it is a legacy version
+        if (Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
+            // Throw error if version name not set, version name set but does not already exist, or version name set and exists but is not a legacy version
+            if (versionName.isEmpty() || !existingDefaults.containsKey(versionName.get()) || (existingDefaults.containsKey(versionName.get()) && !existingDefaults.get(versionName.get()).isLegacyVersion())) {
+                String msg = "Cannot refresh .dockstore.yml workflows";
+                LOG.error(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+        }
 
         // Copy workflow information from source (existingWorkflow) to target (workflow)
         existingWorkflow.get().copyWorkflow(workflow);

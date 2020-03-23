@@ -113,6 +113,24 @@ public class WebhookIT extends BaseIT {
             assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
         }
 
+        // Should be able to refresh a legacy version
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2");
+
+        // Should not be able to refresh a GitHub App version
+        try {
+            workflowApi.refreshVersion(workflow.getId(), "0.1");
+            fail("Should not be able to refresh");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
+
+        // Refresh a version that doesn't already exist
+        try {
+            workflowApi.refreshVersion(workflow.getId(), "dne");
+            fail("Should not be able to refresh");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
     }
 
     /**
