@@ -286,6 +286,7 @@ public class ElasticListener implements StateListenerInterface {
             return entry;
         }
         detachedEntry.setAuthor(entry.getAuthor());
+        detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
         detachedEntry.setWorkflowVersions(entry.getWorkflowVersions());
