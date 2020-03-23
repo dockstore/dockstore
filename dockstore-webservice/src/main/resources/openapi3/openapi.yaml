@@ -4115,6 +4115,33 @@ paths:
       - bearer: []
       tags:
       - workflows
+  /workflows/{workflowId}/refresh:
+    get:
+      description: Refresh one particular workflow.
+      operationId: refresh
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
   /workflows/{workflowId}/refresh/{version}:
     get:
       description: Refresh one particular workflow version.
