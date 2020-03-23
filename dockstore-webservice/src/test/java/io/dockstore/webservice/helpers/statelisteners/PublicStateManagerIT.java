@@ -72,10 +72,10 @@ public class PublicStateManagerIT {
         boolean verified = jsonNode.get("verified").booleanValue();
         Assert.assertFalse(verified);
         tool = getFakeTool(true);
-        final ObjectMapper MAPPER = Jackson.newObjectMapper();
-        String beforeString = MAPPER.writeValueAsString(tool);
+        final ObjectMapper mapper = Jackson.newObjectMapper();
+        String beforeString = mapper.writeValueAsString(tool);
         jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
-        String afterString = MAPPER.writeValueAsString(tool);
+        String afterString = mapper.writeValueAsString(tool);
         Assert.assertEquals("The original tool should not have changed.", beforeString, afterString);
         verified = jsonNode.get("verified").booleanValue();
         Assert.assertTrue(verified);
