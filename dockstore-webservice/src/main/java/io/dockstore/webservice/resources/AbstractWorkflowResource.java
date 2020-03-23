@@ -151,20 +151,24 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * workflow verions.
      * @param workflow    workflow to be updated
      * @param newWorkflow workflow to grab new content from
+     * @param user
+     * @param versionName
      */
-    protected void updateDBWorkflowWithSourceControlWorkflow(Workflow workflow, Workflow newWorkflow, final User user) {
+    protected void updateDBWorkflowWithSourceControlWorkflow(Workflow workflow, Workflow newWorkflow, final User user, Optional<String> versionName) {
         // update root workflow
         workflow.update(newWorkflow);
         // update workflow versions
         Map<String, WorkflowVersion> existingVersionMap = new HashMap<>();
         workflow.getWorkflowVersions().forEach(version -> existingVersionMap.put(version.getName(), version));
 
-        // delete versions that exist in old workflow but do not exist in newWorkflow
-        Map<String, WorkflowVersion> newVersionMap = new HashMap<>();
-        newWorkflow.getWorkflowVersions().forEach(version -> newVersionMap.put(version.getName(), version));
-        Sets.SetView<String> removedVersions = Sets.difference(existingVersionMap.keySet(), newVersionMap.keySet());
-        for (String version : removedVersions) {
-            workflow.removeWorkflowVersion(existingVersionMap.get(version));
+        // delete versions that exist in old workflow but do not exist in newWorkflow (only for whole refresh)
+        if (versionName.isEmpty()) {
+            Map<String, WorkflowVersion> newVersionMap = new HashMap<>();
+            newWorkflow.getWorkflowVersions().forEach(version -> newVersionMap.put(version.getName(), version));
+            Sets.SetView<String> removedVersions = Sets.difference(existingVersionMap.keySet(), newVersionMap.keySet());
+            for (String version : removedVersions) {
+                workflow.removeWorkflowVersion(existingVersionMap.get(version));
+            }
         }
 
         // Then copy over content that changed

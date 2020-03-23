@@ -363,7 +363,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -374,7 +374,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
-                references.add(getRef(ref, repository));
+                Triple<String, Date, String> referenceTriple = getRef(ref, repository);
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
+                    references.add(referenceTriple);
+                }
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases

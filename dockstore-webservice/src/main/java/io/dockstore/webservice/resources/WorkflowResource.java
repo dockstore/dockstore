@@ -339,18 +339,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     logFullWorkflowRefresh(workflow);
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
-                    final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow));
+                    final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow), Optional.empty());
 
                     // Take ownership of these workflows
                     workflow.getUsers().add(user);
 
                     // Update the existing matching workflows based off of the new information
-                    updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user);
+                    updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user, Optional.empty());
                     alreadyProcessed.add(workflow.getId());
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.empty());
+                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.empty(), Optional.empty());
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
@@ -362,7 +362,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     workflowFromDB.getUsers().add(user);
 
                     // Update newly created template workflow (workflowFromDB) with found data from the repository
-                    updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user);
+                    updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user, Optional.empty());
                     alreadyProcessed.add(workflowFromDB.getId());
                 }
             }
@@ -388,6 +388,31 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+        return refreshWorkflow(user, workflowId, Optional.empty());
+    }
+
+    @GET
+    @Path("/{workflowId}/refresh/{version}")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "refreshVersion", description = "Refresh one particular workflow version.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(nickname = "refreshVersion", value = "Refresh one particular workflow version.", notes = "Refresh existing or new version of a workflow.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow refreshVersion(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "version", required = true) @PathParam("version") String version) {
+        return refreshWorkflow(user, workflowId, Optional.of(version));
+    }
+
+    /**
+     * Refresh a workflow, pulling in all versions from remote sources
+     * Optionally pass version to only refresh a specific version
+     * @param user User who made call
+     * @param workflowId ID of workflow
+     * @param version Name of the workflow version
+     * @return Updated workflow
+     */
+    private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkUser(user, workflow);
@@ -419,14 +444,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // new workflow is the workflow as found on github (source control)
         logFullWorkflowRefresh(workflow);
         final Workflow newWorkflow = sourceCodeRepo
-            .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
+                .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow), version);
         workflow.getUsers().add(user);
-        updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user);
+        updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user, version);
         FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
 
         // Refresh checker workflow
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
-            refresh(user, workflow.getCheckerWorkflow().getId());
+            if (version.isEmpty()) {
+                refresh(user, workflow.getCheckerWorkflow().getId());
+            } else {
+                refreshVersion(user, workflow.getCheckerWorkflow().getId(), version.get());
+            }
         }
         workflow.getWorkflowVersions().forEach(Version::updateVerified);
         String repositoryId = sourceCodeRepo.getRepositoryId(workflow);
@@ -1261,9 +1290,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Save into database and then pull versions
         Workflow workflowFromDB = saveNewWorkflow(newWorkflow, user);
-        updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user);
+        updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user, Optional.empty());
         return workflowDAO.findById(workflowFromDB.getId());
-
     }
 
     @PUT

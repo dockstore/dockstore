@@ -190,10 +190,11 @@ public abstract class SourceCodeRepoInterface {
      * @param workflow
      * @param existingWorkflow
      * @param existingDefaults
+     * @param versionName
      * @return workflow with associated workflow versions
      */
     public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults);
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName);
 
     /**
      * Creates a basic workflow object with default values
@@ -211,13 +212,12 @@ public abstract class SourceCodeRepoInterface {
      *
      * @param repositoryId
      * @param existingWorkflow
+     * @param versionName
      * @return workflow
      */
-    public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
+    public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName) {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
-
-        // Nextflow and (future) dockstore.yml workflow can be detected and handled without stubs
 
         // Determine if workflow should be returned as a STUB or FULL
         if (existingWorkflow.isEmpty()) {
@@ -251,7 +251,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Create branches and associated source files
         //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
-        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName);
         // setting last modified date can be done uniformly
         Optional<Date> max = workflow.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy

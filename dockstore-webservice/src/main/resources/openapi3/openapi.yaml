@@ -1476,7 +1476,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.0-alpha.5-SNAPSHOT
+  version: 1.9.0-alpha.6-SNAPSHOT
 openapi: 3.0.1
 paths:
   /api/ga4gh/v1/tools:
@@ -4110,6 +4110,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BioWorkflow'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/refresh/{version}:
+    get:
+      description: Refresh one particular workflow version.
+      operationId: refreshVersion
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: version
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - bearer: []

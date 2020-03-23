@@ -198,7 +198,7 @@ public class WDLHandlerTest {
 
         @Override
         public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-                Map<String, WorkflowVersion> existingDefaults) {
+                Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
             return null;
         }
 
