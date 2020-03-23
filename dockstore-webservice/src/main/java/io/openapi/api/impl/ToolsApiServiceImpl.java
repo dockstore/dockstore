@@ -517,7 +517,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 if (potentialDockerfile.isPresent()) {
                     ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
                     //TODO: hook up file checksum here
-                    dockerfile.setChecksum(getFileDescriptorChecksumsForTrs(potentialDockerfile.get()));
+                    dockerfile.setChecksum(convertToTRSChecksums(potentialDockerfile.get()));
                     dockerfile.setContent(potentialDockerfile.get().getContent());
                     dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
                     dockerfile.setOriginalFile(potentialDockerfile.get());
@@ -569,7 +569,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return Response.status(status).build();
     }
 
-    public static List<Checksum> getFileDescriptorChecksumsForTrs(final SourceFile sourceFile) {
+    public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
         List<Checksum> trsChecksums = new ArrayList<>();
         if (sourceFile.getChecksums() != null && !sourceFile.getChecksums().isEmpty()) {
             sourceFile.getChecksums().stream().forEach(checksum -> {

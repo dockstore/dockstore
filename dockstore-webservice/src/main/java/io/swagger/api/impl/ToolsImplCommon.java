@@ -79,8 +79,8 @@ public final class ToolsImplCommon {
      */
     public static ExtendedFileWrapper sourceFileToToolDescriptor(String url, SourceFile sourceFile) {
         ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
-        getChecksumsForTrs(sourceFile);
-        toolDescriptor.setChecksum(getChecksumsForTrs(sourceFile));
+        convertToTRSChecksums(sourceFile);
+        toolDescriptor.setChecksum(convertToTRSChecksums(sourceFile));
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
@@ -471,7 +471,7 @@ public final class ToolsImplCommon {
             LOG.error("This source file is not a recognized test file.");
         }
         ExtendedFileWrapper toolTests = new ExtendedFileWrapper();
-        List<Checksum> trsChecksums = getChecksumsForTrs(sourceFile);
+        List<Checksum> trsChecksums = convertToTRSChecksums(sourceFile);
         toolTests.setChecksum(trsChecksums);
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
         toolTests.setContent(sourceFile.getContent());
@@ -479,8 +479,8 @@ public final class ToolsImplCommon {
         return toolTests;
     }
 
-    private static List<Checksum> getChecksumsForTrs(final SourceFile sourceFile) {
-        List<Checksum> trsChecksums = ToolsApiServiceImpl.getFileDescriptorChecksumsForTrs(sourceFile);
+    private static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
+        List<Checksum> trsChecksums = ToolsApiServiceImpl.convertToTRSChecksums(sourceFile);
         return trsChecksums;
     }
 
