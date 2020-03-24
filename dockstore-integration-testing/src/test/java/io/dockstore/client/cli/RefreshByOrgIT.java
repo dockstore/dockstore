@@ -37,13 +37,20 @@ import io.dockstore.webservice.core.Tool;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.User;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
+import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
@@ -141,6 +148,51 @@ public class RefreshByOrgIT {
         testRefreshToolsByOrg3();
         currentTools = getTools();
         assertThat(currentTools.size() - previousTools.size()).isEqualTo(0);
+    }
+
+    /**
+     * This tests if the user can quickly register a single tool with Quay.io org and repo specified
+     */
+    @Test
+    public void testRefreshToolByOrgAndRepo() {
+        final String exceptionMessage = "Could not get repository from Quay.io";
+        final String knownValidOrganization = "dockstoretestuser2";
+        final String knownValidRepository = "md5sum";
+        ApiClient apiClient = getWebClient(true, "DockstoreTestUser2", testingPostgres);
+        UsersApi usersApi = new UsersApi(apiClient);
+        User user = usersApi.getUser();
+        Long userId = user.getId();
+        List<DockstoreTool> dockstoreToolsBeforeRefresh = usersApi.userContainers(userId);
+        boolean hasTool = hasTool(dockstoreToolsBeforeRefresh, knownValidOrganization, knownValidRepository);
+        Assert.assertFalse(hasTool);
+        List<DockstoreTool> dockstoreToolsAfterRefresh = usersApi.refreshToolsByOrganization(userId, knownValidOrganization, knownValidRepository);
+        Assert.assertEquals("Should have 1 more tool than before", dockstoreToolsBeforeRefresh.size() + 1, dockstoreToolsAfterRefresh.size());
+        hasTool = hasTool(dockstoreToolsAfterRefresh, knownValidOrganization, knownValidRepository);
+        Assert.assertTrue("Should've have added a single tool", hasTool);
+        try {
+            usersApi.refreshToolsByOrganization(userId, "fakeOrganization", "fakeRepository");
+            Assert.fail("Should have an exception when repo and org does not exist");
+        } catch (ApiException e) {
+            Assert.assertEquals(exceptionMessage, e.getMessage());
+        }
+        try {
+            usersApi.refreshToolsByOrganization(userId, knownValidOrganization, "fakeRepository");
+            Assert.fail("Should have an exception when repo does not exist");
+        } catch (ApiException e) {
+            Assert.assertEquals(exceptionMessage, e.getMessage());
+        }
+        try {
+            usersApi.refreshToolsByOrganization(userId, "fakeOrganization", "md5sum");
+            Assert.fail("Should have an exception when org does not exist");
+        } catch (ApiException e) {
+            Assert.assertEquals(exceptionMessage, e.getMessage());
+        }
+    }
+
+    private boolean hasTool(List<DockstoreTool> dockstoreTools, String organization, String repository) {
+        return dockstoreTools.stream().anyMatch(
+            dockstoreTool -> dockstoreTool.getName().equals(repository) && dockstoreTool.getNamespace().equals(organization)
+                && dockstoreTool.getRegistry().equals(DockstoreTool.RegistryEnum.QUAY_IO));
     }
 
     /**

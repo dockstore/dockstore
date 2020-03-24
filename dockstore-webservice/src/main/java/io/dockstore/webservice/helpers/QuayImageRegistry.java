@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Tag;
@@ -54,6 +55,7 @@ import io.swagger.quay.client.model.QuayTag;
 import io.swagger.quay.client.model.UserView;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -173,6 +175,17 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return namespaces;
     }
 
+    public List<String> getRepositoryNamesFromNamespace(String namespace) {
+        try {
+            List<QuayRepo> repositories = repositoryApi.listRepos(null, null, null, null, null, null, namespace).getRepositories();
+            return repositories.stream().map(QuayRepo::getName).collect(Collectors.toList());
+        } catch (ApiException e) {
+            LOG.error("Could not retrieve repositories for: " + namespace);
+            return new ArrayList<>();
+        }
+    }
+
+
     @Override
     public List<Tool> getToolsFromNamespace(List<String> namespaces) {
         List<Tool> toolList = new ArrayList<>(0);
@@ -201,6 +214,29 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         }
 
         return toolList;
+    }
+
+    public Tool getToolFromNamespaceAndRepo(String namespace, String repository) {
+        try {
+            String name = namespace + "/" + repository;
+            QuayRepo repo = repositoryApi.getRepo(name, true);
+
+            Tool tool = new Tool();
+            // interesting, this relies upon our container object having the same fields
+            // as quay.io's repositories
+
+            // PLEASE NOTE : is_public is from quay.  It has NO connection to our is_published!
+            tool.setName(repo.getName());
+            tool.setNamespace(repo.getNamespace());
+            // tag all of these with where they came from
+            tool.setRegistry(Registry.QUAY_IO.getDockerPath());
+            // not quite correct, they could be mixed but how can we tell from quay?
+            tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+            return tool;
+        } catch (ApiException ex) {
+            LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
+            throw new CustomWebApplicationException("Could not get repository from Quay.io", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @Override

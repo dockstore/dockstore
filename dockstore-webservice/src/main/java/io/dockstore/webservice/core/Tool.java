@@ -84,7 +84,9 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteTool(t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
                 + "FROM Tool t LEFT JOIN t.workflowVersions v "
                 + "WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
-                + "GROUP BY t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate")
+                + "GROUP BY t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespace", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace AND t.name = :repository")
 })
 
 

@@ -4449,6 +4449,11 @@ paths:
         description: "Organization"
         required: true
         type: "string"
+      - name: "dockerRegistry"
+        in: "query"
+        description: "Docker registry"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"

@@ -157,14 +157,10 @@ public class DockerRepoResource
     }
 
     List<Tool> refreshToolsForUser(Long userId, String organization) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
-        if (!tokens.isEmpty()) {
-            Token bitbucketToken = tokens.get(0);
-            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-        }
+        refreshBitbucketToken(userId);
 
         // Get user's quay and git tokens
-        tokens = tokenDAO.findByUserId(userId);
+        List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
         Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
         Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
@@ -184,10 +180,40 @@ public class DockerRepoResource
             LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
 
             updatedTools.addAll(abstractImageRegistry
-                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken,
-                    organization, eventDAO, dashboardPrefix));
+                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
+                    gitlabToken, organization, eventDAO, dashboardPrefix));
         }
         return updatedTools;
+    }
+
+    List<Tool> refreshToolsForUser(Long userId, String organization, String repository) {
+        refreshBitbucketToken(userId);
+
+        // Get user's quay and git tokens
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+
+        // with Docker Hub support it is now possible that there is no quayToken
+        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
+
+        // Get a list of all namespaces from Quay.io only
+        if (quayToken == null) {
+            throw new CustomWebApplicationException("Missing required Quay.io token", HttpStatus.SC_BAD_REQUEST);
+        }
+        QuayImageRegistry registry = new QuayImageRegistry(quayToken);
+        return registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
+            gitlabToken, organization, eventDAO, dashboardPrefix, repository);
+    }
+
+    private void refreshBitbucketToken(long userId) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        }
     }
 
     private static void checkTokens(final Token quayToken, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {

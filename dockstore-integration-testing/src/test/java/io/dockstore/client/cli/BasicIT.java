@@ -150,8 +150,8 @@ public class BasicIT extends BaseIT {
 
         final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         // should have 0 tools to start with
-        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser");
-        usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2");
+        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
+        usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
@@ -161,8 +161,8 @@ public class BasicIT extends BaseIT {
 
         // refresh
         try {
-            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser");
-            usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2");
+            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
+            usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
             fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message since user has Quay tools but no Quay token.",
