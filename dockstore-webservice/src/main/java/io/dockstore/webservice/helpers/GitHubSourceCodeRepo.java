@@ -476,6 +476,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param existingDefaults Optional mapping of existing versions
      * @param repository GitHub repository object
      * @param dockstoreYml Dockstore YML sourcefile
+     * @param versionName Optional version name to refresh
      * @return WorkflowVersion for the given reference
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -498,7 +499,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
                 calculatedPath = version.getWorkflowPath();
             } else {
-                // Legacy version refresh of Dockstore.yml workflow, so use existing path for version
+                // Legacy version refresh of Dockstore.yml workflow, so use existing path for version (instead of default path)
                 if (!existingDefaults.containsKey(versionName.get())) {
                     String msg = "Cannot refresh version " + versionName.get() + ". Only existing legacy versions can be refreshed.";
                     LOG.error(msg);

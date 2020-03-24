@@ -339,7 +339,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     logFullWorkflowRefresh(workflow);
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
-                    final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow), Optional.empty());
+                    final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.of(workflow), Optional.empty());
 
                     // Take ownership of these workflows
                     workflow.getUsers().add(user);
@@ -350,7 +350,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.empty(), Optional.empty());
+                final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.empty(), Optional.empty());
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
@@ -377,6 +377,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private void logFullWorkflowRefresh(final Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.FULL) {
             LOG.info(String.format("%s: Refreshing %s workflow named %s", dashboardPrefix, workflow.getDescriptorType(), workflow.getEntryPath()));
+        }
+    }
+
+    /**
+     * Logs a version refresh statement with the workflow's descriptor language if workflow is a FULL workflow .
+     * These logs will be monitored by CloudWatch and displayed on Grafana.
+     * @param workflow
+     * @param workflowVersion
+     */
+    private void logWorkflowVersionRefresh(final Workflow workflow, final String workflowVersion) {
+        if (workflow.getMode() == WorkflowMode.FULL) {
+            LOG.info(String.format("%s: Refreshing version %s for %s workflow named %s", dashboardPrefix, workflowVersion, workflow.getDescriptorType(), workflow.getEntryPath()));
         }
     }
 
@@ -414,57 +426,63 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @return Updated workflow
      */
     private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkUser(user, workflow);
-        checkNotHosted(workflow);
+        Workflow existingWorkflow = workflowDAO.findById(workflowId);
+        checkEntry(existingWorkflow);
+        checkUser(user, existingWorkflow);
+        checkNotHosted(existingWorkflow);
         // get a live user for the following
         user = userDAO.findById(user.getId());
         // Update user data
         user.updateUserMetadata(tokenDAO);
 
         // Set up source code interface and ensure token is set up
-        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(workflow.getGitUrl(), user);
+        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(existingWorkflow.getGitUrl(), user);
 
-        // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (!Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
-            workflow.setMode(WorkflowMode.FULL);
+        if (!Objects.equals(existingWorkflow.getMode(), DOCKSTORE_YML)) {
+            existingWorkflow.setMode(WorkflowMode.FULL);
         }
 
-        // look for checker workflows to associate with if applicable
-        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL || workflow.getDescriptorType() == WDL) {
-            String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
-            String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
-            BioWorkflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
-            if (byPath != null && workflow.getCheckerWorkflow() == null) {
-                workflow.setCheckerWorkflow(byPath);
+        // Look for checker workflows to associate with if applicable
+        if (existingWorkflow instanceof BioWorkflow && !existingWorkflow.isIsChecker() && existingWorkflow.getDescriptorType() == CWL || existingWorkflow.getDescriptorType() == WDL) {
+            String workflowName = existingWorkflow.getWorkflowName() == null ? "" : existingWorkflow.getWorkflowName();
+            String checkerWorkflowName = "/" + workflowName + (existingWorkflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
+            BioWorkflow byPath = workflowDAO.findByPath(existingWorkflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
+            if (byPath != null && existingWorkflow.getCheckerWorkflow() == null) {
+                existingWorkflow.setCheckerWorkflow(byPath);
             }
         }
 
-        // new workflow is the workflow as found on github (source control)
-        logFullWorkflowRefresh(workflow);
+        if (version.isEmpty()) {
+            logFullWorkflowRefresh(existingWorkflow);
+        } else {
+            logWorkflowVersionRefresh(existingWorkflow, version.get());
+        }
+
+        // Create a new workflow based on the current state of the Git repository
         final Workflow newWorkflow = sourceCodeRepo
-                .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow), version);
-        workflow.getUsers().add(user);
-        updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user, version);
+                .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version);
+        existingWorkflow.getUsers().add(user);
+
+        // Use new workflow to update existing workflow
+        updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
         FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
 
         // Refresh checker workflow
-        if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
+        if (!existingWorkflow.isIsChecker() && existingWorkflow.getCheckerWorkflow() != null) {
             if (version.isEmpty()) {
-                refresh(user, workflow.getCheckerWorkflow().getId());
+                refresh(user, existingWorkflow.getCheckerWorkflow().getId());
             } else {
-                refreshVersion(user, workflow.getCheckerWorkflow().getId(), version.get());
+                refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get());
             }
         }
-        workflow.getWorkflowVersions().forEach(Version::updateVerified);
-        String repositoryId = sourceCodeRepo.getRepositoryId(workflow);
-        sourceCodeRepo.setDefaultBranchIfNotSet(workflow, repositoryId);
-        workflow.syncMetadataWithDefault();
-        // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
-        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-        return workflow;
+        existingWorkflow.getWorkflowVersions().forEach(Version::updateVerified);
+        String repositoryId = sourceCodeRepo.getRepositoryId(existingWorkflow);
+        sourceCodeRepo.setDefaultBranchIfNotSet(existingWorkflow, repositoryId);
+        existingWorkflow.syncMetadataWithDefault();
+
+        PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow, StateManagerMode.UPDATE);
+        return existingWorkflow;
     }
 
     @GET
