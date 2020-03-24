@@ -290,6 +290,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.valid = valid;
     }
 
+    public abstract Version createEmptyVersion();
+
     @JsonProperty
     public String getName() {
         return name;

@@ -84,6 +84,10 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         super();
     }
 
+    public Version createEmptyVersion() {
+        return new Tag();
+    }
+
     @Override
     @ApiModelProperty(position = 108)
     public String getWorkingDirectory() {

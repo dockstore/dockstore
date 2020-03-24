@@ -88,7 +88,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public String getWorkingDirectory() {
-        if (!workflowPath.isEmpty()) {
+        if (workflowPath != null && !workflowPath.isEmpty()) {
             return FilenameUtils.getPathNoEndSeparator(workflowPath);
         }
         return "";
@@ -149,6 +149,11 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Override
     public int hashCode() {
         return Objects.hash(name, reference);
+    }
+
+    @Override
+    public Version createEmptyVersion() {
+        return new WorkflowVersion();
     }
 
 
