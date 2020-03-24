@@ -83,6 +83,19 @@ public class PublicStateManagerIT {
 
     private Tool getFakeTool(boolean verified) throws IOException {
         Tool tool = new Tool();
+        Tag fakeTag1 = getFakeTag(verified);
+        Tag fakeTag2 = getFakeTag(verified);
+        fakeTag2.setName("notthedefault");
+        fakeTag2.setReference("notthedefault");
+        tool.setRegistry("potato");
+        tool.addWorkflowVersion(fakeTag1);
+        tool.addWorkflowVersion(fakeTag2);
+        tool.setDefaultVersion("master");
+        tool.setIsPublished(true);
+        return tool;
+    }
+
+    private Tag getFakeTag(boolean verified) throws IOException {
         Tag tag = new Tag();
         SourceFile file = new SourceFile();
         File cwlFilePath = new File(ResourceHelpers.resourceFilePath("schema.cwl"));
@@ -103,12 +116,9 @@ public class PublicStateManagerIT {
         tag.addSourceFile(file);
         tag.setReference("master");
         tag.updateVerified();
-        tool.setRegistry("potato");
-        tool.addWorkflowVersion(tag);
-        tool.setDefaultVersion("master");
-        tool.setIsPublished(true);
-        return tool;
+        return tag;
     }
+
 
     @Test
     public void addAnEntry() throws IOException {
