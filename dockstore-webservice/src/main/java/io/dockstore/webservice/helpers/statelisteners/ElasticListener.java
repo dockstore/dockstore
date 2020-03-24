@@ -313,7 +313,7 @@ public class ElasticListener implements StateListenerInterface {
         return detachedEntry;
     }
 
-    private static Set<Version> cloneWorkflowVersion(Set<Version> originalWorkflowVersions) {
+    private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
         Set<Version> detatchedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
             Version detatchedVersion = workflowVersion.createEmptyVersion();
@@ -327,7 +327,7 @@ public class ElasticListener implements StateListenerInterface {
                 SourceFile detachedSourceFile = gson.fromJson(gsonString, SourceFile.class);
                 detatchedVersion.addSourceFile(detachedSourceFile);
             });
-
+            detatchedVersion.updateVerified();
             detatchedVersions.add(detatchedVersion);
         });
         return detatchedVersions;
