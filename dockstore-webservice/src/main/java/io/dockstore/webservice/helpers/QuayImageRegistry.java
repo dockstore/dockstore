@@ -114,7 +114,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             List<QuayTag> quayTags = new ArrayList<>(tagsFromRepo.values());
             if (tagsFromRepo.size() == maxQuayTagsReturnedByRepo) {
                 try {
-                quayTags = getAllQuayTags(repo);
+                    quayTags = getAllQuayTags(repo);
                 } catch (ApiException e) {
                     throw new CustomWebApplicationException("Could not get QuayTag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
