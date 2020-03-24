@@ -1004,10 +1004,13 @@ public class WorkflowIT extends BaseIT {
 
         // Test that a version of an official dockerhub image will get an image per architecture. (python 2.7) Also check that regular
         // DockerHub images are grabbed correctly broadinstitute/gatk:4.0.1.1
-        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "NatalieEO/broad-prod-wgs-germline-snps-indels", "wdl", "/JointGenotypingWf.wdl", "1.1.2");
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", "wdl", "/JointGenotypingWf.wdl", "1.1.2");
         version.getImages();
         assertEquals("Should 10 images in this workflow", 10, version.getImages().size());
         verifyImageChecksumsAreSaved(version);
+
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/broad-prod-wgs-germline-snps-indels");
+        verifyTRSImageConversion(versions, "1.1.2", 10);
     }
 
     @Test

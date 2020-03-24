@@ -360,8 +360,6 @@ public interface LanguageHandlerInterface {
             String[] splitDocker;
             String[] splitTag;
 
-            Optional<String> response;
-            Map<String, String> errorMap = new HashMap<>();
             if (image.startsWith("quay.io/")) {
                 try {
                     splitDocker = image.split("/");
@@ -374,7 +372,7 @@ public interface LanguageHandlerInterface {
                 if (splitTag.length > 1) {
                     String repo = splitDocker[1] + "/" + splitTag[0];
                     String tagName = splitTag[1];
-                    Set<Image> quayImages = getImageResponseFromQuay(repo, tagName, errorMap);
+                    Set<Image> quayImages = getImageResponseFromQuay(repo, tagName);
                     if (!quayImages.isEmpty()) {
                         dockerImages.addAll(quayImages);
                     }
@@ -403,7 +401,7 @@ public interface LanguageHandlerInterface {
                     String repo = splitDocker[0] + "/" + splitTag[0];
                     String tagName = splitTag[1];
 
-                    Set<Image> dockerHubImages = getImagesFromDockerHub(errorMap, repo, tagName);
+                    Set<Image> dockerHubImages = getImagesFromDockerHub(repo, tagName);
                     if (!dockerHubImages.isEmpty()) {
                         dockerImages.addAll(dockerHubImages);
                     }
@@ -419,7 +417,7 @@ public interface LanguageHandlerInterface {
                     String repo = "library" + "/" + splitDocker[0];
                     String tagName = splitDocker[1];
 
-                    Set<Image> dockerHubImages = getImagesFromDockerHub(errorMap, repo, tagName);
+                    Set<Image> dockerHubImages = getImagesFromDockerHub(repo, tagName);
                     if (!dockerHubImages.isEmpty()) {
                         dockerImages.addAll(dockerHubImages);
                     }
@@ -429,8 +427,9 @@ public interface LanguageHandlerInterface {
         return dockerImages;
     }
 
-    default Set<Image> getImagesFromDockerHub(Map<String, String> errorMap, final String repo, final String tagName) {
+    default Set<Image> getImagesFromDockerHub(final String repo, final String tagName) {
         Set<Image> dockerHubImages = new HashSet<>();
+        Map<String, String> errorMap = new HashMap<>();
         Optional<String> response;
         boolean versionFound = false;
         String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags?name=" + tagName;
@@ -482,25 +481,25 @@ public interface LanguageHandlerInterface {
                     repoUrl = dockerHubTag.getNext();
                 }
             }
-        } while (!versionFound && !(dockerHubTag.getNext() == null) && response.isPresent());
+        } while (response.isPresent() && !versionFound && dockerHubTag.getNext() != null);
         return dockerHubImages;
     }
 
     //default Optional<String> getImageResponseFromQuay(String repo, String tag) {
-    default Set<Image> getImageResponseFromQuay(String repo, String tagName, Map<String, String> errorMap) {
+    default Set<Image> getImageResponseFromQuay(String repo, String tagName) {
         final String tagUrl = QUAY_URL + "repository/" + repo + "/tag/" + "?specificTag=" + tagName;
         Optional<String> response;
+        Map<String, String> errorMap = new HashMap<>();
 
         try {
             URL url = new URL(tagUrl);
             response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
-            //return response;
 
         } catch (IOException ex) {
             LOG.error("Unable to get response from Quay", ex);
             response = Optional.empty();
         }
-        //return Optional.empty();
+
         Set<Image> quayImages = new HashSet<>();
         if (response.isPresent()) {
             Map<String, ArrayList<Map<String, String>>> map = new HashMap<>();
