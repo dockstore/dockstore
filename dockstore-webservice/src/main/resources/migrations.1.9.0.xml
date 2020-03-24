@@ -88,4 +88,10 @@
             <column name="checksums" type="varchar"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="addArchitectureColumnToImages">
+        <addColumn tableName="image">
+            <column name="architecture" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

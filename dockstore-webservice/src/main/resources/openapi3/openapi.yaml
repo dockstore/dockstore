@@ -361,6 +361,8 @@ components:
       type: object
     Image:
       properties:
+        architecture:
+          type: string
         checksums:
           items:
             $ref: '#/components/schemas/Checksum'
@@ -2814,7 +2816,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -2945,7 +2947,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []

@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -42,6 +44,10 @@ import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.dockerhub.DockerHubImage;
+import io.dockstore.webservice.core.dockerhub.DockerHubTag;
+import io.dockstore.webservice.core.dockerhub.Results;
+import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -60,6 +66,7 @@ import org.yaml.snakeyaml.error.YAMLException;
  */
 public interface LanguageHandlerInterface {
     String QUAY_URL = "https://quay.io/api/v1/";
+    String DOCKERHUB_URL = AbstractImageRegistry.DOCKERHUB_URL;
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
 
@@ -340,90 +347,189 @@ public interface LanguageHandlerInterface {
     default Set<Image> getImagesFromRegistry(String toolsJSONTable) {
         List<Map<String, String>> dockerTools = new ArrayList<>();
         dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
+        Pattern amazonECRPattern = Pattern.compile("(.*\\.)(drk\\.ecr\\.)(.*\\.)(amazonaws.com)");
+        Pattern googlePattern = Pattern.compile("(.*)(gcr\\.io)(.*)");
 
         // Eliminate duplicate docker strings
         Set<String> dockerStrings = dockerTools.stream().map(dockertool -> dockertool.get("docker")).filter(Objects::nonNull).collect(Collectors.toSet());
 
         Set<Image> dockerImages = new HashSet<>();
-        String errorKey = "error_message";
+
         for (String image : dockerStrings) {
             String[] parts = image.split("/");
+            String[] splitDocker;
+            String[] splitTag;
 
             Optional<String> response;
+            Map<String, String> errorMap = new HashMap<>();
             if (image.startsWith("quay.io/")) {
-                String[] splitDocker;
-                String[] splitTag;
-
                 try {
                     splitDocker = image.split("/");
                     splitTag = splitDocker[2].split(":");
                 } catch (ArrayIndexOutOfBoundsException ex) {
                     LOG.error("URL to image on Quay incomplete", ex);
-                    break;
+                    continue;
                 }
 
                 if (splitTag.length > 1) {
                     String repo = splitDocker[1] + "/" + splitTag[0];
                     String tagName = splitTag[1];
-                    response = getImageResponseFromQuay(repo, tagName);
-
-                    if (response.isPresent()) {
-                        Map<String, ArrayList<Map<String, String>>> map = new HashMap<>();
-                        Map<String, String> errorMap = new HashMap<>();
-                        map = (Map<String, ArrayList<Map<String, String>>>)GSON.fromJson(response.get(), map.getClass());
-                        errorMap = (Map<String, String>)GSON.fromJson(response.get(), errorMap.getClass());
-                        if (errorMap.get(errorKey) != null) {
-                            LOG.error("Error response from Quay: " + errorMap.get(errorKey));
-                        } else {
-                            try {
-                                final List<Map<String, String>> array = map.get("tags");
-
-                                for (Map<String, String> tag : array) {
-                                    final String digest = tag.get("manifest_digest");
-                                    final String imageID = tag.get("image_id");
-                                    List<Checksum> checksums = new ArrayList<>();
-                                    checksums.add(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-                                    dockerImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO));
-                                }
-
-                            } catch (IndexOutOfBoundsException | NullPointerException ex) {
-                                LOG.error("Could not get checksum information for " + splitDocker[1], ex);
-                            }
-                        }
-                    } else {
-                        LOG.error("Could not get response from Quay for " + repo);
+                    Set<Image> quayImages = getImageResponseFromQuay(repo, tagName, errorMap);
+                    if (!quayImages.isEmpty()) {
+                        dockerImages.addAll(quayImages);
                     }
                 } else {
                     LOG.error("Could not find image version specified for " + splitDocker[1]);
                 }
-
             } else if (image.startsWith("images.sbgenomics")) {
-                return dockerImages;
-
+                continue;
             } else if (image.startsWith("registry.gitlab.com")) {
-                return dockerImages;
+                continue;
+            } else if (googlePattern.matcher(image).matches()) {
+                continue;
+            } else if (amazonECRPattern.matcher(image).matches()) {
+                continue;
+            } else {
+                // DockerHub by process of elimination.
+                if (parts.length == 2) {
+                    try {
+                        splitDocker = image.split("/");
+                        splitTag = splitDocker[1].split(":");
+                    } catch (ArrayIndexOutOfBoundsException ex) {
+                        LOG.error("URL to image on DockerHub incomplete", ex);
+                        continue;
+                    }
 
-            } else if (parts.length == 2) {
-                //dockerhub
-                return dockerImages;
+                    String repo = splitDocker[0] + "/" + splitTag[0];
+                    String tagName = splitTag[1];
+
+                    Set<Image> dockerHubImages = getImagesFromDockerHub(errorMap, repo, tagName);
+                    if (!dockerHubImages.isEmpty()) {
+                        dockerImages.addAll(dockerHubImages);
+                    }
+                } else {
+                    // if the path looks like debian:8 or debian (which are official DockerHub images)
+                    try {
+                        splitDocker = image.split(":");
+                    } catch (ArrayIndexOutOfBoundsException ex) {
+                        LOG.error("URL to image on DockerHub incomplete", ex);
+                        continue;
+                    }
+
+                    String repo = "library" + "/" + splitDocker[0];
+                    String tagName = splitDocker[1];
+
+                    Set<Image> dockerHubImages = getImagesFromDockerHub(errorMap, repo, tagName);
+                    if (!dockerHubImages.isEmpty()) {
+                        dockerImages.addAll(dockerHubImages);
+                    }
+                }
             }
         }
         return dockerImages;
     }
 
-    default Optional<String> getImageResponseFromQuay(String repo, String tag) {
-        final String tagUrl = QUAY_URL + "repository/" + repo + "/tag/" + "?specificTag=" + tag;
+    default Set<Image> getImagesFromDockerHub(Map<String, String> errorMap, final String repo, final String tagName) {
+        Set<Image> dockerHubImages = new HashSet<>();
+        Optional<String> response;
+        boolean versionFound = false;
+        String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags?name=" + tagName;
+        DockerHubTag dockerHubTag = new DockerHubTag();
+        do {
+            try {
+                URL url = new URL(repoUrl);
+                response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
+            } catch (IOException ex) {
+                LOG.error("Unable to get DockerHub response for " + repo);
+                response = Optional.empty();
+            }
+
+            if (response.isPresent()) {
+                Gson gson = new Gson();
+
+                final String json = response.get();
+                errorMap = (Map<String, String>)gson.fromJson(json, errorMap.getClass());
+                if (errorMap.get("message") != null) {
+                    LOG.error("Error response from DockerHub: " + errorMap.get("message"));
+                    return dockerHubImages;
+                }
+
+                // DockerHub seems to give empty results if something is not found, other fields are marked as null
+                dockerHubTag = gson.fromJson(json, DockerHubTag.class);
+                List<Results> results = Arrays.asList(dockerHubTag.getResults());
+                if (results.isEmpty()) {
+                    LOG.error("Could not find any results for " + repo);
+                    break;
+                }
+
+                for (Results r : results) {
+                    if (r.getName().equals(tagName)) {
+                        List<DockerHubImage> images = Arrays.asList(r.getImages());
+                        // For every version, DockerHub can provide multiple images, one for each architecture
+                        images.stream().forEach(dockerHubImage -> {
+                            final String manifestDigest = dockerHubImage.getDigest();
+                            Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
+                            List<Checksum> checksums = Collections.singletonList(checksum);
+                            Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB);
+                            archImage.setArchitecture(dockerHubImage.getArchitecture());
+                            dockerHubImages.add(archImage);
+                        });
+                        versionFound = true;
+                        break;
+                    }
+                }
+                if (!versionFound) {
+                    repoUrl = dockerHubTag.getNext();
+                }
+            }
+        } while (!versionFound && !(dockerHubTag.getNext() == null) && response.isPresent());
+        return dockerHubImages;
+    }
+
+    //default Optional<String> getImageResponseFromQuay(String repo, String tag) {
+    default Set<Image> getImageResponseFromQuay(String repo, String tagName, Map<String, String> errorMap) {
+        final String tagUrl = QUAY_URL + "repository/" + repo + "/tag/" + "?specificTag=" + tagName;
         Optional<String> response;
 
         try {
             URL url = new URL(tagUrl);
             response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
-            return response;
+            //return response;
 
         } catch (IOException ex) {
             LOG.error("Unable to get response from Quay", ex);
+            response = Optional.empty();
         }
-        return Optional.empty();
+        //return Optional.empty();
+        Set<Image> quayImages = new HashSet<>();
+        if (response.isPresent()) {
+            Map<String, ArrayList<Map<String, String>>> map = new HashMap<>();
+            String errorKey = "error_message";
+
+            map = (Map<String, ArrayList<Map<String, String>>>)GSON.fromJson(response.get(), map.getClass());
+            errorMap = (Map<String, String>)GSON.fromJson(response.get(), errorMap.getClass());
+            if (errorMap.get(errorKey) != null) {
+                LOG.error("Error response from Quay: " + errorMap.get(errorKey));
+            } else {
+                try {
+                    final List<Map<String, String>> array = map.get("tags");
+
+                    for (Map<String, String> tag : array) {
+                        final String digest = tag.get("manifest_digest");
+                        final String imageID = tag.get("image_id");
+                        List<Checksum> checksums = new ArrayList<>();
+                        checksums.add(new Checksum(digest.split(":")[0], digest.split(":")[1]));
+                        quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO));
+                    }
+
+                } catch (IndexOutOfBoundsException | NullPointerException ex) {
+                    LOG.error("Could not get checksum information for " + repo, ex);
+                }
+            }
+        } else {
+            LOG.error("Could not get response from Quay for " + repo);
+        }
+        return quayImages;
     }
 
     /**

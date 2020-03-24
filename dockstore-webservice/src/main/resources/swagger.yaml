@@ -6888,6 +6888,11 @@ definitions:
         - "GITLAB"
         - "AMAZON_ECR"
         - "SEVEN_BRIDGES"
+      architecture:
+        type: "string"
+        position: 6
+        description: "For each image version, DockerHub can provide multiple images\
+          \ depending on the architecture/OS"
     description: "Image(s) associated with tags and workflow versions"
   Label:
     type: "object"

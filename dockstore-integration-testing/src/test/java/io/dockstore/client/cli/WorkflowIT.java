@@ -869,7 +869,7 @@ public class WorkflowIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
 
         // Check image info is grabbed
-        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", "/hello_world.cwl", "1.0.1");
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", "cwl", "/hello_world.cwl", "1.0.1");
         assertEquals("Should only be one image in this workflow", 1, version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
@@ -877,11 +877,11 @@ public class WorkflowIT extends BaseIT {
         verifyTRSImageConversion(versions, "1.0.1", 1);
 
         // Test that a workflow version containing an unversioned image isn't saved
-        WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", "/cwl/workflow_docker.cwl", "1.0");
+        WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", "cwl", "/cwl/workflow_docker.cwl", "1.0");
         assertEquals("Should not have grabbed any images", 0, workflowVersionWithoutVersionedImage.getImages().size());
 
         // Test that a workflow version that contains duplicate images will not store multiples
-        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", "/main.cwl", "1.0");
+        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", "cwl", "/main.cwl", "1.0");
         assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());
         verifyImageChecksumsAreSaved(versionWithDuplicateImages);
         versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
@@ -977,8 +977,8 @@ public class WorkflowIT extends BaseIT {
         assertTrue("Snapshotted version should be in the list", snapshotInList);
     }
 
-    private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, String workflowPath, String descriptorPath, String versionName) {
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, workflowPath, "", "cwl", SourceControl.GITHUB, descriptorPath, true);
+    private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, String workflowPath, String descriptorType, String descriptorPath, String versionName) {
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, workflowPath, "", descriptorType, SourceControl.GITHUB, descriptorPath, true);
         WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
         version.setFrozen(true);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
@@ -993,6 +993,21 @@ public class WorkflowIT extends BaseIT {
             assertFalse(checksum.getType().isEmpty());
         })
         );
+    }
+
+    @Test
+    public void testGettingImagesFromDockerHub() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
+
+        // Test that a version of an official dockerhub image will get an image per architecture. (python 2.7) Also check that regular
+        // DockerHub images are grabbed correctly broadinstitute/gatk:4.0.1.1
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "NatalieEO/broad-prod-wgs-germline-snps-indels", "wdl", "/JointGenotypingWf.wdl", "1.1.2");
+        version.getImages();
+        assertEquals("Should 10 images in this workflow", 10, version.getImages().size());
+        verifyImageChecksumsAreSaved(version);
     }
 
     @Test

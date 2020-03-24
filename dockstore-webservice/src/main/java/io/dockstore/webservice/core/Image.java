@@ -69,6 +69,10 @@ public class Image {
     @ApiModelProperty(value = "Registry the image belongs to", position = 5)
     private Registry imageRegistry;
 
+    @Column()
+    @ApiModelProperty(value = "For each image version, DockerHub can provide multiple images depending on the architecture/OS", position = 6)
+    private String architecture;
+
     @Column(updatable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
@@ -127,6 +131,14 @@ public class Image {
 
     public void setImageRegistry(final Registry imageRegistry) {
         this.imageRegistry = imageRegistry;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(final String architecture) {
+        this.architecture = architecture;
     }
 
 }
