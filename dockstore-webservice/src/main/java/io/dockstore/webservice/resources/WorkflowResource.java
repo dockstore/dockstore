@@ -326,13 +326,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
             LOG.info("refreshing " + entry.getKey());
 
-            // Get all workflows with the same giturl)
+            // Get all workflows with the same giturl (ignore dockstore.yml workflows)
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
             if (byGitUrl.size() > 0) {
                 // Workflows exist with the given git url
                 for (Workflow workflow : byGitUrl) {
                     // check whitelist for already processed workflows
-                    if (alreadyProcessed.contains(workflow.getId())) {
+                    if (alreadyProcessed.contains(workflow.getId()) || Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
                         continue;
                     }
 

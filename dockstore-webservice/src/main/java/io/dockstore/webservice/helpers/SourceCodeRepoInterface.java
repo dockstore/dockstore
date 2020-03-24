@@ -210,9 +210,9 @@ public abstract class SourceCodeRepoInterface {
     /**
      * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
      * If versionName is present this will only pull one version
-     * @param repositoryId
-     * @param existingWorkflow
-     * @param versionName
+     * @param repositoryId Repository ID (ex. dockstore/dockstore-ui2)
+     * @param existingWorkflow Optional existing workflow
+     * @param versionName Optional version name to refresh
      * @return workflow
      */
     public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName) {
