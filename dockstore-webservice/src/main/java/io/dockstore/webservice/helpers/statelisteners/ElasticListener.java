@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers.statelisteners;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -289,14 +290,12 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setAliases(entry.getAliases());
         detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
-        Set<Version> workflowVersions = entry.getWorkflowVersions();
-        detachedEntry.setWorkflowVersions(workflowVersions);
-        entry.getStarredUsers().forEach(user -> {
-            detachedEntry.addStarredUser((User)user);
-        });
+        Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
+        detachedEntry.setWorkflowVersions(detachedVersions);
+        entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
         String defaultVersion = entry.getDefaultVersion();
         if (defaultVersion != null) {
-            boolean saneDefaultVersion = workflowVersions.stream().anyMatch(version -> defaultVersion.equals(version.getName()) || defaultVersion.equals(version.getReference()));
+            boolean saneDefaultVersion = detachedVersions.stream().anyMatch(version -> defaultVersion.equals(version.getName()) || defaultVersion.equals(version.getReference()));
             if (saneDefaultVersion) {
                 // If the tool/workflow has a default version, only keep the default version (and its sourcefile contents and description)
                 Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
@@ -313,6 +312,27 @@ public class ElasticListener implements StateListenerInterface {
         }
         return detachedEntry;
     }
+
+    private static Set<Version> cloneWorkflowVersion(Set<Version> originalWorkflowVersions) {
+        Set<Version> detatchedVersions = new HashSet<>();
+        originalWorkflowVersions.forEach(workflowVersion -> {
+            Version detatchedVersion = workflowVersion.createEmptyVersion();
+            detatchedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
+            detatchedVersion.setName(workflowVersion.getName());
+            detatchedVersion.setReference(workflowVersion.getReference());
+            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+            sourceFiles.forEach(sourceFile -> {
+                Gson gson = new Gson();
+                String gsonString = gson.toJson(sourceFile);
+                SourceFile detachedSourceFile = gson.fromJson(gsonString, SourceFile.class);
+                detatchedVersion.addSourceFile(detachedSourceFile);
+            });
+
+            detatchedVersions.add(detatchedVersion);
+        });
+        return detatchedVersions;
+    }
+
 
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
         Set<String> platforms = new TreeSet<>();
