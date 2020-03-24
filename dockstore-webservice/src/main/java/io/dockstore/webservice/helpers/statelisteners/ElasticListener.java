@@ -318,6 +318,8 @@ public class ElasticListener implements StateListenerInterface {
         originalWorkflowVersions.forEach(workflowVersion -> {
             Version detatchedVersion = workflowVersion.createEmptyVersion();
             detatchedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
+            detatchedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
+            detatchedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
             detatchedVersion.setName(workflowVersion.getName());
             detatchedVersion.setReference(workflowVersion.getReference());
             SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
