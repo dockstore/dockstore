@@ -2814,7 +2814,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -3980,6 +3980,27 @@ paths:
           description: default response
       tags:
       - users
+  /workflows/github:
+    delete:
+      description: Handles the deletion of a branch on GitHub. Will delete all workflow
+        versions that match in all workflows that share the same repository.
+      operationId: handleGitHubBranchDeletion
+      parameters:
+      - in: query
+        name: repository
+        schema:
+          type: string
+      - in: query
+        name: gitReference
+        schema:
+          type: string
+      responses:
+        "418":
+          description: This code tells AWS Lambda not to retry.
+      security:
+      - bearer: []
+      tags:
+      - workflows
   /workflows/github/release:
     post:
       description: Handle a release of a repository on GitHub. Will create a workflow/service

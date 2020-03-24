@@ -132,6 +132,7 @@ import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -1828,7 +1829,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = "bearer"), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
@@ -1836,6 +1837,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
         @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
         @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        LOG.info("Branch/tag " + gitReference + " pushed to " + repository + "(" + username + ")");
         return githubWebhookRelease(repository, username, gitReference, installationId);
+    }
+
+    @DELETE
+    @Path("/github")
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Response.class)
+    public Response handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
+            @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference) {
+        LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
+        githubWebhookDelete(repository, gitReference);
+        return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 }
