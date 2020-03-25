@@ -251,7 +251,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      */
     public Optional<Workflow> getWorkflowByWorkflowVersionId(long workflowVersionId) {
         try {
-            Workflow workflow = uniqueResult(namedQuery("Workflow.getWorkflowByWorkflowVersionId")
+            Workflow workflow = uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
                     .setParameter("workflowVersionId", workflowVersionId));
             return Optional.of(workflow);
         } catch (NoResultException nre) {
