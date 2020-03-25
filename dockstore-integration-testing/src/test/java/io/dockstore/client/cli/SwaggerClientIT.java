@@ -386,7 +386,7 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
-        containersApi.registerManual(c);
+        final DockstoreTool registeredDockstoreTool = containersApi.registerManual(c);
 
         final ToolDockerfile toolDockerfile = toolApi
             .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");

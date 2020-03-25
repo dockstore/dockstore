@@ -29,8 +29,6 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -136,8 +134,7 @@ public class Tool extends Entry<Tool, Tag> {
             + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25)
     private Date lastBuild;
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
-    @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
     @JsonAlias({ "tags", "workflowVersions"})
     @OrderBy("id")

@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers.statelisteners;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,10 +33,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -229,15 +233,109 @@ public class ElasticListener implements StateListenerInterface {
      * @return The Elasticsearch object string to be placed into the index
      * @throws IOException  Mapper problems
      */
-    public static JsonNode dockstoreEntryToElasticSearchObject(Entry entry) throws IOException {
+    public static JsonNode dockstoreEntryToElasticSearchObject(final Entry entry) throws IOException {
         Set<Version> workflowVersions = entry.getWorkflowVersions();
         boolean verified = workflowVersions.stream().anyMatch(Version::isVerified);
         Set<String> verifiedPlatforms = getVerifiedPlatforms(workflowVersions);
-        JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(entry));
+        Entry detachedEntry = removeIrrelevantProperties(entry);
+        JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
         return jsonNode;
     }
+
+    /**
+     * Remove some stuff that should not be indexed by ES.
+     * This is not ideal, we should be including things we want indexed, not removing.
+     * @param entry
+     */
+    private static Entry removeIrrelevantProperties(final Entry entry) {
+        Entry detachedEntry;
+        if (entry instanceof Tool) {
+            Tool tool = (Tool) entry;
+            Tool detachedTool = new Tool();
+            tool.getWorkflowVersions().forEach(version -> {
+                Hibernate.initialize(version.getSourceFiles());
+            });
+
+            // These are for facets
+            detachedTool.setDefaultWdlPath(tool.getDefaultWdlPath());
+            detachedTool.setDefaultCwlPath(tool.getDefaultCwlPath());
+            detachedTool.setNamespace(tool.getNamespace());
+            detachedTool.setRegistry(tool.getRegistry());
+            detachedTool.setPrivateAccess(tool.isPrivateAccess());
+
+            // These are for table
+            detachedTool.setGitUrl(tool.getGitUrl());
+            detachedTool.setName(tool.getName());
+            detachedTool.setToolname(tool.getToolname());
+            detachedEntry = detachedTool;
+        } else if (entry instanceof BioWorkflow) {
+            BioWorkflow bioWorkflow = (BioWorkflow) entry;
+            BioWorkflow detachedBioWorkflow = new BioWorkflow();
+            // These are for facets
+            detachedBioWorkflow.setDescriptorType(bioWorkflow.getDescriptorType());
+            detachedBioWorkflow.setSourceControl(bioWorkflow.getSourceControl());
+            detachedBioWorkflow.setOrganization(bioWorkflow.getOrganization());
+
+            // These are for table
+            detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
+            detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
+            detachedBioWorkflow.setGitUrl(bioWorkflow.getGitUrl());
+            detachedEntry = detachedBioWorkflow;
+        } else {
+            return entry;
+        }
+        detachedEntry.setDescription(entry.getDescription());
+        detachedEntry.setAuthor(entry.getAuthor());
+        detachedEntry.setAliases(entry.getAliases());
+        detachedEntry.setLabels((SortedSet<Label>)entry.getLabels());
+        detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
+        Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
+        detachedEntry.setWorkflowVersions(detachedVersions);
+        entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
+        String defaultVersion = entry.getDefaultVersion();
+        if (defaultVersion != null) {
+            boolean saneDefaultVersion = detachedVersions.stream().anyMatch(version -> defaultVersion.equals(version.getName()) || defaultVersion.equals(version.getReference()));
+            if (saneDefaultVersion) {
+                // If the tool/workflow has a default version, only keep the default version (and its sourcefile contents and description)
+                Set<Version> newWorkflowVersions = detachedEntry.getWorkflowVersions();
+                newWorkflowVersions.forEach(version -> {
+                    if (!defaultVersion.equals(version.getReference()) && !defaultVersion.equals(version.getName())) {
+                        version.setDescriptionAndDescriptionSource(null, null);
+                        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+                        sourceFiles.forEach(sourceFile -> sourceFile.setContent(""));
+                    }
+                });
+            } else {
+                LOGGER.error("Entry has a default version that doesn't exist: " + entry.getEntryPath());
+            }
+        }
+        return detachedEntry;
+    }
+
+    private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
+        Set<Version> detatchedVersions = new HashSet<>();
+        originalWorkflowVersions.forEach(workflowVersion -> {
+            Version detatchedVersion = workflowVersion.createEmptyVersion();
+            detatchedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
+            detatchedVersion.setInputFileFormats(new TreeSet<>(workflowVersion.getInputFileFormats()));
+            detatchedVersion.setOutputFileFormats(new TreeSet<>(workflowVersion.getOutputFileFormats()));
+            detatchedVersion.setName(workflowVersion.getName());
+            detatchedVersion.setReference(workflowVersion.getReference());
+            SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+            sourceFiles.forEach(sourceFile -> {
+                Gson gson = new Gson();
+                String gsonString = gson.toJson(sourceFile);
+                SourceFile detachedSourceFile = gson.fromJson(gsonString, SourceFile.class);
+                detatchedVersion.addSourceFile(detachedSourceFile);
+            });
+            detatchedVersion.updateVerified();
+            detatchedVersions.add(detatchedVersion);
+        });
+        return detatchedVersions;
+    }
+
 
     private static Set<String> getVerifiedPlatforms(Set<? extends Version> workflowVersions) {
         Set<String> platforms = new TreeSet<>();

@@ -142,6 +142,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
         for (Tag tag : tags) {
+            tag.setParent(tool);
             final long tagId = tagDAO.create(tag);
             Tag byId = tagDAO.findById(tagId);
             this.eventDAO.createAddTagToEntryEvent(user, tool, byId);

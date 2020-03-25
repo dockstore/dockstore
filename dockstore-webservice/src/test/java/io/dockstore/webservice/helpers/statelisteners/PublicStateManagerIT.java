@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -35,6 +36,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -70,13 +72,30 @@ public class PublicStateManagerIT {
         boolean verified = jsonNode.get("verified").booleanValue();
         Assert.assertFalse(verified);
         tool = getFakeTool(true);
+        final ObjectMapper mapper = Jackson.newObjectMapper();
+        String beforeString = mapper.writeValueAsString(tool);
         jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
+        String afterString = mapper.writeValueAsString(tool);
+        Assert.assertEquals("The original tool should not have changed.", beforeString, afterString);
         verified = jsonNode.get("verified").booleanValue();
         Assert.assertTrue(verified);
     }
 
     private Tool getFakeTool(boolean verified) throws IOException {
         Tool tool = new Tool();
+        Tag fakeTag1 = getFakeTag(verified);
+        Tag fakeTag2 = getFakeTag(verified);
+        fakeTag2.setName("notthedefault");
+        fakeTag2.setReference("notthedefault");
+        tool.setRegistry("potato");
+        tool.addWorkflowVersion(fakeTag1);
+        tool.addWorkflowVersion(fakeTag2);
+        tool.setDefaultVersion("master");
+        tool.setIsPublished(true);
+        return tool;
+    }
+
+    private Tag getFakeTag(boolean verified) throws IOException {
         Tag tag = new Tag();
         SourceFile file = new SourceFile();
         File cwlFilePath = new File(ResourceHelpers.resourceFilePath("schema.cwl"));
@@ -97,12 +116,9 @@ public class PublicStateManagerIT {
         tag.addSourceFile(file);
         tag.setReference("master");
         tag.updateVerified();
-        tool.setRegistry("potato");
-        tool.addWorkflowVersion(tag);
-        tool.setDefaultVersion("master");
-        tool.setIsPublished(true);
-        return tool;
+        return tag;
     }
+
 
     @Test
     public void addAnEntry() throws IOException {
