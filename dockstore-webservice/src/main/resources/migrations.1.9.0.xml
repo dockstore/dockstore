@@ -54,7 +54,7 @@
         </addColumn>
         <sql dbms="postgresql">
             UPDATE workflowversion SET islegacyversion=true;
-            UPDATE workflowversion SET islegacyversion=false WHERE id IN (SELECT wv.id FROM workflowversion wv JOIN workflow_workflowversion wwv ON wv.id=wwv.workflowversionid WHERE wwv.workflowid IN (SELECT id FROM workflow WHERE mode='DOCKSTORE_YML'));
+            UPDATE workflowversion SET islegacyversion=false WHERE id IN (SELECT wv.id FROM workflowversion wv WHERE wv.parentid IN (SELECT id FROM workflow WHERE mode='DOCKSTORE_YML'));
         </sql>
     </changeSet>
 
