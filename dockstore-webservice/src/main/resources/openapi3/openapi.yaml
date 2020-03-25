@@ -24,12 +24,9 @@ components:
         type: object
       type: object
     Checksum:
-      description: A production (immutable) tool version is required to have a hashcode.
-        Not required otherwise, but might be useful to detect changes.  This exposes
-        the hashcode for specific image versions to verify that the container version
-        pulled is actually the version that was indexed by the registry.
-      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,
-        type=sha256}]'
+      description: 'A production (immutable) tool version is required to have a hashcode.
+        Not required otherwise, but might be useful to detect changes. '
+      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -258,6 +255,88 @@ components:
         workflowVersions:
           items:
             $ref: '#/components/schemas/Version'
+          type: array
+          uniqueItems: true
+      type: object
+    EntryObjectObject:
+      properties:
+        aliases:
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+          type: object
+        author:
+          type: string
+        checker_id:
+          format: int64
+          type: integer
+        conceptDoi:
+          type: string
+        dbCreateDate:
+          format: date-time
+          type: string
+        dbUpdateDate:
+          format: date-time
+          type: string
+        defaultVersion:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        input_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        is_published:
+          type: boolean
+        labels:
+          items:
+            $ref: '#/components/schemas/Label'
+          type: array
+          uniqueItems: true
+        lastUpdated:
+          format: date-time
+          type: string
+        last_modified:
+          format: int32
+          type: integer
+        last_modified_date:
+          format: date-time
+          type: string
+        metadataFromEntry:
+          type: object
+          writeOnly: true
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
+        output_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        starredUsers:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
+        users:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        workflowVersions:
+          items:
+            type: object
           type: array
           uniqueItems: true
       type: object
@@ -694,6 +773,8 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -1180,6 +1261,8 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -1417,6 +1500,8 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -2817,7 +2902,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []

@@ -41,7 +41,8 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteWorkflow(w.sourceControl, w.organization, w.repository, w.workflowName, w.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
                 + "FROM Workflow w LEFT JOIN w.workflowVersions v "
                 + "WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
-                + "GROUP BY w.sourceControl, w.organization, w.repository, w.workflowName, w.dbUpdateDate")
+                + "GROUP BY w.sourceControl, w.organization, w.repository, w.workflowName, w.dbUpdateDate"),
+        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {

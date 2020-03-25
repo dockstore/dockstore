@@ -524,7 +524,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     private List<Workflow> getWorkflows(User user) {
-        return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).collect(Collectors.toList());
+        return bioWorkflowDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
     }
 
     @GET
@@ -543,9 +543,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     private List<Workflow> getServices(User user) {
-        return user.getEntries().stream().filter(Service.class::isInstance).map(Service.class::cast).collect(Collectors.toList());
+        return serviceDAO.findMyEntries(user.getId()).stream().map(Service.class::cast).collect(Collectors.toList());
     }
-
     private List<Workflow> getStrippedServices(User user) {
         final List<Workflow> services = getServices(user);
         EntryVersionHelper.stripContent(services, this.userDAO);
@@ -560,7 +559,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     private List<Tool> getTools(User user) {
-        return user.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast).collect(Collectors.toList());
+        return toolDAO.findMyEntries(user.getId()).stream().map(Tool.class::cast).collect(Collectors.toList());
     }
 
     @GET
