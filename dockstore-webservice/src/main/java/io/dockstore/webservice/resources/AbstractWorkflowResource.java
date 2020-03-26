@@ -11,6 +11,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
+import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.yaml.DockstoreYaml12;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
+import io.dockstore.common.yaml.Service12;
+import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -44,8 +49,6 @@ import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.error.YAMLException;
 
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
@@ -287,36 +290,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
         SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
 
-        // Parse Dockstore YML and perform appropriate actions
-        Yaml yaml = new Yaml();
         try {
-            Map<String, Object> map = yaml.load(dockstoreYml.getContent());
-            double versionString = (double)map.get("version");
-
-            if (Objects.equals(dockstoreYMLV11, versionString)) {
-                // 1.1 - Only works with services
-                return createServicesAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, gitHubSourceCodeRepo, user, map);
-            } else if (Objects.equals(dockstoreYMLV12, versionString)) {
-                // 1.2 - Currently only supports workflows, though will eventually support services
-                if (map.containsKey("services")) {
-                    LOG.info("Services are not yet implemented for version 1.2");
-                }
-
-                if (map.containsKey("workflows")) {
-                    return createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYml, repository, gitReference, map, gitHubSourceCodeRepo, user);
-                }
-
-                String msg = "Invalid .dockstore.yml";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            } else {
-                String msg = versionString + " is not a valid version";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            }
-        } catch (YAMLException | ClassCastException | NullPointerException ex) {
-            String msg = "Invalid .dockstore.yml";
-            LOG.info(msg, ex);
+            // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
+            // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
+            final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
+            final List<Workflow> workflows = new ArrayList();
+            workflows.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getServices(), repository, gitReference,
+                    gitHubSourceCodeRepo, user, dockstoreYml));
+            workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
+                    gitHubSourceCodeRepo, user, dockstoreYml));
+            return workflows;
+        } catch (ClassCastException | NullPointerException | DockstoreYamlHelper.DockstoreYamlException ex) {
+            String msg = "Invalid .dockstore.yml: " + ex.getMessage();
+            LOG.error(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
     }
@@ -324,21 +310,20 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     /**
      * Create or retrieve workflows based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.2
-     * @param dockstoreYml Dockstore YAML File
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
-     * @param yml Dockstore YML map
      * @param gitHubSourceCodeRepo Source Code Repo
      * @param user User that triggered action
+     * @param dockstoreYml
      * @return List of new and updated workflows
      */
-    private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, Map<String, Object> yml, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user) {
+    private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user,
+            final SourceFile dockstoreYml) {
         try {
-            List<Map<String, Object>> workflows = (List<Map<String, Object>>)yml.get("workflows");
             List<Workflow> updatedWorkflows = new ArrayList<>();
-            for (Map<String, Object> wf : workflows) {
-                String subclass = (String)wf.get("subclass");
-                String workflowName = (String)wf.get("name");
+            for (YamlWorkflow wf : yamlWorkflows) {
+                String subclass = wf.getSubclass();
+                String workflowName = wf.getName();
 
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
@@ -355,35 +340,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     /**
      * Create or retrieve services based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.1
-     * @param dockstoreYml Dockstore YAML File
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param gitHubSourceCodeRepo Source Code Repo
      * @param user User that triggered action
-     * @param yml Dockstore YML map
+     * @param dockstoreYml
      * @return List of new and updated services
      */
-    private List<Workflow> createServicesAndVersionsFromDockstoreYml(SourceFile dockstoreYml, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, Map<String, Object> yml) {
-        List<Workflow> updatedServices = new ArrayList<>();
-        // TODO: Currently only supports one service per .dockstore.yml
-        String subclass;
-        try {
-            Map<String, Object> serviceObject = (Map<String, Object>)yml.get("service");
-            subclass = (String)serviceObject.get("type");
-            if (subclass == null) {
-                String msg = "Missing required type field.";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-            }
-        } catch (ClassCastException ex) {
-            String msg = "Could not parse .dockstore.yml";
-            LOG.info(msg, ex);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+    private List<Workflow> createServicesAndVersionsFromDockstoreYml(List<Service12> services, String repository, String gitReference,
+            GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
+        final List<Workflow> updatedServices = new ArrayList<>();
+        for (Service12 service: services) {
+            final DescriptorLanguageSubclass subclass = service.getSubclass();
+            Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
+            workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+            updatedServices.add(workflow);
         }
-        Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass, gitHubSourceCodeRepo);
-        workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
-        updatedServices.add(workflow);
-
         return updatedServices;
     }
 

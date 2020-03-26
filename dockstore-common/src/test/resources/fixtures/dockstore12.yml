@@ -10,6 +10,11 @@ workflows:
      primaryDescriptorPath: /Dockstore.cwl
      testParameterFiles:
        - /dockstore.cwl.json
+  # A workflow with no name:
+  -  subclass: cwl
+     primaryDescriptorPath: /Dockstore.cwl
+     testParameterFiles:
+       - /dockstore.cwl.json
 services:
   - subclass: DOCKER_COMPOSE
     name: UCSC Xena Browser
