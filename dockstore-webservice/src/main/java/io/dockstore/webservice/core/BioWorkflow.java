@@ -42,7 +42,9 @@ import io.swagger.annotations.ApiModelProperty;
                 + "FROM Workflow w LEFT JOIN w.workflowVersions v "
                 + "WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
                 + "GROUP BY w.sourceControl, w.organization, w.repository, w.workflowName, w.dbUpdateDate"),
-        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
+        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
+
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {
