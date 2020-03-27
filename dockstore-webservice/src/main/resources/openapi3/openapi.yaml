@@ -4126,11 +4126,6 @@ paths:
         schema:
           format: int64
           type: integer
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -4158,11 +4153,6 @@ paths:
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:

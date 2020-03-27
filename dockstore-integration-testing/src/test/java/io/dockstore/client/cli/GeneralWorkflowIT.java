@@ -33,6 +33,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -157,6 +158,13 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refreshVersion(workflow.getId(), "testCWL");
         assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
         assertTrue("Should have testCWL version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "testCWL")));
+
+        try {
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion");
+            fail("Should not be able to refresh a version that does not exist");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
+        }
     }
 
     /**
@@ -428,6 +436,13 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refreshVersion(workflow.getId(), "cwl_import");
         assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
         assertTrue("Should have cwl_import version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "cwl_import")));
+
+        try {
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion");
+            fail("Should not be able to refresh a version that does not exist");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
+        }
     }
 
     @Test
@@ -887,6 +902,13 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refreshVersion(workflow.getId(), "test");
         assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
         assertTrue("Should have test version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "test")));
+
+        try {
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion");
+            fail("Should not be able to refresh a version that does not exist");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
+        }
     }
 
     /**

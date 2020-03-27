@@ -161,13 +161,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         Map<String, WorkflowVersion> existingVersionMap = new HashMap<>();
         workflow.getWorkflowVersions().forEach(version -> existingVersionMap.put(version.getName(), version));
 
-        // delete versions that exist in old workflow but do not exist in newWorkflow (only for whole refresh)
+        // delete versions that exist in old workflow but do not exist in newWorkflow
         if (versionName.isEmpty()) {
             Map<String, WorkflowVersion> newVersionMap = new HashMap<>();
             newWorkflow.getWorkflowVersions().forEach(version -> newVersionMap.put(version.getName(), version));
             Sets.SetView<String> removedVersions = Sets.difference(existingVersionMap.keySet(), newVersionMap.keySet());
             for (String version : removedVersions) {
-                workflow.removeWorkflowVersion(existingVersionMap.get(version));
+                if (!existingVersionMap.get(version).isFrozen()) {
+                    workflow.removeWorkflowVersion(existingVersionMap.get(version));
+                }
             }
         }
 

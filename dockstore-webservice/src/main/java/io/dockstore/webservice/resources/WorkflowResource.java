@@ -396,10 +396,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
-    @Operation(operationId = "refresh", description = "Refresh one particular workflow.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "refresh", description = "Refresh one particular workflow.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "refresh", value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
+    public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         return refreshWorkflow(user, workflowId, Optional.empty());
     }
@@ -408,12 +408,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/refresh/{version}")
     @Timed
     @UnitOfWork
-    @Operation(operationId = "refreshVersion", description = "Refresh one particular workflow version.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "refreshVersion", description = "Refresh one particular workflow version.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "refreshVersion", value = "Refresh one particular workflow version.", notes = "Refresh existing or new version of a workflow.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow refreshVersion(@ApiParam(hidden = true) @Auth User user,
+    public Workflow refreshVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "version", required = true) @PathParam("version") String version) {
+        if (version == null || version.isBlank()) {
+            String msg = "Version is a required field for this endpoint.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
         return refreshWorkflow(user, workflowId, Optional.of(version));
     }
 

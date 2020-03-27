@@ -257,6 +257,12 @@ public abstract class SourceCodeRepoInterface {
         //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
         workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName);
 
+        if (versionName.isPresent() && workflow.getWorkflowVersions().size() == 0) {
+            String msg = "Version " + versionName.get() + " was not found on Git repository";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Setting last modified date can be done uniformly
         Optional<Date> max = workflow.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
