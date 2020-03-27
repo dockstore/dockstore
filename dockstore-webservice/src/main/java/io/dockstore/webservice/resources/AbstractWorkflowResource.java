@@ -420,12 +420,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow
      */
-    private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml, GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow) {
+    private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
+            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow) {
         try {
             // Create version and pull relevant files
-            WorkflowVersion workflowVersion = gitHubSourceCodeRepo.createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
+            WorkflowVersion workflowVersion = gitHubSourceCodeRepo
+                    .createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             workflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
-            workflow.addWorkflowVersion(workflowVersion);
+            workflow.getWorkflowVersions().stream().filter(wv -> wv.equals(workflowVersion)).findFirst().ifPresentOrElse(existing -> {
+                existing.setWorkflowPath(workflowVersion.getWorkflowPath());
+                existing.setLastModified(workflowVersion.getLastModified());
+                existing.setLegacyVersion(workflowVersion.isLegacyVersion());
+                existing.setAliases(workflowVersion.getAliases());
+                existing.setSubClass(workflowVersion.getSubClass());
+                existing.getSourceFiles().clear();
+                existing.getSourceFiles().addAll(workflowVersion.getSourceFiles());
+            }, () -> workflow.addWorkflowVersion(workflowVersion));
+
             LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
             String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
