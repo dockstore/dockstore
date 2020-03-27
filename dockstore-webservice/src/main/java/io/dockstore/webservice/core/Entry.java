@@ -481,10 +481,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public boolean addWorkflowVersion(T workflowVersion) {
+        workflowVersion.setParent(this);
         return getWorkflowVersions().add(workflowVersion);
     }
 
     public boolean removeWorkflowVersion(T workflowVersion) {
+        workflowVersion.setParent(null);
         return getWorkflowVersions().remove(workflowVersion);
     }
 

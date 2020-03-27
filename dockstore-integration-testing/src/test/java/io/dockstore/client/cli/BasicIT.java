@@ -150,8 +150,8 @@ public class BasicIT extends BaseIT {
 
         final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         // should have 0 tools to start with
-        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser");
-        usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2");
+        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
+        usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
@@ -161,8 +161,8 @@ public class BasicIT extends BaseIT {
 
         // refresh
         try {
-            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser");
-            usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2");
+            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
+            usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
             fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message since user has Quay tools but no Quay token.",
@@ -471,19 +471,18 @@ public class BasicIT extends BaseIT {
 
         // Check how many versions the entry has
         final long currentNumberOfTags = testingPostgres
-            .runSelectStatement("select count(*) from tool_tag where toolid = '" + id + "'", long.class);
+            .runSelectStatement("select count(*) from tag where parentid = '" + id + "'", long.class);
         assertTrue("There are no tags for this tool", currentNumberOfTags > 0);
 
         // This grabs the first tag that belongs to the tool
-        final long firstTag = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = '" + id + "'", long.class);
+        final long firstTag = testingPostgres.runSelectStatement("select id from tag where parentid = '" + id + "'", long.class);
 
         // Delete the version that is known
-        testingPostgres.runUpdateStatement("delete from tool_tag where toolid = '" + id + "' and tagid='" + firstTag + "'");
-        testingPostgres.runUpdateStatement("delete from tag where id = '" + firstTag + "'");
+        testingPostgres.runUpdateStatement("delete from tag where parentid = '" + id + "' and id='" + firstTag + "'");
 
         // Double check that there is one less tag
         final long afterDeletionTags = testingPostgres
-            .runSelectStatement("select count(*) from tool_tag where toolid = '" + id + "'", long.class);
+            .runSelectStatement("select count(*) from tag where parentid = '" + id + "'", long.class);
         Assert.assertEquals(currentNumberOfTags - 1, afterDeletionTags);
 
         // Refresh the tool
@@ -494,7 +493,7 @@ public class BasicIT extends BaseIT {
 
         // Check how many tags there are after the refresh
         final long afterRefreshTags = testingPostgres
-            .runSelectStatement("select count(*) from tool_tag where toolid = '" + id + "'", long.class);
+            .runSelectStatement("select count(*) from tag where parentid = '" + id + "'", long.class);
         Assert.assertEquals(currentNumberOfTags, afterRefreshTags);
     }
 

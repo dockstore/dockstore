@@ -61,4 +61,9 @@ public class ManualRegistry extends AbstractImageRegistry {
     public boolean canConvertToAuto(Tool tool) {
         return false;
     }
+
+    @Override
+    public Tool getToolFromNamespaceAndRepo(final String organization, final String repository) {
+        return unsupportedOperation();
+    }
 }

@@ -43,6 +43,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
 import io.openapi.model.ExtendedFileWrapper;
@@ -62,7 +63,7 @@ import org.slf4j.LoggerFactory;
 public final class ToolsImplCommon {
     public static final String WORKFLOW_PREFIX = "#workflow";
     public static final String SERVICE_PREFIX = "#service";
-    public static final String DOCKSTORE_IMAGEID = "dockstore:imageid";
+    public static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
 
     private ToolsImplCommon() { }
@@ -78,8 +79,8 @@ public final class ToolsImplCommon {
      */
     public static ExtendedFileWrapper sourceFileToToolDescriptor(String url, SourceFile sourceFile) {
         ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
-        //TODO: hook up file checksum here
-        toolDescriptor.setChecksum(Lists.newArrayList());
+        convertToTRSChecksums(sourceFile);
+        toolDescriptor.setChecksum(convertToTRSChecksums(sourceFile));
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
@@ -250,7 +251,7 @@ public final class ToolsImplCommon {
 
             for (io.dockstore.webservice.core.Checksum checksum : checksumList) {
                 Checksum trsChecksum = new Checksum();
-                trsChecksum.setType(checksum.getType());
+                trsChecksum.setType(DOCKER_IMAGE_SHA_TYPE_FOR_TRS);
                 trsChecksum.setChecksum(checksum.getChecksum());
                 trsChecksums.add(trsChecksum);
             }
@@ -269,14 +270,19 @@ public final class ToolsImplCommon {
     private static void processImageDataForToolVersion(io.dockstore.webservice.core.Tool castedContainer, Tag version,
         ToolVersion toolVersion) {
         ImageData data = new ImageData();
-        if (version.getImageId() != null) {
-            Checksum checksum = new Checksum();
-            checksum.setChecksum(version.getImageId());
-            checksum.setType(DOCKSTORE_IMAGEID);
-            //TODO: hook up snapshot and checksum behaviour here too for tools
-            data.setChecksum(Lists.newArrayList(checksum));
+        List<Checksum> trsChecksums = new ArrayList<>();
+        if (version.getImages() != null) {
+            version.getImages().forEach(image -> {
+                image.getChecksums().forEach(checksum -> {
+                    Checksum trsChecksum = new Checksum();
+                    trsChecksum.setType(DOCKER_IMAGE_SHA_TYPE_FOR_TRS);
+                    trsChecksum.setChecksum(checksum.getChecksum());
+                    trsChecksums.add(trsChecksum);
+                });
+            });
+            data.setChecksum(trsChecksums);
         } else {
-            //TODO: hook up snapshot and checksum behaviour here too for workflows (or tools without images?)
+            //tools without images?
             data.setChecksum(MoreObjects.firstNonNull(data.getChecksum(), Lists.newArrayList()));
         }
         //TODO: for now, all container images are Docker based
@@ -465,12 +471,17 @@ public final class ToolsImplCommon {
             LOG.error("This source file is not a recognized test file.");
         }
         ExtendedFileWrapper toolTests = new ExtendedFileWrapper();
-        //TODO: hook up file checksum here
-        toolTests.setChecksum(Lists.newArrayList());
+        List<Checksum> trsChecksums = convertToTRSChecksums(sourceFile);
+        toolTests.setChecksum(trsChecksums);
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
         toolTests.setContent(sourceFile.getContent());
         toolTests.setOriginalFile(sourceFile);
         return toolTests;
+    }
+
+    private static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
+        List<Checksum> trsChecksums = ToolsApiServiceImpl.convertToTRSChecksums(sourceFile);
+        return trsChecksums;
     }
 
     /**

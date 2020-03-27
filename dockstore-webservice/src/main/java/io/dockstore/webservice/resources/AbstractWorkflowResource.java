@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.FileFormatHelper;
+import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -183,7 +184,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
                 workflowVersionFromDB.update(version);
             } else {
-                // create a new one and replace the old one
+                // attach real workflow
+                workflow.addWorkflowVersion(version);
+
                 final long workflowVersionId = workflowVersionDAO.create(version);
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
                 this.eventDAO.createAddTagToEntryEvent(user, workflow, workflowVersionFromDB);
@@ -242,6 +245,31 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflowVersionFromDB.addOrUpdateValidation(versionValidation);
             }
         }
+    }
+
+    /**
+     * Handle webhooks from GitHub apps after branch deletion (redirected from AWS Lambda)
+     * - Delete version for corresponding service and workflow
+     * @param repository Repository path (ex. dockstore/dockstore-ui2)
+     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
+     * @return List of updated workflows
+     */
+    protected List<Workflow> githubWebhookDelete(String repository, String gitReference) {
+        // Retrieve name from gitReference
+        Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
+        if (gitReferenceName.isEmpty()) {
+            String msg = "Reference " + gitReference + " is not of the valid form";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        }
+
+        // Find all workflows and services that are github apps and use the given repo
+        List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).collect(
+                Collectors.toList());
+
+        // Delete all non-frozen versions that have the same git reference name
+        workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
+        return workflows;
     }
 
     /**

@@ -70,7 +70,6 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.FileFormat;
 import io.swagger.client.model.FileWrapper;
-import io.swagger.client.model.Image;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -137,6 +136,9 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
     private static final String GATK_SV_TAG = "dockstore-test";
+    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
+    private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
     @Rule
@@ -869,10 +871,10 @@ public class WorkflowIT extends BaseIT {
         // Check image info is grabbed
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", "/hello_world.cwl", "1.0.1");
         assertEquals("Should only be one image in this workflow", 1, version.getImages().size());
-        verifyChecksumsAreSaved(version);
+        verifyImageChecksumsAreSaved(version);
 
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world");
-        testTRSConversion(versions, "1.0.1", 1);
+        verifyTRSImageConversion(versions, "1.0.1", 1);
 
         // Test that a workflow version containing an unversioned image isn't saved
         WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", "/cwl/workflow_docker.cwl", "1.0");
@@ -881,16 +883,21 @@ public class WorkflowIT extends BaseIT {
         // Test that a workflow version that contains duplicate images will not store multiples
         WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", "/main.cwl", "1.0");
         assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());
-        verifyChecksumsAreSaved(versionWithDuplicateImages);
+        verifyImageChecksumsAreSaved(versionWithDuplicateImages);
         versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
-        testTRSConversion(versions, "1.0", 3);
+        verifyTRSImageConversion(versions, "1.0", 3);
     }
 
+    /**
+    * Tests the a checksum is calculated for workflow sourcefiles on refresh or snapshot. Also checks that trs endpoints convert correctly.
+    * */
     @Test
     public void testChecksumsForSourceFiles() {
         // Test grabbing checksum on refresh
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
         Workflow workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "", "wdl", "/test.json");
 
         workflow = workflowsApi.refresh(workflow.getId());
@@ -902,6 +909,7 @@ public class WorkflowIT extends BaseIT {
             if (workflowVersion.getName().equals("testBoth") || workflowVersion.getName().equals("testWDL")) {
                 testedWDL = true;
                 assertNotNull(workflowVersion.getSourceFiles());
+                verifySourcefileChecksumsSaved(workflowVersion);
                 workflowVersion.getSourceFiles().stream().forEach(sourceFile -> assertFalse("Source file should have a checksum", sourceFile.getChecksums().get(0).toString().isEmpty()));
             }
         }
@@ -913,14 +921,38 @@ public class WorkflowIT extends BaseIT {
         assertNotNull(snapshotVersion.getSourceFiles());
         snapshotVersion.setFrozen(true);
         workflowsApi.updateWorkflowVersion(workflow2.getId(), Collections.singletonList(snapshotVersion));
-        snapshotVersion.getSourceFiles().stream().forEach(sourceFile -> assertFalse("Source File should have a checksum", sourceFile.getChecksums().get(0).toString().isEmpty()));
+        verifySourcefileChecksumsSaved(snapshotVersion);
 
         // Make sure refresh does not error.
         workflowsApi.refresh(workflow2.getId());
 
+        // Test TRS conversion
+        io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/github.com/dockstore-testing/hello_world", "1.0.1");
+        verifyTRSSourcefileConversion(fileWrapper);
+
     }
 
-    private void testTRSConversion(final List<ToolVersion> versions, final String snapShottedVersionName, final int numImages) {
+    private void verifyTRSSourcefileConversion(final io.dockstore.openapi.client.model.FileWrapper fileWrapper) {
+        assertEquals(1, fileWrapper.getChecksum().size());
+        fileWrapper.getChecksum().stream().forEach(checksum -> {
+            assertFalse(checksum.getChecksum().isEmpty());
+            assertEquals(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS, checksum.getType());
+        });
+    }
+
+    private void verifySourcefileChecksumsSaved(final WorkflowVersion snapshotVersion) {
+        assertTrue(snapshotVersion.getSourceFiles().size() >= 1);
+        snapshotVersion.getSourceFiles().stream().forEach(sourceFile -> {
+            assertFalse("Source File should have a checksum", sourceFile.getChecksums().isEmpty());
+            assertTrue(sourceFile.getChecksums().size() >= 1);
+            sourceFile.getChecksums().stream().forEach(checksum -> {
+                assertFalse(checksum.getType().isEmpty());
+                assertFalse(checksum.getChecksum().isEmpty());
+            });
+        });
+    }
+
+    private void verifyTRSImageConversion(final List<ToolVersion> versions, final String snapShottedVersionName, final int numImages) {
         assertFalse("Should have at least one version", versions.isEmpty());
         boolean snapshotInList = false;
         for (ToolVersion trsVersion : versions) {
@@ -931,6 +963,10 @@ public class WorkflowIT extends BaseIT {
                 assertFalse(trsVersion.getImages().isEmpty());
                 for (ImageData imageData :trsVersion.getImages()) {
                     assertNotNull(imageData.getChecksum());
+                    imageData.getChecksum().stream().forEach(checksum -> {
+                        assertTrue(checksum.getType().equals(DOCKER_IMAGE_SHA_TYPE_FOR_TRS));
+                        assertFalse(checksum.getChecksum().isEmpty());
+                    });
                     assertNotNull(imageData.getRegistryHost());
                 }
             } else {
@@ -950,15 +986,13 @@ public class WorkflowIT extends BaseIT {
         return workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
     }
 
-    private void verifyChecksumsAreSaved(WorkflowVersion version) {
-        for (Image image : version.getImages()) {
-            String hashType = image.getChecksums().get(0).getType();
-            String checksum = image.getChecksums().get(0).getChecksum();
-            assertNotNull(hashType);
-            assertFalse(hashType.isEmpty());
-            assertFalse(checksum.isEmpty());
-            assertNotNull(checksum);
-        }
+    private void verifyImageChecksumsAreSaved(WorkflowVersion version) {
+        assertFalse(version.getImages().isEmpty());
+        version.getImages().stream().forEach(image -> image.getChecksums().stream().forEach(checksum -> {
+            assertFalse(checksum.getChecksum().isEmpty());
+            assertFalse(checksum.getType().isEmpty());
+        })
+        );
     }
 
     @Test

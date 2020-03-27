@@ -418,13 +418,18 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Refresh all tools owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
+            @ApiParam(value = "Docker registry") @QueryParam("dockerRegistry") String dockerRegistry) {
 
         checkUser(authUser, userId);
 
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
-        dockerRepoResource.refreshToolsForUser(userId, organization);
+        if (dockerRegistry != null) {
+            dockerRepoResource.refreshToolsForUser(userId, organization, dockerRegistry);
+        } else {
+            dockerRepoResource.refreshToolsForUser(userId, organization);
+        }
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());

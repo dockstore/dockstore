@@ -100,10 +100,14 @@ public class WebhookIT extends BaseIT {
         // Refresh should work
         workflow = workflowApi.refresh(workflow.getId());
         assertEquals("Workflow should be FULL mode", Workflow.ModeEnum.FULL, workflow.getMode());
-        assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(workflowVersion -> workflowVersion.isLegacyVersion()));
+        assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion));
+
+        // seems like handleGitHubRelease has issue with versions that already exist
+        testingPostgres.runUpdateStatement("delete from workflowversion where parentid = " + workflow.getId());
 
         // Webhook call should convert workflow to DOCKSTORE_YML
-        workflowApi.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        workflowApi.
+                handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
         workflow = workflowApi.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertEquals("Workflow should be DOCKSTORE_YML mode", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertTrue("One version should be not legacy", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> !workflowVersion.isLegacyVersion()));
@@ -189,6 +193,13 @@ public class WebhookIT extends BaseIT {
 
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.isLegacyVersion());
         assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
+
+        // Delete tag 0.2
+        client.handleGitHubBranchDeletion(workflowRepo, "refs/tags/0.2");
+        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        assertTrue("Should not have a 0.2 version.", workflow.getWorkflowVersions().stream().noneMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
+        assertTrue("Should not have a 0.2 version.", workflow2.getWorkflowVersions().stream().noneMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
     }
 
     /**

@@ -47,7 +47,8 @@ import org.apache.commons.io.FilenameUtils;
  */
 @ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
 @Entity
-@Table(name = "workflowversion")
+@Table(name = "workflowversion", uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_names", columnNames = { "parentid",
+    "name" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
 })
@@ -91,7 +92,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public String getWorkingDirectory() {
-        if (!workflowPath.isEmpty()) {
+        if (workflowPath != null && !workflowPath.isEmpty()) {
             return FilenameUtils.getPathNoEndSeparator(workflowPath);
         }
         return "";
@@ -152,6 +153,11 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Override
     public int hashCode() {
         return Objects.hash(name, reference);
+    }
+
+    @Override
+    public Version createEmptyVersion() {
+        return new WorkflowVersion();
     }
 
 

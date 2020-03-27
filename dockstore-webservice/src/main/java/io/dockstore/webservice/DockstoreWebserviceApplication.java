@@ -94,6 +94,7 @@ import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
+import io.dockstore.webservice.resources.UserResourceDockerRegistries;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
@@ -320,7 +321,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer));
 
         MetadataResourceHelper.init(configuration);
-
+        environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));

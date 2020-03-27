@@ -258,6 +258,88 @@ components:
           type: array
           uniqueItems: true
       type: object
+    EntryObjectObject:
+      properties:
+        aliases:
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+          type: object
+        author:
+          type: string
+        checker_id:
+          format: int64
+          type: integer
+        conceptDoi:
+          type: string
+        dbCreateDate:
+          format: date-time
+          type: string
+        dbUpdateDate:
+          format: date-time
+          type: string
+        defaultVersion:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        input_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        is_published:
+          type: boolean
+        labels:
+          items:
+            $ref: '#/components/schemas/Label'
+          type: array
+          uniqueItems: true
+        lastUpdated:
+          format: date-time
+          type: string
+        last_modified:
+          format: int32
+          type: integer
+        last_modified_date:
+          format: date-time
+          type: string
+        metadataFromEntry:
+          type: object
+          writeOnly: true
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
+        output_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        starredUsers:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        topicId:
+          format: int64
+          type: integer
+        users:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        workflowVersions:
+          items:
+            type: object
+          type: array
+          uniqueItems: true
+      type: object
     EntryUpdateTime:
       properties:
         entryType:
@@ -691,6 +773,8 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -1177,6 +1261,8 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -1414,6 +1500,8 @@ components:
             $ref: '#/components/schemas/FileFormat'
           type: array
           uniqueItems: true
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -3801,6 +3889,79 @@ paths:
       summary: Search for ToolTester log files
       tags:
       - toolTester
+  /users/dockerRegistries:
+    get:
+      description: Get all of the Docker registries accessible to the logged-in user.
+      operationId: getUserDockerRegistries
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
+  /users/dockerRegistries/{dockerRegistry}/organizations:
+    get:
+      description: Get all of the organizations/namespaces of the Docker registry
+        accessible to the logged-in user.
+      operationId: getDockerRegistriesOrganization
+      parameters:
+      - description: Name of Docker registry
+        in: path
+        name: dockerRegistry
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
+  /users/dockerRegistries/{dockerRegistry}/organizations/{organization}/repositories:
+    get:
+      description: Get names of repositories associated with a specific namespace
+        and Docker registry of the logged-in user.
+      operationId: getDockerRegistryOrganizationRepositories
+      parameters:
+      - description: Name of Docker registry
+        in: path
+        name: dockerRegistry
+        required: true
+        schema:
+          type: string
+      - description: Name of organization or namespace
+        in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -3980,6 +4141,27 @@ paths:
           description: default response
       tags:
       - users
+  /workflows/github:
+    delete:
+      description: Handles the deletion of a branch on GitHub. Will delete all workflow
+        versions that match in all workflows that share the same repository.
+      operationId: handleGitHubBranchDeletion
+      parameters:
+      - in: query
+        name: repository
+        schema:
+          type: string
+      - in: query
+        name: gitReference
+        schema:
+          type: string
+      responses:
+        "418":
+          description: This code tells AWS Lambda not to retry.
+      security:
+      - bearer: []
+      tags:
+      - workflows
   /workflows/github/release:
     post:
       description: Handle a release of a repository on GitHub. Will create a workflow/service

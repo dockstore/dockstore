@@ -45,7 +45,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -127,6 +126,12 @@ public abstract class AbstractImageRegistry {
      */
     public abstract boolean canConvertToAuto(Tool tool);
 
+    public abstract Tool getToolFromNamespaceAndRepo(String organization, String repository);
+
+    protected Tool unsupportedOperation() throws CustomWebApplicationException {
+        throw new CustomWebApplicationException("Unsupported operation, only Quay.io is supported for now", HttpStatus.SC_BAD_REQUEST);
+    }
+
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
@@ -158,28 +163,74 @@ public abstract class AbstractImageRegistry {
         // Get all the tools based on the found namespaces
         List<Tool> apiTools = getToolsFromNamespace(namespaces);
 
+        String registryString = getRegistry().getDockerPath();
+
         // Add manual tools to list of api tools
         User user = userDAO.findById(userId);
-        List<Tool> manualTools = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
-
-        // Get all tools in the db for the given registry
-        List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO, toolDAO));
-
-        // Filter DB tools and API tools to only include relevant tools
-        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry().getDockerPath()));
-
-        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry().getDockerPath()));
+        List<Tool> userTools = toolDAO.findByUserRegistryNamespace(userId, registryString, organization);
+        // manualTools:
+        //  - isManualMode
+        //  - isTool
+        //  - belongs to user
+        //  - correct registry
+        //  - correct organization/namespace
+        List<Tool> manualTools = userTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
+        // notManualTools is similar except it's not manualMode
+        List<Tool> notManualTools = userTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
         apiTools.addAll(manualTools);
 
-        // Remove tools that can't be updated (Manual tools)
-        dbTools.removeIf(tool1 -> tool1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
-        apiTools.removeIf(tool -> !namespaces.contains(tool.getNamespace()));
-        dbTools.removeIf(tool -> !namespaces.contains(tool.getNamespace()));
         // Update api tools with build information
         updateAPIToolsWithBuildInformation(apiTools);
 
         // Update db tools by copying over from api tools
-        List<Tool> newDBTools = updateTools(apiTools, dbTools, user, toolDAO);
+        List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
+
+        // Get tags and update for each tool
+        for (Tool tool : newDBTools) {
+            logToolRefresh(dashboardPrefix, tool);
+
+            List<Tag> toolTags = getTags(tool);
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+        }
+
+        return newDBTools;
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public List<Tool> refreshTool(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
+            String organization, final EventDAO eventDAO, final String dashboardPrefix, String repository) {
+
+        // Get all the tools based on the found namespaces
+        List<Tool> apiTools;
+        if (repository != null) {
+            apiTools = new ArrayList<>(Collections.singletonList(getToolFromNamespaceAndRepo(organization, repository)));
+        } else {
+            throw new CustomWebApplicationException("Trying to refresh/register a tool without a repository name", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Add manual tools to list of api tools
+        String registryString = getRegistry().getDockerPath();
+        
+        User user = userDAO.findById(userId);
+        List<Tool> userRegistryNamespaceRepositoryTools = toolDAO
+                .findByUserRegistryNamespaceRepository(userId, registryString, organization, repository);
+        List<Tool> manualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH
+                .equals(tool.getMode())).collect(
+                Collectors.toList());
+        List<Tool> notManualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH
+                .equals(tool.getMode())).collect(
+                Collectors.toList());
+        apiTools.addAll(manualTools);
+
+        // Update api tools with build information
+        updateAPIToolsWithBuildInformation(apiTools);
+
+        // Update db tools by copying over from api tools
+        List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
@@ -455,7 +506,7 @@ public abstract class AbstractImageRegistry {
                 // create and add a tag if it does not already exist
                 if (!tool.getWorkflowVersions().contains(tag)) {
                     LOG.info(tool.getToolPath() + " : Updating tag {}", tag.getName());
-
+                    tag.setParent(tool);
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
                     eventDAO.createAddTagToEntryEvent(user, tool, tag);
@@ -809,23 +860,6 @@ public abstract class AbstractImageRegistry {
         sourcefile.setAbsolutePath(path);
         sourcefile.setType(type);
         return sourcefile;
-    }
-
-    /**
-     * Gets tools for the current user
-     *
-     * @param userId
-     * @param userDAO
-     * @return
-     */
-    private List<Tool> getToolsFromUser(Long userId, UserDAO userDAO, ToolDAO toolDAO) {
-        final Set<Entry> entries = userDAO.findById(userId).getEntries();
-        List<Tool> toolList = new ArrayList<>();
-        // getting tools indirectly via the user seems to retrieve shallow tools that cause lazy load issues during deletion
-        // optimize post 1.5.0, see #1779
-        entries.stream().filter(entry -> entry instanceof Tool).map(tool -> toolDAO.findById(tool.getId())).filter(Objects::nonNull)
-            .forEach(toolList::add);
-        return toolList;
     }
 
     /**

@@ -1,8 +1,8 @@
-sudo: required
 services:
 - docker
 
 addons:
+  postgresql: "9.6"
   snaps:
     - yq
 
@@ -13,6 +13,7 @@ cache:
   - $HOME/.m2/repository
   - $HOME/apache-maven-3.6.2
 
+os: linux
 dist: bionic
 language: java
 jdk: openjdk12
@@ -92,20 +93,10 @@ before_install:
 install:
 - docker version
 - scripts/install-tests.sh
-- sudo apt-get install -y postgresql-client-11
-- DOCKERIZE_VERSION=v0.3.0 bash -c 'wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz'
-# Postgres 11 needs to be explicitly configured to trust local connections.
-# It was easier to run PG as a Docker container and take advantage of the POSTGRES_HOST_AUTH_METHOD env
-# variable, rather than modifying the conf file for the one installed via Travis addon and then restarting it.
-- docker pull postgres:11.6-alpine
-- docker run -p 5432:5432 --env POSTGRES_HOST_AUTH_METHOD=trust -d postgres:11.6-alpine
-- dockerize -wait tcp://localhost:5432 -timeout 1m
-# Even though dockerize says it's ready, it's not quite ready
-- sleep 3
 
 before_script:
-- psql -h localhost -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-- psql -h localhost -c 'create database webservice_test with owner = dockstore;' -U postgres
+- psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+- psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
 # debug by double checking versions of stuff
 - mvn -version
@@ -120,9 +111,4 @@ after_success:
 - java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l Java -r reports/target/site/jacoco-aggregate/jacoco.xml 
   
 notifications:
-  slack:
-    on_success: never
-    on_failure: always
-    rooms:
-    - oicr:S9k4EowgQv9AnbCfEZHSzCsg
   webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN

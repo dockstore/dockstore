@@ -175,10 +175,119 @@
         <addNotNullConstraint tableName="service" columnName="dbupdatedate"/>
         <addNotNullConstraint tableName="tool" columnName="dbcreatedate"/>
         <addNotNullConstraint tableName="tool" columnName="dbupdatedate"/>
-        
+
         <addNotNullConstraint tableName="workflowversion" columnName="dbcreatedate"/>
         <addNotNullConstraint tableName="workflowversion" columnName="dbupdatedate"/>
         <addNotNullConstraint tableName="tag" columnName="dbcreatedate"/>
         <addNotNullConstraint tableName="tag" columnName="dbupdatedate"/>
     </changeSet>
+
+    <changeSet author="dyuen" id="restructure_workflowversions">
+        <addColumn tableName="tag">
+            <column name="parentid" type="int8">
+            </column>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="parentid" type="int8">
+            </column>
+        </addColumn>
+        <!-- migrate data -->
+        <sql dbms="postgresql">
+            update workflowversion set parentid = wwv.workflowid from workflowversion as wv join workflow_workflowversion as wwv on wv.id = wwv.workflowversionid where workflowversion.id = wv.id;
+            update tag set parentid = tt.toolid from tag as t join tool_tag as tt on t.id = tt.tagid where tag.id = t.id;
+        </sql>
+
+        <!-- clean-up -->
+        <dropForeignKeyConstraint baseTableName="tool_tag" constraintName="fkjkn6qubuvn25bun52eqjleyl6"/>
+        <dropForeignKeyConstraint baseTableName="tool_tag" constraintName="fkjtsjg6jdnwxoeicd27ujmeeaj"/>
+        <dropForeignKeyConstraint baseTableName="workflow_workflowversion" constraintName="fkibmeux3552ua8dwnqdb8w6991"/>
+        <dropUniqueConstraint constraintName="uk_encl8hnebnkcaxj9tlugr9cxh" tableName="workflow_workflowversion"/>
+        <dropTable tableName="workflow_workflowversion"/>
+        <dropTable tableName="tool_tag"/>
+    </changeSet>
+
+    <changeSet author="dyuen" id="cleanup invalid content">
+        <!-- need to investigate whether too much content is being dropped and whether the right content is being dropped -->
+        <comment>some orphaned versions are protected by security</comment>
+        <sql dbms="postgresql">
+            alter table workflowversion disable row level security;
+            alter table tag disable row level security;
+        </sql>
+
+        <comment>delete the versions that are orphaned already</comment>
+        <delete tableName="tag">
+            <where>parentid is null</where>
+        </delete>
+        <delete tableName="workflowversion">
+            <where>parentid is null</where>
+        </delete>
+
+        <comment>migrate content from join tables into tag and workflowversion tables</comment>
+        <sql dbms="postgresql">
+            delete from tag t where t.id in (select min(t.id) id from tag t group by t.name,t.parentid having count(t.name) > 1);
+        </sql>
+        <sql dbms="postgresql">
+            delete from workflowversion wv where wv.id in (select min(wv.id) id from workflowversion wv group by wv.name,wv.parentid having count(wv.name) > 1);
+        </sql>
+        <sql dbms="postgresql">
+            delete from workflowversion where parentid not in (select id from workflow union select id from service);
+        </sql>
+        <sql dbms="postgresql">
+            delete from tag where parentid not in (select id from tool);
+        </sql>
+
+        <comment>Delete the source files of deleted tags and versions.</comment>
+        <sql dbms="postgresql">
+            delete from version_sourcefile vs where vs.versionid not in (select wv.id from workflowversion wv union select tag.id from tag);
+            delete from sourcefile_verified sv where sv.id not in (select vs.sourcefileid from version_sourcefile vs);
+            delete from sourcefile s where s.id not in (select vs.sourcefileid from version_sourcefile vs);
+        </sql>
+
+        <comment>Delete references from version_input_fileformat to deleted tags and versions.</comment>
+        <sql dbms="postgresql">
+            delete from version_input_fileformat v where v.versionid not in (select wv.id from workflowversion wv union select tag.id from tag);
+        </sql>
+
+        <comment>Delete references from version_output_fileformat to deleted tags and versions</comment>
+        <sql dbms="postgresql">
+            delete from version_output_fileformat v where v.versionid not in (select wv.id from workflowversion wv union select tag.id from tag);
+        </sql>
+
+        <comment>Delete the version validations of deleted tags and versions.</comment>
+        <sql dbms="postgresql">
+            delete from version_validation vv where vv.versionid not in (select wv.id from workflowversion wv union select tag.id from tag);
+            delete from validation v where v.id not in (select vv.validationid from version_validation vv);
+        </sql>
+
+        <comment>Delete workflow version aliases. There are no tag aliases</comment>
+        <sql dbms="postgresql">
+            delete from workflowversion_alias wa where wa.id not in (select wv.id from workflowversion wv);
+        </sql>
+
+        <sql dbms="postgresql">
+            alter table workflowversion enable row level security;
+            alter table tag enable row level security;
+        </sql>
+    </changeSet>
+
+    <changeSet author="dyuen" id="lock_versions_down">
+        <!-- deletion can fail if row level security is not disabled properly in previous migration -->
+        <preConditions onFail="HALT">
+            <sqlCheck expectedResult="0">select count(*) from tag where parentid is null</sqlCheck>
+            <sqlCheck expectedResult="0">select count(*) from workflowversion where parentid is null</sqlCheck>
+            <!-- would not need this check if we can make a multi table constraint below -->
+            <sqlCheck expectedResult="0">select count(*) from workflowversion where parentid not in (select id from workflow union select id from service)</sqlCheck>
+        </preConditions>
+        <!-- add constraints -->
+        <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="tag" />
+        <addNotNullConstraint columnName="parentid" constraintName="parent_id_not_nullable" tableName="workflowversion" />
+        <addUniqueConstraint columnNames="parentid, name" constraintName="unique_tag_names" tableName="tag"/>
+        <addUniqueConstraint columnNames="parentid, name" constraintName="unique_workflowversion_names" tableName="workflowversion"/>
+        <!-- deletion can fail if row level security is not disabled properly in previous migration -->
+        <!-- this one would be nice, but I could not figure out a constraint that that says the parent id can come from either workflow or services
+        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="workflowversion" constraintName="parentid_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+        -->
+        <addForeignKeyConstraint baseColumnNames="parentid" baseTableName="tag" constraintName="parentid_constraint" deferrable="true" initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
+    </changeSet>
+
 </databaseChangeLog>

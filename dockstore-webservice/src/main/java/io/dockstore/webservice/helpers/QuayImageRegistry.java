@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Tag;
@@ -45,7 +46,9 @@ import io.swagger.quay.client.ApiException;
 import io.swagger.quay.client.Configuration;
 import io.swagger.quay.client.api.BuildApi;
 import io.swagger.quay.client.api.RepositoryApi;
+import io.swagger.quay.client.api.TagApi;
 import io.swagger.quay.client.api.UserApi;
+import io.swagger.quay.client.model.InlineResponse2002;
 import io.swagger.quay.client.model.QuayBuild;
 import io.swagger.quay.client.model.QuayBuildTriggerMetadata;
 import io.swagger.quay.client.model.QuayOrganization;
@@ -54,6 +57,7 @@ import io.swagger.quay.client.model.QuayTag;
 import io.swagger.quay.client.model.UserView;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,52 +69,80 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     private static final Logger LOG = LoggerFactory.getLogger(QuayImageRegistry.class);
 
     private final Token quayToken;
-    private final ApiClient apiClient;
     private final BuildApi buildApi;
     private final RepositoryApi repositoryApi;
     private final UserApi userApi;
+    private final TagApi tagApi;
 
     public QuayImageRegistry(final Token quayToken) {
         this.quayToken = quayToken;
-
-        apiClient = Configuration.getDefaultApiClient();
+        ApiClient apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Authorization", "Bearer " + quayToken.getContent());
         this.buildApi = new BuildApi(apiClient);
         this.repositoryApi = new RepositoryApi(apiClient);
         this.userApi = new UserApi(apiClient);
+        this.tagApi = new TagApi((apiClient));
+
     }
+
+    private List<QuayTag> getAllQuayTags(String repository) throws ApiException {
+        List<QuayTag> allQuayTags = new ArrayList<>();
+        // Completely arbitrary maxPageSize in the weird event that Quay.io's pagination results in an infinite loop or something
+        final int maxPageSize = 100;
+        for (int page = 1; page < Integer.MAX_VALUE; page++) {
+            InlineResponse2002 inlineResponse2002 = tagApi.listRepoTags(repository, page, maxPageSize, null, true);
+            List<QuayTag> quayTags = inlineResponse2002.getTags();
+            allQuayTags.addAll(quayTags);
+            if (!inlineResponse2002.isHasAdditional()) {
+                break;
+            }
+        }
+        return allQuayTags;
+    }
+
 
     @Override
     public List<Tag> getTags(Tool tool) {
         LOG.info(quayToken.getUsername() + " ======================= Getting tags for: {}================================", tool.getPath());
-
+        final String repo = tool.getNamespace() + '/' + tool.getName();
         final List<Tag> tags = new ArrayList<>();
         final Optional<QuayRepo> toolFromQuay = getToolFromQuay(tool);
         if (toolFromQuay.isPresent()) {
             final QuayRepo quayRepo = toolFromQuay.get();
             final Map<String, QuayTag> tagsFromRepo = quayRepo.getTags();
-            for (QuayTag tagItem : tagsFromRepo.values()) {
+            final int maxQuayTagsReturnedByRepo = 500;
+            List<QuayTag> quayTags = new ArrayList<>(tagsFromRepo.values());
+            if (tagsFromRepo.size() == maxQuayTagsReturnedByRepo) {
                 try {
-                    final Tag tag = new Tag();
-                    BeanUtils.copyProperties(tag, tagItem);
-                    Optional<Image> tagImage = getImageForTag(tool, tag, tagItem);
-                    if (tagImage.isPresent()) {
-                        tag.getImages().add(tagImage.get());
-                    }
-                    insertQuayLastModifiedIntoLastBuilt(tagItem, tag);
+                    quayTags = getAllQuayTags(repo);
+                } catch (ApiException e) {
+                    throw new CustomWebApplicationException("Could not get QuayTag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+            }
+            for (QuayTag tagItem : quayTags) {
+                try {
+                    final Tag tag = convertQuayTagToTag(tagItem, tool);
                     tags.add(tag);
                 } catch (IllegalAccessException | InvocationTargetException ex) {
                     LOG.error(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
-
         }
-
         String repository = tool.getNamespace() + "/" + tool.getName();
         updateTagsWithBuildInformation(repository, tags, tool);
 
         return tags;
     }
+
+    private Tag convertQuayTagToTag(QuayTag quayTag, Tool tool) throws InvocationTargetException, IllegalAccessException {
+        final Tag tag = new Tag();
+        BeanUtils.copyProperties(tag, quayTag);
+        Optional<Image> tagImage = getImageForTag(tool, tag, quayTag);
+        tagImage.ifPresent(image -> tag.getImages().add(image));
+        insertQuayLastModifiedIntoLastBuilt(quayTag, tag);
+        return tag;
+    }
+
 
     //TODO: If the repo has a lot of tags, then it needs to be paged through. Can get tag info individually, but then that's more API calls.
     private Optional<Image> getImageForTag(final Tool tool, final Tag tag, final QuayTag quayTag) {
@@ -173,6 +205,17 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return namespaces;
     }
 
+    public List<String> getRepositoryNamesFromNamespace(String namespace) {
+        try {
+            List<QuayRepo> repositories = repositoryApi.listRepos(null, null, null, null, null, null, namespace).getRepositories();
+            return repositories.stream().map(QuayRepo::getName).collect(Collectors.toList());
+        } catch (ApiException e) {
+            LOG.error("Could not retrieve repositories for: " + namespace);
+            return new ArrayList<>();
+        }
+    }
+
+
     @Override
     public List<Tool> getToolsFromNamespace(List<String> namespaces) {
         List<Tool> toolList = new ArrayList<>(0);
@@ -201,6 +244,29 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         }
 
         return toolList;
+    }
+
+    public Tool getToolFromNamespaceAndRepo(String namespace, String repository) {
+        try {
+            String name = namespace + "/" + repository;
+            QuayRepo repo = repositoryApi.getRepo(name, true);
+
+            Tool tool = new Tool();
+            // interesting, this relies upon our container object having the same fields
+            // as quay.io's repositories
+
+            // PLEASE NOTE : is_public is from quay.  It has NO connection to our is_published!
+            tool.setName(repo.getName());
+            tool.setNamespace(repo.getNamespace());
+            // tag all of these with where they came from
+            tool.setRegistry(Registry.QUAY_IO.getDockerPath());
+            // not quite correct, they could be mixed but how can we tell from quay?
+            tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+            return tool;
+        } catch (ApiException ex) {
+            LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
+            throw new CustomWebApplicationException("Could not get repository from Quay.io", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @Override
