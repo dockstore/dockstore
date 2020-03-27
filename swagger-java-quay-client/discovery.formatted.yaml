@@ -4713,9 +4713,25 @@ paths:
           name: specificTag
           required: false
           type: string
+        - description: Filters the tags to the specific tag.
+          in: query
+          name: onlyActiveTags
+          required: false
+          type: boolean
       responses:
         '200':
           description: Successful invocation
+          schema:
+            type: object
+            properties:
+              tags:
+                type: array
+                items:
+                  $ref: '#/definitions/QuayTag'
+              has_additional:
+                type: boolean
+              page:
+                type: integer
         '400':
           description: Bad Request
           schema:
