@@ -1147,5 +1147,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         }
 
+        // Should be able to refresh a workflow with a frozen version without throwing an error
+        workflowsApi.refresh(githubWorkflow.getId());
     }
 }
