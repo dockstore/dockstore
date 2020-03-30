@@ -31,13 +31,11 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import org.apache.http.HttpStatus;
 import org.gitlab.api.GitlabAPI;
 import org.gitlab.api.TokenType;
 import org.gitlab.api.models.GitlabBranch;
@@ -101,9 +99,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return reposByGitUrl;
         } catch (IOException e) {
-            LOG.error("could not find projects due to ", e);
-            throw new CustomWebApplicationException("could not read projects from gitlab, please re-link your gitlab token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return this.handleGetWorkflowGitUrl2RepositoryIdError(e);
         }
+    }
+
+    @Override
+    public String getName() {
+        return "GitLab";
     }
 
     @Override
