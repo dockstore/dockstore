@@ -83,9 +83,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private final String bitbucketClientID;
     private final Class<T> entityClass;
 
-    private final double dockstoreYMLV11 = 1.1;
-    private final double dockstoreYMLV12 = 1.2;
-
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
         this.client = client;
         this.sessionFactory = sessionFactory;

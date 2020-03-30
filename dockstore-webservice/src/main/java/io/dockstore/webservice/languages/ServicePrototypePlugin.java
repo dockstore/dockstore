@@ -23,13 +23,14 @@ import java.util.stream.Collectors;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.common.yaml.DockstoreYaml12;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
+import io.dockstore.common.yaml.Service12;
 import io.dockstore.language.RecommendedLanguageInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.error.YAMLException;
 
 public class ServicePrototypePlugin implements RecommendedLanguageInterface {
     private static final Logger LOG = LoggerFactory.getLogger(ServicePrototypePlugin.class);
@@ -50,17 +51,19 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
 
         Map<String, String> validationMessageObject = new HashMap<>();
 
-        Yaml yaml = new Yaml();
-        List<String> files;
         boolean isValid = true;
         try {
-            Map<String, Object> map = yaml.load(contents);
-            Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
-            if (serviceObject == null) {
-                validationMessageObject.put(initialPath, "The key 'service' does not exist.");
+            final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(contents);
+            final List<Service12> services = dockstoreYaml12.getServices();
+            if (services.isEmpty()) {
+                validationMessageObject.put(initialPath, "No services are defined.");
+                isValid = false;
+            } else if (services.size() > 1) {
+                // TODO: Temporary; followup with https://github.com/dockstore/dockstore/issues/3356
+                validationMessageObject.put(initialPath, "No more than one service can be defined in .dockstore.yml.");
                 isValid = false;
             } else {
-                files = (List<String>)serviceObject.get("files");
+                final List<String> files = services.get(0).getFiles();
                 if (files == null) {
                     validationMessageObject.put(initialPath, "The key 'files' does not exist.");
                     isValid = false;
@@ -74,7 +77,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
                     }
                 }
             }
-        } catch (YAMLException | ClassCastException ex) {
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             validationMessageObject.put(initialPath, ex.getMessage());
             isValid = false;
         }
@@ -109,15 +112,17 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
     public WorkflowMetadata parseWorkflowForMetadata(String initialPath, String contents,
         Map<String, Pair<String, GenericFileType>> indexedFiles) {
         WorkflowMetadata metadata = new WorkflowMetadata();
-        Yaml yaml = new Yaml();
         try {
-            Map<String, Object> map = yaml.load(contents);
-            Map<String, Object> serviceObject = (Map<String, Object>)map.get("service");
-            metadata.setAuthor((String)serviceObject.get("author"));
-            metadata.setDescription((String)serviceObject.get("description"));
-            metadata.setEmail((String)serviceObject.get("email"));
-        } catch (YAMLException | ClassCastException ex) {
-            LOG.info("Error parsing service metadata.", ex);
+            final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(contents);
+            // TODO: Temporary; followup with https://github.com/dockstore/dockstore/issues/3356
+            final List<Service12> services = dockstoreYaml12.getServices();
+            if (!services.isEmpty()) {
+                final Service12 service12 = services.get(0);
+                metadata.setAuthor(service12.getAuthor());
+                metadata.setDescription(service12.getDescription());
+            }
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            LOG.error("Error parsing service metadata.", ex);
         }
         return metadata;
     }
