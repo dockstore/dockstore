@@ -191,57 +191,69 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
             }
 
-            // Update source files for each version
-            Map<String, SourceFile> existingFileMap = new HashMap<>();
-            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getAbsolutePath(), file));
+            // Update sourcefiles
+            updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
+        }
+    }
 
-            for (SourceFile file : version.getSourceFiles()) {
-                String fileKey = file.getType().toString() + file.getAbsolutePath();
-                SourceFile existingFile = existingFileMap.get(fileKey);
-                if (existingFileMap.containsKey(fileKey)) {
-                    List<Checksum> checksums = new ArrayList<>();
-                    Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-                    if (sha.isPresent()) {
-                        checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                        if (existingFile.getChecksums() == null) {
-                            existingFile.setChecksums(checksums);
-                        } else {
-                            existingFile.getChecksums().clear();
-                            existingFileMap.get(fileKey).getChecksums().addAll(checksums);
+    /**
+     * Updates the sourcefiles in the database to match the sourcefiles on the remote
+     * @param existingVersion
+     * @param remoteVersion
+     * @return WorkflowVersion with updated sourcefiles
+     */
+    private WorkflowVersion updateDBVersionSourceFilesWithRemoteVersionSourceFiles(WorkflowVersion existingVersion, WorkflowVersion remoteVersion) {
+        // Update source files for each version
+        Map<String, SourceFile> existingFileMap = new HashMap<>();
+        existingVersion.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getAbsolutePath(), file));
 
-                        }
-                    }
-                    existingFile.setContent(file.getContent());
-                } else {
-                    final long fileID = fileDAO.create(file);
-                    final SourceFile fileFromDB = fileDAO.findById(fileID);
+        for (SourceFile file : remoteVersion.getSourceFiles()) {
+            String fileKey = file.getType().toString() + file.getAbsolutePath();
+            SourceFile existingFile = existingFileMap.get(fileKey);
+            if (existingFileMap.containsKey(fileKey)) {
+                List<Checksum> checksums = new ArrayList<>();
+                Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+                if (sha.isPresent()) {
+                    checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                    if (existingFile.getChecksums() == null) {
+                        existingFile.setChecksums(checksums);
+                    } else {
+                        existingFile.getChecksums().clear();
+                        existingFileMap.get(fileKey).getChecksums().addAll(checksums);
 
-                    Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-                    if (sha.isPresent()) {
-                        fileFromDB.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                    }
-                    workflowVersionFromDB.getSourceFiles().add(fileFromDB);
-                }
-            }
-
-            // Remove existing files that are no longer present on remote
-            for (Map.Entry<String, SourceFile> entry : existingFileMap.entrySet()) {
-                boolean toDelete = true;
-                for (SourceFile file : version.getSourceFiles()) {
-                    if (entry.getKey().equals(file.getType().toString() + file.getAbsolutePath())) {
-                        toDelete = false;
                     }
                 }
-                if (toDelete) {
-                    workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
-                }
-            }
+                existingFile.setContent(file.getContent());
+            } else {
+                final long fileID = fileDAO.create(file);
+                final SourceFile fileFromDB = fileDAO.findById(fileID);
 
-            // Update the validations
-            for (Validation versionValidation : version.getValidations()) {
-                workflowVersionFromDB.addOrUpdateValidation(versionValidation);
+                Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+                if (sha.isPresent()) {
+                    fileFromDB.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                }
+                existingVersion.getSourceFiles().add(fileFromDB);
             }
         }
+
+        // Remove existing files that are no longer present on remote
+        for (Map.Entry<String, SourceFile> entry : existingFileMap.entrySet()) {
+            boolean toDelete = true;
+            for (SourceFile file : remoteVersion.getSourceFiles()) {
+                if (entry.getKey().equals(file.getType().toString() + file.getAbsolutePath())) {
+                    toDelete = false;
+                }
+            }
+            if (toDelete) {
+                existingVersion.getSourceFiles().remove(entry.getValue());
+            }
+        }
+
+        // Update the validations
+        for (Validation versionValidation : remoteVersion.getValidations()) {
+            existingVersion.addOrUpdateValidation(versionValidation);
+        }
+        return existingVersion;
     }
 
     /**
@@ -424,20 +436,28 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow) {
         try {
             // Create version and pull relevant files
-            WorkflowVersion workflowVersion = gitHubSourceCodeRepo
+            WorkflowVersion remoteWorkflowVersion = gitHubSourceCodeRepo
                     .createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
-            workflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
-            workflow.getWorkflowVersions().stream().filter(wv -> wv.equals(workflowVersion)).findFirst().ifPresentOrElse(existing -> {
-                existing.setWorkflowPath(workflowVersion.getWorkflowPath());
-                existing.setLastModified(workflowVersion.getLastModified());
-                existing.setLegacyVersion(workflowVersion.isLegacyVersion());
-                existing.setAliases(workflowVersion.getAliases());
-                existing.setSubClass(workflowVersion.getSubClass());
-                existing.getSourceFiles().clear();
-                existing.getSourceFiles().addAll(workflowVersion.getSourceFiles());
-            }, () -> workflow.addWorkflowVersion(workflowVersion));
+            remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
 
-            LOG.info("Version " + workflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
+            // So we have workflowversion which is the new version, we want to update the version and associated source files
+            Optional<WorkflowVersion> existingWorkflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.equals(remoteWorkflowVersion)).findFirst();
+
+            // Update existing source files, add new source files, remove deleted sourcefiles
+            if (existingWorkflowVersion.isPresent()) {
+                // Copy over workflow version level information
+                existingWorkflowVersion.get().setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
+                existingWorkflowVersion.get().setLastModified(remoteWorkflowVersion.getLastModified());
+                existingWorkflowVersion.get().setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
+                existingWorkflowVersion.get().setAliases(remoteWorkflowVersion.getAliases());
+                existingWorkflowVersion.get().setSubClass(remoteWorkflowVersion.getSubClass());
+
+                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion.get(), remoteWorkflowVersion);
+            } else {
+                workflow.addWorkflowVersion(remoteWorkflowVersion);
+            }
+
+            LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
             String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
             LOG.info(msg);
