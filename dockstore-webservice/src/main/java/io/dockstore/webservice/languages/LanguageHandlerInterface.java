@@ -52,7 +52,11 @@ import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.swagger.quay.client.ApiClient;
+import io.swagger.quay.client.ApiException;
 import io.swagger.quay.client.Configuration;
+import io.swagger.quay.client.api.RepositoryApi;
+import io.swagger.quay.client.model.QuayRepo;
+import io.swagger.quay.client.model.QuayTag;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
@@ -504,46 +508,19 @@ public interface LanguageHandlerInterface {
     }
 
     default Set<Image> getImageResponseFromQuay(String repo, String tagName) {
-        final String tagUrl = QUAY_URL + "repository/" + repo + "/tag/" + "?specificTag=" + tagName;
-        Optional<String> response;
-        Map<String, String> errorMap = new HashMap<>();
-
-        try {
-            URL url = new URL(tagUrl);
-            response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
-
-        } catch (IOException ex) {
-            LOG.error("Unable to get response from Quay", ex);
-            response = Optional.empty();
-        }
-
         Set<Image> quayImages = new HashSet<>();
-        if (response.isPresent()) {
-            Map<String, ArrayList<Map<String, String>>> map = new HashMap<>();
-            String errorKey = "error_message";
+        RepositoryApi api = new RepositoryApi(API_CLIENT);
+        try {
 
-            map = (Map<String, ArrayList<Map<String, String>>>)GSON.fromJson(response.get(), map.getClass());
-            errorMap = (Map<String, String>)GSON.fromJson(response.get(), errorMap.getClass());
-            if (errorMap.get(errorKey) != null) {
-                LOG.error("Error response from Quay: " + errorMap.get(errorKey));
-            } else {
-                try {
-                    final List<Map<String, String>> array = map.get("tags");
-
-                    for (Map<String, String> tag : array) {
-                        final String digest = tag.get("manifest_digest");
-                        final String imageID = tag.get("image_id");
-                        List<Checksum> checksums = new ArrayList<>();
-                        checksums.add(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-                        quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO));
-                    }
-
-                } catch (IndexOutOfBoundsException | NullPointerException ex) {
-                    LOG.error("Could not get checksum information for " + repo, ex);
-                }
-            }
-        } else {
-            LOG.error("Could not get response from Quay for " + repo);
+            final QuayRepo quayRepo = api.getRepo(repo, false);
+            quayRepo.getTags().values().stream();
+            QuayTag tag = quayRepo.getTags().get(tagName);
+            final String digest = tag.getManifestDigest();
+            final String imageID = tag.getImageId();
+            List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
+            quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO));
+        } catch (ApiException ex) {
+            LOG.error("Could not read from " + repo, ex);
         }
         return quayImages;
     }
