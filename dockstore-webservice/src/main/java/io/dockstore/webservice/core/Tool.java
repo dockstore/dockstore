@@ -170,7 +170,7 @@ public class Tool extends Entry<Tool, Tag> {
     @Override
     public String getDefaultVersion() {
         if (actualDefaultVersion != null) {
-            return actualDefaultVersion.name;
+            return actualDefaultVersion.getName();
         } else {
             return null;
         }
