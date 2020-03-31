@@ -236,7 +236,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
-
     public void setConceptDoi(String conceptDoi) {
         this.conceptDoi = conceptDoi;
     }
@@ -476,6 +475,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     @JsonProperty
     public abstract Set<T> getWorkflowVersions();
+
+    @JsonProperty("actualDefaultVersionName")
+    public abstract String getActualDefaultVersionName();
 
     @JsonProperty
     public void setWorkflowVersions(Set<T> set) {

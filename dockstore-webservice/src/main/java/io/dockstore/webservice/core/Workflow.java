@@ -28,9 +28,11 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
@@ -125,6 +127,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     private final SortedSet<WorkflowVersion> workflowVersions;
+
+    @JsonIgnore
+    @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id")
+    private WorkflowVersion actualDefaultVersion;
 
     protected Workflow() {
         workflowVersions = new TreeSet<>();
@@ -225,6 +232,15 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     //TODO: odd side effect, this means that if the descriptor language is set wrong, we will get or set the wrong the default paths
     public void setDefaultWorkflowPath(String defaultWorkflowPath) {
         getDefaultPaths().put(this.getDescriptorType().getFileType(), defaultWorkflowPath);
+    }
+
+    @JsonProperty("actualDefaultVersionName")
+    public String getActualDefaultVersionName() {
+        if (actualDefaultVersion != null) {
+            return actualDefaultVersion.name;
+        } else {
+            return null;
+        }
     }
 
     @JsonProperty

@@ -88,7 +88,10 @@
             <column name="checksums" type="varchar"/>
         </addColumn>
     </changeSet>
+<<<<<<< HEAD
   
+=======
+>>>>>>> Add new column, temporarily add new property
     <changeSet author="natalieperez (generated)" id="addDockerHubColumnsToImages">
         <addColumn tableName="image">
             <column name="architecture" type="varchar(255 BYTE)"/>
@@ -97,10 +100,23 @@
             <column name="os" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
-
     <changeSet author="esoth (generated)" id="addUserOrcidIDColumn">
         <addColumn tableName="enduser">
             <column name="orcid" type="varchar(255 BYTE)"/>
         </addColumn>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="1585679980673-1">
+        <addColumn tableName="service">
+            <column name="actualdefaultversion" type="int8"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="actualdefaultversion" type="int8"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="actualdefaultversion" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="workflow" constraintName="fk_workflow_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="service" constraintName="fk_service_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="tool" constraintName="fk_tool_default_tag" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tag"/>
     </changeSet>
 </databaseChangeLog>
