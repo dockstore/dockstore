@@ -311,7 +311,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
          */
         boolean statsCollection = false;
         if (statsCollection) {
-            List<Workflow> workflows = userDAO.findById(user.getId()).getEntries().stream().filter(entry -> entry instanceof Workflow)
+            List<Workflow> workflows = bioWorkflowDAO.findMyEntries(user.getId()).stream()
                 .map(obj -> (Workflow)obj).collect(Collectors.toList());
             for (Workflow workflow : workflows) {
                 workflowGitUrl2Name.put(workflow.getGitUrl(), workflow.getOrganization() + "/" + workflow.getRepository());
