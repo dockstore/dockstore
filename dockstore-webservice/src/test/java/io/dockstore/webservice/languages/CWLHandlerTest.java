@@ -32,7 +32,7 @@ public class CWLHandlerTest {
     }
 
     @Test
-    public void testDeterminingImageRegistry () {
+    public void testDeterminingImageRegistry() {
         CWLHandler cwlHandler = new CWLHandler();
         Assert.assertEquals("Should be Docker Hub", Registry.DOCKER_HUB, cwlHandler.determineImageRegistry("python:2.7").get());
         Assert.assertEquals("Should be Docker Hub", Registry.DOCKER_HUB, cwlHandler.determineImageRegistry("debian:jessie").get());

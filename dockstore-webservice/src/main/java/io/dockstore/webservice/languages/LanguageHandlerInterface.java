@@ -361,7 +361,7 @@ public interface LanguageHandlerInterface {
             return Optional.of(Registry.GITLAB);
         } else if (GOOGLE_PATTERN.matcher(image).matches()) {
             return Optional.empty();
-        } else if(AMAZON_ECR_PATTERN.matcher(image).matches()) {
+        } else if (AMAZON_ECR_PATTERN.matcher(image).matches()) {
             return Optional.of(Registry.AMAZON_ECR);
         } else if ((DOCKER_HUB.matcher(image).matches() || OFFICIAL_DOCKER_HUB_IMAGE.matcher(image).matches())) {
             return Optional.of(Registry.DOCKER_HUB);
