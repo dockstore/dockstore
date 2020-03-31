@@ -234,8 +234,8 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         getDefaultPaths().put(this.getDescriptorType().getFileType(), defaultWorkflowPath);
     }
 
-    @JsonProperty("actualDefaultVersionName")
-    public String getActualDefaultVersionName() {
+    @Override
+    public String getDefaultVersion() {
         if (actualDefaultVersion != null) {
             return actualDefaultVersion.name;
         } else {

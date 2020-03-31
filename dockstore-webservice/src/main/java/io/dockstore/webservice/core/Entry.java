@@ -297,9 +297,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
 
-    public String getDefaultVersion() {
-        return defaultVersion;
-    }
+    public abstract String getDefaultVersion();
 
     public void setDefaultVersion(String defaultVersion) {
         this.defaultVersion = defaultVersion;
@@ -475,9 +473,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     @JsonProperty
     public abstract Set<T> getWorkflowVersions();
-
-    @JsonProperty("actualDefaultVersionName")
-    public abstract String getActualDefaultVersionName();
 
     @JsonProperty
     public void setWorkflowVersions(Set<T> set) {

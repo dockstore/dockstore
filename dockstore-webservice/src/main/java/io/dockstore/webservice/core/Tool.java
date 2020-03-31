@@ -167,15 +167,14 @@ public class Tool extends Entry<Tool, Tag> {
         workflowVersions = new TreeSet<>();
     }
 
-    @JsonProperty("actualDefaultVersionName")
-    public String getActualDefaultVersionName() {
+    @Override
+    public String getDefaultVersion() {
         if (actualDefaultVersion != null) {
             return actualDefaultVersion.name;
         } else {
             return null;
         }
     }
-
 
     @JsonProperty
     @Override
