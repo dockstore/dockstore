@@ -244,7 +244,7 @@ public final class ToolsImplCommon {
         for (Image image : images) {
             ImageData imageData = new ImageData();
             imageData.setImageType(ImageType.DOCKER);
-            imageData.setRegistryHost(image.getImageRegistry().toString());
+            imageData.setRegistryHost(image.getImageRegistry().getDockerPath());
             imageData.setImageName(constructName(Arrays.asList(image.getRepository(), image.getTag())));
             List<Checksum> trsChecksums = new ArrayList<>();
             List<io.dockstore.webservice.core.Checksum> checksumList = image.getChecksums();

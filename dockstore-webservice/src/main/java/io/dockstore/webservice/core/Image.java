@@ -28,7 +28,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.Table;
 
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
@@ -38,7 +37,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @ApiModel(value = "Image", description = "Image(s) associated with tags and workflow versions")
-@Table(name = "image")
 @SuppressWarnings("checkstyle:magicnumber")
 
 public class Image {
@@ -70,8 +68,12 @@ public class Image {
     private Registry imageRegistry;
 
     @Column()
-    @ApiModelProperty(value = "For each image version, DockerHub can provide multiple images depending on the architecture/OS", position = 6)
+    @ApiModelProperty(value = "Stores the architecture and, if available, the variant of an image. Separated by a / and only applicable to Docker Hub", position = 6)
     private String architecture;
+
+    @Column()
+    @ApiModelProperty(value = "Stores the OS and, if available the OS version. Separated by a / and only applicable to Docker Hub", position = 7)
+    private String os;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -139,6 +141,14 @@ public class Image {
 
     public void setArchitecture(final String architecture) {
         this.architecture = architecture;
+    }
+
+    public String getOs() {
+        return os;
+    }
+
+    public void setOs(final String os) {
+        this.os = os;
     }
 
 }

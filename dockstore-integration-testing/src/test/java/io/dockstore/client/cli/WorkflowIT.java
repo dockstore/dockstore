@@ -868,8 +868,8 @@ public class WorkflowIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
 
-        // Check image info is grabbed
-        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", "cwl", "/hello_world.cwl", "1.0.1");
+        //Check image info is grabbed
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", DescriptorType.CWL.toString(), "/hello_world.cwl", "1.0.1");
         assertEquals("Should only be one image in this workflow", 1, version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
@@ -877,11 +877,11 @@ public class WorkflowIT extends BaseIT {
         verifyTRSImageConversion(versions, "1.0.1", 1);
 
         // Test that a workflow version containing an unversioned image isn't saved
-        WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", "cwl", "/cwl/workflow_docker.cwl", "1.0");
+        WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", DescriptorType.CWL.toString(), "/cwl/workflow_docker.cwl", "1.0");
         assertEquals("Should not have grabbed any images", 0, workflowVersionWithoutVersionedImage.getImages().size());
 
         // Test that a workflow version that contains duplicate images will not store multiples
-        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", "cwl", "/main.cwl", "1.0");
+        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", DescriptorType.CWL.toString(), "/main.cwl", "1.0");
         assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());
         verifyImageChecksumsAreSaved(versionWithDuplicateImages);
         versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
@@ -1004,7 +1004,8 @@ public class WorkflowIT extends BaseIT {
 
         // Test that a version of an official dockerhub image will get an image per architecture. (python 2.7) Also check that regular
         // DockerHub images are grabbed correctly broadinstitute/gatk:4.0.1.1
-        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", "wdl", "/JointGenotypingWf.wdl", "1.1.2");
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", DescriptorType.WDL.toString(), "/JointGenotypingWf.wdl", "1.1.2");
+        WorkflowVersion version2 = snapshotWorkflowVersion(workflowsApi, "NatalieEO/broad-prod-wgs-germline-snps-indels", DescriptorType.WDL.toString(), "/JointGenotypingWf.wdl", "1.1.2");
         version.getImages();
         assertEquals("Should 10 images in this workflow", 10, version.getImages().size());
         verifyImageChecksumsAreSaved(version);

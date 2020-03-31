@@ -51,6 +51,8 @@ import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.swagger.quay.client.ApiClient;
+import io.swagger.quay.client.Configuration;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
@@ -69,6 +71,13 @@ public interface LanguageHandlerInterface {
     String DOCKERHUB_URL = AbstractImageRegistry.DOCKERHUB_URL;
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
+    ApiClient API_CLIENT = Configuration.getDefaultApiClient();
+    Pattern AMAZON_ECR_PATTERN = Pattern.compile("(.+)(\\.dkr\\.ecr\\.)(.+)(\\.amazonaws.com/)(.+)");
+    Pattern GOOGLE_PATTERN = Pattern.compile("((us|eu|asia)(.))?(gcr\\.io)(.+)");
+    // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
+    Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*):(.+)");
+    //    // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
+    Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+:(.+)");
 
     /**
      * Parses the content of the primary descriptor to get author, email, and description
@@ -343,12 +352,28 @@ public interface LanguageHandlerInterface {
         return url;
     }
 
-    // TODO: Implement for DockerHub, then gitlab and seven bridges;
+    default Optional<Registry> determineImageRegistry(String image) {
+        if (image.startsWith("quay.io/")) {
+            return Optional.of(Registry.QUAY_IO);
+        } else if (image.startsWith("images.sbgenomics")) {
+            return Optional.of(Registry.SEVEN_BRIDGES);
+        } else if (image.startsWith("registry.gitlab.com")) {
+            return Optional.of(Registry.GITLAB);
+        } else if (GOOGLE_PATTERN.matcher(image).matches()) {
+            return Optional.empty();
+        } else if(AMAZON_ECR_PATTERN.matcher(image).matches()) {
+            return Optional.of(Registry.AMAZON_ECR);
+        } else if ((DOCKER_HUB.matcher(image).matches() || OFFICIAL_DOCKER_HUB_IMAGE.matcher(image).matches())) {
+            return Optional.of(Registry.DOCKER_HUB);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    // TODO: Implement then gitlab, seven bridges, amazon, google if possible;
     default Set<Image> getImagesFromRegistry(String toolsJSONTable) {
         List<Map<String, String>> dockerTools = new ArrayList<>();
         dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
-        Pattern amazonECRPattern = Pattern.compile("(.*\\.)(drk\\.ecr\\.)(.*\\.)(amazonaws.com)");
-        Pattern googlePattern = Pattern.compile("(.*)(gcr\\.io)(.*)");
 
         // Eliminate duplicate docker strings
         Set<String> dockerStrings = dockerTools.stream().map(dockertool -> dockertool.get("docker")).filter(Objects::nonNull).collect(Collectors.toSet());
@@ -356,11 +381,14 @@ public interface LanguageHandlerInterface {
         Set<Image> dockerImages = new HashSet<>();
 
         for (String image : dockerStrings) {
-            String[] parts = image.split("/");
             String[] splitDocker;
             String[] splitTag;
 
-            if (image.startsWith("quay.io/")) {
+            Optional<Registry> registry = determineImageRegistry(image);
+            Registry registryFound = registry.isEmpty() ? null : registry.get();
+            if (registry.isEmpty() || registryFound == Registry.AMAZON_ECR || registryFound == Registry.GITLAB) {
+                continue;
+            } else if (registryFound == Registry.QUAY_IO) {
                 try {
                     splitDocker = image.split("/");
                     splitTag = splitDocker[2].split(":");
@@ -373,23 +401,14 @@ public interface LanguageHandlerInterface {
                     String repo = splitDocker[1] + "/" + splitTag[0];
                     String tagName = splitTag[1];
                     Set<Image> quayImages = getImageResponseFromQuay(repo, tagName);
-                    if (!quayImages.isEmpty()) {
-                        dockerImages.addAll(quayImages);
-                    }
+                    dockerImages.addAll(quayImages);
+
                 } else {
                     LOG.error("Could not find image version specified for " + splitDocker[1]);
                 }
-            } else if (image.startsWith("images.sbgenomics")) {
-                continue;
-            } else if (image.startsWith("registry.gitlab.com")) {
-                continue;
-            } else if (googlePattern.matcher(image).matches()) {
-                continue;
-            } else if (amazonECRPattern.matcher(image).matches()) {
-                continue;
-            } else {
-                // DockerHub by process of elimination.
-                if (parts.length == 2) {
+            } else if (registryFound == Registry.DOCKER_HUB) {
+                // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
+                if (DOCKER_HUB.matcher(image).matches()) {
                     try {
                         splitDocker = image.split("/");
                         splitTag = splitDocker[1].split(":");
@@ -402,25 +421,20 @@ public interface LanguageHandlerInterface {
                     String tagName = splitTag[1];
 
                     Set<Image> dockerHubImages = getImagesFromDockerHub(repo, tagName);
-                    if (!dockerHubImages.isEmpty()) {
-                        dockerImages.addAll(dockerHubImages);
-                    }
+                    dockerImages.addAll(dockerHubImages);
                 } else {
-                    // if the path looks like debian:8 or debian (which are official DockerHub images)
                     try {
                         splitDocker = image.split(":");
                     } catch (ArrayIndexOutOfBoundsException ex) {
                         LOG.error("URL to image on DockerHub incomplete", ex);
                         continue;
                     }
-
+                    // <repo>:<version> -> python:2.7
                     String repo = "library" + "/" + splitDocker[0];
                     String tagName = splitDocker[1];
 
                     Set<Image> dockerHubImages = getImagesFromDockerHub(repo, tagName);
-                    if (!dockerHubImages.isEmpty()) {
-                        dockerImages.addAll(dockerHubImages);
-                    }
+                    dockerImages.addAll(dockerHubImages);
                 }
             }
         }
@@ -444,17 +458,16 @@ public interface LanguageHandlerInterface {
             }
 
             if (response.isPresent()) {
-                Gson gson = new Gson();
 
                 final String json = response.get();
-                errorMap = (Map<String, String>)gson.fromJson(json, errorMap.getClass());
+                errorMap = (Map<String, String>)GSON.fromJson(json, errorMap.getClass());
                 if (errorMap.get("message") != null) {
                     LOG.error("Error response from DockerHub: " + errorMap.get("message"));
                     return dockerHubImages;
                 }
 
                 // DockerHub seems to give empty results if something is not found, other fields are marked as null
-                dockerHubTag = gson.fromJson(json, DockerHubTag.class);
+                dockerHubTag = GSON.fromJson(json, DockerHubTag.class);
                 List<Results> results = Arrays.asList(dockerHubTag.getResults());
                 if (results.isEmpty()) {
                     LOG.error("Could not find any results for " + repo);
@@ -470,7 +483,12 @@ public interface LanguageHandlerInterface {
                             Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
                             List<Checksum> checksums = Collections.singletonList(checksum);
                             Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB);
-                            archImage.setArchitecture(dockerHubImage.getArchitecture());
+                            String os = dockerHubImage.getOs() == null ? "" : dockerHubImage.getOs();
+                            String osVersion = dockerHubImage.getOsVersion() == null ? "" : dockerHubImage.getOsVersion();
+                            String architecture = dockerHubImage.getArchitecture() == null ? "" : dockerHubImage.getArchitecture();
+                            String variant = dockerHubImage.getVariant() == null ? "" : dockerHubImage.getVariant();
+                            archImage.setArchitecture(architecture + "/" + variant);
+                            archImage.setOs(os + "/" + osVersion);
                             dockerHubImages.add(archImage);
                         });
                         versionFound = true;
@@ -485,7 +503,6 @@ public interface LanguageHandlerInterface {
         return dockerHubImages;
     }
 
-    //default Optional<String> getImageResponseFromQuay(String repo, String tag) {
     default Set<Image> getImageResponseFromQuay(String repo, String tagName) {
         final String tagUrl = QUAY_URL + "repository/" + repo + "/tag/" + "?specificTag=" + tagName;
         Optional<String> response;
