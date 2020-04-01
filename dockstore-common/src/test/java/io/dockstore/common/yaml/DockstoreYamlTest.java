@@ -172,4 +172,13 @@ public class DockstoreYamlTest {
         }
     }
 
+    @Test
+    public void testDifferentCaseForWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+        final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML);
+        final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
+        assertEquals(3, workflows.size());
+        assertEquals(1, workflows.stream().filter(w -> "CWL".equals(w.getSubclass())).count());
+        assertEquals(1, workflows.stream().filter(w -> "cwl".equals(w.getSubclass())).count());
+    }
+
 }

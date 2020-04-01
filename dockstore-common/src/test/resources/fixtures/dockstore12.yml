@@ -11,7 +11,7 @@ workflows:
      testParameterFiles:
        - /dockstore.cwl.json
   # A workflow with no name:
-  -  subclass: cwl
+  -  subclass: CWL
      primaryDescriptorPath: /Dockstore.cwl
      testParameterFiles:
        - /dockstore.cwl.json
