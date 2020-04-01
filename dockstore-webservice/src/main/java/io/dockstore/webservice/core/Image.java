@@ -28,6 +28,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Table;
 
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
@@ -37,6 +38,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @ApiModel(value = "Image", description = "Image(s) associated with tags and workflow versions")
+@Table(name = "image")
 @SuppressWarnings("checkstyle:magicnumber")
 
 public class Image {

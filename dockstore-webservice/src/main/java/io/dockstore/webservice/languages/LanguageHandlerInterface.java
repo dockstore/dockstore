@@ -80,7 +80,7 @@ public interface LanguageHandlerInterface {
     Pattern GOOGLE_PATTERN = Pattern.compile("((us|eu|asia)(.))?(gcr\\.io)(.+)");
     // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
     Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*):(.+)");
-    //    // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
+    // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
     Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+:(.+)");
 
     /**
@@ -390,7 +390,7 @@ public interface LanguageHandlerInterface {
 
             Optional<Registry> registry = determineImageRegistry(image);
             Registry registryFound = registry.isEmpty() ? null : registry.get();
-            if (registry.isEmpty() || registryFound == Registry.AMAZON_ECR || registryFound == Registry.GITLAB) {
+            if (registry == null || registryFound == Registry.AMAZON_ECR || registryFound == Registry.GITLAB) {
                 continue;
             } else if (registryFound == Registry.QUAY_IO) {
                 try {
@@ -481,18 +481,18 @@ public interface LanguageHandlerInterface {
                 for (Results r : results) {
                     if (r.getName().equals(tagName)) {
                         List<DockerHubImage> images = Arrays.asList(r.getImages());
-                        // For every version, DockerHub can provide multiple images, one for each architecture
+                        // For every version, DockerHub can provide multiple images, one for each os/architecture
                         images.stream().forEach(dockerHubImage -> {
                             final String manifestDigest = dockerHubImage.getDigest();
                             Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
                             List<Checksum> checksums = Collections.singletonList(checksum);
                             Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB);
-                            String os = dockerHubImage.getOs() == null ? "" : dockerHubImage.getOs();
-                            String osVersion = dockerHubImage.getOsVersion() == null ? "" : dockerHubImage.getOsVersion();
-                            String architecture = dockerHubImage.getArchitecture() == null ? "" : dockerHubImage.getArchitecture();
-                            String variant = dockerHubImage.getVariant() == null ? "" : dockerHubImage.getVariant();
-                            archImage.setArchitecture(architecture + "/" + variant);
-                            archImage.setOs(os + "/" + osVersion);
+
+                            String osInfo = formatDockerHubInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
+                            String archInfo = formatDockerHubInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
+                            archImage.setOs(osInfo);
+                            archImage.setArchitecture(archInfo);
+
                             dockerHubImages.add(archImage);
                         });
                         versionFound = true;
@@ -507,14 +507,28 @@ public interface LanguageHandlerInterface {
         return dockerHubImages;
     }
 
+    default String formatDockerHubInfo(String type, String version) {
+        String imageInfo = null;
+        if (type != null) {
+            imageInfo = type;
+            if (version != null) {
+                imageInfo = imageInfo + "/" + version;
+            }
+        }
+        return imageInfo;
+    }
+
     default Set<Image> getImageResponseFromQuay(String repo, String tagName) {
         Set<Image> quayImages = new HashSet<>();
         RepositoryApi api = new RepositoryApi(API_CLIENT);
         try {
 
             final QuayRepo quayRepo = api.getRepo(repo, false);
-            quayRepo.getTags().values().stream();
             QuayTag tag = quayRepo.getTags().get(tagName);
+            if (tag == null) {
+                LOG.error("Unable to get find tag: " + tagName + " from Quay in repo " + repo);
+                return quayImages;
+            }
             final String digest = tag.getManifestDigest();
             final String imageID = tag.getImageId();
             List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));

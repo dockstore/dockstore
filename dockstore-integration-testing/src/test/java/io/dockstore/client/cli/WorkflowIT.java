@@ -1005,8 +1005,6 @@ public class WorkflowIT extends BaseIT {
         // Test that a version of an official dockerhub image will get an image per architecture. (python 2.7) Also check that regular
         // DockerHub images are grabbed correctly broadinstitute/gatk:4.0.1.1
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", DescriptorType.WDL.toString(), "/JointGenotypingWf.wdl", "1.1.2");
-        WorkflowVersion version2 = snapshotWorkflowVersion(workflowsApi, "NatalieEO/broad-prod-wgs-germline-snps-indels", DescriptorType.WDL.toString(), "/JointGenotypingWf.wdl", "1.1.2");
-        version.getImages();
         assertEquals("Should 10 images in this workflow", 10, version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
