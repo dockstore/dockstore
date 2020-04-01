@@ -146,11 +146,15 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return collect;
         } catch (ApiException e) {
-            LOG.error("could not find projects due to ", e);
-            throw new CustomWebApplicationException("could not read projects from gitlab, please re-link your gitlab token",
-                HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return this.handleGetWorkflowGitUrl2RepositoryIdError(e);
         }
     }
+
+    @Override
+    public String getName() {
+        return "Bitbucket";
+    }
+
 
     /**
      * Gets arbitrary URLs that Bitbucket seems to use for pagination

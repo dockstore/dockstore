@@ -103,6 +103,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    public String getName() {
+        return "GitHub";
+    }
+
+    @Override
     public String readFile(String repositoryId, String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
 
@@ -237,8 +242,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> reposByGitURl.put(r.getSshUrl(), r.getFullName()));
             return reposByGitURl;
         } catch (IOException e) {
-            LOG.error("could not find projects due to ", e);
-            throw new CustomWebApplicationException("could not read projects from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return this.handleGetWorkflowGitUrl2RepositoryIdError(e);
         }
     }
 

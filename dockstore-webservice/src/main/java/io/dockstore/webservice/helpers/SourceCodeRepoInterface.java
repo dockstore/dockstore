@@ -86,6 +86,14 @@ public abstract class SourceCodeRepoInterface {
         return filename.matches("(?i:/?readme([.]md)?)");
     }
 
+    public Map<String, String> handleGetWorkflowGitUrl2RepositoryIdError(Exception e) {
+        LOG.error("could not find projects due to ", e);
+        throw new CustomWebApplicationException(
+                String.format("could not read projects from %s, please re-link your %s token", getName(), getName()), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    }
+
+    public abstract String getName();
+
     /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
