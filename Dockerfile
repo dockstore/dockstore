@@ -24,6 +24,7 @@ RUN apt-get update \
 RUN locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
+# copy the jar not ending in 's', to make sure we get don't get the one ending in 'sources'
 COPY --from=maven /dockstore-webservice/target/dockstore-webservice*[^s].jar /home
 
 # install dockerize
