@@ -24,7 +24,6 @@ import javax.validation.constraints.NotNull;
  * A workflow as described in a .dockstore.yml
  */
 public class YamlWorkflow {
-    @NotNull
     private String name;
     @NotNull
     private String subclass;

@@ -919,14 +919,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
-        // Delete existing version if it exists
-        Optional<WorkflowVersion> existingVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getReference(), gitBranchName)).findFirst();
-        if (existingVersion.isPresent()) {
-            workflow.removeWorkflowVersion(existingVersion.get());
-        }
-
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-        existingVersion.ifPresent(workflowVersion -> existingDefaults.put(gitReference, workflowVersion));
 
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml);
