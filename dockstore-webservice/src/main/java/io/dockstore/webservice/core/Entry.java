@@ -137,10 +137,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String email;
 
     @Column
-    @ApiModelProperty(value = "This is the default version of the entry", position = 7)
-    private String defaultVersion;
-
-    @Column
     @JsonProperty("is_published")
     @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
     private boolean isPublished;
@@ -296,16 +292,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
             this.setMetadataFromVersion(realDefaultVersion);
         }
     }
-
+    @ApiModelProperty(value = "This is the name of the default version of the entry", position = 7)
     public abstract String getDefaultVersion();
-
-    public void setDefaultVersion(String defaultVersion) {
-        this.defaultVersion = defaultVersion;
-    }
 
     @JsonIgnore
     public T getRealDefaultVersion() {
-        return this.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(this.defaultVersion)).findFirst().orElse(null);
+        return this.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(this.getDefaultVersion())).findFirst().orElse(null);
     }
 
     public void setAuthor(String newAuthor) {
@@ -490,14 +482,19 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return getWorkflowVersions().remove(workflowVersion);
     }
 
+    public abstract void setActualDefaultVersion(T version);
+
+    @JsonIgnore
+    public abstract T getActualDefaultVersion();
+
     /**
      * @param newDefaultVersion
      * @return true if defaultVersion is a valid Docker tag
      */
     public boolean checkAndSetDefaultVersion(String newDefaultVersion) {
-        for (Version version : this.getWorkflowVersions()) {
+        for (T version : this.getWorkflowVersions()) {
             if (Objects.equals(newDefaultVersion, version.getName())) {
-                this.setDefaultVersion(newDefaultVersion);
+                this.setActualDefaultVersion(version);
                 this.syncMetadataWithDefault();
                 return true;
             }

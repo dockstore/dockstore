@@ -50,7 +50,7 @@ public class JsonLdRetrieverTest {
         tag.addSourceFile(file);
         tag.setReference("master");
         tool.addWorkflowVersion(tag);
-        tool.setDefaultVersion("master");
+        tool.setActualDefaultVersion(tag);
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String schemaJson = gson.toJson(JsonLdRetriever.getSchema(tool));

@@ -106,7 +106,7 @@ public class PublicStateManagerIT {
         tag.updateVerified();
         tool.setRegistry("potato");
         tool.addWorkflowVersion(tag);
-        tool.setDefaultVersion("master");
+        tool.setActualDefaultVersion(tag);
         tool.setIsPublished(true);
         return tool;
     }

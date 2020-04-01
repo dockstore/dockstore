@@ -88,10 +88,6 @@
             <column name="checksums" type="varchar"/>
         </addColumn>
     </changeSet>
-<<<<<<< HEAD
-  
-=======
->>>>>>> Add new column, temporarily add new property
     <changeSet author="natalieperez (generated)" id="addDockerHubColumnsToImages">
         <addColumn tableName="image">
             <column name="architecture" type="varchar(255 BYTE)"/>
@@ -105,7 +101,7 @@
             <column name="orcid" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
-    <changeSet author="gluu (generated)" id="1585679980673-1">
+    <changeSet author="gluu (generated)" id="addNewDefaultVersionColumn">
         <addColumn tableName="service">
             <column name="actualdefaultversion" type="int8"/>
         </addColumn>
@@ -124,5 +120,10 @@
         <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.name</sql>
         <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.reference</sql>
         <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.name</sql>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="removeOldDefaultVersionColumn">
+        <dropColumn columnName="defaultversion" tableName="service"/>
+        <dropColumn columnName="defaultversion" tableName="tool"/>
+        <dropColumn columnName="defaultversion" tableName="workflow"/>
     </changeSet>
 </databaseChangeLog>

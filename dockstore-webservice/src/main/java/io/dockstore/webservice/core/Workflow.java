@@ -183,12 +183,22 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setGitUrl(getGitUrl());
         targetWorkflow.setDescriptorType(getDescriptorType());
         targetWorkflow.setDescriptorTypeSubclass(getDescriptorTypeSubclass());
-        targetWorkflow.setDefaultVersion(getDefaultVersion());
+        targetWorkflow.setActualDefaultVersion(this.getActualDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
         targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
         targetWorkflow.setIsChecker(isIsChecker());
         targetWorkflow.setConceptDoi(getConceptDoi());
         targetWorkflow.setMode(getMode());
+    }
+
+    @Override
+    public void setActualDefaultVersion(WorkflowVersion version) {
+        this.actualDefaultVersion = version;
+    }
+
+    @Override
+    public WorkflowVersion getActualDefaultVersion() {
+        return this.actualDefaultVersion;
     }
 
     @JsonProperty
@@ -236,8 +246,8 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Override
     public String getDefaultVersion() {
-        if (actualDefaultVersion != null) {
-            return actualDefaultVersion.getName();
+        if (this.getActualDefaultVersion() != null) {
+            return this.getActualDefaultVersion().getName();
         } else {
             return null;
         }

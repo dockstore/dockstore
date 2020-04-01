@@ -6487,7 +6487,7 @@ definitions:
       defaultVersion:
         type: "string"
         position: 7
-        description: "This is the default version of the entry"
+        description: "This is the name of the default version of the entry"
       is_published:
         type: "boolean"
         position: 8
@@ -6723,7 +6723,7 @@ definitions:
       defaultVersion:
         type: "string"
         position: 7
-        description: "This is the default version of the entry"
+        description: "This is the name of the default version of the entry"
       is_published:
         type: "boolean"
         position: 8
@@ -8202,7 +8202,7 @@ definitions:
       defaultVersion:
         type: "string"
         position: 7
-        description: "This is the default version of the entry"
+        description: "This is the name of the default version of the entry"
       is_published:
         type: "boolean"
         position: 8
