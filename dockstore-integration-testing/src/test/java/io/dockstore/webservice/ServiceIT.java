@@ -216,8 +216,9 @@ public class ServiceIT extends BaseIT {
 
         // Test user endpoints
         UsersApi usersApi = new UsersApi(webClient);
-        services = usersApi.userServices(service.getUsers().get(0).getId());
-        List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(service.getUsers().get(0).getId());
+        final long userId = service.getUsers().get(0).getId();
+        services = usersApi.userServices(userId);
+        List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(userId);
         assertEquals("There should be one service", 1, services.size());
         assertEquals("There should be no workflows", 0, workflows.size());
     }

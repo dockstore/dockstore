@@ -385,14 +385,13 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(user, userId);
 
         // get live entity
-        final User byId = this.userDAO.findById(user.getId());
-        final List<Tool> immutableList = byId.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
-            .collect(Collectors.toList());
+        final List<Tool> immutableList = toolDAO.findMyEntriesPublished(user.getId());
         final List<Tool> repositories = Lists.newArrayList(immutableList);
         repositories.removeIf(c -> !c.getIsPublished());
         return repositories;
     }
 
+    //TODO: should separate out services and workflows
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -403,9 +402,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(user, userId);
 
         // get live entity
-        final User byId = this.userDAO.findById(user.getId());
-        final List<Workflow> immutableList = byId.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
-            .collect(Collectors.toList());
+        final List<Workflow> immutableList = workflowDAO.findMyEntriesPublished(user.getId());
         final List<Workflow> repositories = Lists.newArrayList(immutableList);
         repositories.removeIf(workflow -> !workflow.getIsPublished());
         return repositories;
@@ -443,8 +440,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     // TODO: Only update the ones that have changed
     private void bulkUpsertTools(User authUser) {
-        Set<Entry> allEntries = authUser.getEntries();
-        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished())
+        List<Entry> toolEntries = toolDAO.findMyEntriesPublished(authUser.getId()).stream().map(Entry.class::cast)
                 .collect(Collectors.toList());
         if (!toolEntries.isEmpty()) {
             PublicStateManager.getInstance().bulkUpsert(toolEntries);
@@ -453,11 +449,10 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     // TODO: Only update the ones that have changed
     private void bulkUpsertWorkflows(User authUser) {
-        Set<Entry> allEntries = authUser.getEntries();
-        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
+        List<Entry> workflowEntries = workflowDAO.findMyEntriesPublished(authUser.getId()).stream().map(Entry.class::cast)
                 .collect(Collectors.toList());
-        if (!toolEntries.isEmpty()) {
-            PublicStateManager.getInstance().bulkUpsert(toolEntries);
+        if (!workflowEntries.isEmpty()) {
+            PublicStateManager.getInstance().bulkUpsert(workflowEntries);
         }
     }
 
@@ -524,7 +519,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     private List<Workflow> getWorkflows(User user) {
-        return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).collect(Collectors.toList());
+        return bioWorkflowDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
     }
 
     @GET
@@ -543,9 +538,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     private List<Workflow> getServices(User user) {
-        return user.getEntries().stream().filter(Service.class::isInstance).map(Service.class::cast).collect(Collectors.toList());
+        return serviceDAO.findMyEntries(user.getId()).stream().map(Service.class::cast).collect(Collectors.toList());
     }
-
     private List<Workflow> getStrippedServices(User user) {
         final List<Workflow> services = getServices(user);
         EntryVersionHelper.stripContent(services, this.userDAO);
@@ -553,14 +547,14 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
-        final List<Workflow> workflows = user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
+        final List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
         EntryVersionHelper.stripContent(workflows, this.userDAO);
         return workflows;
 
     }
 
     private List<Tool> getTools(User user) {
-        return user.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast).collect(Collectors.toList());
+        return toolDAO.findMyEntries(user.getId());
     }
 
     @GET
