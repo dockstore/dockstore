@@ -118,5 +118,11 @@
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="workflow" constraintName="fk_workflow_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="service" constraintName="fk_service_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="tool" constraintName="fk_tool_default_tag" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tag"/>
+        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.reference</sql>
+        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.name</sql>
+        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.reference</sql>
+        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.name</sql>
+        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.reference</sql>
+        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.name</sql>
     </changeSet>
 </databaseChangeLog>
