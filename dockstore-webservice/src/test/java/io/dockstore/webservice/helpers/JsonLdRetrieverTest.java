@@ -49,6 +49,7 @@ public class JsonLdRetrieverTest {
         file.setAbsolutePath("/dummy path");
         tag.addSourceFile(file);
         tag.setReference("master");
+        tag.setName("master");
         tool.addWorkflowVersion(tag);
         tool.setActualDefaultVersion(tag);
 
@@ -58,7 +59,7 @@ public class JsonLdRetrieverTest {
         File expected = new File(ResourceHelpers.resourceFilePath(json));
         String expectedJson = Files.asCharSource(expected, Charsets.UTF_8).read();
 
-        assertEquals(schemaJson, expectedJson);
+        assertEquals(expectedJson, schemaJson);
     }
 
     @Test
