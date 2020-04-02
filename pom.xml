@@ -1305,6 +1305,7 @@
                 <configuration>
                     <outputDirectory>${project.basedir}</outputDirectory>
                     <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
+                    <sortArtifactByName>true</sortArtifactByName>
                 </configuration>
                 <executions>
                     <execution>
