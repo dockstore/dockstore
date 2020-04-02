@@ -641,6 +641,24 @@ public class BasicIT extends BaseIT {
     }
 
     /**
+     * This tests that a tool's default version can be automatically set during refresh
+     */
+    @Test
+    public void testUpdateToolDefaultVersionDuringRefresh() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+        Assert.assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "latest", tool.getDefaultVersion());
+        tool = toolsApi.updateToolDefaultVersion(tool.getId(), "test");
+        Assert.assertEquals("Should be able to overwrite previous default version", "test", tool.getDefaultVersion());
+        tool = toolsApi.refresh(tool.getId());
+        Assert.assertEquals("Refresh should not have set it back to the automatic one", "test", tool.getDefaultVersion());
+
+    }
+
+    /**
      * Tests that a WDL file is supported
      */
     @Test
@@ -654,6 +672,7 @@ public class BasicIT extends BaseIT {
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and ispublished = 't'", long.class);
         Assert.assertEquals("the given entry should be published", 1, count);
     }
+
 
     /**
      * Tests the manual registration of a standard workflow
@@ -812,11 +831,11 @@ public class BasicIT extends BaseIT {
         existingTool = toolsApi.updateContainer(toolId, refresh);
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
-            + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master'", long.class);
+            + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null", long.class);
         Assert.assertEquals("the tool should have a default version set", 1, count);
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
-                + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master' and author = 'Dockstore Test User'",
+                + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null and author = 'Dockstore Test User'",
             long.class);
         Assert.assertEquals("the tool should have any metadata set (author)", 1, count2);
 

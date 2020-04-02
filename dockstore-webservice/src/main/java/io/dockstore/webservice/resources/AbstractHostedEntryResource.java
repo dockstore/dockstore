@@ -238,7 +238,10 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         validatedVersion.setParent(entry);
         long l = getVersionDAO().create(validatedVersion);
         entry.getWorkflowVersions().add(getVersionDAO().findById(l));
-        entry.checkAndSetDefaultVersion(validatedVersion.getName());
+        // Only set if the default version isn't already there
+        if (entry.getDefaultVersion() == null) {
+            entry.checkAndSetDefaultVersion(validatedVersion.getName());
+        }
         // Set entry-level metadata to this latest version
         // TODO: handle when latest version is removed
         entry.setActualDefaultVersion(validatedVersion);
@@ -361,6 +364,10 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkEntry(entry);
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
+        // If the version that's about to be deleted is the default version, unset it
+        if (entry.getActualDefaultVersion().getName().equals(version)) {
+            entry.setActualDefaultVersion(null);
+        }
         entry.getWorkflowVersions().removeIf(v -> Objects.equals(v.getName(), version));
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
         return entry;
