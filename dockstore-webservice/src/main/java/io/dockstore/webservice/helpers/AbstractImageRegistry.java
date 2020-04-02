@@ -81,6 +81,7 @@ public abstract class AbstractImageRegistry {
     public static final String DOCKERHUB_URL = "https://hub.docker.com/v2/";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractImageRegistry.class);
     private static final String GITLAB_URL = "https://gitlab.com/api/v4/";
+    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
 
     /**
@@ -675,9 +676,21 @@ public abstract class AbstractImageRegistry {
         // copy content over to existing files
         for (SourceFile oldFile : oldFilesTempSet) {
             boolean found = false;
+            List<Checksum> checksums = new ArrayList<>();
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
+
+                    Optional<String> sha = FileFormatHelper.calcSHA1(oldFile.getContent());
+                    if(sha.isPresent()) {
+                        checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                        if (oldFile.getChecksums() == null) {
+                            oldFile.setChecksums(checksums);
+                        } else {
+                            oldFile.getChecksums().clear();
+                            oldFile.getChecksums().addAll(checksums);
+                        }
+                    }
                     newFiles.remove(newFile);
                     found = true;
                     break;
@@ -693,6 +706,10 @@ public abstract class AbstractImageRegistry {
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
+            Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+            if (sha.isPresent()) {
+                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+            }
             tag.addSourceFile(file);
         }
 
