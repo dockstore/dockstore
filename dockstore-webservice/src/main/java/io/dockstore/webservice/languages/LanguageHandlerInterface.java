@@ -390,7 +390,7 @@ public interface LanguageHandlerInterface {
 
             Optional<Registry> registry = determineImageRegistry(image);
             Registry registryFound = registry.isEmpty() ? null : registry.get();
-            if (registry == null || registryFound == Registry.AMAZON_ECR || registryFound == Registry.GITLAB) {
+            if (registryFound == null || registryFound == Registry.AMAZON_ECR || registryFound == Registry.GITLAB) {
                 continue;
             } else if (registryFound == Registry.QUAY_IO) {
                 try {
