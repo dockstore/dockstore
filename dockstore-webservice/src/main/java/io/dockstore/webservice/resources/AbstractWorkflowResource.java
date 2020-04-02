@@ -454,6 +454,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.get().setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
                 existingWorkflowVersion.get().setAliases(remoteWorkflowVersion.getAliases());
                 existingWorkflowVersion.get().setSubClass(remoteWorkflowVersion.getSubClass());
+                existingWorkflowVersion.get().setCommitID(remoteWorkflowVersion.getCommitID());
 
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion.get(), remoteWorkflowVersion);
             } else {
