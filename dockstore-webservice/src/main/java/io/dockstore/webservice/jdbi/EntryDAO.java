@@ -154,6 +154,14 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId").setParameter("userId", userId));
     }
 
+    public List<T> findMyEntries(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId").setParameter("userId", userId));
+    }
+
+    public List<T> findMyEntriesPublished(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId").setParameter("userId", userId));
+    }
+
     public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
         return findAllPublished(offset, limit, filter, sortCol, sortOrder, typeOfT);
     }

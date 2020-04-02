@@ -31,7 +31,8 @@ import io.swagger.annotations.ApiModel;
         @NamedQuery(name = "io.dockstore.webservice.core.Service.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteService(s.sourceControl, s.organization, s.repository, s.workflowName, s.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
                 + "FROM Service s LEFT JOIN s.workflowVersions v "
                 + "WHERE s.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
-                + "GROUP BY s.sourceControl, s.organization, s.repository, s.workflowName, s.dbUpdateDate")
+                + "GROUP BY s.sourceControl, s.organization, s.repository, s.workflowName, s.dbUpdateDate"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Service.getEntriesByUserId", query = "SELECT s FROM Service s WHERE s.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 public class Service extends Workflow {
 

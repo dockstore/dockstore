@@ -175,6 +175,11 @@ public class WDLHandlerTest {
             return null;
         }
 
+        @Override
+        public String getName() {
+            return "gatk";
+        }
+
         // From here on down these methods are not invoked in our tests
         @Override
         public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
