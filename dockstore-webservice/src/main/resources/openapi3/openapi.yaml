@@ -4297,6 +4297,55 @@ paths:
       - bearer: []
       tags:
       - workflows
+  /workflows/{workflowId}/refresh:
+    get:
+      description: Refresh one particular workflow.
+      operationId: refresh
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/refresh/{version}:
+    get:
+      description: Refresh one particular workflow version.
+      operationId: refreshVersion
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: version
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
 servers:
 - description: Current server when hosted on AWS
   url: /api

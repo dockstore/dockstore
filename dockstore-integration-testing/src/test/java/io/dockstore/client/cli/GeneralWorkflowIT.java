@@ -33,6 +33,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -144,6 +145,27 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
+
+        // Restub
+        workflow = workflowsApi.restub(workflow.getId());
+
+        // Refresh a single version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "master");
+        assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
+        assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
+        assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Refresh another version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "testCWL");
+        assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
+        assertTrue("Should have testCWL version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "testCWL")));
+
+        try {
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion");
+            fail("Should not be able to refresh a version that does not exist");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
+        }
     }
 
     /**
@@ -398,6 +420,30 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Publish workflow
         workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+
+        // Unpublish workflow
+        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+
+        // Restub
+        workflow = workflowsApi.restub(workflow.getId());
+
+        // Refresh a single version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "master");
+        assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
+        assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
+        assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Refresh another version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "cwl_import");
+        assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
+        assertTrue("Should have cwl_import version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "cwl_import")));
+
+        try {
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion");
+            fail("Should not be able to refresh a version that does not exist");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
+        }
     }
 
     @Test
@@ -775,7 +821,6 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testGitlab() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        UsersApi usersApi = new UsersApi(client);
 
         // refresh all and individual
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore.test.user2/dockstore-workflow-example", "testname", "cwl",
@@ -844,8 +889,28 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Should now be a WDL workflow
         final long count9 = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype='wdl'", long.class);
-        assertEquals("there should be no 1 wdl workflow" + count9, 1, count9);
+        assertEquals("there should be 1 wdl workflow" + count9, 1, count9);
 
+        // Restub
+        workflow = workflowsApi.restub(workflow.getId());
+
+        // Refresh a single version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "master");
+        assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
+        assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
+        assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Refresh another version
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "test");
+        assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
+        assertTrue("Should have test version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "test")));
+
+        try {
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion");
+            fail("Should not be able to refresh a version that does not exist");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
+        }
     }
 
     /**
@@ -1082,5 +1147,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         }
 
+        // Should be able to refresh a workflow with a frozen version without throwing an error
+        workflowsApi.refresh(githubWorkflow.getId());
     }
 }

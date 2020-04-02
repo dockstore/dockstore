@@ -367,7 +367,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -378,7 +378,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
-                references.add(getRef(ref, repository));
+                Triple<String, Date, String> referenceTriple = getRef(ref, repository);
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
+                    references.add(referenceTriple);
+                }
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
@@ -391,8 +394,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
             if (ref != null) {
-                WorkflowVersion version = setupWorkflowVersionsHelper(repositoryId, workflow, ref, existingWorkflow, existingDefaults,
-                    repository, null);
+                WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
+                    repository, null, versionName);
                 if (version != null) {
                     workflow.addWorkflowVersion(version);
                 }
@@ -470,17 +473,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Creates a workflow version for a specific branch/tag on GitHub
-     * @param repositoryId Unique repository ID (ex. dockstore/dockstore-ui2)
      * @param workflow Workflow object
      * @param ref Triple containing reference name, branch date, and SHA
      * @param existingWorkflow Optional existing workflow
      * @param existingDefaults Optional mapping of existing versions
      * @param repository GitHub repository object
      * @param dockstoreYml Dockstore YML sourcefile
+     * @param versionName Optional version name to refresh
      * @return WorkflowVersion for the given reference
      */
-    private WorkflowVersion setupWorkflowVersionsHelper(String repositoryId, Workflow workflow, Triple<String, Date, String> ref, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, GHRepository repository, SourceFile dockstoreYml) {
+    private WorkflowVersion setupWorkflowVersionsHelper(Workflow workflow, Triple<String, Date, String> ref, Optional<Workflow> existingWorkflow,
+        Map<String, WorkflowVersion> existingDefaults, GHRepository repository, SourceFile dockstoreYml, Optional<String> versionName) {
         LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
         // Initialize the workflow version
         WorkflowVersion version = initializeWorkflowVersion(ref.getLeft(), existingWorkflow, existingDefaults);
@@ -491,13 +494,25 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         DescriptorLanguage.FileType identifiedType = workflow.getFileType();
 
         if (workflow.getMode() == WorkflowMode.DOCKSTORE_YML) {
-            version = setupEntryFilesForGitHubVersion(ref, repository, version, workflow, existingDefaults, dockstoreYml);
-            if (version == null) {
-                return null;
+            if (versionName.isEmpty()) {
+                version = setupEntryFilesForGitHubVersion(ref, repository, version, workflow, existingDefaults, dockstoreYml);
+                if (version == null) {
+                    return null;
+                }
+                calculatedPath = version.getWorkflowPath();
+            } else {
+                // Legacy version refresh of Dockstore.yml workflow, so use existing path for version (instead of default path)
+                if (!existingDefaults.containsKey(versionName.get())) {
+                    String msg = "Cannot refresh version " + versionName.get() + ". Only existing legacy versions can be refreshed.";
+                    LOG.error(msg);
+                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                }
+                calculatedPath = existingDefaults.get(versionName.get()).getWorkflowPath();
+                version.setWorkflowPath(calculatedPath);
+                version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, existingDefaults);
             }
-            calculatedPath = version.getWorkflowPath();
         } else {
-            version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, repositoryId, existingDefaults);
+            version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, existingDefaults);
         }
 
         return versionValidation(version, workflow, calculatedPath);
@@ -542,12 +557,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param version Version to update
      * @param identifiedType Descriptor type of file
      * @param workflow Workflow for given version
-     * @param repositoryId Unique repository ID (ex. dockstore/dockstore-ui2)
      * @param existingDefaults Optional mapping of existing versions
      * @return Version with updated sourcefiles
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    private WorkflowVersion setupWorkflowFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, DescriptorLanguage.FileType identifiedType, Workflow workflow, String repositoryId, Map<String, WorkflowVersion> existingDefaults) {
+    private WorkflowVersion setupWorkflowFilesForVersion(String calculatedPath, Triple<String, Date, String> ref, GHRepository repository, WorkflowVersion version, DescriptorLanguage.FileType identifiedType, Workflow workflow, Map<String, WorkflowVersion> existingDefaults) {
         // Grab workflow file from github
         try {
             // Get contents of descriptor file and store
@@ -558,7 +572,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 file.setPath(calculatedPath);
                 file.setAbsolutePath(calculatedPath);
                 file.setType(identifiedType);
-                version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
+                version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
 
                 // Use default test parameter file if either new version or existing version that hasn't been edited
                 // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
@@ -922,6 +936,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
 
         // Create version with sourcefiles and validate
-        return setupWorkflowVersionsHelper(ghRepository.getFullName(), workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml);
+        return setupWorkflowVersionsHelper(workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml, Optional.empty());
     }
 }
