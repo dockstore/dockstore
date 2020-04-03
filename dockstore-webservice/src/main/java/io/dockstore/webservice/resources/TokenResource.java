@@ -671,8 +671,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         if (user != null) {
             // save the ORCID to the enduser table
-            user.setOrcid(orcid);
-            userDAO.clearCache();
+            User byId = userDAO.findById(user.getId());
+            byId.setOrcid(orcid);
 
             List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
 
