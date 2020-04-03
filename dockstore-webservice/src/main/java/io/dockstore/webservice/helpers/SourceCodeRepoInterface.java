@@ -364,7 +364,7 @@ public abstract class SourceCodeRepoInterface {
                             return branch.equals(reference);
                         }).findFirst();
                 firstWorkflowVersion.ifPresentOrElse(version -> entry.checkAndSetDefaultVersion(version.getName()), () -> {
-                    Version newestVersion = Collections.max(workflowVersions, Comparator.comparingInt(s -> s.getDbUpdateDate().getNanos()));
+                    Version newestVersion = Collections.max(workflowVersions, Comparator.comparingLong(s -> s.getDate().getTime()));
                     entry.setActualDefaultVersion(newestVersion);
                 });
             }

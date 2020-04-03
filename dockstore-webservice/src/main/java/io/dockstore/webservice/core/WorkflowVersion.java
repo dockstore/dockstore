@@ -88,6 +88,11 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     }
 
     @Override
+    public Date getDate() {
+        return this.getLastModified();
+    }
+
+    @Override
     public String getWorkingDirectory() {
         if (workflowPath != null && !workflowPath.isEmpty()) {
             return FilenameUtils.getPathNoEndSeparator(workflowPath);
