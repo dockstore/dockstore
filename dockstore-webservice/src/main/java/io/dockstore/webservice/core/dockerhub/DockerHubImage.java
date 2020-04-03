@@ -15,6 +15,8 @@
 
 package io.dockstore.webservice.core.dockerhub;
 
+import com.google.gson.annotations.SerializedName;
+
 public class DockerHubImage {
     private String osFeatures;
 
@@ -24,6 +26,7 @@ public class DockerHubImage {
 
     private String os;
 
+    @SerializedName("os_version")
     private String osVersion;
 
     private String digest;

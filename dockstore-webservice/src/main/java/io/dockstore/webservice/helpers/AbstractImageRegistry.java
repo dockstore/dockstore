@@ -377,11 +377,14 @@ public abstract class AbstractImageRegistry {
 
                     List<DockerHubImage> dockerHubImages = Arrays.asList(r.getImages());
                     List<Checksum> checksums = new ArrayList<>();
+                    // For every version, DockerHub can provide multiple images, one for each architecture
                     for (DockerHubImage i : dockerHubImages) {
                         final String manifestDigest = i.getDigest();
                         checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+                        Image image = new Image(checksums, repo, tag.getName(), r.getImageID(), Registry.DOCKER_HUB);
+                        image.setArchitecture(i.getArchitecture());
+                        tag.getImages().add(image);
                     }
-                    tag.getImages().add(new Image(checksums, repo, tag.getName(), r.getImageID(), Registry.DOCKER_HUB));
                     tags.add(tag);
                 }
 

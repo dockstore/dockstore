@@ -21,6 +21,7 @@ package io.dockstore.webservice;
 import java.util.List;
 import java.util.Objects;
 
+import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
@@ -28,7 +29,9 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
@@ -46,6 +49,8 @@ import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -90,6 +95,7 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), workflowRepo, "/Dockstore.wdl",
                 "foobar", "wdl", "/test.json");
@@ -98,9 +104,6 @@ public class WebhookIT extends BaseIT {
         workflow = workflowApi.refresh(workflow.getId());
         assertEquals("Workflow should be FULL mode", Workflow.ModeEnum.FULL, workflow.getMode());
         assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion));
-
-        // seems like handleGitHubRelease has issue with versions that already exist
-        testingPostgres.runUpdateStatement("delete from workflowversion where parentid = " + workflow.getId());
 
         // Webhook call should convert workflow to DOCKSTORE_YML
         workflowApi.
@@ -117,6 +120,54 @@ public class WebhookIT extends BaseIT {
             assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
         }
 
+        // Should be able to refresh a legacy version
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2");
+
+        // Should not be able to refresh a GitHub App version
+        try {
+            workflowApi.refreshVersion(workflow.getId(), "0.1");
+            fail("Should not be able to refresh");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
+
+        // Refresh a version that doesn't already exist
+        try {
+            workflowApi.refreshVersion(workflow.getId(), "dne");
+            fail("Should not be able to refresh");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
+
+        // Refresh org should not throw a failure even though you cannot refresh the Dockstore.yml workflow
+        User user = usersApi.getUser();
+        List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+        assertTrue("There should still be a dockstore.yml workflow", workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), Workflow.ModeEnum.DOCKSTORE_YML)));
+        assertTrue("There should be at least one stub workflow", workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), Workflow.ModeEnum.STUB)));
+
+        // Test that refreshing a frozen version doesn't update the version
+        testingPostgres.runUpdateStatement("UPDATE workflowversion SET commitid = NULL where name = '0.2'");
+
+        // Refresh before frozen should populate the commit id
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2");
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> Objects.equals(wv.getName(), "0.2")).findFirst().get();
+        assertNotNull(workflowVersion.getCommitID());
+
+        // Refresh after freezing should not update
+        testingPostgres.runUpdateStatement("UPDATE workflowversion SET commitid = NULL where name = '0.2'");
+
+        // Freeze legacy version
+        workflowVersion.setFrozen(true);
+        List<WorkflowVersion> workflowVersions = workflowApi
+                .updateWorkflowVersion(workflow.getId(), Lists.newArrayList(workflowVersion));
+        workflowVersion = workflowVersions.stream().filter(v -> v.getName().equals("0.2")).findFirst().get();
+        assertTrue(workflowVersion.isFrozen());
+
+        // Ensure refresh does not touch frozen legacy version
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2");
+        assertNotNull(workflow);
+        workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> Objects.equals(wv.getName(), "0.2")).findFirst().get();
+        assertNull(workflowVersion.getCommitID());
     }
 
     /**

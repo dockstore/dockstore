@@ -443,6 +443,8 @@ components:
       type: object
     Image:
       properties:
+        architecture:
+          type: string
         checksums:
           items:
             $ref: '#/components/schemas/Checksum'
@@ -456,6 +458,8 @@ components:
           - GITLAB
           - AMAZON_ECR
           - SEVEN_BRIDGES
+          type: string
+        os:
           type: string
         repository:
           type: string
@@ -1566,7 +1570,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.0-alpha.6-SNAPSHOT
+  version: 1.9.0-alpha.6
 openapi: 3.0.1
 paths:
   /api/ga4gh/v1/tools:
@@ -4294,6 +4298,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BioWorkflow'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/refresh:
+    get:
+      description: Refresh one particular workflow.
+      operationId: refresh
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/refresh/{version}:
+    get:
+      description: Refresh one particular workflow version.
+      operationId: refreshVersion
+      parameters:
+      - in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: version
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
       - bearer: []
