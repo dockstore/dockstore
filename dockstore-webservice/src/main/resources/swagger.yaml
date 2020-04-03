@@ -6921,6 +6921,16 @@ definitions:
         - "GITLAB"
         - "AMAZON_ECR"
         - "SEVEN_BRIDGES"
+      architecture:
+        type: "string"
+        position: 6
+        description: "Stores the architecture and, if available, the variant of an\
+          \ image. Separated by a / and only applicable to Docker Hub"
+      os:
+        type: "string"
+        position: 7
+        description: "Stores the OS and, if available the OS version. Separated by\
+          \ a / and only applicable to Docker Hub"
     description: "Image(s) associated with tags and workflow versions"
   Label:
     type: "object"
