@@ -88,4 +88,10 @@
             <column name="checksums" type="varchar"/>
         </addColumn>
     </changeSet>
+
+    <changeSet id="addUserOrcidIDColumn" author="esoth">
+        <addColumn tableName="enduser">
+            <column name="orcid" type="varchar"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

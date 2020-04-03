@@ -642,6 +642,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String accessToken;
         String refreshToken;
         String username;
+        String orcid;
 
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
@@ -658,8 +659,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();
 
-            // ORCID API returns the user's ORCID username in the "name" property
+            // ORCID API returns the username and orcid id along with the tokens
+            // get them to store in the token and user tables
             username = tokenResponse.get("name").toString();
+            orcid = tokenResponse.get("orcid").toString();
 
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage());
@@ -667,6 +670,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         if (user != null) {
+            user.setOrcid(orcid);
+
             List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
 
             if (tokens.isEmpty()) {

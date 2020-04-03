@@ -205,6 +205,12 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     private String temporaryCredential;
 
+    /**
+     * The user's ORCID id in the format xxxx-xxxx-xxxx-xxxx
+     */
+    @Column()
+    private String orcid;
+
 
     public User() {
         entries = new TreeSet<>();
@@ -491,6 +497,14 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void setPrivacyPolicyVersionAcceptanceDate(Date date) {
         this.privacyPolicyVersionAcceptanceDate = date;
+    }
+
+    public String getOrcid() {
+        return this.orcid;
+    }
+
+    public void setOrcid(String orcid) {
+        this.orcid = orcid;
     }
 
     @JsonIgnore
