@@ -674,6 +674,14 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             User byId = userDAO.findById(user.getId());
             byId.setOrcid(orcid);
 
+            // create an ORCID profile for the user
+            User.Profile profile = new User.Profile();
+            profile.name = orcid;
+            profile.username = "emlys";
+
+            Map<String, User.Profile> userProfile = byId.getUserProfiles();
+            userProfile.put(TokenType.ORCID_ORG.toString(), profile);  // label it as being the ORCID profile
+
             List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
 
             if (tokens.isEmpty()) {
