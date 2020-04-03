@@ -682,7 +682,7 @@ public abstract class AbstractImageRegistry {
                     oldFile.setContent(newFile.getContent());
 
                     Optional<String> sha = FileFormatHelper.calcSHA1(oldFile.getContent());
-                    if(sha.isPresent()) {
+                    if (sha.isPresent()) {
                         checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
                         if (oldFile.getChecksums() == null) {
                             oldFile.setChecksums(checksums);
