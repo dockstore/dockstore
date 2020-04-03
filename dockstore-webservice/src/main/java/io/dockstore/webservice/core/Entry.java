@@ -287,18 +287,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * Currently unused because too many entries do not have a default version set
      */
     public void syncMetadataWithDefault() {
-        T realDefaultVersion = this.getRealDefaultVersion();
+        T realDefaultVersion = this.getActualDefaultVersion();
         if (realDefaultVersion != null) {
             this.setMetadataFromVersion(realDefaultVersion);
         }
     }
     @ApiModelProperty(value = "This is the name of the default version of the entry", position = 7)
     public abstract String getDefaultVersion();
-
-    @JsonIgnore
-    public T getRealDefaultVersion() {
-        return this.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(this.getDefaultVersion())).findFirst().orElse(null);
-    }
 
     public void setAuthor(String newAuthor) {
         this.author = newAuthor;
