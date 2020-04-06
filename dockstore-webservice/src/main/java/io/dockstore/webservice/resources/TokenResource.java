@@ -671,7 +671,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             orcid = tokenResponse.get("orcid").toString();
 
         } catch (IOException e) {
-            LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage());
+            LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage(), e);
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -679,14 +679,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // save the ORCID to the enduser table
             User byId = userDAO.findById(user.getId());
             byId.setOrcid(orcid);
-
-            // create an ORCID profile for the user
-            User.Profile profile = new User.Profile();
-            profile.name = orcid;
-            profile.username = "emlys";
-
-            Map<String, User.Profile> userProfile = byId.getUserProfiles();
-            userProfile.put(TokenType.ORCID_ORG.toString(), profile);  // label it as being the ORCID profile
 
             List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
 

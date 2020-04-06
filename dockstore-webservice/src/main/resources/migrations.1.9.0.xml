@@ -98,9 +98,9 @@
         </addColumn>
     </changeSet>
 
-    <changeSet id="addUserOrcidIDColumn" author="esoth">
+    <changeSet author="esoth (generated)" id="1586206601202-8">
         <addColumn tableName="enduser">
-            <column name="orcid" type="varchar"/>
+            <column name="orcid" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>
