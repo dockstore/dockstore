@@ -167,15 +167,6 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @Override
-    public String getDefaultVersion() {
-        if (this.getActualDefaultVersion() != null) {
-            return this.getActualDefaultVersion().getName();
-        } else {
-            return null;
-        }
-    }
-
-    @Override
     public void setActualDefaultVersion(Tag version) {
         this.actualDefaultVersion = version;
     }

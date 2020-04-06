@@ -244,15 +244,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         getDefaultPaths().put(this.getDescriptorType().getFileType(), defaultWorkflowPath);
     }
 
-    @Override
-    public String getDefaultVersion() {
-        if (this.getActualDefaultVersion() != null) {
-            return this.getActualDefaultVersion().getName();
-        } else {
-            return null;
-        }
-    }
-
     @JsonProperty
     public String getOrganization() {
         return organization;

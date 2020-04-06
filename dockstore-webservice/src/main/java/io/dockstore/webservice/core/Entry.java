@@ -293,7 +293,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         }
     }
     @ApiModelProperty(value = "This is the name of the default version of the entry", position = 7)
-    public abstract String getDefaultVersion();
+    public String getDefaultVersion() {
+        if (this.getActualDefaultVersion() != null) {
+            return this.getActualDefaultVersion().getName();
+        } else {
+            return null;
+        }
+    }
 
     public void setAuthor(String newAuthor) {
         this.author = newAuthor;
