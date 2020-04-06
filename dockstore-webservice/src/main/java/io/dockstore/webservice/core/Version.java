@@ -196,6 +196,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
+    /**
+     * Used to determine the "newer" version. WorkflowVersion relies on last_modified, Tag relies on last_built.
+     * @return  The date used to determine the "newer" version
+     */
     @JsonIgnore
     public abstract Date getDate();
 
