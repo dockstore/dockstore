@@ -237,6 +237,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         tokenDAO.delete(token);
 
+        // also erase the user's ORCID id if deleting an ORCID token
+        if (token.getTokenSource() == TokenType.ORCID_ORG) {
+            User byId = userDAO.findById(user.getId());
+            byId.setOrcid("");
+        }
+
         token = tokenDAO.findById(tokenId);
         if (token == null) {
             return Response.noContent().build();
