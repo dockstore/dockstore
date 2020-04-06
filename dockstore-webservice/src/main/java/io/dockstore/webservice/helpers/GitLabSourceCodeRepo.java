@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -129,19 +130,24 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
 
         try {
             GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
             List<GitlabTag> tagList = gitlabAPI.getTags(repositoryId);
             List<GitlabBranch> branches = gitlabAPI.getBranches(project);
             tagList.forEach(tag -> {
-                Date committedDate = tag.getCommit().getCommittedDate();
-                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate);
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), tag.getName())) {
+                    Date committedDate = tag.getCommit().getCommittedDate();
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate);
+                }
             });
             branches.forEach(branch -> {
-                Date committedDate = branch.getCommit().getCommittedDate();
-                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(), Version.ReferenceType.BRANCH, committedDate);
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), branch.getName())) {
+                    Date committedDate = branch.getCommit().getCommittedDate();
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(),
+                            Version.ReferenceType.BRANCH, committedDate);
+                }
             });
         } catch (IOException e) {
             LOG.info("could not find " + repositoryId + " due to " + e.getMessage());

@@ -78,8 +78,8 @@ public class DockstoreYamlTest {
     public void testReadDockstoreYaml12() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml = (DockstoreYaml12)DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML);
         final List<YamlWorkflow> workflows = dockstoreYaml.getWorkflows();
-        assertEquals(2, workflows.size());
-        final Optional<YamlWorkflow> workflowFoobar = workflows.stream().filter(w -> w.getName().equals("foobar")).findFirst();
+        assertEquals(3, workflows.size());
+        final Optional<YamlWorkflow> workflowFoobar = workflows.stream().filter(w -> "foobar".equals(w.getName())).findFirst();
         if (!workflowFoobar.isPresent()) {
             fail("Could not find workflow foobar");
         }
@@ -91,6 +91,15 @@ public class DockstoreYamlTest {
         assertEquals("/dockstore.wdl.json", testParameterFiles.get(0));
         final List<Service12> services = dockstoreYaml.getServices();
         assertEquals(1, services.size());
+    }
+
+    @Test
+    public void testOptionalName() throws DockstoreYamlHelper.DockstoreYamlException {
+        final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML);
+        final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
+        assertEquals(3, workflows.size());
+        assertEquals("Expecting two workflows with names", 2L, workflows.stream().filter(w -> w.getName() != null).count());
+        assertEquals("Expecting one workflow without a name", 1L, workflows.stream().filter(w -> w.getName() == null).count());
     }
 
     @Test
@@ -161,6 +170,15 @@ public class DockstoreYamlTest {
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             assertEquals(Service12.MISSING_SUBCLASS, e.getMessage());
         }
+    }
+
+    @Test
+    public void testDifferentCaseForWorkflowSubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+        final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE12_YAML);
+        final List<YamlWorkflow> workflows = dockstoreYaml12.getWorkflows();
+        assertEquals(3, workflows.size());
+        assertEquals(1, workflows.stream().filter(w -> "CWL".equals(w.getSubclass())).count());
+        assertEquals(1, workflows.stream().filter(w -> "cwl".equals(w.getSubclass())).count());
     }
 
 }
