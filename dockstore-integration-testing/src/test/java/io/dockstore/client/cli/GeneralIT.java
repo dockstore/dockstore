@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -29,6 +33,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.FileWrapper;
+import io.dockstore.openapi.client.model.Tool;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -40,6 +45,7 @@ import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -790,6 +796,34 @@ public class GeneralIT extends BaseIT {
         toolApi.refresh(tool.getId());
         List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         verifyChecksumsAreSaved(updatedTags);
+    }
+
+    @Test
+    public void ga4ghImageType() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        tool = toolApi.refresh(tool.getId());
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        toolApi.publish(tool.getId(), publishRequest);
+        Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub");
+
+        final Response.ResponseBuilder responseBuilder = Response.ok(ga4ghatool);
+        Response response = responseBuilder.build();
+        response.getEntity();
+
+        ObjectMapper om = new ObjectMapper();
+        boolean failed = false;
+        try {
+            JSONObject json = new JSONObject(om.writeValueAsString(response.getEntity()));
+            assertTrue(json.toString().contains("Docker"));
+            assertFalse(json.toString().contains("DOCKER"));
+        } catch (JsonProcessingException ex) {
+            failed = true;
+        }
+        assertFalse("Parsing should not have failed", failed);
     }
 
     private void refreshAfterDeletedTag(ContainersApi toolApi, DockstoreTool tool, List<Tag> tags) {
