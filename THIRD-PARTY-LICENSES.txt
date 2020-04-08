@@ -122,7 +122,7 @@ Lists of 358 third-party dependencies.
      (Apache Software License, Version 2.0) dockstore-integration-testing (io.dockstore:dockstore-integration-testing:1.9.0-alpha.6-SNAPSHOT - https://github.com/dockstore/dockstore/dockstore-integration-testing)
      (Apache Software License, Version 2.0) dockstore-language-plugin-parent (io.dockstore:dockstore-language-plugin-parent:1.9.0-alpha.6-SNAPSHOT - https://github.com/dockstore/dockstore/dockstore-language-plugin-parent)
      (Apache Software License, Version 2.0) dockstore-webservice (io.dockstore:dockstore-webservice:1.9.0-alpha.6-SNAPSHOT - https://github.com/dockstore/dockstore/dockstore-webservice)
-     (BSD 3-clause New License) (Unknown license) dom4j (org.dom4j:dom4j:2.1.1 - http://dom4j.github.io/)
+     (BSD 3-clause New License) (https://github.com/dom4j/dom4j/blob/master/LICENSE) dom4j (org.dom4j:dom4j:2.1.1 - http://dom4j.github.io/)
      (Apache License 2.0) Dropwizard (io.dropwizard:dropwizard-core:1.3.17 - http://www.dropwizard.io/1.3.17/dropwizard-core)
      (Apache License 2.0) Dropwizard Asset Bundle (io.dropwizard:dropwizard-assets:1.3.17 - http://www.dropwizard.io/1.3.17/dropwizard-assets)
      (Apache License 2.0) Dropwizard Authentication (io.dropwizard:dropwizard-auth:1.3.17 - http://www.dropwizard.io/1.3.17/dropwizard-auth)

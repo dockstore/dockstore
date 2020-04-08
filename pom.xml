@@ -1307,6 +1307,7 @@
                     <missingFile>THIRD-PARTY-LICENSES.properties</missingFile>
                     <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
                     <sortArtifactByName>true</sortArtifactByName>
+                    <failOnMissing>true</failOnMissing>
                 </configuration>
                 <executions>
                     <execution>
