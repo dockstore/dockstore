@@ -25,6 +25,7 @@ public enum {{#datatypeWithEnum}}{{{.}}}{{/datatypeWithEnum}}{{^datatypeWithEnum
   }
 
   @Override
+  @JsonValue
   public String toString() {
     return String.valueOf(value);
   }
