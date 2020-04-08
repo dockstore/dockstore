@@ -1304,6 +1304,7 @@
                 <version>2.0.0</version>
                 <configuration>
                     <outputDirectory>${project.basedir}</outputDirectory>
+                    <missingFile>THIRD-PARTY-LICENSES.properties</missingFile>
                     <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
                     <sortArtifactByName>true</sortArtifactByName>
                 </configuration>
