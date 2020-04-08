@@ -88,13 +88,19 @@
             <column name="checksums" type="varchar"/>
         </addColumn>
     </changeSet>
-
+  
     <changeSet author="natalieperez (generated)" id="addDockerHubColumnsToImages">
         <addColumn tableName="image">
             <column name="architecture" type="varchar(255 BYTE)"/>
         </addColumn>
         <addColumn tableName="image">
             <column name="os" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="esoth (generated)" id="addUserOrcidIDColumn">
+        <addColumn tableName="enduser">
+            <column name="orcid" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
 </databaseChangeLog>

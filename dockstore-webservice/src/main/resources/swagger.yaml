@@ -7858,6 +7858,8 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
         readOnly: true
+      orcid:
+        type: "string"
       privacyPolicyVersion:
         type: "string"
         description: "Indicates which version of the privacy policy the user has accepted"

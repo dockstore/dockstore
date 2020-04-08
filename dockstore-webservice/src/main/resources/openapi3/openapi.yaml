@@ -1149,6 +1149,8 @@ components:
           type: boolean
         name:
           type: string
+        orcid:
+          type: string
         privacyPolicyVersion:
           enum:
           - NONE

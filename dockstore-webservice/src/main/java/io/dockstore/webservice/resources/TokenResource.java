@@ -237,6 +237,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         tokenDAO.delete(token);
 
+        // also erase the user's ORCID id if deleting an ORCID token
+        if (token.getTokenSource() == TokenType.ORCID_ORG) {
+            User byId = userDAO.findById(user.getId());
+            byId.setOrcid(null);
+        }
+
         token = tokenDAO.findById(tokenId);
         if (token == null) {
             return Response.noContent().build();
@@ -642,6 +648,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String accessToken;
         String refreshToken;
         String username;
+        String orcid;
 
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
@@ -658,15 +665,21 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();
 
-            // ORCID API returns the user's ORCID username in the "name" property
+            // ORCID API returns the username and orcid id along with the tokens
+            // get them to store in the token and user tables
             username = tokenResponse.get("name").toString();
+            orcid = tokenResponse.get("orcid").toString();
 
         } catch (IOException e) {
-            LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage());
+            LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage(), e);
             throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         }
 
         if (user != null) {
+            // save the ORCID to the enduser table
+            User byId = userDAO.findById(user.getId());
+            byId.setOrcid(orcid);
+
             List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
 
             if (tokens.isEmpty()) {
