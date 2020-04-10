@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,13 +32,11 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import org.apache.http.HttpStatus;
 import org.gitlab.api.GitlabAPI;
 import org.gitlab.api.TokenType;
 import org.gitlab.api.models.GitlabBranch;
@@ -101,9 +100,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return reposByGitUrl;
         } catch (IOException e) {
-            LOG.error("could not find projects due to ", e);
-            throw new CustomWebApplicationException("could not read projects from gitlab, please re-link your gitlab token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return this.handleGetWorkflowGitUrl2RepositoryIdError(e);
         }
+    }
+
+    @Override
+    public String getName() {
+        return "GitLab";
     }
 
     @Override
@@ -127,19 +130,24 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
 
         try {
             GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
             List<GitlabTag> tagList = gitlabAPI.getTags(repositoryId);
             List<GitlabBranch> branches = gitlabAPI.getBranches(project);
             tagList.forEach(tag -> {
-                Date committedDate = tag.getCommit().getCommittedDate();
-                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate);
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), tag.getName())) {
+                    Date committedDate = tag.getCommit().getCommittedDate();
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate);
+                }
             });
             branches.forEach(branch -> {
-                Date committedDate = branch.getCommit().getCommittedDate();
-                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(), Version.ReferenceType.BRANCH, committedDate);
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), branch.getName())) {
+                    Date committedDate = branch.getCommit().getCommittedDate();
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(),
+                            Version.ReferenceType.BRANCH, committedDate);
+                }
             });
         } catch (IOException e) {
             LOG.info("could not find " + repositoryId + " due to " + e.getMessage());

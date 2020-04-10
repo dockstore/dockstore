@@ -69,6 +69,14 @@ public class Image {
     @ApiModelProperty(value = "Registry the image belongs to", position = 5)
     private Registry imageRegistry;
 
+    @Column()
+    @ApiModelProperty(value = "Stores the architecture and, if available, the variant of an image. Separated by a / and only applicable to Docker Hub", position = 6)
+    private String architecture;
+
+    @Column()
+    @ApiModelProperty(value = "Stores the OS and, if available the OS version. Separated by a / and only applicable to Docker Hub", position = 7)
+    private String os;
+
     @Column(updatable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
@@ -127,6 +135,22 @@ public class Image {
 
     public void setImageRegistry(final Registry imageRegistry) {
         this.imageRegistry = imageRegistry;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(final String architecture) {
+        this.architecture = architecture;
+    }
+
+    public String getOs() {
+        return os;
+    }
+
+    public void setOs(final String os) {
+        this.os = os;
     }
 
 }

@@ -86,6 +86,14 @@ public abstract class SourceCodeRepoInterface {
         return filename.matches("(?i:/?readme([.]md)?)");
     }
 
+    public Map<String, String> handleGetWorkflowGitUrl2RepositoryIdError(Exception e) {
+        LOG.error("could not find projects due to ", e);
+        throw new CustomWebApplicationException(
+                String.format("could not read projects from %s, please re-link your %s token", getName(), getName()), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    }
+
+    public abstract String getName();
+
     /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
@@ -190,10 +198,11 @@ public abstract class SourceCodeRepoInterface {
      * @param workflow
      * @param existingWorkflow
      * @param existingDefaults
+     * @param versionName
      * @return workflow with associated workflow versions
      */
     public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults);
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName);
 
     /**
      * Creates a basic workflow object with default values
@@ -208,51 +217,61 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
-     *
-     * @param repositoryId
-     * @param existingWorkflow
+     * If versionName is present this will only pull one version
+     * @param repositoryId Repository ID (ex. dockstore/dockstore-ui2)
+     * @param existingWorkflow Optional existing workflow
+     * @param versionName Optional version name to refresh
      * @return workflow
      */
-    public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
+    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName) {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
 
-        // Nextflow and (future) dockstore.yml workflow can be detected and handled without stubs
-
-        // Determine if workflow should be returned as a STUB or FULL
+        // When there is no existing workflow just return a CWL stub
         if (existingWorkflow.isEmpty()) {
-            // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
             workflow.setDescriptorType(DescriptorLanguage.CWL);
             return workflow;
         }
 
-        if (Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
-            String msg = "Cannot refresh .dockstore.yml workflows";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
+        // Do not refresh stub workflows
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
-            // when there is an existing stub workflow, just return the new stub as well
             return workflow;
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        workflow.setMode(WorkflowMode.FULL);
+        if (!Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
+            workflow.setMode(WorkflowMode.FULL);
+        }
 
-        // if it exists, extract paths from the previous workflow entry
+        // Create a map of existing versions
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-        // Copy over existing workflow versions
         existingWorkflow.get().getWorkflowVersions()
                 .forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
+
+        // Cannot refresh dockstore.yml workflow version unless it is a targeted refresh of a legacy version
+        if (Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
+            // Throw error if version name not set, version name set but does not already exist, or version name set and exists but is not a legacy version
+            if (versionName.isEmpty() || !existingDefaults.containsKey(versionName.get()) || (existingDefaults.containsKey(versionName.get()) && !existingDefaults.get(versionName.get()).isLegacyVersion())) {
+                String msg = "Cannot refresh .dockstore.yml workflows";
+                LOG.error(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+        }
 
         // Copy workflow information from source (existingWorkflow) to target (workflow)
         existingWorkflow.get().copyWorkflow(workflow);
 
-        // Create branches and associated source files
+        // Create versions and associated source files
         //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
-        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
-        // setting last modified date can be done uniformly
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName);
+
+        if (versionName.isPresent() && workflow.getWorkflowVersions().size() == 0) {
+            String msg = "Version " + versionName.get() + " was not found on Git repository";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Setting last modified date can be done uniformly
         Optional<Date> max = workflow.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
         if (max.isPresent()) {

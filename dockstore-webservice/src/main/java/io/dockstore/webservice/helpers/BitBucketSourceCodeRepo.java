@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -146,11 +147,15 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return collect;
         } catch (ApiException e) {
-            LOG.error("could not find projects due to ", e);
-            throw new CustomWebApplicationException("could not read projects from gitlab, please re-link your gitlab token",
-                HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return this.handleGetWorkflowGitUrl2RepositoryIdError(e);
         }
     }
+
+    @Override
+    public String getName() {
+        return "Bitbucket";
+    }
+
 
     /**
      * Gets arbitrary URLs that Bitbucket seems to use for pagination
@@ -281,7 +286,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             PaginatedRefs paginatedRefs = refsApi
@@ -290,21 +295,22 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             while (paginatedRefs != null) {
                 paginatedRefs.getValues().forEach(ref -> {
                     String branchName = ref.getName();
-                    OffsetDateTime date = ref.getTarget().getDate();
-                    WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
-                    version.setLastModified(Date.from(date.toInstant()));
-                    String calculatedPath = version.getWorkflowPath();
-                    // Now grab source files
-                    DescriptorLanguage.FileType identifiedType = workflow.getFileType();
-                    // TODO: No exceptions are caught here in the event of a failed call
-                    SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+                    if (versionName.isEmpty() || Objects.equals(branchName, versionName.get())) {
+                        OffsetDateTime date = ref.getTarget().getDate();
+                        WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+                        version.setLastModified(Date.from(date.toInstant()));
+                        String calculatedPath = version.getWorkflowPath();
+                        // Now grab source files
+                        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
+                        // TODO: No exceptions are caught here in the event of a failed call
+                        SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                    // Use default test parameter file if either new version or existing version that hasn't been edited
-                    createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
-                    workflow.addWorkflowVersion(
-                        combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+                        // Use default test parameter file if either new version or existing version that hasn't been edited
+                        createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
+                        workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
 
-                    version = versionValidation(version, workflow, calculatedPath);
+                        version = versionValidation(version, workflow, calculatedPath);
+                    }
                 });
 
                 if (paginatedRefs.getNext() != null) {

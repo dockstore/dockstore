@@ -524,7 +524,7 @@ definitions:
           $ref: "#/definitions/QuayTag"
       tag_expiration_s:
         description: TBD
-        type: integer
+        type: long
       is_public:
         description: TBD
         type: boolean
@@ -576,7 +576,7 @@ definitions:
         type: string
       size:
         description: TBD
-        type: integer
+        type: long
     type: object
   RepoUpdate:
     description: Fields which can be updated in a repository.

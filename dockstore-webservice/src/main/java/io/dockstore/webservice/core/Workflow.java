@@ -71,7 +71,9 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent")
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
@@ -185,6 +187,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JsonProperty
     public WorkflowMode getMode() {
         return mode;
+    }
+
+    @Override
+    public boolean isHosted() {
+        return getMode().equals(WorkflowMode.HOSTED);
     }
 
     public void setMode(WorkflowMode mode) {

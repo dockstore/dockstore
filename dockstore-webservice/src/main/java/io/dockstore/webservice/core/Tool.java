@@ -84,7 +84,9 @@ import org.hibernate.annotations.Check;
                 + "WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
                 + "GROUP BY t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespace", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace AND t.name = :repository")
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace AND t.name = :repository"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.isPublished = true AND t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 
 
@@ -270,6 +272,11 @@ public class Tool extends Entry<Tool, Tag> {
     @JsonProperty
     public ToolMode getMode() {
         return mode;
+    }
+
+    @Override
+    public boolean isHosted() {
+        return getMode().equals(ToolMode.HOSTED);
     }
 
     public void setMode(ToolMode mode) {
