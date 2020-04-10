@@ -1390,7 +1390,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @GET
     @Timed
-    @UnitOfWork(readOnly = true)
+    @UnitOfWork()
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version.", response = String.class, notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
@@ -1404,12 +1404,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
+        if (workflowVersion.getDagJson() != null) {
+            return workflowVersion.getDagJson();
+        }
+
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                     LanguageHandlerInterface.Type.DAG, toolDAO);
+            if (workflowVersion.getReferenceType() == Version.ReferenceType.TAG) {
+                workflowVersion.setDagJson(dagJson);
+            }
+            return dagJson;
         }
         return null;
     }
@@ -1423,7 +1431,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     @GET
     @Timed
-    @UnitOfWork(readOnly = true)
+    @UnitOfWork()
     @Path("/{workflowId}/tools/{workflowVersionId}")
     @ApiOperation(value = "Get the Tools for a given workflow version.", notes = OPTIONAL_AUTH_MESSAGE, response = String.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
@@ -1439,12 +1447,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (workflowVersion == null) {
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
         }
+
+        if (workflowVersion.getToolTableJson() != null) {
+            return workflowVersion.getToolTableJson();
+        }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            if (workflowVersion.getReferenceType() == Version.ReferenceType.TAG) {
+                workflowVersion.setToolTableJson(toolTableJson);
+            }
+            return toolTableJson;
         }
 
         return null;

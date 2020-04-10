@@ -83,6 +83,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "The subclass of this for services.", position = 103)
     private Service.SubClass subClass = null;
 
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "JSON needed to create DAG in UI", position = 104)
+    private String dagJson;
+
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "JSON needed to create tool table in UI", position = 105)
+    private String toolTableJson;
+
     public WorkflowVersion() {
         super();
     }
@@ -198,6 +206,22 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setLegacyVersion(boolean legacyVersion) {
         isLegacyVersion = legacyVersion;
+    }
+
+    public String getDagJson() {
+        return dagJson;
+    }
+
+    public void setDagJson(final String dagJson) {
+        this.dagJson = dagJson;
+    }
+
+    public String getToolTableJson() {
+        return toolTableJson;
+    }
+
+    public void setToolTableJson(final String toolTableJson) {
+        this.toolTableJson = toolTableJson;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
