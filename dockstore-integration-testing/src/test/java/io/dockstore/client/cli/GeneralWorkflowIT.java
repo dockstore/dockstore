@@ -603,7 +603,28 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     /**
+     * This tests that a workflow's default version can be automatically set during refresh
+     */
+    @Test
+    public void testUpdateWorkflowDefaultVersionDuringRefresh() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        // Manually register workflow
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl",
+                SourceControl.GITHUB, "/Dockstore.cwl", true);
+        Assert.assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
+        workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
+        Assert.assertEquals("Should be able to overwrite previous default version", "testBoth", workflow.getDefaultVersion());
+        workflow = workflowsApi.refresh(workflow.getId());
+        Assert.assertEquals("Refresh should not have set it back to the automatic one", "testBoth", workflow.getDefaultVersion());
+
+    }
+
+    /**
      * This tests that a workflow can be updated to have default version, and that metadata is set related to the default version
+     * WorkflowVersion 951 is testBoth
+     * WorkflowVersion 952 is testCWL
+     * WorkflowVersion 953 is testWWL
      */
     @Test
     public void testUpdateWorkflowDefaultVersion() {
@@ -618,28 +639,32 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testWDL");
 
         // Assert default version is updated and no author or email is found
-        final long count = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflow where actualdefaultversion = '953'", long.class);
         assertEquals("there should be 1 matching workflow, there is " + count, 1, count);
-
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL' and author is null and email is null",
+            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '953' and author is null and email is null",
                 long.class);
         assertEquals("The given workflow shouldn't have any contact info", 1, count2);
-
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        Assert.assertEquals("testWDL", workflow.getDefaultVersion());
+        Assert.assertNull(workflow.getAuthor());
+        Assert.assertNull(workflow.getEmail());
         // Update workflow with version with metadata
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
         workflow = workflowsApi.refresh(workflow.getId());
 
         // Assert default version is updated and author and email are set
         final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where defaultversion = 'testBoth'", long.class);
+            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '951'", long.class);
         assertEquals("there should be 1 matching workflow, there is " + count3, 1, count3);
-
         final long count4 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where defaultversion = 'testBoth' and author = 'testAuthor' and email = 'testEmail'",
+            "select count(*) from workflow where actualdefaultversion = '951' and author = 'testAuthor' and email = 'testEmail'",
             long.class);
         assertEquals("The given workflow should have contact info", 1, count4);
-
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        Assert.assertEquals("testBoth", workflow.getDefaultVersion());
+        Assert.assertEquals("testAuthor", workflow.getAuthor());
+        Assert.assertEquals("testEmail", workflow.getEmail());
         // Unpublish
         workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 

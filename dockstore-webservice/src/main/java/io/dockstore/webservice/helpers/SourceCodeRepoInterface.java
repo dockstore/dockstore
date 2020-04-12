@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -335,14 +336,22 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
+     * Currently this function is only ran when during tool/workflow refreshes
      * Sets the default version if there isn't already one present.
      * This is required because entry-level metadata depends on the default version
+     * Makes sure that the entry actually has that workflowVersion
+     * First tries to get the default branch from the Git repository and sets it there.
+     * If the current versions do not have that, then it falls back to the newest version.
      *
      * @param entry
      * @param repositoryId
      */
     public void setDefaultBranchIfNotSet(Entry entry, String repositoryId) {
-        if (entry.getDefaultVersion() == null) {
+        Version defaultVersion = entry.getActualDefaultVersion();
+        Set<Long> workflowVersionIds = (Set<Long>)entry.getWorkflowVersions().stream().map(version -> ((Version)version).getId()).collect(Collectors.toSet());
+        if (defaultVersion == null  || !workflowVersionIds.contains(defaultVersion.getId())) {
+            // Set null for now in case workflowVersions doesn't contain the current default version for some reason
+            entry.setActualDefaultVersion(null);
             String branch = getMainBranch(entry, repositoryId);
             if (branch == null) {
                 String message = String.format("%s : Error getting the main branch.", repositoryId);
@@ -354,7 +363,10 @@ public abstract class SourceCodeRepoInterface {
                             String reference = workflowVersion.getReference();
                             return branch.equals(reference);
                         }).findFirst();
-                firstWorkflowVersion.ifPresent(version -> entry.checkAndSetDefaultVersion(version.getName()));
+                firstWorkflowVersion.ifPresentOrElse(version -> entry.checkAndSetDefaultVersion(version.getName()), () -> {
+                    Version newestVersion = Collections.max(workflowVersions, Comparator.comparingLong(s -> s.getDate().getTime()));
+                    entry.setActualDefaultVersion(newestVersion);
+                });
             }
         }
     }

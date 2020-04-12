@@ -28,9 +28,11 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
@@ -126,6 +128,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     private final SortedSet<WorkflowVersion> workflowVersions;
 
+    @JsonIgnore
+    @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id")
+    private WorkflowVersion actualDefaultVersion;
+
     protected Workflow() {
         workflowVersions = new TreeSet<>();
     }
@@ -176,12 +183,22 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setGitUrl(getGitUrl());
         targetWorkflow.setDescriptorType(getDescriptorType());
         targetWorkflow.setDescriptorTypeSubclass(getDescriptorTypeSubclass());
-        targetWorkflow.setDefaultVersion(getDefaultVersion());
+        targetWorkflow.setActualDefaultVersion(this.getActualDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
         targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
         targetWorkflow.setIsChecker(isIsChecker());
         targetWorkflow.setConceptDoi(getConceptDoi());
         targetWorkflow.setMode(getMode());
+    }
+
+    @Override
+    public void setActualDefaultVersion(WorkflowVersion version) {
+        this.actualDefaultVersion = version;
+    }
+
+    @Override
+    public WorkflowVersion getActualDefaultVersion() {
+        return this.actualDefaultVersion;
     }
 
     @JsonProperty

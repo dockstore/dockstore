@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -194,6 +195,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
             return GSON.fromJson(Strings.nullToEmpty(this.getVersionMetadata().verifiedSource), String[].class);
         }
     }
+
+    /**
+     * Used to determine the "newer" version. WorkflowVersion relies on last_modified, Tag relies on last_built.
+     * @return  The date used to determine the "newer" version
+     */
+    @JsonIgnore
+    public abstract Date getDate();
 
     public boolean isDirtyBit() {
         return dirtyBit;
