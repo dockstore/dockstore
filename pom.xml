@@ -137,8 +137,8 @@
 
     <licenses>
         <license>
-            <name>GNU General Public License (GPLv3)</name>
-            <url>http://www.gnu.org/licenses/gpl-3.0.html</url>
+            <name>Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
 
@@ -1094,6 +1094,11 @@
                     <artifactId>versions-maven-plugin</artifactId>
                     <version>2.7</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>2.0.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1292,6 +1297,25 @@
                     </includeOnlyProperties>
                     <commitIdGenerationMode>full</commitIdGenerationMode>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>2.0.0</version>
+                <configuration>
+                    <outputDirectory>${project.basedir}</outputDirectory>
+                    <missingFile>THIRD-PARTY-LICENSES.properties</missingFile>
+                    <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
+                    <sortArtifactByName>true</sortArtifactByName>
+                    <failOnMissing>true</failOnMissing>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>aggregate-add-third-party</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
