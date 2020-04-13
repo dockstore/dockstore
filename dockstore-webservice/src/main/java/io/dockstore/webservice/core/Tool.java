@@ -29,15 +29,18 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
@@ -143,6 +146,11 @@ public class Tool extends Entry<Tool, Tag> {
     @Cascade(CascadeType.DETACH)
     private final SortedSet<Tag> workflowVersions;
 
+    @JsonIgnore
+    @OneToOne(targetEntity = Tag.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id")
+    private Tag actualDefaultVersion;
+
     @Transient
     @JsonProperty
     private Set<Tag> tags = null;
@@ -156,6 +164,16 @@ public class Tool extends Entry<Tool, Tag> {
         // this.userId = userId;
         this.name = name;
         workflowVersions = new TreeSet<>();
+    }
+
+    @Override
+    public void setActualDefaultVersion(Tag version) {
+        this.actualDefaultVersion = version;
+    }
+
+    @Override
+    public Tag getActualDefaultVersion() {
+        return this.actualDefaultVersion;
     }
 
     @JsonProperty

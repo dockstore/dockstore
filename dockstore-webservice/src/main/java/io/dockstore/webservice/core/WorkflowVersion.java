@@ -55,9 +55,6 @@ import org.apache.commons.io.FilenameUtils;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion>, Aliasable {
-
-
-
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "workflowversion_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
@@ -88,6 +85,11 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public WorkflowVersion() {
         super();
+    }
+
+    @Override
+    public Date getDate() {
+        return this.getLastModified();
     }
 
     @Override

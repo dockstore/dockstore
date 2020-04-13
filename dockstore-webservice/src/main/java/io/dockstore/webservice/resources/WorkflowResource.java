@@ -235,6 +235,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         for (WorkflowVersion version : workflow.getWorkflowVersions()) {
             workflowVersionDAO.delete(version);
         }
+        workflow.setActualDefaultVersion(null);
         workflow.getWorkflowVersions().clear();
 
         // Do we maintain the checker workflow association? For now we won't

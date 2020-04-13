@@ -90,7 +90,7 @@ public class PublicStateManagerIT {
         tool.setRegistry("potato");
         tool.addWorkflowVersion(fakeTag1);
         tool.addWorkflowVersion(fakeTag2);
-        tool.setDefaultVersion("master");
+        tool.setActualDefaultVersion(fakeTag1);
         tool.setIsPublished(true);
         return tool;
     }

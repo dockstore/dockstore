@@ -84,6 +84,11 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         super();
     }
 
+    @Override
+    public Date getDate() {
+        return this.getLastBuilt();
+    }
+
     public Version createEmptyVersion() {
         return new Tag();
     }
