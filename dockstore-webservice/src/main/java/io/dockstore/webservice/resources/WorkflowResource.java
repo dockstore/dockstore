@@ -1414,7 +1414,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                     LanguageHandlerInterface.Type.DAG, toolDAO);
-            if (workflowVersion.getReferenceType() == Version.ReferenceType.TAG) {
+            if (workflowVersion.getReferenceType() == Version.ReferenceType.TAG && workflowVersion.isValid()) {
                 workflowVersion.setDagJson(dagJson);
             }
             return dagJson;
@@ -1457,7 +1457,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            if (workflowVersion.getReferenceType() == Version.ReferenceType.TAG) {
+            if (workflowVersion.getReferenceType() == Version.ReferenceType.TAG && workflowVersion.isValid()) {
                 workflowVersion.setToolTableJson(toolTableJson);
             }
             return toolTableJson;
