@@ -8492,6 +8492,14 @@ definitions:
         - "SWARM"
         - "KUBERNETES"
         - "HELM"
+      dagJson:
+        type: "string"
+        position: 104
+        description: "JSON needed to create DAG in UI"
+      toolTableJson:
+        type: "string"
+        position: 105
+        description: "JSON needed to create tool table in UI"
     description: "This describes one workflow version associated with a workflow."
   WorkflowVersionPathInfo:
     type: "object"
