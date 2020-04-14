@@ -53,6 +53,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,9 +212,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
                 return Response.ok().entity(get.getEntity().getContent()).build();
-            } catch (IOException e) {
-                LOG.error("Could not use elastic search index", e);
-                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } catch (ResponseException e) {
+                throw new CustomWebApplicationException(e.getMessage(), e.getResponse().getStatusLine().getStatusCode());
+            } catch (IOException e2) {
+                throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
         return Response.ok().entity(0).build();
