@@ -1404,7 +1404,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
-        if (workflowVersion.getDagJson() != null) {
+        if (workflowVersion.getCommitID() != null && workflowVersion.getCommitID().equals(workflowVersion.getCommitForJsonGeneration()) && workflowVersion.getDagJson() != null) {
             return workflowVersion.getDagJson();
         }
 
@@ -1412,11 +1412,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                     LanguageHandlerInterface.Type.DAG, toolDAO);
-            if (workflowVersion.getReferenceType() == Version.ReferenceType.TAG && workflowVersion.isValid()) {
-                workflowVersion.setDagJson(dagJson);
-            }
+
+            workflowVersion.setDagJson(dagJson);
+            workflowVersion.setCommitForJsonGeneration(workflowVersion.getCommitID());
             return dagJson;
         }
         return null;
@@ -1448,18 +1448,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (workflowVersion.getToolTableJson() != null) {
+        if (workflowVersion.getCommitID() != null && workflowVersion.getCommitID().equals(workflowVersion.getCommitForJsonGeneration()) && workflowVersion.getToolTableJson() != null) {
             return workflowVersion.getToolTableJson();
         }
+
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            if (workflowVersion.getReferenceType() == Version.ReferenceType.TAG && workflowVersion.isValid()) {
-                workflowVersion.setToolTableJson(toolTableJson);
-            }
+            workflowVersion.setToolTableJson(toolTableJson);
+            workflowVersion.setCommitForJsonGeneration(workflowVersion.getCommitID());
             return toolTableJson;
         }
 

@@ -32,6 +32,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
@@ -83,13 +84,18 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "The subclass of this for services.", position = 103)
     private Service.SubClass subClass = null;
 
+    @JsonIgnore
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "JSON needed to create DAG in UI", position = 104)
     private String dagJson;
 
+    @JsonIgnore
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "JSON needed to create tool table in UI", position = 105)
     private String toolTableJson;
+
+    // Keeps track of the commit used to generate the dag and tool table json.
+    @JsonIgnore
+    @Column()
+    private String commitForJsonGeneration;
 
     public WorkflowVersion() {
         super();
@@ -222,6 +228,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setToolTableJson(final String toolTableJson) {
         this.toolTableJson = toolTableJson;
+    }
+
+    public String getCommitForJsonGeneration() {
+        return commitForJsonGeneration;
+    }
+
+    public void setCommitForJsonGeneration(final String commitForJsonGeneration) {
+        this.commitForJsonGeneration = commitForJsonGeneration;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "

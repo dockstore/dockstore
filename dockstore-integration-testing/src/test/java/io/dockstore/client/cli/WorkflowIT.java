@@ -336,7 +336,6 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        //master, test
         Workflow workflow = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/cwl-gene-prioritization", "", "cwl", SourceControl.GITHUB, "/Dockstore.cwl", true);
         workflow = workflowApi.refresh((workflow.getId()));
         WorkflowVersion branchVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("master")).findFirst().get();
@@ -344,7 +343,9 @@ public class WorkflowIT extends BaseIT {
 
         workflowApi.getTableToolContent(workflow.getId(), branchVersion.getId());
         String toolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
-        assertTrue(toolJson == null);
+        assertFalse(toolJson == null);
+        assertFalse(toolJson.isEmpty());
+
         workflowApi.getTableToolContent(workflow.getId(), tagVersion.getId());
         toolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", tagVersion.getId()), String.class);
         assertTrue(toolJson != null);
@@ -352,7 +353,11 @@ public class WorkflowIT extends BaseIT {
 
         workflowApi.getWorkflowDag(workflow.getId(), branchVersion.getId());
         String dagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
-        assertTrue(dagJson == null);
+        String commitShaForJson = testingPostgres.runSelectStatement(String.format("select commitforjsongeneration from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertFalse(commitShaForJson.isEmpty());
+        assertTrue(dagJson != null);
+        assertFalse(dagJson.isEmpty());
+
         workflowApi.getWorkflowDag(workflow.getId(), tagVersion.getId());
         dagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", tagVersion.getId()), String.class);
         assertTrue(dagJson != null);
