@@ -4,7 +4,7 @@ jobs:
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
         environment:
-          JAVA_TOOL_OPTIONS: -Xmx3g # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Using 1/2 memory as heap.
+          JAVA_TOOL_OPTIONS: -Xmx1g # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Using 1/2 memory as heap.
           PGHOST: 127.0.0.1
       - image: circleci/postgres:9.6.5-alpine-ram
         environment:
