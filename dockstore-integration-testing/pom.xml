@@ -195,7 +195,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!-- nothing to do with the JAVA_TOOL_OPTIONS in .cirleci/config.yml because surefire has its own JVM-->
-                    <argLine>-Xmx2g</argLine>
+                    <argLine>-Xmx3g</argLine>
                     <!-- seems like some form of Jackson fork issue for this module with random order -->
                     <runOrder>filesystem</runOrder>
                 </configuration>
