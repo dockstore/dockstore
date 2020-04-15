@@ -48,6 +48,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -213,7 +214,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
                 return Response.ok().entity(get.getEntity().getContent()).build();
             } catch (ResponseException e) {
-                throw new CustomWebApplicationException(e.getMessage(), e.getResponse().getStatusLine().getStatusCode());
+                // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
+                int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
+                int statusCode = e.getResponse().getStatusLine().getStatusCode();
+                if (ArrayUtils.contains(codesToResurface, statusCode)) {
+                    throw new CustomWebApplicationException(e.getMessage(), statusCode);
+                } else {
+                    throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
             } catch (IOException e2) {
                 throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
