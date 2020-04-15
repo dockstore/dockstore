@@ -92,11 +92,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Column(columnDefinition = "TEXT")
     private String toolTableJson;
 
-    // Keeps track of the commit used to generate the dag and tool table json.
-    @JsonIgnore
-    @Column()
-    private String commitForJsonGeneration;
-
     public WorkflowVersion() {
         super();
     }
@@ -228,14 +223,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setToolTableJson(final String toolTableJson) {
         this.toolTableJson = toolTableJson;
-    }
-
-    public String getCommitForJsonGeneration() {
-        return commitForJsonGeneration;
-    }
-
-    public void setCommitForJsonGeneration(final String commitForJsonGeneration) {
-        this.commitForJsonGeneration = commitForJsonGeneration;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "

@@ -8333,8 +8333,6 @@ definitions:
         description: "aliases can be used as an alternate unique id for workflow versions"
         additionalProperties:
           $ref: "#/definitions/Alias"
-      commitForJsonGeneration:
-        type: "string"
       id:
         type: "integer"
         format: "int64"

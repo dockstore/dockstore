@@ -134,8 +134,5 @@
         <addColumn tableName="workflowversion">
             <column name="tooltablejson" type="text"/>
         </addColumn>
-        <addColumn tableName="workflowversion">
-            <column name="commitforjsongeneration" type="varchar(255 BYTE)"/>
-        </addColumn>
     </changeSet>
 </databaseChangeLog>

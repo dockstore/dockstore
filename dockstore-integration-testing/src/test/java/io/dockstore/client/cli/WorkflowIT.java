@@ -337,31 +337,67 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         Workflow workflow = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/cwl-gene-prioritization", "", "cwl", SourceControl.GITHUB, "/Dockstore.cwl", true);
-        workflow = workflowApi.refresh((workflow.getId()));
         WorkflowVersion branchVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("master")).findFirst().get();
         WorkflowVersion tagVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("test")).findFirst().get();
 
-        workflowApi.getTableToolContent(workflow.getId(), branchVersion.getId());
-        String toolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
-        assertFalse(toolJson == null);
-        assertFalse(toolJson.isEmpty());
+        // test getting tool table json on a branch and that it clears after refresh worrkflow
+        String branchToolJsonFromApi = workflowApi.getTableToolContent(workflow.getId(), branchVersion.getId());
+        String branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertFalse(branchToolJson == null);
+        assertFalse(branchToolJson.isEmpty());
+        assertEquals(branchToolJsonFromApi, branchToolJson);
 
-        workflowApi.getTableToolContent(workflow.getId(), tagVersion.getId());
-        toolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", tagVersion.getId()), String.class);
-        assertTrue(toolJson != null);
-        assertFalse(toolJson.isEmpty());
+        workflow = workflowApi.refresh(workflow.getId());
+        branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertTrue(branchToolJson == null);
+
+        // Test getting tool table json for a tag and that only that version is cleared after a refreshVersion.
+        String tagToolJsonFromApi = workflowApi.getTableToolContent(workflow.getId(), tagVersion.getId());
+        String tagToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", tagVersion.getId()), String.class);
+        assertTrue(tagToolJson != null);
+        assertFalse(tagToolJson.isEmpty());
+        assertEquals(tagToolJsonFromApi, tagToolJson);
+
+        workflowApi.getTableToolContent(workflow.getId(), branchVersion.getId());
+        workflow = workflowApi.refreshVersion(workflow.getId(), tagVersion.getName());
+        tagToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", tagVersion.getId()), String.class);
+        assertTrue(tagToolJson == null);
+        branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertFalse(branchToolJson == null);
+
+        // Test getting dag json for a branch and that it clears after a refresh workflow
+        String branchDagJsonFromApi = workflowApi.getWorkflowDag(workflow.getId(), branchVersion.getId());
+        String branchDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertTrue(branchDagJson != null);
+        assertFalse(branchDagJson.isEmpty());
+        assertEquals(branchDagJsonFromApi, branchDagJson);
+
+        workflow = workflowApi.refresh(workflow.getId());
+        branchDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertTrue(branchDagJson == null);
+
+        // Test getting dag json for a tag that only that version is cleared after a refreshVersion
+        String tagDagJsonFromApi = workflowApi.getWorkflowDag(workflow.getId(), tagVersion.getId());
+        String tagDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", tagVersion.getId()), String.class);
+        assertTrue(tagDagJson != null);
+        assertFalse(tagDagJson.isEmpty());
+        assertEquals(tagDagJsonFromApi, tagDagJson);
 
         workflowApi.getWorkflowDag(workflow.getId(), branchVersion.getId());
-        String dagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
-        String commitShaForJson = testingPostgres.runSelectStatement(String.format("select commitforjsongeneration from workflowversion where id = '%s'", branchVersion.getId()), String.class);
-        assertFalse(commitShaForJson.isEmpty());
-        assertTrue(dagJson != null);
-        assertFalse(dagJson.isEmpty());
+        workflowApi.refreshVersion(workflow.getId(), tagVersion.getName());
+        tagDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", tagVersion.getId()), String.class);
+        assertTrue(tagDagJson == null);
+        branchDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertFalse(branchDagJson == null);
 
-        workflowApi.getWorkflowDag(workflow.getId(), tagVersion.getId());
-        dagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", tagVersion.getId()), String.class);
-        assertTrue(dagJson != null);
-        assertFalse(dagJson.isEmpty());
+        // Test json is cleared after an organization refresh
+        UsersApi usersApi = new UsersApi(webClient);
+        long userId = 1;
+        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+        branchDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertTrue(branchDagJson == null);
+        branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
+        assertTrue(branchToolJson == null);
     }
     /**
      * This tests that you are able to download zip files for versions of a workflow

@@ -1404,7 +1404,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
-        if (workflowVersion.getCommitID() != null && workflowVersion.getCommitID().equals(workflowVersion.getCommitForJsonGeneration()) && workflowVersion.getDagJson() != null) {
+        // json in db cleared after a refresh
+        if (workflowVersion.getDagJson() != null) {
             return workflowVersion.getDagJson();
         }
 
@@ -1416,7 +1417,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     LanguageHandlerInterface.Type.DAG, toolDAO);
 
             workflowVersion.setDagJson(dagJson);
-            workflowVersion.setCommitForJsonGeneration(workflowVersion.getCommitID());
             return dagJson;
         }
         return null;
@@ -1448,7 +1448,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (workflowVersion.getCommitID() != null && workflowVersion.getCommitID().equals(workflowVersion.getCommitForJsonGeneration()) && workflowVersion.getToolTableJson() != null) {
+        // json in db cleared after a refresh
+        if (workflowVersion.getToolTableJson() != null) {
             return workflowVersion.getToolTableJson();
         }
 
@@ -1459,7 +1460,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             final String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
             workflowVersion.setToolTableJson(toolTableJson);
-            workflowVersion.setCommitForJsonGeneration(workflowVersion.getCommitID());
             return toolTableJson;
         }
 
