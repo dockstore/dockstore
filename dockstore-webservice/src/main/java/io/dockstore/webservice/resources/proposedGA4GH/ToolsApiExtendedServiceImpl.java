@@ -217,12 +217,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
                 int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
                 int statusCode = e.getResponse().getStatusLine().getStatusCode();
+                LOG.error("Could not use Elasticsearch search", e);
                 if (ArrayUtils.contains(codesToResurface, statusCode)) {
                     throw new CustomWebApplicationException(e.getMessage(), statusCode);
                 } else {
                     throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             } catch (IOException e2) {
+                LOG.error("Could not use Elasticsearch search", e2);
                 throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
