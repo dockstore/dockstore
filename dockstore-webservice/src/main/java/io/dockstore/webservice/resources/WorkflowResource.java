@@ -1360,8 +1360,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean nowFrozen = existingTag.isFrozen();
                 // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
+                    String toolsJSONTable;
                     LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
-                    String toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                    // Store tool table json
+                    if (existingTag.getToolTableJson() == null) {
+                        toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                        existingTag.setToolTableJson(toolsJSONTable);
+                    } else {
+                        toolsJSONTable = existingTag.getToolTableJson();
+                    }
                     Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable);
                     existingTag.getImages().addAll(images);
 
@@ -1380,12 +1387,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                     }
 
-                    //store dag and tool table json
+                    // store dag
                     if (existingTag.getDagJson() == null) {
-                        existingTag.setDagJson(getWorkflowDag(Optional.of(user), w.getId(), existingTag.getId()));
-                    }
-                    if (existingTag.getToolTableJson() == null) {
-                        existingTag.setToolTableJson(getTableToolContent(Optional.of(user), w.getId(), existingTag.getId()));
+                        String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(),getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
+                        existingTag.setDagJson(dagJson);
                     }
                 }
             }
