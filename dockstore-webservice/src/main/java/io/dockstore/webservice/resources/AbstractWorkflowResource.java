@@ -303,9 +303,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
-        SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
 
         try {
+            SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
@@ -315,8 +315,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
             return workflows;
-        } catch (ClassCastException | NullPointerException | DockstoreYamlHelper.DockstoreYamlException ex) {
-            String msg = "Invalid .dockstore.yml: " + ex.getMessage();
+        } catch (CustomWebApplicationException | ClassCastException | NullPointerException | DockstoreYamlHelper.DockstoreYamlException ex) {
+            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
@@ -395,7 +395,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Ensure that a Dockstore user exists to add to the workflow
             if (user == null) {
                 String msg = "User does not have an account on Dockstore.";
-                LOG.info(msg);
+                LOG.warn(msg);
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
 

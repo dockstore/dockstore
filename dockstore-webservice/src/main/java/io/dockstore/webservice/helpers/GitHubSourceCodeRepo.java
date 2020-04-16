@@ -740,7 +740,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             repository = getRepository(repositoryId);
         } catch (CustomWebApplicationException ex) {
             String msg = "Could not find repository " + repositoryId + ".";
-            LOG.warn(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
         String dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
@@ -756,7 +755,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             // TODO: https://github.com/dockstore/dockstore/issues/3239
             String msg = "Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?";
-            LOG.warn(msg);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
     }
