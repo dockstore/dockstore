@@ -315,9 +315,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
             return workflows;
-        } catch (CustomWebApplicationException | ClassCastException | NullPointerException | DockstoreYamlHelper.DockstoreYamlException ex) {
+        } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
+            // TODO: Eventually want to record something to the database so that the user can know the type of lambda errors run into
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
-            LOG.error(msg, ex);
+            LOG.info(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
     }
@@ -395,7 +396,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Ensure that a Dockstore user exists to add to the workflow
             if (user == null) {
                 String msg = "User does not have an account on Dockstore.";
-                LOG.warn(msg);
+                LOG.info(msg);
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
 
