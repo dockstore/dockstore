@@ -1358,7 +1358,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean wasFrozen = existingTag.isFrozen();
                 existingTag.updateByUser(version);
                 boolean nowFrozen = existingTag.isFrozen();
-                // If version is snapshotted on this update, grab and store image information
+                // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
                     LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
                     String toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
@@ -1378,6 +1378,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                             }
                         }
 
+                    }
+
+                    //store dag and tool table json
+                    if (existingTag.getDagJson() == null) {
+                        existingTag.setDagJson(getWorkflowDag(Optional.of(user), w.getId(), existingTag.getId()));
+                    }
+                    if (existingTag.getToolTableJson() == null) {
+                        existingTag.setToolTableJson(getTableToolContent(Optional.of(user), w.getId(), existingTag.getId()));
                     }
                 }
             }
