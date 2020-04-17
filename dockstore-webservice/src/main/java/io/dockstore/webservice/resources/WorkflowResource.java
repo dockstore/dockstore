@@ -1389,7 +1389,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                     // store dag
                     if (existingTag.getDagJson() == null) {
-                        String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(),getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
+                        String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
                         existingTag.setDagJson(dagJson);
                     }
                 }
