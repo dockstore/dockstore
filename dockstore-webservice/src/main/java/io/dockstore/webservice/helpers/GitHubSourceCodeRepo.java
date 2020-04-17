@@ -326,9 +326,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 descriptorLanguageSubclass = DescriptorLanguageSubclass.convertShortNameStringToEnum(subclass);
             } catch (UnsupportedOperationException ex) {
                 // TODO: https://github.com/dockstore/dockstore/issues/3239
-                String msg = "Subclass " + subclass + " is not a valid descriptor language subclass.";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+                throw new CustomWebApplicationException("Subclass " + subclass + " is not a valid descriptor language subclass.", LAMBDA_FAILURE);
             }
             service.setDescriptorTypeSubclass(descriptorLanguageSubclass);
         }
@@ -357,9 +355,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
             workflow.setDescriptorType(descriptorLanguage);
         } catch (UnsupportedOperationException ex) {
-            String msg = "The given descriptor type is not supported: " + subclass;
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("The given descriptor type is not supported: " + subclass, LAMBDA_FAILURE);
         }
         workflow.setDefaultWorkflowPath("/.dockstore.yml");
         return workflow;
@@ -739,8 +735,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repository = getRepository(repositoryId);
         } catch (CustomWebApplicationException ex) {
-            String msg = "Could not find repository " + repositoryId + ".";
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Could not find repository " + repositoryId + ".", LAMBDA_FAILURE);
         }
         String dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
         if (dockstoreYmlContent != null) {
@@ -754,8 +749,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             return dockstoreYml;
         } else {
             // TODO: https://github.com/dockstore/dockstore/issues/3239
-            String msg = "Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?";
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
         }
     }
 
@@ -915,9 +909,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         Matcher matcher = pattern.matcher(gitReference);
 
         if (!matcher.find()) {
-            String msg = "Reference " + gitReference + " is not of the valid form";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Reference " + gitReference + " is not of the valid form", LAMBDA_FAILURE);
         }
         String gitBranchType = matcher.group(1);
         String gitBranchName = matcher.group(2);
@@ -926,9 +918,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
         if (ref == null) {
-            String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.", LAMBDA_FAILURE);
         }
 
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();

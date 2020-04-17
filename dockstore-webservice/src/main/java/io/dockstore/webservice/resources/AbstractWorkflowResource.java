@@ -320,6 +320,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.info(msg, ex);
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+        } catch (NullPointerException ex) {
+            String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
+            LOG.error(msg, ex);
+            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
     }
 
@@ -347,9 +351,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             return updatedWorkflows;
         } catch (ClassCastException ex) {
-            String msg = "Could not parse workflow array from YML.";
-            LOG.info(msg, ex);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Could not parse workflow array from YML.", LAMBDA_FAILURE);
         }
     }
 
@@ -395,9 +397,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         if (workflow.isEmpty()) {
             // Ensure that a Dockstore user exists to add to the workflow
             if (user == null) {
-                String msg = "User does not have an account on Dockstore.";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+                throw new CustomWebApplicationException("User does not have an account on Dockstore.", LAMBDA_FAILURE);
             }
 
             if (workflowType == BioWorkflow.class) {
@@ -405,8 +405,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             } else if (workflowType == Service.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
             } else {
-                LOG.error(workflowType.getCanonicalName()  + " is not a valid workflow type.");
-                throw new CustomWebApplicationException("Currently only workflows and services are supported by GitHub Apps.", LAMBDA_FAILURE);
+                throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows and services are supported by GitHub Apps.", LAMBDA_FAILURE);
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
@@ -464,9 +463,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
-            String msg = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.", LAMBDA_FAILURE);
         }
         return workflow;
     }
