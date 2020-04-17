@@ -273,6 +273,10 @@ public class GA4GHV1IT extends GA4GHIT {
         responseObject = response.readEntity(ToolV1.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
 
+        // test garbage source control value
+        response = checkedResponse(baseURL + "tools/%23workflow%2Fgarbagio%2FfakeOrganization%2FfakeRepository%2FPotato", HttpStatus.SC_NOT_FOUND);
+        assertThat(response == null);
+
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
