@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -612,21 +613,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory) {
         // ignore leading slashes
         String searchPath = cleanRelativePath(searchPathParam);
+        // assemble normalized absolute path
+        searchPath = Paths.get(workingDirectory, searchPath).normalize().toString().toLowerCase();
+        // assembled map from normalized absolute paths to files
+        Map<String, SourceFile> calculatedPathMap = sourceFiles.stream().collect(Collectors.toMap(sourceFile -> {
+            return cleanRelativePath(sourceFile.getAbsolutePath()).toLowerCase();
+        }, sourceFile -> sourceFile));
 
-        for (SourceFile sourceFile : sourceFiles) {
-            String calculatedPath = sourceFile.getAbsolutePath();
-            // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
-            // so we need to standardize relative to the main descriptor
-            if (SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType())) {
-                calculatedPath = StringUtils.removeStart(cleanRelativePath(sourceFile.getPath()), cleanRelativePath(workingDirectory));
-            }
-            calculatedPath = cleanRelativePath(calculatedPath);
-            if (searchPath.equalsIgnoreCase(calculatedPath) || searchPath
-                .equalsIgnoreCase(StringUtils.removeStart(calculatedPath, workingDirectory + "/"))) {
-                return Optional.of(sourceFile);
-            }
-        }
-        return Optional.empty();
+        return Optional.ofNullable(calculatedPathMap.get(searchPath));
     }
 
     @Override
@@ -718,8 +712,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     private String cleanRelativePath(String relativePath) {
-        String cleanRelativePath = StringUtils.stripStart(relativePath, "./");
-        return StringUtils.stripStart(cleanRelativePath, "/");
+        String cleanRelativePath = StringUtils.removeStart(relativePath, "./");
+        return StringUtils.removeStart(cleanRelativePath, "/");
     }
 
     /**
@@ -733,10 +727,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static class ParsedRegistryID {
         private enum ToolType { TOOL, SERVICE, WORKFLOW };
         private ToolType type = ToolType.TOOL;
-        private String registry;
-        private String organization;
-        private String name;
-        private String toolName;
+        private final String registry;
+        private final String organization;
+        private final String name;
+        private final String toolName;
 
         public ParsedRegistryID(String paramId) {
             String id;
