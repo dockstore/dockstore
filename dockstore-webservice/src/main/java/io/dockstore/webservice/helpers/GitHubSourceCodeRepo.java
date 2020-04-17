@@ -499,9 +499,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } else {
                 // Legacy version refresh of Dockstore.yml workflow, so use existing path for version (instead of default path)
                 if (!existingDefaults.containsKey(versionName.get())) {
-                    String msg = "Cannot refresh version " + versionName.get() + ". Only existing legacy versions can be refreshed.";
-                    LOG.error(msg);
-                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                    throw new CustomWebApplicationException("Cannot refresh version " + versionName.get() + ". Only existing legacy versions can be refreshed.", HttpStatus.SC_BAD_REQUEST);
                 }
                 calculatedPath = existingDefaults.get(versionName.get()).getWorkflowPath();
                 version.setWorkflowPath(calculatedPath);
@@ -592,7 +590,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
 
         } catch (Exception ex) {
-            LOG.error(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
+            LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
         }
         return version;
     }
@@ -612,7 +610,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             final List<Service12> services = dockstoreYaml12.getServices();
             if (services.isEmpty()) {
-                LOG.error(".dockstore.yml has no services");
+                LOG.info(".dockstore.yml has no services");
                 return null;
             }
             // TODO: Handle more than one service.
@@ -620,7 +618,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // null catch due to .dockstore.yml files like https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/.dockstore.yml
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "Invalid .dockstore.yml";
-            LOG.error(msg, ex);
+            LOG.info(msg, ex);
             return null;
         }
         for (String filePath: files) {
@@ -672,7 +670,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             testParameterPaths = theWf.getTestParameterFiles();
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "Invalid .dockstore.yml: " + ex.getMessage();
-            LOG.error(msg, ex);
+            LOG.info(msg, ex);
             return null;
         }
 
