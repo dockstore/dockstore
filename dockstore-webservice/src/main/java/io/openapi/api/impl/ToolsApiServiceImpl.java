@@ -551,7 +551,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
 
-            Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory(), relativePath != null);
+            Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
             if (correctSourceFile.isPresent()) {
                 SourceFile sourceFile = correctSourceFile.get();
                 // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
@@ -608,21 +608,27 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param sourceFiles      files to look through
      * @param searchPathParam       file to look for
      * @param workingDirectory working directory if relevant
-     * @param relativePath true if we're lookign for a rrelative path
      * @return
      */
-    public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory, boolean relativePath) {
-        String searchPath = cleanRelativePath(searchPathParam).toLowerCase();
-        if (relativePath) {
-            // assemble normalized absolute path
-            searchPath = Paths.get(workingDirectory, searchPath).normalize().toString().toLowerCase();
-        }
+    public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory) {
+        // treat searchPath as an absolute path
+        String absoluteSearchPath = cleanRelativePath(searchPathParam).toLowerCase();
+        // treat searchPath as a relative path
+        String relativeSearchPath = cleanRelativePath(searchPathParam);
+        // assemble normalized absolute path
+        relativeSearchPath = Paths.get(workingDirectory, relativeSearchPath).normalize().toString().toLowerCase();
+
         // assembled map from normalized absolute paths to files
         Map<String, SourceFile> calculatedPathMap = sourceFiles.stream().collect(Collectors.toMap(sourceFile -> {
             return cleanRelativePath(sourceFile.getAbsolutePath()).toLowerCase();
         }, sourceFile -> sourceFile));
 
-        return Optional.ofNullable(calculatedPathMap.get(searchPath));
+        // this is terrible, but it looks like some existing code+tests basically relies upon this trying both a relative and an absolute path
+        // for example: even if the main descriptor is /cwls/cgpmap-bamOut.cwl, we allow cgpmap-bamOut.cwl (relative to the main), /cwls/cgpmap-bamOut.cwl (absolute)
+        // and /cgpmap-bamOut.cwl (no idea why, but we have a test for it at testManualRegisterToolWithMixinsAndSymbolicLinks)
+        SourceFile sourceFileAbsolute = calculatedPathMap.get(absoluteSearchPath);
+        SourceFile sourceFileRelative = calculatedPathMap.get(relativeSearchPath);
+        return Optional.ofNullable(ObjectUtils.firstNonNull(sourceFileRelative, sourceFileAbsolute));
     }
 
     @Override
