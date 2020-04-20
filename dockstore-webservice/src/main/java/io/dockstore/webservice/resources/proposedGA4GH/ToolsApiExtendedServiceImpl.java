@@ -244,7 +244,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             Version<?> version = versionOptional.get();
             // so in this stream we need to standardize relative to the main descriptor
             Optional<SourceFile> correctSourceFile = impl
-                .lookForFilePath(version.getSourceFiles(), relativePath, version.getWorkingDirectory());
+                .lookForFilePath(version.getSourceFiles(), relativePath, version.getWorkingDirectory(), false);
             if (correctSourceFile.isPresent()) {
                 SourceFile sourceFile = correctSourceFile.get();
                 if (!(SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType()))) {

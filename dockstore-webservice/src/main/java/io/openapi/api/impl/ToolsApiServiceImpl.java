@@ -551,7 +551,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
 
-            Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
+            Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory(), relativePath != null);
             if (correctSourceFile.isPresent()) {
                 SourceFile sourceFile = correctSourceFile.get();
                 // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
@@ -608,13 +608,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param sourceFiles      files to look through
      * @param searchPathParam       file to look for
      * @param workingDirectory working directory if relevant
+     * @param relativePath true if we're lookign for a rrelative path
      * @return
      */
-    public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory) {
-        // ignore leading slashes
+    public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory, boolean relativePath) {
         String searchPath = cleanRelativePath(searchPathParam);
-        // assemble normalized absolute path
-        searchPath = Paths.get(workingDirectory, searchPath).normalize().toString().toLowerCase();
+        if (relativePath) {
+            // assemble normalized absolute path
+            searchPath = Paths.get(workingDirectory, searchPath).normalize().toString().toLowerCase();
+        }
         // assembled map from normalized absolute paths to files
         Map<String, SourceFile> calculatedPathMap = sourceFiles.stream().collect(Collectors.toMap(sourceFile -> {
             return cleanRelativePath(sourceFile.getAbsolutePath()).toLowerCase();
