@@ -2906,7 +2906,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -3037,7 +3037,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
