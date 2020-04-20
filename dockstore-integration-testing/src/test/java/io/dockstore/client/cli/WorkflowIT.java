@@ -1160,6 +1160,30 @@ public class WorkflowIT extends BaseIT {
             "../examples/chksum_seqval_wf_interleaved_fq.json");
     }
 
+    // working on https://github.com/dockstore/dockstore/issues/3335
+    @Test
+    public void testWeirdPathCase() throws ApiException, URISyntaxException, IOException {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi
+                .manualRegister("github", "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", "wdl",
+                        "");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
+
+        workflowApi.refresh(workflowByPathGithub.getId());
+        workflowApi.publish(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
+
+        // check on URLs for workflows via ga4gh calls
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        FileWrapper toolDescriptor = ga4Ghv2Api
+                .toolsIdVersionsVersionIdTypeDescriptorGet("WDL", "#workflow/github.com/dockstore-testing/viral-pipelines", "test_path");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        assertFalse(content.isEmpty());
+        // check relative path below the main descriptor
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + "github.com/dockstore-testing/viral-pipelines", "test_path",
+                "../tasks/tasks_assembly.wdl");
+    }
+
     /**
      * Tests manual registration of a tool and check that descriptors are downloaded properly.
      * Description is pulled properly from an $include.

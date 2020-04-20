@@ -612,7 +612,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @return
      */
     public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory, boolean relativePath) {
-        String searchPath = cleanRelativePath(searchPathParam);
+        String searchPath = cleanRelativePath(searchPathParam).toLowerCase();
         if (relativePath) {
             // assemble normalized absolute path
             searchPath = Paths.get(workingDirectory, searchPath).normalize().toString().toLowerCase();
