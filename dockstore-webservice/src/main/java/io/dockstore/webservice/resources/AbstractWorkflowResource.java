@@ -193,6 +193,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflow.getWorkflowVersions().add(workflowVersionFromDB);
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
             }
+            workflowVersionFromDB.setToolTableJson(null);
+            workflowVersionFromDB.setDagJson(null);
 
             // Update sourcefiles
             updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
@@ -446,7 +448,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             Optional<WorkflowVersion> existingWorkflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.equals(remoteWorkflowVersion)).findFirst();
 
-            // Update existing source files, add new source files, remove deleted sourcefiles
+            // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion.isPresent()) {
                 // Copy over workflow version level information
                 existingWorkflowVersion.get().setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
@@ -455,6 +457,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.get().setAliases(remoteWorkflowVersion.getAliases());
                 existingWorkflowVersion.get().setSubClass(remoteWorkflowVersion.getSubClass());
                 existingWorkflowVersion.get().setCommitID(remoteWorkflowVersion.getCommitID());
+                existingWorkflowVersion.get().setDagJson(null);
+                existingWorkflowVersion.get().setToolTableJson(null);
 
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion.get(), remoteWorkflowVersion);
             } else {
