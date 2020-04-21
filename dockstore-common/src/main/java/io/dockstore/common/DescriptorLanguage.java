@@ -234,6 +234,21 @@ public enum DescriptorLanguage {
         }
     }
 
+    public static String getDefaultDescriptorPath(DescriptorLanguage descriptorLanguage) {
+        switch (descriptorLanguage) {
+        case CWL:
+            return "/Dockstore.cwl";
+        case WDL:
+            return "/Dockstore.wdl";
+        case NEXTFLOW:
+            return "/nextflow.config";
+        case GXFORMAT2:
+            return "/Dockstore.yml";
+        default:
+            return null;
+        }
+    }
+
     /**
      * Expanded version for API list of descriptor language
      */
