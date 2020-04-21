@@ -102,6 +102,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         this.descriptorTypeToDefaultDescriptorPath.put("wdl", defaultWDLPath);
         String defaultNextflowPath = "/nextflow.config";
         this.descriptorTypeToDefaultDescriptorPath.put("nfl", defaultNextflowPath);
+        String defaultGalaxyPath = "/Dockstore.yml";
+        this.descriptorTypeToDefaultDescriptorPath.put("gxformat2", defaultGalaxyPath);
     }
 
     @Override
@@ -260,6 +262,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         case DOCKSTORE_WDL:
             testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
             break;
+        case DOCKSTORE_GXFORMAT2:
         case NEXTFLOW_CONFIG:
             // Nextflow does not have test parameter files, so do not fail
             break;
