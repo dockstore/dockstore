@@ -263,6 +263,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
             break;
         case DOCKSTORE_GXFORMAT2:
+            testParameterType = DescriptorLanguage.FileType.GXFORMAT2_TEST_FILE;
         case NEXTFLOW_CONFIG:
             // Nextflow does not have test parameter files, so do not fail
             break;
