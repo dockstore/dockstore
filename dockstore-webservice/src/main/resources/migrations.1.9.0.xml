@@ -126,4 +126,13 @@
         <dropColumn columnName="defaultversion" tableName="tool"/>
         <dropColumn columnName="defaultversion" tableName="workflow"/>
     </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="dagAndToolTableJsonColumnsToWorkflowVersion">
+        <addColumn tableName="workflowversion">
+            <column name="dagjson" type="text"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="tooltablejson" type="text"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

@@ -1358,10 +1358,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean wasFrozen = existingTag.isFrozen();
                 existingTag.updateByUser(version);
                 boolean nowFrozen = existingTag.isFrozen();
-                // If version is snapshotted on this update, grab and store image information
+                // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
+                    String toolsJSONTable;
                     LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
-                    String toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                    // Store tool table json
+                    if (existingTag.getToolTableJson() == null) {
+                        toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                        existingTag.setToolTableJson(toolsJSONTable);
+                    } else {
+                        toolsJSONTable = existingTag.getToolTableJson();
+                    }
                     Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable);
                     existingTag.getImages().addAll(images);
 
@@ -1379,6 +1386,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                         }
 
                     }
+
+                    // store dag
+                    if (existingTag.getDagJson() == null) {
+                        String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
+                        existingTag.setDagJson(dagJson);
+                    }
                 }
             }
         }
@@ -1390,7 +1403,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @GET
     @Timed
-    @UnitOfWork(readOnly = true)
+    @UnitOfWork()
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version.", response = String.class, notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
@@ -1404,12 +1417,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
+        // json in db cleared after a refresh
+        if (workflowVersion.getDagJson() != null) {
+            return workflowVersion.getDagJson();
+        }
+
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                     LanguageHandlerInterface.Type.DAG, toolDAO);
+
+            workflowVersion.setDagJson(dagJson);
+            return dagJson;
         }
         return null;
     }
@@ -1423,7 +1444,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     @GET
     @Timed
-    @UnitOfWork(readOnly = true)
+    @UnitOfWork()
     @Path("/{workflowId}/tools/{workflowVersionId}")
     @ApiOperation(value = "Get the Tools for a given workflow version.", notes = OPTIONAL_AUTH_MESSAGE, response = String.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
@@ -1439,12 +1460,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (workflowVersion == null) {
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
         }
+
+        // json in db cleared after a refresh
+        if (workflowVersion.getToolTableJson() != null) {
+            return workflowVersion.getToolTableJson();
+        }
+
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            workflowVersion.setToolTableJson(toolTableJson);
+            return toolTableJson;
         }
 
         return null;

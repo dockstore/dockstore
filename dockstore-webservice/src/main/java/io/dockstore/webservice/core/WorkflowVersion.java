@@ -32,6 +32,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
@@ -82,6 +83,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
      */
     @ApiModelProperty(value = "The subclass of this for services.", position = 103)
     private Service.SubClass subClass = null;
+
+    @JsonIgnore
+    @Column(columnDefinition = "TEXT")
+    private String dagJson;
+
+    @JsonIgnore
+    @Column(columnDefinition = "TEXT")
+    private String toolTableJson;
 
     public WorkflowVersion() {
         super();
@@ -198,6 +207,22 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setLegacyVersion(boolean legacyVersion) {
         isLegacyVersion = legacyVersion;
+    }
+
+    public String getDagJson() {
+        return dagJson;
+    }
+
+    public void setDagJson(final String dagJson) {
+        this.dagJson = dagJson;
+    }
+
+    public String getToolTableJson() {
+        return toolTableJson;
+    }
+
+    public void setToolTableJson(final String toolTableJson) {
+        this.toolTableJson = toolTableJson;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
