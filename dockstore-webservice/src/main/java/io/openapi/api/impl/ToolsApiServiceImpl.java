@@ -422,11 +422,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param registryId   registry id
      * @param versionIdParam    git reference
      * @param type         type of file
-     * @param relativePath if null, return the primary descriptor, if not null, return a specific file
+     * @param parameterPath if null, return the primary descriptor, if not null, return a specific file
      * @param unwrap       unwrap the file and present the descriptor sans wrapper model
      * @return a specific file wrapped in a response
      */
-    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String relativePath,
+    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
         boolean unwrap, Optional<User> user) {
 
         // if a version is provided, get that version, otherwise return the newest
@@ -543,8 +543,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
             }
             String searchPath;
-            if (relativePath != null) {
-                searchPath = cleanRelativePath(relativePath);
+            if (parameterPath != null) {
+                searchPath = parameterPath;
             } else {
                 searchPath = path;
             }
@@ -606,29 +606,28 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * Return a matching source file
      *
      * @param sourceFiles      files to look through
-     * @param searchPathParam       file to look for
+     * @param searchPathParam       file to look for, could be relative or absolute
      * @param workingDirectory working directory if relevant
      * @return
      */
     public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory) {
-        // treat searchPath as an absolute path
-        String absoluteSearchPath = cleanRelativePath(searchPathParam).toLowerCase();
-        // treat searchPath as a relative path
-        String relativeSearchPath = cleanRelativePath(searchPathParam);
-        // assemble normalized absolute path
-        relativeSearchPath = Paths.get(workingDirectory, relativeSearchPath).normalize().toString().toLowerCase();
+        String targetPath;
+        if (searchPathParam.startsWith("/")) {
+            // treat searchPath as an absolute path
+            targetPath = cleanRelativePath(searchPathParam).toLowerCase();
+        } else {
+            // treat searchPath as a relative path
+            String relativeSearchPath = cleanRelativePath(searchPathParam);
+            // assemble normalized absolute path
+            targetPath = Paths.get(workingDirectory, relativeSearchPath).normalize().toString().toLowerCase();
+        }
 
-        // assembled map from normalized absolute paths to files
+        // assembled map from paths normalized relative to the root (not the main descriptor) to files
         Map<String, SourceFile> calculatedPathMap = sourceFiles.stream().collect(Collectors.toMap(sourceFile -> {
             return cleanRelativePath(sourceFile.getAbsolutePath()).toLowerCase();
         }, sourceFile -> sourceFile));
 
-        // this is terrible, but it looks like some existing code+tests basically relies upon this trying both a relative and an absolute path
-        // for example: even if the main descriptor is /cwls/cgpmap-bamOut.cwl, we allow cgpmap-bamOut.cwl (relative to the main), /cwls/cgpmap-bamOut.cwl (absolute)
-        // and /cgpmap-bamOut.cwl (no idea why, but we have a test for it at testManualRegisterToolWithMixinsAndSymbolicLinks)
-        SourceFile sourceFileAbsolute = calculatedPathMap.get(absoluteSearchPath);
-        SourceFile sourceFileRelative = calculatedPathMap.get(relativeSearchPath);
-        return Optional.ofNullable(ObjectUtils.firstNonNull(sourceFileRelative, sourceFileAbsolute));
+        return Optional.ofNullable(calculatedPathMap.get(targetPath));
     }
 
     @Override
