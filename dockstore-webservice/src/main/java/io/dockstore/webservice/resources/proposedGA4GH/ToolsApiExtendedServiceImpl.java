@@ -48,11 +48,13 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,9 +213,19 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
                 return Response.ok().entity(get.getEntity().getContent()).build();
-            } catch (IOException e) {
-                LOG.error("Could not use elastic search index", e);
-                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } catch (ResponseException e) {
+                // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
+                int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
+                int statusCode = e.getResponse().getStatusLine().getStatusCode();
+                LOG.error("Could not use Elasticsearch search", e);
+                if (ArrayUtils.contains(codesToResurface, statusCode)) {
+                    throw new CustomWebApplicationException(e.getMessage(), statusCode);
+                } else {
+                    throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+            } catch (IOException e2) {
+                LOG.error("Could not use Elasticsearch search", e2);
+                throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
         return Response.ok().entity(0).build();
