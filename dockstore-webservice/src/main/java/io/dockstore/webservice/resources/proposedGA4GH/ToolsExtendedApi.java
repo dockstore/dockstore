@@ -87,7 +87,7 @@ public class ToolsExtendedApi {
     @Produces({ MediaType.APPLICATION_JSON })
     @ApiOperation(nickname = ToolsIndexSearch.OPERATION_ID, value = ToolsIndexSearch.SUMMARY, notes = ToolsIndexSearch.DESCRIPTION, response = String.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexSearch.OK_RESPONSE, response = String.class) })
-    @Operation(operationId = ToolsIndexSearch.OPERATION_ID, summary = ToolsIndexSearch.SUMMARY, description = ToolsIndexSearch.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = {
+    @Operation(operationId = ToolsIndexSearch.OPERATION_ID, summary = ToolsIndexSearch.SUMMARY, description = ToolsIndexSearch.DESCRIPTION, responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsIndexSearch.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class)))
     })
     public Response toolsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query, @Context UriInfo uriInfo,
