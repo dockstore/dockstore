@@ -72,6 +72,7 @@ import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.common.DescriptorLanguage.getDefaultDescriptorPath;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
@@ -88,20 +89,12 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
-    private Map<String, String> descriptorTypeToDefaultDescriptorPath;
 
     public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
         super(sessionFactory, permissionsInterface, limitConfig);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
-        this.descriptorTypeToDefaultDescriptorPath = new HashMap<>();
-        String defaultCWLPath = "/Dockstore.cwl";
-        this.descriptorTypeToDefaultDescriptorPath.put("cwl", defaultCWLPath);
-        String defaultWDLPath = "/Dockstore.wdl";
-        this.descriptorTypeToDefaultDescriptorPath.put("wdl", defaultWDLPath);
-        String defaultNextflowPath = "/nextflow.config";
-        this.descriptorTypeToDefaultDescriptorPath.put("nfl", defaultNextflowPath);
     }
 
     @Override
@@ -168,7 +161,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setLastModified(new Date());
         // Uncomment if we add entry name to hosted workflows
         // workflow.setWorkflowName(entryName);
-        workflow.setDefaultWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(descriptorType.toString().toLowerCase()));
+        workflow.setDefaultWorkflowPath(getDefaultDescriptorPath(descriptorType));
         workflow.getUsers().add(user);
         return workflow;
     }
@@ -220,7 +213,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion getVersion(Workflow workflow) {
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
-        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorType().getLowerShortName()));
+        version.setWorkflowPath(getDefaultDescriptorPath(workflow.getDescriptorType()));
         version.setLastModified(new Date());
         return version;
     }
@@ -236,7 +229,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         DescriptorLanguage.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().getLowerShortName()));
+        String mainDescriptorPath = mainDescriptorOpt.map(SourceFile::getPath).orElse(getDefaultDescriptorPath(entry.getDescriptorType()));
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
@@ -260,6 +253,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         case DOCKSTORE_WDL:
             testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
             break;
+        case DOCKSTORE_GXFORMAT2:
+            testParameterType = DescriptorLanguage.FileType.GXFORMAT2_TEST_FILE;
         case NEXTFLOW_CONFIG:
             // Nextflow does not have test parameter files, so do not fail
             break;
