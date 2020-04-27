@@ -187,7 +187,7 @@ public abstract class SourceCodeRepoInterface {
     public Service initializeService(String repositoryId) {
         Service service = (Service)initializeWorkflow(repositoryId, new Service());
         service.setDescriptorType(DescriptorLanguage.SERVICE);
-        service.setMode(WorkflowMode.SERVICE);
+        service.setMode(WorkflowMode.DOCKSTORE_YML);
         service.setDefaultWorkflowPath(".dockstore.yml");
         return service;
     }

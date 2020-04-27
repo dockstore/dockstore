@@ -1393,7 +1393,6 @@ components:
           - FULL
           - STUB
           - HOSTED
-          - SERVICE
           - DOCKSTORE_YML
           type: string
         organization:
@@ -2906,7 +2905,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
