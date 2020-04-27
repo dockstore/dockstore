@@ -271,23 +271,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         return version;
     }
 
-    //    @Override
-    //    protected String invalidFileNames(WorkflowVersion version) {
-    //        Pattern pattern = Pattern.compile("/.+(/.+)*(\\.).+");
-    //        //Pattern pattern = Pattern.compile("/.+(/.+)*(\\.).+");
-    //        Set<SourceFile> sourceFiles = version.getSourceFiles();
-    //        StringBuilder invalidFileNames = new StringBuilder();
-    //        invalidFileNames.append("Files must begin with '/', and have a name. Unable to save new version due to the following files: ");
-    //
-    //        sourceFiles.stream().forEach(sourceFile -> {
-    //            Matcher matcher = pattern.matcher(sourceFile.getPath());
-    //            if (!matcher.matches()) {
-    //                invalidFileNames.append(sourceFile.getPath());
-    //            }
-    //        });
-    //        return invalidFileNames.toString();
-    //    }
-
     /**
      * A workflow version is valid if it has a valid descriptor set and all valid test parameter files
      * @param version Workflow Version to validate
