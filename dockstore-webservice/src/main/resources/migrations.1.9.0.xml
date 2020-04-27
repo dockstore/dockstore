@@ -137,6 +137,6 @@
     </changeSet>
 
     <changeSet id="removeServiceMode" author="aduncan">
-        <sql dbms="postgresql">UPDATE workflow SET mode="DOCKSTORE_YML" WHERE mode="SERVICE"</sql>
+        <sql dbms="postgresql">UPDATE service SET mode='DOCKSTORE_YML' WHERE mode='SERVICE'</sql>
     </changeSet>
 </databaseChangeLog>
