@@ -980,7 +980,10 @@ public class DockerRepoResource
         FileType fileType =
             (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);
+            boolean fileDeleted = sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);
+            if (!fileDeleted) {
+                throw new CustomWebApplicationException("There are no existing files with the path: " + path, HttpStatus.SC_NOT_FOUND);
+            }
         }
 
         return tag.getSourceFiles();
