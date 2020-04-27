@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -421,11 +422,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param registryId   registry id
      * @param versionIdParam    git reference
      * @param type         type of file
-     * @param relativePath if null, return the primary descriptor, if not null, return a specific file
+     * @param parameterPath if null, return the primary descriptor, if not null, return a specific file
      * @param unwrap       unwrap the file and present the descriptor sans wrapper model
      * @return a specific file wrapped in a response
      */
-    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String relativePath,
+    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
         boolean unwrap, Optional<User> user) {
 
         // if a version is provided, get that version, otherwise return the newest
@@ -542,8 +543,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
             }
             String searchPath;
-            if (relativePath != null) {
-                searchPath = cleanRelativePath(relativePath);
+            if (parameterPath != null) {
+                searchPath = parameterPath;
             } else {
                 searchPath = path;
             }
@@ -605,28 +606,28 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * Return a matching source file
      *
      * @param sourceFiles      files to look through
-     * @param searchPathParam       file to look for
+     * @param searchPathParam       file to look for, could be relative or absolute
      * @param workingDirectory working directory if relevant
      * @return
      */
     public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory) {
-        // ignore leading slashes
-        String searchPath = cleanRelativePath(searchPathParam);
-
-        for (SourceFile sourceFile : sourceFiles) {
-            String calculatedPath = sourceFile.getAbsolutePath();
-            // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
-            // so we need to standardize relative to the main descriptor
-            if (SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType())) {
-                calculatedPath = StringUtils.removeStart(cleanRelativePath(sourceFile.getPath()), cleanRelativePath(workingDirectory));
-            }
-            calculatedPath = cleanRelativePath(calculatedPath);
-            if (searchPath.equalsIgnoreCase(calculatedPath) || searchPath
-                .equalsIgnoreCase(StringUtils.removeStart(calculatedPath, workingDirectory + "/"))) {
-                return Optional.of(sourceFile);
-            }
+        String targetPath;
+        if (searchPathParam.startsWith("/")) {
+            // treat searchPath as an absolute path
+            targetPath = cleanRelativePath(searchPathParam).toLowerCase();
+        } else {
+            // treat searchPath as a relative path
+            String relativeSearchPath = cleanRelativePath(searchPathParam);
+            // assemble normalized absolute path
+            targetPath = Paths.get(workingDirectory, relativeSearchPath).normalize().toString().toLowerCase();
         }
-        return Optional.empty();
+
+        // assembled map from paths normalized relative to the root (not the main descriptor) to files
+        Map<String, SourceFile> calculatedPathMap = sourceFiles.stream().collect(Collectors.toMap(sourceFile -> {
+            return cleanRelativePath(sourceFile.getAbsolutePath()).toLowerCase();
+        }, sourceFile -> sourceFile));
+
+        return Optional.ofNullable(calculatedPathMap.get(targetPath));
     }
 
     @Override
@@ -718,8 +719,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     private String cleanRelativePath(String relativePath) {
-        String cleanRelativePath = StringUtils.stripStart(relativePath, "./");
-        return StringUtils.stripStart(cleanRelativePath, "/");
+        String cleanRelativePath = StringUtils.removeStart(relativePath, "./");
+        return StringUtils.removeStart(cleanRelativePath, "/");
     }
 
     /**
@@ -733,10 +734,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static class ParsedRegistryID {
         private enum ToolType { TOOL, SERVICE, WORKFLOW };
         private ToolType type = ToolType.TOOL;
-        private String registry;
-        private String organization;
-        private String name;
-        private String toolName;
+        private final String registry;
+        private final String organization;
+        private final String name;
+        private final String toolName;
 
         public ParsedRegistryID(String paramId) {
             String id;
