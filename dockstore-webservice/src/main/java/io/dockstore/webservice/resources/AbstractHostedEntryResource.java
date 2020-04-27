@@ -232,6 +232,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
         }
 
+        String invalidFileNames = invalidFileNames(version);
+        if (!invalidFileNames.isEmpty()) {
+            StringBuilder message = new StringBuilder();
+            message.append("Files must have a name. Unable to save new version due to the following files: ");
+            message.append(invalidFileNames);
+            throw new CustomWebApplicationException(message.toString(), HttpStatus.SC_BAD_REQUEST);
+        }
+
         validatedVersion.setValid(true); // Hosted entry versions must be valid to save
         validatedVersion.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, validatedVersion);
@@ -299,6 +307,20 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         return result.toString();
+    }
+
+    protected String invalidFileNames(U version) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
+        StringBuilder invalidFileNames = new StringBuilder();
+
+        sourceFiles.stream().forEach(sourceFile -> {
+            sourceFile.getPath().endsWith("/");
+            if (sourceFile.getPath().endsWith("/")) {
+                invalidFileNames.append(sourceFile.getPath() + " ");
+            }
+        });
+
+        return invalidFileNames.toString();
     }
 
     /**
