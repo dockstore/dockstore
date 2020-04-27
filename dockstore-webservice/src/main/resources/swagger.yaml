@@ -8250,7 +8250,6 @@ definitions:
         - "FULL"
         - "STUB"
         - "HOSTED"
-        - "SERVICE"
         - "DOCKSTORE_YML"
       workflowName:
         type: "string"
