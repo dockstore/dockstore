@@ -31,6 +31,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.eclipse.jetty.http.HttpStatus;
@@ -1065,10 +1066,15 @@ public class GeneralWorkflowIT extends BaseIT {
         toAdd.add("test.cwl.json");
         toAdd.add("test2.cwl.json");
         toAdd.add("fake.cwl.json");
-        workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "master");
+        List<SourceFile> master = workflowsApi.addTestParameterFiles(workflow.getId(), toAdd, "", "master");
         List<String> toDelete = new ArrayList<>();
         toDelete.add("notreal.cwl.json");
-        workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
+        try {
+            workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
+            Assert.fail("Should've have thrown an error when deleting non-existent file");
+        } catch (ApiException e) {
+            assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
+        }
         workflow = workflowsApi.refresh(workflow.getId());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
