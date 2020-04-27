@@ -330,7 +330,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     @Test
-    public void testValidHostedFileNames() throws IOException{
+    public void testValidHostedFileNames() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api
                 .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
