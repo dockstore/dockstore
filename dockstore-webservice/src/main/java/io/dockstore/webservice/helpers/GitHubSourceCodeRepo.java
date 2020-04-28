@@ -688,7 +688,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             file.setContent(fileContent);
             DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
             file.setType(identifiedType);
-            version.setWorkflowPath(primaryDescriptorPath);
 
             version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
 
@@ -715,7 +714,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             // File not found or null
             LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);
-            return null;
         }
 
         return version;
