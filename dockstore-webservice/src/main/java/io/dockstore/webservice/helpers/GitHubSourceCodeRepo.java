@@ -38,6 +38,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
@@ -51,6 +52,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -696,6 +698,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         if (testParameterPaths != null) {
+            List<String> missingFiles = new ArrayList<>();
             for (String testParameterPath : testParameterPaths) {
                 String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
                 if (testJsonContent != null) {
@@ -712,8 +715,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     if (!hasDuplicate) {
                         version.getSourceFiles().add(testJson);
                     }
+                } else {
+                    missingFiles.add(testParameterPath);
                 }
             }
+
+            Map<String, String> validationMessage = new HashMap<>();
+            validationMessage.put("/.dockstore.yml", String.format("The following file(s) are missing: %s.", missingFiles.stream().collect(Collectors.joining(", "))));
+            VersionTypeValidation missingTestParameterFile = new VersionTypeValidation(false, validationMessage);
+            Validation missingTestParameterFileValidation = new Validation(DescriptorLanguage.FileType.DOCKSTORE_YML, missingTestParameterFile);
+            version.addOrUpdateValidation(missingTestParameterFileValidation);
         }
 
         return version;
