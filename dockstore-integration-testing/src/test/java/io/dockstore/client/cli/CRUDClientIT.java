@@ -333,7 +333,7 @@ public class CRUDClientIT extends BaseIT {
     public void testValidHostedFileNames() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api
-                .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString().toLowerCase(), null, null);
+                .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("metadata_example2.wdl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);

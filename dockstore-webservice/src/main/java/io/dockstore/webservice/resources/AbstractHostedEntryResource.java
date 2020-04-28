@@ -314,7 +314,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         StringBuilder invalidFileNames = new StringBuilder();
 
         sourceFiles.stream().forEach(sourceFile -> {
-            sourceFile.getPath().endsWith("/");
             if (sourceFile.getPath().endsWith("/")) {
                 invalidFileNames.append(sourceFile.getPath() + " ");
             }
