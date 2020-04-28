@@ -38,11 +38,7 @@ public enum WorkflowMode {
      */
     HOSTED,
     /**
-     * A degenerate workflow
-     */
-    SERVICE,
-    /**
-     * A workflow that uses a .dockstore.yml
+     * A workflow/service that uses a .dockstore.yml
      */
     DOCKSTORE_YML
 }
