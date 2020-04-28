@@ -681,6 +681,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         version.setWorkflowPath(primaryDescriptorPath);
 
+        Map<String, String> validationMessage = new HashMap<>();
+
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
@@ -692,40 +694,41 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             file.setType(identifiedType);
 
             version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
+
+            if (testParameterPaths != null) {
+                List<String> missingFiles = new ArrayList<>();
+                for (String testParameterPath : testParameterPaths) {
+                    String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
+                    if (testJsonContent != null) {
+                        SourceFile testJson = new SourceFile();
+                        // find type from file type, then find matching test param type
+                        testJson.setType(workflow.getDescriptorType().getTestParamType());
+                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
+                        testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
+                        testJson.setContent(testJsonContent);
+
+                        // Only add test parameter file if it hasn't already been added
+                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch(
+                                (SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
+                        if (!hasDuplicate) {
+                            version.getSourceFiles().add(testJson);
+                        }
+                    } else {
+                        missingFiles.add(testParameterPath);
+                    }
+                }
+
+                validationMessage.put("/.dockstore.yml", String.format("The following file(s) are missing: %s.", missingFiles.stream().collect(Collectors.joining(", "))));
+            }
         } else {
             // File not found or null
             LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);
+            validationMessage.put("/.dockstore.yml", "Could not find the primary descriptor file " + primaryDescriptorPath + ".");
         }
 
-        if (testParameterPaths != null) {
-            List<String> missingFiles = new ArrayList<>();
-            for (String testParameterPath : testParameterPaths) {
-                String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
-                if (testJsonContent != null) {
-                    SourceFile testJson = new SourceFile();
-                    // find type from file type, then find matching test param type
-                    testJson.setType(workflow.getDescriptorType().getTestParamType());
-                    testJson.setPath(workflow.getDefaultTestParameterFilePath());
-                    testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
-                    testJson.setContent(testJsonContent);
-
-                    // Only add test parameter file if it hasn't already been added
-                    boolean hasDuplicate = version.getSourceFiles().stream().anyMatch(
-                            (SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
-                    if (!hasDuplicate) {
-                        version.getSourceFiles().add(testJson);
-                    }
-                } else {
-                    missingFiles.add(testParameterPath);
-                }
-            }
-
-            Map<String, String> validationMessage = new HashMap<>();
-            validationMessage.put("/.dockstore.yml", String.format("The following file(s) are missing: %s.", missingFiles.stream().collect(Collectors.joining(", "))));
-            VersionTypeValidation missingTestParameterFile = new VersionTypeValidation(false, validationMessage);
-            Validation missingTestParameterFileValidation = new Validation(DescriptorLanguage.FileType.DOCKSTORE_YML, missingTestParameterFile);
-            version.addOrUpdateValidation(missingTestParameterFileValidation);
-        }
+        VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(false, validationMessage);
+        Validation dockstoreYmlValidation = new Validation(DescriptorLanguage.FileType.DOCKSTORE_YML, dockstoreYmlValidationMessage);
+        version.addOrUpdateValidation(dockstoreYmlValidation);
 
         return version;
     }
