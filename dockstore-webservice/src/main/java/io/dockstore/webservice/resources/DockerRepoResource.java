@@ -982,7 +982,7 @@ public class DockerRepoResource
         for (String path : testParameterPaths) {
             boolean fileDeleted = sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);
             if (!fileDeleted) {
-                throw new CustomWebApplicationException("There are no existing files with the path: " + path, HttpStatus.SC_NOT_FOUND);
+                throw new CustomWebApplicationException("There are no existing test parameter files with the path: " + path, HttpStatus.SC_NOT_FOUND);
             }
         }
 

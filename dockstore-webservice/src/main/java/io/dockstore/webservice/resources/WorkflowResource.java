@@ -1264,7 +1264,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .forEach(path -> {
                 boolean fileDeleted = sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType);
                 if (!fileDeleted) {
-                    throw new CustomWebApplicationException("There are no existing files with the path: " + path, HttpStatus.SC_NOT_FOUND);
+                    throw new CustomWebApplicationException("There are no existing test parameter files with the path: " + path, HttpStatus.SC_NOT_FOUND);
                 }
             });
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
