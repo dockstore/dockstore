@@ -32,6 +32,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Validation;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
@@ -271,5 +272,59 @@ public class WebhookIT extends BaseIT {
         } catch (ApiException ex) {
             assertEquals("Should not be able to add a workflow when user does not exist on Dockstore.", LAMBDA_ERROR, ex.getCode());
         }
+    }
+
+    /**
+     * This tests the GitHub release process when the dockstore.yml is
+     * * Missing the primary descriptor
+     * * Missing a test parameter file
+     */
+    @Test
+    public void testInvalidDockstoreYmlFiles() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        // Release 0.1 on GitHub - one new wdl workflow
+        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        assertEquals("Should only have one service", 1, workflows.size());
+
+        // Ensure that new workflow is created and is what is expected
+        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
+        assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
+        assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
+        assertTrue("Should be valid", workflow.getWorkflowVersions().get(0).isValid());
+
+        // Push missingPrimaryDescriptor on GitHub - one existing wdl workflow, missing primary descriptor
+        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/heads/missingPrimaryDescriptor", installationId);
+        assertEquals("Should only have one service", 1, workflows.size());
+
+        // Ensure that new version is in the correct state (invalid)
+        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", false);
+        assertNotNull(workflow);
+        assertEquals("Should have two versions", 2, workflow.getWorkflowVersions().size());
+        WorkflowVersion missingPrimaryDescriptorVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "missingPrimaryDescriptor")).findFirst().get();
+        assertFalse("Version should be invalid", missingPrimaryDescriptorVersion.isValid());
+        assertTrue("Should have .dockstore.yml file", missingPrimaryDescriptorVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/.dockstore.yml")).findFirst().isPresent());
+        assertTrue("Should not have doesnotexist.wdl file", missingPrimaryDescriptorVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty());
+        assertFalse("Should have invalid .dockstore.yml", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
+        assertFalse("Should have invalid doesnotexist.wdl", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
+
+        // Push missingTestParameterFile on GitHub - one existing wdl workflow, missing a test parameter file
+        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/heads/missingTestParameterFile", installationId);
+        assertEquals("Should only have one service", 1, workflows.size());
+
+        // Ensure that new version is in the correct state (invalid)
+        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", false);
+        assertNotNull(workflow);
+        assertEquals("Should have three versions", 3, workflow.getWorkflowVersions().size());
+        WorkflowVersion missingTestParameterFileVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "missingTestParameterFile")).findFirst().get();
+        assertFalse("Version should be invalid", missingTestParameterFileVersion.isValid());
+        assertTrue("Should have .dockstore.yml file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/.dockstore.yml")).findFirst().isPresent());
+        assertTrue("Should not have /test/doesnotexist.txt file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/test/doesnotexist.txt")).findFirst().isEmpty());
+        assertTrue("Should have Dockstore2.wdl file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
+        assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
+        assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
     }
 }

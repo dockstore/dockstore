@@ -696,7 +696,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
 
             if (testParameterPaths != null) {
-                List<String> missingFiles = new ArrayList<>();
+                List<String> missingParamFiles = new ArrayList<>();
                 for (String testParameterPath : testParameterPaths) {
                     String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
                     if (testJsonContent != null) {
@@ -713,11 +713,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             version.getSourceFiles().add(testJson);
                         }
                     } else {
-                        missingFiles.add(testParameterPath);
+                        missingParamFiles.add(testParameterPath);
                     }
                 }
 
-                validationMessage.put("/.dockstore.yml", String.format("The following file(s) are missing: %s.", missingFiles.stream().collect(Collectors.joining(", "))));
+                if (missingParamFiles.size() > 0) {
+                    validationMessage.put("/.dockstore.yml", String.format("The following file(s) are missing: %s.",
+                            missingParamFiles.stream().collect(Collectors.joining(", "))));
+                }
             }
         } else {
             // File not found or null
@@ -725,7 +728,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             validationMessage.put("/.dockstore.yml", "Could not find the primary descriptor file " + primaryDescriptorPath + ".");
         }
 
-        VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(false, validationMessage);
+        VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(validationMessage.isEmpty(), validationMessage);
         Validation dockstoreYmlValidation = new Validation(DescriptorLanguage.FileType.DOCKSTORE_YML, dockstoreYmlValidationMessage);
         version.addOrUpdateValidation(dockstoreYmlValidation);
 
