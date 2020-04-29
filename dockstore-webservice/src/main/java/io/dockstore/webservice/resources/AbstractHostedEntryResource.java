@@ -15,10 +15,12 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -232,7 +234,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
         }
 
-        String invalidFileNames = invalidFileNames(version);
+        String invalidFileNames = String.join(",", invalidFileNames(version));
         if (!invalidFileNames.isEmpty()) {
             StringBuilder message = new StringBuilder();
             message.append("Files must have a name. Unable to save new version due to the following files: ");
@@ -309,17 +311,17 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return result.toString();
     }
 
-    protected String invalidFileNames(U version) {
+    protected List<String> invalidFileNames(U version) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
-        StringBuilder invalidFileNames = new StringBuilder();
+        List<String> invalidFileNames = new ArrayList<>();
 
         sourceFiles.stream().forEach(sourceFile -> {
             if (sourceFile.getPath().endsWith("/")) {
-                invalidFileNames.append(sourceFile.getPath() + " ");
+                invalidFileNames.add(sourceFile.getPath());
             }
         });
 
-        return invalidFileNames.toString();
+        return invalidFileNames;
     }
 
     /**

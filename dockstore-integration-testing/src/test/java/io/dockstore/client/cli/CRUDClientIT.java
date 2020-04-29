@@ -345,13 +345,14 @@ public class CRUDClientIT extends BaseIT {
         sourceFiles.add(file);
         sourceFiles.add(file2);
 
-        thrown.expectMessage("Files must have a name");
+        String msg = "Files must have a name";
+        thrown.expectMessage(msg);
         Workflow workflow = api.editHostedWorkflow(hostedWorkflow.getId(), sourceFiles);
 
         sourceFiles.remove(file2);
         file2.setPath("folder/");
         sourceFiles.add(file2);
-        thrown.expectMessage("Files must have a name");
+        thrown.expectMessage(msg);
         workflow = api.editHostedWorkflow(hostedWorkflow.getId(), sourceFiles);
 
         sourceFiles.remove(file2);
