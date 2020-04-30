@@ -304,8 +304,11 @@ public class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", false);
         assertNotNull(workflow);
         assertEquals("Should have two versions", 2, workflow.getWorkflowVersions().size());
+
         WorkflowVersion missingPrimaryDescriptorVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "missingPrimaryDescriptor")).findFirst().get();
         assertFalse("Version should be invalid", missingPrimaryDescriptorVersion.isValid());
+
+        // Check existence of files and validations
         assertTrue("Should have .dockstore.yml file", missingPrimaryDescriptorVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/.dockstore.yml")).findFirst().isPresent());
         assertTrue("Should not have doesnotexist.wdl file", missingPrimaryDescriptorVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty());
         assertFalse("Should have invalid .dockstore.yml", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
@@ -319,8 +322,11 @@ public class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", false);
         assertNotNull(workflow);
         assertEquals("Should have three versions", 3, workflow.getWorkflowVersions().size());
+
         WorkflowVersion missingTestParameterFileVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "missingTestParameterFile")).findFirst().get();
         assertFalse("Version should be invalid", missingTestParameterFileVersion.isValid());
+
+        // Check existence of files and validations
         assertTrue("Should have .dockstore.yml file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/.dockstore.yml")).findFirst().isPresent());
         assertTrue("Should not have /test/doesnotexist.txt file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/test/doesnotexist.txt")).findFirst().isEmpty());
         assertTrue("Should have Dockstore2.wdl file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
