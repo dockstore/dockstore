@@ -325,7 +325,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should have three versions", 3, workflow.getWorkflowVersions().size());
 
         WorkflowVersion missingTestParameterFileVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "missingTestParameterFile")).findFirst().get();
-        assertFalse("Version should be invalid", missingTestParameterFileVersion.isValid());
+        assertTrue("Version should be valid (missing test parameter doesn't make the version invalid)", missingTestParameterFileVersion.isValid());
 
         // Check existence of files and validations
         assertTrue("Should have .dockstore.yml file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)).findFirst().isPresent());
