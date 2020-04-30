@@ -89,7 +89,7 @@ public final class DockstoreYamlHelper {
         } else if (dockstoreYaml instanceof DockstoreYaml11) {
             return convert11To12((DockstoreYaml11)dockstoreYaml);
         } else {
-            throw new DockstoreYamlException("not a valid dockstore.yml version 1.1 or 1.2");
+            throw new DockstoreYamlException("not a valid .dockstore.yml version 1.1 or 1.2");
         }
     }
 
