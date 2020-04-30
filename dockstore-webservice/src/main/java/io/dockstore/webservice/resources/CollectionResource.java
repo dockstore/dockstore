@@ -1,6 +1,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,6 +51,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,8 +78,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     private final WorkflowDAO workflowDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
+    private final SessionFactory sessionFactory;
 
     public CollectionResource(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -349,11 +353,16 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
 
         List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
-
+        Session currentSession = sessionFactory.getCurrentSession();
         if (checkIncludes(include, "entries")) {
             collections.forEach(collection -> Hibernate.initialize(collection.getEntries()));
+        } else {
+            // Ensure that entries is empty
+            collections.forEach(collection -> {
+                currentSession.evict(collection);
+                collection.setEntries(new HashSet<>());
+            });
         }
-
         return collections;
     }
 
