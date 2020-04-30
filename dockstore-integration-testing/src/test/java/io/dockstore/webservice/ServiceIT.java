@@ -221,6 +221,14 @@ public class ServiceIT extends BaseIT {
         List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(userId);
         assertEquals("There should be one service", 1, services.size());
         assertEquals("There should be no workflows", 0, workflows.size());
+
+        // Should not be able to refresh service
+        try {
+            client.refresh(services.get(0).getId());
+            fail("Should not be able refresh a service");
+        } catch (ApiException ex) {
+            assertEquals("Should fail since you cannot refresh services.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
     }
 
     /**
