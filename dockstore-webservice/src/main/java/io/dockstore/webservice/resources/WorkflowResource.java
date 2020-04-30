@@ -437,6 +437,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(existingWorkflow);
         checkUser(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
+        checkNotService(existingWorkflow);
         // get a live user for the following
         user = userDAO.findById(user.getId());
         // Update user data
@@ -1753,6 +1754,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private void checkNotHosted(Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private void checkNotService(Workflow workflow) {
+        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
+            throw new CustomWebApplicationException("Cannot modify services this way", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
