@@ -82,6 +82,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 
 /**
@@ -318,7 +319,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setGitUrl("git@github.com:" + repositoryId + ".git");
         service.setLastUpdated(new Date());
         service.setDescriptorType(DescriptorLanguage.SERVICE);
-        service.setDefaultWorkflowPath("/.dockstore.yml");
+        service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
 
         // Validate subclass
@@ -359,7 +360,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (UnsupportedOperationException ex) {
             throw new CustomWebApplicationException("The given descriptor type is not supported: " + subclass, LAMBDA_FAILURE);
         }
-        workflow.setDefaultWorkflowPath("/.dockstore.yml");
+        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         return workflow;
     }
 
@@ -718,14 +719,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
 
                 if (missingParamFiles.size() > 0) {
-                    validationMessage.put("/.dockstore.yml", String.format("The following file(s) are missing: %s.",
+                    validationMessage.put(DOCKSTORE_YML_PATH, String.format("%s: %s.", missingParamFiles.size() == 1 ? "The following file is missing" : "The following files are missing",
                             missingParamFiles.stream().map(paramFile -> String.format("'%s'", paramFile)).collect(Collectors.joining(", "))));
                 }
             }
         } else {
             // File not found or null
-            LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);
-            validationMessage.put("/.dockstore.yml", "Could not find the primary descriptor file '" + primaryDescriptorPath + "'.");
+            LOG.info("Could not find the file " + primaryDescriptorPath + " in repo " + repository);
+            validationMessage.put(DOCKSTORE_YML_PATH, "Could not find the primary descriptor file '" + primaryDescriptorPath + "'.");
         }
 
         VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(validationMessage.isEmpty(), validationMessage);
@@ -742,20 +743,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return dockstore YML file
      */
     public SourceFile getDockstoreYml(String repositoryId, String gitReference) {
-        String dockstoreYmlPath = "/.dockstore.yml";
         GHRepository repository;
         try {
             repository = getRepository(repositoryId);
         } catch (CustomWebApplicationException ex) {
             throw new CustomWebApplicationException("Could not find repository " + repositoryId + ".", LAMBDA_FAILURE);
         }
-        String dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
+        String dockstoreYmlContent = this.readFileFromRepo(DOCKSTORE_YML_PATH, gitReference, repository);
         if (dockstoreYmlContent != null) {
             // Create file for .dockstore.yml
             SourceFile dockstoreYml = new SourceFile();
             dockstoreYml.setContent(dockstoreYmlContent);
-            dockstoreYml.setPath(dockstoreYmlPath);
-            dockstoreYml.setAbsolutePath(dockstoreYmlPath);
+            dockstoreYml.setPath(DOCKSTORE_YML_PATH);
+            dockstoreYml.setAbsolutePath(DOCKSTORE_YML_PATH);
             dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
 
             return dockstoreYml;
