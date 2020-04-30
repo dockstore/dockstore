@@ -23,8 +23,6 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-
 /**
  * Converts the contents of a zip file into a <code>SourceFiles</code> object, ensuring that
  * no zip exploits (e.g., zip bomb, path traversal) can execute.
@@ -138,7 +136,7 @@ public final class ZipSourceFileHelper {
                         SourceFile sourceFile = new SourceFile();
                         if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
                             sourceFile.setType(paramFileType(workflowFileType));
-                        } else if (DOCKSTORE_YML_PATH.equals(zipEntry.getName())) {
+                        } else if (".dockstore.yml".equals(zipEntry.getName())) {
                             sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
                         } else {
                             sourceFile.setType(workflowFileType);
@@ -211,7 +209,7 @@ public final class ZipSourceFileHelper {
     }
 
     private static DockstoreYaml10 readAndPrevalidateDockstoreYml(final ZipFile zipFile) {
-        ZipEntry dockstoreYml = zipFile.stream().filter(zipEntry -> DOCKSTORE_YML_PATH.equals(zipEntry.getName())).findFirst()
+        ZipEntry dockstoreYml = zipFile.stream().filter(zipEntry -> ".dockstore.yml".equals(zipEntry.getName())).findFirst()
                 .orElseThrow(() -> new CustomWebApplicationException("Missing .dockstore.yml", HttpStatus.SC_BAD_REQUEST));
         try {
             return readAndPrevalidateDockstoreYml(zipFile.getInputStream(dockstoreYml));
