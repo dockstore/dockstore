@@ -28,6 +28,7 @@ import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -82,6 +83,7 @@ public class Collection implements Serializable, Aliasable {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "collection_entry", joinColumns = @JoinColumn(name = "collectionid"), inverseJoinColumns = @JoinColumn(name = "entryid"))
+    @JsonIgnoreProperties({ "workflowVersions" })
     private Set<Entry> entries = new HashSet<>();
 
     @JsonIgnore
