@@ -686,14 +686,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
-            SourceFile file = new SourceFile();
-            file.setAbsolutePath(primaryDescriptorPath);
-            file.setPath(primaryDescriptorPath);
-            file.setContent(fileContent);
+            SourceFile primaryDescriptorFile = new SourceFile();
+            primaryDescriptorFile.setAbsolutePath(primaryDescriptorPath);
+            primaryDescriptorFile.setPath(primaryDescriptorPath);
+            primaryDescriptorFile.setContent(fileContent);
             DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
-            file.setType(identifiedType);
+            primaryDescriptorFile.setType(identifiedType);
 
-            version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
+            version = combineVersionAndSourcefile(repository.getFullName(), primaryDescriptorFile, workflow, identifiedType, version, existingDefaults);
 
             if (testParameterPaths != null) {
                 List<String> missingParamFiles = new ArrayList<>();
@@ -719,13 +719,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                 if (missingParamFiles.size() > 0) {
                     validationMessage.put("/.dockstore.yml", String.format("The following file(s) are missing: %s.",
-                            missingParamFiles.stream().collect(Collectors.joining(", "))));
+                            missingParamFiles.stream().map(paramFile -> String.format("'%s'", paramFile)).collect(Collectors.joining(", "))));
                 }
             }
         } else {
             // File not found or null
             LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);
-            validationMessage.put("/.dockstore.yml", "Could not find the primary descriptor file " + primaryDescriptorPath + ".");
+            validationMessage.put("/.dockstore.yml", "Could not find the primary descriptor file '" + primaryDescriptorPath + "'.");
         }
 
         VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(validationMessage.isEmpty(), validationMessage);
