@@ -677,6 +677,7 @@ public abstract class SourceCodeRepoInterface {
      * @return True if valid workflow version, false otherwise
      */
     private boolean isValidVersion(WorkflowVersion version) {
-        return version.getValidations().stream().allMatch(Validation::isValid);
+        return version.getValidations().stream().filter(validation -> !Objects.equals(validation.getType(),
+                DescriptorLanguage.FileType.DOCKSTORE_YML)).allMatch(Validation::isValid);
     }
 }
