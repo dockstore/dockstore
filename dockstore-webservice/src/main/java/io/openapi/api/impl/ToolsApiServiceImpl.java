@@ -677,7 +677,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param fileType The SourceFile.FileType
      * @return The ToolFile.FileTypeEnum
      */
-    private ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(DescriptorLanguage.FileType fileType) {
+    private static ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(DescriptorLanguage.FileType fileType) {
         if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.TEST_FILE) {
             return ToolFile.FileTypeEnum.TEST_FILE;
         } else if (fileType.getCategory() == DescriptorLanguage.FileTypeCategory.CONTAINERFILE) {
@@ -699,7 +699,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param mainDescriptor The main descriptor path, used to determine if the file is a primary or secondary descriptor
      * @return A list of ToolFile for the Tool
      */
-    private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type, String workingDirectory) {
+    public static List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type, String workingDirectory) {
         // Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL or NFL)
         final DescriptorLanguage descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(type);
         List<SourceFile> filteredSourceFiles = sourceFiles.stream()
