@@ -1236,6 +1236,8 @@ public class OrganizationIT extends BaseIT {
         List<Collection> collections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "");
         assertEquals("There should be 1 collection associated with the Organization, there are " + collections.size(), 1,
             collections.size());
+        assertEquals("There should be no entries because entries is not specified to be included " + collections.get(0).getEntries().size(), 0,
+                collections.get(0).getEntries().size());
 
         collections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "entries");
         assertEquals("There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size(), 1,

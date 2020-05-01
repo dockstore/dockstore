@@ -94,6 +94,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,9 +124,11 @@ public class UserResource implements AuthenticatedResourceInterface {
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
+    private SessionFactory sessionFactory;
 
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
                         DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+        this.sessionFactory = sessionFactory;
         this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
@@ -514,7 +517,12 @@ public class UserResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
         List<Workflow> workflows = getWorkflows(fetchedUser);
-        EntryVersionHelper.stripContent(workflows, this.userDAO);
+        Session currentSession = sessionFactory.getCurrentSession();
+        workflows.forEach(workflow -> {
+            currentSession.evict(workflow);
+            workflow.setUsers(null);
+            workflow.setWorkflowVersions(new HashSet<>());
+        });
         return workflows;
     }
 
