@@ -60,6 +60,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -435,7 +436,7 @@ public class ServiceIT extends BaseIT {
             testService.setMode(WorkflowMode.DOCKSTORE_YML);
             testService.setOrganization("hydra");
             testService.setRepository("hydra_repo");
-            testService.setDefaultWorkflowPath(".dockstore.yml");
+            testService.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             Service test2Service = new Service();
             test2Service.setDescription("test service");
@@ -445,7 +446,7 @@ public class ServiceIT extends BaseIT {
             test2Service.setDescriptorType(DescriptorLanguage.SERVICE);
             test2Service.setOrganization("hydra");
             test2Service.setRepository("hydra_repo2");
-            test2Service.setDefaultWorkflowPath(".dockstore.yml");
+            test2Service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             final Map<DescriptorLanguage.FileType, String> defaultPaths = test2Service.getDefaultPaths();
             for (DescriptorLanguage.FileType val : DescriptorLanguage.FileType.values()) {

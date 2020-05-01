@@ -50,6 +50,7 @@ import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
@@ -418,7 +419,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (Objects.equals(workflowToUpdate.getMode(), FULL) || Objects.equals(workflowToUpdate.getMode(), STUB)) {
                 LOG.info("Converting workflow to DOCKSTORE_YML");
                 workflowToUpdate.setMode(DOCKSTORE_YML);
-                workflowToUpdate.setDefaultWorkflowPath("/.dockstore.yml");
+                workflowToUpdate.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
             }
         }
 
