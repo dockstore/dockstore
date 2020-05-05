@@ -57,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * This defines the set of operations that is needed to interact with a particular
@@ -332,7 +333,9 @@ public abstract class SourceCodeRepoInterface {
             Workflow workflow = (Workflow)entry;
             workflow.getWorkflowVersions().forEach(workflowVersion -> {
                 String filePath = workflowVersion.getWorkflowPath();
-                updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
+                if (!Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID())) {
+                    updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
+                }
             });
         }
     }

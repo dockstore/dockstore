@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
@@ -179,6 +180,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
             // skip frozen versions
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
+
+            // Skip these since they have not changed
+            if (Objects.equals(SKIP_COMMIT_ID, version.getCommitID())) {
+                continue;
+            }
+
             if (existingVersionMap.containsKey(version.getName())) {
                 if (workflowVersionFromDB.isFrozen()) {
                     continue;
