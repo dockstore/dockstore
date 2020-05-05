@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,8 +36,11 @@ import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.ToolMode;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.openapi.api.impl.ToolsApiServiceImpl;
+import io.openapi.model.ToolFile;
 import io.swagger.model.DescriptorType;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
@@ -244,6 +248,31 @@ public class ToolsImplCommonTest {
             sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         }
         return sourceFile;
+    }
+
+    @Test
+    public void testGalaxyConversion() {
+        Workflow workflow = new BioWorkflow();
+        workflow.setSourceControl(SourceControl.GITHUB);
+        workflow.setRepository("fakeRepository");
+        workflow.setOrganization("fakeOrganization");
+        WorkflowVersion workflowVersion = new WorkflowVersion();
+        SourceFile galaxyDescriptor = getFakeSourceFile(null, false, "/Galaxy.ga");
+        galaxyDescriptor.setType(DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
+        SourceFile dockstoreYML = getFakeSourceFile(null, false, "/.dockstore.yml");
+        dockstoreYML.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
+        Set<SourceFile> sourceFiles = new HashSet<>();
+        sourceFiles.add(galaxyDescriptor);
+        sourceFiles.add(dockstoreYML);
+        workflowVersion.addSourceFile(dockstoreYML);
+        workflowVersion.addSourceFile(galaxyDescriptor);
+        workflowVersion.setWorkflowPath("/Galaxy.ga");
+        List<String> workflowPaths = new ArrayList<>();
+        workflowPaths.add("/Galaxy.ga");
+        workflowVersion.setName("fakeName");
+        workflow.addWorkflowVersion(workflowVersion);
+        List<ToolFile> toolFiles = ToolsApiServiceImpl.getToolFiles(sourceFiles, workflowPaths, DescriptorType.GXFORMAT2.toString(), "");
+        assertEquals(2, toolFiles.size());
     }
 
     /**
