@@ -397,7 +397,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 WorkflowVersion existingVersion = existingDefaults.get(ref.getLeft());
                 // Only add if version doesn't already exist, or it exists but commit ID is null or does not match
                 if (hardRefresh || existingVersion == null || existingVersion.getCommitID() == null || !Objects.equals(existingVersion.getCommitID(), ref.getRight())) {
-                    LOG.info("Refreshing " + ref.getLeft() + " " + ref.getRight());
                     WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
                             repository, null, versionName);
                     if (version != null) {
