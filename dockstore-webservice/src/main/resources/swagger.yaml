@@ -4688,7 +4688,7 @@ paths:
       - name: "hardRefresh"
         in: "query"
         description: "hard refresh"
-        required: true
+        required: false
         type: "boolean"
         default: true
       responses:
@@ -5744,7 +5744,7 @@ paths:
       - name: "hardRefresh"
         in: "query"
         description: "hard refresh"
-        required: true
+        required: false
         type: "boolean"
         default: true
       responses:
@@ -5778,7 +5778,7 @@ paths:
       - name: "hardRefresh"
         in: "query"
         description: "hard refresh"
-        required: true
+        required: false
         type: "boolean"
         default: true
       responses:
