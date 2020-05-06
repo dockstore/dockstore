@@ -43,6 +43,7 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -954,7 +955,12 @@ public class BasicIT extends BaseIT {
         toRemove.add("notreal.cwl.json");
 
         toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
-        toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+        try {
+            toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+            Assert.fail("Should've have thrown an error when deleting non-existent file");
+        } catch (ApiException e) {
+            assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
+        }
         toolsApi.refresh(existingTool.getId());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
