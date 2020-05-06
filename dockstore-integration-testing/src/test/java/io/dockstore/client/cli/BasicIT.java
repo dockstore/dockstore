@@ -183,8 +183,8 @@ public class BasicIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // Refresh all
-        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
-        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
+        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser", true);
+        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2", true);
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
@@ -192,14 +192,14 @@ public class BasicIT extends BaseIT {
         // refresh a specific workflow
         Workflow workflow = workflowsApi
             .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), true);
 
         // artificially create an invalid version
         testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
         testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
 
         // refresh individual workflow
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), true);
 
         // check that the version was deleted
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
@@ -223,7 +223,7 @@ public class BasicIT extends BaseIT {
 
         // refresh without github token
         try {
-            workflow = workflowsApi.refresh(workflow.getId());
+            workflow = workflowsApi.refresh(workflow.getId(), true);
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("No GitHub or Google token found"));
         }

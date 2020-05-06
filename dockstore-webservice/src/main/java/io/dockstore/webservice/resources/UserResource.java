@@ -487,12 +487,13 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Refresh all workflows owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
+            @ApiParam(value = "Hard refresh", required = true) @PathParam("hardRefresh") Boolean hardRefresh) {
 
         checkUser(authUser, userId);
 
         // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser, organization, new HashSet<>());
+        workflowResource.refreshStubWorkflowsForUser(authUser, organization, new HashSet<>(), hardRefresh);
         userDAO.clearCache();
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());

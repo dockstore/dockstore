@@ -520,7 +520,7 @@ public class CRUDClientIT extends BaseIT {
         Workflow hostedWorkflow = hostedApi
             .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
-        workflowApi.refresh(hostedWorkflow.getId());
+        workflowApi.refresh(hostedWorkflow.getId(), true);
     }
 
     /**

@@ -214,7 +214,7 @@ public class CheckerWorkflowIT extends BaseIT {
             Workflow githubWorkflow = workflowApi
                 .manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "", "cwl", "/testcwl.json");
             // Refresh the workflow
-            baseEntryId = workflowApi.refresh(githubWorkflow.getId()).getId();
+            baseEntryId = workflowApi.refresh(githubWorkflow.getId(), true).getId();
         } else {
             // Manually register a tool
             DockstoreTool newTool = new DockstoreTool();
@@ -245,9 +245,9 @@ public class CheckerWorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         final Long id = usersApi.getUser().getId();
         if (all) {
-            usersApi.refreshWorkflowsByOrganization(id, "DockstoreTestUser2");
+            usersApi.refreshWorkflowsByOrganization(id, "DockstoreTestUser2", true);
         } else {
-            usersApi.refreshWorkflowsByOrganization(id, stubCheckerWorkflow.getOrganization());
+            usersApi.refreshWorkflowsByOrganization(id, stubCheckerWorkflow.getOrganization(), true);
         }
     }
 
@@ -278,7 +278,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertEquals("No workflows are in full mode, there are " + count, 0, count);
 
         // Refresh the workflow
-        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.refresh(githubWorkflow.getId(), true);
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
@@ -288,7 +288,7 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
 
         // Refresh workflow
-        Workflow refreshedEntry = workflowApi.refresh(githubWorkflow.getId());
+        Workflow refreshedEntry = workflowApi.refresh(githubWorkflow.getId(), true);
 
         // Should be able to download zip for first version
         Workflow checkerWorkflow = workflowApi.getWorkflow(refreshedEntry.getCheckerId(), null);
@@ -371,7 +371,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertEquals("No workflows are in full mode, there are " + count, 0, count);
 
         // Refresh the workflow
-        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.refresh(githubWorkflow.getId(), true);
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
@@ -381,7 +381,7 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.wdl", githubWorkflow.getId(), "wdl", null);
 
         // Refresh workflow
-        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.refresh(githubWorkflow.getId(), true);
 
         // Checker workflow should refresh
         final long count3 = testingPostgres

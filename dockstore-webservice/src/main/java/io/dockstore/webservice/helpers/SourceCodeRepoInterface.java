@@ -206,7 +206,7 @@ public abstract class SourceCodeRepoInterface {
      * @return workflow with associated workflow versions
      */
     public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName);
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh);
 
     /**
      * Creates a basic workflow object with default values
@@ -227,7 +227,7 @@ public abstract class SourceCodeRepoInterface {
      * @param versionName Optional version name to refresh
      * @return workflow
      */
-    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName) {
+    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName, boolean hardRefresh) {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
 
@@ -267,7 +267,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Create versions and associated source files
         //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
-        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName);
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName, hardRefresh);
 
         if (versionName.isPresent() && workflow.getWorkflowVersions().size() == 0) {
             String msg = "Version " + versionName.get() + " was not found on Git repository";

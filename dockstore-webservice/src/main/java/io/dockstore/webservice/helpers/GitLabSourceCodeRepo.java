@@ -130,7 +130,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
 
         try {
             GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);

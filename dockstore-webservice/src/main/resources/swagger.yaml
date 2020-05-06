@@ -4685,6 +4685,11 @@ paths:
         description: "Organization"
         required: true
         type: "string"
+      - name: "hardRefresh"
+        in: "path"
+        description: "Hard refresh"
+        required: true
+        type: "boolean"
       responses:
         200:
           description: "successful operation"
@@ -5735,6 +5740,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "hardRefresh"
+        in: "path"
+        description: "hard refresh"
+        required: true
+        type: "boolean"
       responses:
         200:
           description: "successful operation"
@@ -5763,6 +5773,11 @@ paths:
         description: "version"
         required: true
         type: "string"
+      - name: "hardRefresh"
+        in: "path"
+        description: "hard refresh"
+        required: true
+        type: "boolean"
       responses:
         200:
           description: "successful operation"

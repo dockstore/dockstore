@@ -2905,7 +2905,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -3036,7 +3036,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4311,6 +4311,11 @@ paths:
         schema:
           format: int64
           type: integer
+      - in: path
+        name: hardRefresh
+        required: true
+        schema:
+          type: boolean
       responses:
         default:
           content:
@@ -4338,6 +4343,11 @@ paths:
         required: true
         schema:
           type: string
+      - in: path
+        name: hardRefresh
+        required: true
+        schema:
+          type: boolean
       responses:
         default:
           content:

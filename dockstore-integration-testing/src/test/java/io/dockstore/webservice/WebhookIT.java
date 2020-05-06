@@ -103,7 +103,7 @@ public class WebhookIT extends BaseIT {
                 "foobar", "wdl", "/test.json");
         
         // Refresh should work
-        workflow = workflowApi.refresh(workflow.getId());
+        workflow = workflowApi.refresh(workflow.getId(), true);
         assertEquals("Workflow should be FULL mode", Workflow.ModeEnum.FULL, workflow.getMode());
         assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion));
 
@@ -116,18 +116,18 @@ public class WebhookIT extends BaseIT {
 
         // Refresh should now no longer work
         try {
-            workflowApi.refresh(workflow.getId());
+            workflowApi.refresh(workflow.getId(), true);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
             assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
         }
 
         // Should be able to refresh a legacy version
-        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2");
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", true);
 
         // Should not be able to refresh a GitHub App version
         try {
-            workflowApi.refreshVersion(workflow.getId(), "0.1");
+            workflowApi.refreshVersion(workflow.getId(), "0.1", true);
             fail("Should not be able to refresh");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
@@ -135,7 +135,7 @@ public class WebhookIT extends BaseIT {
 
         // Refresh a version that doesn't already exist
         try {
-            workflowApi.refreshVersion(workflow.getId(), "dne");
+            workflowApi.refreshVersion(workflow.getId(), "dne", true);
             fail("Should not be able to refresh");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
@@ -143,7 +143,7 @@ public class WebhookIT extends BaseIT {
 
         // Refresh org should not throw a failure even though you cannot refresh the Dockstore.yml workflow
         User user = usersApi.getUser();
-        List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+        List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2", true);
         assertTrue("There should still be a dockstore.yml workflow", workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), Workflow.ModeEnum.DOCKSTORE_YML)));
         assertTrue("There should be at least one stub workflow", workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), Workflow.ModeEnum.STUB)));
 
@@ -151,7 +151,7 @@ public class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET commitid = NULL where name = '0.2'");
 
         // Refresh before frozen should populate the commit id
-        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2");
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", true);
         WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> Objects.equals(wv.getName(), "0.2")).findFirst().get();
         assertNotNull(workflowVersion.getCommitID());
 
@@ -166,7 +166,7 @@ public class WebhookIT extends BaseIT {
         assertTrue(workflowVersion.isFrozen());
 
         // Ensure refresh does not touch frozen legacy version
-        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2");
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", true);
         assertNotNull(workflow);
         workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> Objects.equals(wv.getName(), "0.2")).findFirst().get();
         assertNull(workflowVersion.getCommitID());
@@ -251,7 +251,7 @@ public class WebhookIT extends BaseIT {
 
         // Refresh
         try {
-            client.refresh(workflow.getId());
+            client.refresh(workflow.getId(), true);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
             assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());

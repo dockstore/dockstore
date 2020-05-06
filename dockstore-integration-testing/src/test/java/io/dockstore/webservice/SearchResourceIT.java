@@ -109,7 +109,7 @@ public class SearchResourceIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
         entriesApi.addAliases(workflow.getId(), "potatoAlias");
         workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
         workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
@@ -154,7 +154,7 @@ public class SearchResourceIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
 
         workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 

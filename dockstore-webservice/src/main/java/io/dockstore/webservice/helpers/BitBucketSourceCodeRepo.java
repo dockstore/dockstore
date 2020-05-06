@@ -286,7 +286,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             PaginatedRefs paginatedRefs = refsApi

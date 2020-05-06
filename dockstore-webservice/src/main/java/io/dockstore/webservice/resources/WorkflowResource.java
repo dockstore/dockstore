@@ -253,7 +253,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param organization     limit the refresh to particular organizations if given
      * @param alreadyProcessed skip particular workflows if already refreshed, previously used for debugging
      */
-    void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
+    void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed, boolean hardRefresh) {
 
         List<Token> tokens = checkOnBitbucketToken(user);
 
@@ -276,7 +276,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             try {
                 if (hasToken) {
                     // get workflows from source control for a user and updates db
-                    refreshHelper(sourceCodeRepo, user, organization, alreadyProcessed);
+                    refreshHelper(sourceCodeRepo, user, organization, alreadyProcessed, hardRefresh);
                 }
                 // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
             } catch (WebApplicationException ex) {
@@ -302,7 +302,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param organization            if specified, only refresh if workflow belongs to the organization
      */
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization,
-        Set<Long> alreadyProcessed) {
+        Set<Long> alreadyProcessed, boolean hardRefresh) {
 
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
@@ -341,7 +341,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     logFullWorkflowRefresh(workflow);
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
-                    final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.of(workflow), Optional.empty());
+                    final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.of(workflow), Optional.empty(), hardRefresh);
 
                     // Take ownership of these workflows
                     workflow.getUsers().add(user);
@@ -352,7 +352,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.empty(), Optional.empty());
+                final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.empty(), Optional.empty(), hardRefresh);
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
@@ -402,8 +402,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(nickname = "refresh", value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        return refreshWorkflow(user, workflowId, Optional.empty());
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "hard refresh", required = true) @PathParam("hardRefresh") Boolean hardRefresh) {
+        return refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
     }
 
     @GET
@@ -415,13 +416,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refreshVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
-            @ApiParam(value = "version", required = true) @PathParam("version") String version) {
+            @ApiParam(value = "version", required = true) @PathParam("version") String version,
+            @ApiParam(value = "hard refresh", required = true) @PathParam("hardRefresh") Boolean hardRefresh) {
         if (version == null || version.isBlank()) {
             String msg = "Version is a required field for this endpoint.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        return refreshWorkflow(user, workflowId, Optional.of(version));
+        return refreshWorkflow(user, workflowId, Optional.of(version), hardRefresh);
     }
 
     /**
@@ -432,7 +434,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param version Name of the workflow version
      * @return Updated workflow
      */
-    private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version) {
+    private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version, boolean hardRefresh) {
         Workflow existingWorkflow = workflowDAO.findById(workflowId);
         checkEntry(existingWorkflow);
         checkUser(user, existingWorkflow);
@@ -469,7 +471,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Create a new workflow based on the current state of the Git repository
         final Workflow newWorkflow = sourceCodeRepo
-                .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version);
+                .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version, hardRefresh);
         existingWorkflow.getUsers().add(user);
 
         // Use new workflow to update existing workflow
@@ -479,9 +481,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Refresh checker workflow
         if (!existingWorkflow.isIsChecker() && existingWorkflow.getCheckerWorkflow() != null) {
             if (version.isEmpty()) {
-                refresh(user, existingWorkflow.getCheckerWorkflow().getId());
+                refresh(user, existingWorkflow.getCheckerWorkflow().getId(), hardRefresh);
             } else {
-                refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get());
+                refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get(), hardRefresh);
             }
         }
         existingWorkflow.getWorkflowVersions().forEach(Version::updateVerified);
