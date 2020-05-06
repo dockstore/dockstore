@@ -4686,7 +4686,7 @@ paths:
         required: true
         type: "string"
       - name: "hardRefresh"
-        in: "path"
+        in: "query"
         description: "hard refresh"
         required: true
         type: "boolean"
@@ -5742,7 +5742,7 @@ paths:
         type: "integer"
         format: "int64"
       - name: "hardRefresh"
-        in: "path"
+        in: "query"
         description: "hard refresh"
         required: true
         type: "boolean"
@@ -5776,7 +5776,7 @@ paths:
         required: true
         type: "string"
       - name: "hardRefresh"
-        in: "path"
+        in: "query"
         description: "hard refresh"
         required: true
         type: "boolean"

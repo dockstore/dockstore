@@ -489,7 +489,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
-        @ApiParam(value = "hard refresh", defaultValue = "true") @PathParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
+            @ApiParam(value = "hard refresh", required = true, defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
 
         checkUser(authUser, userId);
 
