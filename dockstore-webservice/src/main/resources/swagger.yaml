@@ -4687,9 +4687,10 @@ paths:
         type: "string"
       - name: "hardRefresh"
         in: "path"
-        description: "Hard refresh"
+        description: "hard refresh"
         required: true
         type: "boolean"
+        default: true
       responses:
         200:
           description: "successful operation"
@@ -5745,6 +5746,7 @@ paths:
         description: "hard refresh"
         required: true
         type: "boolean"
+        default: true
       responses:
         200:
           description: "successful operation"
@@ -5778,6 +5780,7 @@ paths:
         description: "hard refresh"
         required: true
         type: "boolean"
+        default: true
       responses:
         200:
           description: "successful operation"

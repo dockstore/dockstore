@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -488,7 +489,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
-            @ApiParam(value = "Hard refresh", required = true) @PathParam("hardRefresh") Boolean hardRefresh) {
+        @ApiParam(value = "hard refresh", defaultValue = "true") @PathParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
 
         checkUser(authUser, userId);
 
