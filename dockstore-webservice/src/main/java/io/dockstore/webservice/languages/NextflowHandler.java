@@ -514,7 +514,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
         if (mainDescriptor.isPresent()) {
             content = mainDescriptor.get().getContent();
             if (content.contains("manifest")) {
-                return new VersionTypeValidation(true, new HashMap<>());
+                return new VersionTypeValidation(true, Collections.emptyMap());
             } else {
                 validationMessage = "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.";
             }

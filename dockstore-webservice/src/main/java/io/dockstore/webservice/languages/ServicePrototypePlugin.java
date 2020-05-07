@@ -87,7 +87,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Map<String, Pair<String, GenericFileType>> indexedFiles) {
-        return new VersionTypeValidation(true, new HashMap<>());
+        return new VersionTypeValidation(true, Collections.emptyMap());
     }
 
     @Override

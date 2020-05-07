@@ -77,7 +77,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
             return ((RecommendedLanguageInterface)minimalLanguageInterface).validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
         } else {
-            return new VersionTypeValidation(true, new HashMap<>());
+            return new VersionTypeValidation(true, Collections.emptyMap());
         }
     }
 
@@ -123,12 +123,12 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return new VersionTypeValidation(true, new HashMap<>());
+        return new VersionTypeValidation(true, Collections.emptyMap());
     }
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        return new VersionTypeValidation(true, new HashMap<>());
+        return new VersionTypeValidation(true, Collections.emptyMap());
     }
 
     @Override
