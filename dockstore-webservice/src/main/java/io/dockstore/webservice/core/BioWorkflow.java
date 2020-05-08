@@ -37,7 +37,8 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "workflow")
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPaths", query = "SELECT new io.dockstore.webservice.core.database.WorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName) from BioWorkflow c where c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate", query = "SELECT new io.dockstore.webservice.core.database.RSSWorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) from BioWorkflow c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc")
+        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate", query = "SELECT new io.dockstore.webservice.core.database.RSSWorkflowPath(c.sourceControl, c.organization, c.repository, c.workflowName, c.lastUpdated, c.description) from BioWorkflow c where c.isPublished = true and c.dbUpdateDate is not null ORDER BY c.dbUpdateDate desc"),
+        @NamedQuery(name = "io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows", query = "SELECT new io.dockstore.webservice.core.database.MyWorkflows(c.organization, c.id, c.sourceControl, c.isPublished, c.workflowName, c.repository) from BioWorkflow c where c.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class BioWorkflow extends Workflow {

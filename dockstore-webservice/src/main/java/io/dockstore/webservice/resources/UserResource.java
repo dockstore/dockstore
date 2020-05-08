@@ -72,6 +72,7 @@ import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -117,6 +118,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
     private final EventDAO eventDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
@@ -130,6 +132,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -556,20 +559,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        List<Workflow> workflows = getWorkflows(fetchedUser);
-        return workflows.parallelStream().map(workflow -> convertWorkflowToMyWorkflows(workflow)).collect(
-                Collectors.toList());
-    }
-
-    private static MyWorkflows convertWorkflowToMyWorkflows(Workflow workflow) {
-        MyWorkflows newWorkflow = new MyWorkflows();
-        newWorkflow.setOrganization(workflow.getOrganization());
-        newWorkflow.setId(workflow.getId());
-        newWorkflow.setSourceControl(workflow.getSourceControl());
-        newWorkflow.setPublished(workflow.getIsPublished());
-        newWorkflow.setWorkflowName(workflow.getWorkflowName());
-        newWorkflow.setRepository(workflow.getRepository());
-        return newWorkflow;
+        return this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId());
     }
 
     private List<Workflow> getWorkflows(User user) {

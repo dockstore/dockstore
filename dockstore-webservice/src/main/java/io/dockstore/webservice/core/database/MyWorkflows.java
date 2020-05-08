@@ -14,6 +14,16 @@ public class MyWorkflows {
     private String workflowName;
     private String repository;
 
+    public MyWorkflows(String organization, long id, SourceControl sourceControl, boolean isPublished, String workflowName,
+            String repository) {
+        this.organization = organization;
+        this.id = id;
+        this.sourceControl = sourceControl;
+        this.isPublished = isPublished;
+        this.workflowName = workflowName;
+        this.repository = repository;
+    }
+
     public String getOrganization() {
         return organization;
     }
