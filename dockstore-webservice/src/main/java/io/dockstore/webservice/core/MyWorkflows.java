@@ -1,4 +1,4 @@
-package io.dockstore.webservice.core.database;
+package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.SourceControl;
@@ -61,7 +61,7 @@ public class MyWorkflows {
         return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
 
-    public String getPath() {
+    private String getPath() {
         return sourceControl.toString() + '/' + organization + '/' + repository;
     }
 

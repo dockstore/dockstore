@@ -18,7 +18,7 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.database.MyWorkflows;
+import io.dockstore.webservice.core.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.core.database.WorkflowPath;
 import org.hibernate.SessionFactory;
