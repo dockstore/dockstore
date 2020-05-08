@@ -66,6 +66,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -92,7 +93,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -549,7 +549,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
+    public List<MyWorkflows> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
@@ -557,13 +557,19 @@ public class UserResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
         List<Workflow> workflows = getWorkflows(fetchedUser);
-        Session currentSession = sessionFactory.getCurrentSession();
-        workflows.forEach(workflow -> {
-            currentSession.evict(workflow);
-            workflow.setUsers(null);
-            workflow.setWorkflowVersions(new HashSet<>());
-        });
-        return workflows;
+        return workflows.parallelStream().map(workflow -> convertWorkflowToMyWorkflows(workflow)).collect(
+                Collectors.toList());
+    }
+
+    private static MyWorkflows convertWorkflowToMyWorkflows(Workflow workflow) {
+        MyWorkflows newWorkflow = new MyWorkflows();
+        newWorkflow.setOrganization(workflow.getOrganization());
+        newWorkflow.setId(workflow.getId());
+        newWorkflow.setSourceControl(workflow.getSourceControl());
+        newWorkflow.setPublished(workflow.getIsPublished());
+        newWorkflow.setWorkflowName(workflow.getWorkflowName());
+        newWorkflow.setRepository(workflow.getRepository());
+        return newWorkflow;
     }
 
     private List<Workflow> getWorkflows(User user) {
