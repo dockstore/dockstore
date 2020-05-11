@@ -378,8 +378,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
                 Triple<String, Date, String> referenceTriple = getRef(ref, repository);
-                if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
-                    references.add(referenceTriple);
+                if (referenceTriple != null) {
+                    if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
+                        references.add(referenceTriple);
+                    }
                 }
             }
         } catch (GHFileNotFoundException e) {
