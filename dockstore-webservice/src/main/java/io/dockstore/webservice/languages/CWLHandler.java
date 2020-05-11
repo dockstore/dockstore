@@ -753,8 +753,12 @@ public class CWLHandler implements LanguageHandlerInterface {
             isValid = false;
         }
 
-        validationMessageObject.put(primaryDescriptorFilePath, validationMessage.toString());
-        return new VersionTypeValidation(isValid, validationMessageObject);
+        if (isValid) {
+            return new VersionTypeValidation(true, Collections.emptyMap());
+        } else {
+            validationMessageObject.put(primaryDescriptorFilePath, validationMessage.toString());
+            return new VersionTypeValidation(false, validationMessageObject);
+        }
     }
 
     @Override
