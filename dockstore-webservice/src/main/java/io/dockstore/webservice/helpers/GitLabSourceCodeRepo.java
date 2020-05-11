@@ -139,14 +139,16 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             tagList.forEach(tag -> {
                 if (versionName.isEmpty() || Objects.equals(versionName.get(), tag.getName())) {
                     Date committedDate = tag.getCommit().getCommittedDate();
-                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate);
+                    String commitId = tag.getCommit().getId();
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate, commitId);
                 }
             });
             branches.forEach(branch -> {
                 if (versionName.isEmpty() || Objects.equals(versionName.get(), branch.getName())) {
                     Date committedDate = branch.getCommit().getCommittedDate();
+                    String commitId = branch.getCommit().getId();
                     handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(),
-                            Version.ReferenceType.BRANCH, committedDate);
+                            Version.ReferenceType.BRANCH, committedDate, commitId);
                 }
             });
         } catch (IOException e) {
@@ -157,7 +159,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @SuppressWarnings("checkstyle:parameternumber")
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate) {
+        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId) {
         // Initialize workflow version
         WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
         String calculatedPath = version.getWorkflowPath();
@@ -169,6 +171,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
         version.setReferenceType(type);
         version.setLastModified(committedDate);
+        version.setCommitID(commitId);
         // Use default test parameter file if either new version or existing version that hasn't been edited
         createTestParameterFiles(workflow, id, branchName, version, identifiedType);
         version = combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults);
@@ -185,7 +188,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     protected String getCommitID(String repositoryId, Version version) {
-        //TODO: optimize here for gitlab by returning actual sha1
+        //TODO: Commit ID is returned by an existing API callgs
         return null;
     }
 
