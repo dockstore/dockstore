@@ -249,12 +249,13 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             Branch branch = refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(repositoryId.split("/")[0], version.getReference(),
-                repositoryId.split("/")[0]);
-            Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
-                repositoryId.split("/")[0]);
+                repositoryId.split("/")[1]);
             if (branch != null) {
                 return branch.getTarget().getHash();
             }
+
+            Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
+                    repositoryId.split("/")[1]);
             if (tag != null) {
                 return tag.getTarget().getHash();
             }
@@ -310,6 +311,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
 
                         version = versionValidation(version, workflow, calculatedPath);
+                        version.setCommitID(getCommitID(repositoryId, version));
                     }
                 });
 
