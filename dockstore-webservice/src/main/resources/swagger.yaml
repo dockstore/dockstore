@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.8.1-SNAPSHOT"
+  version: "1.8.5"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -4653,7 +4653,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/Workflow"
+              $ref: "#/definitions/MyWorkflows"
       security:
       - BEARER: []
   /users/{userId}/workflows/published:
@@ -7011,6 +7011,30 @@ definitions:
       version:
         type: "string"
     description: "Describes this registry to better allow for mirroring and indexing."
+  MyWorkflows:
+    type: "object"
+    properties:
+      full_workflow_path:
+        type: "string"
+        readOnly: true
+      id:
+        type: "integer"
+        format: "int64"
+      is_published:
+        type: "boolean"
+      organization:
+        type: "string"
+      repository:
+        type: "string"
+      sourceControl:
+        type: "string"
+        enum:
+        - "dockstore.org"
+        - "github.com"
+        - "bitbucket.org"
+        - "gitlab.com"
+      workflowName:
+        type: "string"
   Notification:
     type: "object"
     properties:

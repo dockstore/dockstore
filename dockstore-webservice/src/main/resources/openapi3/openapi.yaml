@@ -138,42 +138,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
-  /organizations/{organizationName}/collections/{collectionName}/name:
-    get:
-      tags:
-      - organizations
-      summary: Retrieve a collection by name.
-      description: Retrieve a collection by name. Supports optional authentication.
-      operationId: getCollectionById
-      parameters:
-      - name: organizationName
-        in: path
-        description: Organization name.
-        required: true
-        schema:
-          type: string
-      - name: collectionName
-        in: path
-        description: Collection name.
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-      - bearer: []
   /organizations/{organizationId}/collections/{collectionId}:
     get:
       tags:
       - organizations
       summary: Retrieve a collection by ID.
       description: Retrieve a collection by ID. Supports optional authentication.
-      operationId: getCollectionById_1
+      operationId: getCollectionById
       parameters:
       - name: organizationId
         in: path
@@ -227,6 +198,35 @@ paths:
             schema:
               $ref: '#/components/schemas/Collection'
         required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+      - bearer: []
+  /organizations/{organizationName}/collections/{collectionName}/name:
+    get:
+      tags:
+      - organizations
+      summary: Retrieve a collection by name.
+      description: Retrieve a collection by name. Supports optional authentication.
+      operationId: getCollectionById_1
+      parameters:
+      - name: organizationName
+        in: path
+        description: Organization name.
+        required: true
+        schema:
+          type: string
+      - name: collectionName
+        in: path
+        description: Collection name.
+        required: true
+        schema:
+          type: string
       responses:
         default:
           description: default response
@@ -506,6 +506,52 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
+  /metadata/descriptorLanguageList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of descriptor languages supported on Dockstore
+      description: Get the list of descriptor languages supported on Dockstore, NO
+        authentication
+      operationId: getDescriptorLanguages
+      responses:
+        default:
+          description: List of descriptor languages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DescriptorLanguageBean'
+  /metadata/okHttpCachePerformance:
+    get:
+      tags:
+      - metadata
+      summary: Get measures of cache performance
+      description: Get measures of cache performance, NO authentication
+      operationId: getCachePerformance
+      responses:
+        default:
+          description: Cache performance information
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /metadata/elasticSearch:
+    get:
+      tags:
+      - metadata
+      summary: Successful response if elastic search is up and running
+      description: Successful response if elastic search is up and running, NO authentication
+      operationId: checkElasticSearch
+      responses:
+        default:
+          description: default response
+          content:
+            text/html: {}
+            text/xml: {}
   /metadata/sitemap:
     get:
       tags:
@@ -598,116 +644,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
-  /metadata/descriptorLanguageList:
-    get:
-      tags:
-      - metadata
-      summary: Get the list of descriptor languages supported on Dockstore
-      description: Get the list of descriptor languages supported on Dockstore, NO
-        authentication
-      operationId: getDescriptorLanguages
-      responses:
-        default:
-          description: List of descriptor languages
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DescriptorLanguageBean'
-  /metadata/okHttpCachePerformance:
-    get:
-      tags:
-      - metadata
-      summary: Get measures of cache performance
-      description: Get measures of cache performance, NO authentication
-      operationId: getCachePerformance
-      responses:
-        default:
-          description: Cache performance information
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: string
-  /metadata/elasticSearch:
-    get:
-      tags:
-      - metadata
-      summary: Successful response if elastic search is up and running
-      description: Successful response if elastic search is up and running, NO authentication
-      operationId: checkElasticSearch
-      responses:
-        default:
-          description: default response
-          content:
-            text/html: {}
-            text/xml: {}
-  /organizations:
-    get:
-      tags:
-      - organizations
-      summary: List all available organizations.
-      description: List all organizations that have been approved by a curator or
-        admin, sorted by number of stars.
-      operationId: getApprovedOrganizations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-    post:
-      tags:
-      - organizations
-      summary: Create an organization.
-      description: Create an organization. Organization requires approval by an admin
-        before being made public.
-      operationId: createOrganization
-      requestBody:
-        description: Organization to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Organization'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-      - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-      - name: organizationId
-        in: path
-        description: Organization ID.
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-      - bearer: []
   /organizations/{organizationId}/reject:
     post:
       tags:
@@ -882,6 +818,70 @@ paths:
             schema:
               type: string
         required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations:
+    get:
+      tags:
+      - organizations
+      summary: List all available organizations.
+      description: List all organizations that have been approved by a curator or
+        admin, sorted by number of stars.
+      operationId: getApprovedOrganizations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - organizations
+      summary: Create an organization.
+      description: Create an organization. Organization requires approval by an admin
+        before being made public.
+      operationId: createOrganization
+      requestBody:
+        description: Organization to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+      - bearer: []
+  /organizations/{organizationId}/approve:
+    post:
+      tags:
+      - organizations
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        description: Organization ID.
+        required: true
+        schema:
+          type: integer
+          format: int64
       responses:
         default:
           description: default response
@@ -1542,18 +1542,11 @@ paths:
                   $ref: '#/components/schemas/Repository'
       security:
       - bearer: []
-  /users/{userId}:
+  /users/user:
     get:
       tags:
       - users
-      operationId: getSpecificUser
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -1566,11 +1559,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/user:
+  /users/{userId}:
     get:
       tags:
       - users
-      operationId: getUser
+      operationId: getSpecificUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
       requestBody:
         content:
           '*/*':
@@ -1805,6 +1805,88 @@ components:
           items:
             $ref: '#/components/schemas/Version'
       writeOnly: true
+    EntryObjectObject:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        author:
+          type: string
+        checker_id:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        defaultVersion:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        is_published:
+          type: boolean
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        lastUpdated:
+          type: string
+          format: date-time
+        last_modified:
+          type: integer
+          format: int32
+        last_modified_date:
+          type: string
+          format: date-time
+        metadataFromEntry:
+          type: object
+          writeOnly: true
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        topicId:
+          type: integer
+          format: int64
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        workflowVersions:
+          uniqueItems: true
+          type: array
+          items:
+            type: object
     FileFormat:
       type: object
       properties:
@@ -2010,6 +2092,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -2061,8 +2145,8 @@ components:
           - WDL
           - NFL
           - service
-          
-          
+          - cwl
+          - wdl
         aliases:
           type: object
           additionalProperties:
@@ -2373,6 +2457,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -2558,8 +2644,8 @@ components:
           - WDL
           - NFL
           - service
-          
-          
+          - cwl
+          - wdl
         aliases:
           type: object
           additionalProperties:
@@ -2737,6 +2823,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
         referenceType:
@@ -2860,14 +2948,14 @@ components:
           type: string
         url:
           type: string
-    SourceControlBean:
+    DescriptorLanguageBean:
       type: object
       properties:
         friendlyName:
           type: string
         value:
           type: string
-    DescriptorLanguageBean:
+    SourceControlBean:
       type: object
       properties:
         friendlyName:

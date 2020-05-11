@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.core.database.WorkflowPath;
 import org.hibernate.SessionFactory;
@@ -40,5 +41,9 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
     public List<RSSWorkflowPath> findAllPublishedPathsOrderByDbupdatedate() {
         return list(namedQuery("io.dockstore.webservice.core.BioWorkflow.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(
                 RSS_ENTRY_LIMIT));
+    }
+
+    public List<MyWorkflows> findUserBioWorkflows(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows").setParameter("userId", userId));
     }
 }

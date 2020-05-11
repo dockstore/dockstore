@@ -56,6 +56,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
+import io.dockstore.webservice.core.MyWorkflows;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -71,6 +72,7 @@ import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -92,7 +94,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,6 +118,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
     private final EventDAO eventDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
@@ -130,6 +132,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -548,22 +551,15 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = MyWorkflows.class, responseContainer = "List")
+    public List<MyWorkflows> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        List<Workflow> workflows = getWorkflows(fetchedUser);
-        Session currentSession = sessionFactory.getCurrentSession();
-        workflows.forEach(workflow -> {
-            currentSession.evict(workflow);
-            workflow.setUsers(null);
-            workflow.setWorkflowVersions(new HashSet<>());
-        });
-        return workflows;
+        return this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId());
     }
 
     private List<Workflow> getWorkflows(User user) {
