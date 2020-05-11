@@ -14,7 +14,7 @@ public class MyWorkflows {
     private String workflowName;
     private String repository;
 
-    public MyWorkflows() {}
+    public MyWorkflows() { }
 
     public MyWorkflows(String organization, long id, SourceControl sourceControl, boolean isPublished, String workflowName,
             String repository) {
