@@ -1,49 +1,47 @@
 package io.dockstore.webservice.core;
 
-import java.sql.Timestamp;
+import java.io.Serializable;
+import java.util.Date;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.dockstore.common.SourceControl;
 
-public class CollectionEntry {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CollectionEntry.class);
+public class CollectionEntry implements Serializable {
     private String entryPath;
-    private Timestamp dbUpdateDate;
+    private Date dbUpdateDate;
     private long id;
     private String entryType;
 
-    CollectionEntry(Entry entry) {
-        setDbUpdateDate(entry.getDbUpdateDate());
-        setId(entry.getId());
-        setEntryPath(entry.getEntryPath());
-        switch (entry.getEntryType()) {
-        case TOOL:
-            setEntryType("container");
-            break;
-        case WORKFLOW:
-            setEntryType("workflow");
-            break;
-        case SERVICE:
-            setEntryType("service");
-            break;
-        default:
-            LOGGER.error("Unrecognized entry type: " + entry.getEntryType());
-        }
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
+        setEntryType(entryTypeString);
+        setDbUpdateDate(dbUpdateDate);
+        setId(id);
+        setEntryPath(sourceControl.toString(), organization, repository, entryName);
     }
 
-    public String getEntryPath() {
-        return entryPath;
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
+        setEntryType(entryTypeString);
+        setDbUpdateDate(dbUpdateDate);
+        setId(id);
+        setEntryPath(registry, organization, repository, entryName);
+    }
+
+    private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
+        setEntryPath(sourceControl + '/' + organization + '/' + repository + (entryName == null || "".equals(entryName) ? "" : '/' + entryName));
     }
 
     public void setEntryPath(String entryPath) {
         this.entryPath = entryPath;
     }
 
-    public Timestamp getDbUpdateDate() {
+    public String getEntryPath() {
+        return entryPath;
+    }
+
+    public Date getDbUpdateDate() {
         return dbUpdateDate;
     }
 
-    public void setDbUpdateDate(Timestamp dbUpdateDate) {
+    public void setDbUpdateDate(Date dbUpdateDate) {
         this.dbUpdateDate = dbUpdateDate;
     }
 

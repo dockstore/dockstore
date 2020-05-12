@@ -2,8 +2,10 @@ package io.dockstore.webservice.core;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,6 +25,7 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -107,6 +110,9 @@ public class Collection implements Serializable, Aliasable {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    @Transient
+    private List<CollectionEntry> collectionEntries = new ArrayList<>();
+
     @JsonProperty("organizationName")
     @ApiModelProperty(value = "The name of the organization the collection belongs to")
     public String getOrganizationName() {
@@ -142,8 +148,8 @@ public class Collection implements Serializable, Aliasable {
     }
 
     @JsonProperty("entries")
-    public Set<CollectionEntry> getCollectionEntries() {
-        return getEntries().stream().map(entry -> new CollectionEntry(entry)).collect(Collectors.toSet());
+    public List<CollectionEntry> getCollectionEntries() {
+        return collectionEntries;
     }
 
     public void setEntries(Set<Entry> entries) {
@@ -212,5 +218,9 @@ public class Collection implements Serializable, Aliasable {
 
     public void setOrganizationID(long organizationID) {
         this.organizationID = organizationID;
+    }
+
+    public void setCollectionEntries(List<CollectionEntry> collectionEntries) {
+        this.collectionEntries = collectionEntries;
     }
 }
