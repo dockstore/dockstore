@@ -52,6 +52,7 @@ import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_T
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -871,6 +872,10 @@ public class GeneralWorkflowIT extends BaseIT {
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'", long.class);
         assertEquals("there should be 1 workflow, there are " + count3, 1, count3);
 
+        workflow.getWorkflowVersions().forEach(workflowVersion -> {
+            assertNotNull(workflowVersion.getCommitID());
+        });
+
         // publish
         workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         final long count4 = testingPostgres.runSelectStatement(
@@ -960,6 +965,11 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
         assertEquals("All Bitbucket workflow versions should have last modified populated when manual published", 0, count2);
+
+        // Check that commit ID is set
+        workflow.getWorkflowVersions().forEach(workflowVersion -> {
+            assertNotNull(workflowVersion.getCommitID());
+        });
 
         // grab wdl file
         Optional<WorkflowVersion> version = workflow.getWorkflowVersions().stream()
