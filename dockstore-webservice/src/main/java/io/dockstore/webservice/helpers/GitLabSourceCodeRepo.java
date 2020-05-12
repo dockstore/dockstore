@@ -188,7 +188,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     protected String getCommitID(String repositoryId, Version version) {
-        //TODO: Commit ID is returned by an existing API callgs
+        //TODO: Commit ID is returned by an existing API call
         return null;
     }
 
