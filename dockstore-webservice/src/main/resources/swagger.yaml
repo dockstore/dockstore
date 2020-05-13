@@ -6494,8 +6494,6 @@ definitions:
         format: "date-time"
       entries:
         type: "array"
-        readOnly: true
-        uniqueItems: true
         items:
           $ref: "#/definitions/CollectionEntry"
       id:
