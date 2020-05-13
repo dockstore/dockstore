@@ -253,8 +253,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             if (branch != null) {
                 return branch.getTarget().getHash();
             }
-        } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading branch commitid" + e.getMessage());
+        } catch (ApiException ex) {
+            LOG.error(gitUsername + ": apiexception on reading branch commitid" , ex);
             // this is not so critical to warrant a http error code
         }
 
@@ -264,8 +264,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             if (tag != null) {
                 return tag.getTarget().getHash();
             }
-        } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading tag commitid" + e.getMessage());
+        } catch (ApiException ex) {
+            LOG.error(gitUsername + ": apiexception on reading tag commitid" , ex);
             // this is not so critical to warrant a http error code
         }
         return null;
