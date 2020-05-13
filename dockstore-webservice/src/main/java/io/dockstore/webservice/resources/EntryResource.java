@@ -161,9 +161,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException("Entry " + id + " already has an associated Discourse topic.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Verify and set category
-        Integer category = discourseCategoryId;
-
         // Create title and link to entry
         String entryLink = "https://dockstore.org/";
         String title;
@@ -211,10 +208,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             // Create a discourse topic
             InlineResponse2005 response;
             try {
-                response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
+                response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, discourseCategoryId, null, null, null);
                 entry.setTopicId(response.getTopicId().longValue());
             } catch (ApiException ex) {
-                String message = "Could not add a topic " + title + " to category " + category;
+                String message = "Could not add a topic " + title + " to category " + discourseCategoryId;
                 LOG.error(message, ex);
                 throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
             }
