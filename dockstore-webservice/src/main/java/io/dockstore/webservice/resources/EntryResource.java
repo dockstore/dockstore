@@ -213,7 +213,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 response = topicsApi.postsJsonPost(description, discourseKey, discourseApiUsername, title, null, category, null, null, null);
                 entry.setTopicId(response.getTopicId().longValue());
             } catch (ApiException ex) {
-                String message = "Could not add a topic to the given entry.";
+                String message = "Could not add a topic " + title + " to category " + category;
                 LOG.error(message, ex);
                 throw new CustomWebApplicationException(message, HttpStatus.SC_BAD_REQUEST);
             }
