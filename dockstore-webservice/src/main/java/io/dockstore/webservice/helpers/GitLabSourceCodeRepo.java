@@ -188,7 +188,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     protected String getCommitID(String repositoryId, Version version) {
-        //TODO: Commit ID is returned by an existing API call
+        try {
+            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            GitlabBranch gitlabBranch = gitlabAPI.getBranch(project, version.getReference());
+            return gitlabBranch.getCommit().getId();
+        } catch (IOException ex) {
+            LOG.error("could not find " + repositoryId, ex);
+        }
         return null;
     }
 
