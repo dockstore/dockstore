@@ -24,12 +24,9 @@ components:
         type: object
       type: object
     Checksum:
-      description: A production (immutable) tool version is required to have a hashcode.
-        Not required otherwise, but might be useful to detect changes.  This exposes
-        the hashcode for specific image versions to verify that the container version
-        pulled is actually the version that was indexed by the registry.
-      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,
-        type=sha256}]'
+      description: 'A production (immutable) tool version is required to have a hashcode.
+        Not required otherwise, but might be useful to detect changes. '
+      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -2934,7 +2931,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4198,11 +4195,14 @@ paths:
       operationId: handleGitHubBranchDeletion
       parameters:
       - in: query
-        name: repository
+        name: Repository path (ex. dockstore/dockstore-ui2)
+        required: true
         schema:
           type: string
       - in: query
-        name: gitReference
+        name: Full git reference for a GitHub branch/tag. Ex. refs/heads/master or
+          refs/tags/v1.0
+        required: true
         schema:
           type: string
       requestBody:
@@ -4214,6 +4214,9 @@ paths:
                   type: string
                 username:
                   type: string
+              required:
+              - installationId
+              - username
               type: object
       responses:
         "418":
@@ -4238,6 +4241,10 @@ paths:
                   type: string
                 username:
                   type: string
+              required:
+              - installationId
+              - repositories
+              - username
               type: object
       responses:
         "418":
@@ -4264,6 +4271,11 @@ paths:
                   type: string
                 username:
                   type: string
+              required:
+              - gitReference
+              - installationId
+              - repository
+              - username
               type: object
       responses:
         "418":

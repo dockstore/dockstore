@@ -1936,10 +1936,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-        @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
-        @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
-        @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        @Parameter(name = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
+        @Parameter(name = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+        @Parameter(name = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
+        @Parameter(name = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " pushed to " + repository + "(" + username + ")");
         return githubWebhookRelease(repository, username, gitReference, installationId);
     }
@@ -1954,9 +1954,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Handle the installation of our GitHub app onto a repository or organization.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-            @ApiParam(value = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
-            @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+            @Parameter(name = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
+            @Parameter(name = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+            @Parameter(name = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         LOG.info("GitHub app installed on the repositories " + repositories + "(" + username + ")");
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
@@ -1980,10 +1980,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Response.class)
     public Response handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-            @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
-            @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-            @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
-            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+            @Parameter(name = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
+            @Parameter(name = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+            @Parameter(name = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
+            @Parameter(name = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
         githubWebhookDelete(repository, gitReference, username, installationId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();

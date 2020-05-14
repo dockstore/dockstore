@@ -36,7 +36,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class LambdaEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Unique ID of event.", position = 0)
+    @ApiModelProperty(value = "Unique ID of the event.", position = 0)
     private long id;
 
     @Column(columnDefinition = "TEXT")
@@ -60,12 +60,12 @@ public class LambdaEvent {
     private String message;
 
     @Column(nullable = false, columnDefinition = "boolean default false")
-    @ApiModelProperty(value = "Whether or not the user has dismissed an event.", position = 6)
+    @ApiModelProperty(value = "Whether or not the user has dismissed the event.", position = 6)
     private boolean dismissed = false;
 
     @Column
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "The type of lambda event", required = true, position = 7)
+    @ApiModelProperty(value = "The type of event", required = true, position = 7)
     private LambdaEventType type;
 
     @ManyToOne

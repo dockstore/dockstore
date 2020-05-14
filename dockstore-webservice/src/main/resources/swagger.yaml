@@ -4724,24 +4724,19 @@ paths:
       parameters:
       - name: "repository"
         in: "query"
-        description: "Repository path (ex. dockstore/dockstore-ui2)"
-        required: true
+        required: false
         type: "string"
       - name: "username"
         in: "formData"
-        description: "Username of user on GitHub who triggered action"
-        required: true
+        required: false
         type: "string"
       - name: "gitReference"
         in: "query"
-        description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
-          \ or refs/tags/v1.0"
-        required: true
+        required: false
         type: "string"
       - name: "installationId"
         in: "formData"
-        description: "GitHub installation ID"
-        required: true
+        required: false
         type: "string"
       responses:
         default:
@@ -4762,19 +4757,15 @@ paths:
       parameters:
       - name: "repositories"
         in: "formData"
-        description: "Comma-separated repository paths (ex. dockstore/dockstore-ui2)\
-          \ for all repositories installed"
-        required: true
+        required: false
         type: "string"
       - name: "username"
         in: "formData"
-        description: "Username of user on GitHub who triggered action"
-        required: true
+        required: false
         type: "string"
       - name: "installationId"
         in: "formData"
-        description: "GitHub installation ID"
-        required: true
+        required: false
         type: "string"
       responses:
         200:
@@ -4800,24 +4791,19 @@ paths:
       parameters:
       - name: "repository"
         in: "formData"
-        description: "Repository path (ex. dockstore/dockstore-ui2)"
-        required: true
+        required: false
         type: "string"
       - name: "username"
         in: "formData"
-        description: "Username of user on GitHub who triggered action"
-        required: true
+        required: false
         type: "string"
       - name: "gitReference"
         in: "formData"
-        description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
-          \ or refs/tags/v1.0"
-        required: true
+        required: false
         type: "string"
       - name: "installationId"
         in: "formData"
-        description: "GitHub installation ID"
-        required: true
+        required: false
         type: "string"
       responses:
         200:
@@ -7023,7 +7009,7 @@ definitions:
       id:
         type: "integer"
         format: "int64"
-        description: "Unique ID of event."
+        description: "Unique ID of the event."
       repository:
         type: "string"
         position: 1
@@ -7047,11 +7033,11 @@ definitions:
       dismissed:
         type: "boolean"
         position: 6
-        description: "Whether or not the user has dismissed an event."
+        description: "Whether or not the user has dismissed the event."
       type:
         type: "string"
         position: 7
-        description: "The type of lambda event"
+        description: "The type of event"
         enum:
         - "PUSH"
         - "DELETE"
