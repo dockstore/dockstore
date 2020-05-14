@@ -272,15 +272,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
+     * @param installationId GitHub App installation ID
      * @return List of updated workflows
      */
-    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username) {
+    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username, String installationId) {
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
             String msg = "Reference " + gitReference + " is not of the valid form";
             LOG.error(msg);
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.DELETE);
             lambdaEvent.setMessage(msg);
             lambdaEvent.setSuccess(false);
             lambdaEventDAO.create(lambdaEvent);
@@ -294,7 +295,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         // Delete all non-frozen versions that have the same git reference name
         workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
-        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
+        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
         return workflows;
     }
@@ -329,13 +330,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     gitHubSourceCodeRepo, user, dockstoreYml));
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.info(msg, ex);
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
             lambdaEvent.setMessage(ex.getMessage());
             lambdaEventDAO.create(lambdaEvent);
@@ -344,7 +345,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } catch (Exception ex) {
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
             lambdaEvent.setMessage(ex.getMessage());
             lambdaEventDAO.create(lambdaEvent);
@@ -358,19 +359,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository repository path
      * @param gitReference full git reference (ex. refs/heads/master)
      * @param username Username of GitHub user who triggered the event
+     * @param installationId The GitHub App Installation ID
      * @param type Event type
      * @return New lambda event
      */
-    private LambdaEvent createBasicEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type) {
+    private LambdaEvent createBasicEvent(String repository, String gitReference, String username, String installationId, LambdaEvent.LambdaEventType type) {
         LambdaEvent lambdaEvent = new LambdaEvent();
         lambdaEvent.setRepository(repository);
         lambdaEvent.setReference(gitReference);
         lambdaEvent.setUsername(username);
         lambdaEvent.setType(type);
+        lambdaEvent.setInstallationId(installationId);
         Optional<User> user = Optional.ofNullable(userDAO.findByGitHubUsername(username));
-        if (user.isPresent()) {
-            lambdaEvent.setUser(user.get());
-        }
+        user.ifPresent(lambdaEvent::setUser);
         return lambdaEvent;
     }
 

@@ -72,6 +72,10 @@ public class LambdaEvent {
     @ApiModelProperty(value = "User that the event is acting on.", position = 8)
     private User user;
 
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "The installation ID of the event.", position = 9)
+    private String installationId;
+
     @Column(updatable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
@@ -152,9 +156,18 @@ public class LambdaEvent {
         this.user = user;
     }
 
+    public String getInstallationId() {
+        return installationId;
+    }
+
+    public void setInstallationId(String installationId) {
+        this.installationId = installationId;
+    }
+
     public enum LambdaEventType {
         PUSH,
-        DELETE
+        DELETE,
+        INSTALL
     }
 
 }

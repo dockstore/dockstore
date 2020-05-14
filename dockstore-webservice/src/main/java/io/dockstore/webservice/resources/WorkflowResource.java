@@ -67,6 +67,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -1943,6 +1944,33 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return githubWebhookRelease(repository, username, gitReference, installationId);
     }
 
+    @POST
+    @Path("/github/install")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handle the installation of our GitHub app onto a repository or organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handle the installation of our GitHub app onto a repository or organization.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @ApiParam(value = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
+            @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        LOG.info("GitHub app installed on the repositories " + repositories + "(" + username + ")");
+        Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
+        Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
+            LambdaEvent lambdaEvent = new LambdaEvent();
+            lambdaEvent.setRepository(repository);
+            lambdaEvent.setUsername(username);
+            lambdaEvent.setType(LambdaEvent.LambdaEventType.INSTALL);
+            lambdaEvent.setInstallationId(installationId);
+            triggerUser.ifPresent(lambdaEvent::setUser);
+            lambdaEventDAO.create(lambdaEvent);
+        });
+        return Response.status(HttpStatus.SC_OK).build();
+    }
+
     @DELETE
     @Path("/github")
     @Timed
@@ -1954,9 +1982,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Response handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
             @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-            @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference) {
+            @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
+            @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
-        githubWebhookDelete(repository, gitReference, username);
+        githubWebhookDelete(repository, gitReference, username, installationId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 }

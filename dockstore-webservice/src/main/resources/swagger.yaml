@@ -4721,9 +4721,51 @@ paths:
           \ or refs/tags/v1.0"
         required: true
         type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
       responses:
         default:
           description: "successful operation"
+      security:
+      - BEARER: []
+  /workflows/github/install:
+    post:
+      tags:
+      - "workflows"
+      summary: "Handle the installation of our GitHub app onto a repository or organization."
+      description: ""
+      operationId: "handleGitHubInstallation"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repositories"
+        in: "formData"
+        description: "Comma-separated repository paths (ex. dockstore/dockstore-ui2)\
+          \ for all repositories installed"
+        required: true
+        type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Username of user on GitHub who triggered action"
+        required: true
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        description: "GitHub installation ID"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/github/release:

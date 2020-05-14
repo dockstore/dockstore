@@ -4163,6 +4163,32 @@ paths:
           '*/*':
             schema:
               properties:
+                installationId:
+                  type: string
+                username:
+                  type: string
+              type: object
+      responses:
+        "418":
+          description: This code tells AWS Lambda not to retry.
+      security:
+      - bearer: []
+      tags:
+      - workflows
+  /workflows/github/install:
+    post:
+      description: Handle the installation of our GitHub app onto a repository or
+        organization.
+      operationId: handleGitHubInstallation
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                installationId:
+                  type: string
+                repositories:
+                  type: string
                 username:
                   type: string
               type: object
