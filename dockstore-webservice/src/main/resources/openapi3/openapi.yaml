@@ -24,9 +24,12 @@ components:
         type: object
       type: object
     Checksum:
-      description: 'A production (immutable) tool version is required to have a hashcode.
-        Not required otherwise, but might be useful to detect changes. '
-      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+      description: A production (immutable) tool version is required to have a hashcode.
+        Not required otherwise, but might be useful to detect changes.  This exposes
+        the hashcode for specific image versions to verify that the container version
+        pulled is actually the version that was indexed by the registry.
+      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,
+        type=sha256}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -507,6 +510,32 @@ components:
           format: int64
           type: integer
         value:
+          type: string
+      type: object
+    LambdaEvent:
+      properties:
+        dismissed:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        installationId:
+          type: string
+        message:
+          type: string
+        reference:
+          type: string
+        repository:
+          type: string
+        success:
+          type: boolean
+        type:
+          enum:
+          - PUSH
+          - DELETE
+          - INSTALL
+          type: string
+        username:
           type: string
       type: object
     Organization:
@@ -2905,7 +2934,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -3965,6 +3994,24 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/github/events:
+    get:
+      description: Get all of the repositories for an organization for a given git
+        registry accessible to the logged in user.
+      operationId: getUserOrganizationRepositories
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LambdaEvent'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -4022,7 +4069,7 @@ paths:
     get:
       description: Get all of the repositories for an organization for a given git
         registry accessible to the logged in user.
-      operationId: getUserOrganizationRepositories
+      operationId: getUserOrganizationRepositories_1
       parameters:
       - description: Git registry
         in: path

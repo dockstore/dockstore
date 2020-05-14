@@ -15,6 +15,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -27,9 +28,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "LambdaEvent")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByRepository", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository = :repository"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByUsername", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.username = :username"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByUser", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.user = :user"),
+        @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByRepository", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository = :repository"),
+        @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByUsername", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.username = :username"),
+        @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByUser", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.user = :user"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class LambdaEvent {
@@ -70,6 +71,7 @@ public class LambdaEvent {
     @ManyToOne
     @JoinColumn(name = "userId", referencedColumnName = "id")
     @ApiModelProperty(value = "User that the event is acting on.", position = 8)
+    @JsonIgnore
     private User user;
 
     @Column(columnDefinition = "TEXT")

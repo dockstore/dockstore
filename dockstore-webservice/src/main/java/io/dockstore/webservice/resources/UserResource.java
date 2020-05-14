@@ -55,6 +55,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -73,6 +74,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -121,6 +123,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final BioWorkflowDAO bioWorkflowDAO;
     private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
+    private final LambdaEventDAO lambdaEventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
@@ -136,6 +139,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.toolDAO = new ToolDAO(sessionFactory);
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
+        this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -760,6 +764,17 @@ public class UserResource implements AuthenticatedResourceInterface {
         workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/github/events")
+    @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
+        final User user = userDAO.findById(authUser.getId());
+        return lambdaEventDAO.findByUser(user);
     }
 
     @GET
