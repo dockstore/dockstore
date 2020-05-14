@@ -271,15 +271,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * - Delete version for corresponding service and workflow
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
+     * @param username Git user who triggered the event
      * @return List of updated workflows
      */
-    protected List<Workflow> githubWebhookDelete(String repository, String gitReference) {
+    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username) {
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
             String msg = "Reference " + gitReference + " is not of the valid form";
             LOG.error(msg);
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, null, LambdaEvent.LambdaEventType.DELETE);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
             lambdaEvent.setMessage(msg);
             lambdaEvent.setSuccess(false);
             lambdaEventDAO.create(lambdaEvent);
@@ -293,7 +294,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         // Delete all non-frozen versions that have the same git reference name
         workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
-        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, null, LambdaEvent.LambdaEventType.DELETE);
+        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
         return workflows;
     }

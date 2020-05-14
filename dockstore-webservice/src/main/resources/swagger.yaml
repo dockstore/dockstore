@@ -4710,6 +4710,11 @@ paths:
         description: "Repository path (ex. dockstore/dockstore-ui2)"
         required: true
         type: "string"
+      - name: "username"
+        in: "formData"
+        description: "Username of user on GitHub who triggered action"
+        required: true
+        type: "string"
       - name: "gitReference"
         in: "query"
         description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\

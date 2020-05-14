@@ -221,7 +221,7 @@ public class WebhookIT extends BaseIT {
         assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
 
         // Delete tag 0.2
-        client.handleGitHubBranchDeletion(workflowRepo, "refs/tags/0.2");
+        client.handleGitHubBranchDeletion(workflowRepo, "DockstoreTestUser2", "refs/tags/0.2");
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertTrue("Should not have a 0.2 version.", workflow.getWorkflowVersions().stream().noneMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
         workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);

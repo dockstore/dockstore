@@ -1953,9 +1953,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Response.class)
     public Response handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
+            @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
             @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference) {
         LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
-        githubWebhookDelete(repository, gitReference);
+        githubWebhookDelete(repository, gitReference, username);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 }

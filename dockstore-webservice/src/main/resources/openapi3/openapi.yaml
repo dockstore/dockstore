@@ -2905,7 +2905,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4158,6 +4158,14 @@ paths:
         name: gitReference
         schema:
           type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              properties:
+                username:
+                  type: string
+              type: object
       responses:
         "418":
           description: This code tells AWS Lambda not to retry.
