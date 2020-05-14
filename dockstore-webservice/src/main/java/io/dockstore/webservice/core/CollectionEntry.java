@@ -5,6 +5,9 @@ import java.util.Date;
 
 import io.dockstore.common.SourceControl;
 
+/**
+ * Used to retrieve specific entry fields from workflows/tools.  Also used in response for all endpoints that return a single collection.
+ */
 public class CollectionEntry implements Serializable {
     private String entryPath;
     private Date dbUpdateDate;

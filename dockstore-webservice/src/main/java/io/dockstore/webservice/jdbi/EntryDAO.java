@@ -151,15 +151,15 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<CollectionEntry> getCollectionWorkflows(long collectionId) {
-        return list(namedQuery("getCollectionWorkflows").setParameter("collectionId", collectionId));
+        return list(namedQuery("Entry.getCollectionWorkflows").setParameter("collectionId", collectionId));
     }
 
     public List<CollectionEntry> getCollectionServices(long collectionId) {
-        return list(namedQuery("getCollectionServices").setParameter("collectionId", collectionId));
+        return list(namedQuery("Entry.getCollectionServices").setParameter("collectionId", collectionId));
     }
 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
-        return list(namedQuery("getCollectionTools").setParameter("collectionId", collectionId));
+        return list(namedQuery("Entry.getCollectionTools").setParameter("collectionId", collectionId));
     }
 
     public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
