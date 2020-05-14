@@ -38,6 +38,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
@@ -46,6 +47,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -78,9 +80,11 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
     private DescriptorLanguage.FileType type;
 
-    @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
-    private String content;
+    //TODO sha1 duplicates part of checksums
+    @OneToOne()
+    @JoinColumn(name = "sha1", referencedColumnName = "id")
+    @JsonIgnore
+    private FileContent fileContent;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
@@ -139,12 +143,14 @@ public class SourceFile implements Comparable<SourceFile> {
         this.type = type;
     }
 
+    @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
     public String getContent() {
-        return content;
+        return fileContent.getContent();
     }
 
     public void setContent(String content) {
-        this.content = content;
+        // TODO: can probably do better than null default
+        this.fileContent = new FileContent(FileFormatHelper.calcSHA1(content).orElse(null), content);
     }
 
     public String getPath() {
