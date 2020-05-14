@@ -29,9 +29,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.http.HttpStatus;
 
 /**
  * This describes one tag associated with a container. For our implementation, this means one tag on quay.io or Docker Hub which is
@@ -45,6 +47,7 @@ import org.apache.commons.io.FilenameUtils;
 @SuppressWarnings("checkstyle:magicnumber")
 @Table(name = "tag", uniqueConstraints = @UniqueConstraint(name = "unique_tag_names", columnNames = { "parentid", "name" }))
 public class Tag extends Version<Tag> implements Comparable<Tag> {
+    private static final String CANNOT_UPDATE_FROZEN_TAG = "Cannot update frozen tag";
 
     @Column
     @JsonProperty("last_built")
@@ -115,7 +118,10 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
             wdlPath = tag.wdlPath;
             dockerfilePath = tag.dockerfilePath;
             lastBuilt = tag.lastBuilt;
+        } else {
+            throw new CustomWebApplicationException(CANNOT_UPDATE_FROZEN_TAG + " with id: " + this.getId(), HttpStatus.SC_BAD_REQUEST);
         }
+
         // this is a bit confusing, but we need to call the super method last since it will set frozen
         // skipping the above even if we are only freezing it "now"
         super.updateByUser(tag);
