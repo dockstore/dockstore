@@ -139,4 +139,27 @@
     <changeSet id="removeServiceMode" author="aduncan">
         <sql dbms="postgresql">UPDATE service SET mode='DOCKSTORE_YML' WHERE mode='SERVICE'</sql>
     </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addLambdaEvents">
+        <createTable tableName="lambdaevent">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="lambdaevent_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column defaultValueBoolean="false" name="dismissed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message" type="TEXT"/>
+            <column name="reference" type="TEXT"/>
+            <column name="repository" type="TEXT"/>
+            <column defaultValueBoolean="true" name="success" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="username" type="TEXT"/>
+            <column name="userid" type="BIGINT"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="lambdaevent" constraintName="fkj387wwrofm9u30t4mwiiwa835" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
 </databaseChangeLog>

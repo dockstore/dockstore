@@ -20,6 +20,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -39,6 +40,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -76,6 +78,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final WorkflowVersionDAO workflowVersionDAO;
     protected final EventDAO eventDAO;
     protected final FileDAO fileDAO;
+    protected final LambdaEventDAO lambdaEventDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
@@ -94,6 +97,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.fileDAO = new FileDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
+        this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -275,6 +279,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         if (gitReferenceName.isEmpty()) {
             String msg = "Reference " + gitReference + " is not of the valid form";
             LOG.error(msg);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, null, LambdaEvent.LambdaEventType.DELETE);
+            lambdaEvent.setMessage(msg);
+            lambdaEvent.setSuccess(false);
+            lambdaEventDAO.create(lambdaEvent);
+            sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
@@ -284,6 +293,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         // Delete all non-frozen versions that have the same git reference name
         workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
+        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, null, LambdaEvent.LambdaEventType.DELETE);
+        lambdaEventDAO.create(lambdaEvent);
         return workflows;
     }
 
@@ -317,17 +328,49 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     gitHubSourceCodeRepo, user, dockstoreYml));
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+            lambdaEventDAO.create(lambdaEvent);
             return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
-            // TODO: Eventually want to record something to the database so that the user can know the type of lambda errors run into
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.info(msg, ex);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+            lambdaEvent.setSuccess(false);
+            lambdaEvent.setMessage(ex.getMessage());
+            lambdaEventDAO.create(lambdaEvent);
+            sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-        } catch (NullPointerException ex) {
+        } catch (Exception ex) {
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+            lambdaEvent.setSuccess(false);
+            lambdaEvent.setMessage(ex.getMessage());
+            lambdaEventDAO.create(lambdaEvent);
+            sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    /**
+     * Create a basic lambda event
+     * @param repository repository path
+     * @param gitReference full git reference (ex. refs/heads/master)
+     * @param username Username of GitHub user who triggered the event
+     * @param type Event type
+     * @return New lambda event
+     */
+    private LambdaEvent createBasicEvent(String repository, String gitReference, String username, LambdaEvent.LambdaEventType type) {
+        LambdaEvent lambdaEvent = new LambdaEvent();
+        lambdaEvent.setRepository(repository);
+        lambdaEvent.setReference(gitReference);
+        lambdaEvent.setUsername(username);
+        lambdaEvent.setType(type);
+        Optional<User> user = Optional.ofNullable(userDAO.findByGitHubUsername(username));
+        if (user.isPresent()) {
+            lambdaEvent.setUser(user.get());
+        }
+        return lambdaEvent;
     }
 
     /**

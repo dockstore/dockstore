@@ -4,9 +4,15 @@ import java.sql.Timestamp;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModel;
@@ -20,6 +26,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ApiModel("LambdaEvent")
 @Entity
 @Table(name = "LambdaEvent")
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByRepository", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository = :repository"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByUsername", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.username = :username"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByUser", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.user = :user"),
+})
+@SuppressWarnings("checkstyle:magicnumber")
 public class LambdaEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,15 +39,15 @@ public class LambdaEvent {
     private long id;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The repository from the event.", position = 1)
+    @ApiModelProperty(value = "The repository from the event.", required = true, position = 1)
     private String repository;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The name of the user on GitHub that triggers the event.", position = 2)
+    @ApiModelProperty(value = "The name of the user on GitHub that triggers the event.", required = true, position = 2)
     private String username;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The git reference from the event.", position = 3)
+    @ApiModelProperty(value = "The git reference from the event.", required = true, position = 3)
     private String reference;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
@@ -47,8 +59,18 @@ public class LambdaEvent {
     private String message;
 
     @Column(nullable = false, columnDefinition = "boolean default false")
-    @ApiModelProperty(value = "Whether or not the user has dismissed an event.", position = 4)
+    @ApiModelProperty(value = "Whether or not the user has dismissed an event.", position = 6)
     private boolean dismissed = false;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "The type of lambda event", required = true, position = 7)
+    private LambdaEventType type;
+
+    @ManyToOne
+    @JoinColumn(name = "userId", referencedColumnName = "id")
+    @ApiModelProperty(value = "User that the event is acting on.", position = 8)
+    private User user;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -113,4 +135,26 @@ public class LambdaEvent {
     public void setDismissed(boolean dismissed) {
         this.dismissed = dismissed;
     }
+
+    public LambdaEventType getType() {
+        return type;
+    }
+
+    public void setType(LambdaEventType type) {
+        this.type = type;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public enum LambdaEventType {
+        PUSH,
+        DELETE
+    }
+
 }
