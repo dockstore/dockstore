@@ -1,5 +1,6 @@
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +21,7 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
@@ -60,6 +62,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * Collection of collection endpoints
+ * TODO: Add an endpoint that retrieves collection entries
  * @author aduncan
  */
 @Path("/organizations")
@@ -135,9 +138,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
             throwExceptionForNullCollection(collection);
             assert collection != null;
-            Hibernate.initialize(collection.getEntries());
             Hibernate.initialize(collection.getAliases());
-            return getApprovalForCollection(collection);
+            Collection approvalForCollection = getApprovalForCollection(collection);
+            addCollectionEntriesToCollection(approvalForCollection);
+            return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
             // Admins and curators should be able to see collections from unapproved organizations
@@ -148,8 +152,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 throwExceptionForNullCollection(collection);
             }
             assert collection != null;
-            Hibernate.initialize(collection.getEntries());
             Hibernate.initialize(collection.getAliases());
+            addCollectionEntriesToCollection(collection);
             return collection;
         }
     }
@@ -163,7 +167,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     public Collection getCollectionByName(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
             @ApiParam(value = "Organization name.", required = true) @Parameter(description = "Organization name.", name = "organizationName", in = ParameterIn.PATH, required = true) @PathParam("organizationName") String organizationName,
             @ApiParam(value = "Collection name.", required = true) @Parameter(description = "Collection name.", name = "collectionName", in = ParameterIn.PATH, required = true) @PathParam("collectionName") String collectionName) {
-
         if (user.isEmpty()) {
             // No user given, only show collections from approved organizations
             Organization organization = organizationDAO.findApprovedByName(organizationName);
@@ -175,7 +178,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
             throwExceptionForNullCollection(collection);
-            return getApprovalForCollection(collection);
+            Collection approvalForCollection = getApprovalForCollection(collection);
+            addCollectionEntriesToCollection(approvalForCollection);
+            return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
             // Admins and curators should be able to see collections from unapproved organizations
@@ -187,10 +192,23 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
-            Hibernate.initialize(collection.getEntries());
             Hibernate.initialize(collection.getAliases());
+            addCollectionEntriesToCollection(collection);
             return collection;
         }
+    }
+
+    private void addCollectionEntriesToCollection(Collection collection) {
+        Session currentSession = sessionFactory.getCurrentSession();
+        currentSession.evict(collection);
+        List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
+        List<CollectionEntry> collectionServices = workflowDAO.getCollectionServices(collection.getId());
+        List<CollectionEntry> collectionTools = workflowDAO.getCollectionTools(collection.getId());
+        List<CollectionEntry> collectionEntries = new ArrayList<>();
+        collectionEntries.addAll(collectionWorkflows);
+        collectionEntries.addAll(collectionServices);
+        collectionEntries.addAll(collectionTools);
+        collection.setCollectionEntries(collectionEntries);
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
@@ -355,9 +373,13 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
         Session currentSession = sessionFactory.getCurrentSession();
         if (checkIncludes(include, "entries")) {
-            collections.forEach(collection -> Hibernate.initialize(collection.getEntries()));
+            collections.forEach(collection -> {
+                currentSession.evict(collection);
+                addCollectionEntriesToCollection(collection);
+            });
         } else {
             // Ensure that entries is empty
+            // This is probably unnecessary
             collections.forEach(collection -> {
                 currentSession.evict(collection);
                 collection.setEntries(new HashSet<>());

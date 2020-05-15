@@ -33,6 +33,7 @@ import javax.persistence.criteria.Root;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
@@ -147,6 +148,18 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public T findPublishedById(long id) {
         return (T)uniqueResult(
             namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
+    }
+
+    public List<CollectionEntry> getCollectionWorkflows(long collectionId) {
+        return list(namedQuery("Entry.getCollectionWorkflows").setParameter("collectionId", collectionId));
+    }
+
+    public List<CollectionEntry> getCollectionServices(long collectionId) {
+        return list(namedQuery("Entry.getCollectionServices").setParameter("collectionId", collectionId));
+    }
+
+    public List<CollectionEntry> getCollectionTools(long collectionId) {
+        return list(namedQuery("Entry.getCollectionTools").setParameter("collectionId", collectionId));
     }
 
     public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
