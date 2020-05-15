@@ -118,13 +118,15 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
             wdlPath = tag.wdlPath;
             dockerfilePath = tag.dockerfilePath;
             lastBuilt = tag.lastBuilt;
-        } else {
-            throw new CustomWebApplicationException(CANNOT_UPDATE_FROZEN_TAG + " with id: " + this.getId(), HttpStatus.SC_BAD_REQUEST);
         }
 
         // this is a bit confusing, but we need to call the super method last since it will set frozen
         // skipping the above even if we are only freezing it "now"
         super.updateByUser(tag);
+
+        if (this.isFrozen()) {
+            throw new CustomWebApplicationException(CANNOT_UPDATE_FROZEN_TAG + " with id: " + this.getId(), HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     public void update(Tag tag) {
