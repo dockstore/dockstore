@@ -146,11 +146,12 @@
                 <constraints primaryKey="true" primaryKeyName="filecontent_pkey"/>
             </column>
             <column name="content" type="TEXT"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
         </createTable>
         <addColumn tableName="sourcefile">
             <column name="sha1" type="varchar(255 BYTE)"/>
         </addColumn>
-        <addForeignKeyConstraint baseColumnNames="sha1" baseTableName="sourcefile" constraintName="filecontentsha1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="filecontent"/>
 
         <!-- disable security to not skip frozen files -->
         <sql dbms="postgresql">
@@ -167,5 +168,10 @@
         </sql>
         <dropColumn columnName="content" tableName="sourcefile"/>
     </changeSet>
+
+    <changeSet author="dyuen" id="constrain_filecontent">
+        <addForeignKeyConstraint baseColumnNames="sha1" baseTableName="sourcefile" constraintName="filecontentsha1" deferrable="true" initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="filecontent"/>
+    </changeSet>
+
 
 </databaseChangeLog>

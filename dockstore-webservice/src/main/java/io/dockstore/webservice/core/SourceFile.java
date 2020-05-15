@@ -23,7 +23,9 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
@@ -37,8 +39,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
@@ -81,7 +83,7 @@ public class SourceFile implements Comparable<SourceFile> {
     private DescriptorLanguage.FileType type;
 
     //TODO sha1 duplicates part of checksums
-    @OneToOne()
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "sha1", referencedColumnName = "id")
     @JsonIgnore
     private FileContent fileContent;
@@ -148,9 +150,24 @@ public class SourceFile implements Comparable<SourceFile> {
         return fileContent.getContent();
     }
 
+    @JsonIgnore
+    public FileContent getFileContent() {
+        return fileContent;
+    }
+
+    @JsonIgnore
+    public void setFileContent(FileContent fileContent) {
+        this.fileContent = fileContent;
+    }
+
     public void setContent(String content) {
         // TODO: can probably do better than null default
-        this.fileContent = new FileContent(FileFormatHelper.calcSHA1(content).orElse(null), content);
+        // TODO: make sure that updates create a new FileContent rather than edit an existing one
+        // TODO: also make sure workflowversion deletes do not affect other versions with the same content
+        String calcSha1 = FileFormatHelper.calcSHA1(content).orElse(null);
+        if (fileContent == null || !Objects.equals(fileContent.getId(), calcSha1)) {
+            this.fileContent = new FileContent(calcSha1, content);
+        }
     }
 
     public String getPath() {

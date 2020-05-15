@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -24,6 +25,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.google.common.collect.ComparisonChain;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * This stores de-duplicated file content, should not be user-facing
@@ -44,13 +47,21 @@ public class FileContent implements Comparable<FileContent> {
     @Column(columnDefinition = "text")
     private String content;
 
-    protected FileContent() {
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
 
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
+
+    protected FileContent() {
     }
 
     public FileContent(String id, String content) {
         this.id = id;
-        this.setContent(content);
+        this.content = content;
     }
 
 
@@ -86,9 +97,5 @@ public class FileContent implements Comparable<FileContent> {
      */
     public String getContent() {
         return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
     }
 }
