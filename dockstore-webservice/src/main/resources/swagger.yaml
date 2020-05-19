@@ -4727,7 +4727,7 @@ paths:
         required: false
         type: "string"
       - name: "username"
-        in: "formData"
+        in: "query"
         required: false
         type: "string"
       - name: "gitReference"
@@ -4735,7 +4735,7 @@ paths:
         required: false
         type: "string"
       - name: "installationId"
-        in: "formData"
+        in: "query"
         required: false
         type: "string"
       responses:
@@ -7037,7 +7037,7 @@ definitions:
       type:
         type: "string"
         position: 7
-        description: "The type of event"
+        description: "The type of event."
         enum:
         - "PUSH"
         - "DELETE"

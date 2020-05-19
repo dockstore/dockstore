@@ -31,6 +31,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.LambdaEvent;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Validation;
 import io.swagger.client.model.Workflow;
@@ -180,9 +181,13 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
+
+        // Track install event
+        client.handleGitHubInstallation(workflowRepo, BasicIT.USER_2_USERNAME, installationId);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
         assertEquals("Should only have one service", 1, workflows.size());
 
         // Ensure that new workflow is created and is what is expected
@@ -192,7 +197,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
-        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.2", installationId);
+        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.2", installationId);
         assertEquals("Should only have two services", 2, workflows.size());
 
         // Ensure that existing workflow is updated
@@ -205,7 +210,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
 
         // Branch master on GitHub - updates two existing workflows
-        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/heads/master", installationId);
+        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
         assertEquals("Should only have two services", 2, workflows.size());
 
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
@@ -221,11 +226,24 @@ public class WebhookIT extends BaseIT {
         assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
 
         // Delete tag 0.2
-        client.handleGitHubBranchDeletion(workflowRepo, "DockstoreTestUser2", "refs/tags/0.2", installationId);
+        client.handleGitHubBranchDeletion(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.2", installationId);
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertTrue("Should not have a 0.2 version.", workflow.getWorkflowVersions().stream().noneMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
         workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
         assertTrue("Should not have a 0.2 version.", workflow2.getWorkflowVersions().stream().noneMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+
+        // Add version that doesn't exist
+        try {
+            client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/idonotexist", installationId);
+            fail("Should fail and not reach this point");
+        } catch (ApiException ex) {
+            List<LambdaEvent> failureEvents = usersApi.getUserGitHubEvents();
+            assertTrue("There should be 1 unsuccessful event", failureEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count() == 1);
+        }
+
+        // There should be 5 successful lambda events
+        List<LambdaEvent> events = usersApi.getUserGitHubEvents();
+        assertTrue("There should be 5 successful events", events.stream().filter(LambdaEvent::isSuccess).count() == 5);
     }
 
     /**
@@ -285,9 +303,10 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
         assertEquals("Should only have one service", 1, workflows.size());
 
         // Ensure that new workflow is created and is what is expected
@@ -298,7 +317,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should be valid", workflow.getWorkflowVersions().get(0).isValid());
 
         // Push missingPrimaryDescriptor on GitHub - one existing wdl workflow, missing primary descriptor
-        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/heads/missingPrimaryDescriptor", installationId);
+        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingPrimaryDescriptor", installationId);
         assertEquals("Should only have one service", 1, workflows.size());
 
         // Ensure that new version is in the correct state (invalid)
@@ -316,7 +335,7 @@ public class WebhookIT extends BaseIT {
         assertFalse("Should have invalid doesnotexist.wdl", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
 
         // Push missingTestParameterFile on GitHub - one existing wdl workflow, missing a test parameter file
-        workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/heads/missingTestParameterFile", installationId);
+        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingTestParameterFile", installationId);
         assertEquals("Should only have one service", 1, workflows.size());
 
         // Ensure that new version is in the correct state (invalid)
@@ -333,5 +352,18 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should have Dockstore2.wdl file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
         assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
+
+        // There should be 3 successful lambda events
+        List<LambdaEvent> events = usersApi.getUserGitHubEvents();
+        assertTrue("There should be 3 successful events", events.stream().filter(LambdaEvent::isSuccess).count() == 3);
+
+        // Push branch with invalid dockstore.yml
+        try {
+            workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidDockstoreYml", installationId);
+            fail("Should not reach this statement");
+        } catch (ApiException ex) {
+            List<LambdaEvent> failEvents = usersApi.getUserGitHubEvents();
+            assertTrue("There should be 1 unsuccessful event", failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count() == 1);
+        }
     }
 }

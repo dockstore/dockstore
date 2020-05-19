@@ -65,12 +65,12 @@ public class LambdaEvent {
 
     @Column
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "The type of event", required = true, position = 7)
+    @ApiModelProperty(value = "The type of event.", required = true, position = 7)
     private LambdaEventType type;
 
     @ManyToOne
     @JoinColumn(name = "userId", referencedColumnName = "id")
-    @ApiModelProperty(value = "User that the event is acting on.", position = 8)
+    @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 8)
     @JsonIgnore
     private User user;
 

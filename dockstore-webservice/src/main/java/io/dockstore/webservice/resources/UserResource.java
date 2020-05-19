@@ -770,7 +770,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/github/events")
-    @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getUserGitHubEvents", description = "Get all of the GitHub Events for the logged in user.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());

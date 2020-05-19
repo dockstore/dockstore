@@ -2931,7 +2931,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -4200,24 +4200,21 @@ paths:
         schema:
           type: string
       - in: query
+        name: Username of user on GitHub who triggered action
+        required: true
+        schema:
+          type: string
+      - in: query
         name: Full git reference for a GitHub branch/tag. Ex. refs/heads/master or
           refs/tags/v1.0
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              properties:
-                installationId:
-                  type: string
-                username:
-                  type: string
-              required:
-              - installationId
-              - username
-              type: object
+      - in: query
+        name: GitHub installation ID
+        required: true
+        schema:
+          type: string
       responses:
         "418":
           description: This code tells AWS Lambda not to retry.
