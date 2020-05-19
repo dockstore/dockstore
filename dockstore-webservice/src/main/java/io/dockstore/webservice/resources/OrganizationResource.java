@@ -322,7 +322,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         getOrganizationByIdOptionalAuth(user, id);
         response.addHeader("X-total-count", String.valueOf(eventDAO.countAllEventsForOrganization(id)));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
-        return eventDAO.findEventsForOrganization(id, offset, limit);
+        List<Event> eventsForOrganization = eventDAO.findEventsForOrganization(id, offset, limit);
+        for (Event event : eventsForOrganization) {
+            Hibernate.initialize(event.getInitiatorUser());
+            Hibernate.initialize(event.getCollection());
+        }
+        return eventsForOrganization;
     }
 
     @PUT
