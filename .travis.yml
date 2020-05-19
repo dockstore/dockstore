@@ -3,10 +3,6 @@ services:
 
 addons:
   postgresql: "11"
-  apt:
-    packages:
-    - postgresql-11
-    - postgresql-client-11
   snaps:
     - yq
 
@@ -99,8 +95,6 @@ install:
 - scripts/install-tests.sh
 
 before_script:
-- netstat -tulpn
-- sleep 60
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
