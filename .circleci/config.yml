@@ -41,6 +41,7 @@ jobs:
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c "ALTER USER dockstore WITH superuser;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+            psql -c 'create extension pgcrypto;' -U postgres webservice_test
       - run:
           name: run the actual tests
           command: mvn -B clean install -Punit-tests -ntp
