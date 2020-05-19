@@ -161,9 +161,6 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     public void setContent(String content) {
-        // TODO: can probably do better than null default
-        // TODO: make sure that updates create a new FileContent rather than edit an existing one
-        // TODO: also make sure workflowversion deletes do not affect other versions with the same content
         String calcSha1 = FileFormatHelper.calcSHA1(content).orElse(null);
         if (fileContent == null || !Objects.equals(fileContent.getId(), calcSha1)) {
             this.fileContent = new FileContent(calcSha1, content);
