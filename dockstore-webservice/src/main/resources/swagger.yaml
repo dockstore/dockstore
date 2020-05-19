@@ -60,6 +60,7 @@ tags:
   description: "Interactions with the Dockstore-support's ToolTester application"
 - name: "users"
   description: "List, modify, and manage end users of the dockstore"
+- name: "versions"
 - name: "workflows"
   description: "List and register workflows in the dockstore (CWL, Nextflow, WDL)"
 paths:
@@ -4692,6 +4693,45 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+  /versions/{versionId}/sourcefiles:
+    get:
+      tags:
+      - "versions"
+      summary: "Retrieve sourcefiles for an entry version"
+      description: ""
+      operationId: "getSourceFiles"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "versionId"
+        in: "path"
+        description: "Version to retrieve sourcefiles for"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryType"
+        in: "query"
+        description: "Type of entry"
+        required: true
+        type: "string"
+      - name: "fileType"
+        in: "query"
+        description: "List of file types to filter sourcefiles by"
+        required: false
+        type: "array"
+        items:
+          type: "string"
+        collectionFormat: "multi"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceFile"
+            uniqueItems: true
       security:
       - BEARER: []
   /workflows/github:

@@ -4389,6 +4389,8 @@ tags:
   name: curation
 - description: List and register workflows in the dockstore (CWL, Nextflow, WDL)
   name: workflows
+- description: List sourcefiles for entry versions
+  name: sourceFile
 - description: List, modify, refresh, and delete tokens for external services
   name: tokens
 - description: Interactions with the Dockstore-support's ToolTester application
