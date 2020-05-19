@@ -320,6 +320,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
 
+        // Create the lambda event (assume success for now)
+        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
         try {
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
@@ -330,13 +332,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     gitHubSourceCodeRepo, user, dockstoreYml));
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.info(msg, ex);
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
             lambdaEvent.setMessage(ex.getMessage());
             lambdaEventDAO.create(lambdaEvent);
@@ -345,7 +345,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } catch (Exception ex) {
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
             lambdaEvent.setMessage(ex.getMessage());
             lambdaEventDAO.create(lambdaEvent);

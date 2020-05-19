@@ -1,5 +1,6 @@
 services:
 - docker
+- postgresql
 
 addons:
   postgresql: "11"
