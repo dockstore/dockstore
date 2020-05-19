@@ -618,7 +618,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        Hibernate.initialize(byAlias.getEntries());
         Hibernate.initialize(byAlias.getAliases());
         return byAlias;
     }
