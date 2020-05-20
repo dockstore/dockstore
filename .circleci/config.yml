@@ -69,6 +69,19 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: ~/junit
+      - run:
+          name: Make jar directory
+          command: mkdir /tmp/artifacts
+      - run:
+          name: Move jars
+          command: cp dockstore-webservice/target/dockstore*.jar /tmp/artifacts
+      - run:
+          name: Move swagger.yaml
+          command: |
+            cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
+            cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
+      - store_artifacts:
+          path: /tmp/artifacts
     branches:
       ignore:
         - gh-pages
