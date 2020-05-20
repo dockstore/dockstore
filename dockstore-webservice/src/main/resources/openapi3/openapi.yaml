@@ -1553,7 +1553,7 @@ components:
       type: object
   securitySchemes:
     bearer:
-      scheme: bearer
+      scheme: BEARER
       type: http
 info:
   contact:
@@ -4144,6 +4144,50 @@ paths:
           description: default response
       tags:
       - users
+  /versions/{versionId}/sourcefiles:
+    get:
+      description: Retrieve sourcefiles for an entry's version
+      operationId: getVersionsSourcefiles
+      parameters:
+      - description: Version to retrieve sourcefiles for
+        in: path
+        name: versionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Type of entry
+        in: query
+        name: entryType
+        required: true
+        schema:
+          type: string
+      - description: List of file types to filter sourcefiles by
+        in: query
+        name: fileTypes
+        schema:
+          items:
+            type: string
+          type: array
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+                type: array
+                uniqueItems: true
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - sourceFile
   /workflows/github:
     delete:
       description: Handles the deletion of a branch on GitHub. Will delete all workflow
@@ -4389,14 +4433,14 @@ tags:
   name: curation
 - description: List and register workflows in the dockstore (CWL, Nextflow, WDL)
   name: workflows
-- description: List sourcefiles for entry versions
-  name: sourceFile
 - description: List, modify, refresh, and delete tokens for external services
   name: tokens
 - description: Interactions with the Dockstore-support's ToolTester application
   name: toolTester
 - description: List, modify, and manage end users of the dockstore
   name: users
+- description: List sourcefiles for entry versions
+  name: sourceFile
 - description: Optional experimental extensions of the GA4GH API
   name: extendedGA4GH
 - description: A curated subset of resources proposed as a common standard for tool
