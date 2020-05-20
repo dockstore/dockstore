@@ -40,11 +40,13 @@ public class FileDAO extends AbstractDAO<SourceFile> {
     @Override
     protected SourceFile persist(SourceFile file) throws HibernateException {
         // intercept creation of new content to de-duplicate
-        FileContent content = fileContentDAO.findById(file.getFileContent().getId());
-        if (content == null) {
-            content = fileContentDAO.persist(file.getFileContent());
+        if (file.getFileContent() != null) {
+            FileContent content = fileContentDAO.findById(file.getFileContent().getId());
+            if (content == null) {
+                content = fileContentDAO.persist(file.getFileContent());
+            }
+            file.setFileContent(content);
         }
-        file.setFileContent(content);
         SourceFile persist = super.persist(file);
         return findById(persist.getId());
     }

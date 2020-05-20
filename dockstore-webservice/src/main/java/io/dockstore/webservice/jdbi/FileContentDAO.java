@@ -40,7 +40,6 @@ public class FileContentDAO extends AbstractDAO<FileContent> {
         FileContent content = findById(file.getId());
         if (content == null) {
             FileContent persist = super.persist(file);
-            currentSession().flush();
             return persist;
         }
         return content;

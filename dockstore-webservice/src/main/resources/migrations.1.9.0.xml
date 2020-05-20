@@ -159,7 +159,7 @@
         </sql>
 
         <!-- copy over unique non-null content from sourcefile -->
-        <sql>with uniquecontent as (select distinct content from sourcefile where content is not null) insert into filecontent(id, content) select encode(digest(content, 'sha1'), 'hex'), content from uniquecontent</sql>
+        <sql>with uniquecontent as (select content, min(dbcreatedate) as dbcreatedate, max(dbupdatedate) as dbupdatedate from sourcefile where content is not null group by content) insert into filecontent(id, content, dbcreatedate, dbupdatedate) select encode(digest(content, 'sha1'), 'hex'), content, dbcreatedate, dbupdatedate from uniquecontent</sql>
         <!-- populate sha1 for main table -->
         <sql>update sourcefile set sha1 = encode(digest(content, 'sha1'), 'hex')</sql>
 
