@@ -1916,6 +1916,37 @@ public class WorkflowIT extends BaseIT {
 
     }
 
+    @Test
+    public void testGettingSourceFilesForWorkflowVersion() {
+
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        // Sourcefiles for workflowversions
+        Workflow workflow = workflowsApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "", "cwl", "/test.json");
+        workflow = workflowsApi.refresh(workflow.getId());
+
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion1 -> workflowVersion1.getName().equals("testCWL")).findFirst().get();
+
+        List<SourceFile> sourceFiles = workflowsApi.getWorkflowVersionsSourceFiles(workflow.getId(), workflowVersion.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(1, sourceFiles.size());
+
+        // Check that filtering works
+        List<String> fileTypes = new ArrayList<>();
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_CWL.toString());
+        sourceFiles = workflowsApi.getWorkflowVersionsSourceFiles(workflow.getId(), workflowVersion.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(1, sourceFiles.size());
+
+        fileTypes.clear();
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_WDL.toString());
+        sourceFiles = workflowsApi.getWorkflowVersionsSourceFiles(workflow.getId(), workflowVersion.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(0, sourceFiles.size());
+    }
+
     /**
      * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
      */

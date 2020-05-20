@@ -19,7 +19,11 @@ package io.dockstore.webservice.resources;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -28,12 +32,15 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
@@ -49,12 +56,17 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author dyuen
@@ -245,5 +257,32 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         checkEntry(tool);
         checkUser(user, tool);
         return tool;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("{containerId}/tags/{tagId}/sourcefiles")
+    @Operation(operationId = "getTagsSourcefiles", description = "Retrieve sourcefiles for a container's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public SortedSet<SourceFile> getTagsSourceFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
+            @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
+            @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileType") List<DescriptorLanguage.FileType> fileTypes) {
+        Tool tool = toolDAO.findById(containerId);
+        checkEntry(tool);
+        checkOptionalAuthRead(user, tool);
+
+        Set<Tag> tags = tool.getWorkflowVersions();
+        Optional<Tag> tag = tags.stream().filter(tag1 -> tag1.getId() == tagId).findFirst();
+        if (tag.isEmpty()) {
+            throw new CustomWebApplicationException("Container tag " + tagId + " does not exist", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        SortedSet<SourceFile> sourceFiles = tag.get().getSourceFiles();
+        if (fileTypes != null && !fileTypes.isEmpty()) {
+            sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
+                    TreeSet::new));
+        }
+        return sourceFiles;
     }
 }

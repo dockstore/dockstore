@@ -1553,7 +1553,7 @@ components:
       type: object
   securitySchemes:
     bearer:
-      scheme: BEARER
+      scheme: bearer
       type: http
 info:
   contact:
@@ -2045,6 +2045,68 @@ paths:
       summary: Add a new orcid.org token
       tags:
       - tokens
+  /containers/{containerId}/tags/{tagId}/sourcefiles:
+    get:
+      description: Retrieve sourcefiles for a container's version
+      operationId: getTagsSourcefiles
+      parameters:
+      - description: Container to retrieve the version from
+        in: path
+        name: containerId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Tag to retrieve the sourcefiles from
+        in: path
+        name: tagId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: List of file types to filter sourcefiles by
+        in: query
+        name: fileTypes
+        schema:
+          items:
+            enum:
+            - DOCKSTORE_CWL
+            - DOCKSTORE_WDL
+            - DOCKERFILE
+            - CWL_TEST_JSON
+            - WDL_TEST_JSON
+            - NEXTFLOW
+            - NEXTFLOW_CONFIG
+            - NEXTFLOW_TEST_PARAMS
+            - DOCKSTORE_YML
+            - DOCKSTORE_SERVICE_YML
+            - DOCKSTORE_SERVICE_TEST_JSON
+            - DOCKSTORE_SERVICE_OTHER
+            - DOCKSTORE_GXFORMAT2
+            - GXFORMAT2_TEST_FILE
+            - DOCKSTORE_SWL
+            - SWL_TEST_JSON
+            type: string
+          type: array
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+                type: array
+                uniqueItems: true
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - containertags
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.
@@ -4144,50 +4206,6 @@ paths:
           description: default response
       tags:
       - users
-  /versions/{versionId}/sourcefiles:
-    get:
-      description: Retrieve sourcefiles for an entry's version
-      operationId: getVersionsSourcefiles
-      parameters:
-      - description: Version to retrieve sourcefiles for
-        in: path
-        name: versionId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - description: Type of entry
-        in: query
-        name: entryType
-        required: true
-        schema:
-          type: string
-      - description: List of file types to filter sourcefiles by
-        in: query
-        name: fileTypes
-        schema:
-          items:
-            type: string
-          type: array
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-                type: array
-                uniqueItems: true
-          description: default response
-      security:
-      - bearer: []
-      tags:
-      - sourceFile
   /workflows/github:
     delete:
       description: Handles the deletion of a branch on GitHub. Will delete all workflow
@@ -4393,6 +4411,68 @@ paths:
       - bearer: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
+    get:
+      description: Retrieve sourcefiles for an entry's version
+      operationId: getWorkflowVersionsSourcefiles
+      parameters:
+      - description: Workflow to retrieve the version from.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Workflow version to retrieve the version from.
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: List of file types to filter sourcefiles by
+        in: query
+        name: fileTypes
+        schema:
+          items:
+            enum:
+            - DOCKSTORE_CWL
+            - DOCKSTORE_WDL
+            - DOCKERFILE
+            - CWL_TEST_JSON
+            - WDL_TEST_JSON
+            - NEXTFLOW
+            - NEXTFLOW_CONFIG
+            - NEXTFLOW_TEST_PARAMS
+            - DOCKSTORE_YML
+            - DOCKSTORE_SERVICE_YML
+            - DOCKSTORE_SERVICE_TEST_JSON
+            - DOCKSTORE_SERVICE_OTHER
+            - DOCKSTORE_GXFORMAT2
+            - GXFORMAT2_TEST_FILE
+            - DOCKSTORE_SWL
+            - SWL_TEST_JSON
+            type: string
+          type: array
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+                type: array
+                uniqueItems: true
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -4439,8 +4519,6 @@ tags:
   name: toolTester
 - description: List, modify, and manage end users of the dockstore
   name: users
-- description: List sourcefiles for entry versions
-  name: sourceFile
 - description: Optional experimental extensions of the GA4GH API
   name: extendedGA4GH
 - description: A curated subset of resources proposed as a common standard for tool

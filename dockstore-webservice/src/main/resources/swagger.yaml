@@ -60,7 +60,6 @@ tags:
   description: "Interactions with the Dockstore-support's ToolTester application"
 - name: "users"
   description: "List, modify, and manage end users of the dockstore"
-- name: "versions"
 - name: "workflows"
   description: "List and register workflows in the dockstore (CWL, Nextflow, WDL)"
 paths:
@@ -2204,6 +2203,57 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+  /containers/{containerId}/tags/{tagId}/sourcefiles:
+    get:
+      tags:
+      - "containertags"
+      operationId: "getTagsSourceFiles"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tagId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "fileType"
+        in: "query"
+        required: false
+        type: "array"
+        items:
+          type: "string"
+          enum:
+          - "DOCKSTORE_CWL"
+          - "DOCKSTORE_WDL"
+          - "DOCKERFILE"
+          - "CWL_TEST_JSON"
+          - "WDL_TEST_JSON"
+          - "NEXTFLOW"
+          - "NEXTFLOW_CONFIG"
+          - "NEXTFLOW_TEST_PARAMS"
+          - "DOCKSTORE_YML"
+          - "DOCKSTORE_SERVICE_YML"
+          - "DOCKSTORE_SERVICE_TEST_JSON"
+          - "DOCKSTORE_SERVICE_OTHER"
+          - "DOCKSTORE_GXFORMAT2"
+          - "GXFORMAT2_TEST_FILE"
+          - "DOCKSTORE_SWL"
+          - "SWL_TEST_JSON"
+        collectionFormat: "multi"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceFile"
+            uniqueItems: true
   /containers/{containerId}/testParameterFiles:
     get:
       tags:
@@ -4695,39 +4745,6 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /versions/{versionId}/sourcefiles:
-    get:
-      tags:
-      - "versions"
-      operationId: "getSourceFiles"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "versionId"
-        in: "path"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "entryType"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "fileType"
-        in: "query"
-        required: false
-        type: "array"
-        items:
-          type: "string"
-        collectionFormat: "multi"
-      responses:
-        200:
-          description: "successful operation"
-          headers: {}
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-            uniqueItems: true
   /workflows/github:
     delete:
       tags:
@@ -6200,6 +6217,57 @@ paths:
               $ref: "#/definitions/WorkflowVersion"
       security:
       - BEARER: []
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
+    get:
+      tags:
+      - "workflows"
+      operationId: "getWorkflowVersionsSourceFiles"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "workflowVersionId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "fileType"
+        in: "query"
+        required: false
+        type: "array"
+        items:
+          type: "string"
+          enum:
+          - "DOCKSTORE_CWL"
+          - "DOCKSTORE_WDL"
+          - "DOCKERFILE"
+          - "CWL_TEST_JSON"
+          - "WDL_TEST_JSON"
+          - "NEXTFLOW"
+          - "NEXTFLOW_CONFIG"
+          - "NEXTFLOW_TEST_PARAMS"
+          - "DOCKSTORE_YML"
+          - "DOCKSTORE_SERVICE_YML"
+          - "DOCKSTORE_SERVICE_TEST_JSON"
+          - "DOCKSTORE_SERVICE_OTHER"
+          - "DOCKSTORE_GXFORMAT2"
+          - "GXFORMAT2_TEST_FILE"
+          - "DOCKSTORE_SWL"
+          - "SWL_TEST_JSON"
+        collectionFormat: "multi"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceFile"
+            uniqueItems: true
   /workflows/{workflowId}/zip/{workflowVersionId}:
     get:
       tags:

@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
@@ -39,6 +40,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Event;
+import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
@@ -1401,4 +1403,42 @@ public class BasicIT extends BaseIT {
             Assert.assertEquals("Entry not found", e.getMessage());
         }
     }
+
+    @Test
+    public void testGettingSourceFilesForTag() {
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+
+        // Sourcefiles for tags
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", null);
+        Tag tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst().get();
+        tool = toolApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+
+        List<SourceFile> sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(3, sourceFiles.size());
+
+        // Check that filtering works
+        List<String> fileTypes = new ArrayList<>();
+        fileTypes.add(DescriptorLanguage.FileType.DOCKERFILE.toString());
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_CWL.toString());
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_WDL.toString());
+
+        sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(3, sourceFiles.size());
+
+        fileTypes.remove(1);
+        sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(2, sourceFiles.size());
+
+        fileTypes.clear();
+        fileTypes.add(DescriptorLanguage.FileType.NEXTFLOW_CONFIG.toString());
+        sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(0, sourceFiles.size());
+    }
+
 }

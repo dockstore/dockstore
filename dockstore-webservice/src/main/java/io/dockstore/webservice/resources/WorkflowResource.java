@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1483,6 +1485,31 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         return null;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles")
+    @Operation(operationId = "getWorkflowVersionsSourcefiles", description = "Retrieve sourcefiles for an entry's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public SortedSet<SourceFile> getWorkflowVersionsSourceFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+            @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
+            @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileType") List<DescriptorLanguage.FileType> fileTypes) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkOptionalAuthRead(user, workflow);
+
+        WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
+        }
+        SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        if (fileTypes != null && !fileTypes.isEmpty()) {
+            sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
+                    TreeSet::new));
+        }
+        return sourceFiles;
     }
 
     /**
