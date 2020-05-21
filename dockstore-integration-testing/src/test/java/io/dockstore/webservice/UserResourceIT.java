@@ -85,6 +85,24 @@ public class UserResourceIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
+    @Test
+    public void testAddUserToOrgs() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        List<Workflow> workflows = userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
+
+        // Remove an association with an entry
+        long numberOfWorkflows = workflows.size();
+        testingPostgres.runUpdateStatement("delete from user_entry where entryid = 951");
+        long newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
+        assertEquals("Should have one less workflow", numberOfWorkflows - 1, newNumberOfWorkflows);
+
+        // Readd user
+        userApi.addUserToDockstoreWorkflows();
+        newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
+        assertEquals("Should have the original number of workflows", numberOfWorkflows, newNumberOfWorkflows);
+    }
+
     @Test(expected = ApiException.class)
     public void testChangingNameFail() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
