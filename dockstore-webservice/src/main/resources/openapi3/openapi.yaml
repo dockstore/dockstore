@@ -2931,7 +2931,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -3993,9 +3993,8 @@ paths:
       - users
   /users/github/events:
     get:
-      description: Get all of the repositories for an organization for a given git
-        registry accessible to the logged in user.
-      operationId: getUserOrganizationRepositories
+      description: Get all of the GitHub Events for the logged in user.
+      operationId: getUserGitHubEvents
       responses:
         default:
           content:
@@ -4066,7 +4065,7 @@ paths:
     get:
       description: Get all of the repositories for an organization for a given git
         registry accessible to the logged in user.
-      operationId: getUserOrganizationRepositories_1
+      operationId: getUserOrganizationRepositories
       parameters:
       - description: Git registry
         in: path
