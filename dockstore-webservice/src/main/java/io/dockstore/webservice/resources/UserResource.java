@@ -51,6 +51,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
@@ -109,7 +110,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "users", description = ResourceConstants.USERS)
-public class UserResource implements AuthenticatedResourceInterface {
+public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -127,8 +128,11 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final HttpClient client;
     private SessionFactory sessionFactory;
 
+    private final String bitbucketClientSecret;
+    private final String bitbucketClientID;
+
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
-                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
         this.sessionFactory = sessionFactory;
         this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
@@ -143,6 +147,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.authorizer = authorizer;
         this.cachingAuthenticator = cachingAuthenticator;
         this.client = client;
+        this.bitbucketClientID = configuration.getBitbucketClientID();
+        this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
     }
 
     @GET
@@ -787,7 +793,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
                 Collectors.toList());
 
-        List<Token> scTokens = tokenDAO.findByUserId(user.getId())
+        List<Token> scTokens = checkOnBitbucketToken(user)
                 .stream()
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
                 .collect(Collectors.toList());
@@ -870,7 +876,7 @@ public class UserResource implements AuthenticatedResourceInterface {
      * @return mapping of git url to repository path
      */
     private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
-        List<Token> scTokens = tokenDAO.findByUserId(user.getId())
+        List<Token> scTokens = checkOnBitbucketToken(user)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -882,6 +888,19 @@ public class UserResource implements AuthenticatedResourceInterface {
         } else {
             return new HashMap<>();
         }
+    }
+
+    protected List<Token> checkOnBitbucketToken(User user) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
+            String payload = "grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
+            refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
+        }
+
+        return tokenDAO.findByUserId(user.getId());
     }
 
     /**
