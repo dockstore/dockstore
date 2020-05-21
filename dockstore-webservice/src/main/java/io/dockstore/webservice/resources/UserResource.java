@@ -555,6 +555,16 @@ public class UserResource implements AuthenticatedResourceInterface {
         return services;
     }
 
+    private List<Workflow> getBioworkflows(User user) {
+        return serviceDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
+    }
+    
+    private List<Workflow> getStrippedBioworkflows(User user) {
+        final List<Workflow> bioworkflows = getBioworkflows(user);
+        EntryVersionHelper.stripContent(bioworkflows, this.userDAO);
+        return bioworkflows;
+    }
+
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
         final List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
         EntryVersionHelper.stripContent(workflows, this.userDAO);
@@ -793,7 +803,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             });
         });
 
-        return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
+        return getStrippedBioworkflows(userDAO.findById(user.getId()));
     }
 
     @GET
