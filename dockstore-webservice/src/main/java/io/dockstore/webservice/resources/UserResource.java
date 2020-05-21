@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -759,6 +760,39 @@ public class UserResource implements AuthenticatedResourceInterface {
         final User user = userDAO.findById(authUser.getId());
         workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
+        return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
+    }
+
+    @POST
+    @Path("/workflow")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds a user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Adds a user to any Dockstore workflows that they should have access to.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = Workflow.class, responseContainer = "List")
+    public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
+        final User user = userDAO.findById(authUser.getId());
+        // Ignore hosted workflows
+        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
+                Collectors.toList());
+
+        List<Token> scTokens = tokenDAO.findByUserId(user.getId())
+                .stream()
+                .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
+                .collect(Collectors.toList());
+
+        scTokens.stream().forEach(token -> {
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+            Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+            Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+
+            organizations.forEach(organization -> {
+                List<Workflow> workflows = workflowDAO.findByOrganization(token.getTokenSource().getSourceControl(), organization);
+                workflows.stream().forEach(workflow -> workflow.getUsers().add(user));
+            });
+        });
+
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 

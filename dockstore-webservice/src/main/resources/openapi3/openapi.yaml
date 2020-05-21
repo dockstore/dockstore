@@ -4125,6 +4125,24 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/workflow:
+    post:
+      description: Adds a user to any Dockstore workflows that they should have access
+        to.
+      operationId: addUserToDockstoreWorkflows
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/{userId}:
     get:
       operationId: getSpecificUser
