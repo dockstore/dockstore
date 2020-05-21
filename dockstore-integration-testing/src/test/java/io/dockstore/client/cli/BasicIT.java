@@ -1439,6 +1439,21 @@ public class BasicIT extends BaseIT {
         sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), fileTypes);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(0, sourceFiles.size());
+
+        // Check that you can't grab a tag's sourcefiles if it doesn't belong to the tool.
+        DockstoreTool tool2 = manualRegisterAndPublish(toolApi, "dockstoretestuser", "private_test_repo", "tool1",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay-2.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+        Tag tool2tag = tool2.getWorkflowVersions().get(0);
+        boolean throwsError = false;
+        try {
+            sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tool2tag.getId(), null);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            Assert.fail("Should not be able to grab sourcefile for a version not belonging to a tool");
+        }
     }
 
 }

@@ -1500,11 +1500,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         checkOptionalAuthRead(user, workflow);
 
-        WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
-        if (workflowVersion == null) {
-            throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
+        Version version = workflowVersionDAO.findVersionInEntry(workflowId, workflowVersionId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Workflow version" + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_BAD_REQUEST);
         }
-        SortedSet<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+
+        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         if (fileTypes != null && !fileTypes.isEmpty()) {
             sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
                     TreeSet::new));

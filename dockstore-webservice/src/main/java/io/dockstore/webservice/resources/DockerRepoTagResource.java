@@ -45,6 +45,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -272,13 +273,12 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         checkEntry(tool);
         checkOptionalAuthRead(user, tool);
 
-        Set<Tag> tags = tool.getWorkflowVersions();
-        Optional<Tag> tag = tags.stream().filter(tag1 -> tag1.getId() == tagId).findFirst();
-        if (tag.isEmpty()) {
-            throw new CustomWebApplicationException("Container tag " + tagId + " does not exist", HttpStatus.SC_BAD_REQUEST);
+        Version version = tagDAO.findVersionInEntry(containerId, tagId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Container tag " + tagId + " does not exist for this tool", HttpStatus.SC_BAD_REQUEST);
         }
 
-        SortedSet<SourceFile> sourceFiles = tag.get().getSourceFiles();
+        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         if (fileTypes != null && !fileTypes.isEmpty()) {
             sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
                     TreeSet::new));

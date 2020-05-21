@@ -40,4 +40,8 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     public void delete(T version) {
         currentSession().delete(version);
     }
+
+    public Version<T> findVersionInEntry(Long entryId, Long versionId) {
+        return uniqueResult(namedQuery("Version.findVersionInEntry").setParameter("entryId", entryId).setParameter("versionId", versionId));
+    }
 }

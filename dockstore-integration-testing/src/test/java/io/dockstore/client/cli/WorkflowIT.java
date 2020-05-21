@@ -1945,6 +1945,22 @@ public class WorkflowIT extends BaseIT {
         sourceFiles = workflowsApi.getWorkflowVersionsSourceFiles(workflow.getId(), workflowVersion.getId(), fileTypes);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(0, sourceFiles.size());
+
+        // Check that you can't retrieve a version's sourcefiles if it doesn't belong to the workflow
+        Workflow workflow2 = workflowsApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
+                        "test", "cwl", null);
+        workflow2 = workflowsApi.refresh(workflow2.getId());
+        WorkflowVersion workflow2Version = workflow2.getWorkflowVersions().get(0);
+        boolean throwsError = false;
+        try {
+            sourceFiles = workflowsApi.getWorkflowVersionsSourceFiles(workflow.getId(), workflow2Version.getId(), null);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            fail("Should not be able to grab sourcefile for a version not belonging to a workflow");
+        }
     }
 
     /**
