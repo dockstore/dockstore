@@ -71,7 +71,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
 @NamedQueries({
-        @NamedQuery(name = "Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id")
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")

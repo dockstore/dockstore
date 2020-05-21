@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -45,12 +43,13 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -76,16 +75,23 @@ import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SE
 @Api("containertags")
 @Produces(MediaType.APPLICATION_JSON)
 @io.swagger.v3.oas.annotations.tags.Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS)
-public class DockerRepoTagResource implements AuthenticatedResourceInterface {
+public class DockerRepoTagResource implements AuthenticatedResourceInterface, EntryVersionHelper {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
     private final EventDAO eventDAO;
+    private final VersionDAO versionDAO;
 
-    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, EventDAO eventDAO) {
+    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO, EventDAO eventDAO, VersionDAO versionDAO) {
         this.tagDAO = tagDAO;
         this.toolDAO = toolDAO;
         this.eventDAO = eventDAO;
+        this.versionDAO = versionDAO;
+    }
+
+    @Override
+    public ToolDAO getDAO() {
+        return this.toolDAO;
     }
 
     @GET
@@ -273,16 +279,6 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         checkEntry(tool);
         checkOptionalAuthRead(user, tool);
 
-        Version version = tagDAO.findVersionInEntry(containerId, tagId);
-        if (version == null) {
-            throw new CustomWebApplicationException("Container tag " + tagId + " does not exist for this tool", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
-        if (fileTypes != null && !fileTypes.isEmpty()) {
-            sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
-                    TreeSet::new));
-        }
-        return sourceFiles;
+        return getVersionsSourcefiles(containerId, tagId, fileTypes, versionDAO);
     }
 }

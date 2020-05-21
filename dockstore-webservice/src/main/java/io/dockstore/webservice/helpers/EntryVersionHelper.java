@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -51,6 +53,7 @@ import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -388,6 +391,20 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
+    default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, VersionDAO versionDAO) {
+        Version version = versionDAO.findVersionInEntry(entryId, versionId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Workflow version" + versionId + " does not exist for this workflow", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+        if (fileTypes != null && !fileTypes.isEmpty()) {
+            sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
+                    TreeSet::new));
+        }
+        return sourceFiles;
+
+    }
     /**
      * Looks like this is used just to denote which descriptor is the primary descriptor
      */

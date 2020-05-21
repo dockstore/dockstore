@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -96,6 +95,7 @@ import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.ServiceEntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
@@ -166,6 +166,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final EntryResource entryResource;
     private final ServiceEntryDAO serviceEntryDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
+    private final VersionDAO versionDAO;
 
     private final PermissionsInterface permissionsInterface;
     private final String zenodoUrl;
@@ -184,6 +185,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         this.serviceEntryDAO = new ServiceEntryDAO(sessionFactory);
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
+        this.versionDAO = new VersionDAO(sessionFactory);
 
         this.permissionsInterface = permissionsInterface;
 
@@ -1500,17 +1502,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         checkOptionalAuthRead(user, workflow);
 
-        Version version = workflowVersionDAO.findVersionInEntry(workflowId, workflowVersionId);
-        if (version == null) {
-            throw new CustomWebApplicationException("Workflow version" + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
-        if (fileTypes != null && !fileTypes.isEmpty()) {
-            sourceFiles = sourceFiles.stream().filter(sourceFile -> fileTypes.contains(sourceFile.getType())).collect(Collectors.toCollection(
-                    TreeSet::new));
-        }
-        return sourceFiles;
+        return getVersionsSourcefiles(workflowId, workflowVersionId, fileTypes, versionDAO);
     }
 
     /**
