@@ -131,6 +131,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
                         DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
         this.sessionFactory = sessionFactory;
