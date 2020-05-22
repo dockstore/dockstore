@@ -1,7 +1,15 @@
 package io.dockstore.webservice.jdbi;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.hibernate.AbstractDAO;
@@ -50,9 +58,20 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         return list(query);
     }
 
-    public List<LambdaEvent> findByOrganization(String organization) {
-        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByOrganization")
-                .setParameter("organization", organization + "/%");
-        return list(query);
+    public List<LambdaEvent> findByOrganization(String organization, String offset, Integer limit) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<LambdaEvent> query = criteriaQuery();
+        Root<LambdaEvent> event = query.from(LambdaEvent.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.like(event.get("repository"), organization + "/%"));
+        query.orderBy(cb.desc(event.get("id")));
+        query.where(predicates.toArray(new Predicate[]{}));
+
+        query.select(event);
+
+        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
+        TypedQuery<LambdaEvent> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
+        return typedQuery.getResultList();
     }
 }

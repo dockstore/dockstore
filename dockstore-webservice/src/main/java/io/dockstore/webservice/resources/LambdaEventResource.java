@@ -3,10 +3,12 @@ package io.dockstore.webservice.resources;
 import java.util.List;
 import java.util.Objects;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
@@ -30,6 +32,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
+
 @Path("/lambdaEvents")
 @Api("/lambdaEvents")
 @Produces(MediaType.APPLICATION_JSON)
@@ -52,7 +58,9 @@ public class LambdaEventResource {
     @Operation(operationId = "getLambdaEventsByOrganization", description = "Get all of the Lambda Events for the given GitHub organization.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-            @ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
+            @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
+            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") String offset,
+            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
         // To ensure a user has access to an organization, check that they have at least one workflow from that organization
         List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
         boolean canAccessOrganization = workflows.stream().anyMatch(workflow -> Objects.equals(workflow.getOrganization(), organization) && Objects.equals(workflow.getSourceControl(),
@@ -61,6 +69,6 @@ public class LambdaEventResource {
             throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_BAD_REQUEST);
         }
 
-        return lambdaEventDAO.findByOrganization(organization);
+        return lambdaEventDAO.findByOrganization(organization, offset, limit);
     }
 }

@@ -2655,6 +2655,16 @@ paths:
         required: true
         schema:
           type: string
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          default: 100
+          format: int32
+          type: integer
       responses:
         default:
           content:

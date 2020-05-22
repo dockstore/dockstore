@@ -35,6 +35,11 @@ public final class ResourceConstants {
     public static final String NIHDATACOMMONS = "Needed for SmartAPI compatibility apparantly, might be cargo cult behaviour";
     public static final String LAMBDAEVENTS = "Query lambda events triggered by GitHub Apps";
     public static final String OPENAPI_JWT_SECURITY_DEFINITION_NAME = "bearer";
+    public static final String PAGINATION_LIMIT = "100";
+    public static final String PAGINATION_LIMIT_TEXT = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT;
+    public static final String PAGINATION_OFFSET_TEXT = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.";
+
+
     private ResourceConstants() {
         // utility class
     }

@@ -247,11 +247,21 @@ public class WebhookIT extends BaseIT {
         List<LambdaEvent> events = usersApi.getUserGitHubEvents();
         assertTrue("There should be 5 successful events", events.stream().filter(LambdaEvent::isSuccess).count() == 5);
 
-        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2");
+        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
         assertEquals("There should be 6 events", 6, orgEvents.size());
 
+        // Test pagination
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "2", 2);
+        assertEquals("There should be 2 events (id 3 and 4)", 2, orgEvents.size());
+
+        // Change organization to test filter
+        testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'DockstoreTestUser3/workflow-dockstore-yml' WHERE id = '1'");
+
+        orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
+        assertEquals("There should now be 5 events", 5, orgEvents.size());
+
         try {
-            lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser");
+            lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser", "0", 10);
             fail("Should not reach this statement");
         } catch (ApiException ex) {
             assertEquals("Should fail because user cannot access org.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
