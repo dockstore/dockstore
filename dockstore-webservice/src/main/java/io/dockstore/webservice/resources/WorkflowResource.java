@@ -255,7 +255,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
 
-        List<Token> tokens = checkOnBitbucketToken(user);
+        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
 
         boolean foundAtLeastOneToken = false;
         for (TokenType type : TokenType.values()) {
@@ -1831,7 +1831,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
 
         // Find matching source control
-        List<Token> scTokens = checkOnBitbucketToken(foundUser)
+        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -1888,7 +1888,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
-        List<Token> scTokens = checkOnBitbucketToken(foundUser)
+        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());

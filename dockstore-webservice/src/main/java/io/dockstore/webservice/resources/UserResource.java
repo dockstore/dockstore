@@ -794,7 +794,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
                 Collectors.toList());
 
-        List<Token> scTokens = checkOnBitbucketToken(user)
+        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
                 .collect(Collectors.toList());
@@ -877,7 +877,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      * @return mapping of git url to repository path
      */
     private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
-        List<Token> scTokens = checkOnBitbucketToken(user)
+        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -889,19 +889,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         } else {
             return new HashMap<>();
         }
-    }
-
-    protected List<Token> checkOnBitbucketToken(User user) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-
-        if (!tokens.isEmpty()) {
-            Token bitbucketToken = tokens.get(0);
-            String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
-            String payload = "grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
-            refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
-        }
-
-        return tokenDAO.findByUserId(user.getId());
     }
 
     /**
