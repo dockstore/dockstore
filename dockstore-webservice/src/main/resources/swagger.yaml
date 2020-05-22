@@ -46,6 +46,7 @@ tags:
     \ repositories. Implements TRS [2.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0)."
 - name: "hosted"
   description: "Created and modify hosted entries in the dockstore"
+- name: "lambdaEvents"
 - name: "metadata"
   description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
     \ etc."
@@ -2697,6 +2698,28 @@ paths:
               $ref: "#/definitions/Event"
       security:
       - BEARER: []
+  /lambdaEvents/{organization}:
+    get:
+      tags:
+      - "lambdaEvents"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getLambdaEventsByOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organization"
+        in: "path"
+        description: "organization"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/LambdaEvent"
   /metadata/config.json:
     get:
       tags:
@@ -7001,10 +7024,10 @@ definitions:
   LambdaEvent:
     type: "object"
     required:
+    - "githubUsername"
     - "reference"
     - "repository"
     - "type"
-    - "username"
     properties:
       id:
         type: "integer"
@@ -7014,7 +7037,7 @@ definitions:
         type: "string"
         position: 1
         description: "The repository from the event."
-      username:
+      githubUsername:
         type: "string"
         position: 2
         description: "The name of the user on GitHub that triggers the event."
@@ -7042,10 +7065,6 @@ definitions:
         - "PUSH"
         - "DELETE"
         - "INSTALL"
-      installationId:
-        type: "string"
-        position: 9
-        description: "The installation ID of the event."
   Limits:
     type: "object"
     properties:

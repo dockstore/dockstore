@@ -49,4 +49,10 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
                 .setParameter("user", user);
         return list(query);
     }
+
+    public List<LambdaEvent> findByOrganization(String organization) {
+        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByOrganization")
+                .setParameter("organization", organization + "/%");
+        return list(query);
+    }
 }

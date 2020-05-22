@@ -87,6 +87,7 @@ import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
+import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
@@ -327,6 +328,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new NotificationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new EventResource(eventDAO, userDAO));

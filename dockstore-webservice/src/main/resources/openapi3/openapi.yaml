@@ -513,11 +513,11 @@ components:
       properties:
         dismissed:
           type: boolean
+        githubUsername:
+          type: string
         id:
           format: int64
           type: integer
-        installationId:
-          type: string
         message:
           type: string
         reference:
@@ -531,8 +531,6 @@ components:
           - PUSH
           - DELETE
           - INSTALL
-          type: string
-        username:
           type: string
       type: object
     Organization:
@@ -2647,6 +2645,29 @@ paths:
       summary: Get a list of test JSONs
       tags:
       - GA4GHV20
+  /lambdaEvents/{organization}:
+    get:
+      description: Get all of the Lambda Events for the given organization.
+      operationId: getLambdaEventsByOrganization
+      parameters:
+      - in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LambdaEvent'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - lambdaEvents
   /metadata/config.json:
     get:
       description: Configuration, NO authentication
@@ -2931,7 +2952,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -4471,6 +4492,8 @@ tags:
   name: entries
 - description: Created and modify hosted entries in the dockstore
   name: hosted
+- description: Query lambda events triggered by GitHub Apps
+  name: lambdaEvents
 - description: Information about Dockstore like RSS, sitemap, lists of dependencies,
     etc.
   name: metadata

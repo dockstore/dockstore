@@ -30,7 +30,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "LambdaEvent")
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByRepository", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository = :repository"),
-        @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByUsername", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.username = :username"),
+        @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByOrganization", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository like :organization"),
+        @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByUsername", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.githubUsername = :username"),
         @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByUser", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.user = :user"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
@@ -74,10 +75,6 @@ public class LambdaEvent {
     @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 8)
     @JsonIgnore
     private User user;
-
-    @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The installation ID of the event.", position = 9)
-    private String installationId;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -157,14 +154,6 @@ public class LambdaEvent {
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public String getInstallationId() {
-        return installationId;
-    }
-
-    public void setInstallationId(String installationId) {
-        this.installationId = installationId;
     }
 
     public enum LambdaEventType {

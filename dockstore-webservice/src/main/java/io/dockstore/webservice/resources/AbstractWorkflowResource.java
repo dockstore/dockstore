@@ -373,7 +373,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         lambdaEvent.setReference(gitReference);
         lambdaEvent.setGithubUsername(username);
         lambdaEvent.setType(type);
-        lambdaEvent.setInstallationId(installationId);
         User user = userDAO.findByGitHubUsername(username);
         if (user != null) {
             lambdaEvent.setUser(user);
