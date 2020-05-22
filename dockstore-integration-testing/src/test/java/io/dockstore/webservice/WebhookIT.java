@@ -29,6 +29,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.LambdaEventsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.LambdaEvent;
@@ -182,6 +183,7 @@ public class WebhookIT extends BaseIT {
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
+        LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
 
         // Track install event
         client.handleGitHubInstallation(workflowRepo, BasicIT.USER_2_USERNAME, installationId);
@@ -244,6 +246,16 @@ public class WebhookIT extends BaseIT {
         // There should be 5 successful lambda events
         List<LambdaEvent> events = usersApi.getUserGitHubEvents();
         assertTrue("There should be 5 successful events", events.stream().filter(LambdaEvent::isSuccess).count() == 5);
+
+        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2");
+        assertEquals("There should be 6 events", 6, orgEvents.size());
+
+        try {
+            lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser");
+            fail("Should not reach this statement");
+        } catch (ApiException ex) {
+            assertEquals("Should fail because user cannot access org.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
     }
 
     /**

@@ -2647,7 +2647,7 @@ paths:
       - GA4GHV20
   /lambdaEvents/{organization}:
     get:
-      description: Get all of the Lambda Events for the given organization.
+      description: Get all of the Lambda Events for the given GitHub organization.
       operationId: getLambdaEventsByOrganization
       parameters:
       - in: path
@@ -2952,7 +2952,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []

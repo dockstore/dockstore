@@ -157,7 +157,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="type" type="VARCHAR(255)"/>
-            <column name="username" type="TEXT"/>
+            <column name="githubusername" type="TEXT"/>
             <column name="userid" type="BIGINT"/>
         </createTable>
         <addForeignKeyConstraint baseColumnNames="userid" baseTableName="lambdaevent" constraintName="fkj387wwrofm9u30t4mwiiwa835" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
