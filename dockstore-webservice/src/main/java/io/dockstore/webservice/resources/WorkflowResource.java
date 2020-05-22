@@ -1962,7 +1962,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
             lambdaEvent.setRepository(repository);
-            lambdaEvent.setUsername(username);
+            lambdaEvent.setGithubUsername(username);
             lambdaEvent.setType(LambdaEvent.LambdaEventType.INSTALL);
             lambdaEvent.setInstallationId(installationId);
             triggerUser.ifPresent(lambdaEvent::setUser);

@@ -46,7 +46,7 @@ public class LambdaEvent {
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "The name of the user on GitHub that triggers the event.", required = true, position = 2)
-    private String username;
+    private String githubUsername;
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "The git reference from the event.", required = true, position = 3)
@@ -103,12 +103,12 @@ public class LambdaEvent {
         this.repository = repository;
     }
 
-    public String getUsername() {
-        return username;
+    public String getGithubUsername() {
+        return githubUsername;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setGithubUsername(String githubUsername) {
+        this.githubUsername = githubUsername;
     }
 
     public String getReference() {

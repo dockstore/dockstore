@@ -371,11 +371,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         LambdaEvent lambdaEvent = new LambdaEvent();
         lambdaEvent.setRepository(repository);
         lambdaEvent.setReference(gitReference);
-        lambdaEvent.setUsername(username);
+        lambdaEvent.setGithubUsername(username);
         lambdaEvent.setType(type);
         lambdaEvent.setInstallationId(installationId);
-        Optional<User> user = Optional.ofNullable(userDAO.findByGitHubUsername(username));
-        user.ifPresent(lambdaEvent::setUser);
+        User user = userDAO.findByGitHubUsername(username);
+        if (user != null) {
+            lambdaEvent.setUser(user);
+        }
         return lambdaEvent;
     }
 
