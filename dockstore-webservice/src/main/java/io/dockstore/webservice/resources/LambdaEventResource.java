@@ -1,6 +1,5 @@
 package io.dockstore.webservice.resources;
 
-import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,7 +56,7 @@ public class LambdaEventResource {
         // To ensure a user has access to an organization, check that they have at least one workflow from that organization
         List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
         boolean canAccessOrganization = workflows.stream().anyMatch(workflow -> Objects.equals(workflow.getOrganization(), organization) && Objects.equals(workflow.getSourceControl(),
-                SourceControl.GITHUB.toString()));
+                SourceControl.GITHUB));
         if (!canAccessOrganization) {
             throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_BAD_REQUEST);
         }
