@@ -7549,15 +7549,30 @@ components:
     MyWorkflows:
       type: object
       properties:
+        description:
+          type: string
         full_workflow_path:
           type: string
           readOnly: true
+        gitUrl:
+          type: string
+        gitUrl2:
+          type: string
         id:
           type: integer
           format: int64
         is_published:
           type: boolean
+        mode:
+          type: string
+          enum:
+            - FULL
+            - STUB
+            - HOSTED
+            - SERVICE
         organization:
+          type: string
+        path:
           type: string
         repository:
           type: string

@@ -552,18 +552,36 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = MyWorkflows.class, responseContainer = "List")
-    public List<MyWorkflows> userWorkflows(@ApiParam(hidden = true) @Auth User user,
+    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        return this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId());
+        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
     }
 
     private List<Workflow> getWorkflows(User user) {
         return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).collect(Collectors.toList());
+    }
+
+    private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {
+        List<Workflow> workflows = new ArrayList<>();
+        myWorkflows.forEach(myWorkflow -> {
+            Workflow workflow = new BioWorkflow();
+            workflow.setOrganization(myWorkflow.getOrganization());
+            workflow.setId(myWorkflow.getId());
+            workflow.setSourceControl(myWorkflow.getSourceControl());
+            workflow.setIsPublished(myWorkflow.isPublished());
+            workflow.setWorkflowName(myWorkflow.getWorkflowName());
+            workflow.setRepository(myWorkflow.getRepository());
+            workflow.setMode(myWorkflow.getMode());
+            workflow.setGitUrl(myWorkflow.getGitUrl());
+            workflow.setDescription(myWorkflow.getDescription());
+            workflows.add(workflow);
+        });
+        return workflows;
     }
 
     @GET
