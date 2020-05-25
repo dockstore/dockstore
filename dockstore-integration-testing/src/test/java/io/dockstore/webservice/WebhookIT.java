@@ -248,8 +248,10 @@ public class WebhookIT extends BaseIT {
         assertTrue("There should be 5 successful events", events.stream().filter(LambdaEvent::isSuccess).count() == 5);
 
         // Test pagination for user github events
-        events = usersApi.getUserGitHubEvents( "2", 2);
+        events = usersApi.getUserGitHubEvents("2", 2);
         assertEquals("There should be 2 events (id 3 and 4)", 2, events.size());
+        assertTrue("Should have event with ID 3", events.stream().anyMatch(lambdaEvent -> Objects.equals(3L, lambdaEvent.getId())));
+        assertTrue("Should have event with ID 4", events.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())));
 
         // Test the organization events endpoint
         List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
@@ -258,6 +260,8 @@ public class WebhookIT extends BaseIT {
         // Test pagination
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "2", 2);
         assertEquals("There should be 2 events (id 3 and 4)", 2, orgEvents.size());
+        assertTrue("Should have event with ID 3", orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(3L, lambdaEvent.getId())));
+        assertTrue("Should have event with ID 4", orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())));
 
         // Change organization to test filter
         testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'DockstoreTestUser3/workflow-dockstore-yml' WHERE id = '1'");
