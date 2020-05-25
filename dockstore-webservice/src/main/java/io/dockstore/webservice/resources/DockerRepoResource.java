@@ -598,6 +598,7 @@ public class DockerRepoResource
         deleteTool.setId(tool.getId());
 
         tool.getWorkflowVersions().clear();
+        eventDAO.deleteEventByEntryID(tool.getId());
         toolDAO.delete(tool);
         tool = toolDAO.findById(containerId);
         if (tool == null) {
