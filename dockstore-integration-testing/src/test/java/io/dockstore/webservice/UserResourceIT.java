@@ -97,9 +97,8 @@ public class UserResourceIT extends BaseIT {
         long newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
         assertEquals("Should have one less workflow", numberOfWorkflows - 1, newNumberOfWorkflows);
 
-        // Readd user
-        userApi.addUserToDockstoreWorkflows();
-        newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
+        // Add user again
+        newNumberOfWorkflows= userApi.addUserToDockstoreWorkflows().size();
         assertEquals("Should have the original number of workflows", numberOfWorkflows, newNumberOfWorkflows);
     }
 
