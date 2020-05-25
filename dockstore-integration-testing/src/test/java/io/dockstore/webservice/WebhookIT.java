@@ -239,14 +239,19 @@ public class WebhookIT extends BaseIT {
             client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/idonotexist", installationId);
             fail("Should fail and not reach this point");
         } catch (ApiException ex) {
-            List<LambdaEvent> failureEvents = usersApi.getUserGitHubEvents();
+            List<LambdaEvent> failureEvents = usersApi.getUserGitHubEvents("0", 10);
             assertTrue("There should be 1 unsuccessful event", failureEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count() == 1);
         }
 
         // There should be 5 successful lambda events
-        List<LambdaEvent> events = usersApi.getUserGitHubEvents();
+        List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
         assertTrue("There should be 5 successful events", events.stream().filter(LambdaEvent::isSuccess).count() == 5);
 
+        // Test pagination for user github events
+        events = usersApi.getUserGitHubEvents( "2", 2);
+        assertEquals("There should be 2 events (id 3 and 4)", 2, events.size());
+
+        // Test the organization events endpoint
         List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
         assertEquals("There should be 6 events", 6, orgEvents.size());
 
@@ -376,7 +381,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
 
         // There should be 3 successful lambda events
-        List<LambdaEvent> events = usersApi.getUserGitHubEvents();
+        List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
         assertTrue("There should be 3 successful events", events.stream().filter(LambdaEvent::isSuccess).count() == 3);
 
         // Push branch with invalid dockstore.yml
@@ -384,7 +389,7 @@ public class WebhookIT extends BaseIT {
             workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidDockstoreYml", installationId);
             fail("Should not reach this statement");
         } catch (ApiException ex) {
-            List<LambdaEvent> failEvents = usersApi.getUserGitHubEvents();
+            List<LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
             assertTrue("There should be 1 unsuccessful event", failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count() == 1);
         }
     }
