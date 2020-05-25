@@ -97,9 +97,11 @@ public class UserResourceIT extends BaseIT {
         long newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
         assertEquals("Should have one less workflow", numberOfWorkflows - 1, newNumberOfWorkflows);
 
-        // Add user again
-        newNumberOfWorkflows= userApi.addUserToDockstoreWorkflows().size();
+        // Add user back to workflow
+        workflows = userApi.addUserToDockstoreWorkflows("");
+        newNumberOfWorkflows = workflows.size();
         assertEquals("Should have the original number of workflows", numberOfWorkflows, newNumberOfWorkflows);
+        assertTrue("Should have the workflow DockstoreTestUser/dockstore-whalesay-2", workflows.stream().anyMatch(workflow -> Objects.equals("dockstore-whalesay-2", workflow.getRepository()) && Objects.equals("DockstoreTestUser", workflow.getOrganization())));
     }
 
     @Test(expected = ApiException.class)

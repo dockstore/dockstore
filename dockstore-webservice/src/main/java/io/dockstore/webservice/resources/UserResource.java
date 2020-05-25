@@ -780,7 +780,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
-    @POST
+    @PUT
     @Path("/workflow")
     @Timed
     @UnitOfWork
@@ -788,7 +788,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Adds a user to any Dockstore workflows that they should have access to.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
-    public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
+    public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+            @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
         final User user = userDAO.findById(authUser.getId());
         // Ignore hosted workflows
         List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(

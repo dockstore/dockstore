@@ -4356,7 +4356,7 @@ paths:
             items:
               $ref: "#/definitions/OrganizationUpdateTime"
   /users/workflow:
-    post:
+    put:
       tags:
       - "users"
       summary: "Adds a user to any Dockstore workflows that they should have access\
@@ -4365,7 +4365,12 @@ paths:
       operationId: "addUserToDockstoreWorkflows"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          type: "string"
       responses:
         200:
           description: "successful operation"
