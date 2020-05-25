@@ -14,16 +14,49 @@ public class MyWorkflows {
     private String workflowName;
     private String repository;
 
-    public MyWorkflows() { }
+    private WorkflowMode mode;
+    private String gitUrl;
+    private String description;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public MyWorkflows(String organization, long id, SourceControl sourceControl, boolean isPublished, String workflowName,
-            String repository) {
+            String repository, WorkflowMode workflowMode, String gitUrl, String description) {
         this.organization = organization;
         this.id = id;
         this.sourceControl = sourceControl;
         this.isPublished = isPublished;
         this.workflowName = workflowName;
         this.repository = repository;
+        this.mode = workflowMode;
+        this.gitUrl = gitUrl;
+        this.description = description;
+    }
+
+    public MyWorkflows() { }
+
+    public WorkflowMode getMode() {
+        return mode;
+    }
+
+    public void setMode(WorkflowMode mode) {
+        this.mode = mode;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @JsonProperty
+    public String getGitUrl() {
+        if (mode == WorkflowMode.HOSTED) {
+            // for a dockstore hosted workflow, fake a git url. Used by the UI
+            return "git@dockstore.org:workflows/" + this.getWorkflowPath() + ".git";
+        }
+        return this.getGitUrl2();
     }
 
     public String getOrganization() {
@@ -63,7 +96,7 @@ public class MyWorkflows {
         return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
 
-    private String getPath() {
+    public String getPath() {
         return sourceControl.toString() + '/' + organization + '/' + repository;
     }
 
@@ -82,5 +115,16 @@ public class MyWorkflows {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public void setGitUrl(String gitUrl) {
+        this.gitUrl = gitUrl;
+    }
+
+    public String getGitUrl2() {
+        if (gitUrl == null) {
+            return "";
+        }
+        return gitUrl;
     }
 }
