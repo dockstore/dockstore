@@ -74,7 +74,7 @@ jobs:
           command: mkdir /tmp/artifacts
       - run:
           name: Move jars
-          command: cp dockstore-webservice/target/dockstore*.jar /tmp/artifacts
+          command: cp dockstore-webservice/target/dockstore*[^s].jar /tmp/artifacts
       - run:
           name: Move swagger.yaml
           command: |
