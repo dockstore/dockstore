@@ -2721,6 +2721,7 @@ paths:
           \ in the request, this will start at the beginning of the results."
         required: false
         type: "string"
+        default: "0"
       - name: "limit"
         in: "query"
         description: "Amount of records to return in a given page, limited to 100"

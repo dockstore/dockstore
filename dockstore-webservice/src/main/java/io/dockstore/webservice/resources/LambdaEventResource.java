@@ -59,7 +59,7 @@ public class LambdaEventResource {
     @ApiOperation(value = "See OpenApi for details")
     public List<LambdaEvent> getLambdaEventsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
-            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") String offset,
+            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
             @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
         // To ensure a user has access to an organization, check that they have at least one workflow from that organization
         List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());

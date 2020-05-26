@@ -27,9 +27,9 @@ import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.LambdaEventsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.LambdaEvent;
@@ -180,20 +180,20 @@ public class WebhookIT extends BaseIT {
     @Test
     public void testGitHubReleaseNoWorkflowOnDockstore() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        WorkflowsApi client = new WorkflowsApi(webClient);
-        UsersApi usersApi = new UsersApi(webClient);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi client = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
         LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
 
         // Track install event
         client.handleGitHubInstallation(workflowRepo, BasicIT.USER_2_USERNAME, installationId);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
+        List<io.dockstore.openapi.client.model.Workflow> workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
         assertEquals("Should only have one service", 1, workflows.size());
 
         // Ensure that new workflow is created and is what is expected
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
@@ -206,7 +206,7 @@ public class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
 
         // Ensure that new workflow is created and is what is expected
-        Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
+        io.dockstore.openapi.client.model.Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
         assertEquals("Should be a CWL workflow", Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
         assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
@@ -216,13 +216,13 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should only have two services", 2, workflows.size());
 
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
-        assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
-        assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
-        assertTrue("Should have a 0.2 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
+        assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
+        assertTrue("Should have a 0.2 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
         workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
-        assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
-        assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
+        assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.isLegacyVersion());
         assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
@@ -230,22 +230,22 @@ public class WebhookIT extends BaseIT {
         // Delete tag 0.2
         client.handleGitHubBranchDeletion(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.2", installationId);
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
-        assertTrue("Should not have a 0.2 version.", workflow.getWorkflowVersions().stream().noneMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        assertTrue("Should not have a 0.2 version.", workflow.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
         workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
-        assertTrue("Should not have a 0.2 version.", workflow2.getWorkflowVersions().stream().noneMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+        assertTrue("Should not have a 0.2 version.", workflow2.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
         // Add version that doesn't exist
         try {
             client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/idonotexist", installationId);
             fail("Should fail and not reach this point");
         } catch (ApiException ex) {
-            List<LambdaEvent> failureEvents = usersApi.getUserGitHubEvents("0", 10);
+            List<io.dockstore.openapi.client.model.LambdaEvent> failureEvents = usersApi.getUserGitHubEvents("0", 10);
             assertTrue("There should be 1 unsuccessful event", failureEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count() == 1);
         }
 
         // There should be 5 successful lambda events
-        List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        assertTrue("There should be 5 successful events", events.stream().filter(LambdaEvent::isSuccess).count() == 5);
+        List<io.dockstore.openapi.client.model.LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
+        assertTrue("There should be 5 successful events", events.stream().filter(io.dockstore.openapi.client.model.LambdaEvent::isSuccess).count() == 5);
 
         // Test pagination for user github events
         events = usersApi.getUserGitHubEvents("2", 2);
@@ -254,7 +254,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should have event with ID 4", events.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())));
 
         // Test the organization events endpoint
-        List<LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
+        List<io.dockstore.openapi.client.model.LambdaEvent> orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
         assertEquals("There should be 6 events", 6, orgEvents.size());
 
         // Test pagination
