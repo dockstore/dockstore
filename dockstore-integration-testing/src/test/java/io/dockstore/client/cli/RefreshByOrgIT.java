@@ -32,8 +32,8 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.MyWorkflows;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -69,7 +69,7 @@ public class RefreshByOrgIT {
     private static ObjectMapper objectMapper;
     private static Long id;
     private static List<Tool> previousTools;
-    private static List<MyWorkflows> previousWorkflows;
+    private static List<Workflow> previousWorkflows;
     private static TestingPostgres testingPostgres;
 
     @AfterClass
@@ -91,7 +91,7 @@ public class RefreshByOrgIT {
 
     private void checkInitialDB() throws IOException {
         // The DB initially has no workflows
-        List<MyWorkflows> currentWorkflows = getWorkflows();
+        List<Workflow> currentWorkflows = getWorkflows();
         // Leaving this in here so we don't forget to change this when there is a workflow in the test DB
         assertThat(currentWorkflows.size()).isGreaterThanOrEqualTo(0);
 
@@ -198,7 +198,7 @@ public class RefreshByOrgIT {
         checkInitialDB();
 
         testRefreshWorkflowsByOrg1();
-        List<MyWorkflows> currentWorkflows = getWorkflows();
+        List<Workflow> currentWorkflows = getWorkflows();
         assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS_ARRAY.size());
         previousWorkflows = currentWorkflows;
 
@@ -227,7 +227,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg1() throws IOException {
         String url = usersURLPrefix + "/workflows/DockstoreTestUser2/refresh";
-        List<MyWorkflows> workflows = clientHelperWorkflow(url);
+        List<Workflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -242,7 +242,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg2() throws IOException {
         String url = usersURLPrefix + "/workflows/dockstore/refresh";
-        List<MyWorkflows> workflows = clientHelperWorkflow(url);
+        List<Workflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -255,7 +255,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg3() throws IOException {
         String url = usersURLPrefix + "/workflows/mmmrrrggglll/refresh";
-        List<MyWorkflows> workflows = clientHelperWorkflow(url);
+        List<Workflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -267,7 +267,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg4() throws IOException {
         String url = usersURLPrefix + "/workflows/dockstore_testuser2/refresh";
-        List<MyWorkflows> workflows = clientHelperWorkflow(url);
+        List<Workflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -281,7 +281,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg5() throws IOException {
         String url = usersURLPrefix + "/workflows/dockstore.test.user2/refresh";
-        List<MyWorkflows> workflows = clientHelperWorkflow(url);
+        List<Workflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -290,15 +290,15 @@ public class RefreshByOrgIT {
             workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(workflowRepository))).isTrue());
     }
 
-    private List<MyWorkflows> clientHelperWorkflow(String url) throws IOException {
+    private List<Workflow> clientHelperWorkflow(String url) throws IOException {
         Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
-        return objectMapper.readValue(entity, new TypeReference<List<MyWorkflows>>() {
+        return objectMapper.readValue(entity, new TypeReference<List<Workflow>>() {
         });
     }
 
-    private List<MyWorkflows> getWorkflows() throws IOException {
+    private List<Workflow> getWorkflows() throws IOException {
         String url = usersURLPrefix + "/workflows";
         return clientHelperWorkflow(url);
     }

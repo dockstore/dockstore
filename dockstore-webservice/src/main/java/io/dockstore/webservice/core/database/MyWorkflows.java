@@ -1,6 +1,7 @@
-package io.dockstore.webservice.core;
+package io.dockstore.webservice.core.database;
 
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.core.WorkflowMode;
 
 /**
  * This class is for the list of objects returned by the endpoint which gets the user's workflows (which is only for populating sidebar)

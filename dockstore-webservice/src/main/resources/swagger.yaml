@@ -4653,7 +4653,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/MyWorkflows"
+              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /users/{userId}/workflows/published:
@@ -7214,45 +7214,6 @@ definitions:
       version:
         type: "string"
     description: "Describes this registry to better allow for mirroring and indexing."
-  MyWorkflows:
-    type: "object"
-    properties:
-      description:
-        type: "string"
-      full_workflow_path:
-        type: "string"
-        readOnly: true
-      gitUrl:
-        type: "string"
-      gitUrl2:
-        type: "string"
-      id:
-        type: "integer"
-        format: "int64"
-      is_published:
-        type: "boolean"
-      mode:
-        type: "string"
-        enum:
-        - "FULL"
-        - "STUB"
-        - "HOSTED"
-        - "SERVICE"
-      organization:
-        type: "string"
-      path:
-        type: "string"
-      repository:
-        type: "string"
-      sourceControl:
-        type: "string"
-        enum:
-        - "dockstore.org"
-        - "github.com"
-        - "bitbucket.org"
-        - "gitlab.com"
-      workflowName:
-        type: "string"
   Notification:
     type: "object"
     properties:

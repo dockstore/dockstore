@@ -492,20 +492,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
-  /metadata/rss:
-    get:
-      tags:
-      - metadata
-      summary: List all published tools and workflows in creation order
-      description: List all published tools and workflows in creation order, NO authentication
-      operationId: rssFeed
-      responses:
-        default:
-          description: default response
-          content:
-            text/xml:
-              schema:
-                type: string
   /metadata/runner_dependencies:
     get:
       tags:
@@ -627,6 +613,20 @@ paths:
             text/html:
               schema:
                 type: string
+            text/xml:
+              schema:
+                type: string
+  /metadata/rss:
+    get:
+      tags:
+      - metadata
+      summary: List all published tools and workflows in creation order
+      description: List all published tools and workflows in creation order, NO authentication
+      operationId: rssFeed
+      responses:
+        default:
+          description: default response
+          content:
             text/xml:
               schema:
                 type: string
