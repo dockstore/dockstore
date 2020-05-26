@@ -407,7 +407,7 @@ public class ValidationIT extends BaseIT {
     }
 
     @Test
-    public void getThingy() {
+    public void readmePathTest() {
         final List<String> readmePaths = new ArrayList<>(
                 Arrays.asList("README.md", "readme.md", "/README.md", "/readme.md", "README", "readme", "/README", "/readme"));
         readmePaths.forEach(readmePath -> {
