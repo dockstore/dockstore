@@ -32,6 +32,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.client.JerseyClientBuilder;
@@ -294,7 +295,7 @@ public class RefreshByOrgIT {
         Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
-        return objectMapper.readValue(entity, new TypeReference<List<Workflow>>() {
+        return objectMapper.readValue(entity, new TypeReference<List<BioWorkflow>>() {
         });
     }
 
