@@ -24,12 +24,9 @@ components:
         type: object
       type: object
     Checksum:
-      description: A production (immutable) tool version is required to have a hashcode.
-        Not required otherwise, but might be useful to detect changes.  This exposes
-        the hashcode for specific image versions to verify that the container version
-        pulled is actually the version that was indexed by the registry.
-      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,
-        type=sha256}]'
+      description: 'A production (immutable) tool version is required to have a hashcode.
+        Not required otherwise, but might be useful to detect changes. '
+      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -2908,7 +2905,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -3039,7 +3036,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4130,8 +4127,8 @@ paths:
       - users
   /users/workflow:
     put:
-      description: Adds a user to any Dockstore workflows that they should have access
-        to.
+      description: Adds the logged-in user to any Dockstore workflows that they should
+        have access to.
       operationId: addUserToDockstoreWorkflows
       requestBody:
         content:
@@ -4148,7 +4145,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Workflow'
                 type: array
-          description: default response
+          description: Returns all workflows the logged-in user now has access to.
       security:
       - bearer: []
       tags:
@@ -4170,6 +4167,63 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: default response
+      tags:
+      - users
+  /users/{userId}/workflows:
+    get:
+      description: List all workflows owned by the authenticated user.
+      operationId: userWorkflows
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
+  /users/{userId}/workflows/{organization}/refresh:
+    get:
+      description: Refresh all workflows owned by the authenticated user with specified
+        organization.
+      operationId: refreshWorkflowsByOrganization
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Organization
+        in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
       tags:
       - users
   /workflows/github:

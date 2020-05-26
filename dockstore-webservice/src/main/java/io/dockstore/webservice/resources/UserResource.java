@@ -91,6 +91,7 @@ import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -102,6 +103,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author xliu
@@ -492,10 +494,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/{organization}/refresh")
+    @Operation(operationId = "refreshWorkflowsByOrganization", description = "Refresh all workflows owned by the authenticated user with specified organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), method = "GET")
     @ApiOperation(value = "Refresh all workflows owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+            @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @Parameter(name = "organization", description = "Organization", required = true, in = ParameterIn.PATH) @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
 
         checkUser(authUser, userId);
 
@@ -516,9 +519,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork(readOnly = true)
+    @Operation(operationId = "userWorkflows", description = "List all workflows owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), method = "GET")
     @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         if (fetchedUser == null) {
@@ -565,7 +569,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private List<Workflow> getBioworkflows(User user) {
         return workflowDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
     }
-    
+
+    // TODO: Replace with code similar to the new userWorkflows endpoint once it is optimised
     private List<Workflow> getStrippedBioworkflows(User user) {
         final List<Workflow> bioworkflows = getBioworkflows(user);
         EntryVersionHelper.stripContent(bioworkflows, this.userDAO);
@@ -784,10 +789,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/workflow")
     @Timed
     @UnitOfWork
-    @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds a user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Adds a user to any Dockstore workflows that they should have access to.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
-            response = Workflow.class, responseContainer = "List")
+    @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds the logged-in user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(description = "Returns all workflows the logged-in user now has access to."))
     public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
             @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
         final User user = userDAO.findById(authUser.getId());

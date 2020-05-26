@@ -87,9 +87,9 @@ public class UserResourceIT extends BaseIT {
 
     @Test
     public void testAddUserToOrgs() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        UsersApi userApi = new UsersApi(client);
-        List<Workflow> workflows = userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
+        List<io.dockstore.openapi.client.model.Workflow> workflows = userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
 
         // Remove an association with an entry
         long numberOfWorkflows = workflows.size();

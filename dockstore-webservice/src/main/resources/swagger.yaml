@@ -4359,9 +4359,6 @@ paths:
     put:
       tags:
       - "users"
-      summary: "Adds a user to any Dockstore workflows that they should have access\
-        \ to."
-      description: ""
       operationId: "addUserToDockstoreWorkflows"
       produces:
       - "application/json"
@@ -4374,12 +4371,11 @@ paths:
       responses:
         200:
           description: "successful operation"
+          headers: {}
           schema:
             type: "array"
             items:
               $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /users/{userId}:
     get:
       tags:
