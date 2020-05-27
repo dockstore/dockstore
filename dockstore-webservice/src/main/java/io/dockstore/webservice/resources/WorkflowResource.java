@@ -157,6 +157,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
+    private static final String CANNOT_UPDATE_FROZEN_WORKFLOW_VERSION = "Cannot update frozen workflow version";
+
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -1344,6 +1346,26 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();
         for (WorkflowVersion version : w.getWorkflowVersions()) {
             mapOfExistingWorkflowVersions.put(version.getId(), version);
+        }
+
+        // We must not try to  modify the workflow path or last modified date of a Workflow Version that is frozen
+        // (see io.dockstore.webservice.core.WorkflowVersion.updateByUser)
+        // Check for this and assemble a list of these workflow versions so we can throw an exception and
+        // notify the user about the attempt to modify these versions
+        List<WorkflowVersion> disallowedModificationFrozenWorkflowVersionsList = workflowVersions.stream()
+                .filter(workflowVersion -> mapOfExistingWorkflowVersions.entrySet().stream()
+                        .anyMatch(entry ->
+                                entry.getKey().equals(workflowVersion.getId())
+                                        && entry.getValue().isFrozen()
+                                        && (!entry.getValue().getWorkflowPath().equals(workflowVersion.getWorkflowPath())
+                                        || !entry.getValue().getLastModified().equals(workflowVersion.getLastModified()))))
+                .collect(Collectors.toList());
+
+        if (!disallowedModificationFrozenWorkflowVersionsList.isEmpty()) {
+            String disallowedModificationFrozenWorkflowVersions = disallowedModificationFrozenWorkflowVersionsList.stream()
+                    .map(WorkflowVersion::getWorkflowPath).collect(Collectors.joining());
+            throw new CustomWebApplicationException(CANNOT_UPDATE_FROZEN_WORKFLOW_VERSION + "with workflow paths: "
+                    + disallowedModificationFrozenWorkflowVersions, HttpStatus.SC_BAD_REQUEST);
         }
 
         for (WorkflowVersion version : workflowVersions) {

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -65,6 +66,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @io.swagger.v3.oas.annotations.tags.Tag(name = "containertags", description = ResourceConstants.CONTAINERTAGS)
 public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
+    private static final String CANNOT_UPDATE_FROZEN_TAG = "Cannot update frozen tag";
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
     private final EventDAO eventDAO;
@@ -100,6 +102,30 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
         Map<Long, Tag> mapOfExistingTags = new HashMap<>();
         for (Tag tag : tool.getWorkflowVersions()) {
             mapOfExistingTags.put(tag.getId(), tag);
+        }
+
+        // We must not try to  modify the tag WDL,CWL or Dockerfile path or image id or last built date
+        // of a tag that is frozen
+        // (see io.dockstore.webservice.core.Tag.updateByUser)
+        // Check for this and assemble a list of these tags so we can throw an exception and
+        // notify the user about the attempt to modify these tags
+        List<Tag> disallowedModificationFrozenTagsList = tags.stream()
+                .filter(existingTag -> mapOfExistingTags.entrySet().stream()
+                        .anyMatch(entry ->
+                                entry.getKey().equals(existingTag.getId())
+                                        && entry.getValue().isFrozen()
+                                        && (!entry.getValue().getImageId().equals(existingTag.getImageId())
+                                                        || !entry.getValue().getCwlPath().equals(existingTag.getCwlPath())
+                                                        || !entry.getValue().getWdlPath().equals(existingTag.getWdlPath())
+                                                        || !entry.getValue().getDockerfilePath().equals(existingTag.getDockerfilePath())
+                                                        || !entry.getValue().getLastBuilt().equals(existingTag.getLastBuilt()))
+                        )).collect(Collectors.toList());
+
+        if (!disallowedModificationFrozenTagsList.isEmpty()) {
+            String disallowedModificationFrozenTags = disallowedModificationFrozenTagsList.stream().
+                    map(entry -> entry.getDockerfilePath()).collect(Collectors.joining());
+            throw new CustomWebApplicationException(CANNOT_UPDATE_FROZEN_TAG + "with paths: "
+                    + disallowedModificationFrozenTags, HttpStatus.SC_BAD_REQUEST);
         }
 
         for (Tag tag : tags) {
