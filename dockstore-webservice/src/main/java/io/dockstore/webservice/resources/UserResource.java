@@ -88,10 +88,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -785,14 +785,18 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
-    @PUT
-    @Path("/workflow")
+    @PATCH
     @Timed
     @UnitOfWork
-    @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds the logged-in user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(description = "Returns all workflows the logged-in user now has access to."))
-    public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
-            @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", name = "emptyBody") String emptyBody) {
+    @Path("/{userId}/workflow")
+    @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds the logged-in user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public List<Workflow> addUserToDockstoreWorkflows(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+            @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
+            @Parameter(name = "emptyBody", description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", in = ParameterIn.DEFAULT) String emptyBody) {
         final User user = userDAO.findById(authUser.getId());
+        if (!Objects.equals(userId, user.getId())) {
+            throw new CustomWebApplicationException("The user Id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
+        }
         // Ignore hosted workflows
         List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
                 Collectors.toList());
