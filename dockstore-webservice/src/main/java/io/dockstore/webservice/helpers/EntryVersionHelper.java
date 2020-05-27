@@ -394,7 +394,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     default SortedSet<SourceFile> getVersionsSourcefiles(Long entryId, Long versionId, List<DescriptorLanguage.FileType> fileTypes, VersionDAO versionDAO) {
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
-            throw new CustomWebApplicationException("Workflow version" + versionId + " does not exist for this workflow", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
         }
 
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();

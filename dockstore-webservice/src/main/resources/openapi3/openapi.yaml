@@ -2088,11 +2088,6 @@ paths:
             - SWL_TEST_JSON
             type: string
           type: array
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -3098,7 +3093,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4454,11 +4449,6 @@ paths:
             - SWL_TEST_JSON
             type: string
           type: array
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:

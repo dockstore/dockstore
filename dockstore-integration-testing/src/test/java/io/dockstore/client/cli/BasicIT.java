@@ -29,6 +29,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -40,7 +41,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Event;
-import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
@@ -1407,15 +1407,16 @@ public class BasicIT extends BaseIT {
     @Test
     public void testGettingSourceFilesForTag() {
         final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        io.dockstore.openapi.client.api.ContainertagsApi toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(openAPIWebClient);
 
         // Sourcefiles for tags
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", null);
         Tag tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst().get();
         tool = toolApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
 
-        List<SourceFile> sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), null);
+        List<SourceFile> sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(3, sourceFiles.size());
 
@@ -1425,18 +1426,18 @@ public class BasicIT extends BaseIT {
         fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_CWL.toString());
         fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_WDL.toString());
 
-        sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), fileTypes);
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(3, sourceFiles.size());
 
         fileTypes.remove(1);
-        sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), fileTypes);
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(2, sourceFiles.size());
 
         fileTypes.clear();
         fileTypes.add(DescriptorLanguage.FileType.NEXTFLOW_CONFIG.toString());
-        sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tag.getId(), fileTypes);
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(0, sourceFiles.size());
 
@@ -1447,8 +1448,8 @@ public class BasicIT extends BaseIT {
         Tag tool2tag = tool2.getWorkflowVersions().get(0);
         boolean throwsError = false;
         try {
-            sourceFiles = toolTagsApi.getTagsSourceFiles(tool.getId(), tool2tag.getId(), null);
-        } catch (ApiException ex) {
+            sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tool2tag.getId(), null);
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             throwsError = true;
         }
         if (!throwsError) {

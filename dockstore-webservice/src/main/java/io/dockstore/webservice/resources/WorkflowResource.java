@@ -1494,10 +1494,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork(readOnly = true)
     @Path("{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles")
     @Operation(operationId = "getWorkflowVersionsSourcefiles", description = "Retrieve sourcefiles for an entry's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public SortedSet<SourceFile> getWorkflowVersionsSourceFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public SortedSet<SourceFile> getWorkflowVersionsSourceFiles(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth Optional<User> user,
             @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
             @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
-            @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileType") List<DescriptorLanguage.FileType> fileTypes) {
+            @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by", in = ParameterIn.QUERY) @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkOptionalAuthRead(user, workflow);

@@ -2211,6 +2211,11 @@ paths:
       produces:
       - "application/json"
       parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/User"
       - name: "containerId"
         in: "path"
         required: true
@@ -2221,7 +2226,7 @@ paths:
         required: true
         type: "integer"
         format: "int64"
-      - name: "fileType"
+      - name: "fileTypes"
         in: "query"
         required: false
         type: "array"
@@ -6225,6 +6230,11 @@ paths:
       produces:
       - "application/json"
       parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/User"
       - name: "workflowId"
         in: "path"
         required: true
@@ -6235,7 +6245,7 @@ paths:
         required: true
         type: "integer"
         format: "int64"
-      - name: "fileType"
+      - name: "fileTypes"
         in: "query"
         required: false
         type: "array"
@@ -7135,6 +7145,20 @@ definitions:
         format: "date-time"
         position: 6
         description: "Timestamp at which the notification was last updated"
+  Optional:
+    type: "object"
+    properties:
+      empty:
+        type: "boolean"
+      present:
+        type: "boolean"
+  OptionalUser:
+    type: "object"
+    properties:
+      empty:
+        type: "boolean"
+      present:
+        type: "boolean"
   Organization:
     type: "object"
     required:

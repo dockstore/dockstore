@@ -70,6 +70,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
+// Ensure that the version requested belongs to a workflow a user has access to.
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id")
 })

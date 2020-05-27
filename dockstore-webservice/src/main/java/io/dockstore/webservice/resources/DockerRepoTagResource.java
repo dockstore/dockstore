@@ -271,10 +271,10 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @UnitOfWork(readOnly = true)
     @Path("{containerId}/tags/{tagId}/sourcefiles")
     @Operation(operationId = "getTagsSourcefiles", description = "Retrieve sourcefiles for a container's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public SortedSet<SourceFile> getTagsSourceFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public SortedSet<SourceFile> getTagsSourceFiles(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth Optional<User> user,
             @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
-            @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileType") List<DescriptorLanguage.FileType> fileTypes) {
+            @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
         checkOptionalAuthRead(user, tool);
