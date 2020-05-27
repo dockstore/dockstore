@@ -7088,13 +7088,9 @@ definitions:
         type: "string"
         position: 5
         description: "The message associated with the event."
-      dismissed:
-        type: "boolean"
-        position: 6
-        description: "Whether or not the user has dismissed the event."
       type:
         type: "string"
-        position: 7
+        position: 6
         description: "The type of event."
         enum:
         - "PUSH"

@@ -61,18 +61,14 @@ public class LambdaEvent {
     @ApiModelProperty(value = "The message associated with the event.", position = 5)
     private String message;
 
-    @Column(nullable = false, columnDefinition = "boolean default false")
-    @ApiModelProperty(value = "Whether or not the user has dismissed the event.", position = 6)
-    private boolean dismissed = false;
-
     @Column
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "The type of event.", required = true, position = 7)
+    @ApiModelProperty(value = "The type of event.", required = true, position = 6)
     private LambdaEventType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", referencedColumnName = "id")
-    @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 8)
+    @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 7)
     @JsonIgnore
     private User user;
 
@@ -130,14 +126,6 @@ public class LambdaEvent {
 
     public void setMessage(String message) {
         this.message = message;
-    }
-
-    public boolean isDismissed() {
-        return dismissed;
-    }
-
-    public void setDismissed(boolean dismissed) {
-        this.dismissed = dismissed;
     }
 
     public LambdaEventType getType() {
