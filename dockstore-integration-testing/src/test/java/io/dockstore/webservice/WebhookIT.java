@@ -186,20 +186,20 @@ public class WebhookIT extends BaseIT {
         LambdaEventsApi lambdaEventsApi = new LambdaEventsApi(webClient);
 
         // Track install event
-        client.handleGitHubInstallation(workflowRepo, BasicIT.USER_2_USERNAME, installationId);
+        client.handleGitHubInstallation(installationId, workflowRepo, BasicIT.USER_2_USERNAME);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        List<io.dockstore.openapi.client.model.Workflow> workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
+        List<io.dockstore.openapi.client.model.Workflow> workflows = client.handleGitHubRelease("refs/tags/0.1", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         assertEquals("Should only have one service", 1, workflows.size());
 
         // Ensure that new workflow is created and is what is expected
         io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
-        assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
-        assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
+        assertEquals("Should be a WDL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
+        assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
-        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.2", installationId);
+        workflows = client.handleGitHubRelease("refs/tags/0.2", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         assertEquals("Should only have two services", 2, workflows.size());
 
         // Ensure that existing workflow is updated
@@ -207,12 +207,12 @@ public class WebhookIT extends BaseIT {
 
         // Ensure that new workflow is created and is what is expected
         io.dockstore.openapi.client.model.Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
-        assertEquals("Should be a CWL workflow", Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType());
-        assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
+        assertEquals("Should be a CWL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType());
+        assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
         assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
 
         // Branch master on GitHub - updates two existing workflows
-        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
+        workflows = client.handleGitHubRelease("refs/heads/master", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         assertEquals("Should only have two services", 2, workflows.size());
 
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
@@ -236,9 +236,9 @@ public class WebhookIT extends BaseIT {
 
         // Add version that doesn't exist
         try {
-            client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/idonotexist", installationId);
+            client.handleGitHubRelease("refs/heads/idonotexist", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
             fail("Should fail and not reach this point");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             List<io.dockstore.openapi.client.model.LambdaEvent> failureEvents = usersApi.getUserGitHubEvents("0", 10);
             assertTrue("There should be 1 unsuccessful event", failureEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count() == 1);
         }
@@ -272,7 +272,7 @@ public class WebhookIT extends BaseIT {
         try {
             lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser", "0", 10);
             fail("Should not reach this statement");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals("Should fail because user cannot access org.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
         }
     }
