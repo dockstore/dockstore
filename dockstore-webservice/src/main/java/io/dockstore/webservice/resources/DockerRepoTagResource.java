@@ -270,6 +270,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{containerId}/tags/{tagId}/sourcefiles")
+    @ApiOperation(value = "Retrieve sourcefiles for a container's version",  hidden = true)
     @Operation(operationId = "getTagsSourcefiles", description = "Retrieve sourcefiles for a container's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public SortedSet<SourceFile> getTagsSourceFiles(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth Optional<User> user,
             @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,

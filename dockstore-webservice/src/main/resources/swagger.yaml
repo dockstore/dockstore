@@ -2203,62 +2203,6 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
-  /containers/{containerId}/tags/{tagId}/sourcefiles:
-    get:
-      tags:
-      - "containertags"
-      operationId: "getTagsSourceFiles"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/User"
-      - name: "containerId"
-        in: "path"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "tagId"
-        in: "path"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "fileTypes"
-        in: "query"
-        required: false
-        type: "array"
-        items:
-          type: "string"
-          enum:
-          - "DOCKSTORE_CWL"
-          - "DOCKSTORE_WDL"
-          - "DOCKERFILE"
-          - "CWL_TEST_JSON"
-          - "WDL_TEST_JSON"
-          - "NEXTFLOW"
-          - "NEXTFLOW_CONFIG"
-          - "NEXTFLOW_TEST_PARAMS"
-          - "DOCKSTORE_YML"
-          - "DOCKSTORE_SERVICE_YML"
-          - "DOCKSTORE_SERVICE_TEST_JSON"
-          - "DOCKSTORE_SERVICE_OTHER"
-          - "DOCKSTORE_GXFORMAT2"
-          - "GXFORMAT2_TEST_FILE"
-          - "DOCKSTORE_SWL"
-          - "SWL_TEST_JSON"
-        collectionFormat: "multi"
-      responses:
-        200:
-          description: "successful operation"
-          headers: {}
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-            uniqueItems: true
   /containers/{containerId}/testParameterFiles:
     get:
       tags:
@@ -6222,62 +6166,6 @@ paths:
               $ref: "#/definitions/WorkflowVersion"
       security:
       - BEARER: []
-  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
-    get:
-      tags:
-      - "workflows"
-      operationId: "getWorkflowVersionsSourceFiles"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/User"
-      - name: "workflowId"
-        in: "path"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "workflowVersionId"
-        in: "path"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "fileTypes"
-        in: "query"
-        required: false
-        type: "array"
-        items:
-          type: "string"
-          enum:
-          - "DOCKSTORE_CWL"
-          - "DOCKSTORE_WDL"
-          - "DOCKERFILE"
-          - "CWL_TEST_JSON"
-          - "WDL_TEST_JSON"
-          - "NEXTFLOW"
-          - "NEXTFLOW_CONFIG"
-          - "NEXTFLOW_TEST_PARAMS"
-          - "DOCKSTORE_YML"
-          - "DOCKSTORE_SERVICE_YML"
-          - "DOCKSTORE_SERVICE_TEST_JSON"
-          - "DOCKSTORE_SERVICE_OTHER"
-          - "DOCKSTORE_GXFORMAT2"
-          - "GXFORMAT2_TEST_FILE"
-          - "DOCKSTORE_SWL"
-          - "SWL_TEST_JSON"
-        collectionFormat: "multi"
-      responses:
-        200:
-          description: "successful operation"
-          headers: {}
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
-            uniqueItems: true
   /workflows/{workflowId}/zip/{workflowVersionId}:
     get:
       tags:
@@ -7145,20 +7033,6 @@ definitions:
         format: "date-time"
         position: 6
         description: "Timestamp at which the notification was last updated"
-  Optional:
-    type: "object"
-    properties:
-      empty:
-        type: "boolean"
-      present:
-        type: "boolean"
-  OptionalUser:
-    type: "object"
-    properties:
-      empty:
-        type: "boolean"
-      present:
-        type: "boolean"
   Organization:
     type: "object"
     required:

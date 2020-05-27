@@ -1493,6 +1493,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles")
+    @ApiOperation(value = "Retrieve sourcefiles for an entry's version",  hidden = true)
     @Operation(operationId = "getWorkflowVersionsSourcefiles", description = "Retrieve sourcefiles for an entry's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public SortedSet<SourceFile> getWorkflowVersionsSourceFiles(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth Optional<User> user,
             @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
