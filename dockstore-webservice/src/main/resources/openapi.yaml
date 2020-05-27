@@ -4957,7 +4957,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MyWorkflows"
+                  $ref: "#/components/schemas/Workflow"
       security:
         - BEARER: []
   "/users/{userId}/workflows/published":
@@ -7546,30 +7546,6 @@ components:
         version:
           type: string
       description: Describes this registry to better allow for mirroring and indexing.
-    MyWorkflows:
-      type: object
-      properties:
-        full_workflow_path:
-          type: string
-          readOnly: true
-        id:
-          type: integer
-          format: int64
-        is_published:
-          type: boolean
-        organization:
-          type: string
-        repository:
-          type: string
-        sourceControl:
-          type: string
-          enum:
-            - dockstore.org
-            - github.com
-            - bitbucket.org
-            - gitlab.com
-        workflowName:
-          type: string
     Notification:
       type: object
       properties:

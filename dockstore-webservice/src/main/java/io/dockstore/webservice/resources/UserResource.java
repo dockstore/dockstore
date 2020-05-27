@@ -56,7 +56,6 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
-import io.dockstore.webservice.core.MyWorkflows;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -67,6 +66,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -551,19 +551,37 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = MyWorkflows.class, responseContainer = "List")
-    public List<MyWorkflows> userWorkflows(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        return this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId());
+        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
     }
 
     private List<Workflow> getWorkflows(User user) {
         return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).collect(Collectors.toList());
+    }
+
+    private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {
+        List<Workflow> workflows = new ArrayList<>();
+        myWorkflows.forEach(myWorkflow -> {
+            Workflow workflow = new BioWorkflow();
+            workflow.setOrganization(myWorkflow.getOrganization());
+            workflow.setId(myWorkflow.getId());
+            workflow.setSourceControl(myWorkflow.getSourceControl());
+            workflow.setIsPublished(myWorkflow.isPublished());
+            workflow.setWorkflowName(myWorkflow.getWorkflowName());
+            workflow.setRepository(myWorkflow.getRepository());
+            workflow.setMode(myWorkflow.getMode());
+            workflow.setGitUrl(myWorkflow.getGitUrl());
+            workflow.setDescription(myWorkflow.getDescription());
+            workflows.add(workflow);
+        });
+        return workflows;
     }
 
     @GET
