@@ -2905,7 +2905,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -4144,7 +4144,31 @@ paths:
           description: default response
       tags:
       - users
-  /users/{userId}/workflow:
+  /users/{userId}/workflows:
+    get:
+      description: List all workflows owned by the authenticated user.
+      operationId: userWorkflows
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
     patch:
       description: Adds the logged-in user to any Dockstore workflows that they should
         have access to.
@@ -4164,31 +4188,6 @@ paths:
               type: string
         description: This is here to appease Swagger. It requires PATCH methods to
           have a body, even if it is empty. Please leave it empty.
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Workflow'
-                type: array
-          description: default response
-      security:
-      - bearer: []
-      tags:
-      - users
-  /users/{userId}/workflows:
-    get:
-      description: List all workflows owned by the authenticated user.
-      operationId: userWorkflows
-      parameters:
-      - description: User ID
-        in: path
-        name: userId
-        required: true
-        schema:
-          format: int64
-          type: integer
       responses:
         default:
           content:

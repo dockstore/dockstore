@@ -789,7 +789,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @PATCH
     @Timed
     @UnitOfWork
-    @Path("/{userId}/workflow")
+    @Path("/{userId}/workflows")
     @ApiOperation(value = "Adds a user to any Dockstore workflows that they should have access to.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds the logged-in user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
