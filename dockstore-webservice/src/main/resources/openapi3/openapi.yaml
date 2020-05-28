@@ -4162,8 +4162,8 @@ paths:
           '*/*':
             schema:
               type: string
-        description: This is here to appease Swagger. It requires PUT methods to have
-          a body, even if it is empty. Please leave it empty.
+        description: This is here to appease Swagger. It requires PATCH methods to
+          have a body, even if it is empty. Please leave it empty.
       responses:
         default:
           content:

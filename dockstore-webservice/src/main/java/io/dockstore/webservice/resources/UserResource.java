@@ -103,6 +103,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
@@ -789,10 +790,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflow")
+    @ApiOperation(value = "Adds a user to any Dockstore workflows that they should have access to.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds the logged-in user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public List<Workflow> addUserToDockstoreWorkflows(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
-            @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
-            @Parameter(name = "emptyBody", description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", in = ParameterIn.DEFAULT) String emptyBody) {
+    public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+            @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
+            @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
         final User user = userDAO.findById(authUser.getId());
         if (!Objects.equals(userId, user.getId())) {
             throw new CustomWebApplicationException("The user Id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
