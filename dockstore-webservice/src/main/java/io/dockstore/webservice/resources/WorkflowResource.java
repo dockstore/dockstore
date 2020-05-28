@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -94,6 +95,7 @@ import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.ServiceEntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
@@ -164,6 +166,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final EntryResource entryResource;
     private final ServiceEntryDAO serviceEntryDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
+    private final VersionDAO versionDAO;
 
     private final PermissionsInterface permissionsInterface;
     private final String zenodoUrl;
@@ -182,6 +185,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         this.serviceEntryDAO = new ServiceEntryDAO(sessionFactory);
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
+        this.versionDAO = new VersionDAO(sessionFactory);
 
         this.permissionsInterface = permissionsInterface;
 
@@ -1483,6 +1487,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         return null;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles")
+    @ApiOperation(value = "Retrieve sourcefiles for an entry's version",  hidden = true)
+    @Operation(operationId = "getWorkflowVersionsSourcefiles", description = "Retrieve sourcefiles for an entry's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public SortedSet<SourceFile> getWorkflowVersionsSourceFiles(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth Optional<User> user,
+            @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+            @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
+            @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by", in = ParameterIn.QUERY) @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkOptionalAuthRead(user, workflow);
+
+        return getVersionsSourcefiles(workflowId, workflowVersionId, fileTypes, versionDAO);
     }
 
     /**
