@@ -6246,9 +6246,8 @@ definitions:
         format: "date-time"
       entries:
         type: "array"
-        uniqueItems: true
         items:
-          $ref: "#/definitions/Entry"
+          $ref: "#/definitions/CollectionEntry"
       id:
         type: "integer"
         format: "int64"
@@ -6284,6 +6283,19 @@ definitions:
         type: "string"
         position: 4
         description: "Short description of the collection"
+  CollectionEntry:
+    type: "object"
+    properties:
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      entryPath:
+        type: "string"
+      entryType:
+        type: "string"
+      id:
+        type: "integer"
+        format: "int64"
   CollectionOrganization:
     type: "object"
     properties:

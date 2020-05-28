@@ -6,6 +6,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -47,35 +48,35 @@ public class Event {
     @ApiModelProperty(value = "Implementation specific ID for the event in this web service", position = 0)
     private long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", referencedColumnName = "id")
     @ApiModelProperty(value = "User that the event is acting on.", position = 1)
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizationId", referencedColumnName = "id")
     @ApiModelProperty(value = "Organization that the event is acting on.", position = 2)
     private Organization organization;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "toolId", referencedColumnName = "id")
     @ApiModelProperty(value = "Tool that the event is acting on.", position = 3)
     @JsonIgnoreProperties({ "workflowVersions" })
     private Tool tool;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workflowId", referencedColumnName = "id")
     @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
     @JsonIgnoreProperties({ "workflowVersions" })
     private BioWorkflow workflow;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collectionId", referencedColumnName = "id")
     @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
     @JsonIgnoreProperties({ "entries" })
     private Collection collection;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "initiatorUserId", referencedColumnName = "id")
     @ApiModelProperty(value = "User initiating the event.", position = 6)
     private User initiatorUser;
