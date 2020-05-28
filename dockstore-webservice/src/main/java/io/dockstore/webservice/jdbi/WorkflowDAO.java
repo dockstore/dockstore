@@ -238,11 +238,6 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             .setParameter("organization", organization));
     }
 
-    public List<Workflow> findByOrganization(String organization) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
-                .setParameter("organization", organization));
-    }
-
     public Workflow findByAlias(String alias) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }

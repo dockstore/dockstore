@@ -1,7 +1,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -12,12 +12,14 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
-import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
@@ -31,6 +33,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
@@ -45,13 +48,17 @@ public class LambdaEventResource {
     private final LambdaEventDAO lambdaEventDAO;
     private final WorkflowDAO workflowDAO;
     private final UserDAO userDAO;
+    private final TokenDAO tokenDAO;
     private SessionFactory sessionFactory;
+    private final HttpClient client;
 
-    public LambdaEventResource(SessionFactory sessionFactory) {
+    public LambdaEventResource(SessionFactory sessionFactory, HttpClient client) {
         this.sessionFactory = sessionFactory;
+        this.client = client;
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
+        this.tokenDAO = new TokenDAO(sessionFactory);
     }
 
     @GET
@@ -64,12 +71,15 @@ public class LambdaEventResource {
             @ApiParam(value = "organization", required = true) @PathParam("organization") String organization,
             @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
             @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
-        // To ensure a user has access to an organization, check that they have at least one workflow from that organization
         User authUser = userDAO.findById(user.getId());
-        List<Workflow> workflows = workflowDAO.findByOrganization(organization);
-        boolean canAccessOrganization = workflows.stream().anyMatch(workflow -> workflow.getUsers().contains(authUser) && Objects.equals(workflow.getSourceControl(),
-                SourceControl.GITHUB));
-        if (!canAccessOrganization) {
+        List<Token> githubToken = tokenDAO.findGithubByUserId(authUser.getId());
+        if (githubToken.size() == 0) {
+            throw new CustomWebApplicationException("You do not have GitHub connected to your account.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        GitHubSourceCodeRepo sourceCodeRepoInterface = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken.get(0), client);
+        Set<String> organizations = sourceCodeRepoInterface.getMyOrganizations();
+        if (!organizations.contains(organization)) {
             throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_UNAUTHORIZED);
         }
 

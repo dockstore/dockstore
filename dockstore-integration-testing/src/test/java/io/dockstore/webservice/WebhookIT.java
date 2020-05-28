@@ -163,7 +163,7 @@ public class WebhookIT extends BaseIT {
         // Freeze legacy version
         workflowVersion.setFrozen(true);
         List<WorkflowVersion> workflowVersions = workflowApi
-                .updateWorkflowVersion(workflow.getId(), Lists.newArrayList(workflowVersion));
+                 .updateWorkflowVersion(workflow.getId(), Lists.newArrayList(workflowVersion));
         workflowVersion = workflowVersions.stream().filter(v -> v.getName().equals("0.2")).findFirst().get();
         assertTrue(workflowVersion.isFrozen());
 
@@ -270,7 +270,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("There should now be 5 events", 5, orgEvents.size());
 
         try {
-            lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser", "0", 10);
+            lambdaEventsApi.getLambdaEventsByOrganization("IAmMadeUp", "0", 10);
             fail("Should not reach this statement");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals("Should fail because user cannot access org.", HttpStatus.SC_UNAUTHORIZED, ex.getCode());
