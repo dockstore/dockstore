@@ -66,11 +66,13 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -92,7 +94,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,6 +118,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
     private final EventDAO eventDAO;
+    private final BioWorkflowDAO bioWorkflowDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
@@ -130,6 +132,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
+        this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -556,18 +559,29 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        List<Workflow> workflows = getWorkflows(fetchedUser);
-        Session currentSession = sessionFactory.getCurrentSession();
-        workflows.forEach(workflow -> {
-            currentSession.evict(workflow);
-            workflow.setUsers(null);
-            workflow.setWorkflowVersions(new HashSet<>());
-        });
-        return workflows;
+        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
     }
 
     private List<Workflow> getWorkflows(User user) {
         return user.getEntries().stream().filter(BioWorkflow.class::isInstance).map(BioWorkflow.class::cast).collect(Collectors.toList());
+    }
+
+    private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {
+        List<Workflow> workflows = new ArrayList<>();
+        myWorkflows.forEach(myWorkflow -> {
+            Workflow workflow = new BioWorkflow();
+            workflow.setOrganization(myWorkflow.getOrganization());
+            workflow.setId(myWorkflow.getId());
+            workflow.setSourceControl(myWorkflow.getSourceControl());
+            workflow.setIsPublished(myWorkflow.isPublished());
+            workflow.setWorkflowName(myWorkflow.getWorkflowName());
+            workflow.setRepository(myWorkflow.getRepository());
+            workflow.setMode(myWorkflow.getMode());
+            workflow.setGitUrl(myWorkflow.getGitUrl());
+            workflow.setDescription(myWorkflow.getDescription());
+            workflows.add(workflow);
+        });
+        return workflows;
     }
 
     @GET
