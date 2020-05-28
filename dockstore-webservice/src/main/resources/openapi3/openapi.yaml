@@ -2060,6 +2060,63 @@ paths:
       summary: Add a new orcid.org token
       tags:
       - tokens
+  /containers/{containerId}/tags/{tagId}/sourcefiles:
+    get:
+      description: Retrieve sourcefiles for a container's version
+      operationId: getTagsSourcefiles
+      parameters:
+      - description: Container to retrieve the version from
+        in: path
+        name: containerId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Tag to retrieve the sourcefiles from
+        in: path
+        name: tagId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: List of file types to filter sourcefiles by
+        in: query
+        name: fileTypes
+        schema:
+          items:
+            enum:
+            - DOCKSTORE_CWL
+            - DOCKSTORE_WDL
+            - DOCKERFILE
+            - CWL_TEST_JSON
+            - WDL_TEST_JSON
+            - NEXTFLOW
+            - NEXTFLOW_CONFIG
+            - NEXTFLOW_TEST_PARAMS
+            - DOCKSTORE_YML
+            - DOCKSTORE_SERVICE_YML
+            - DOCKSTORE_SERVICE_TEST_JSON
+            - DOCKSTORE_SERVICE_OTHER
+            - DOCKSTORE_GXFORMAT2
+            - GXFORMAT2_TEST_FILE
+            - DOCKSTORE_SWL
+            - SWL_TEST_JSON
+            type: string
+          type: array
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+                type: array
+                uniqueItems: true
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - containertags
   /entries/{id}/topic:
     post:
       description: Create a discourse topic for an entry.
@@ -2920,7 +2977,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -4359,6 +4416,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
+    get:
+      description: Retrieve sourcefiles for an entry's version
+      operationId: getWorkflowVersionsSourcefiles
+      parameters:
+      - description: Workflow to retrieve the version from.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Workflow version to retrieve the version from.
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: List of file types to filter sourcefiles by
+        in: query
+        name: fileTypes
+        schema:
+          items:
+            enum:
+            - DOCKSTORE_CWL
+            - DOCKSTORE_WDL
+            - DOCKERFILE
+            - CWL_TEST_JSON
+            - WDL_TEST_JSON
+            - NEXTFLOW
+            - NEXTFLOW_CONFIG
+            - NEXTFLOW_TEST_PARAMS
+            - DOCKSTORE_YML
+            - DOCKSTORE_SERVICE_YML
+            - DOCKSTORE_SERVICE_TEST_JSON
+            - DOCKSTORE_SERVICE_OTHER
+            - DOCKSTORE_GXFORMAT2
+            - GXFORMAT2_TEST_FILE
+            - DOCKSTORE_SWL
+            - SWL_TEST_JSON
+            type: string
+          type: array
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+                type: array
+                uniqueItems: true
           description: default response
       security:
       - bearer: []
