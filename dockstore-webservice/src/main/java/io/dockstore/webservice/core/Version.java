@@ -41,6 +41,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
@@ -67,6 +69,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+
+// Ensure that the version requested belongs to a workflow a user has access to.
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id")
+})
+
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
     public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
