@@ -18,6 +18,7 @@ import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -43,12 +44,14 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 public class LambdaEventResource {
     private final LambdaEventDAO lambdaEventDAO;
     private final WorkflowDAO workflowDAO;
+    private final UserDAO userDAO;
     private SessionFactory sessionFactory;
 
     public LambdaEventResource(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.userDAO = new UserDAO(sessionFactory);
     }
 
     @GET
@@ -62,11 +65,12 @@ public class LambdaEventResource {
             @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
             @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
         // To ensure a user has access to an organization, check that they have at least one workflow from that organization
-        List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
-        boolean canAccessOrganization = workflows.stream().anyMatch(workflow -> Objects.equals(workflow.getOrganization(), organization) && Objects.equals(workflow.getSourceControl(),
+        User authUser = userDAO.findById(user.getId());
+        List<Workflow> workflows = workflowDAO.findByOrganization(organization);
+        boolean canAccessOrganization = workflows.stream().anyMatch(workflow -> workflow.getUsers().contains(authUser) && Objects.equals(workflow.getSourceControl(),
                 SourceControl.GITHUB));
         if (!canAccessOrganization) {
-            throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_UNAUTHORIZED);
         }
 
         return lambdaEventDAO.findByOrganization(organization, offset, limit);

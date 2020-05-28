@@ -147,9 +147,6 @@
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column defaultValueBoolean="false" name="dismissed" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
             <column name="message" type="TEXT"/>
             <column name="reference" type="TEXT"/>
             <column name="repository" type="TEXT"/>

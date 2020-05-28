@@ -273,7 +273,7 @@ public class WebhookIT extends BaseIT {
             lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser", "0", 10);
             fail("Should not reach this statement");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals("Should fail because user cannot access org.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals("Should fail because user cannot access org.", HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
     }
 
