@@ -1,4 +1,4 @@
-{
+ {
     "swagger": "2.0",
     "info": {
         "title": "Discourse API Documentation",
@@ -853,13 +853,13 @@
                 ],
                 "parameters": [
                     {
-                        "in": "formData",
-                        "name": "api_key",
+                        "in": "header",
+                        "name": "Api-Key",
                         "type": "string"
                     },
                     {
-                        "in": "formData",
-                        "name": "api_username",
+                        "in": "header",
+                        "name": "Api-Username",
                         "type": "string"
                     },
                     {

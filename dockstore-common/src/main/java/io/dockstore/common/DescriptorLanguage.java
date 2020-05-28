@@ -48,7 +48,7 @@ public enum DescriptorLanguage {
         ImmutableSet.of("ga", "yaml", "yml")) {
         @Override
         public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type);
+            return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
         }
     },
     // DOCKSTORE-2428 - demo how to add new workflow language

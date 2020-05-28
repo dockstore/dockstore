@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +88,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Map<String, Pair<String, GenericFileType>> indexedFiles) {
-        return new VersionTypeValidation(true, new HashMap<>());
+        return new VersionTypeValidation(true, Collections.emptyMap());
     }
 
     @Override

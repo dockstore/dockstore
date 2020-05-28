@@ -276,7 +276,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             validationMessageObject.put(primaryDescriptorFilePath, "Primary WDL descriptor is not present.");
             return new VersionTypeValidation(false, validationMessageObject);
         }
-        return new VersionTypeValidation(true, null);
+        return new VersionTypeValidation(true, Collections.emptyMap());
     }
 
     /**
